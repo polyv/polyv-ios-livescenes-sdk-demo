@@ -1,0 +1,151 @@
+//
+//  PLVLCMediaAreaView.h
+//  PolyvLiveScenesDemo
+//
+//  Created by Lincal on 2020/9/15.
+//  Copyright © 2020 polyv. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+#import "PLVLiveRoomData.h"
+#import "PLVLivePlayerPresenter.h"
+#import "PLVPlaybackPlayerPresenter.h"
+
+#import "PLVLCMediaPlayerSkinView.h"
+#import "PLVLCMediaFloatView.h"
+
+#define PPTPlayerViewScale (9.0 / 16.0)
+#define NormalPlayerViewScale (9.0 / 16.0)
+
+NS_ASSUME_NONNULL_BEGIN
+
+/// 枚举
+/// 媒体区域播放器类型
+typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewPlayerType) {
+    PLVLCMediaAreaViewPlayerType_CDNPlayer = 0, // 当前正在显示CDN流播放器
+    PLVLCMediaAreaViewPlayerType_RTCPlayer = 2, // 当前正在显示RTC流播放器
+};
+
+@protocol PLVLCMediaAreaViewDelegate;
+
+/// 媒体区域视图
+///
+/// @note 播放相关的UI、逻辑都在此类中实现；
+///       负责管理 [UI]媒体播放器皮肤视图、[UI]媒体悬浮视图、[UI]媒体更多视图、[Presenter]播放器管理器
+@interface PLVLCMediaAreaView : UIView <PLVLCBasePlayerSkinViewDelegate>
+
+/// delegate
+@property (nonatomic, weak) id <PLVLCMediaAreaViewDelegate> delegate;
+
+/// 媒体播放器皮肤视图 (用于 竖屏时 显示)
+///
+/// @note 暴露给外部的“竖屏 媒体播放器皮肤视图“，便于和其他 播放器皮肤视图 作交互
+@property (nonatomic, strong, readonly) PLVLCMediaPlayerSkinView * skinView;
+
+/// 跑马灯视图
+///
+/// @note 便于外部作图层管理
+@property (nonatomic, strong, readonly) UIView * marqueeView;
+
+/// 媒体悬浮视图
+///
+/// @note 便于外部作图层管理
+@property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
+
+/// 当前播放器类型
+///
+/// @note 可通过 [switchPlayerTypeTo:] 方法进行切换
+@property (nonatomic, assign, readonly) PLVLCMediaAreaViewPlayerType playerType;
+
+/// 是否限制 内容画面 在安全区域内
+///
+/// @note YES:内容画面 仅在安全区域内显示，低于iOS 11时需搭配配置 [CGFloat topPaddingBelowiOS11] 属性
+///       NO:内容画面 不考虑安全区域
+///       具体来说，“内容画面” 指私有的 contentBackgroudView
+@property (nonatomic, assign) BOOL limitContentViewInSafeArea;
+
+/// 顶部安全距离
+///
+/// @note 仅在 [limitContentViewInSafeArea] 为YES 且 系统是iOS 11以下时，此值会使用；
+///       说明：当低于 iOS 11 时，无法判断顶部有无状态栏遮挡 (即开发者是否将 AreaView 置于状态栏下方)。
+///       此时开发者需根据对 AreaView 的布局，告知顶部安全距离 (若无状态栏遮挡，则此值应该为0)；
+@property (nonatomic, assign) CGFloat topPaddingBelowiOS11;
+
+/// 初始化方法
+- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData;
+
+/// 显示或隐藏弹幕
+- (void)showDanmu:(BOOL)show;
+
+/// 插入一条滚动弹幕
+- (void)insertDanmu:(NSString *)danmu;
+
+- (void)refreshUIInfo;
+
+/// 切换播放器类型
+///
+/// @note 切换后，媒体区域视图 AreaView，将更新布局至对应的效果
+///
+/// @param toType 需要切换至的播放器类型
+- (void)switchPlayerTypeTo:(PLVLCMediaAreaViewPlayerType)toType;
+
+/// 媒体区域展示一个内容视图
+- (void)displayContentView:(UIView *)contentView;
+
+/// 在媒体区域中，获取当前的内容视图，用于与外部进行交换
+///
+/// @note 非连麦场景中的视图交换：指PPT与CDN播放器画面，进行视图交换；由点击 floatView 触发（全程在 AreaView 中完成）
+///       连麦场景中的视图交换：指PPT与RTC播放器画面 或 两个RTC播放器画面之间，进行视图交换；由点击 RTC播放器画面 触发（在 AreaView 与 外部视图中完成）
+///       因此以下该“对外方法”，仅应该在 连麦场景中 被调用。
+- (UIView *)getContentViewForExchange;
+
+@end
+
+@protocol PLVLCMediaAreaViewDelegate <NSObject>
+
+/// 用户希望退出当前页面
+///
+/// @param mediaAreaView 连麦区域视图
+- (void)plvLCMediaAreaViewWannaBack:(PLVLCMediaAreaView *)mediaAreaView;
+
+/// 媒体区域视图需要得知当前的连麦状态
+///
+/// @param mediaAreaView 媒体区域视图
+///
+/// @return BOOL 由外部告知的当前是否连麦中 (YES:正在连麦中 NO:不在连麦中)
+- (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView;
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerStateDidChange:(LivePlayerState)livePlayerState;
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerPlayingDidChange:(BOOL)playing;
+
+/// 媒体区域的 悬浮视图 出现/隐藏回调
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView floatViewSwitchToShow:(BOOL)show;
+
+/// 媒体区域的 皮肤视图 出现/隐藏回调
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangedSkinShowStatus:(BOOL)skinShow forSkinView:(PLVLCBasePlayerSkinView *)skinView;
+
+/// 媒体区域视图询问是否有 外部视图 处理此次触摸事件
+///
+/// @note 并非任何触摸事件，都将回调此方法，因为有些触摸事件是点击 皮肤视图skinView 上的有效控件的。
+///       此方法，主要是为了解决 “一些触摸事件被皮肤视图遮挡” 的场景。
+///
+/// @param mediaAreaView 媒体区域视图
+/// @param point 此次触摸事件的 CGPoint (相对于皮肤视图skinView；可用于判断该触摸，是否在某个外部视图的范围内)
+/// @param skinView 触摸事件所在的 skinView
+///
+/// @return BOOL 是否有外部视图处理 (YES:由外部视图处理 NO:外部视图不处理，交回给皮肤视图skinView)
+- (BOOL)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView askHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView;
+
+/// 用户希望连麦区域视图 隐藏/显示
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView userWannaLinkMicAreaViewShow:(BOOL)wannaShow onSkinView:(PLVLCBasePlayerSkinView *)skinView;
+
+/// 回放场景
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackPlayerPlayingDidChange:(BOOL)playing;
+
+@end
+
+NS_ASSUME_NONNULL_END
