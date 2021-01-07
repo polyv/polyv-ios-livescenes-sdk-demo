@@ -6,11 +6,14 @@
 //  Copyright © 2020 polyv. All rights reserved.
 //
 
-#import "PLVLiveUtil.h"
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface PLVLCUtils : PLVLiveUtil
+@interface PLVLCUtils : NSObject
+
++ (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view;
 
 + (UIImage *)imageForLiveRoomResource:(NSString *)imageName;
 

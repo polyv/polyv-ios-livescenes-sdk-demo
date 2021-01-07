@@ -53,7 +53,7 @@
         [self.cellModels insertObject:cellModel atIndex:0];
         self.totalItems ++;
         return 0;
-    } else if (newModel.rank > self.cellModels.lastObject.model.rank) { // 待添加商品在列表商品排序范围内（上架商品）
+    } else if (self.cellModels.count > 0 && newModel.rank > self.cellModels.lastObject.model.rank) { // 待添加商品在列表商品排序范围内（上架商品）
         for (int i=0; i < self.cellModels.count; i++) {
             PLVECCommodityModel *model = [self.cellModels[i] model];
             if (newModel.rank > model.rank) { // 排序

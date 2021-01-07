@@ -7,23 +7,37 @@
 //
 
 #import "PLVECUtils.h"
+#import <PolyvFoundationSDK/PLVProgressHUD.h>
 
 @implementation PLVECUtils
 
-+ (NSBundle *)watchBundle {
-    /*
-     使用 [NSBundle bundleForClass:[PLVECUtils class]] 而非 [NSBundle mainBundle] 的原因在于：
-     如果是将 watch 文件夹打包进 framework，也能读到资源文件
-     */
-    return [NSBundle bundleForClass:[PLVECUtils class]];
-}
+#pragma mark - [ Public Methods ]
 
-+ (NSBundle *)watchResource {
-    return [NSBundle bundleWithPath:[[PLVECUtils watchBundle] pathForResource:@"WatchResource" ofType:@"bundle"]];
++ (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view {
+    NSLog(@"HUD info title:%@,detail:%@",title,detail);
+    if (view == nil) {
+        return;
+    }
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:view animated:YES];
+    hud.mode = PLVProgressHUDModeText;
+    hud.label.text = title;
+    hud.detailsLabel.text = detail;
+    [hud hideAnimated:YES afterDelay:2.0];
 }
 
 + (UIImage *)imageForWatchResource:(NSString *)imageName {
-    return [UIImage imageNamed:imageName inBundle:[self watchResource] compatibleWithTraitCollection:nil];
+    return [self imageFromBundle:@"WatchResource" imageName:imageName];
+}
+
+#pragma mark - [ Private Methods ]
+
++ (NSBundle *)ECBundle {
+    return [NSBundle bundleForClass:[PLVECUtils class]];
+}
+
++ (UIImage *)imageFromBundle:(NSString *)bundleName imageName:(NSString *)imageName{
+    NSBundle * resourceBundle = [NSBundle bundleWithPath:[[PLVECUtils ECBundle] pathForResource:bundleName ofType:@"bundle"]];
+    return [UIImage imageNamed:imageName inBundle:resourceBundle compatibleWithTraitCollection:nil];
 }
 
 @end

@@ -19,6 +19,7 @@
 
 #pragma mark - <PLVECCommodityViewProtocol>
 
+@synthesize channelId;
 @synthesize titleLabel;
 @synthesize tableView;
 @synthesize indicatorView;
@@ -48,10 +49,8 @@
 
 #pragma mark - <PLVECCommodityPresenterProtocol>
 
-@synthesize channel;
-
-- (void)setChannel:(PLVLiveChannelConfig *)channel {
-    self.presenter.channel = channel;
+- (void)setChannelId:(NSString *)channelId {
+    self.presenter.channelId = channelId;
 }
 
 - (void)loadCommodityInfo {

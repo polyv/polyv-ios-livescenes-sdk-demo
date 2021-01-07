@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import "PLVECRewardView.h"
-#import "PLVLiveChannelConfig.h"
+#import "PLVRoomUser.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) PLVECRewardView *view;
 
-@property (nonatomic, strong) PLVLiveChannelConfig *channel;
+@property (nonatomic, strong) PLVRoomUser *roomUser;
 
 @property (nonatomic, weak) id<PLVECRewardControllerDelegate> delegate;
 

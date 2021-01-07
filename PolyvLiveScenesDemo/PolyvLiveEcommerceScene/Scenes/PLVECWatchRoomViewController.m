@@ -9,7 +9,7 @@
 #import "PLVECWatchRoomViewController.h"
 
 // 模块
-#import "PLVLiveRoomManager.h"
+#import "PLVRoomDataManager.h"
 #import "PLVECPlayerViewController.h"
 #import "PLVECGoodsDetailViewController.h"
 #import "PLVECBaseNavigationController.h"
@@ -28,17 +28,18 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @interface PLVECWatchRoomViewController ()<
+PLVSocketManagerProtocol,
 PLVECLiveHomePageViewDelegate,
 PLVPalybackHomePageViewDelegate,
 PLVECFloatingWindowProtocol,
-PLVECPlayerViewControllerProtocol
+PLVECPlayerViewControllerProtocol,
+PLVRoomDataManagerProtocol,
+UIGestureRecognizerDelegate
 >
 
 #pragma mark 数据
-@property (nonatomic, strong) PLVLiveRoomData * watchRoomData; // 观看间数据
 
 #pragma mark 模块
-@property (nonatomic, strong) PLVLiveRoomManager * watchRoomManager; // 观看间数据管理器
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
 @property (nonatomic, strong) PLVECGoodsDetailViewController *goodsDetailVC; // 商品详情页控制器
 
@@ -48,13 +49,30 @@ PLVECPlayerViewControllerProtocol
 @property (nonatomic, strong) PLVECLiveDetailPageView * liveDetailPageView;
 @property (nonatomic, strong) PLVECPalybackHomePageView * livePlaybackHomePageView;
 @property (nonatomic, strong) UIButton * closeButton;
-@property (nonatomic, weak) PLVPlayerController *player;
 
 @end
 
 @implementation PLVECWatchRoomViewController
 
 #pragma mark - [ Life Period ]
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        PLVRoomUser *roomUser = roomData.roomUser;
+        
+        /// Socket 登录管理
+        PLVSocketUserType userType = roomUser.viewerType == PLVRoomUserTypeStudent ? PLVSocketUserTypeStudent : PLVSocketUserTypeSlice;
+        [PLVSocketManager sharedManager].allowChildRoom = YES;
+        [[PLVSocketManager sharedManager] loginWithChannelId:roomData.channelId viewerId:roomUser.viewerId viewerName:roomUser.viewerName avatarUrl:roomUser.viewerAvatar actor:nil userType:userType];
+        
+        [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+    }
+    return self;
+}
+
 - (void)dealloc{
     NSLog(@"%s",__FUNCTION__);
 }
@@ -66,6 +84,23 @@ PLVECPlayerViewControllerProtocol
     [self setupData];
     
     [PLVECFloatingWindow sharedInstance].delegate = self;
+    
+    // 单击、双击手势控制播放器和UI
+    UITapGestureRecognizer *doubleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+    doubleGestureRecognizer.numberOfTapsRequired = 2;
+    doubleGestureRecognizer.numberOfTouchesRequired = 1;
+    doubleGestureRecognizer.delegate = self;
+    [doubleGestureRecognizer addTarget:self action:@selector(tapAction:)];
+    [self.view addGestureRecognizer:doubleGestureRecognizer];
+    
+    UITapGestureRecognizer *singleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+    singleGestureRecognizer.numberOfTapsRequired = 1;
+    singleGestureRecognizer.numberOfTouchesRequired = 1;
+    singleGestureRecognizer.delegate = self;
+    [singleGestureRecognizer addTarget:self action:@selector(tapAction:)];
+    [self.view addGestureRecognizer:singleGestureRecognizer];
+    
+    [singleGestureRecognizer requireGestureRecognizerToFail:doubleGestureRecognizer];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -81,35 +116,30 @@ PLVECPlayerViewControllerProtocol
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
     
     if (![PLVECFloatingWindow sharedInstance].hidden) {
         [[PLVECFloatingWindow sharedInstance] close]; // 关闭悬浮窗
     }
     
-    if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为直播
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         self.playerVC.view.frame = self.view.bounds;// 重新布局
         [self.view insertSubview:self.playerVC.view atIndex:0];
         
-        PLVLivePlayerController *livePlayer = (PLVLivePlayerController *)self.player;
-        [livePlayer cancelMute];
+        [self.playerVC cancelMute];
     } else {
         self.playerVC.view.frame = self.view.bounds;// 重新布局
         [self.view insertSubview:self.playerVC.view atIndex:0];
         
-        PLVVodPlayerController *playbackPlayer = (PLVVodPlayerController *)self.player;
-        [playbackPlayer cancelMute];
+        [self.playerVC cancelMute];
     }
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
     if ([PLVECFloatingWindow sharedInstance].hidden) {
-        if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为直播
-            PLVLivePlayerController *livePlayer = (PLVLivePlayerController *)self.player;
-            [livePlayer mute];
-        } else {
-            PLVVodPlayerController *playbackPlayer = (PLVVodPlayerController *)self.player;
-            [playbackPlayer mute];
-        }
+        [self.playerVC mute];
     }
 }
 
@@ -129,23 +159,14 @@ PLVECPlayerViewControllerProtocol
     return UIInterfaceOrientationMaskPortrait;
 }
 
-
-#pragma mark - [ Public Methods ]
-- (instancetype)initWithLiveRoomData:(PLVLiveRoomData *)roomData {
-    if (self = [super init]) {
-        self.watchRoomData = roomData;
-    }
-    return self;
-}
-
-
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
     /// 注意：1. 此处不建议将共同拥有的图层，提炼在 if 判断外，来做“代码简化”
     ///         因为此处涉及到添加顺序，而影响图层顺序。放置在 if 内，能更加准确地配置图层顺序，也更清晰地预览图层顺序。
     ///      2. 懒加载过程中(即Getter)，已增加判断，若场景不匹配，将创建失败并返回nil
     
-    if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 创建添加视图
         [self.view addSubview:self.scrollView];
         [self.scrollView addSubview:self.liveHomePageView];
@@ -161,7 +182,7 @@ PLVECPlayerViewControllerProtocol
         
         self.liveDetailPageView.frame = CGRectMake(0, 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
-    }else if (self.watchRoomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
+    } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 创建添加视图
         [self.view addSubview:self.scrollView];
         [self.scrollView addSubview:self.livePlaybackHomePageView];
@@ -181,71 +202,21 @@ PLVECPlayerViewControllerProtocol
 }
 
 - (void)setupData{
-    if (!self.watchRoomData) {
-        NSLog(@"%@ 初始化失败！请调用 -initWithChannel:roomData: API 初始化",NSStringFromClass(self.class));
-        return;
-    }
-    
-    /// 观看间数据管理器
-    self.watchRoomManager = [[PLVLiveRoomManager alloc] initWithRoomData:self.watchRoomData];
-    [self.watchRoomManager requestLiveDetail]; // 获取直播详情数据
-    [self.watchRoomManager requestPageview];   // 上报观看热度
-    
-    /// 监听房间数据
-    [self observeRoomData];
-    
     /// 注意：懒加载过程中(即Getter)，已增加判断，若场景不匹配，将创建失败并返回nil
-    if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live ||
-        self.watchRoomData.videoType == PLVWatchRoomVideoType_LivePlayback) {
-        self.playerVC = [[PLVECPlayerViewController alloc] initWithRoomData:self.watchRoomData];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live ||
+        roomData.videoType == PLVChannelVideoType_Playback) {
+        self.playerVC = [[PLVECPlayerViewController alloc] init];
         self.playerVC.view.frame = self.view.bounds;
         self.playerVC.delegate = self;
         [self.view insertSubview:self.playerVC.view atIndex:0];
     }
-    
-    if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
-        self.player = self.playerVC.livePresenter.player; // PLVLivePlayerController
-    }else if (self.watchRoomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
-        self.player = self.playerVC.playbackPresenter.player; // PLVVodPlayerController
-    }
-}
-
-- (void)observeRoomData {
-    PLVLiveRoomData *roomData = self.watchRoomData;
-    if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_CHANNEL options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_ONLINECOUNT options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_LIKECOUNT options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_LIVESTATE options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-    }else if (self.watchRoomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_ONLINECOUNT options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_CHANNEL options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_VIEWCOUNT options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_DURATION options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-        [roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_PLAYING options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-    }
-}
-
-- (void)removeObserveRoomData {
-    PLVLiveRoomData *roomData = self.watchRoomData;
-    if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_CHANNEL];
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_ONLINECOUNT];
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_LIKECOUNT];
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_LIVESTATE];
-    }else if (self.watchRoomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_ONLINECOUNT];
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_CHANNEL];
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_VIEWCOUNT];
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_DURATION];
-        [roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_PLAYING];
-    }
 }
 
 - (void)exitCurrentController {
-    [self removeObserveRoomData];
+    [[PLVSocketManager sharedManager] logout];
     [self.liveHomePageView destroy];
-    [self.playerVC destroy];
+    [self.livePlaybackHomePageView destroy];
 
     if (self.navigationController) {
         [self.navigationController popViewControllerAnimated:YES];
@@ -272,8 +243,9 @@ PLVECPlayerViewControllerProtocol
 }
 
 - (PLVECLiveHomePageView *)liveHomePageView{
-    if (!_liveHomePageView && self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) {
-        _liveHomePageView = [[PLVECLiveHomePageView alloc] initWithDelegate:self roomData:self.watchRoomData];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (!_liveHomePageView && roomData.videoType == PLVChannelVideoType_Live) {
+        _liveHomePageView = [[PLVECLiveHomePageView alloc] initWithDelegate:self];
     }
     return _liveHomePageView;
 }
@@ -286,8 +258,9 @@ PLVECPlayerViewControllerProtocol
 }
 
 - (PLVECPalybackHomePageView *)livePlaybackHomePageView{
-    if (!_livePlaybackHomePageView && self.watchRoomData.videoType == PLVWatchRoomVideoType_LivePlayback) {
-        _livePlaybackHomePageView = [[PLVECPalybackHomePageView alloc] initWithDelegate:self roomData:self.watchRoomData];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (!_livePlaybackHomePageView && roomData.videoType == PLVChannelVideoType_Playback) {
+        _livePlaybackHomePageView = [[PLVECPalybackHomePageView alloc] initWithDelegate:self];
     }
     return _livePlaybackHomePageView;
 }
@@ -308,48 +281,83 @@ PLVECPlayerViewControllerProtocol
     [self exitCurrentController];
 }
 
-#pragma mark KVO
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    if (![object isKindOfClass:PLVLiveRoomData.class]) {
+- (void)tapAction:(UITapGestureRecognizer *)gestureRecognizer {
+    /** 播放广告中，点击屏幕跳转广告链接 */
+    if (self.playerVC.advPlaying) {
+        if ([PLVFdUtil checkStringUseable:self.playerVC.advLinkUrl]) {
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.playerVC.advLinkUrl]];
+        }
         return;
     }
     
-    PLVLiveRoomData *roomData = object;
-    if ([keyPath isEqualToString:KEYPATH_LIVEROOM_CHANNEL]) { // 频道信息
-        if (!roomData.channelMenuInfo)
-            return;
-        
-        for (PLVLiveVideoChannelMenu *menu in roomData.channelMenuInfo.channelMenus) {
-            if ([menu.menuType isEqualToString:@"desc"]) {
-                [self.liveDetailPageView addLiveInfoCardView:menu.content];
-            } else if ([menu.menuType isEqualToString:@"buy"] && self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) {
-                self.liveHomePageView.shoppingCardButton.hidden = NO;
-            }
+    if (gestureRecognizer.numberOfTapsRequired == 1) {
+        if (! self.playerVC.playing) {
+            [self.playerVC play];
         }
-        
-        if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
-            [self.liveHomePageView updateChannelInfo:roomData.channelMenuInfo.publisher coverImage:roomData.channelMenuInfo.coverImage];
-        } else if (self.watchRoomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
-            [self.livePlaybackHomePageView updateChannelInfo:roomData.channelMenuInfo.publisher coverImage:roomData.channelMenuInfo.coverImage];
+    } else if (gestureRecognizer.numberOfTapsRequired == 2) {
+        if (self.playerVC.playing) {
+            [self.playerVC pause];
+        } else {
+            [self.playerVC play];
         }
-    } else if ([keyPath isEqualToString:KEYPATH_LIVEROOM_ONLINECOUNT]) { // 观看热度
-        [self.liveHomePageView updateOnlineCount:roomData.onlineCount];
-        [self.livePlaybackHomePageView updateWatchViewCount:roomData.onlineCount];
-    } else if ([keyPath isEqualToString:KEYPATH_LIVEROOM_LIKECOUNT]) { // 点赞数
-        [self.liveHomePageView updateLikeCount:roomData.likeCount];
-    } else if ([keyPath isEqualToString:KEYPATH_LIVEROOM_LIVESTATE]) { // 直播状态
-        [self.liveHomePageView updatePlayerState:roomData.liveState == PLVLiveStreamStateLive];
-    } else if ([keyPath isEqualToString:KEYPATH_LIVEROOM_VIEWCOUNT]) {
-//        [self.livePlaybackHomePageView updateWatchViewCount:roomData.watchViewCount];
-    } else if ([keyPath isEqualToString:KEYPATH_LIVEROOM_DURATION]) {
-        [self.livePlaybackHomePageView updateVideoDuration:roomData.duration];
-    } else if ([keyPath isEqualToString:KEYPATH_LIVEROOM_PLAYING]) {
-        [self.livePlaybackHomePageView updatePlayButtonState:roomData.playing];
     }
 }
 
-
 #pragma mark - [ Delegate ]
+#pragma mark PLVRoomDataManagerProtocol
+
+- (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
+    [self.liveHomePageView updateOnlineCount:onlineCount];
+    [self.livePlaybackHomePageView updateWatchViewCount:onlineCount];
+}
+
+- (void)roomDataManager_didLikeCountChanged:(NSUInteger)likeCount {
+    [self.liveHomePageView updateLikeCount:likeCount];
+}
+
+- (void)roomDataManager_didPlayingStatusChanged:(BOOL)playing {
+    [self.livePlaybackHomePageView updatePlayButtonState:playing];
+}
+
+- (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    for (PLVLiveVideoChannelMenu *menu in menuInfo.channelMenus) {
+        if ([menu.menuType isEqualToString:@"desc"]) {
+            [self.liveDetailPageView addLiveInfoCardView:menu.content];
+        } else if ([menu.menuType isEqualToString:@"buy"] && roomData.videoType == PLVChannelVideoType_Live) {
+            self.liveHomePageView.shoppingCardButton.hidden = NO;
+        }
+    }
+    
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        [self.liveHomePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
+    } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
+        [self.livePlaybackHomePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
+    }
+}
+
+- (void)roomDataManager_didLiveStateChanged:(PLVChannelLiveStreamState)liveState {
+    [self.liveHomePageView updatePlayerState:liveState == PLVChannelLiveStreamState_Live];
+}
+
+#pragma mark PLVSocketManagerProtocol
+
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
+//    [PLVECUtils showHUDWithTitle:@"登陆成功" detail:@"" view:self.view];
+}
+
+- (void)socketMananger_didLoginFailure:(NSError *)error {
+    if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
+        error.code == PLVSocketLoginErrorCodeRelogin ||
+        error.code == PLVSocketLoginErrorCodeKick) &&
+        error.localizedDescription) {
+        __weak typeof(self) weakSelf = self;
+        [PLVFdUtil showAlertWithTitle:nil message:error.localizedDescription viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
+            [weakSelf exitCurrentController];
+        } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
+    }
+}
+
 #pragma mark PLVECFloatingWindowProtocol
 
 - (void)floatingWindow_closeWindowAndBack:(BOOL)back {
@@ -360,13 +368,7 @@ PLVECPlayerViewControllerProtocol
             [self.goodsDetailVC dismissViewControllerAnimated:YES completion:nil];
         }
     } else {
-        if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为直播
-            PLVLivePlayerController *livePlayer = (PLVLivePlayerController *)self.player;
-            [livePlayer mute];
-        } else {
-            PLVVodPlayerController *playbackPlayer = (PLVVodPlayerController *)self.player;
-            [playbackPlayer mute];
-        }
+        [self.playerVC mute];
     }
 }
 
@@ -385,21 +387,7 @@ PLVECPlayerViewControllerProtocol
     [self.livePlaybackHomePageView updateDowloadProgress:dowloadProgress playedProgress:playedProgress currentPlaybackTime:currentPlaybackTime duration:duration];
 }
 
-- (void)presenter:(PLVPlaybackPlayerPresenter *)presenter mainPlayerPlaybackDidFinish:(NSDictionary *)dataInfo {
-    // 播放完成
-    [self updateDowloadProgress:0 playedProgress:1
-            currentPlaybackTime:[PLVFdUtil secondsToString:self.watchRoomData.duration]
-                       duration:[PLVFdUtil secondsToString:self.watchRoomData.duration]];
-}
-
 #pragma mark PLVECLiveHomePageView Delegate
-
-- (void)homePageView:(PLVECLiveHomePageView *)homePageView authorizationVerificationFailed:(PLVLiveRoomErrorReason)reason message:(NSString *)message {
-    __weak typeof(self) weakSelf = self;
-    [PLVFdUtil showAlertWithTitle:nil message:message viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
-        [weakSelf exitCurrentController];
-    } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
-}
 
 - (void)homePageView:(PLVECLiveHomePageView *)homePageView switchPlayLine:(NSUInteger)line {
     [self.playerVC switchPlayLine:line showHud:NO];
@@ -414,21 +402,24 @@ PLVECPlayerViewControllerProtocol
 }
 
 - (BOOL)playerIsPlaying {
-    return self.watchRoomData.liveState == PLVLiveStreamStateLive;
+    return self.playerVC.playing;
 }
 
 - (void)homePageView:(PLVECLiveHomePageView *)homePageView receiveBulletinMessage:(NSString *)content open:(BOOL)open {
-    if (open) {
-        [self.liveDetailPageView addBulletinCardView:content];
-    } else {
-        [self.liveDetailPageView removeBulletinCardView];
-    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (open) {
+            [self.liveDetailPageView addBulletinCardView:content];
+        } else {
+            [self.liveDetailPageView removeBulletinCardView];
+        }
+    });
 }
 
 - (void)homePageView:(PLVECLiveHomePageView *)homePageView openGoodsDetail:(NSURL *)goodsURL {
     NSLog(@"商品详情 %@", goodsURL);
     
-    if (self.watchRoomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为直播
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
         [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view]; // 打开悬浮窗
     }
     
@@ -447,6 +438,14 @@ PLVECPlayerViewControllerProtocol
 
 #pragma mark PLVPalybackHomePageViewDelegate
 - (void)homePageView:(PLVECPalybackHomePageView *)homePageView switchPause:(BOOL)pause {
+    /** 播放广告中，点击屏幕跳转广告链接 */
+    if (self.playerVC.advPlaying) {
+        if ([PLVFdUtil checkStringUseable:self.playerVC.advLinkUrl]) {
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.playerVC.advLinkUrl]];
+        }
+        return;
+    }
+    
     if (pause) {
         [self.playerVC pause];
     } else {
@@ -463,11 +462,23 @@ PLVECPlayerViewControllerProtocol
 }
 
 - (void)palyback_homePageView:(PLVECPalybackHomePageView *)homePageView receiveBulletinMessage:(NSString *)content open:(BOOL)open {
-    if (open) {
-        [self.liveDetailPageView addBulletinCardView:content];
-    } else {
-        [self.liveDetailPageView removeBulletinCardView];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (open) {
+            [self.liveDetailPageView addBulletinCardView:content];
+        } else {
+            [self.liveDetailPageView removeBulletinCardView];
+        }
+    });
+}
+
+#pragma mark - UIGestureRecognizerDelegate
+-(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    if([touch.view isKindOfClass:UIButton.class] ||
+       [touch.view isKindOfClass:UITableView.class] ||
+       [touch.view isKindOfClass:UIVisualEffectView.class]) {
+        return NO;
     }
+    return YES;
 }
 
 @end

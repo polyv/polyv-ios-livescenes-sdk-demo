@@ -8,8 +8,6 @@
 
 #import <UIKit/UIKit.h>
 
-#import "PLVLiveRoomData.h"
-
 NS_ASSUME_NONNULL_BEGIN
 
 /// [云课堂场景] 用于观看 “直播、直播回放” 的控制器
@@ -18,9 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
 ///       直播:三分屏直播(有PPT)、普通直播
 ///       直播回放:三分屏直播回放(有PPT)、普通直播的直播回放
 @interface PLVLCCloudClassViewController : UIViewController
-
-/// 初始化 当前控制器
-- (instancetype)initWithWatchRoomData:(PLVLiveRoomData *)watchRoomData;
 
 @end
 

@@ -7,10 +7,24 @@
 //
 
 #import "PLVLCUtils.h"
+#import <PolyvFoundationSDK/PLVProgressHUD.h>
 
 @implementation PLVLCUtils
 
 #pragma mark - [ Public Methods ]
+
++ (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view {
+    NSLog(@"HUD info title:%@,detail:%@",title,detail);
+    if (view == nil) {
+        return;
+    }
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:view animated:YES];
+    hud.mode = PLVProgressHUDModeText;
+    hud.label.text = title;
+    hud.detailsLabel.text = detail;
+    [hud hideAnimated:YES afterDelay:2.0];
+}
+
 + (UIImage *)imageForLiveRoomResource:(NSString *)imageName {
     return [self imageFromBundle:@"PLVLiveRoom" imageName:imageName];
 }

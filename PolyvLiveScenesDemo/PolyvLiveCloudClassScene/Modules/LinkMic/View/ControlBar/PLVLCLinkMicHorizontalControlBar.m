@@ -163,6 +163,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 - (void)controlBarUserInteractionEnabled:(BOOL)enable{
     self.onOffButton.enabled = enable;
     self.userInteractionEnabled = enable;
+    self.tapGR.enabled = enable;
 }
 
 - (void)refreshControlBarFrame{

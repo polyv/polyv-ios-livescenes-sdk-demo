@@ -54,14 +54,16 @@
 
 #pragma mark - [ Public Methods ]
 - (void)addRTCView:(UIView *)rtcView{
-    if (rtcView) {
-        rtcView.frame = self.bounds;
-        rtcView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [self addSubview:rtcView];
-        self.rtcView = rtcView;
-    }else{
-        NSLog(@"PLVLCLinkMicWindowCanvasView - add rtc view failed, rtcView illegal:%@",rtcView);
-    }
+    plv_dispatch_main_async_safe(^{
+        if (rtcView) {
+            rtcView.frame = self.bounds;
+            rtcView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+            [self addSubview:rtcView];
+            self.rtcView = rtcView;
+        }else{
+            NSLog(@"PLVLCLinkMicWindowCanvasView - add rtc view failed, rtcView illegal:%@",rtcView);
+        }
+    })
 }
 
 - (void)removeRTCView{

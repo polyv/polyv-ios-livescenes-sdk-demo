@@ -7,7 +7,7 @@
 //
 
 #import "PLVECRewardController.h"
-#import "PLVECChatroomManager.h"
+#import "PLVECChatroomViewModel.h"
 #import <PolyvFoundationSDK/PLVFdUtil.h>
 
 @interface PLVECRewardController () <PLVECRewardViewDelegate>
@@ -44,21 +44,19 @@
     NSString *giftName = giftItem.name;
     NSString *giftType = [giftItem.imageName substringFromIndex:14];
     
-    PLVLiveWatchUser *watchUser = self.channel.watchUser;
-    if (!giftName || !giftType || !watchUser) {
+    if (!giftName || !giftType || !self.roomUser) {
         return;
     }
     
     if ([self.delegate respondsToSelector:@selector(showGiftAnimation:giftName:giftType:)]) {
-        [self.delegate showGiftAnimation:watchUser.viewerName giftName:giftName giftType:giftType];
+        [self.delegate showGiftAnimation:self.roomUser.viewerName giftName:giftName giftType:giftType];
     }
     
     NSDictionary *data = @{@"giftName" : giftName,
                            @"giftType" : giftType,
                            @"giftCount" : @"1"};
-    NSString *tip = [NSString stringWithFormat:@"%@ 赠送了 %@",watchUser.viewerName, giftName];
-    
-    [[PLVECChatroomManager sharedManager] sendGiftMessageWithData:data tip:tip];
+    NSString *tip = [NSString stringWithFormat:@"%@ 赠送了 %@",self.roomUser.viewerName, giftName];
+    [[PLVECChatroomViewModel sharedViewModel] sendGiftMessageWithData:data tip:tip];
 }
 
 @end

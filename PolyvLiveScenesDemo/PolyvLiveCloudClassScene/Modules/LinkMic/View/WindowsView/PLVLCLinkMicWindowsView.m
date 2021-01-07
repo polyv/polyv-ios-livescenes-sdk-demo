@@ -17,22 +17,23 @@
 
 static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 
-@interface PLVLCLinkMicWindowsView ()<UICollectionViewDataSource,UICollectionViewDelegate>
-
-#pragma mark 对象
-@property (nonatomic, strong) dispatch_semaphore_t sem;
+@interface PLVLCLinkMicWindowsView () <
+UICollectionViewDataSource,
+UICollectionViewDelegate
+>
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL hadShowedGuide;  // 是否已展示过’左滑引导‘
 @property (nonatomic, assign) BOOL guideShowing;    // 是否正在展示’左滑引导‘
+@property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType; /// 只读，当前频道连麦场景类型
 
 #pragma mark 数据
-@property (nonatomic, copy) NSArray <PLVLinkMicOnlineUser *> * dataArray;
-@property (nonatomic, strong) NSIndexPath * showingExternalCellIndexPath; // 正在显示外部视图的Cell，所对应的下标
-@property (nonatomic, copy) NSString * showingExternalCellLinkMicUserId;  // 正在显示外部视图的Cell，所对应的用户Id (将用于更新 showingExternalCellIndexPath 属性，以保证在 dataArray 刷新时仍是正确的)
+@property (nonatomic, readonly) NSArray <PLVLinkMicOnlineUser *> * dataArray; // 只读，当前连麦在线用户数组
+@property (nonatomic, strong) NSIndexPath * showingExternalCellIndexPath; // 正在显示外部视图的Cell，所对应的下标 (仅在 PLVChannelLinkMicSceneType_PPT_PureRtc 该连麦场景类型下允许有值)
+@property (nonatomic, copy) NSString * showingExternalCellLinkMicUserId;  // 正在显示外部视图的Cell，所对应的用户Id (将用于更新 showingExternalCellIndexPath 属性，以保证 dataArray 刷新时其仍是正确的；仅在 PLVChannelLinkMicSceneType_PPT_PureRtc 该连麦场景类型下允许有值)
 @property (nonatomic, copy) NSString * currentMainSpeakerUserId;
 @property (nonatomic, assign) float lastOffsetX;    // collectionView 滑动上次停留的x点位置
-@property (nonatomic, assign) NSString * manualSwitchMainSpeakerUserId; // 当前由用户触发的、切去主屏显示的、成为第一画面的用户连麦id
+@property (nonatomic, copy) NSString * manualSwitchMainSpeakerUserId; // 当前由用户触发的、切去主屏显示的、成为第一画面的用户连麦id
 
 #pragma mark UI
 @property (nonatomic, weak) UIView * externalView; // 外部视图 (正在被显示在 PLVLCLinkMicWindowsView 窗口列表中的外部视图；弱引用)
@@ -66,7 +67,6 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 
 - (instancetype)initWithFrame:(CGRect)frame{
     if (self = [super initWithFrame:frame]) {
-        [self setup];
         [self setupUI];
     }
     return self;
@@ -121,122 +121,119 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 
 
 #pragma mark - [ Public Methods ]
-- (void)reloadWindowsWithDataArray:(NSArray <PLVLinkMicOnlineUser *>*)dataArray{
-    dispatch_semaphore_wait(self.sem, DISPATCH_TIME_FOREVER);
-    self.dataArray = dataArray;
+- (void)reloadLinkMicUserWindows{
     [self.collectionView reloadData];
-    
     [self showGuideView];
-    dispatch_semaphore_signal(self.sem);
-    
-    BOOL originalShowingExternalCellIndexPath = (self.showingExternalCellIndexPath != nil);
-    if (![self.currentMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
-        if (self.showingExternalCellIndexPath) {
-            [self rollbackExternalView];
+        
+    if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) { /// 完全RTC (云课堂连麦)
+        BOOL originalShowingExternalCellIndexPath = (self.showingExternalCellIndexPath != nil);
+        if (![self.currentMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
+            if (self.showingExternalCellIndexPath) {
+                NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
+                [self rollbackExternalView];
+                [self rollbackLinkMicCanvasView:oriIndexPath];
+            }
+        }
+        
+        if (self.dataArray.count >= 1) {
+            if (originalShowingExternalCellIndexPath) {
+                [self collectionView:_collectionView didSelectItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]];
+            } else if ([PLVFdUtil checkStringUseable:self.manualSwitchMainSpeakerUserId] && [self.manualSwitchMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
+                [self collectionView:_collectionView didSelectItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]];
+                self.manualSwitchMainSpeakerUserId = nil;
+            }
+        }
+    } else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){ /// 完全RTC (新版普通直播连麦)
+        PLVLinkMicOnlineUser * firstSiteOnlineUser = self.dataArray.firstObject;
+        if (firstSiteOnlineUser) {
+            [self checkUserModelAndSetupLinkMicCanvasView:firstSiteOnlineUser];
+            [self setupUserModelWillDeallocBlock:firstSiteOnlineUser];
+            
+            if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:showFirstSiteCanvasViewOnExternal:)]) {
+                [self.delegate plvLCLinkMicWindowsView:self showFirstSiteCanvasViewOnExternal:firstSiteOnlineUser.canvasView];
+            }
         }
     }
     
-    if (self.dataArray.count >= 1) {
-        if (originalShowingExternalCellIndexPath) {
-            [self collectionView:_collectionView didSelectItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]];
-        } else if ([PLVFdUtil checkStringUseable:self.manualSwitchMainSpeakerUserId] && [self.manualSwitchMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
-            [self collectionView:_collectionView didSelectItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]];
-            self.manualSwitchMainSpeakerUserId = nil;
-        }
+    if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
+        self.currentMainSpeakerUserId = self.dataArray.firstObject.linkMicUserId;
+    }else{
+        self.currentMainSpeakerUserId = nil;
+        self.manualSwitchMainSpeakerUserId = nil;
     }
-    
-    self.currentMainSpeakerUserId = self.dataArray.firstObject.linkMicUserId;
 }
 
-- (void)linkMicWindowLinkMicUserId:(NSString *)linkMicUserId wannaBecomeFirstSite:(BOOL)wannaBecomeFirstSite{
+- (void)linkMicWindowMainSpeaker:(NSString *)linkMicUserId toMainScreen:(BOOL)mainSpeakerToMainScreen{
     if (![PLVFdUtil checkStringUseable:linkMicUserId]) {
         NSLog(@"PLVLCLinkMicWindowsView - [linkMicWindowLinkMicUserId:wannaBecomeFirstSite:] call failed ,linkMicUserId illegale:%@",linkMicUserId);
         return;
     }
     
-    if (wannaBecomeFirstSite) {
+    if (mainSpeakerToMainScreen) {
         // 切换至主屏
-        if ([linkMicUserId isEqualToString:self.showingExternalCellLinkMicUserId]) {
-            /// 对应用户 已显示在主屏视图中，无需处理
+        if (self.showingExternalCellLinkMicUserId) {
+            /// 已显示在主屏视图中，无需处理
         }else{
-            /// 对应用户 未显示在主视图中，将对应rtcView切换至主视图中
+            /// 未显示在主视图中，将对应rtcView切换至主视图中
             NSIndexPath * cellIndexPath = [self.collectionView indexPathForCell:[self findCellWithUserId:linkMicUserId]];
             [self collectionView:self.collectionView didSelectItemAtIndexPath:cellIndexPath];
         }
     }else{
         // 切换至小窗
-        if (self.showingExternalCellIndexPath == nil ||
-            (self.showingExternalCellIndexPath != nil && [linkMicUserId isEqualToString:self.showingExternalCellLinkMicUserId] == NO)) {
-            /// 对应用户 已显示在小窗视图中，无需处理
-            /// 但需要确认 PPT 位于主屏中
-            if (self.showingExternalCellIndexPath) {
-                /// 有值，代表 PPT 处于小窗中，需恢复
-                [self rollbackExternalView];
-            }
+        if (self.showingExternalCellIndexPath == nil) {
+            /// 已显示在小窗视图中，无需处理
         }else{
-            /// 对应用户 未显示在小窗视图中，将对应rtcView切换至小窗视图中
+            /// 未显示在小窗视图中，将对应rtcView切换至小窗视图中
+            NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
             [self rollbackExternalView];
+            [self rollbackLinkMicCanvasView:oriIndexPath];
         }
     }
 }
 
 
 #pragma mark - [ Private Methods ]
-- (void)setup{
-    self.sem = dispatch_semaphore_create(1);
-}
-
 - (PLVLCLinkMicWindowCell *)findLocalUserCell{
-    return [self findCellWithJudgeBlock:^BOOL(PLVLinkMicOnlineUser *user) {
-        if (user.localUser) { return YES; }
-        return NO;
-    }];
+    NSInteger targetUserIndex = -1;
+    if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:findUserModelIndexWithFiltrateBlock:)]) {
+        targetUserIndex = [self.delegate plvLCLinkMicWindowsView:self findUserModelIndexWithFiltrateBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
+            if (enumerateUser.localUser) { return YES; }
+            return NO;
+        }];
+    }
+    return [self getWindowCellWithIndex:targetUserIndex];
 }
 
 - (PLVLCLinkMicWindowCell *)findCellWithUserId:(NSString *)userId{
-    return [self findCellWithJudgeBlock:^BOOL(PLVLinkMicOnlineUser *user) {
-        if ([user.linkMicUserId isEqualToString:userId]) { return YES; }
-        return NO;
-    }];
+    NSInteger targetUserIndex = -1;
+    if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:findUserModelIndexWithFiltrateBlock:)]) {
+        targetUserIndex = [self.delegate plvLCLinkMicWindowsView:self findUserModelIndexWithFiltrateBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
+            if ([enumerateUser.linkMicUserId isEqualToString:userId]) { return YES; }
+            return NO;
+        }];
+    }
+    return [self getWindowCellWithIndex:targetUserIndex];
 }
 
-- (PLVLCLinkMicWindowCell *)findCellWithJudgeBlock:(BOOL(^)(PLVLinkMicOnlineUser * user))judgeBlock{
-    int index = -1;
-    dispatch_semaphore_wait(self.sem, DISPATCH_TIME_FOREVER);
-    for (int i = 0; i < self.dataArray.count; i++) {
-        PLVLinkMicOnlineUser * user = self.dataArray[i];
-        BOOL target = NO;
-        if (judgeBlock) { target = judgeBlock(user); }
-        if (target) {
-            index = i;
-            break;
-        }
-    }
-    dispatch_semaphore_signal(self.sem);
+- (PLVLCLinkMicWindowCell *)getWindowCellWithIndex:(NSInteger)cellIndex{
     PLVLCLinkMicWindowCell * cell;
-    if (index >= 0) { cell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]]; }
+    if (cellIndex >= 0) { cell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:cellIndex inSection:0]]; }
     if (!cell) { NSLog(@"PLVLCLinkMicWindowsView - cell find failed"); }
     return cell;
 }
 
 - (PLVLinkMicOnlineUser *)readUserModelFromDataArray:(NSIndexPath *)indexPath{
-    PLVLinkMicOnlineUser * user;
-    dispatch_semaphore_wait(self.sem, DISPATCH_TIME_FOREVER);
-    if (indexPath.row < self.dataArray.count) {
-        user = self.dataArray[indexPath.row];
-    }else{
-        NSLog(@"PLVLCLinkMicWindowsView - data error, '%@' beyond data array",indexPath);
+    NSInteger targetIndexPathRow = indexPath.row;
+    if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc ||
+        self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){
+        targetIndexPathRow++;
     }
-    dispatch_semaphore_signal(self.sem);
+    
+    PLVLinkMicOnlineUser * user;
+    if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:getUserModelFromOnlineUserArrayWithIndex:)]) {
+        user = [self.delegate plvLCLinkMicWindowsView:self getUserModelFromOnlineUserArrayWithIndex:targetIndexPathRow];
+    }
     return user;
-}
-
-- (NSInteger)readDataArrayCountBySemaphore{
-    NSInteger dataArrayCount;
-    dispatch_semaphore_wait(self.sem, DISPATCH_TIME_FOREVER);
-    dataArrayCount = self.dataArray.count;
-    dispatch_semaphore_signal(self.sem);
-    return dataArrayCount;
 }
 
 - (void)showGuideView{
@@ -270,20 +267,26 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 }
 
 - (void)rollbackExternalView{
-    NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
-    PLVLinkMicOnlineUser * oriUserModel = [self readUserModelFromDataArray:oriIndexPath];
-
     // 告知外部对象，进行视图位置回退、恢复
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:rollbackExternalView:)]) {
-        [self.delegate plvLCLinkMicWindowsView:self rollbackExternalView:self.externalView];
+    if (self.externalView) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:rollbackExternalView:)]) {
+            [self.delegate plvLCLinkMicWindowsView:self rollbackExternalView:self.externalView];
+        }
+        self.showingExternalCellIndexPath = nil;
+        self.showingExternalCellLinkMicUserId = nil;
         self.externalView = nil;
     }
-    
-    // 将播放画布视图恢复至默认位置
-    PLVLCLinkMicWindowCell * showingExternalCell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:self.showingExternalCellIndexPath];
-    [showingExternalCell switchToShowRtcContentView:oriUserModel.canvasView];
-    self.showingExternalCellIndexPath = nil;
-    self.showingExternalCellLinkMicUserId = nil;
+}
+
+- (void)rollbackLinkMicCanvasView:(NSIndexPath *)oriIndexPath{
+    PLVLinkMicOnlineUser * oriUserModel = [self readUserModelFromDataArray:oriIndexPath];
+    if (oriUserModel){
+        // 将播放画布视图恢复至默认位置
+        PLVLCLinkMicWindowCell * showingExternalCell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:oriIndexPath];
+        [showingExternalCell switchToShowRtcContentView:oriUserModel.canvasView];
+    } else {
+        NSLog(@"PLVLCLinkMicWindowsView - rollbackLinkMicCanvasView failed, oriIndexPath %@ can't get userModel",oriIndexPath);
+    }
 }
 
 - (void)cleanLinkMicCellWithLinkMicUser:(PLVLinkMicOnlineUser *)didLeftLinkMicUser{
@@ -300,6 +303,24 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
         [canvasView removeRTCView];
         [canvasView removeFromSuperview];
     });
+}
+
+// 若 连麦用户Model 未有 连麦rtc画布视图，则此时需创建并交由 连麦用户Model 进行管理
+- (void)checkUserModelAndSetupLinkMicCanvasView:(PLVLinkMicOnlineUser *)linkMicUserModel{
+    if (linkMicUserModel.canvasView == nil) {
+        PLVLCLinkMicCanvasView * canvasView = [[PLVLCLinkMicCanvasView alloc] init];
+        [canvasView addRTCView:linkMicUserModel.rtcView];
+        linkMicUserModel.canvasView = canvasView;
+    }
+}
+
+// 设置 连麦用户Model的 ’即将销毁Block‘ Block
+// 用于在连麦用户退出时，及时回收资源
+- (void)setupUserModelWillDeallocBlock:(PLVLinkMicOnlineUser *)linkMicUserModel{
+    __weak typeof(self) weakSelf = self;
+    linkMicUserModel.willDeallocBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        [weakSelf cleanLinkMicCellWithLinkMicUser:onlineUser];
+    };
 }
 
 #pragma mark UI
@@ -378,6 +399,29 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
     return _guideTextLabel;
 }
 
+- (PLVChannelLinkMicSceneType)linkMicSceneType{
+    if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsViewGetCurrentLinkMicSceneType:)]) {
+        return [self.delegate plvLCLinkMicWindowsViewGetCurrentLinkMicSceneType:self];
+    }
+    return PLVChannelLinkMicSceneType_Unknown;
+}
+
+- (NSIndexPath *)showingExternalCellIndexPath{
+    if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) { return _showingExternalCellIndexPath; }
+    return nil;
+}
+
+- (NSString *)showingExternalCellLinkMicUserId{
+    if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) { return _showingExternalCellLinkMicUserId; }
+    return nil;
+}
+
+- (NSArray<PLVLinkMicOnlineUser *> *)dataArray{
+    if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsViewGetCurrentUserModelArray:)]) {
+        return [self.delegate plvLCLinkMicWindowsViewGetCurrentUserModelArray:self];
+    }
+    return nil;
+}
 
 #pragma mark - [ Delegate ]
 #pragma mark UIScrollViewDelegate
@@ -394,28 +438,26 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 
 #pragma mark UICollectionViewDataSource
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
-    return [self readDataArrayCountBySemaphore];;
+    NSInteger dataNum = self.dataArray.count;
+    if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) {
+        return dataNum; /// 此场景下，全部连麦用户在连麦窗口列表中，均有座位
+    } else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc ||
+               self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){
+        return (dataNum - 1); /// 此场景下，第一位连麦用户，不需在连麦窗口列表中拥有座位
+    }
+    return dataNum;
 }
 
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
     BOOL thisCellShowingExternalView = NO;
     PLVLinkMicOnlineUser * linkMicUserModel = [self readUserModelFromDataArray:indexPath];
-    
-    // 若 连麦用户Model 未有 连麦rtc画布视图，则此时需创建并交由 连麦用户Model 进行管理
-    if (linkMicUserModel.canvasView == nil) {
-        PLVLCLinkMicCanvasView * canvasView = [[PLVLCLinkMicCanvasView alloc] init];
-        [canvasView addRTCView:linkMicUserModel.rtcView];
-        linkMicUserModel.canvasView = canvasView;
+    if (!linkMicUserModel) {
+        NSLog(@"PLVLCLinkMicWindowsView - cellForItemAtIndexPath for %@ error",indexPath);
+        return [collectionView dequeueReusableCellWithReuseIdentifier:@"PLVLCLinkMicWindowCellID" forIndexPath:indexPath];
     }
     
-    // 若 连麦用户Model ’即将销毁Block‘为空，则设置此Block
-    // 用于在连麦用户退出时，及时回收资源
-    if (linkMicUserModel.willDeallocBlock == nil) {
-        __weak typeof(self) weakSelf = self;
-        linkMicUserModel.willDeallocBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-            [weakSelf cleanLinkMicCellWithLinkMicUser:onlineUser];
-        };
-    }
+    [self checkUserModelAndSetupLinkMicCanvasView:linkMicUserModel];
+    [self setupUserModelWillDeallocBlock:linkMicUserModel];
     
     // 若两值一致，则表示此 Cell 将需要展示外部视图，此时应更新 showingExternalCellIndexPath
     if ([self.showingExternalCellLinkMicUserId isEqualToString:linkMicUserModel.linkMicUserId]) {
@@ -459,10 +501,16 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
     }
     
     PLVLinkMicOnlineUser * currentTapUserModel = [self readUserModelFromDataArray:indexPath];
+    if (!currentTapUserModel) {
+        NSLog(@"PLVLCLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ can't get userModel",indexPath);
+        return;
+    }
     
-    if (indexPath.row > 0) {
+    BOOL needCallToChangeFirstSite = (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) ? (indexPath.row > 0) : YES;
+    if (needCallToChangeFirstSite) {
         if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:linkMicUserWantToBecomeFirstSite:)]) {
-            [self.delegate plvLCLinkMicWindowsView:self linkMicUserWantToBecomeFirstSite:indexPath.row];
+            NSInteger targetUserIndex = (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) ? indexPath.row : (indexPath.row + 1);
+            [self.delegate plvLCLinkMicWindowsView:self linkMicUserWantToBecomeFirstSite:targetUserIndex];
         }
         self.manualSwitchMainSpeakerUserId = currentTapUserModel.linkMicUserId;
         return;
@@ -473,6 +521,7 @@ static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 
         // 将 外部视图 交回给外部，并将rtc视图显示回列表中
         [self rollbackExternalView];
+        [self rollbackLinkMicCanvasView:oriIndexPath];
 
         // 若点击的是 窗口列表中的外部视图，则仅回退恢复即可
         if ([oriIndexPath compare:indexPath] == NSOrderedSame) { return; }

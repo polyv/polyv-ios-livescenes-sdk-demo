@@ -8,17 +8,8 @@
 
 #import "PLVLinkMicPresenter.h"
 
-#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import "PLVRoomDataManager.h"
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
-
-#ifndef dispatch_main_async_safe
-#define dispatch_main_async_safe(block)\
-    if (dispatch_queue_get_label(DISPATCH_CURRENT_QUEUE_LABEL) == dispatch_queue_get_label(dispatch_get_main_queue())) {\
-        block();\
-    } else {\
-        dispatch_async(dispatch_get_main_queue(), block);\
-    }
-#endif
 
 /// 默认值
 /// (注意:此处为默认值，最终以外部的设置为准。若外部未设置，才使用此默认值)
@@ -26,42 +17,57 @@ static const BOOL PLVLinkMicPresenterMicDefaultOpen = YES;     // 麦克风按�
 static const BOOL PLVLinkMicPresenterCameraDefaultOpen = NO;   // 摄像头按钮 默认开关值
 static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默认前置值
 
-@interface PLVLinkMicPresenter () <PLVSocketListenerProtocol,PLVLinkMicManagerDelegate>
+/// 连麦事件
+typedef NS_ENUM(NSUInteger, PLVLinkMicEventType) {
+    /// 讲师发起或结束连麦功能；讲师单独挂断学生连麦
+    PLVLinkMicEventType_OPEN_MICROPHONE = 0,
+    
+    /// 学生举手申请连麦
+    PLVLinkMicEventType_JOIN_REQUEST,
+    /// 讲师同意学生连麦
+    PLVLinkMicEventType_JOIN_RESPONSE,
+    /// 学生加入连麦频道成功
+    PLVLinkMicEventType_JOIN_SUCCESS,
+    /// 学生已退出连麦频道
+    PLVLinkMicEventType_JOIN_LEAVE,
+    
+    /// 讲师信息
+    PLVLinkMicEventType_TEACHER_INFO,
+    /// 讲师打开或关闭，讲师或学生的摄像头或麦克风
+    PLVLinkMicEventType_MuteUserMedia,
+    /// 讲师切换连麦人的主副屏位置
+    PLVLinkMicEventType_SwitchView,
+    /// 讲师设置连麦人权限
+    PLVLinkMicEventType_TEACHER_SET_PERMISSION,
+    /// 讲师主动切换PPT和播放器的位置
+    PLVLinkMicEventType_changeVideoAndPPTPosition,
+    /// 讲师允许某连麦人上麦
+    PLVLinkMicEventType_switchJoinVoice,
+};
+
+@interface PLVLinkMicPresenter () <
+PLVSocketManagerProtocol,
+PLVLinkMicManagerDelegate
+>
 
 #pragma mark 状态
-/// 当前连麦状态
-@property (nonatomic, assign) PLVLinkMicStatus linkMicStatus;
-
-/// 当前连麦媒体类型
-@property (nonatomic, assign) PLVLinkMicMediaType linkMicMediaType;
-
-/// 当前连麦场景类型
-@property (nonatomic, assign) PLVLinkMicScenesType linkMicScenesType;
-
-/// 当前讲师是否发起连麦 (YES:讲师已开启连麦 NO:讲师未开启连麦)
 @property (nonatomic, assign) BOOL linkMicOpen;
-
-/// 当前‘主讲’是否为本地用户手动选定
+@property (nonatomic, assign) PLVLinkMicStatus linkMicStatus;
+@property (nonatomic, assign) PLVLinkMicMediaType linkMicMediaType;
+@property (nonatomic, assign) PLVChannelLinkMicSceneType linkMicSceneType;
 @property (nonatomic, assign) BOOL currentMainSpeakerByLocalUser;
+@property (nonatomic, assign) NSTimeInterval socketRefreshOpenStatusDate;
 
 #pragma mark 数据
-/// 设置当前直播间(频道)信息
-@property (nonatomic, strong) PLVLiveRoomData *roomData;
-
-/// 当前连麦 SocketToken (不为空时重连后要发送reJoinMic事件)
 @property (nonatomic, copy) NSString *linkMicSocketToken;
-
-/// 当前连麦 在线用户列表 (包含全部角色，包含自己) 内部使用
-@property (nonatomic, strong) NSMutableArray <PLVLinkMicOnlineUser *>*onlineUserMuArray;
-
-/// 讲师连麦Id (若此值非空，则代表讲师已在频道中)
+@property (nonatomic, copy) NSArray <PLVLinkMicOnlineUser *> * onlineUserArray; // 提供外部读取的数据数组，保存最新的用户数据
+@property (nonatomic, strong) NSMutableArray <PLVLinkMicOnlineUser *> * onlineUserMuArray;
 @property (nonatomic, copy) NSString * teacherLinkMicUserId;
 
 #pragma mark 外部数据封装
 @property (nonatomic, copy, readonly) NSString * rtcType;
 @property (nonatomic, copy, readonly) NSString * channelId;
 @property (nonatomic, copy, readonly) NSString * sessionId;
-
 @property (nonatomic, copy, readonly) NSString * userId;
 @property (nonatomic, copy, readonly) NSString * linkMicUserId;
 @property (nonatomic, copy, readonly) NSString * linkMicUserNickname;
@@ -69,21 +75,18 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVLinkMicManager * linkMicManager; // 连麦管理器
-
 @property (nonatomic, strong) NSTimer * linkMicTimer;
-
 @property (nonatomic, strong) dispatch_queue_t arraySafeQueue;
 @property (nonatomic, strong) dispatch_queue_t requestLinkMicOnlineListSafeQueue;
-
 @property (nonatomic, weak) dispatch_block_t requestOnlineListBlock;
-
 @property (nonatomic, copy) void (^addLocalUserBlock) (void); // 本地用户添加事件 (本地用户添加应该在’连麦在线列表‘请求后执行，以保证所处位置在’已进入连麦‘的观众之后)
 
 @end
 
-@implementation PLVLinkMicPresenter
-
-@synthesize listenEvents;
+@implementation PLVLinkMicPresenter {
+    /// PLVSocketManager回调的执行队列
+    dispatch_queue_t socketDelegateQueue;
+}
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
@@ -92,9 +95,8 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
     NSLog(@"%s",__FUNCTION__);
 }
 
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData{
+- (instancetype)init {
     if (self = [super init]) {
-        self.roomData = roomData;
         [self setup];
     }
     return self;
@@ -102,22 +104,29 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 
 
 #pragma mark - [ Public Methods ]
-#pragma mark LinkMic
+#pragma mark 业务
 - (void)requestJoinLinkMic{
     if (self.linkMicStatus == PLVLinkMicStatus_Open) {
         __weak typeof(self) weakSelf = self;
+        
+        BOOL cloudClassLinkMicScene = ([PLVRoomDataManager sharedManager].roomData.channelType == PLVChannelTypePPT);
+        self.linkMicSceneType = cloudClassLinkMicScene ? PLVChannelLinkMicSceneType_PPT_PureRtc : self.linkMicSceneType;
+        [PLVRoomDataManager sharedManager].roomData.linkMicSceneType = self.linkMicSceneType; /// 同步值
+        
         [PLVAuthorizationManager requestAuthorizationForAudioAndVideo:^(BOOL granted) { /// 申请麦克风、摄像头权限
             if (granted) {
                 [self callbackForOperationInProgress:YES];
-                if (weakSelf.linkMicScenesType == PLVLinkMicScenesType_CloudClass) {
+                if (weakSelf.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) {
                     [weakSelf createLinkMicManagerAndEmitJoinRequest];
                 } else {
-                    [PLVLiveVideoAPI rtcEnabled:[PLVLiveVideoConfig sharedInstance].channelId.integerValue completion:^(BOOL rtcEnabled) {
+                    [PLVLiveVideoAPI rtcEnabled:[PLVRoomDataManager sharedManager].roomData.channelId.integerValue completion:^(BOOL rtcEnabled) {
                         if (rtcEnabled) {
-                            weakSelf.linkMicScenesType = PLVLinkMicScenesType_NormalLive;
+                            weakSelf.linkMicSceneType = PLVChannelLinkMicSceneType_Alone_PureRtc;
                         } else {
-                            weakSelf.linkMicScenesType = PLVLinkMicScenesType_BeforeLive;
+                            weakSelf.linkMicSceneType = PLVChannelLinkMicSceneType_Alone_PartRtc;
                         }
+                        [PLVRoomDataManager sharedManager].roomData.linkMicSceneType = weakSelf.linkMicSceneType; /// 同步值
+
                         [weakSelf createLinkMicManagerAndEmitJoinRequest];
                     } failure:^(NSError *error) {
                         [self callbackForOperationInProgress:NO];
@@ -151,6 +160,49 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
     }
 }
 
+- (void)changeMainSpeakerWithLinkMicUserIndex:(NSInteger)nowMainSpeakerLinkMicUserIndex{
+    if (nowMainSpeakerLinkMicUserIndex < self.onlineUserMuArray.count) {
+        PLVLinkMicOnlineUser * nowMainSpeakerLinkMicUser = self.onlineUserMuArray[nowMainSpeakerLinkMicUserIndex];
+        [self changeMainSpeakerWithLinkMicUser:nowMainSpeakerLinkMicUser];
+        self.currentMainSpeakerByLocalUser = YES;
+    }
+}
+
+- (NSInteger)findUserModelIndexWithFiltrateBlock:(BOOL (^)(PLVLinkMicOnlineUser * _Nonnull))filtrateBlockBlock{
+    NSInteger targetIndex = -1;
+    for (int i = 0; i < self.onlineUserArray.count; i++) {
+        PLVLinkMicOnlineUser * user = self.onlineUserArray[i];
+        BOOL target = NO;
+        if (filtrateBlockBlock) { target = filtrateBlockBlock(user); }
+        if (target) {
+            targetIndex = i;
+            break;
+        }
+    }
+    return targetIndex;
+}
+
+- (PLVLinkMicOnlineUser *)getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex{
+    PLVLinkMicOnlineUser * user;
+    if (targetIndex < self.onlineUserArray.count) {
+        user = self.onlineUserArray[targetIndex];
+    }else{
+        NSLog(@"PLVLinkMicPresenter - getUserModelFromOnlineUserArrayWithIndex failed, '%ld' beyond data array",(long)targetIndex);
+    }
+    return user;
+}
+
+#pragma mark 设备控制
+- (void)micOpen:(BOOL)open{
+    int enableResult = [self.linkMicManager enableLocalAudio:open];
+    int muteResult = [self.linkMicManager muteLocalAudioStream:!open];
+    if (enableResult == 0 && muteResult == 0) {
+        [self.currentLocalLinkMicUser updateUserCurrentMicOpen:open];
+    }else{
+        NSLog(@"PLVLinkMicPresenter - micOpen failed, enableResult %u, muteResult %u",enableResult,muteResult);
+    }
+}
+
 - (void)cameraOpen:(BOOL)open{
     int enableResult = [self.linkMicManager enableLocalVideo:open];
     int muteResult = [self.linkMicManager muteLocalVideoStream:!open];
@@ -165,28 +217,15 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
     [self.linkMicManager switchCamera];
 }
 
-- (void)micOpen:(BOOL)open{
-    int enableResult = [self.linkMicManager enableLocalAudio:open];
-    int muteResult = [self.linkMicManager muteLocalAudioStream:!open];
-    if (enableResult == 0 && muteResult == 0) {
-        [self.currentLocalLinkMicUser updateUserCurrentMicOpen:open];
-    }else{
-        NSLog(@"PLVLinkMicPresenter - micOpen failed, enableResult %u, muteResult %u",enableResult,muteResult);
-    }
-}
-
-- (void)changeMainSpeakerWithLinkMicUserIndex:(NSInteger)nowMainSpeakerLinkMicUserIndex{
-    if (nowMainSpeakerLinkMicUserIndex < self.onlineUserMuArray.count) {
-        PLVLinkMicOnlineUser * nowMainSpeakerLinkMicUser = self.onlineUserMuArray[nowMainSpeakerLinkMicUserIndex];
-        [self changeMainSpeakerWithLinkMicUser:nowMainSpeakerLinkMicUser];
-        self.currentMainSpeakerByLocalUser = YES;
-    }
-}
 
 #pragma mark - [ Private Methods ]
 - (void)setup{
     /// 初始化 数据
+    self.linkMicSceneType = PLVChannelLinkMicSceneType_Unknown;
+    [PLVRoomDataManager sharedManager].roomData.linkMicSceneType = self.linkMicSceneType; /// 同步值
+
     self.onlineUserMuArray = [[NSMutableArray<PLVLinkMicOnlineUser *> alloc] init];
+    self.onlineUserArray = self.onlineUserMuArray;
     self.arraySafeQueue = dispatch_queue_create("PLVLinkMicPresenterArraySafeQueue", DISPATCH_QUEUE_SERIAL);
     self.requestLinkMicOnlineListSafeQueue = dispatch_queue_create("PLVLinkMicPresenterRequestLinkMicOnlineListSafeQueue", DISPATCH_QUEUE_SERIAL);
 
@@ -202,10 +241,8 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
     [self.linkMicTimer fire];
     
     /// 添加 socket 事件监听
-    self.listenEvents = @[kPLVBSocketEvent_joinRequest,kPLVBSocketEvent_joinResponse,
-                          kPLVBSocketEvent_joinSuccess,kPLVBSocketEvent_joinLeave,
-                          kPLVBSocketEvent_MuteUserMedia,kPLVBSocketEvent_switchView];
-    [[PLVSocketWrapper sharedSocketWrapper] addListener:self];
+    socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
+    [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
 }
 
 - (void)stopLinkMicUserListTimer{
@@ -234,37 +271,40 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 
 #pragma mark Getter
 - (NSString *)rtcType{
-    return self.roomData.channelMenuInfo.rtcType;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.menuInfo.rtcType;
 }
 
 - (NSString *)channelId{
-    return self.roomData.channelId;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.channelId;
 }
 
 - (NSString *)sessionId{
-    return self.roomData.sessionId;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.channelInfo.sessionId;
 }
 
 - (NSString *)userId{
-    return [PLVSocketWrapper sharedSocketWrapper].loginUser.userId;
+    return [PLVSocketManager sharedManager].viewerId;
 }
 
 - (NSString *)linkMicUserId{
-    return [PLVSocketWrapper sharedSocketWrapper].loginUser.linkMicId;
+    return [PLVSocketManager sharedManager].linkMicId;
 }
 
 - (NSString *)linkMicUserNickname{
-    return [PLVSocketWrapper sharedSocketWrapper].loginUser.nickName;
+    return [PLVSocketManager sharedManager].viewerName;
 }
 
 - (NSString *)linkMicUserAvatar{
-    return [PLVSocketWrapper sharedSocketWrapper].loginUser.avatarUrl;
+    return [PLVSocketManager sharedManager].avatarUrl;
 }
 
 #pragma mark Callback
 /// 连麦状态发生改变
 - (void)callbackForLinkMicStatusChanged{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:linkMicStatusChanged:)]) {
             [self.viewDelegate plvLinkMicPresenter:self linkMicStatusChanged:self.linkMicStatus];
         }
@@ -273,7 +313,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 
 /// 连麦管理器的处理状态发生改变
 - (void)callbackForOperationInProgress:(BOOL)inProgress{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:operationInProgress:)]) {
             [self.viewDelegate plvLinkMicPresenter:self operationInProgress:inProgress];
         }
@@ -281,31 +321,31 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)callbackForMediaMute:(BOOL)mute mediaType:(NSString *)mediaType linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:didMediaMuted:mediaType:linkMicUser:)]) {
             [self.viewDelegate plvLinkMicPresenter:self didMediaMuted:mute mediaType:mediaType linkMicUser:linkMicUser];
         }
     })
 }
 
-- (void)callbackForLinkMicUserJoin{
-    dispatch_main_async_safe(^{
+- (void)callbackForLinkMicUserListRefresh{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:linkMicOnlineUserListRefresh:)]) {
-            [self.viewDelegate plvLinkMicPresenter:self linkMicOnlineUserListRefresh:self.onlineUserMuArray];
+            [self.viewDelegate plvLinkMicPresenter:self linkMicOnlineUserListRefresh:self.onlineUserArray];
         }
     })
 }
 
-- (void)callbackForMainSpeaker:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite{
-    dispatch_main_async_safe(^{
-        if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:mainSpeakerLinkMicUserId:wannaBecomeFirstSite:)]) {
-            [self.viewDelegate plvLinkMicPresenter:self mainSpeakerLinkMicUserId:linkMicUserId wannaBecomeFirstSite:toFirstSite];
+- (void)callbackForMainSpeaker:(NSString *)linkMicUserId mainSpeakerToMainScreen:(BOOL)mainSpeakerToMainScreen{
+    plv_dispatch_main_async_safe(^{
+        if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:mainSpeakerLinkMicUserId:mainSpeakerToMainScreen:)]) {
+            [self.viewDelegate plvLinkMicPresenter:self mainSpeakerLinkMicUserId:linkMicUserId mainSpeakerToMainScreen:mainSpeakerToMainScreen];
         }
     })
 }
 
 - (void)callbackForMainSpeakerChangedToLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser {
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:mainSpeakerChangedToLinkMicUser:)]) {
             [self.viewDelegate plvLinkMicPresenter:self
                    mainSpeakerChangedToLinkMicUser:linkMicUser];
@@ -314,7 +354,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)callbackForDidOccurError:(PLVLinkMicErrorCode)errorCode{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:didOccurError:extraCode:)]) {
             [self.viewDelegate plvLinkMicPresenter:self didOccurError:errorCode extraCode:0];
         }
@@ -322,7 +362,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)callbackForLocalUserDidInOutLinkMicRoom:(BOOL)InOut{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:localUserDidInOutLinkMicRoom:)]) {
             [self.viewDelegate plvLinkMicPresenter:self localUserDidInOutLinkMicRoom:InOut];
         }
@@ -330,7 +370,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)callbackForDidOccurError:(PLVLinkMicErrorCode)errorCode extraCode:(NSInteger)extraCode{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:didOccurError:extraCode:)]) {
             [self.viewDelegate plvLinkMicPresenter:self didOccurError:errorCode extraCode:extraCode];
         }
@@ -338,7 +378,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)callbackForReportAudioVolumeOfSpeakers:(NSDictionary<NSString *, NSNumber *> * _Nonnull)volumeDict{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:reportAudioVolumeOfSpeakers:)]) {
             [self.viewDelegate plvLinkMicPresenter:self reportAudioVolumeOfSpeakers:volumeDict];
         }
@@ -346,7 +386,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)callbackForReportCurrentSpeakingUsers:(NSArray<PLVLinkMicOnlineUser *> * _Nonnull)currentSpeakingUsers{
-    dispatch_main_async_safe(^{
+    plv_dispatch_main_async_safe(^{
         if ([self.viewDelegate respondsToSelector:@selector(plvLinkMicPresenter:reportCurrentSpeakingUsers:)]) {
             [self.viewDelegate plvLinkMicPresenter:self reportCurrentSpeakingUsers:currentSpeakingUsers];
         }
@@ -373,8 +413,21 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 
 - (void)createLinkMicManagerAndEmitJoinRequest{
     if ([self createLinkMicManager]) {
+        PLVLinkMicGetTokenModel * getTokenModel = [[PLVLinkMicGetTokenModel alloc]init];
+        getTokenModel.channelId = self.channelId;
+        getTokenModel.userId = self.linkMicUserId;
+        getTokenModel.channelType = [PLVRoomDataManager sharedManager].roomData.channelType;
+        getTokenModel.viewerId = self.userId;
+        getTokenModel.nickname = self.linkMicUserNickname;
+        getTokenModel.sessionId = self.sessionId;
+
+        PLVRoomUser * currentUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+        PLVRoomUserType currentUserViewerType = currentUser.viewerType;
+        if (currentUserViewerType == PLVRoomUserTypeSlice) {
+            getTokenModel.userType = @"audience";
+        }
         __weak typeof(self) weakSelf = self;
-        [self.linkMicManager updateLinkMicTokenWithChannelId:self.channelId userLinkMicId:self.linkMicUserId completion:^(BOOL updateResult) {
+        [self.linkMicManager updateLinkMicTokenWith:getTokenModel completion:^(BOOL updateResult) {
             if (updateResult) {
                 [weakSelf emitSocketMessge_JoinRequest];
             }else{
@@ -437,25 +490,29 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)muteUser:(NSString *)linkMicUserId mediaType:(NSString *)mediaType mute:(BOOL)mute{
-    PLVLinkMicOnlineUser * targetLinkMicUser = [self findLinkMicOnlineUserWithLinkMicUserId:linkMicUserId];
-    if (targetLinkMicUser) {
-        if ([self.linkMicUserId isEqualToString:linkMicUserId]) {
-            // 目标用户 是 本地用户
-            if ([@"video" isEqualToString:mediaType]) {
-                [self cameraOpen:!mute];
+    __weak typeof(self) weakSelf = self;
+    [self findLinkMicOnlineUserWithLinkMicUserId:linkMicUserId completionBlock:^(PLVLinkMicOnlineUser *resultUser) {
+        if (resultUser) {
+            if ([weakSelf.linkMicUserId isEqualToString:linkMicUserId]) {
+                // 目标用户 是 本地用户
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if ([@"video" isEqualToString:mediaType]) {
+                        [weakSelf cameraOpen:!mute];
+                    }else{
+                        [weakSelf micOpen:!mute];
+                    }
+                });
             }else{
-                [self micOpen:!mute];
+                // 目标用户 是 远端用户
+                if ([@"video" isEqualToString:mediaType]) {
+                    [resultUser updateUserCurrentCameraOpen:!mute];
+                }else{
+                    [resultUser updateUserCurrentMicOpen:!mute];
+                }
             }
-        }else{
-            // 目标用户 是 远端用户
-            if ([@"video" isEqualToString:mediaType]) {
-                [targetLinkMicUser updateUserCurrentCameraOpen:!mute];
-            }else{
-                [targetLinkMicUser updateUserCurrentMicOpen:!mute];
-            }
+            [weakSelf callbackForMediaMute:mute mediaType:mediaType linkMicUser:resultUser];
         }
-        [self callbackForMediaMute:mute mediaType:mediaType linkMicUser:targetLinkMicUser];
-    }
+    }];
 }
 
 - (void)linkMicUserJoined:(NSString *)linkMicUserId retryCount:(NSInteger)retryCount{
@@ -549,7 +606,8 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
                 }
                 
                 //[weakSelf sortOnlineUserList];
-                [weakSelf callbackForLinkMicUserJoin];
+                weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
+                [weakSelf callbackForLinkMicUserListRefresh];
             }else{
                 //NSLog(@"POLYVTEST - 重复加入 %@ %@",user.linkMicUserId,user.nickname);
             }
@@ -571,9 +629,15 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
                 }
             }
             
+            if (user.mainSpeaker && ![user.linkMicUserId isEqualToString:weakSelf.teacherLinkMicUserId]) {
+                weakSelf.currentMainSpeaker = nil;
+                [weakSelf changeMainSpeakerWithLinkMicUserId:weakSelf.teacherLinkMicUserId];
+            }
+            
             if (index >= 0 && index < weakSelf.onlineUserMuArray.count && user != nil) {
                 [weakSelf.onlineUserMuArray removeObject:user];
-                [weakSelf callbackForLinkMicUserJoin];
+                weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
+                [weakSelf callbackForLinkMicUserListRefresh];
             }else{
                 NSLog(@"PLVLinkMicPresenter - remove link mic user(%@) failed, index(%d) not in the array",linkMicUserId,index);
             }
@@ -584,15 +648,19 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 - (void)resetOnlineUserList{
     __weak typeof(self) weakSelf = self;
     dispatch_async(self.arraySafeQueue, ^{
+        weakSelf.currentMainSpeakerByLocalUser = NO;;
         [weakSelf.onlineUserMuArray removeAllObjects];
-        [weakSelf callbackForLinkMicUserJoin];
+        weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
+        [weakSelf callbackForLinkMicUserListRefresh];
     });
 }
 
 - (void)changeMainSpeakerWithLinkMicUserId:(NSString *)nowMainSpeakerLinkMicUserId{
     if ([self.currentMainSpeaker.linkMicUserId isEqualToString:nowMainSpeakerLinkMicUserId] == NO) {
-        PLVLinkMicOnlineUser * nowMainSpeakerUser = [self findLinkMicOnlineUserWithLinkMicUserId:nowMainSpeakerLinkMicUserId];
-        [self changeMainSpeakerWithLinkMicUser:nowMainSpeakerUser];
+        __weak typeof(self) weakSelf = self;
+        [self findLinkMicOnlineUserWithLinkMicUserId:nowMainSpeakerLinkMicUserId completionBlock:^(PLVLinkMicOnlineUser *resultUser) {
+            [weakSelf changeMainSpeakerWithLinkMicUser:resultUser];
+        }];
     }
 }
 
@@ -616,7 +684,8 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
             if (targetUserIndex < weakSelf.onlineUserMuArray.count) {
                 if (targetUserIndex > 0) {
                     [weakSelf.onlineUserMuArray exchangeObjectAtIndex:targetUserIndex withObjectAtIndex:0];
-                    [weakSelf callbackForLinkMicUserJoin];
+                    weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
+                    [weakSelf callbackForLinkMicUserListRefresh];
                 }
             }else{
                 NSLog(@"PLVLinkMicPresenter - linkMicUserBecomeFirstSiteInArray failed, index(%ld) beyond bounds for empty array",(long)targetUserIndex);
@@ -625,28 +694,33 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
     });
 }
 
-- (PLVLinkMicOnlineUser *)findLinkMicOnlineUserWithLinkMicUserId:(NSString *)linkMicUserId{
-    return [self findLinkMicOnlineUserWithJudgeBlock:^BOOL(PLVLinkMicOnlineUser *user) {
+- (void)findLinkMicOnlineUserWithLinkMicUserId:(NSString *)linkMicUserId
+                                                 completionBlock:(void(^)(PLVLinkMicOnlineUser * resultUser))completionBlock{
+    [self findLinkMicOnlineUserWithJudgeBlock:^BOOL(PLVLinkMicOnlineUser *user) {
         if ([user.linkMicUserId isEqualToString:linkMicUserId]) {
             return YES;
         }
         return NO;
-    }];
+    } completionBlock:completionBlock];
 }
 
-- (PLVLinkMicOnlineUser *)findLinkMicOnlineUserWithJudgeBlock:(BOOL(^)(PLVLinkMicOnlineUser * user))judgeBlock{
-    PLVLinkMicOnlineUser * user;
-    for (int i = 0; i < self.onlineUserMuArray.count; i++) {
-        user = self.onlineUserMuArray[i];
-        BOOL target = NO;
-        if (judgeBlock) { target = judgeBlock(user); }
-        if (target) {
-            return user;
-        }else{
-            user = nil;
+- (void)findLinkMicOnlineUserWithJudgeBlock:(BOOL(^)(PLVLinkMicOnlineUser * user))judgeBlock
+                            completionBlock:(void(^)(PLVLinkMicOnlineUser * resultUser))completionBlock{
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(self.arraySafeQueue, ^{
+        PLVLinkMicOnlineUser * user;
+        for (int i = 0; i < weakSelf.onlineUserMuArray.count; i++) {
+            user = weakSelf.onlineUserMuArray[i];
+            BOOL target = NO;
+            if (judgeBlock) { target = judgeBlock(user); }
+            if (target) {
+                break;
+            }else{
+                user = nil;
+            }
         }
-    }
-    return user;
+        if (completionBlock) { completionBlock(user); }
+    });
 }
 
 /// 解析‘连麦用户列表数据’ 并 刷新用户数组
@@ -661,7 +735,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
     
     // 读取当前主讲人
     NSString * master = dataDictionary[@"master"];
-    if (![PLVFdUtil checkStringUseable:master]) {
+    if (![PLVFdUtil checkStringUseable:master] && !self.currentMainSpeakerByLocalUser) {
         master = self.channelId;
         // 更新当前主讲人
         [self changeMainSpeakerWithLinkMicUserId:master];
@@ -827,63 +901,63 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 - (void)emitSocketMessge_JoinLeave{
+    // 重置处理
+    [self resetOnlineUserList];
+    self.linkMicSocketToken = nil;
+
+    if (self.linkMicOpen) {
+        self.linkMicStatus = PLVLinkMicStatus_Open;
+        [self callbackForLinkMicStatusChanged];
+    }else{
+        self.linkMicStatus = PLVLinkMicStatus_NotOpen;
+        [self callbackForLinkMicStatusChanged];
+    }
+    
     __weak typeof(self) weakSelf = self;
+    [weakSelf callbackForOperationInProgress:YES];
     [self emitSocketMessageEventType:@"joinLeave" callback:^(NSArray *ackArray) {
         [weakSelf callbackForOperationInProgress:NO];
         [weakSelf callbackForLocalUserDidInOutLinkMicRoom:NO];
-        
-        // 重置处理
-        [weakSelf resetOnlineUserList];
-        weakSelf.linkMicSocketToken = nil;
-
-        if (weakSelf.linkMicOpen) {
-            weakSelf.linkMicStatus = PLVLinkMicStatus_Open;
-            [weakSelf callbackForLinkMicStatusChanged];
-        }else{
-            weakSelf.linkMicStatus = PLVLinkMicStatus_NotOpen;
-            [weakSelf callbackForLinkMicStatusChanged];
-        }
     } failedErrorCode:PLVLinkMicErrorCode_LeaveChannelFailedSocketCannotSend];
 }
 
 - (void)emitSocketMessageEventType:(NSString *)eventType callback:(void (^)(NSArray * _Nonnull))callback failedErrorCode:(PLVLinkMicErrorCode)failedErrorCode{
-    PLVSocketStatus socketStatus = PLVSocketWrapper.sharedSocketWrapper.status;
-    if (socketStatus == PLVSocketStatusLoginSuccess) {
+    if ([PLVSocketManager sharedManager].login &&
+        [PLVSocketManager sharedManager].status == PLVSocketConnectStatusConnected) {
         NSMutableDictionary *jsonDict = [NSMutableDictionary dictionary];
-        NSString *roomId = PLVSocketWrapper.sharedSocketWrapper.roomId; // 此处不可使用频道号，因存在分房间的可能
+        NSString *roomId = [PLVSocketManager sharedManager].roomId; // 此处不可使用频道号，因存在分房间的可能
         jsonDict[@"roomId"]  = [NSString stringWithFormat:@"%@",roomId];
         jsonDict[@"user"]    = @{@"nick" : [NSString stringWithFormat:@"%@",self.linkMicUserNickname],
                                  @"pic" : [NSString stringWithFormat:@"%@",self.linkMicUserAvatar],
                                  @"userId" : [NSString stringWithFormat:@"%@",self.linkMicUserId],
-                                 @"userType" : kPLVBSocketUserTypeSlice};
+                                 @"userType" : @"slice"};
         if ([eventType isEqualToString:@"joinLeave"] && [PLVFdUtil checkStringUseable:self.linkMicSocketToken]) {
             jsonDict[@"token"] = self.linkMicSocketToken;
         }
         
-        [[PLVSocketWrapper sharedSocketWrapper] emitMessage:eventType content:jsonDict timeout:5.0 callback:^(NSArray *ackArray) {
+        [[PLVSocketManager sharedManager] emitEvent:eventType content:jsonDict timeout:5.0 callback:^(NSArray *ackArray) {
             callback(ackArray);
         }];
     }else{
         [self callbackForOperationInProgress:NO];
         [self callbackForDidOccurError:failedErrorCode];
-        NSLog(@"PLVLinkMicPresenter - link mic msg send failed, current status:%lu",(unsigned long)socketStatus);
+        NSLog(@"PLVLinkMicPresenter - link mic msg send failed, current status:%lu",(unsigned long)[PLVSocketManager sharedManager].status);
     }
 }
 
 - (void)emitSocketMessge_reJoinMic{
     if ([PLVFdUtil checkStringUseable:self.linkMicSocketToken]) {
-        __weak typeof(self) weakSelf = self;
-        [[PLVSocketWrapper sharedSocketWrapper] emitMessage:@"reJoinMic" content:self.linkMicSocketToken timeout:5.0 callback:^(NSArray *ackArray) {
+        [[PLVSocketManager sharedManager] emitEvent:@"reJoinMic" content:self.linkMicSocketToken timeout:5.0 callback:^(NSArray *ackArray) {
         }];
     }else{
         NSLog(@"PLVLinkMicPresenter - reJoinMic msg send failed, linkMicSocketToken illegal %@",self.linkMicSocketToken);
     }
 }
 
-- (void)handleSocketEvent:(PLVSocketLinkMicEventType)eventType jsonDict:(NSDictionary *)jsonDict {
+- (void)handleSocketEvent:(PLVLinkMicEventType)eventType jsonDict:(NSDictionary *)jsonDict {
     switch (eventType) {
         // 讲师信息
-        case PLVSocketLinkMicEventType_TEACHER_INFO: {
+        case PLVLinkMicEventType_TEACHER_INFO: {
             NSString *teacherId = (NSString *)jsonDict[@"data"][@"userId"];
             // 更新讲师连麦Id
             if (![PLVFdUtil checkStringUseable:self.teacherLinkMicUserId] && [PLVFdUtil checkStringUseable:teacherId]) {
@@ -892,7 +966,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
         } break;
             
         // 讲师发起或结束连麦功能；讲师单独挂断学生连麦（广播消息 broadcast）
-        case PLVSocketLinkMicEventType_OPEN_MICROPHONE: {
+        case PLVLinkMicEventType_OPEN_MICROPHONE: {
             NSString *teacherId = jsonDict[@"teacherId"];
             if (teacherId) { /// 讲师发起或结束连麦功能
                 // 更新讲师连麦Id
@@ -900,6 +974,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
                     self.teacherLinkMicUserId = teacherId;
                 }
                 
+                self.socketRefreshOpenStatusDate = [NSDate date].timeIntervalSince1970;
                 [self refreshLinkMicOpenStatus:jsonDict[@"status"] mediaType:jsonDict[@"type"]];
             } else if ([jsonDict[@"userId"] isEqualToString:self.linkMicUserId]) {  /// 讲师单独挂断学生连麦
                 [self callbackForOperationInProgress:YES];
@@ -908,7 +983,7 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
         } break;
             
         // 讲师同意学生连麦（单播消息unicast）
-        case PLVSocketLinkMicEventType_JOIN_RESPONSE: {
+        case PLVLinkMicEventType_JOIN_RESPONSE: {
             if (self.linkMicStatus == PLVLinkMicStatus_Waiting) {
                 [self joinRTCChannel];
             }else{
@@ -919,31 +994,31 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
         } break;
             
         // 讲师允许某连麦人上麦（非观众类型的角色，在讲师允许后，才会上麦）
-        case PLVSocketLinkMIcEventType_switchJoinVoice: {
+        case PLVLinkMicEventType_switchJoinVoice: {
         } break;
     
         // 讲师打开或关闭，你的摄像头或麦克风（单播消息 unicast）
-        case PLVSocketLinkMicEventType_MuteUserMedia: {
+        case PLVLinkMicEventType_MuteUserMedia: {
             BOOL mute = ((NSNumber *)jsonDict[@"mute"]).boolValue;
             [self muteUser:self.linkMicUserId mediaType:jsonDict[@"type"] mute:mute];
         } break;
             
         // 讲师让某位连麦人成为’主讲‘，即第一画面
-        case PLVSocketLinkMicEventType_SwitchView: {
+        case PLVLinkMicEventType_SwitchView: {
             self.currentMainSpeakerByLocalUser = NO;
             NSString * nowMainSpeakerLinkMicUserId = [NSString stringWithFormat:@"%@",jsonDict[@"userId"]];
             [self changeMainSpeakerWithLinkMicUserId:nowMainSpeakerLinkMicUserId];
         } break;
             
         // 讲师设置连麦人权限
-        case PLVSocketLinkMIcEventType_TEACHER_SET_PERMISSION: {
+        case PLVLinkMicEventType_TEACHER_SET_PERMISSION: {
         } break;
         
         // 讲师主动切换PPT和播放器的位置（非连麦中，是否应该处理此事件）
         // TODO：此事件不应归于“linkMic”模块
-        case PLVSocketLinkMIcEventType_changeVideoAndPPTPosition: {
-            BOOL mainSpeakerBecomeFirstSite = ((NSNumber *)jsonDict[@"status"]).boolValue;
-            [self callbackForMainSpeaker:self.currentMainSpeaker.linkMicUserId toFirstSite:mainSpeakerBecomeFirstSite];
+        case PLVLinkMicEventType_changeVideoAndPPTPosition: {
+            BOOL mainSpeakerToMainScreen = ((NSNumber *)jsonDict[@"status"]).boolValue;
+            [self callbackForMainSpeaker:self.currentMainSpeaker.linkMicUserId mainSpeakerToMainScreen:mainSpeakerToMainScreen];
         } break;
             
         default:
@@ -956,13 +1031,14 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 #pragma mark Timer
 - (void)linkMicTimerEvent:(NSTimer *)timer{
     /// Socket 断开时不作刷新请求，因连麦业务基本均依赖于 Scoket 服务
-    PLVSocketStatus socketStatus = PLVSocketWrapper.sharedSocketWrapper.status;
-    if (socketStatus == PLVSocketStatusLoginSuccess) {
+    if ([PLVSocketManager sharedManager].login) {
         __weak typeof(self) weakSelf = self;
 
         // 请求，刷新‘讲师端连麦开启状态’
         [PLVLiveVideoAPI requestLinkMicStatusWithRoomId:self.channelId.integerValue completion:^(NSString *status, NSString *type) {
-            [weakSelf refreshLinkMicOpenStatus:status mediaType:type];
+            if ([NSDate date].timeIntervalSince1970 - self.socketRefreshOpenStatusDate > 10) {
+                [weakSelf refreshLinkMicOpenStatus:status mediaType:type];
+            }
         } failure:^(NSError *error) {
             NSLog(@"PLVLinkMicPresenter - request linkmic status failed : %@",error);
         }];
@@ -978,26 +1054,32 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
             }];
         }
     }else{
-        NSLog(@"PLVLinkMicPresenter - link mic status refresh failed, current socket status:%lu",(unsigned long)socketStatus);
+        NSLog(@"PLVLinkMicPresenter - link mic status refresh failed, current socket status:%lu",(unsigned long)[PLVSocketManager sharedManager].status);
     }
 }
 
 
 #pragma mark - [ Delegate ]
-#pragma mark PLVSocketListenerProtocol
+#pragma mark PLVSocketManager Protocol
+
 /// socket 接收到 "message" 事件
-- (void)socket:(id<PLVSocketIOProtocol>)socket didReceiveMessage:(NSString *)string jsonDict:(NSDictionary *)jsonDict{
-    NSString *subEvent = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+- (void)socketMananger_didReceiveMessage:(NSString *)subEvent
+                                    json:(NSString *)jsonString
+                              jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
     if ([subEvent isEqualToString:@"OPEN_MICROPHONE"]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_OPEN_MICROPHONE jsonDict:jsonDict];
+        [self handleSocketEvent:PLVLinkMicEventType_OPEN_MICROPHONE jsonDict:jsonDict];
     } else if ([subEvent isEqualToString:@"O_TEACHER_INFO"]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_TEACHER_INFO jsonDict:jsonDict];
+        [self handleSocketEvent:PLVLinkMicEventType_TEACHER_INFO jsonDict:jsonDict];
     } else if ([subEvent isEqualToString:@"TEACHER_SET_PERMISSION"]) {
-        [self handleSocketEvent:PLVSocketLinkMIcEventType_TEACHER_SET_PERMISSION jsonDict:jsonDict];
+        [self handleSocketEvent:PLVLinkMicEventType_TEACHER_SET_PERMISSION jsonDict:jsonDict];
     } else if ([subEvent isEqualToString:@"changeVideoAndPPTPosition"]) {
-        [self handleSocketEvent:PLVSocketLinkMIcEventType_changeVideoAndPPTPosition jsonDict:jsonDict];
+        [self handleSocketEvent:PLVLinkMicEventType_changeVideoAndPPTPosition jsonDict:jsonDict];
     } else if ([subEvent isEqualToString:@"switchJoinVoice"]) {
-        [self handleSocketEvent:PLVSocketLinkMIcEventType_switchJoinVoice jsonDict:jsonDict];
+        [self handleSocketEvent:PLVLinkMicEventType_switchJoinVoice jsonDict:jsonDict];
     } else if ([subEvent containsString:@"SEND_CUP"]) {   // 奖杯事件
 
     } else if ([subEvent containsString:@"LOGIN"]){ // 登录事件
@@ -1010,19 +1092,26 @@ static const BOOL PLVLinkMicPresenterCameraDefaultFront = YES; // 摄像头 默�
 }
 
 /// socket 接收到 "主动监听" 事件（不包含 "message" 事件）
-- (void)socket:(id<PLVSocketIOProtocol>)socket didReceiveEvent:(NSString *)event jsonDict:(NSDictionary *)jsonDict{
-    if ([event isEqualToString:kPLVBSocketEvent_joinRequest]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_JOIN_REQUEST jsonDict:jsonDict];
-    } else if ([event isEqualToString:kPLVBSocketEvent_joinResponse]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_JOIN_RESPONSE jsonDict:jsonDict];
-    } else if ([event isEqualToString:kPLVBSocketEvent_joinSuccess]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_JOIN_SUCCESS jsonDict:jsonDict];
-    } else if ([event isEqualToString:kPLVBSocketEvent_joinLeave]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_JOIN_LEAVE jsonDict:jsonDict];
-    } else if ([event isEqualToString:kPLVBSocketEvent_MuteUserMedia]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_MuteUserMedia jsonDict:jsonDict];
-    } else if ([event isEqualToString:kPLVBSocketEvent_switchView]) {
-        [self handleSocketEvent:PLVSocketLinkMicEventType_SwitchView jsonDict:jsonDict];
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    if ([event isEqualToString:PLVSocketIOLinkMic_JOIN_REQUEST_key]) {
+        [self handleSocketEvent:PLVLinkMicEventType_JOIN_REQUEST jsonDict:jsonDict];
+    } else if ([event isEqualToString:PLVSocketIOLinkMic_JOIN_RESPONSE_key]) {
+        [self handleSocketEvent:PLVLinkMicEventType_JOIN_RESPONSE jsonDict:jsonDict];
+    } else if ([event isEqualToString:PLVSocketIOLinkMic_JOIN_SUCCESS_key]) {
+        [self handleSocketEvent:PLVLinkMicEventType_JOIN_SUCCESS jsonDict:jsonDict];
+    } else if ([event isEqualToString:PLVSocketIOLinkMic_JOIN_LEAVE_key]) {
+        [self handleSocketEvent:PLVLinkMicEventType_JOIN_LEAVE jsonDict:jsonDict];
+    } else if ([event isEqualToString:PLVSocketLinkMicEventType_MuteUserMedia_key]) {
+        [self handleSocketEvent:PLVLinkMicEventType_MuteUserMedia jsonDict:jsonDict];
+    } else if ([event isEqualToString:PLVSocketLinkMicEventType_SwitchView_key]) {
+        [self handleSocketEvent:PLVLinkMicEventType_SwitchView jsonDict:jsonDict];
     }
 }
 

@@ -24,7 +24,7 @@
                     __weak typeof(self) weakSelf = self;
                     __block NSInteger count = (retryCount > 0 ? retryCount : 1);
                     
-                    [[PLVSocketWrapper sharedSocketWrapper] emitMessage:@"message" content:jsonDict timeout:5.0 callback:^(NSArray *ackArray) {
+                    [[PLVSocketManager sharedManager] emitMessage:jsonDict timeout:5.0 callback:^(NSArray *ackArray) {
                         if (count < weakSelf.triviaCardMaxRetryCount) {
                             count ++;
                             [weakSelf triviaCardAckHandle:ackArray event:event jsonDict:jsonDict retryCount:count];
@@ -44,7 +44,7 @@
 
 - (void)emitInteractMsg:(id)content event:(nonnull NSString *)event{
     __weak typeof(self) weakSelf = self;
-    [[PLVSocketWrapper sharedSocketWrapper] emitMessage:@"message" content:content timeout:self.triviaCardTimeoutSec callback:^(NSArray * ackResultArray) {
+    [[PLVSocketManager sharedManager] emitMessage:content timeout:self.triviaCardTimeoutSec callback:^(NSArray * ackResultArray) {
         [weakSelf triviaCardAckHandle:ackResultArray event:event jsonDict:content retryCount:0];
     }];
 }

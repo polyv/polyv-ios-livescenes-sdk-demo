@@ -83,11 +83,10 @@
     
     NSString * event = @"ANSWER_TEST_QUESTION";
     
-    PLVBSocketUser * loginUser = [PLVSocketWrapper sharedSocketWrapper].loginUser;
     NSDictionary *baseJSON = @{@"EVENT" : event,
-                               @"nick" : [NSString stringWithFormat:@"%@",loginUser.nickName],
-                               @"userId" : [NSString stringWithFormat:@"%@",loginUser.userId],
-                               @"roomId" : [NSString stringWithFormat:@"%@", loginUser.roomId]};
+                               @"nick" : [NSString stringWithFormat:@"%@",[PLVSocketManager sharedManager].viewerName],
+                               @"userId" : [NSString stringWithFormat:@"%@",[PLVSocketManager sharedManager].viewerId],
+                               @"roomId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId]};
     
     NSMutableDictionary *jsonDict = [[NSMutableDictionary alloc] init];
     [jsonDict addEntriesFromDictionary:baseJSON];

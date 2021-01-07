@@ -9,8 +9,7 @@
 #import "PLVInteractView.h"
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
-
-#import "PLVLiveUtil.h"
+#import <PolyvFoundationSDK/PLVFdUtil.h>
 
 #import "PLVInteractAnswer.h"
 #import "PLVInteractSignIn.h"
@@ -107,7 +106,7 @@
 - (void)layoutSelfView {
     [self layoutWebviewFrame];
     
-    float topPadding = [PLVLiveUtil isiPhoneXSeries] ? 30.0 : 10.0;
+    float topPadding = [PLVFdUtil isiPhoneXSeries] ? 30.0 : 10.0;
     CGFloat originX = self.webview.frame.size.width - 11.0 - 28.0;
     CGFloat originY = 11.0 + topPadding;
     self.closeBtn.frame = CGRectMake(originX, originY, 28.0, 28.0);
@@ -138,7 +137,7 @@
         if (forbidRotateNow == YES) {
             // 收到需要 ‘禁止转屏’ 时，将检查当前设备方向，若不是竖屏，则强制转为竖屏
             if ([UIDevice currentDevice].orientation != UIDeviceOrientationPortrait){
-                [PLVLiveUtil changeDeviceOrientationToPortrait];
+                [PLVFdUtil changeDeviceOrientationToPortrait];
             }
         }
         
@@ -219,7 +218,7 @@ didReceiveInteractMessageString:(NSString *)msgString
 
 #pragma mark PLVJSBridgeDelegate
 - (void)plvJSBridge:(PLVJSBridge *)jsBridge showConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completionHandler{
-    UIViewController * vc = [PLVLiveUtil getCurrentViewController];
+    UIViewController * vc = [PLVFdUtil getCurrentViewController];
     if ([vc isKindOfClass:UIViewController.class]) {
         [PLVFdUtil showAlertWithTitle:nil message:message viewController:vc cancelActionTitle:@"取消" cancelActionStyle:UIAlertActionStyleCancel cancelActionBlock:^(UIAlertAction * _Nonnull action) {
             completionHandler(NO);

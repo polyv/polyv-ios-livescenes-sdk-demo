@@ -31,7 +31,6 @@
         self.willDeallocBlock(self);
         self.willDeallocBlock = nil;
     }
-    //NSLog(@"%s",__FUNCTION__);
 }
 
 

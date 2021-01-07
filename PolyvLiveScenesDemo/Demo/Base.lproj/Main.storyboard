@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17506" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="s36-zj-Vc5">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16097.2" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="s36-zj-Vc5">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -107,9 +107,6 @@
                                                 </constraints>
                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                 <textInputTraits key="textInputTraits" keyboardType="alphabet"/>
-                                                <connections>
-                                                    <action selector="textEditChangedAction:" destination="Qpr-3F-BGy" eventType="editingDidEnd" id="Uqn-be-bZ7"/>
-                                                </connections>
                                             </textField>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="1s7-Bj-WAc" userLabel="LineView">
                                                 <rect key="frame" x="47.5" y="265" width="319" height="1"/>
@@ -125,12 +122,9 @@
                                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="319" id="1wH-S2-uaK"/>
                                                     <constraint firstAttribute="height" constant="45" id="CRB-bR-DQy"/>
                                                 </constraints>
-                                                <string key="placeholder">渠道ID	</string>
+                                                <string key="placeholder">频道ID	</string>
                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                 <textInputTraits key="textInputTraits" keyboardType="numberPad"/>
-                                                <connections>
-                                                    <action selector="textEditChangedAction:" destination="Qpr-3F-BGy" eventType="editingDidEnd" id="Giw-8G-jd4"/>
-                                                </connections>
                                             </textField>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="S9h-C0-K9m" userLabel="LineView">
                                                 <rect key="frame" x="47.5" y="310" width="319" height="1"/>
@@ -149,9 +143,6 @@
                                                 </constraints>
                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                 <textInputTraits key="textInputTraits" keyboardType="alphabet"/>
-                                                <connections>
-                                                    <action selector="textEditChangedAction:" destination="Qpr-3F-BGy" eventType="editingDidEnd" id="4HK-pu-dC1"/>
-                                                </connections>
                                             </textField>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="tsJ-eq-Ju7" userLabel="LineView">
                                                 <rect key="frame" x="47.5" y="355" width="319" height="1"/>
@@ -170,9 +161,6 @@
                                                 </constraints>
                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                 <textInputTraits key="textInputTraits" keyboardType="alphabet"/>
-                                                <connections>
-                                                    <action selector="textEditChangedAction:" destination="Qpr-3F-BGy" eventType="editingDidEnd" id="33b-Pq-R0O"/>
-                                                </connections>
                                             </textField>
                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="qwI-j9-UaK" userLabel="LineView">
                                                 <rect key="frame" x="47.5" y="400" width="319" height="1"/>
@@ -191,9 +179,6 @@
                                                 </constraints>
                                                 <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                 <textInputTraits key="textInputTraits" keyboardType="alphabet"/>
-                                                <connections>
-                                                    <action selector="textEditChangedAction:" destination="Qpr-3F-BGy" eventType="editingDidEnd" id="pCX-6X-gHN"/>
-                                                </connections>
                                             </textField>
                                             <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="N3E-Vg-Zaq" userLabel="LastLineView">
                                                 <rect key="frame" x="47.5" y="445" width="319" height="1"/>
@@ -204,7 +189,7 @@
                                                     <constraint firstAttribute="height" constant="1" id="ml0-eh-G9h"/>
                                                 </constraints>
                                             </view>
-                                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Dg2-5S-4sA">
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Dg2-5S-4sA">
                                                 <rect key="frame" x="47.5" y="466" width="319" height="48"/>
                                                 <color key="backgroundColor" red="0.12941176469999999" green="0.58823529409999997" blue="0.95294117649999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <constraints>

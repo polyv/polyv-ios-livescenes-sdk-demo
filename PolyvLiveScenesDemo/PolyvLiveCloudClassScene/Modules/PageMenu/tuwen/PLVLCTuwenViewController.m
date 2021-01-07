@@ -15,7 +15,7 @@ static NSString *kUrlString = @"https://live.polyv.net/front/tuwen/index";
 
 @interface PLVLCTuwenViewController ()<
 PLVJSBridgeDelegate,
-PLVSocketListenerProtocol
+PLVSocketManagerProtocol
 >
 
 @property (nonatomic, strong) NSNumber *channelId;
@@ -26,7 +26,10 @@ PLVSocketListenerProtocol
 
 @end
 
-@implementation PLVLCTuwenViewController
+@implementation PLVLCTuwenViewController {
+    /// PLVSocketManager回调的执行队列
+    dispatch_queue_t socketDelegateQueue;
+}
 
 #pragma mark - Life Cycle
 
@@ -43,7 +46,8 @@ PLVSocketListenerProtocol
     self.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#141518"];
     
     /// 添加 socket 事件监听
-    [[PLVSocketWrapper sharedSocketWrapper] addListener:self];
+    socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
+    [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
     
     [self.jsBridge loadWebView:kUrlString inView:self.view];
     
@@ -116,16 +120,17 @@ PLVSocketListenerProtocol
     }
 }
 
-#pragma mark PLVSocketListenerProtocol
+#pragma mark PLVSocketManager Protocol
 
 /// socket 接收到 "message" 事件
-- (void)socket:(id<PLVSocketIOProtocol>)socket didReceiveMessage:(NSString *)string jsonDict:(NSDictionary *)jsonDict{
-    NSString * subEvent = jsonDict[@"EVENT"];
+- (void)socketMananger_didReceiveMessage:(NSString *)subEvent
+                                    json:(NSString *)jsonString
+                              jsonObject:(id)object {
     if ([subEvent isEqualToString:@"DELETE_IMAGE_TEXT"] // 删除图文
         || [subEvent isEqualToString:@"SET_TOP_IMAGE_TEXT"] // 置顶图文
         || [subEvent isEqualToString:@"CREATE_IMAGE_TEXT"]  // 发布图文
         || [subEvent isEqualToString:@"SET_IMAGE_TEXT_MSG"]) {  // 编辑现有图文
-        [self.jsBridge call:subEvent params:@[string]];
+        [self.jsBridge call:subEvent params:@[jsonString]];
     }
 }
 

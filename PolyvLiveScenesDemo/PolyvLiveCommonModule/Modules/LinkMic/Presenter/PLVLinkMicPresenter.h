@@ -8,8 +8,8 @@
 
 #import <UIKit/UIKit.h>
 
-#import "PLVLiveRoomData.h"
 #import "PLVLinkMicOnlineUser.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,13 +26,6 @@ typedef NS_ENUM(NSUInteger, PLVLinkMicMediaType) {
     PLVLinkMicMediaType_Unknown = 0, // 未知类型
     PLVLinkMicMediaType_Audio = 1,   // 音频连麦
     PLVLinkMicMediaType_Video = 2,   // 视频连麦
-};
-
-typedef NS_ENUM(NSInteger, PLVLinkMicScenesType) {
-    PLVLinkMicScenesType_Unknown = 0,    // 未知连麦场景
-    PLVLinkMicScenesType_BeforeLive = 1, // 旧版普通直播连麦
-    PLVLinkMicScenesType_NormalLive = 2, // 新版普通直播连麦
-    PLVLinkMicScenesType_CloudClass = 3  // 云课堂连麦
 };
 
 typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
@@ -83,6 +76,7 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 ///       该管理器自带 Socket事件 的监听，而无需等待外部将 Socket事件 告知管理器；
 @interface PLVLinkMicPresenter : NSObject
 
+#pragma mark - [ 属性 ]
 #pragma mark 可配置项
 /// 设置视图 delegate(负责处理视图相关的事务)
 @property (nonatomic, weak) id <PLVLinkMicPresenterDelegate> viewDelegate;
@@ -109,8 +103,8 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// 当前讲师是否发起连麦 (YES:讲师已开启连麦 NO:讲师未开启连麦)
 @property (nonatomic, assign, readonly) BOOL linkMicOpen;
 
-/// 当前连麦场景类型
-@property (nonatomic, assign, readonly) PLVLinkMicScenesType linkMicScenesType;
+/// 当前频道连麦场景类型
+@property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType;
 
 /// 当前连麦媒体类型
 @property (nonatomic, assign, readonly) PLVLinkMicMediaType linkMicMediaType;
@@ -119,34 +113,22 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 @property (nonatomic, assign, readonly) PLVLinkMicStatus linkMicStatus;
 
 #pragma mark 数据
-/// 当前直播间(频道)信息
-@property (nonatomic, strong, readonly) PLVLiveRoomData *roomData;
-
 /// 当前连麦 SocketToken (不为空时重连后要发送reJoinMic事件)
-@property (nonatomic, copy, readonly) NSString *linkMicSocketToken;
+@property (nonatomic, copy, readonly) NSString * linkMicSocketToken;
 
 /// 当前连麦 在线用户列表 (包含全部角色[无论是否’允许上麦‘]，包含自己)
-@property (nonatomic, copy, readonly) NSArray <PLVLinkMicOnlineUser *> *onlineUserArray;
-
-/// 当前连麦 在线参与者列表 (包含全部参与者，即 ’未上麦‘ 及 ’允许上麦‘)
-@property (nonatomic, copy, readonly) NSArray *onlineViewerArray;
-
-/// 当前连麦 允许上麦参与者列表 (仅包含允许上麦的参与者)
-@property (nonatomic, copy, readonly) NSArray *onlineAllowedViewerArray;
-
-/// 当前连麦 允许上麦嘉宾列表 (仅包含允许上麦的嘉宾)
-@property (nonatomic, copy, readonly) NSArray *onlineAllowedGuestArray;
+@property (nonatomic, copy, readonly) NSArray <PLVLinkMicOnlineUser *> * onlineUserArray;
 
 /// 当前主讲人 (讲师授予的“第一画面”)
-@property (nonatomic, strong) PLVLinkMicOnlineUser * currentMainSpeaker;
+///
+/// @note 仅表示当前本地的 “第一画面”，不代表讲师端的真实“第一画面”，因本地允许点击某位用户作为“第一画面”
+@property (nonatomic, weak) PLVLinkMicOnlineUser * currentMainSpeaker;
 
 /// 当前本地用户
-@property (nonatomic, strong) PLVLinkMicOnlineUser * currentLocalLinkMicUser;
+@property (nonatomic, weak) PLVLinkMicOnlineUser * currentLocalLinkMicUser;
+
 
 #pragma mark - [ 方法 ]
-#pragma mark 创建
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData ;
-
 #pragma mark 业务
 /// 举手(申请连麦)
 ///
@@ -165,6 +147,20 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 
 - (void)changeMainSpeakerWithLinkMicUserIndex:(NSInteger)nowMainSpeakerLinkMicUserIndex;
 
+/// 查询某个条件的用户，在数组中的下标值
+///
+/// @note 同步方法，非异步执行；不卡线程，无耗时操作，仅遍历逻辑；
+///
+/// @param filtrateBlockBlock 筛选条件Block (参数enumerateUser:遍历过程中的用户Model，请自行判断其是否符合筛选目标；返回值 BOOL，判断后告知此用户Model是否目标)
+///
+/// @return 根据 filtrateBlockBlock 的筛选，返回找到的目标条件用户，在数组中的下标值 (若小于0，表示查询失败无法找到)
+- (NSInteger)findUserModelIndexWithFiltrateBlock:(BOOL(^)(PLVLinkMicOnlineUser * enumerateUser))filtrateBlockBlock;
+
+/// 根据下标值获取连麦用户Model
+///
+/// @param targetIndex 下标值
+- (PLVLinkMicOnlineUser *)getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex;
+
 #pragma mark 设备控制
 - (void)micOpen:(BOOL)open;
 
@@ -174,11 +170,11 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 
 @end
 
+#pragma mark - [ 代理方法 ]
 /// 连麦管理器 代理方法
 @protocol PLVLinkMicPresenterDelegate <NSObject>
 
 @optional
-
 #pragma mark 状态变更
 /// 连麦状态发生改变
 ///
@@ -217,8 +213,10 @@ localUserDidInOutLinkMicRoom:(BOOL)InOut;
                  remoteUser:(PLVLinkMicOnlineUser *)linkMicUser
    didJoinedLeftLinkMicRoom:(BOOL)didJoinedLeft;
 
-/// 添加用户 [会多次调用；已存在的用户，会重复调用；代表当前存在的用户]
-/// 仅在返回的 view 刚创建的时候需要渲染RTC，所以需要view去实现协议，让presenter 确认它是否刚创建的
+/// 连麦在线用户数组 发生变化
+///
+/// @param presenter 连麦管理器
+/// @param onlineUserArray 当前的连麦在线用户数组
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicOnlineUserListRefresh:(NSArray *)onlineUserArray;
 
 #pragma mark 业务事件
@@ -227,7 +225,7 @@ localUserDidInOutLinkMicRoom:(BOOL)InOut;
 
 /// 当前’主讲‘ 的rtc画面，需要切至 主屏/副屏 显示
 /// 非连麦状态时，此回调不应被处理
-- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerLinkMicUserId:(NSString *)mainSpeakerLinkMicUserId wannaBecomeFirstSite:(BOOL)wannaBecomeFirstSite;
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerLinkMicUserId:(NSString *)mainSpeakerLinkMicUserId mainSpeakerToMainScreen:(BOOL)mainSpeakerToMainScreen;
 
 /// 全部连麦成员的音频音量 回调
 ///
@@ -236,6 +234,10 @@ localUserDidInOutLinkMicRoom:(BOOL)InOut;
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter
 reportAudioVolumeOfSpeakers:(NSDictionary<NSString *, NSNumber *> * _Nonnull)volumeDict;
 
+/// 当前正在讲话的连麦成员
+///
+/// @param presenter 连麦管理器
+/// @param currentSpeakingUsers 当前正在讲话的连麦成员
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter
  reportCurrentSpeakingUsers:(NSArray<PLVLinkMicOnlineUser *> * _Nonnull)currentSpeakingUsers;
 

@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import "PLVLiveUser.h"
+#import "PLVRoomUser.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 特殊身份
 @property (nonatomic, assign) BOOL specialIdentity;
 /// 用户类型/角色枚举值
-@property (nonatomic, assign) PLVLiveUserType userType;
+@property (nonatomic, assign) PLVRoomUserType userType;
 /// 用户头衔
 @property (nonatomic, copy) NSString * _Nullable actor;
 /// 用户类型/角色字符串

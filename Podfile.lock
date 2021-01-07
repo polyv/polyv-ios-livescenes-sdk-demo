@@ -1,0 +1,77 @@
+PODS:
+  - AgoraRtcEngine_iOS (2.9.0.107)
+  - MJRefresh (3.5.0)
+  - PLVLiveScenesSDK (1.1.0):
+    - PLVLiveScenesSDK/Core (= 1.1.0)
+    - PLVLiveScenesSDK/Player (= 1.1.0)
+    - PLVLiveScenesSDK/ThirdPart (= 1.1.0)
+  - PLVLiveScenesSDK/Core (1.1.0):
+    - PolyvBusinessSDK (~> 1.1.0)
+  - PLVLiveScenesSDK/Player (1.1.0):
+    - PolyvIJKPlayer (~> 0.9.1)
+  - PLVLiveScenesSDK/ThirdPart (1.1.0):
+    - AgoraRtcEngine_iOS (= 2.9.0.107)
+    - PolyvAliHttpDNS (~> 1.7.3)
+    - Socket.IO-Client-Swift (~> 14.0.0)
+    - UCloudRtcSdk (= 1.6.6)
+  - PolyvAliHttpDNS (1.7.4):
+    - PolyvAliHttpDNS/AlicloudHttpDNS (= 1.7.4)
+    - PolyvAliHttpDNS/AlicloudUtils (= 1.7.4)
+    - PolyvAliHttpDNS/UTDID (= 1.7.4)
+  - PolyvAliHttpDNS/AlicloudHttpDNS (1.7.4)
+  - PolyvAliHttpDNS/AlicloudUtils (1.7.4)
+  - PolyvAliHttpDNS/UTDID (1.7.4)
+  - PolyvBusinessSDK (1.1.0):
+    - PolyvBusinessSDK/Core (= 1.1.0)
+    - PolyvBusinessSDK/Socket (= 1.1.0)
+    - PolyvFoundationSDK (~> 1.1.0)
+  - PolyvBusinessSDK/Core (1.1.0):
+    - PolyvFoundationSDK (~> 1.1.0)
+  - PolyvBusinessSDK/Socket (1.1.0):
+    - PolyvFoundationSDK (~> 1.1.0)
+    - Socket.IO-Client-Swift (~> 14.0.0)
+  - PolyvFoundationSDK (1.1.0)
+  - PolyvIJKPlayer (0.9.2)
+  - SDWebImage (4.4.0):
+    - SDWebImage/Core (= 4.4.0)
+  - SDWebImage/Core (4.4.0)
+  - Socket.IO-Client-Swift (14.0.0):
+    - Starscream (~> 3.0.6)
+  - Starscream (3.0.6)
+  - UCloudRtcSdk (1.6.6)
+
+DEPENDENCIES:
+  - MJRefresh (~> 3.5.0)
+  - PLVLiveScenesSDK (= 1.1.0)
+  - SDWebImage (= 4.4.0)
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - AgoraRtcEngine_iOS
+    - MJRefresh
+    - PLVLiveScenesSDK
+    - PolyvAliHttpDNS
+    - PolyvBusinessSDK
+    - PolyvFoundationSDK
+    - PolyvIJKPlayer
+    - SDWebImage
+    - Socket.IO-Client-Swift
+    - Starscream
+    - UCloudRtcSdk
+
+SPEC CHECKSUMS:
+  AgoraRtcEngine_iOS: f295cc362f18a98a59464c7485a1de1dad4847f2
+  MJRefresh: 6afc955813966afb08305477dd7a0d9ad5e79a16
+  PLVLiveScenesSDK: 988a24ec4fe289ef2b1cf3cab4d95f07bf40c686
+  PolyvAliHttpDNS: 6e7783feba44d25abc4f9584da83f93e7e4ef957
+  PolyvBusinessSDK: 55c7b9845210085c01eb8e0c721fc1e7d48ccaa2
+  PolyvFoundationSDK: 4c68216b8e1ce314bddc3e63e5c25c457f3d295c
+  PolyvIJKPlayer: 2a3c55373b145173ae64b1fc23d1eca51e5aad16
+  SDWebImage: b534502786e43dde36dfcaee89356fe6df30e203
+  Socket.IO-Client-Swift: 21e6a8a23a7d367d5ddfab6cbbd3c679cf3c25d6
+  Starscream: ef3ece99d765eeccb67de105bfa143f929026cf5
+  UCloudRtcSdk: 47094e3cd586374d92a9d9ed4098bec829867bea
+
+PODFILE CHECKSUM: 8bb8f931a52fe9c021b42ac73df0c19decc786b4
+
+COCOAPODS: 1.7.2

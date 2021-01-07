@@ -7,6 +7,7 @@
 //
 
 #import "PLVECCommodityPresenter.h"
+#import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
 #import <PolyvFoundationSDK/PLVFdUtil.h>
 #import <PolyvFoundationSDK/PLVDataUtil.h>
 #import "PLVECCommodityViewModel.h"
@@ -24,7 +25,7 @@
 static const NSUInteger listCount = 20;
 
 @implementation PLVECCommodityPresenter
-@synthesize channel;
+@synthesize channelId;
 
 - (instancetype)init
 {
@@ -67,9 +68,9 @@ static const NSUInteger listCount = 20;
         return;
     }
     
-    if (!self.viewModel.cellModels.count) { // 无数据时或未打开商品列表不处理
-        return;
-    }
+//    if (!self.viewModel.cellModels.count) { // 无数据时或未打开商品列表不处理
+//        return;
+//    }
     
     NSInteger productId = PLV_SafeIntegerForDictKey(content, @"productId");
     NSInteger rank = PLV_SafeIntegerForDictKey(content, @"rank");
@@ -211,17 +212,17 @@ static const NSUInteger listCount = 20;
 
 // 不传排序号会返回列表最前面的数据，传rank后返回rank之后的商品列表
 - (NSURLRequest *)urlRequestForCommodity:(NSUInteger)rank {
-    NSString *appId = self.channel.account.appId;
-    NSString *appSecret = self.channel.account.appSecret;
+    NSString *appId = [PLVLiveVideoConfig sharedInstance].appId;
+    NSString *appSecret = [PLVLiveVideoConfig sharedInstance].appSecret;
     
     NSTimeInterval timeStamp = [NSDate.date timeIntervalSince1970] * 1000;
     NSString *timeStampStr = [NSString stringWithFormat:@"%lld", (long long)timeStamp];
     NSString *rankStr = rank > 0 ? [NSString stringWithFormat:@"rank%ld",rank] : @"";
-    NSString *signRaw = [NSString stringWithFormat:@"%@appId%@channelId%@count%ld%@timestamp%@%@",appSecret,appId,self.channel.channelId,(long)listCount,rankStr,timeStampStr,appSecret];
+    NSString *signRaw = [NSString stringWithFormat:@"%@appId%@channelId%@count%ld%@timestamp%@%@",appSecret,appId,self.channelId,(long)listCount,rankStr,timeStampStr,appSecret];
     NSString *sign = [[PLVDataUtil md5HexDigest:signRaw] uppercaseString];
     
     NSMutableString *urlStr = [NSMutableString stringWithString:@"https://api.polyv.net/live/v3/channel/product/getListByRank"];
-    [urlStr appendFormat:@"?channelId=%@",self.channel.channelId];
+    [urlStr appendFormat:@"?channelId=%@",self.channelId];
     if (rank > 0) {
         [urlStr appendFormat:@"&rank=%ld",(long)rank];
     }

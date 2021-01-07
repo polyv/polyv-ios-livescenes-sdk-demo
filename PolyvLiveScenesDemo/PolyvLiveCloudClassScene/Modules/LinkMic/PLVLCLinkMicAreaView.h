@@ -8,10 +8,9 @@
 
 #import <UIKit/UIKit.h>
 
-#import "PLVLiveRoomData.h"
-
 #import "PLVLCLinkMicVerticalControlBar.h"
 #import "PLVLCLinkMicHorizontalControlBar.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -26,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// delegate
 @property (nonatomic, weak) id <PLVLCLinkMicAreaViewDelegate> delegate;
 
+/// 当前频道连麦场景类型
+@property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType;
+
 /// 是否正在连麦 (YES:正在连麦中 NO:不在连麦中)
 @property (nonatomic, assign, readonly) BOOL inLinkMic;
 
@@ -37,9 +39,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) id <PLVLCLinkMicControlBarProtocol> currentControlBar;
 
-/// 初始化方法
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData;
-
 /// 此方法仅控制 AreaView 的透明度，不关心布局
 - (void)showAreaView:(BOOL)showStatus;
 
@@ -49,6 +48,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 连麦区域视图Delegate
 @protocol PLVLCLinkMicAreaViewDelegate <NSObject>
+
+/// 连麦Rtc画面窗口 需外部展示 ‘第一画面连麦窗口’
+///
+/// @param linkMicAreaView 连麦区域视图
+/// @param canvasView 第一画面连麦窗口视图 (需外部进行添加展示)
+- (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView;
 
 /// 连麦Rtc画面窗口被点击 (表示用户希望视图位置交换)
 ///

@@ -8,7 +8,6 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import "PLVLiveRoomData.h"
 #import "PLVChatModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -54,12 +53,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVChatroomPresenterProtocol> delegate;
 
-/// 每次调用接口获取的聊天消息条数，默认20
-@property (nonatomic, assign) NSInteger eachLoadingHistoryCount;
-
 /// 初始化方法
-/// @param roomData 直播间数据
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData;
+/// @param count 每次调用接口获取的聊天消息条数，不得小于1
+- (instancetype)initWithLoadingHistoryCount:(NSUInteger)count;
 
 /// 销毁方法
 /// 退出前调用，用于资源释放、状态位清零
@@ -99,7 +95,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)sendLike;
 
 /// 加载历史聊天记录
-/// 每次加载条数默认20条，可在第一次调用之前设置 eachLoadingHistoryCount 修改
 - (void)loadHistory;
 
 @end

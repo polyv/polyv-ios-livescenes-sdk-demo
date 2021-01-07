@@ -7,7 +7,7 @@
 //
 
 #import "AppDelegate.h"
-#import "PLVLiveSDKConfig.h"
+#import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
 
 @interface AppDelegate ()
 
@@ -17,13 +17,8 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     
-    // 账户信息配置
-    //[PLVLiveSDKConfig configAccountWithUserId:@"" appId:@"" appSecret:@""];
-    
-    // 开启 socket 调试模式
-    //PLVLiveSDKConfig.sharedSDK.socketDebug = YES;
-    
-    NSLog(@"SDK version: %@", PLVLiveSDKConfig.sdkVersion);
+    // HttpDNS默认开启，如需关闭，解开注释
+//    [PLVLiveVideoConfig sharedInstance].enableHttpDNS = NO;
     
     return YES;
 }

@@ -8,13 +8,12 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import "PLVLiveChannelConfig.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol PLVECCommodityPresenterProtocol <NSObject>
 
-@property (nonatomic, strong) PLVLiveChannelConfig *channel;
+@property (nonatomic, strong) NSString *channelId;
 
 - (void)loadCommodityInfo;
 

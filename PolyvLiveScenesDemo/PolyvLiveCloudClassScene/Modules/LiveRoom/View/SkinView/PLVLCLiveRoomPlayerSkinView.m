@@ -66,7 +66,7 @@
         CGFloat countdownTimeViewHeight = 32.0;
         CGFloat topPadding = 16.0;
         
-        if (! [PLVLiveUtil isiPhoneXSeries]) {
+        if (![PLVFdUtil isiPhoneXSeries]) {
             leftSafePadding = 6;
             rightSafePadding = 6;
         }
@@ -92,11 +92,8 @@
         CGFloat bottomPadding = 28.0;
         self.playButton.frame = CGRectMake(leftSafePadding, viewHeight - bottomPadding - backButtonSize.height, backButtonSize.width, backButtonSize.height);
         
-        self.refreshButton.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame) + 5, CGRectGetMinY(self.playButton.frame), backButtonSize.width, backButtonSize.height);
-        
-        CGFloat floatViewShowButtonX = (self.refreshButton ? CGRectGetMaxX(self.refreshButton.frame) : CGRectGetMaxX(self.playButton.frame));
-        self.floatViewShowButton.frame = CGRectMake(floatViewShowButtonX + 5, CGRectGetMinY(self.playButton.frame), backButtonSize.width, backButtonSize.height);
-        
+        [self refreshRefreshButtonFrame];
+        [self refreshFloatViewShowButtonFrame];
         [self refreshDanmuButtonFrame];
 
         CGFloat guideChatLabelWidth = 0.3572 * viewWidth;
@@ -153,6 +150,27 @@
     self.bulletinButton.frame = CGRectMake(bulletinButtonX, topPadding, backButtonSize.width, backButtonSize.height);
 }
 
+- (void)refreshRefreshButtonFrame {
+    CGSize buttonSize = CGSizeMake(40.0, 20.0);
+    CGFloat originX = CGRectGetMinX(self.playButton.frame);
+    if (!self.playButton.hidden && self.playButton.superview) {
+        originX += CGRectGetWidth(self.playButton.frame) + 5;
+    }
+    self.refreshButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
+}
+
+- (void)refreshFloatViewShowButtonFrame {
+    CGSize buttonSize = CGSizeMake(40.0, 20.0);
+    CGFloat originX = CGRectGetMinX(self.playButton.frame);
+    if (!self.playButton.hidden && self.playButton.superview) {
+        originX += CGRectGetWidth(self.playButton.frame) + 5;
+    }
+    if (!self.refreshButton.hidden && self.refreshButton.superview) {
+        originX += CGRectGetWidth(self.refreshButton.frame) + 5;
+    }
+    self.floatViewShowButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
+}
+
 - (void)refreshDanmuButtonFrame {
     CGSize buttonSize = CGSizeMake(40.0, 20.0);
     CGFloat originX = CGRectGetMinX(self.playButton.frame);
@@ -170,7 +188,7 @@
 
 #pragma mark Private Getter
 - (UIButton *)bulletinButton{
-    if (!_bulletinButton && self.skinViewType == PLVLCBasePlayerSkinViewType_Live) {
+    if (!_bulletinButton && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _bulletinButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_bulletinButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_bulletin"] forState:UIControlStateNormal];
         [_bulletinButton addTarget:self action:@selector(bulletinButtonAction:) forControlEvents:UIControlEventTouchUpInside];
@@ -243,11 +261,9 @@
     [self addSubview:self.landscapeInputView];
     
     // 注意：懒加载过程中已增加判断，若场景不匹配，将创建失败并返回nil
-    if (self.skinViewType == PLVLCBasePlayerSkinViewType_Live) { // 视频类型为 直播
+    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 视频类型为 直播
         /// 顶部UI
         [self addSubview:self.bulletinButton];
-    } else if (self.skinViewType == PLVLCBasePlayerSkinViewType_Playback) { // 视频类型为 直播回放
-
     }
 }
 
@@ -258,8 +274,10 @@
 
     _skinViewLiveStatus = skinViewLiveStatus;
         
-    if (self.skinViewType == PLVLCBasePlayerSkinViewType_Live) {
+    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshBulletinButtonFrame];
+        [self refreshRefreshButtonFrame];
+        [self refreshFloatViewShowButtonFrame];
         [self refreshDanmuButtonFrame];
     }else{
         NSLog(@"PLVLCLiveRoomPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
