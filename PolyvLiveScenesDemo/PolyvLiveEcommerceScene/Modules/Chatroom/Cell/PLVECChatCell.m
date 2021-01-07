@@ -215,13 +215,13 @@
 /// 获取头衔label文本背景色
 + (UIColor *)actorLabelBackground:(PLVChatUser *)user {
     UIColor *backgroundColor = [UIColor clearColor];
-    if (user.userType == PLVLiveUserTypeGuest) {
+    if (user.userType == PLVRoomUserTypeGuest) {
         backgroundColor = [PLVColorUtil colorFromHexString:@"#EB6165"];
-    } else if (user.userType == PLVLiveUserTypeTeacher) {
+    } else if (user.userType == PLVRoomUserTypeTeacher) {
         backgroundColor = [PLVColorUtil colorFromHexString:@"#289343"];
-    } else if (user.userType == PLVLiveUserTypeAssistant) {
+    } else if (user.userType == PLVRoomUserTypeAssistant) {
         backgroundColor = [PLVColorUtil colorFromHexString:@"#598FE5"];
-    } else if (user.userType == PLVLiveUserTypeManager) {
+    } else if (user.userType == PLVRoomUserTypeManager) {
         backgroundColor = [PLVColorUtil colorFromHexString:@"#33BBC5"];
     }
     return backgroundColor;

@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 
 #import "PLVLinkMicOnlineUser.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -17,20 +18,32 @@ NS_ASSUME_NONNULL_BEGIN
 /// 连麦窗口列表视图
 @interface PLVLCLinkMicWindowsView : UIView
 
+/// delegate
 @property (nonatomic, weak) id <PLVLCLinkMicWindowsViewDelegate> delegate;
 
-- (void)linkMicWindowLinkMicUserId:(NSString *)linkMicUserId wannaBecomeFirstSite:(BOOL)wannaBecomeFirstSite;
-
-/// 在连麦窗口列表上，刷新用户信息及Rtc画面
+/// 刷新 连麦窗口列表
 ///
-/// @note 调用此方法，将展示连麦用户信息、添加 用户Rtc渲染画面视图
-- (void)reloadWindowsWithDataArray:(NSArray <PLVLinkMicOnlineUser *>*)dataArray;
+/// @note 将触发 [plvLCLinkMicWindowsViewGetCurrentUserModelArray:] 此代理方法；
+///       外部需实现此方法，以让 连麦窗口列表视图 正确获得当前连麦用户数据
+- (void)reloadLinkMicUserWindows;
+
+- (void)linkMicWindowMainSpeaker:(NSString *)linkMicUserId toMainScreen:(BOOL)mainSpeakerToMainScreen;
 
 @end
 
 @protocol PLVLCLinkMicWindowsViewDelegate <NSObject>
 
 @optional
+/// 连麦窗口列表视图 需获知 ‘当前频道连麦场景类型’
+///
+/// @return PLVChannelLinkMicSceneType 当前的频道连麦场景类型
+- (PLVChannelLinkMicSceneType)plvLCLinkMicWindowsViewGetCurrentLinkMicSceneType:(PLVLCLinkMicWindowsView *)windowsView;
+
+/// 连麦窗口列表视图 需外部展示 ‘第一画面连麦窗口’
+///
+/// @param windowsView 连麦窗口列表视图
+/// @param canvasView 第一画面连麦窗口视图 (需外部进行添加展示)
+- (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView;
 
 /// 连麦窗口被点击事件 (表示用户希望视图位置交换)
 ///
@@ -42,10 +55,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param canvasView 被点击窗口 对应的连麦画布视图
 ///
 /// @return UIView 外部对象返回的视图，将显示在被点击窗口的位置
-- (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView
-               windowCellDidClicked:(NSIndexPath *)indexPath
-                        linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser
-                         canvasView:(UIView *)canvasView;
+- (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView windowCellDidClicked:(NSIndexPath *)indexPath linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser canvasView:(UIView *)canvasView;
 
 /// 连麦窗口需要回退外部视图
 ///
@@ -53,11 +63,31 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param windowsView 连麦窗口列表视图
 /// @param externalView 正在显示在列表中的外部视图
-- (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView
-           rollbackExternalView:(UIView *)externalView;
+- (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView rollbackExternalView:(UIView *)externalView;
 
-- (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView
-linkMicUserWantToBecomeFirstSite:(NSInteger)index;
+/// 连麦窗口被点击事件 (表示用户希望某个窗口成为‘第一画面’)
+///
+/// @param windowsView 连麦窗口列表视图
+/// @param index 希望成为 ‘第一画面’ 的用户下标
+- (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView linkMicUserWantToBecomeFirstSite:(NSInteger)index;
+
+/// 连麦窗口列表视图 需要获取当前用户数组
+///
+/// @param windowsView 连麦窗口列表视图
+- (NSArray *)plvLCLinkMicWindowsViewGetCurrentUserModelArray:(PLVLCLinkMicWindowsView *)windowsView;
+
+/// 连麦窗口列表视图 需要查询某个条件用户的下标值
+///
+/// @param windowsView 连麦窗口列表视图
+/// @param filtrateBlockBlock 筛选条件Block
+- (NSInteger)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView findUserModelIndexWithFiltrateBlock:(BOOL(^)(PLVLinkMicOnlineUser * enumerateUser))filtrateBlockBlock;
+
+/// 连麦窗口列表视图 需要根据下标值获取对应用户
+///
+/// @param windowsView 连麦窗口列表视图
+/// @param targetIndex 目标下标值
+- (PLVLinkMicOnlineUser *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex;
+
 @end
 
 NS_ASSUME_NONNULL_END

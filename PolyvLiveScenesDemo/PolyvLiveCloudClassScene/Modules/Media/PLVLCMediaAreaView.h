@@ -8,23 +8,25 @@
 
 #import <UIKit/UIKit.h>
 
-#import "PLVLiveRoomData.h"
-#import "PLVLivePlayerPresenter.h"
-#import "PLVPlaybackPlayerPresenter.h"
-
 #import "PLVLCMediaPlayerSkinView.h"
 #import "PLVLCMediaFloatView.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define PPTPlayerViewScale (9.0 / 16.0)
 #define NormalPlayerViewScale (9.0 / 16.0)
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// 枚举
-/// 媒体区域播放器类型
-typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewPlayerType) {
-    PLVLCMediaAreaViewPlayerType_CDNPlayer = 0, // 当前正在显示CDN流播放器
-    PLVLCMediaAreaViewPlayerType_RTCPlayer = 2, // 当前正在显示RTC流播放器
+/// 媒体区域 直播场景类型
+///
+/// @note 观看直播的过程中，也存在“拥有不同交互的多种直播观看场景”；
+///       该枚举，则用于划分各种直播观看场景；
+///       该枚举与 ‘直播状态’ 没有直接的关系；
+///       因为不由 ‘直播流的变化’ 来触发，而是由 ‘业务交互’ 触发；
+typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
+    PLVLCMediaAreaViewLiveSceneType_WatchCDN = 0,     /// 观看 ‘CDN’ 场景（包含 直播中、直播结束）
+    PLVLCMediaAreaViewLiveSceneType_WatchNoDelay = 2, /// 观看 ‘无延迟’ 场景
+    PLVLCMediaAreaViewLiveSceneType_InLinkMic = 4,    /// 正在 ‘连麦’ 场景
 };
 
 @protocol PLVLCMediaAreaViewDelegate;
@@ -35,28 +37,10 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewPlayerType) {
 ///       负责管理 [UI]媒体播放器皮肤视图、[UI]媒体悬浮视图、[UI]媒体更多视图、[Presenter]播放器管理器
 @interface PLVLCMediaAreaView : UIView <PLVLCBasePlayerSkinViewDelegate>
 
+#pragma mark - [ 属性 ]
+#pragma mark 可配置项
 /// delegate
 @property (nonatomic, weak) id <PLVLCMediaAreaViewDelegate> delegate;
-
-/// 媒体播放器皮肤视图 (用于 竖屏时 显示)
-///
-/// @note 暴露给外部的“竖屏 媒体播放器皮肤视图“，便于和其他 播放器皮肤视图 作交互
-@property (nonatomic, strong, readonly) PLVLCMediaPlayerSkinView * skinView;
-
-/// 跑马灯视图
-///
-/// @note 便于外部作图层管理
-@property (nonatomic, strong, readonly) UIView * marqueeView;
-
-/// 媒体悬浮视图
-///
-/// @note 便于外部作图层管理
-@property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
-
-/// 当前播放器类型
-///
-/// @note 可通过 [switchPlayerTypeTo:] 方法进行切换
-@property (nonatomic, assign, readonly) PLVLCMediaAreaViewPlayerType playerType;
 
 /// 是否限制 内容画面 在安全区域内
 ///
@@ -72,9 +56,29 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewPlayerType) {
 ///       此时开发者需根据对 AreaView 的布局，告知顶部安全距离 (若无状态栏遮挡，则此值应该为0)；
 @property (nonatomic, assign) CGFloat topPaddingBelowiOS11;
 
-/// 初始化方法
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData;
+#pragma mark 状态
+/// 当前播放器类型
+///
+/// @note 可通过 [switchAreaViewLiveSceneTypeTo:] 方法进行切换；仅适用在视频类型为 ‘直播’ 时使用此类型值
+@property (nonatomic, assign, readonly) PLVLCMediaAreaViewLiveSceneType liveSceneType;
 
+#pragma mark UI
+/// 媒体播放器皮肤视图 (用于 竖屏时 显示)
+///
+/// @note 暴露给外部的“竖屏 媒体播放器皮肤视图“，便于和其他 播放器皮肤视图 作交互
+@property (nonatomic, strong, readonly) PLVLCMediaPlayerSkinView * skinView;
+
+/// 跑马灯视图
+///
+/// @note 便于外部作图层管理
+@property (nonatomic, strong, readonly) UIView * marqueeView;
+
+/// 媒体悬浮视图
+///
+/// @note 便于外部作图层管理
+@property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
+
+#pragma mark - [ 方法 ]
 /// 显示或隐藏弹幕
 - (void)showDanmu:(BOOL)show;
 
@@ -83,17 +87,18 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewPlayerType) {
 
 - (void)refreshUIInfo;
 
-/// 切换播放器类型
+/// [直播场景] 切换直播场景类型
 ///
-/// @note 切换后，媒体区域视图 AreaView，将更新布局至对应的效果
+/// @note 切换后，媒体区域视图 AreaView，将更新布局至对应的效果；
+///       仅适用在视频类型为 ‘直播’ 时，调用此方法；
 ///
-/// @param toType 需要切换至的播放器类型
-- (void)switchPlayerTypeTo:(PLVLCMediaAreaViewPlayerType)toType;
+/// @param toType 需要切换至的直播场景类型
+- (void)switchAreaViewLiveSceneTypeTo:(PLVLCMediaAreaViewLiveSceneType)toType;
 
-/// 媒体区域展示一个内容视图
+/// [连麦场景] 媒体区域展示一个内容视图
 - (void)displayContentView:(UIView *)contentView;
 
-/// 在媒体区域中，获取当前的内容视图，用于与外部进行交换
+/// [连麦场景] 在媒体区域中，获取当前的内容视图，用于与外部进行交换
 ///
 /// @note 非连麦场景中的视图交换：指PPT与CDN播放器画面，进行视图交换；由点击 floatView 触发（全程在 AreaView 中完成）
 ///       连麦场景中的视图交换：指PPT与RTC播放器画面 或 两个RTC播放器画面之间，进行视图交换；由点击 RTC播放器画面 触发（在 AreaView 与 外部视图中完成）
@@ -111,14 +116,16 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewPlayerType) {
 
 /// 媒体区域视图需要得知当前的连麦状态
 ///
+/// @note 此回调不保证在主线程触发
+
 /// @param mediaAreaView 媒体区域视图
 ///
 /// @return BOOL 由外部告知的当前是否连麦中 (YES:正在连麦中 NO:不在连麦中)
 - (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView;
 
-- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerStateDidChange:(LivePlayerState)livePlayerState;
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerStateDidChange:(PLVChannelLiveStreamState)livePlayerState;
 
-- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerPlayingDidChange:(BOOL)playing;
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playerPlayingDidChange:(BOOL)playing;
 
 /// 媒体区域的 悬浮视图 出现/隐藏回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView floatViewSwitchToShow:(BOOL)show;
@@ -143,8 +150,6 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewPlayerType) {
 
 /// 回放场景
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;
-
-- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackPlayerPlayingDidChange:(BOOL)playing;
 
 @end
 

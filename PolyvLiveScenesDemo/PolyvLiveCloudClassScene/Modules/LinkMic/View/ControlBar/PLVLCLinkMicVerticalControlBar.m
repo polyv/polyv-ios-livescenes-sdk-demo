@@ -189,6 +189,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 - (void)controlBarUserInteractionEnabled:(BOOL)enable{
     self.onOffButton.enabled = enable;
     self.userInteractionEnabled = enable;
+    self.tapGR.enabled = enable;
 }
 
 - (void)refreshControlBarFrame{

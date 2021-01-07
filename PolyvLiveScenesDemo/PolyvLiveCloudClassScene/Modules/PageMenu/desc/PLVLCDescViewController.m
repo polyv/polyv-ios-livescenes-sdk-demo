@@ -7,10 +7,10 @@
 //
 
 #import "PLVLCDescViewController.h"
-#import "PLVLiveUtil.h"
 #import "PLVLCDescTopView.h"
 #import "PLVLCDescBottomView.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
+#import "PLVRoomDataManager.h"
 
 @interface PLVLCDescViewController ()
 
@@ -58,7 +58,7 @@
     if (!_topView) {
         _topView = [[PLVLCDescTopView alloc] init];
         _topView.channelInfo = self.channelInfo;
-        if (self.inPlaybackScene) {
+        if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
             _topView.status = PLVLCLiveStatusPlayback;
         }
     }
@@ -75,9 +75,7 @@
 
 #pragma mark - Public Method
 
-- (void)liveStatueChange:(BOOL)living {
-    self.inPlaybackScene = NO;
-    
+- (void)updateliveStatue:(BOOL)living {
     if (self.topView.status == PLVLCLiveStatusLiving && living == NO) {
         self.topView.status = PLVLCLiveStatusNone;
     } else if (self.topView.status != PLVLCLiveStatusLiving && living) {

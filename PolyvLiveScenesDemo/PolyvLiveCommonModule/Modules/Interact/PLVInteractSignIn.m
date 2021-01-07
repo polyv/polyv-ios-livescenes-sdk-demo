@@ -68,12 +68,11 @@
     
     NSString * event = @"TO_SIGN_IN";
 
-    PLVBSocketUser * loginUser = [PLVSocketWrapper sharedSocketWrapper].loginUser;
-    NSDictionary * user = @{@"nick" : [NSString stringWithFormat:@"%@",loginUser.nickName],
-                            @"userId" : [NSString stringWithFormat:@"%@",loginUser.userId]};
+    NSDictionary * user = @{@"nick" : [NSString stringWithFormat:@"%@",[PLVSocketManager sharedManager].viewerName],
+                            @"userId" : [NSString stringWithFormat:@"%@",[PLVSocketManager sharedManager].viewerId]};
     NSDictionary * baseJSON = @{@"EVENT" : event,
                                 @"user" : user,
-                                @"roomId" : [NSString stringWithFormat:@"%@", loginUser.roomId]};
+                                @"roomId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId]};
     
     NSMutableDictionary * jsonDict = [[NSMutableDictionary alloc] init];
     [jsonDict addEntriesFromDictionary:baseJSON];

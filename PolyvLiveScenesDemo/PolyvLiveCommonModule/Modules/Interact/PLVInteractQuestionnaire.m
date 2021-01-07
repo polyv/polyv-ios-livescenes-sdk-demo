@@ -71,7 +71,7 @@
 // 向app发送问卷结果
 - (void)endQuestionnaireAnswer:(NSDictionary *)dict {
     if (![PLVFdUtil checkDictionaryUseable:dict]) {
-        NSLog(@"PLVTriviaCardViewController - [js call] endQuestionnaireAnswer param illegal %@",dict);
+        NSLog(@"[js call] endQuestionnaireAnswer param illegal %@",dict);
         return;
     }
         
@@ -82,11 +82,10 @@
     
     NSString * event = @"ANSWER_QUESTIONNAIRE";
     
-    PLVBSocketUser * loginUser = [PLVSocketWrapper sharedSocketWrapper].loginUser;
     NSDictionary *baseJSON = @{@"EVENT" : event,
-                               @"nick" : [NSString stringWithFormat:@"%@",loginUser.nickName],
-                               @"userId" : [NSString stringWithFormat:@"%@",loginUser.userId],
-                               @"roomId" : [NSString stringWithFormat:@"%@", loginUser.roomId]};
+                               @"nick" : [NSString stringWithFormat:@"%@",[PLVSocketManager sharedManager].viewerName],
+                               @"userId" : [NSString stringWithFormat:@"%@",[PLVSocketManager sharedManager].viewerId],
+                               @"roomId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId]};
     
     NSMutableDictionary *jsonDict = [[NSMutableDictionary alloc] init];
     [jsonDict addEntriesFromDictionary:baseJSON];

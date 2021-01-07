@@ -24,8 +24,8 @@
         self.userName = PLV_SafeStringForDictKey(userInfo, @"nick");
         
         self.role = PLV_SafeStringForDictKey(userInfo, @"userType");
-        self.userType = PLVLiveUserTypeWithString(self.role);
-        self.specialIdentity = IsSpecialIdentityOfLiveUserType(self.userType);
+        self.userType = [PLVRoomUser userTypeWithUserTypeString:self.role];
+        self.specialIdentity = [PLVRoomUser isSpecialIdentityWithUserType:self.userType];
         
         // 自定义参数
         NSDictionary *authorization = userInfo[@"authorization"];

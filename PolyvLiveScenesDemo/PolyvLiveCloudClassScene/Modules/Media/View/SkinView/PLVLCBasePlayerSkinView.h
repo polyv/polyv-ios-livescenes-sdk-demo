@@ -14,19 +14,24 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// 枚举
-/// 媒体播放器皮肤 类型
+/// 媒体播放器皮肤 场景类型
 typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewType) {
-    PLVLCBasePlayerSkinViewType_Live = 0,     // 直播场景类型
-    PLVLCBasePlayerSkinViewType_Playback = 2, // 回放场景类型
+    /// 直播场景
+    PLVLCBasePlayerSkinViewType_AloneLive = 0,     // 普通直播-直播场景
+    PLVLCBasePlayerSkinViewType_PPTLive   = 1,     // 三分屏直播-直播场景
+    /// 回放场景
+    PLVLCBasePlayerSkinViewType_AlonePlayback = 8, // 普通直播回放
+    PLVLCBasePlayerSkinViewType_PPTPlayback = 9, // 三分屏直播回放
 };
 
 /// 媒体播放器皮肤 直播状态
 ///
-/// @note 仅在 PLVLCBasePlayerSkinViewType_Live直播场景类型中 会使用以下枚举
+/// @note 仅在直播场景类型 PLVLCBasePlayerSkinViewType_AloneLive、PLVLCBasePlayerSkinViewType_PPTLive 中 会使用以下枚举；回放场景不涉及此枚举；
 typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
     PLVLCBasePlayerSkinViewLiveStatus_None = 0,      // 无直播状态
-    PLVLCBasePlayerSkinViewLiveStatus_Living = 2,    // 直播中状态 (观看CDN流)
-    PLVLCBasePlayerSkinViewLiveStatus_InLinkMic = 4, // 直播中正在连麦状态 (观看RTC流)
+    PLVLCBasePlayerSkinViewLiveStatus_Living = 2,    // 直播中 观看CDN 状态 (完全CDN)
+    PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC = 4, // 直播中 正在连麦 状态 (部分RTC)
+    PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC = 6, // 直播中 正在连麦 状态 (完全RTC)
 };
 
 @protocol PLVLCBasePlayerSkinViewDelegate;
@@ -35,7 +40,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 @property (nonatomic, weak) id <PLVLCBasePlayerSkinViewDelegate> baseDelegate;
 
-@property (nonatomic, assign) PLVLCBasePlayerSkinViewType skinViewType;
+@property (nonatomic, assign, readonly) PLVLCBasePlayerSkinViewType skinViewType;
 
 @property (nonatomic, assign) PLVLCBasePlayerSkinViewLiveStatus skinViewLiveStatus;
 
@@ -63,8 +68,6 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @property (nonatomic, strong) UILabel * diagonalsLabel;   // 仅直播回放；斜杆符号文本框
 @property (nonatomic, strong) UILabel * durationLabel;    // 仅直播回放
 @property (nonatomic, strong) PLVProgressSlider * progressSlider; // 仅直播回放
-
-- (instancetype)initWithType:(PLVLCBasePlayerSkinViewType)skinViewType;
 
 - (CGFloat)getLabelTextWidth:(UILabel *)label;
 

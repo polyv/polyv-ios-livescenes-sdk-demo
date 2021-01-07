@@ -8,6 +8,8 @@
 
 #import "PLVLCBasePlayerSkinView.h"
 
+#import <PLVLiveScenesSDK/PLVLiveDefine.h>
+#import "PLVRoomDataManager.h"
 #import <MediaPlayer/MPVolumeView.h>
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
@@ -21,6 +23,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
 @interface PLVLCBasePlayerSkinView ()<PLVProgressSliderDelegate>
 
+@property (nonatomic, assign) PLVLCBasePlayerSkinViewType skinViewType;
 @property (nonatomic, assign) CGPoint lastPoint;
 @property (nonatomic, assign) PLVBasePlayerSkinViewPanType panType;
 @property (nonatomic, strong) MPVolumeView *volumeView;
@@ -34,13 +37,33 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
     NSLog(@"%s",__FUNCTION__);
 }
 
-- (instancetype)initWithType:(PLVLCBasePlayerSkinViewType)skinViewType{
+- (instancetype)init {
     if (self = [super initWithFrame:CGRectZero]) {
-        self.skinViewType = skinViewType;
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        self.skinViewType = [PLVLCBasePlayerSkinView playerSkinTypeWithChannelType:roomData.channelType videoType:roomData.videoType];
         [self setupData];
         [self setupUI];
     }
     return self;
+}
+
++ (PLVLCBasePlayerSkinViewType)playerSkinTypeWithChannelType:(PLVChannelType)channelType
+                                                   videoType:(PLVChannelVideoType)videoType {
+    PLVLCBasePlayerSkinViewType skinViewType = PLVLCBasePlayerSkinViewType_AloneLive;
+    if (videoType == PLVChannelVideoType_Live) {
+        if (channelType == PLVChannelTypeAlone) {
+            skinViewType = PLVLCBasePlayerSkinViewType_AloneLive;
+        } else if (channelType == PLVChannelTypePPT) {
+            skinViewType = PLVLCBasePlayerSkinViewType_PPTLive;
+        }
+    } else if (videoType == PLVChannelVideoType_Playback) {
+        if (channelType == PLVChannelTypeAlone) {
+            skinViewType = PLVLCBasePlayerSkinViewType_AlonePlayback;
+        } else if (channelType == PLVChannelTypePPT) {
+            skinViewType = PLVLCBasePlayerSkinViewType_PPTPlayback;
+        }
+    }
+    return skinViewType;
 }
 
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event{
@@ -85,24 +108,30 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
     _skinViewLiveStatus = skinViewLiveStatus;
         
-    if (self.skinViewType == PLVLCBasePlayerSkinViewType_Live) {
+    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 直播场景
         if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_None) {
             self.moreButton.hidden = YES;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = YES;
-        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living){
+        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living) {
             self.moreButton.hidden = NO;
             self.playButton.hidden = NO;
             self.refreshButton.hidden = NO;
             self.floatViewShowButton.hidden = NO;
-        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic){
+        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC) {
+            self.moreButton.hidden = YES;
+            self.playButton.hidden = YES;
+            self.refreshButton.hidden = NO;
+            self.floatViewShowButton.hidden = NO;
+            self.floatViewShowButton.selected = NO;
+        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC) {
             self.moreButton.hidden = YES;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = NO;
             self.floatViewShowButton.selected = NO; /// 连麦中场景，默认显示‘开’
-        } else{
+        } else {
             NSLog(@"PLVLCBasePlayerSkinView - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",skinViewLiveStatus);
         }
     }else{
@@ -192,18 +221,22 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
     [controlsSuperview.layer addSublayer:self.bottomShadowLayer];
     [controlsSuperview addSubview:self.playButton];
-    [controlsSuperview addSubview:self.floatViewShowButtonTipsLabel];
-    [controlsSuperview addSubview:self.floatViewShowButton];
     [controlsSuperview addSubview:self.fullScreenButton];
     
-    if (self.skinViewType == PLVLCBasePlayerSkinViewType_Live) { // 视频类型为 直播
+    if (self.skinViewType == PLVLCBasePlayerSkinViewType_PPTLive ||
+        self.skinViewType == PLVLCBasePlayerSkinViewType_PPTPlayback) {
+        [controlsSuperview addSubview:self.floatViewShowButtonTipsLabel];
+        [controlsSuperview addSubview:self.floatViewShowButton];
+    }
+    
+    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 视频类型为 直播
         /// 顶部UI
         [controlsSuperview addSubview:self.playTimesLabel];
         [controlsSuperview addSubview:self.countdownTimeView];
 
         /// 底部UI
         [controlsSuperview addSubview:self.refreshButton];
-    }else if (self.skinViewType == PLVLCBasePlayerSkinViewType_Playback){ // 视频类型为 直播回放
+    } else { // 视频类型为 直播回放
         /// 底部UI
         [controlsSuperview addSubview:self.currentTimeLabel];
         [controlsSuperview addSubview:self.diagonalsLabel];
@@ -294,7 +327,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (UILabel *)playTimesLabel{
-    if (!_playTimesLabel && self.skinViewType == PLVLCBasePlayerSkinViewType_Live) {
+    if (!_playTimesLabel && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _playTimesLabel = [[UILabel alloc] init];
         _playTimesLabel.text = @"播放量";
         _playTimesLabel.textAlignment = NSTextAlignmentCenter;
@@ -312,13 +345,13 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         _moreButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_moreButton setImage:[self getImageWithName:@"plvlc_media_skin_more"] forState:UIControlStateNormal];
         [_moreButton addTarget:self action:@selector(moreButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _moreButton.hidden = (self.skinViewType == PLVLCBasePlayerSkinViewType_Live ? YES : NO);
+        _moreButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback ? YES : NO);
     }
     return _moreButton;
 }
 
 - (PLVLCMediaCountdownTimeView *)countdownTimeView {
-    if (! _countdownTimeView && self.skinViewType == PLVLCBasePlayerSkinViewType_Live) {
+    if (! _countdownTimeView && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _countdownTimeView = [PLVLCMediaCountdownTimeView new];
         _countdownTimeView.alpha = 0;
     }
@@ -342,13 +375,13 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         [_playButton setImage:[self getImageWithName:@"plvlc_media_skin_play"] forState:UIControlStateNormal];
         [_playButton setImage:[self getImageWithName:@"plvlc_media_skin_pause"] forState:UIControlStateSelected];
         [_playButton addTarget:self action:@selector(playButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _playButton.hidden = (self.skinViewType == PLVLCBasePlayerSkinViewType_Live ? YES : NO);
+        _playButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback ? YES : NO);
     }
     return _playButton;
 }
 
 - (UIButton *)refreshButton{
-    if (!_refreshButton && self.skinViewType == PLVLCBasePlayerSkinViewType_Live) {
+    if (!_refreshButton && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _refreshButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_refreshButton setImage:[self getImageWithName:@"plvlc_media_skin_refresh"] forState:UIControlStateNormal];
         [_refreshButton addTarget:self action:@selector(refreshButtonAction:) forControlEvents:UIControlEventTouchUpInside];
@@ -358,7 +391,8 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (UILabel *)floatViewShowButtonTipsLabel{
-    if (!_floatViewShowButtonTipsLabel) {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (!_floatViewShowButtonTipsLabel && roomData.channelType != PLVChannelTypeAlone) {
         _floatViewShowButtonTipsLabel = [[UILabel alloc] init];
         _floatViewShowButtonTipsLabel.text = @"可从此处重新打开浮窗";
         _floatViewShowButtonTipsLabel.textAlignment = NSTextAlignmentCenter;
@@ -373,12 +407,13 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (UIButton *)floatViewShowButton{
-    if (!_floatViewShowButton) {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (!_floatViewShowButton && roomData.channelType != PLVChannelTypeAlone) {
         _floatViewShowButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_floatViewShowButton setImage:[self getImageWithName:@"plvlc_media_skin_floatview_open"] forState:UIControlStateNormal];
         [_floatViewShowButton setImage:[self getImageWithName:@"plvlc_media_skin_floatview_close"] forState:UIControlStateSelected];
         [_floatViewShowButton addTarget:self action:@selector(floatViewOpenButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _floatViewShowButton.hidden = (self.skinViewType == PLVLCBasePlayerSkinViewType_Live ? YES : NO);
+        _floatViewShowButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback ? YES : NO);
     }
     return _floatViewShowButton;
 }
@@ -394,7 +429,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (UILabel *)currentTimeLabel{
-    if (!_currentTimeLabel && self.skinViewType == PLVLCBasePlayerSkinViewType_Playback) {
+    if (!_currentTimeLabel && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _currentTimeLabel = [[UILabel alloc] init];
         _currentTimeLabel.text = @"00:00";
         _currentTimeLabel.textAlignment = NSTextAlignmentCenter;
@@ -405,7 +440,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (UILabel *)diagonalsLabel{
-    if (!_diagonalsLabel && self.skinViewType == PLVLCBasePlayerSkinViewType_Playback) {
+    if (!_diagonalsLabel && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _diagonalsLabel = [[UILabel alloc] init];
         _diagonalsLabel.text = @"/";
         _diagonalsLabel.textAlignment = NSTextAlignmentCenter;
@@ -416,7 +451,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (UILabel *)durationLabel{
-    if (!_durationLabel && self.skinViewType == PLVLCBasePlayerSkinViewType_Playback) {
+    if (!_durationLabel && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _durationLabel = [[UILabel alloc] init];
         _durationLabel.text = @"00:00";
         _durationLabel.textAlignment = NSTextAlignmentCenter;
@@ -427,7 +462,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (PLVProgressSlider *)progressSlider{
-    if (!_progressSlider && self.skinViewType == PLVLCBasePlayerSkinViewType_Playback) {
+    if (!_progressSlider && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _progressSlider = [[PLVProgressSlider alloc] init];
         _progressSlider.delegate = self;
         _progressSlider.userInteractionEnabled = NO;

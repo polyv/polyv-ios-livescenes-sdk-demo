@@ -11,7 +11,8 @@
 #import "PLVECWelcomView.h"
 #import "PLVECChatCell.h"
 #import "PLVECUtils.h"
-#import "PLVECChatroomManager.h"
+#import "PLVECChatroomViewModel.h"
+#import "PLVRoomDataManager.h"
 #import <MJRefresh/MJRefresh.h>
 
 #define TEXT_MAX_COUNT 200
@@ -22,11 +23,9 @@
 UITextViewDelegate,
 UITableViewDelegate,
 UITableViewDataSource,
-PLVECChatroomManagerProtocol
+PLVECChatroomViewModelProtocol
 >
 
-/// 直播间数据模型
-@property (nonatomic, strong) PLVLiveRoomData *roomData;
 /// 聊天列表
 @property (nonatomic, strong) UITableView *tableView;
 /// 聊天室列表顶部加载更多控件
@@ -56,13 +55,11 @@ PLVECChatroomManagerProtocol
     [self removeObserveTableView];
 }
 
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData {
+- (instancetype)init {
     self = [self initWithFrame:CGRectZero];
     if (self) {
-        self.roomData = roomData;
-        
-        [[PLVECChatroomManager sharedManager] setupRoomData:roomData];
-        [PLVECChatroomManager sharedManager].delegate = self;
+        [[PLVECChatroomViewModel sharedViewModel] setup];
+        [PLVECChatroomViewModel sharedViewModel].delegate = self;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
@@ -213,7 +210,7 @@ PLVECChatroomManagerProtocol
 }
 
 - (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
-    [[PLVECChatroomManager sharedManager] loadHistory];
+    [[PLVECChatroomViewModel sharedViewModel] loadHistory];
 }
 
 - (void)readNewMessageAction { // 点击底部未读消息条幅时触发
@@ -271,7 +268,7 @@ PLVECChatroomManagerProtocol
     [self followKeyboardAnimated:notification.userInfo show:NO];
 }
 
-#pragma mark - PLVECChatroomManagerProtocol
+#pragma mark - PLVECChatroomViewModelProtocol
 
 - (void)chatroomManager_didSendMessage {
     [self.tableView reloadData];
@@ -315,7 +312,7 @@ PLVECChatroomManagerProtocol
 
 - (void)chatroomManager_loadHistoryFailure {
     [self.refresher endRefreshing];
-    [PLVLiveUtil showHUDWithTitle:@"聊天记录获取失败" detail:@"" view:self];
+    [PLVECUtils showHUDWithTitle:@"聊天记录获取失败" detail:@"" view:self];
 }
 
 #pragma mark 显示欢迎语
@@ -323,7 +320,7 @@ PLVECChatroomManagerProtocol
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray {
     NSString *string = @"";
     if (!userArray) {
-        string = self.roomData.watchUser.viewerName;
+        string = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerName;
     }
     
     if (userArray && [userArray count] > 0) {
@@ -383,7 +380,7 @@ PLVECChatroomManagerProtocol
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [[PLVECChatroomManager sharedManager].chatArray count];
+    return [[PLVECChatroomViewModel sharedViewModel].chatArray count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -392,7 +389,7 @@ PLVECChatroomManagerProtocol
     if (!cell) {
         cell = [[PLVECChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
     }
-    PLVChatModel *model = [[PLVECChatroomManager sharedManager].chatArray objectAtIndex:indexPath.row];
+    PLVChatModel *model = [[PLVECChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
     return cell;
 }
@@ -400,7 +397,7 @@ PLVECChatroomManagerProtocol
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    PLVChatModel *model = [[PLVECChatroomManager sharedManager].chatArray objectAtIndex:indexPath.row];
+    PLVChatModel *model = [[PLVECChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     CGFloat cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     return cellHeight;
 }
@@ -410,9 +407,9 @@ PLVECChatroomManagerProtocol
 - (void)sendMessage {
     if (self.textView.text.length > 0) {
         [self tapViewAction];
-        BOOL success = [[PLVECChatroomManager sharedManager] sendSpeakMessage:self.textView.text];
+        BOOL success = [[PLVECChatroomViewModel sharedViewModel] sendSpeakMessage:self.textView.text];
         if (!success) {
-            [PLVLiveUtil showHUDWithTitle:@"消息发送失败" detail:@"" view:self];
+            [PLVECUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self];
         }
         self.textView.text = @"";
     }

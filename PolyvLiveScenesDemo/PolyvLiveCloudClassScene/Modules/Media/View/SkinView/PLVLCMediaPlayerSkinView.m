@@ -14,6 +14,8 @@
 
 @implementation PLVLCMediaPlayerSkinView
 
+@synthesize skinViewLiveStatus = _skinViewLiveStatus;
+
 #pragma mark - [ Life Period ]
 - (void)dealloc{
     NSLog(@"%s",__FUNCTION__);
@@ -67,7 +69,7 @@
         CGFloat bottomPadding = 12.0;
         self.playButton.frame = CGRectMake(leftPadding, viewHeight - bottomPadding - backButtonSize.height, backButtonSize.width, backButtonSize.height);
         
-        self.refreshButton.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame), CGRectGetMinY(self.playButton.frame), backButtonSize.width, backButtonSize.height);
+        [self refreshRefreshButtonFrame];
         
         self.fullScreenButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.playButton.frame), backButtonSize.width, backButtonSize.height);
         
@@ -80,8 +82,9 @@
         
         self.durationLabel.frame = CGRectMake(CGRectGetMaxX(self.diagonalsLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), timeLabelWidth, backButtonSize.height);
         
+        UIButton *progressSliderNextButton = self.floatViewShowButton ?: self.fullScreenButton;
         CGFloat progressSliderLeftRightPadding = 16;
-        CGFloat progressSliderWidth = viewWidth - CGRectGetMaxX(self.durationLabel.frame) - progressSliderLeftRightPadding - (viewWidth - CGRectGetMinX(self.floatViewShowButton.frame)) - progressSliderLeftRightPadding;
+        CGFloat progressSliderWidth = viewWidth - CGRectGetMaxX(self.durationLabel.frame) - progressSliderLeftRightPadding - (viewWidth - CGRectGetMinX(progressSliderNextButton.frame)) - progressSliderLeftRightPadding;
         self.progressSlider.frame = CGRectMake(CGRectGetMaxX(self.durationLabel.frame) + progressSliderLeftRightPadding, CGRectGetMinY(self.currentTimeLabel.frame), progressSliderWidth, 21);
         
     }else{
@@ -129,6 +132,29 @@
 - (void)refreshPlayTimesLabelFrame{
     CGSize playTimesLabelFitSize = [self.playTimesLabel sizeThatFits:CGSizeMake(150, 18)];
     self.playTimesLabel.frame = CGRectMake(CGRectGetMinX(self.titleLabel.frame), CGRectGetMaxY(self.backButton.frame) + 1, playTimesLabelFitSize.width + 8, 18);
+}
+
+- (void)switchSkinViewLiveStatusTo:(PLVLCBasePlayerSkinViewLiveStatus)skinViewLiveStatus{
+    [super switchSkinViewLiveStatusTo:skinViewLiveStatus];
+    
+    if (_skinViewLiveStatus == skinViewLiveStatus) { return; }
+
+    _skinViewLiveStatus = skinViewLiveStatus;
+        
+    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
+        [self refreshRefreshButtonFrame];
+    }else{
+        NSLog(@"PLVLCMediaPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
+    }
+}
+
+- (void)refreshRefreshButtonFrame {
+    CGSize buttonSize = CGSizeMake(40.0, 20.0);
+    CGFloat originX = CGRectGetMinX(self.playButton.frame);
+    if (!self.playButton.hidden && self.playButton.superview) {
+        originX += CGRectGetWidth(self.playButton.frame) + 5;
+    }
+    self.refreshButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
 }
 
 @end

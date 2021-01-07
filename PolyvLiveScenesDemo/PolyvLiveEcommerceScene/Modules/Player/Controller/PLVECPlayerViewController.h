@@ -7,9 +7,6 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "PLVLiveRoomData.h"
-#import "PLVLivePlayerPresenter.h"
-#import "PLVPlaybackPlayerPresenter.h"
 
 @class PLVECPlayerViewController;
 
@@ -33,20 +30,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// 更新回放进度
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress playedProgress:(CGFloat)playedProgress currentPlaybackTime:(NSString *)currentPlaybackTime duration:(NSString *)duration;
 
-/// 主播放器已结束播放
-- (void)presenter:(PLVPlaybackPlayerPresenter *)presenter mainPlayerPlaybackDidFinish:(NSDictionary *)dataInfo;
-
 @end
 
 @interface PLVECPlayerViewController : UIViewController
 
 @property (nonatomic, weak) id<PLVECPlayerViewControllerProtocol> delegate;
 
-@property (nonatomic, strong, readonly) PLVLivePlayerPresenter *livePresenter;
-@property (nonatomic, strong, readonly) PLVPlaybackPlayerPresenter *playbackPresenter;
+/// 播放器播放状态
+@property (nonatomic, assign, readonly) BOOL playing;
 
-/// 初始化方法
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData;
+/// 广告跳转链接
+@property (nonatomic, readonly) NSString *advLinkUrl;
+
+/// 广告播放状态
+@property (nonatomic, readonly) BOOL advPlaying;
 
 /// 播放直播/回放
 - (void)play;
@@ -54,8 +51,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 暂停直播/回放
 - (void)pause;
 
-/// 销毁方法
-- (void)destroy;
+/// 静音 播放器
+- (void)mute;
+
+/// 取消静音 播放器
+- (void)cancelMute;
 
 #pragma mark 直播的API
 

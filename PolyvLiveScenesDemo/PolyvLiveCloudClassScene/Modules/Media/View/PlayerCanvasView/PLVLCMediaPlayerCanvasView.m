@@ -89,7 +89,8 @@
     
     [self switchTypeTo:self.type];
     
-    [self refreshplayerSuperviewFrame];
+    self.playerSuperview.frame = self.bounds;
+    //[self refreshplayerSuperviewFrame];
 }
 
 

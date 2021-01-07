@@ -55,8 +55,11 @@
 - (NSString *)html:(NSString *)content {
     NSString *processedContent = [content stringByReplacingOccurrencesOfString:@"<img src=\"//" withString:@"<img src=\"https://"];
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<img " withString:@"<img style=\"width:100%\""];
-    processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<table>" withString:@"<table border=\"1\" rules=all>"];
+    processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<table>" withString:@"<table border=\"1\" rules=all style=\"color:#ADADC0;\">"];
+    processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<li>" withString:@"<li style=\"color:#ADADC0;\">"];
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<td>" withString:@"<td width=\"36\">"];
+    processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<p>" withString:@"<p style=\"word-break:break-all;color:#ADADC0;\">"];
+    processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<div>" withString:@"<div style=\"word-break:break-all;color:#ADADC0;\">"];
     /*
     NSString *header = @"<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><title></title></head><body>";
     NSString *bodyEnd = @"</body></html>";

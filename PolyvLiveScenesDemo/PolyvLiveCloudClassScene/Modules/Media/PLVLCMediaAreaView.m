@@ -8,16 +8,22 @@
 
 #import "PLVLCMediaAreaView.h"
 
-#import "PLVLCUtils.h"
+// UI
 #import "PLVLCMediaPlayerCanvasView.h"
 #import "PLVLCMediaMoreView.h"
+#import "PLVLCPlayerLogo.h"
 
 // 模块
 #import "PLVPPTView.h"
 #import "ZJZDanMu.h"
-
 #import "PLVEmoticonManager.h"
+#import "PLVPlayerPresenter.h"
+#import "PLVRoomDataManager.h"
 
+// 工具
+#import "PLVLCUtils.h"
+
+// 依赖库
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
 static NSString *const PLVLCMediaAreaView_Data_ModeOptionTitle = @"模式";
@@ -25,23 +31,28 @@ static NSString *const PLVLCMediaAreaView_Data_QualityOptionTitle = @"视频质�
 static NSString *const PLVLCMediaAreaView_Data_RouteOptionTitle = @"线路";
 static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 
-@interface PLVLCMediaAreaView () <PLVLCFloatViewDelegate,PLVPPTViewDelegate,PLVLCMediaMoreViewDelegate,PLVLivePlayerPresenterDelegate,PLVPlaybackPlayerPresenterDelegate, PLVLCMediaPlayerCanvasViewDelegate>
-
-#pragma mark 数据
-@property (nonatomic, strong) PLVLiveRoomData * roomData; // 频道信息
+@interface PLVLCMediaAreaView () <
+PLVLCFloatViewDelegate,
+PLVLCMediaMoreViewDelegate,
+PLVLCMediaPlayerCanvasViewDelegate,
+PLVPPTViewDelegate,
+PLVPlayerPresenterDelegate
+>
 
 #pragma mark 状态
-@property (nonatomic, assign, readonly) BOOL inLinkMic;
-@property (nonatomic, assign) PLVLCMediaAreaViewPlayerType playerType;
-@property (nonatomic, assign, readonly) BOOL pptOnMainSite;     // PPT当前是否处于主屏 (此属性仅适合判断PPT是否在主屏，不适合判断其他视图所处位置)
-@property (nonatomic, assign) LivePlayerState currentLiveState; // 当前播放器直播状态
+@property (nonatomic, assign, readonly) BOOL inLinkMic; // 只读，是否正在连麦
+@property (nonatomic, assign, readonly) PLVChannelType channelType; // 只读，当前 频道类型
+@property (nonatomic, assign, readonly) PLVChannelVideoType videoType; // 只读，当前 视频类型
+@property (nonatomic, assign, readonly) PLVChannelLiveStreamState liveState; // 只读，当前 直播流状态
+@property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType; // 只读，当前 连麦场景类型
+@property (nonatomic, assign) PLVChannelLinkMicSceneType lastLinkMicSceneType; // 上次 连麦场景类型
+@property (nonatomic, assign) PLVLCMediaAreaViewLiveSceneType liveSceneType;
+@property (nonatomic, assign, readonly) BOOL pptOnMainSite;     // 只读，PPT当前是否处于主屏 (此属性仅适合判断PPT是否在主屏，不适合判断其他视图所处位置)
 
 #pragma mark 模块
-@property (nonatomic, strong) PLVBasePlayerPresenter * presenter;  // 播放器 功能模块
-@property (nonatomic, readonly, nullable) PLVLivePlayerPresenter * livePresenter;             // 直播播放器 功能模块 (只读；是对 presenter 的封装；仅直播场景下不为nil)
-@property (nonatomic, readonly, nullable) PLVPlaybackPlayerPresenter * livePlaybackPresenter; // 直播回放播放器 功能模块 (只读；是对 presenter 的封装；仅直播回放场景下不为nil)
-@property (nonatomic, strong) PLVPPTView * pptView;               // PPT 功能模块
-@property (nonatomic, strong) PLVVideoMarquee * videoMarquee;     // 视频跑马灯
+@property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
+@property (nonatomic, strong) PLVPPTView * pptView;                 // PPT 功能模块
+@property (nonatomic, strong) PLVVideoMarquee * videoMarquee;       // 视频跑马灯
 
 #pragma mark UI
 /// view hierarchy
@@ -106,6 +117,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 @property (nonatomic, strong) PLVLCMediaMoreView * moreView;
 @property (nonatomic, strong) ZJZDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) UIView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
+@property (nonatomic, strong) UIView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
 
 @end
 
@@ -113,15 +125,11 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
-    [self.presenter destroy];
     NSLog(@"%s", __FUNCTION__);
 }
 
-- (instancetype)initWithRoomData:(id)roomData{
+- (instancetype)init {
     if (self = [super initWithFrame:CGRectZero]) {
-        self.roomData = roomData;
-
-        [self setupData];
         [self setupUI];
         [self setupModule];
     }
@@ -185,57 +193,87 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 
 
 #pragma mark - [ Public Methods ]
-- (void)refreshUIInfo{
-    [self.skinView setTitleLabelWithText:self.roomData.channelMenuInfo.name];
-    [self.skinView setPlayTimesLabelWithTimes:self.roomData.channelMenuInfo.pageView.integerValue];
+- (void)refreshUIInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [self.skinView setTitleLabelWithText:roomData.menuInfo.name];
+    [self.skinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
 }
 
-- (void)switchPlayerTypeTo:(PLVLCMediaAreaViewPlayerType)toType{
-    if (self.playerType == toType) {
-        NSLog(@"PLVLCMediaAreaView - switchPlayerTypeTo failed, type is same");
+- (void)switchAreaViewLiveSceneTypeTo:(PLVLCMediaAreaViewLiveSceneType)toType{
+    if (self.liveSceneType == toType) {
+        NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type is same");
+        return;
+    }else if(self.videoType != PLVChannelVideoType_Live){
+        NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, video type is not 'Live'");
         return;
     }
     
-    if (toType == PLVLCMediaAreaViewPlayerType_RTCPlayer) {
-        /// 确保 PPT 位于主屏
-        if (!self.pptOnMainSite) { [self.floatView triggerViewExchangeEvent]; }
-        
-        /// 直播播放器清理
-        self.livePresenter.linkMic = YES;
-        [self.livePresenter cleanAllPlayers];
-        
-        /// 隐藏 floatView
-        /// userOperat:YES 表示代表用户强制执行
-        [self.floatView showFloatView:NO userOperat:YES];
-        
-        /// 竖屏皮肤视图
-        [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic];
-    }else{
-        if (self.roomData.liveState == PLVLiveStreamStateLive) {
+    if (toType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) { /// 观看 ‘CDN’ 场景
+        if (self.liveState == PLVChannelLiveStreamState_Live) {
             // 直播中
-            /// 出现 floatView
-            /// 其中 userOperat:YES 表示 ’代表用户去执行’，即强制执行
-            [self.floatView showFloatView:YES userOperat:YES];
+            if (self.channelType == PLVChannelTypePPT) {
+                /// 出现 floatView
+                /// 其中 userOperat:YES 表示 ’代表用户去执行’，即强制执行
+                [self.floatView showFloatView:YES userOperat:YES];
+            } else if(self.channelType == PLVChannelTypeAlone){
+                [self contentBackgroundViewDisplaySubview:self.canvasView];
+            }
             
             /// 恢复直播播放器
-            self.livePresenter.linkMic = NO;
-            [self.livePresenter reloadLive:^(NSError *error) {
-                
-            }];
+            [self.playerPresenter resumePlay];
+            
+            if (self.lastLinkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc) {
+                /// 直播播放器 解除静音
+                [self.playerPresenter cancelMute];
+            }
             
             /// 竖屏皮肤视图
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living];
         }else{
-            // 非直播中
-            /// 确保 ‘播放器画面’ 位于主屏
-            if (self.pptOnMainSite) { [self.floatView triggerViewExchangeEvent]; }
+            // 直播已结束
+            if (self.channelType == PLVChannelTypePPT) {
+                /// 确保 ‘播放器画面’ 位于主屏
+                if (self.pptOnMainSite) { [self.floatView triggerViewExchangeEvent]; }
+            } else if(self.channelType == PLVChannelTypeAlone){
+                [self contentBackgroundViewDisplaySubview:self.canvasView];
+            }
             
             /// 竖屏皮肤视图
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
         }
+    } else if (toType == PLVLCMediaAreaViewLiveSceneType_InLinkMic){ /// 正在 ‘连麦’ 场景
+        if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc) {
+            /// 直播播放器 仅作静音
+            [self.playerPresenter mute];
+            
+            /// 竖屏皮肤视图
+            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC];
+        } else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){
+            /// 直播播放器 清理
+            [self.playerPresenter cleanPlayer];
+            
+            /// 竖屏皮肤视图
+            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
+        }else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc){
+            /// 确保 PPT 位于主屏
+            if (!self.pptOnMainSite) { [self.floatView triggerViewExchangeEvent]; }
+            
+            /// 直播播放器清理
+            [self.playerPresenter cleanPlayer];
+            
+            /// 隐藏 floatView
+            /// userOperat:YES 表示代表用户强制执行
+            [self.floatView showFloatView:NO userOperat:YES];
+            
+            /// 竖屏皮肤视图
+            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
+        }
+        self.lastLinkMicSceneType = self.linkMicSceneType;
+    } else {
+        NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type%lud not support",(unsigned long)toType);
     }
     
-    self.playerType = toType;
+    self.liveSceneType = toType;
 }
 
 - (void)displayContentView:(UIView *)contentView{
@@ -247,7 +285,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 }
 
 - (UIView *)getContentViewForExchange{
-    if (self.playerType == PLVLCMediaAreaViewPlayerType_RTCPlayer) {
+    if (self.liveSceneType == PLVLCMediaAreaViewLiveSceneType_InLinkMic) {
         UIView * currentContentView = self.contentBackgroudView.subviews.firstObject;
         if (currentContentView) {
             return currentContentView;
@@ -255,7 +293,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
             NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, currentContentView is illegal : %@",currentContentView);
         }
     }else{
-        NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, this method should been call in LinkMic, but current playerType is %lu",(unsigned long)self.playerType);
+        NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, this method should been call in LinkMic, but current liveSceneType is %lu",(unsigned long)self.liveSceneType);
     }
     return nil;
 }
@@ -263,7 +301,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 
 #pragma mark - [ Private Methods ]
 - (void)setupData{
-    self.playerType = PLVLCMediaAreaViewPlayerType_CDNPlayer;
+    self.liveSceneType = PLVLCMediaAreaViewLiveSceneType_WatchCDN;
 }
 
 - (void)setupUI{
@@ -287,25 +325,26 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 }
 
 - (void)setupModule{
-    if (self.roomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
+    /// 注意：懒加载过程中(即Getter)，已增加判断，若场景不匹配，将创建失败并返回nil
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 直播 模块
-        self.presenter = [[PLVLivePlayerPresenter alloc] initWithRoomData:self.roomData];
-        self.livePresenter.view = self;
-        [self.livePresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview]; /// TODO 改外部添加
-        
+        self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:PLVChannelVideoType_Live];
+        self.playerPresenter.delegate = self;
+        [self.playerPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview];
+         
         /// PPT模块
         [self.floatView displayExternalView:self.pptView]; /// 无直播时的默认状态，是‘PPT画面’位于副屏(悬浮小窗)
         
-    }else if (self.roomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
+    }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 直播回放 模块
-        self.presenter = [[PLVPlaybackPlayerPresenter alloc] initWithRoomData:self.roomData];
-        self.livePlaybackPresenter.view = self;
-        [self.livePlaybackPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview]; /// TODO 改外部添加
+        self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:PLVChannelVideoType_Playback];
+        self.playerPresenter.delegate = self;
+        [self.playerPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview];
         
         /// PPT模块
         [self.floatView displayExternalView:self.pptView]; /// 默认状态，是‘PPT画面’位于副屏(悬浮小窗)
         [self.floatView showFloatView:YES userOperat:NO];
-        [self.pptView pptStart:self.roomData.vid];
+        [self.pptView pptStart:[PLVRoomDataManager sharedManager].roomData.vid];
         
     }
 }
@@ -320,10 +359,10 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 
 - (NSArray *)getMoreViewDefaultDataArray{
     NSArray * returnArray;
-    if (self.roomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         PLVLCMediaMoreModel * modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_ModeOptionTitle optionItemsArray:@[@"播放画面",@"仅听声音"]];
         returnArray = @[modeModel];
-    }else if (self.roomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
         PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_SpeedOptionTitle optionItemsArray:@[@"0.5x",@"1.0x",@"1.5x",@"2.0x"] selectedIndex:1];
         speedModel.optionSpecifiedWidth = 50.0;
         returnArray = @[speedModel];
@@ -331,18 +370,18 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
     return returnArray;
 }
 
-- (void)updateMoreviewWithData{
+- (void)updateMoreviewWithData {
     // 视频质量选项数据
-    PLVLCMediaMoreModel * qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_QualityOptionTitle optionItemsArray:self.roomData.codeRateItems];
-    [qualityModel setSelectedIndexWithOptionItemString:self.roomData.curCodeRate];
+    PLVLCMediaMoreModel * qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_QualityOptionTitle optionItemsArray:self.playerPresenter.codeRateNamesOptions];
+    [qualityModel setSelectedIndexWithOptionItemString:self.playerPresenter.currentCodeRate];
     
     // 线路选项数据
     NSMutableArray * routeArray = [[NSMutableArray alloc] init];
-    for (int i = 1; i <= self.roomData.lines; i++) {
+    for (int i = 1; i <= self.playerPresenter.lineNum; i++) {
         NSString * route = [NSString stringWithFormat:@"线路%d",i];
         [routeArray addObject:route];
     }
-    PLVLCMediaMoreModel * routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_RouteOptionTitle optionItemsArray:routeArray selectedIndex:self.roomData.curLine];
+    PLVLCMediaMoreModel * routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_RouteOptionTitle optionItemsArray:routeArray selectedIndex:self.playerPresenter.currentLineIndex];
     
     // 整合数据
     NSMutableArray * modelArray = [[NSMutableArray alloc] init];
@@ -372,7 +411,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 }
 
 #pragma mark Marquee
-- (void)setupMarquee:(PLVLiveVideoChannel *)channel customNick:(NSString *)customNick  {
+- (void)setupMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick  {
     if (self.videoMarquee) {
         return;
     }
@@ -394,22 +433,22 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
     }];
 }
 
-- (void)handleMarquee:(PLVLiveVideoChannel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeModel *model, NSError *error))completion {
+- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeModel * model, NSError *error))completion {
     switch (channel.marqueeType) {
-        case PLVLiveMarqueeTypeNick:
+        case PLVChannelMarqueeType_Nick:
             if (customNick) {
                 channel.marquee = customNick;
             } else {
                 channel.marquee = @"自定义昵称";
             }
-        case PLVLiveMarqueeTypeFixed: {
+        case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
             PLVMarqueeModel *model = [PLVMarqueeModel marqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue fontColor:channel.marqueeFontColor alpha:alpha autoZoom:channel.marqueeAutoZoomEnabled];
             completion(model, nil);
         } break;
-        case PLVLiveMarqueeTypeURL: {
+        case PLVChannelMarqueeType_URL: {
             if (channel.marquee) {
-                [PLVLiveVideoAPI loadCustomMarquee:[NSURL URLWithString:channel.marquee] withChannelId:channel.channelId.unsignedIntegerValue userId:channel.userId completion:^(BOOL valid, NSDictionary *marqueeDict) {
+                [PLVLiveVideoAPI loadCustomMarquee:[NSURL URLWithString:channel.marquee] withChannelId:channel.channelId.integerValue userId:channel.accountUserId completion:^(BOOL valid, NSDictionary *marqueeDict) {
                     if (valid) {
                         completion([PLVMarqueeModel marqueeModelWithMarqueeDict:marqueeDict], nil);
                     } else {
@@ -437,14 +476,6 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 }
 
 #pragma mark Getter
-- (PLVLivePlayerPresenter *)livePresenter{
-    return (PLVLivePlayerPresenter *)_presenter;
-}
-
-- (PLVPlaybackPlayerPresenter *)livePlaybackPresenter{
-    return (PLVPlaybackPlayerPresenter *)_presenter;
-}
-
 - (CGFloat)topPaddingBelowiOS11{
     /// 仅在 [limitContentViewInSafeArea] 为YES，会使用此值，否则均返回 0
     return self.limitContentViewInSafeArea ? _topPaddingBelowiOS11 : 0;
@@ -486,15 +517,14 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 
 - (PLVLCMediaPlayerSkinView *)skinView{
     if (!_skinView) {
-        PLVLCBasePlayerSkinViewType type = (self.roomData.videoType == PLVWatchRoomVideoType_Live ? PLVLCBasePlayerSkinViewType_Live : PLVLCBasePlayerSkinViewType_Playback);
-        _skinView = [[PLVLCMediaPlayerSkinView alloc] initWithType:type];
+        _skinView = [[PLVLCMediaPlayerSkinView alloc] init];
         _skinView.baseDelegate = self;
     }
     return _skinView;
 }
 
 - (PLVLCMediaFloatView *)floatView{
-    if (!_floatView) {
+    if (!_floatView && self.channelType != PLVChannelTypeAlone) {
         _floatView = [[PLVLCMediaFloatView alloc] init];
         _floatView.delegate = self;
     }
@@ -512,7 +542,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 }
 
 - (PLVPPTView *)pptView{
-    if (!_pptView) {
+    if (!_pptView && self.channelType != PLVChannelTypeAlone) {
         _pptView = [[PLVPPTView alloc] init];
         _pptView.delegate = self;
         _pptView.backgroudImageView.image = [self getImageWithName:@"plvlc_media_ppt_placeholder"];
@@ -527,6 +557,22 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
         NSLog(@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetInLinkMic:]");
         return NO;
     }
+}
+
+- (PLVChannelType)channelType{
+    return [PLVRoomDataManager sharedManager].roomData.channelType;
+}
+
+- (PLVChannelVideoType)videoType{
+    return [PLVRoomDataManager sharedManager].roomData.videoType;
+}
+
+- (PLVChannelLiveStreamState)liveState{
+    return [PLVRoomDataManager sharedManager].roomData.liveState;
+}
+
+- (PLVChannelLinkMicSceneType)linkMicSceneType{
+    return [PLVRoomDataManager sharedManager].roomData.linkMicSceneType;
 }
 
 - (BOOL)pptOnMainSite{
@@ -545,7 +591,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
         [PLVFdUtil changeDeviceOrientationToPortrait];
     }else{
         __weak typeof(self) weakSelf = self;
-        [PLVFdUtil showAlertWithTitle:@"确认退出直播间？" message:nil viewController:[PLVLiveUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"退出" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        [PLVFdUtil showAlertWithTitle:@"确认退出直播间？" message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"退出" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
             if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(plvLCMediaAreaViewWannaBack:)]) {
                 [weakSelf.delegate plvLCMediaAreaViewWannaBack:weakSelf];
             }
@@ -559,24 +605,14 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 
 - (void)plvLCBasePlayerSkinViewPlayButtonClicked:(PLVLCBasePlayerSkinView *)skinView wannaPlay:(BOOL)wannaPlay{
     if (wannaPlay) {
-        if (self.roomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
-            [self.livePresenter playLive];
-        }else if (self.roomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
-            [self.livePlaybackPresenter play];
-        }
+        [self.playerPresenter resumePlay];
     }else{
-        if (self.roomData.videoType == PLVWatchRoomVideoType_Live) { // 视频类型为 直播
-            [self.livePresenter pauseLive];
-        }else if (self.roomData.videoType == PLVWatchRoomVideoType_LivePlayback){ // 视频类型为 直播回放
-            [self.livePlaybackPresenter pause];
-        }
+        [self.playerPresenter pausePlay];
     }
 }
 
 - (void)plvLCBasePlayerSkinViewRefreshButtonClicked:(PLVLCBasePlayerSkinView *)skinView{
-    [self.livePresenter reloadLive:^(NSError *error) {
-        
-    }];
+    [self.playerPresenter resumePlay];
 }
 
 - (void)plvLCBasePlayerSkinViewFloatViewShowButtonClicked:(PLVLCBasePlayerSkinView *)skinView userWannaShowFloatView:(BOOL)wannaShow{
@@ -615,13 +651,11 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 }
 
 - (void)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView sliderDragEnd:(CGFloat)currentSliderProgress{
-    NSTimeInterval currentTime = self.roomData.duration * currentSliderProgress;
+    NSTimeInterval currentTime = self.playerPresenter.duration * currentSliderProgress;
     
     // 拖动进度条后，同步当前进度时间
-    [self updateDowloadProgress:0 playedProgress:currentSliderProgress
-            currentPlaybackTime:[PLVFdUtil secondsToString:currentTime]
-                       duration:[PLVFdUtil secondsToString:self.roomData.duration]];
-    [self.livePlaybackPresenter seek:currentTime];
+    [self playerPresenter:self.playerPresenter downloadProgress:0 playedProgress:currentSliderProgress playedTimeString:[PLVFdUtil secondsToString:currentTime] durationTimeString:[PLVFdUtil secondsToString:self.playerPresenter.duration]];
+    [self.playerPresenter seekLivePlaybackToTime:currentTime];
 }
 
 #pragma mark PLVLCFloatViewDelegate
@@ -660,21 +694,17 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
     if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_ModeOptionTitle]) {
         // 用户点选了”模式“中的选项
         [self.canvasView switchTypeTo:(model.selectedIndex == 0 ? PLVLCMediaPlayerCanvasViewType_Video : PLVLCMediaPlayerCanvasViewType_Audio)];
-        [self.livePresenter switchAudioMode:(model.selectedIndex == 0 ? NO : YES)];
+        [self.playerPresenter switchLiveToAudioMode:(model.selectedIndex == 0 ? NO : YES)];
     } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_QualityOptionTitle]) {
         // 用户点选了”视频质量“中的选项
-        [self.livePresenter switchPlayCodeRate:model.currentSelectedItemString completion:^(NSError *error) {
-            
-        }];
+        [self.playerPresenter switchLiveToCodeRate:model.currentSelectedItemString];
     } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_RouteOptionTitle]) {
         // 用户点选了”线路“中的选项
-        [self.livePresenter switchPlayLine:model.selectedIndex completion:^(NSError *error) {
-            
-        }];
+        [self.playerPresenter switchLiveToLineIndex:model.selectedIndex];
     } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_SpeedOptionTitle]) {
         // 用户点选了”倍速“中的选项
         CGFloat speed = [[model.currentSelectedItemString substringToIndex:model.currentSelectedItemString.length - 1] floatValue];
-        [self.livePlaybackPresenter speedRate:speed];
+        [self.playerPresenter switchLivePlaybackSpeedRate:speed];
     }
 }
 
@@ -687,7 +717,7 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
     [self.moreView refreshTableView];
     
     // 切换为视频模式
-    [self.livePresenter switchAudioMode:NO];
+    [self.playerPresenter switchLiveToAudioMode:NO];
 }
 
 #pragma mark PLVPPTViewDelegate
@@ -696,75 +726,118 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
     return self.inLinkMic ? 0 : 5000;
 }
 
-/// [回放场景] PPT视图 需要获取视频播放器的当前播放时间点
-- (NSTimeInterval)plvPPTViewGetPlayerCurrentTime:(PLVPPTView *)pptView{
-    return self.roomData.currentTime * 1000;
-}
-
-/// [回放场景] PPT视图 讲师发起PPT位置切换
-- (void)plvPPTView:(PLVPPTView *)pptView changePPTPosition:(BOOL)status{
-    // @param status PPT是否需要切换至主窗口 (YES:PPT需要切至主窗口 NO:PPT需要切至小窗，视频需要切至主窗口)
-    if (status != self.pptOnMainSite) {
-        [self.floatView triggerViewExchangeEvent];
+/// PPT视图 PPT位置需切换
+- (void)plvPPTView:(PLVPPTView *)pptView changePPTPosition:(BOOL)pptToMain{
+    if (self.videoType == PLVChannelVideoType_Live){ // 视频类型为 直播
+        /// 仅在 非连麦场景下 执行 (连麦场景下，由 PLVLCLinkMicAreaView 自行处理)
+        if (self.inLinkMic == NO) {
+            if (pptToMain != self.pptOnMainSite) {
+                [self.floatView triggerViewExchangeEvent];
+            }
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
+        if (pptToMain != self.pptOnMainSite) {
+            [self.floatView triggerViewExchangeEvent];
+        }
     }
 }
 
-#pragma mark PLVPlayerPresenterDelegate
-- (void)presenter:(PLVBasePlayerPresenter *)presenter mainPlayerSeiDidChange:(long)timeStamp newTimeStamp:(long)newTimeStamp{
-    [self.pptView setSEIDataWithNewTimestamp:newTimeStamp];
+/// [回放场景] PPT视图 需要获取视频播放器的当前播放时间点
+- (NSTimeInterval)plvPPTViewGetPlayerCurrentTime:(PLVPPTView *)pptView{
+    return self.playerPresenter.currentPlaybackTime * 1000;
 }
 
-- (void)presenter:(PLVBasePlayerPresenter *)presenter videoSizeChange:(CGSize)videoSize{
+#pragma mark PLVPlayerPresenterDelegate
+// 通用
+/// 播放器 ‘正在播放状态’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playerPlayingStateDidChanged:(BOOL)playing{
+    [self.skinView setPlayButtonWithPlaying:playing];
+    if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playerPlayingDidChange:)]) {
+        [self.delegate plvLCMediaAreaView:self playerPlayingDidChange:playing];
+    }
+}
+
+/// 播放器 发生错误
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter loadPlayerFailureWithMessage:(NSString *)errorMessage{
+    [PLVLCUtils showHUDWithTitle:@"" detail:errorMessage view:[PLVFdUtil getCurrentViewController].view];
+}
+
+/// 播放器 ‘视频大小’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter videoSizeChange:(CGSize)videoSize{
     self.canvasView.videoSize = videoSize;
 }
 
-/// 频道信息更新
-- (void)presenterChannelInfoChanged:(PLVBasePlayerPresenter *)presenter{
-    // 设置 跑马灯
-    [self setupMarquee:self.roomData.channelInfo customNick:self.roomData.channel.watchUser.viewerName];
+/// 播放器 ‘SEI信息’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter seiDidChange:(long)timeStamp newTimeStamp:(long)newTimeStamp{
+    [self.pptView setSEIDataWithNewTimestamp:newTimeStamp];
 }
 
-#pragma mark PLVLivePlayerPresenterDelegate
-- (void)presenter:(PLVLivePlayerPresenter *)presenter livePlayerStateDidChange:(LivePlayerState)livePlayerState{
-    BOOL stateChange = (self.currentLiveState != livePlayerState);
-    
+/// 播放器 ‘频道信息’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
+    /// 设置 跑马灯
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [self setupMarquee:roomData.channelInfo customNick:roomData.roomUser.viewerName];
+}
+
+// 直播相关
+/// 直播 ‘流状态’ 更新
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter streamStateUpdate:(PLVChannelLiveStreamState)newestStreamState streamStateDidChanged:(BOOL)streamStateDidChanged{
     // 设置休息一会视图显示/隐藏
-    self.canvasView.restImageView.hidden = livePlayerState != LivePlayerStatePause;
+    self.canvasView.restImageView.hidden = newestStreamState != PLVChannelLiveStreamState_Stop;
     
-    if (livePlayerState == LivePlayerStateLiving) {
+    if (newestStreamState == PLVChannelLiveStreamState_Live) {
         if (self.inLinkMic == NO) {
             [self.floatView showFloatView:YES userOperat:NO];
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living];
             
             /// 确保 直播状态变更为‘直播中’时，PPT 位于主屏
-            if (stateChange && !self.pptOnMainSite) { [self.floatView triggerViewExchangeEvent]; }
+            if (streamStateDidChanged && (self.pptView.mainSpeakerPPTOnMain != self.pptOnMainSite)) {
+                [self.floatView triggerViewExchangeEvent];
+            }
         }
-    }else if (livePlayerState == LivePlayerStatePause || livePlayerState == LivePlayerStateUnknown || livePlayerState == LivePlayerStateEnd){
-        /// 确保 直播状态变更为‘未知’、‘直播暂停’、‘直播结束’时，播放器画面 位于主屏
+        /// 设置播放器logo
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        [self setupPlayerLogoImage:roomData.channelInfo];
+    }else if (newestStreamState == PLVChannelLiveStreamState_Stop ||
+              newestStreamState == PLVChannelLiveStreamState_End){
+        /// 确保 直播状态变更为‘直播暂停’、‘直播结束’时，播放器画面 位于主屏
         if (self.pptOnMainSite) {
             [self.floatView triggerViewExchangeEvent];
         }
+        [self.logoView removeFromSuperview];
         [self.floatView forceShowFloatView:NO];
         [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
-    }else{
-        [self.floatView forceShowFloatView:NO];
-        [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+    } else if(newestStreamState == PLVChannelLiveStreamState_Unknown){
+        /// ’未知‘状态下，保持原样
     }
+    
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:livePlayerStateDidChange:)]) {
-        [self.delegate plvLCMediaAreaView:self livePlayerStateDidChange:livePlayerState];
-    }
-    self.currentLiveState = livePlayerState;
-}
-
-- (void)presenterPlayingChanged:(PLVLivePlayerPresenter *)presenter{
-    [self.skinView setPlayButtonWithPlaying:self.roomData.playing];
-    if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:livePlayerPlayingDidChange:)]) {
-        [self.delegate plvLCMediaAreaView:self livePlayerPlayingDidChange:self.roomData.playing];
+        [self.delegate plvLCMediaAreaView:self livePlayerStateDidChange:newestStreamState];
     }
 }
 
-- (void)presenter:(PLVLivePlayerPresenter *)presenter cdnPlayerPPTSiteExchange:(BOOL)wannaCDNPlayerOnMainSite{
-    // 仅在 非连麦场景下 执行
+/// 直播播放器 ‘码率可选项、当前码率、线路可选数、当前线路‘ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter codeRateOptions:(NSArray <NSString *> *)codeRateOptions currentCodeRate:(NSString *)currentCodeRate lineNum:(NSInteger)lineNum currentLineIndex:(NSInteger)currentLineIndex{
+    // 更新 ‘更多视图’
+    [self updateMoreviewWithData];
+}
+
+- (BOOL)playerPresenterGetInLinkMic:(PLVPlayerPresenter *)playerPresenter{
+    return self.inLinkMic;
+}
+
+// 非直播相关
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter downloadProgress:(CGFloat)downloadProgress playedProgress:(CGFloat)playedProgress playedTimeString:(NSString *)playedTimeString durationTimeString:(NSString *)durationTimeString{
+    [self.skinView setProgressWithCachedProgress:downloadProgress playedProgress:playedProgress durationTime:playerPresenter.duration currentTimeString:playedTimeString durationString:durationTimeString];
+    
+    if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:progressUpdateWithCachedProgress:playedProgress:durationTime:currentTimeString:durationString:)]) {
+        [self.delegate plvLCMediaAreaView:self progressUpdateWithCachedProgress:downloadProgress playedProgress:playedProgress durationTime:playerPresenter.duration currentTimeString:playedTimeString durationString:durationTimeString];
+    }
+}
+
+// 其他功能相关
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter cdnPlayerPPTSiteExchange:(BOOL)wannaCDNPlayerOnMainSite{
+    /// 仅在 非连麦场景下 执行
     if (self.inLinkMic == NO) {
         BOOL shouldExchange = (wannaCDNPlayerOnMainSite == self.pptOnMainSite);
         if (shouldExchange) {
@@ -773,34 +846,27 @@ static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
     }
 }
 
-/// 频道播放选项信息更新
-- (void)presenterChannelPlayOptionInfoDidUpdate:(PLVLivePlayerPresenter *)presenter{
-    // 更新 ‘更多视图’
-    [self updateMoreviewWithData];
-}
+#pragma mark - 播放器LOGO
+- (void)setupPlayerLogoImage:(PLVChannelInfoModel *)channel {
+    if ([PLVFdUtil checkStringUseable:channel.logoImageUrl]) {
+        PLVLCPlayerLogoParam *logoParam = [[PLVLCPlayerLogoParam alloc] init];
+        logoParam.logoUrl = channel.logoImageUrl;
+        logoParam.position = channel.logoPosition;
+        logoParam.logoAlpha = channel.logoOpacity;
+        logoParam.logoWidthScale = 0.14;
+        logoParam.logoHeightScale = 0.25;
 
-#pragma mark PLVPlaybackPlayerPresenterDelegate
-/// 更新回放进度
-- (void)updateDowloadProgress:(CGFloat)dowloadProgress playedProgress:(CGFloat)playedProgress currentPlaybackTime:(NSString *)currentPlaybackTime duration:(NSString *)duration{
-    [self.skinView setProgressWithCachedProgress:dowloadProgress playedProgress:playedProgress durationTime:self.roomData.duration currentTimeString:currentPlaybackTime durationString:duration];
-    
-    if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:progressUpdateWithCachedProgress:playedProgress:durationTime:currentTimeString:durationString:)]) {
-        [self.delegate plvLCMediaAreaView:self progressUpdateWithCachedProgress:dowloadProgress playedProgress:playedProgress durationTime:self.roomData.duration currentTimeString:currentPlaybackTime durationString:duration];
+        PLVLCPlayerLogo *playerLogo = [[PLVLCPlayerLogo alloc] init];
+        [playerLogo insertLogoWithParam:logoParam];
+        [self addPlayerLogo:playerLogo];
     }
 }
 
-- (void)presenter:(PLVPlaybackPlayerPresenter *)presenter playing:(BOOL)playing{
-    [self.skinView setPlayButtonWithPlaying:playing];
-    if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playbackPlayerPlayingDidChange:)]) {
-        [self.delegate plvLCMediaAreaView:self playbackPlayerPlayingDidChange:playing];
+- (void)addPlayerLogo:(PLVLCPlayerLogo *)logo {
+    if (self.canvasView) {
+        self.logoView = logo;
+        [logo addAtView:self.canvasView];
     }
-}
-
-- (void)presenter:(PLVBasePlayerPresenter *)presenter mainPlayerPlaybackDidFinish:(NSDictionary *)dataInfo {
-    // 播放完成
-    [self updateDowloadProgress:0 playedProgress:1
-            currentPlaybackTime:[PLVFdUtil secondsToString:self.roomData.duration]
-                       duration:[PLVFdUtil secondsToString:self.roomData.duration]];
 }
 
 @end

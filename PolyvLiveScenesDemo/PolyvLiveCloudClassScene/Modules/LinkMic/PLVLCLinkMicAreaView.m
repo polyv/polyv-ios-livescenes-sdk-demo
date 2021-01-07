@@ -11,7 +11,7 @@
 #import "PLVLCLinkMicWindowsView.h"
 #import "PLVLCLinkMicSpeakingView.h"
 #import "PLVLinkMicPresenter.h"
-#import "PLVLiveUtil.h"
+#import "PLVLCUtils.h"
 
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
@@ -21,9 +21,9 @@
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL areaViewShow;
+@property (nonatomic, assign) BOOL inLinkMic;
 
 #pragma mark 数据
-@property (nonatomic, strong) id roomData; // 频道信息
 @property (nonatomic, assign) BOOL currentLandscape; // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
 
 #pragma mark 对象
@@ -53,10 +53,8 @@
     NSLog(@"%s", __FUNCTION__);
 }
 
-- (instancetype)initWithRoomData:(id)roomData{
+- (instancetype)init {
     if (self = [super initWithFrame:CGRectZero]) {
-        self.roomData = roomData;
-        
         [self setup];
         [self setupUI];
     }
@@ -111,33 +109,27 @@
     [self.currentControlBar showSelfViewWithAnimation:showStatus];
 }
 
-#pragma mark Setter
-- (void)setInLinkMic:(BOOL)inLinkMic{
-    if (_inLinkMic != inLinkMic) {
-        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:inLinkMicChanged:)]) {
-            [self.delegate plvLCLinkMicAreaView:self inLinkMicChanged:inLinkMic];
-        }
-    }
-    _inLinkMic = inLinkMic;
+#pragma mark Getter
+- (PLVChannelLinkMicSceneType)linkMicSceneType{
+    return self.presenter.linkMicSceneType;
 }
 
 
 #pragma mark - [ Private Methods ]
 - (void)setup{
-    if (self.roomData) {
-        // 添加 连麦功能模块
-        self.presenter = [[PLVLinkMicPresenter alloc] initWithRoomData:self.roomData];
-        self.presenter.viewDelegate = self;
-        
-        // 配置默认值
-        /* 默认值以 连麦悬浮控制栏 中声明的为准 (详见 PLVLCLinkMicControlBarProtocol.h)
-           若业务改变时，可直接修改 PLVLCLinkMicControlBarProtocol.h 的默认值，则 [Presenter]连麦管理器 中同时生效 */
-        self.presenter.micDefaultOpen = PLVLCLinkMicControlBarMicDefaultOpen;
-        self.presenter.cameraDefaultOpen = PLVLCLinkMicControlBarCameraDefaultOpen;
-        self.presenter.cameraDefaultFront = PLVLCLinkMicControlBarSwitchCameraDefaultFront;
-    }else{
-        NSLog(@"PLVLCLinkMicAreaView - create link mic presenter failed, roomData illegal:%@",self.roomData);
-    }
+    // 原始数据
+    self.inLinkMic = NO;
+    
+    // 添加 连麦功能模块
+    self.presenter = [[PLVLinkMicPresenter alloc] init];
+    self.presenter.viewDelegate = self;
+    
+    // 配置默认值
+    /* 默认值以 连麦悬浮控制栏 中声明的为准 (详见 PLVLCLinkMicControlBarProtocol.h)
+       若业务改变时，可直接修改 PLVLCLinkMicControlBarProtocol.h 的默认值，则 [Presenter]连麦管理器 中同时生效 */
+    self.presenter.micDefaultOpen = PLVLCLinkMicControlBarMicDefaultOpen;
+    self.presenter.cameraDefaultOpen = PLVLCLinkMicControlBarCameraDefaultOpen;
+    self.presenter.cameraDefaultFront = PLVLCLinkMicControlBarSwitchCameraDefaultFront;
 }
 
 - (void)setupUI{
@@ -214,12 +206,12 @@
         [self.presenter requestJoinLinkMic];
     }else if (status == PLVLCLinkMicControlBarStatus_Waiting){
         // Bar 处于显示 ‘请求中...’，点击表示希望取消申请连麦
-        [PLVFdUtil showAlertWithTitle:@"确认取消申请连麦吗？" message:nil viewController:[PLVLiveUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"取消申请连麦" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        [PLVFdUtil showAlertWithTitle:@"确认取消申请连麦吗？" message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"取消申请连麦" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
             [weakSelf.presenter cancelRequestJoinLinkMic];
         }];
     }else if (status == PLVLCLinkMicControlBarStatus_Joined){
         // Bar 处于已连麦，点击表示希望取消申请连麦
-        [PLVFdUtil showAlertWithTitle:@"确认挂断连麦吗？" message:nil viewController:[PLVLiveUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"挂断" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        [PLVFdUtil showAlertWithTitle:@"确认挂断连麦吗？" message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"挂断" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
             [weakSelf.presenter quitLinkMic];
         }];
     }
@@ -242,6 +234,18 @@
 }
 
 #pragma mark PLVLCLinkMicWindowsViewDelegate
+/// 连麦窗口列表视图 需获知 ‘当前频道连麦场景类型’
+- (PLVChannelLinkMicSceneType)plvLCLinkMicWindowsViewGetCurrentLinkMicSceneType:(PLVLCLinkMicWindowsView *)windowsView{
+    return self.presenter.linkMicSceneType;
+}
+
+/// 连麦窗口列表视图 需外部展示 ‘第一画面连麦窗口’
+- (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView{
+    if ([self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:showFirstSiteCanvasViewOnExternal:)]) {
+        [self.delegate plvLCLinkMicAreaView:self showFirstSiteCanvasViewOnExternal:canvasView];
+    }
+}
+
 /// 连麦窗口被点击事件 (表示用户希望视图位置交换)
 - (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView windowCellDidClicked:(NSIndexPath *)indexPath linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser canvasView:(UIView *)canvasView{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:rtcWindowDidClickedCanvasView:)]) {
@@ -259,14 +263,37 @@
     }
 }
 
+/// 连麦窗口被点击事件 (表示用户希望某个窗口成为‘第一画面’)
 - (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView linkMicUserWantToBecomeFirstSite:(NSInteger)index{
     [self.presenter changeMainSpeakerWithLinkMicUserIndex:index];
+}
+
+/// 连麦窗口列表视图 需要获取当前用户数组
+- (NSArray *)plvLCLinkMicWindowsViewGetCurrentUserModelArray:(PLVLCLinkMicWindowsView *)windowsView{
+    return self.presenter.onlineUserArray;
+}
+
+/// 连麦窗口列表视图 需要查询某个条件用户的下标值
+- (NSInteger)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView findUserModelIndexWithFiltrateBlock:(BOOL(^)(PLVLinkMicOnlineUser * enumerateUser))filtrateBlockBlock{
+    return [self.presenter findUserModelIndexWithFiltrateBlock:filtrateBlockBlock];
+}
+
+/// 连麦窗口列表视图 需要根据下标值获取对应用户
+- (PLVLinkMicOnlineUser *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex{
+    return [self.presenter getUserModelFromOnlineUserArrayWithIndex:targetIndex];
 }
 
 #pragma mark PLVLinkMicPresenterDelegate
 /// 连麦状态 发生改变
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicStatusChanged:(PLVLinkMicStatus)currentStatus{
-    self.inLinkMic = currentStatus == PLVLinkMicStatus_Joined;
+    BOOL currentInLinkMic = (currentStatus == PLVLinkMicStatus_Joined);
+    BOOL needCallToInLinkMicChanged = (self.inLinkMic != currentInLinkMic);
+    self.inLinkMic = currentInLinkMic;
+    if (needCallToInLinkMicChanged) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:inLinkMicChanged:)]) {
+            [self.delegate plvLCLinkMicAreaView:self inLinkMicChanged:self.inLinkMic];
+        }
+    }
     
     if (currentStatus == PLVLinkMicStatus_NotOpen) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Default];
@@ -300,20 +327,25 @@
     [self.currentControlBar controlBarUserInteractionEnabled:!inProgress];
 }
 
+/// 连麦在线用户数组 发生变化
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicOnlineUserListRefresh:(NSArray *)onlineUserArray{
-    [self.windowsView reloadWindowsWithDataArray:onlineUserArray];
+    [self.windowsView reloadLinkMicUserWindows];
 }
 
-- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerLinkMicUserId:(NSString *)mainSpeakerLinkMicUserId wannaBecomeFirstSite:(BOOL)wannaBecomeFirstSite{
-    [self.windowsView linkMicWindowLinkMicUserId:mainSpeakerLinkMicUserId wannaBecomeFirstSite:wannaBecomeFirstSite];
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerLinkMicUserId:(NSString *)mainSpeakerLinkMicUserId mainSpeakerToMainScreen:(BOOL)mainSpeakerToMainScreen{
+    if (presenter.linkMicStatus == PLVLinkMicStatus_Joined) {
+        [self.windowsView linkMicWindowMainSpeaker:mainSpeakerLinkMicUserId toMainScreen:mainSpeakerToMainScreen];
+    }else{
+        NSLog(@"PLVLCLinkMicAreaView -  call [linkMicWindowLinkMicUserId:wannaBecomeFirstSite:] failed, not in linkmic");
+    }
 }
 
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerChangedToLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser {
-    // 讲师让某位连麦人成为’主讲‘，即第一画面；TODO:当前不会触发此方法
+    // 讲师让某位连麦人成为’主讲‘，即第一画面；TODO 当前不会触发此方法
 }
 
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter didOccurError:(PLVLinkMicErrorCode)errorCode extraCode:(NSInteger)extraCode{
-    UIViewController * currentVC = [PLVLiveUtil getCurrentViewController];
+    UIViewController * currentVC = [PLVFdUtil getCurrentViewController];
     if (errorCode >= PLVLinkMicErrorCode_RequestJoinFailedNoAuth &&
         errorCode <= PLVLinkMicErrorCode_RequestJoinFailedSocketTimeout) { /// 举手失败
         // 定义提示文案
@@ -341,14 +373,14 @@
         }
         
         // 弹窗提示
-        if (!showed) { [PLVLiveUtil showHUDWithTitle:title detail:msg view:currentVC.view]; }
+        if (!showed) { [PLVLCUtils showHUDWithTitle:title detail:msg view:currentVC.view]; }
     } else if (errorCode == PLVLinkMicErrorCode_CancelRequestJoinFailedStatusIllegal){ /// 取消举手失败
         NSString * msg = @"";
         if (errorCode == PLVLinkMicErrorCode_CancelRequestJoinFailedStatusIllegal) {
             msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld 请稍后再试",(long)presenter.linkMicStatus];
         }
         
-        [PLVLiveUtil showHUDWithTitle:@"取消举手失败" detail:msg view:currentVC.view];
+        [PLVLCUtils showHUDWithTitle:@"取消举手失败" detail:msg view:currentVC.view];
     } else if (errorCode >= PLVLinkMicErrorCode_JoinChannelFailed &&
                errorCode <= PLVLinkMicErrorCode_JoinChannelFailedSocketCannotSend){ /// 加入Rtc频道失败
         NSString * msg = @"";
@@ -360,14 +392,14 @@
             msg = [NSString stringWithFormat:@"消息暂时无法发送，请稍后再试 %ld",(long)errorCode];
         }
         
-        [PLVLiveUtil showHUDWithTitle:@"加入连麦失败" detail:msg view:currentVC.view];
+        [PLVLCUtils showHUDWithTitle:@"加入连麦失败" detail:msg view:currentVC.view];
     } else if (errorCode == PLVLinkMicErrorCode_JoinedOccurError){ /// 连麦中发生错误
         NSString * msg = @"";
         if (errorCode == PLVLinkMicErrorCode_JoinedOccurError) {
             msg = [NSString stringWithFormat:@"%ld,%ld",(long)errorCode,(long)extraCode];
         }
         
-        [PLVLiveUtil showHUDWithTitle:@"连麦中发生错误" detail:msg view:currentVC.view];
+        [PLVLCUtils showHUDWithTitle:@"连麦中发生错误" detail:msg view:currentVC.view];
     } else if (errorCode >= PLVLinkMicErrorCode_LeaveChannelFailedStatusIllegal &&
                errorCode <= PLVLinkMicErrorCode_LeaveChannelFailedSocketCannotSend){ /// 退出连麦失败
         NSString * msg = @"";
@@ -377,14 +409,16 @@
             msg = [NSString stringWithFormat:@"消息暂时无法发送，请稍后再试 %ld",(long)errorCode];
         }
         
-        [PLVLiveUtil showHUDWithTitle:@"退出连麦失败" detail:msg view:currentVC.view];
+        [PLVLCUtils showHUDWithTitle:@"退出连麦失败" detail:msg view:currentVC.view];
     }
 }
 
+/// 全部连麦成员的音频音量 回调
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter reportAudioVolumeOfSpeakers:(NSDictionary<NSString *,NSNumber *> *)volumeDict{
 
 }
 
+/// 当前正在讲话的连麦成员
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter reportCurrentSpeakingUsers:(NSArray<PLVLinkMicOnlineUser *> *)currentSpeakingUsers{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {

@@ -8,20 +8,20 @@
 
 #import "PLVChatroomPresenter.h"
 #import "PLVChatUser.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
 #import <PLVLiveScenesSDK/PLVSpeakMessage.h>
 #import <PLVLiveScenesSDK/PLVImageMessage.h>
 #import <PLVLiveScenesSDK/PLVCustomMessage.h>
 #import <PLVLiveScenesSDK/PLVChatroomManager.h>
-#import <PLVLiveScenesSDK/PLVSocketWrapper.h>
+#import <PLVLiveScenesSDK/PLVSocketManager.h>
 #import <PolyvFoundationSDK/PLVFdUtil.h>
 
 @interface PLVChatroomPresenter ()<
-PLVSocketListenerProtocol, // socket协议
-PLVChatroomManagerProtocol // 聊天室SDK管理类协议
+PLVSocketManagerProtocol, // socket协议
+PLVChatroomManagerProtocol, // 聊天室SDK管理类协议
+PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 >
-
-@property (nonatomic, strong) PLVLiveRoomData *roomData; /// 直播间数据模型
 
 #pragma mark socket数据缓冲
 /// 消息缓存队列
@@ -30,6 +30,8 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
 @property (nonatomic, strong) NSTimer *chatCachTimer;
 
 #pragma mark 历史聊天记录
+/// 每次调用接口获取的聊天消息条数，默认20
+@property (nonatomic, assign) NSUInteger eachLoadingHistoryCount;
 /// 是否正在获取历史记录
 @property (nonatomic, assign) BOOL loadingHistory;
 /// 是否需要延迟请求历史记录，分房间开关为开且房间号为0时为YES
@@ -41,20 +43,22 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
 
 @implementation PLVChatroomPresenter {
     dispatch_semaphore_t _dataSourceLock;
+    
+    /// PLVSocketManager回调的执行队列
+    dispatch_queue_t socketDelegateQueue;
 }
 
 #pragma mark - 生命周期
 
-- (instancetype)initWithRoomData:(PLVLiveRoomData *)roomData {
+- (instancetype)init {
+    return [self initWithLoadingHistoryCount:20];
+}
+
+- (instancetype)initWithLoadingHistoryCount:(NSUInteger)count {
     self = [super init];
     if (self) {
-        self.roomData = roomData;
-        
-        /// 监听房间数据
-        [self observeWatchRoomData];
-        
         // 获取聊天消息条数初始化
-        self.eachLoadingHistoryCount = 20;
+        self.eachLoadingHistoryCount = MAX(1, count);
         
         // 聊天消息缓冲初始化
         _dataSourceLock = dispatch_semaphore_create(1);
@@ -66,55 +70,49 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
                                                              repeats:YES];
         
         // 监听socket消息
-        [[PLVSocketWrapper sharedSocketWrapper] addListener:self];
+        socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
+        [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
         
         // 监听聊天室SDK管理类回调
-        [[PLVChatroomManager sharedManager] setupWithDelegate:self];
+        NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+        [[PLVChatroomManager sharedManager] setupWithDelegate:self channelId:channelId];
+        
+        // 监听直播间数据管理器回调
+        [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT)];
     }
     return self;
 }
 
 - (void)destroy {
-    [self removeObserveWatchRoomData];
+    [[PLVRoomDataManager sharedManager] removeDelegate:self];
+    [[PLVChatroomManager sharedManager] destroy];
+    [[PLVSocketManager sharedManager] removeDelegate:self];
     
     self.delegate = nil;
     [self.chatCachTimer invalidate];
     self.chatCachTimer = nil;
-    
-    self.loadingHistory = NO;
-    self.getHistoryTime = 0;
-    self.eachLoadingHistoryCount = 20;
-    self.delayRequestHistory = NO;
-    
-    [[PLVSocketWrapper sharedSocketWrapper] removeListener:self];
-    [[PLVChatroomManager sharedManager] destroy];
-}
-
-- (void)observeWatchRoomData {
-    [self.roomData addObserver:self forKeyPath:KEYPATH_LIVEROOM_SESSIONID options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-}
-
-- (void)removeObserveWatchRoomData {
-    [self.roomData removeObserver:self forKeyPath:KEYPATH_LIVEROOM_SESSIONID];
 }
 
 #pragma mark - 发送消息
 
 /// 根据roomData生成当前用户模型
 - (PLVChatUser *)loginChatUser {
-    PLVLiveWatchUser *watchUser = self.roomData.watchUser;
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     
     PLVChatUser *user = [[PLVChatUser alloc] init];
-    user.userId = watchUser.viewerId;
-    user.userName = watchUser.viewerName;
-    user.avatarUrl = watchUser.viewerAvatar;
-    user.userType = watchUser.viewerType;
+    user.userId = roomUser.viewerId;
+    user.userName = roomUser.viewerName;
+    user.avatarUrl = roomUser.viewerAvatar;
+    user.userType = roomUser.viewerType;
     return user;
 }
 
 #pragma mark 提问消息
 
 - (PLVChatModel *)sendQuesstionMessage:(NSString *)content {
+    if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
+        return nil;
+    }
     if (![PLVChatroomManager sharedManager].online) {
         return nil;
     }
@@ -135,6 +133,9 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
 #pragma mark 文本消息
 
 - (PLVChatModel *)sendSpeakMessage:(NSString *)content {
+    if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
+        return nil;
+    }
     if ([PLVChatroomManager sharedManager].closeRoom || ![PLVChatroomManager sharedManager].online) {
         return nil;
     }
@@ -157,6 +158,9 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
 #pragma mark 图片消息
 
 - (PLVChatModel *)sendImageMessage:(UIImage *)image {
+    if (!image || ![image isKindOfClass:[UIImage class]]) {
+        return nil;
+    }
     if ([PLVChatroomManager sharedManager].closeRoom || ![PLVChatroomManager sharedManager].online) {
         return nil;
     }
@@ -180,6 +184,11 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
                               data:(NSDictionary *)data
                                tip:(NSString * _Nullable)tip
                           emitMode:(int)emitMode {
+    if (!event || ![event isKindOfClass:[NSString class]] || event.length == 0 ||
+        !data || ![data isKindOfClass:[NSDictionary class]] || [data count] == 0 ||
+        !tip || ![tip isKindOfClass:[NSString class]] || tip.length == 0) {
+        return NO;
+    }
     if ([PLVChatroomManager sharedManager].closeRoom || ![PLVChatroomManager sharedManager].online) {
         return nil;
     }
@@ -202,7 +211,7 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
 
 - (void)createAnswerChatModel {
     NSMutableDictionary *jsonDict = [[NSMutableDictionary alloc] init];
-    jsonDict[@"s_userId"] = self.roomData.userIdForWatchUser;
+    jsonDict[@"s_userId"] = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
     jsonDict[@"content"] = @"同学，您好！请问有什么问题吗？";
     jsonDict[@"user"] = @{@"nick": @"讲师",
                           @"pic" : @"https://livestatic.polyv.net/assets/images/teacher.png",
@@ -228,9 +237,9 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
     self.loadingHistory = YES;
     
     __weak typeof(self) weakSelf = self;
-    NSString *roomId = [PLVSocketWrapper sharedSocketWrapper].roomId;
+    NSString *roomId = [PLVSocketManager sharedManager].roomId;
     if (!roomId || roomId.length == 0) {
-        roomId = self.roomData.channel.channelId;
+        roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
     }
     NSInteger startIndex = self.getHistoryTime * self.eachLoadingHistoryCount;
     NSInteger endIndex = (self.getHistoryTime + 1) * self.eachLoadingHistoryCount;
@@ -417,39 +426,35 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
     }
 }
 
-#pragma mark - PLVLiveRoomData 属性更新
-
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    if (![object isKindOfClass:PLVLiveRoomData.class]) {
-        return;
-    }
-    
-    PLVLiveRoomData *roomData = object;
-    if ([keyPath isEqualToString:KEYPATH_LIVEROOM_SESSIONID]) {
-        if (!roomData.sessionId) {
-            return;
-        }
-        
-        [PLVChatroomManager sharedManager].sessionId = roomData.sessionId;
-    }
-}
+#pragma mark - 更新 RoomData 属性
 
 - (void)updateOnlineCount:(NSInteger)onlineCount {
-    self.roomData.onlineCount = onlineCount;
+    [PLVRoomDataManager sharedManager].roomData.onlineCount = onlineCount;
 }
 
 - (void)increaseWatchCount {
-    self.roomData.watchViewCount++;
+    [PLVRoomDataManager sharedManager].roomData.watchCount++;
 }
 
 - (void)addLikeCount:(NSInteger)likeCount {
-    self.roomData.likeCount += likeCount;
+    [PLVRoomDataManager sharedManager].roomData.likeCount += likeCount;
 }
 
-#pragma mark - PLVSocketListenerProtocol
+#pragma mark - PLVRoomDataManagerProtocol
 
-- (void)socket:(id<PLVSocketIOProtocol>)socket didReceiveMessage:(nonnull NSString *)string jsonDict:(nonnull NSDictionary *)jsonDict {
-    NSString *subEvent = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+- (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
+    [PLVChatroomManager sharedManager].sessionId = channelInfo.sessionId;
+}
+
+#pragma mark - PLVSocketManager Protocol
+
+- (void)socketMananger_didReceiveMessage:(NSString *)subEvent
+                                    json:(NSString *)jsonString
+                              jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
     if ([subEvent isEqualToString:@"LOGIN"]) {   // someone logged in chatroom
         [self loginEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"LOGOUT"]) { // someone logged in chatroom
@@ -663,7 +668,7 @@ PLVChatroomManagerProtocol // 聊天室SDK管理类协议
         return NO;
     }
     
-    BOOL isLoginUser = [userId isEqualToString:self.roomData.userIdForWatchUser];
+    BOOL isLoginUser = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     return isLoginUser;
 }
 

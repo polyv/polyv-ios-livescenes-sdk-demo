@@ -8,6 +8,7 @@
 
 #import "PLVInteractLottery.h"
 
+#import "PLVRoomDataManager.h"
 #import "PLVInteractBaseApp+General.h"
 
 @interface PLVInteractLottery ()
@@ -130,9 +131,8 @@
     muDict[@"sessionId"] = [NSString stringWithFormat:@"%@",self.sessionId];
     muDict[@"receiveInfo"] = [self generateLotteryCollectString:dict[@"receiveInfo"]];
     
-    PLVBSocketUser * loginUser = [PLVSocketWrapper sharedSocketWrapper].loginUser;
     NSMutableDictionary * jsonDict = [[NSMutableDictionary alloc] init];
-    [jsonDict addEntriesFromDictionary:@{@"channelId" : [NSString stringWithFormat:@"%@", loginUser.roomId]}];
+    [jsonDict addEntriesFromDictionary:@{@"channelId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId]}];
     [jsonDict addEntriesFromDictionary:[muDict copy]];
     
     __weak typeof(self) weakSelf = self;
@@ -146,7 +146,7 @@
 
 // 接收到js放弃中奖消息
 - (void)abandonLottery:(id)placeholder {
-    [PLVLiveVideoAPI giveUpReceiveWithChannelId:[PLVLiveVideoConfig sharedInstance].channelId userId:self.viewerId completion:^(NSString *str) {
+    [PLVLiveVideoAPI giveUpReceiveWithChannelId:[PLVRoomDataManager sharedManager].roomData.channelId userId:self.viewerId completion:^(NSString *str) {
         NSLog(@"PLVInteractLottery - abandonLottery success, str:%@", str);
     } failure:^(NSError *error) {
         NSLog(@"PLVInteractLottery - abandonLottery failed, error:%@", error.description);
