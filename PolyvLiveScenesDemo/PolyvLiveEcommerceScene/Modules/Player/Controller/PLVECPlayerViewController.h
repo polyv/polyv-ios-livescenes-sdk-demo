@@ -28,7 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark 回放的回调
 
 /// 更新回放进度
-- (void)updateDowloadProgress:(CGFloat)dowloadProgress playedProgress:(CGFloat)playedProgress currentPlaybackTime:(NSString *)currentPlaybackTime duration:(NSString *)duration;
+- (void)updateDowloadProgress:(CGFloat)dowloadProgress
+               playedProgress:(CGFloat)playedProgress
+                     duration:(NSTimeInterval)duration
+          currentPlaybackTime:(NSString *)currentPlaybackTime
+                 durationTime:(NSString *)durationTime;
 
 @end
 

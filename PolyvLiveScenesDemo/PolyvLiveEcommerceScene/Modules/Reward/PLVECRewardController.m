@@ -8,6 +8,7 @@
 
 #import "PLVECRewardController.h"
 #import "PLVECChatroomViewModel.h"
+#import "PLVRoomDataManager.h"
 #import <PolyvFoundationSDK/PLVFdUtil.h>
 
 @interface PLVECRewardController () <PLVECRewardViewDelegate>
@@ -22,9 +23,6 @@
     _view = view;
     if (view) {
         view.delegate = self;
-        [view setCloseButtonActionBlock:^(PLVECBottomView * _Nonnull view) {
-            [view setHidden:YES];
-        }];
     }
 }
 
@@ -44,18 +42,18 @@
     NSString *giftName = giftItem.name;
     NSString *giftType = [giftItem.imageName substringFromIndex:14];
     
-    if (!giftName || !giftType || !self.roomUser) {
+    if (!giftName || !giftType) {
         return;
     }
     
-    if ([self.delegate respondsToSelector:@selector(showGiftAnimation:giftName:giftType:)]) {
-        [self.delegate showGiftAnimation:self.roomUser.viewerName giftName:giftName giftType:giftType];
+    if (self.didSendGift) {
+        self.didSendGift(giftName, giftType);
     }
-    
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     NSDictionary *data = @{@"giftName" : giftName,
                            @"giftType" : giftType,
                            @"giftCount" : @"1"};
-    NSString *tip = [NSString stringWithFormat:@"%@ 赠送了 %@",self.roomUser.viewerName, giftName];
+    NSString *tip = [NSString stringWithFormat:@"%@ 赠送了 %@", roomUser.viewerName, giftName];
     [[PLVECChatroomViewModel sharedViewModel] sendGiftMessageWithData:data tip:tip];
 }
 

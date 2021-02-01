@@ -4,12 +4,18 @@
 //
 //  Created by ftao on 2020/8/20.
 //  Copyright © 2020 polyv. All rights reserved.
-//
+//  推送商品
 
 #import <UIKit/UIKit.h>
-#import "PLVECCommodityCellModel.h"
+#import <PLVLiveScenesSDK/PLVCommodityModel.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@protocol PLVECCommodityPushViewDelegate <NSObject>
+
+- (void)jumpToGoodsDetail:(NSURL *)goodsURL;
+
+@end
 
 @interface PLVECCommodityPushView : UIView
 
@@ -27,9 +33,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) UIButton *jumpButton;
 
-@property (nonatomic, strong) PLVECCommodityCellModel *cellModel;
+@property (nonatomic, strong) PLVCommodityModel *model;
 
-@property (nonatomic, weak) id<PLVECCommodityDelegate> delegate;
+@property (nonatomic, weak) id<PLVECCommodityPushViewDelegate> delegate;
 
 - (void)destroy;
 

@@ -62,6 +62,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// 广告播放状态
 @property (nonatomic, assign) BOOL openAdv;
 
+#pragma mark 状态
+/// 该频道是否观看 ‘无延迟直播’
+@property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
+
+/// 无延迟直播的当前 ‘开始结束状态’
+@property (nonatomic, assign, readonly) BOOL currentNoDelayLiveStart;
+
 #pragma mark UI
 /// 外部传入的，负责承载播放器画面的父视图
 ///
@@ -177,6 +184,13 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param playerPresenter 播放器管理器
 - (BOOL)playerPresenterGetInLinkMic:(PLVPlayerPresenter *)playerPresenter;
+
+/// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
+///
+/// @param playerPresenter 播放器管理器
+/// @param noDelayLiveStart 当前最新的 ’无延迟直播开始结束状态’
+/// @param noDelayLiveStartDidChanged ’无延迟直播开始结束状态‘ 相对上一次 是否发生变化
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter noDelayLiveStartUpdate:(BOOL)noDelayLiveStart noDelayLiveStartDidChanged:(BOOL)noDelayLiveStartDidChanged;
 
 #pragma mark 非直播相关
 /// 直播回放播放器 定时返回当前播放进度

@@ -20,7 +20,7 @@
         self.coverImageView.layer.cornerRadius = 10.0;
         self.coverImageView.layer.masksToBounds = YES;
         self.coverImageView.contentMode = UIViewContentModeScaleAspectFill;
-        [self addSubview:self.coverImageView];
+        [self.contentView addSubview:self.coverImageView];
         
         self.showIdLabel = [[UILabel alloc] init];
         self.showIdLabel.frame = CGRectMake(0, 0, 27, 16);
@@ -34,7 +34,7 @@
         self.nameLabel.textColor = UIColor.whiteColor;
         self.nameLabel.font = [UIFont systemFontOfSize:14.0];
         self.nameLabel.numberOfLines = 2;
-        [self addSubview:self.nameLabel];
+        [self.contentView addSubview:self.nameLabel];
         
         self.realPriceLabel = [[UILabel alloc] init];
         self.realPriceLabel.textColor = [UIColor colorWithRed:1 green:71/255.0 blue:58/255.0 alpha:1];
@@ -44,11 +44,11 @@
         } else {
             self.realPriceLabel.font = [UIFont systemFontOfSize:18.0];
         }
-        [self addSubview:self.realPriceLabel];
+        [self.contentView addSubview:self.realPriceLabel];
         
         self.priceLabel = [[UILabel alloc] init];
         self.priceLabel.textAlignment = NSTextAlignmentLeft;
-        [self addSubview:self.priceLabel];
+        [self.contentView addSubview:self.priceLabel];
         
         self.selectButton = [UIButton buttonWithType:UIButtonTypeCustom];
         self.selectButton.layer.cornerRadius = 13.5;
@@ -57,7 +57,7 @@
         self.selectButton.backgroundColor = [UIColor colorWithRed:1 green:166/255.0 blue:17/255.0 alpha:1];
         [self.selectButton setTitle:@"去购买" forState:UIControlStateNormal];
         [self.selectButton addTarget:self action:@selector(selectButtonAction) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:self.selectButton];
+        [self.contentView addSubview:self.selectButton];
     }
     return self;
 }
@@ -76,21 +76,71 @@
     self.priceLabel.frame = CGRectMake(priceLabelX, CGRectGetMinY(self.realPriceLabel.frame)+4, CGRectGetMinX(self.selectButton.frame)-10-priceLabelX, 17);
 }
 
-#pragma mark - Setter
+#pragma mark - [ Public Methods ]
+- (NSURL *)jumpLinkUrl {
+    NSURL *jumpLinkUrl;
+    // 跳转地址
+    if (10 == self.model.linkType) { // 通用链接
+        jumpLinkUrl = [NSURL URLWithString:self.model.link];
+    } else if (11 == self.model.linkType) { // 多平台链接
+        jumpLinkUrl = [NSURL URLWithString:self.model.mobileAppLink];
+    } else {
+        jumpLinkUrl = nil;
+    }
+    if (jumpLinkUrl && !jumpLinkUrl.scheme) {
+        jumpLinkUrl = [NSURL URLWithString:[@"http://" stringByAppendingString:jumpLinkUrl.absoluteString]];
+    }
+    
+    return jumpLinkUrl;
+}
 
-- (void)setCellModel:(PLVECCommodityCellModel *)cellModel {
-    _cellModel = cellModel;
-    if (!cellModel) {
+#pragma mark Setter
+- (void)setModel:(PLVCommodityModel *)model {
+    _model = model;
+    if (!model) {
         return;
     }
     
-    self.nameLabel.text = cellModel.model.name;
-    self.realPriceLabel.text = cellModel.realPriceStr;
-    self.priceLabel.attributedText = cellModel.priceAtrrStr;
-    self.showIdLabel.text = [NSString stringWithFormat:@"%ld",cellModel.model.showId];
+    self.nameLabel.text = model.name;
+    
+    // 实际价格显示逻辑
+    NSString *realPriceStr = [NSString stringWithFormat:@"¥ %@",model.realPrice];
+    if ([model.realPrice isEqualToString:@"0"]) {
+        realPriceStr = @"免费";
+    }
+    
+    // 封面地址
+    NSURL *coverUrl;
+    if ([model.cover hasPrefix:@"http"]) {
+        coverUrl = [NSURL URLWithString:model.cover];
+    } else if (model.cover) {
+        coverUrl = [NSURL URLWithString:[@"https:" stringByAppendingString:model.cover]];
+    }
+    
+    // 原价格显示逻辑
+    NSAttributedString *priceAtrrStr;
+    if (!model.price || [model.price isEqualToString:model.realPrice]
+        || [model.price isEqualToString:@"0"]) {
+        priceAtrrStr = nil;
+    } else if (model.realPrice) {
+        UIColor *grayColor = [UIColor colorWithRed:173/255.f green:173/255.f blue:192/255.f alpha:1];
+        NSDictionary *attrParams = @{NSForegroundColorAttributeName:grayColor,
+                                     NSFontAttributeName:[UIFont systemFontOfSize:12],
+                                     NSStrikethroughStyleAttributeName:@(NSUnderlineStyleSingle),
+                                     NSStrikethroughColorAttributeName:grayColor,
+                                     NSBaselineOffsetAttributeName:@(0)};
+        priceAtrrStr = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"¥ %@",model.price] attributes:attrParams];
+    }
+    
+    self.realPriceLabel.text = realPriceStr;
+    self.priceLabel.attributedText = priceAtrrStr;
+    
+    self.showIdLabel.text = [NSString stringWithFormat:@"%ld", model.showId];
     
     self.coverImageView.image = nil;
-    [PLVFdUtil setImageWithURL:cellModel.coverUrl inImageView:self.coverImageView completed:^(UIImage *image, NSError *error, NSURL *imageURL) {
+    [PLVFdUtil setImageWithURL:coverUrl
+                   inImageView:self.coverImageView
+                     completed:^(UIImage *image, NSError *error, NSURL *imageURL) {
         if (error) {
             NSLog(@"-setCellModel:图片加载失败，%@",imageURL);
         }
@@ -98,10 +148,9 @@
 }
 
 #pragma mark - Action
-
 - (void)selectButtonAction {
-    if (self.cellModel && [self.delegate respondsToSelector:@selector(commodity:didSelect:)]) {
-        [self.delegate commodity:self didSelect:self.cellModel];
+    if (self.model && [self.delegate respondsToSelector:@selector(didSelectWithCommodityCell:)]) {
+        [self.delegate didSelectWithCommodityCell:self];
     }
 }
 

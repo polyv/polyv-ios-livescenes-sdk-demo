@@ -114,11 +114,17 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
             self.playButton.hidden = YES;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = YES;
-        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living) {
+        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living_CDN) {
             self.moreButton.hidden = NO;
             self.playButton.hidden = NO;
             self.refreshButton.hidden = NO;
             self.floatViewShowButton.hidden = NO;
+        } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay){
+            self.moreButton.hidden = YES;
+            self.playButton.hidden = YES;
+            self.refreshButton.hidden = YES;
+            self.floatViewShowButton.hidden = NO;
+            self.floatViewShowButton.selected = NO; /// 无延迟场景，默认显示‘开’
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC) {
             self.moreButton.hidden = YES;
             self.playButton.hidden = YES;

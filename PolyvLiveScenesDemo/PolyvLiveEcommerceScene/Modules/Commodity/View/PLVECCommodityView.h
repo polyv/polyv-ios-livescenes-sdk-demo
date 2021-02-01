@@ -4,23 +4,27 @@
 //
 //  Created by ftao on 2020/6/28.
 //  Copyright © 2020 polyv. All rights reserved.
-//
+//  商品列表View
 
 #import "PLVECBottomView.h"
-#import "PLVECCommodityPresenter.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// 商品视图（唯一可由外部模块控制的类）
-@interface PLVECCommodityView : PLVECBottomView <PLVECCommodityViewProtocol, PLVECCommodityPresenterProtocol>
+@interface PLVECCommodityView : PLVECBottomView
 
-@property (nonatomic, strong) UIImageView *iconImageView;
+// 开放 tableview 数据代理
+@property (nonatomic, weak, nullable) id <UITableViewDataSource> dataSource;
+// 开放 tableview UI代理
+@property (nonatomic, weak, nullable) id <UITableViewDelegate> delegate;
 
-@property (nonatomic, strong) UIImageView *notAddedImageView;
+/// 开启loading
+- (void)startLoading;
 
-@property (nonatomic, strong) UILabel *tipLabel;
+/// 停止loading
+- (void)stopLoading;
 
-@property (nonatomic, copy) void(^ _Nullable goodsSelectedHandler)(NSURL *goodsURL);
+/// 加载视图数据
+- (void)reloadData:(NSInteger)total;
 
 @end
 

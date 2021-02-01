@@ -7,6 +7,7 @@
 //
 
 #import "PLVRoomUser.h"
+#import <UIKit/UIKit.h>
 
 static NSString *kRoomUserTypeStudent = @"student";
 static NSString *kRoomUserTypeSlice = @"slice";
@@ -48,7 +49,7 @@ static NSString *kRoomUserTypeDummy = @"dummy";
             viewerId = [self getViewerId];
         }
         if (!viewerName || ![viewerName isKindOfClass:[NSString class]] || viewerName.length == 0) {
-            viewerName = [self getViewerName];
+            viewerName = [self getViewerNameWithViewerId:viewerId];
         }
         if (!viewerAvatar || ![viewerAvatar isKindOfClass:[NSString class]] || viewerAvatar.length == 0) {
             viewerAvatar = @"https://www.polyv.net/images/effect/effect-device.png";
@@ -68,33 +69,20 @@ static NSString *kRoomUserTypeDummy = @"dummy";
 #pragma mark - 获取或生成 ViewerId & ViewerName
 
 - (NSString *)getViewerId {
-    NSString *viewerIdKey = @"PLV_VIEWER_ID";
-    NSString *viewerId = [[NSUserDefaults standardUserDefaults] stringForKey:viewerIdKey];
-    if (!viewerId) {
-        viewerId = [self createViewerId];
-        [[NSUserDefaults standardUserDefaults] setObject:viewerId forKey:viewerIdKey];
-    }
-    
-    return viewerId;
+    return [self getUUID];
 }
 
-- (NSString *)createViewerId {
-    NSMutableString *mutableString = [[NSMutableString alloc] init];
-    [mutableString appendString:@"plv_ios_"];
-    [mutableString appendFormat:@"%ld", (long)[NSDate date].timeIntervalSince1970];
-    [mutableString appendFormat:@"_%05d", arc4random() % 100000];
-    NSString *viewerId = [mutableString copy];
-    return viewerId;
+/// 卸载当前设备该开发者证书下的所有应用，再重新安装，identifierForVendor 会发生改变
+- (NSString *)getUUID {
+    return [UIDevice currentDevice].identifierForVendor.UUIDString;;
 }
 
-- (NSString *)getViewerName {
-    NSString *viewerNameKey = @"PLV_VIEWER_NAME";
-    NSString *viewerName = [[NSUserDefaults standardUserDefaults] stringForKey:viewerNameKey];
-    if (!viewerName) {
-        viewerName = [@"ios用户/" stringByAppendingFormat:@"%05d",arc4random() % 100000];
-        [[NSUserDefaults standardUserDefaults] setObject:viewerName forKey:viewerNameKey];
+- (NSString *)getViewerNameWithViewerId:(NSString *)viewerId {
+    if (!viewerId || ![viewerId isKindOfClass:[NSString class]] || viewerId.length == 0) {
+        return [NSString stringWithFormat:@"观众%@", [self getUUID]];
+    } else {
+        return [NSString stringWithFormat:@"观众%@", viewerId];
     }
-    return viewerName;
 }
 
 #pragma mark - 用户类型相关工具方法

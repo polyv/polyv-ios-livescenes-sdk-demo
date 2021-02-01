@@ -34,6 +34,10 @@ PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol
 >
 
+#pragma mark 数据
+@property (nonatomic, assign, readonly) PLVChannelType channelType; // 只读，当前 频道类型
+@property (nonatomic, assign, readonly) PLVChannelVideoType videoType; // 只读，当前 视频类型
+
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentLandscape;    // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
 @property (nonatomic, assign) BOOL fullScreenDifferent; // 在更新UI布局之前，横竖屏是否发现了变化 (YES:已变化 NO:没有变化)
@@ -54,7 +58,7 @@ PLVRoomDataManagerProtocol
 /// ├── (PLVLCLivePageMenuAreaView) menuAreaView
 /// ├── (PLVLCLinkMicAreaView) linkMicAreaView
 /// ├── (PLVLCMediaFloatView) floatView (由 mediaAreaView 持有及管理)
-/// ├── (PLVLCLinkMicVerticalControlBar) controlBarV (由 linkMicAreaView 持有及管理)
+/// ├── (PLVLCLinkMicPortraitControlBar) portraitControlBar (由 linkMicAreaView 持有及管理)
 /// └── (PLVInteractView) interactView
 ///
 /// [直播] 横屏
@@ -64,7 +68,7 @@ PLVRoomDataManagerProtocol
 /// ├── (PLVLCChatLandscapeView) chatLandscapeView
 /// ├── (PLVLCMediaFloatView) floatView (由 mediaAreaView 持有及管理)
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
-/// ├── (PLVLCLinkMicVerticalControlBar) controlBarV (由 linkMicAreaView 持有及管理)
+/// ├── (PLVLCLinkMicLandscapeControlBar) landscapeControlBar (由 linkMicAreaView 持有及管理)
 /// ├── (UIView) marqueeView (由 mediaAreaView 持有及管理)
 /// └── (PLVInteractView) interactView
 @property (nonatomic, strong) PLVLCMediaAreaView *mediaAreaView;        // 媒体区
@@ -139,25 +143,24 @@ PLVRoomDataManagerProtocol
                                              selector:@selector(interfaceOrientationDidChange:)
                                                  name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLCChatroomOpenBulletinNotification object:nil];
         
-    } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
+    } else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     
     }
 }
 
 - (void)setupUI {
-    self.view.backgroundColor = UIColor.blackColor;
+    self.view.backgroundColor = UIColorFromRGB(@"#0E141E");
     
     /// 注意：1. 此处不建议将共同拥有的图层，提炼在 if 判断外，来做“代码简化”
     ///         因为此处涉及到添加顺序，而影响图层顺序。放置在 if 内，能更加准确地配置图层顺序，也更清晰地预览图层顺序。
     ///      2. 懒加载过程中(即Getter)，已增加判断，若场景不匹配，将创建失败并返回nil
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 创建添加视图
         [self.view addSubview:self.mediaAreaView];    // 媒体区
         [self.view addSubview:self.menuAreaView];     // 菜单区
@@ -174,7 +177,9 @@ PLVRoomDataManagerProtocol
         self.liveRoomSkinView.frame = self.view.bounds;
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
-    }else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
+        if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
+        
+    }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 创建添加视图
         [self.view addSubview:self.mediaAreaView];    // 媒体区
         [self.view addSubview:self.menuAreaView];     // 菜单区
@@ -184,14 +189,23 @@ PLVRoomDataManagerProtocol
         /// 配置
         self.liveRoomSkinView.frame = self.view.bounds;
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        
+        if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
     }
 }
 
 - (void)updateUI {
+    /// 连麦区域是否应该出现
+    BOOL showLinkMicAreaView = self.linkMicAreaView.inRTCRoom;
+    if (self.linkMicAreaView.inRTCRoom && self.channelType == PLVChannelTypeAlone) {
+        showLinkMicAreaView = self.linkMicAreaView.currentRTCRoomUserCount > 1 ? YES : NO;
+    }
+    showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? showLinkMicAreaView : NO;
+    
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {
         // 竖屏
-        self.linkMicAreaView.hidden = !self.linkMicAreaView.inLinkMic;
+        self.linkMicAreaView.hidden = !self.linkMicAreaView.inRTCRoom;
         self.menuAreaView.hidden = NO;
         self.chatLandscapeView.frame = CGRectZero;
         
@@ -203,11 +217,11 @@ PLVRoomDataManagerProtocol
         CGRect mediaAreaViewFrame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetWidth(self.view.bounds) * PPTPlayerViewScale + P_SafeAreaTopEdgeInsets());
         self.mediaAreaView.frame = mediaAreaViewFrame;
         
-        CGFloat linkMicAreaViewHeight = self.linkMicAreaView.inLinkMic ? (self.linkMicAreaView.areaViewShow ? 70 : 0) : 0;
+        CGFloat linkMicAreaViewHeight = showLinkMicAreaView ? 70 : 0;
         CGRect linkMicAreaViewFrame = CGRectMake(0, CGRectGetMaxY(self.mediaAreaView.frame), CGRectGetWidth(self.view.bounds), linkMicAreaViewHeight);
         self.linkMicAreaView.frame = linkMicAreaViewFrame;
         
-        CGFloat menuAreaOriginY = self.linkMicAreaView.inLinkMic ? CGRectGetMaxY(linkMicAreaViewFrame) : CGRectGetMaxY(mediaAreaViewFrame);
+        CGFloat menuAreaOriginY = self.linkMicAreaView.inRTCRoom ? CGRectGetMaxY(linkMicAreaViewFrame) : CGRectGetMaxY(mediaAreaViewFrame);
         self.menuAreaView.frame = CGRectMake(0, menuAreaOriginY, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds)-menuAreaOriginY);
         
         /// 图层管理
@@ -217,7 +231,7 @@ PLVRoomDataManagerProtocol
         
     } else {
         // 横屏
-        self.linkMicAreaView.hidden = !self.linkMicAreaView.inLinkMic;
+        self.linkMicAreaView.hidden = !self.linkMicAreaView.inRTCRoom;
         self.menuAreaView.hidden = YES;
         
         CGFloat leftPadding = P_SafeAreaLeftEdgeInsets() + 16;
@@ -235,7 +249,7 @@ PLVRoomDataManagerProtocol
         [self.view insertSubview:self.chatLandscapeView belowSubview:self.liveRoomSkinView];
        
         CGFloat linkMicAreaViewWidth = 150.0 + rightPadding;
-        linkMicAreaViewWidth = self.linkMicAreaView.inLinkMic ? (self.linkMicAreaView.areaViewShow ? linkMicAreaViewWidth : 0) : 0;
+        linkMicAreaViewWidth = showLinkMicAreaView ? linkMicAreaViewWidth : 0;
         CGRect linkMicAreaViewFrame = CGRectMake(CGRectGetWidth(self.view.bounds) - linkMicAreaViewWidth,
                                                  0,
                                                  linkMicAreaViewWidth,
@@ -279,7 +293,7 @@ PLVRoomDataManagerProtocol
 
 - (void)startCountdownTimer {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (self.countdownTimer || roomData.videoType != PLVChannelVideoType_Live) {
+    if (self.countdownTimer || self.videoType != PLVChannelVideoType_Live) {
         return;
     }
     
@@ -330,8 +344,7 @@ PLVRoomDataManagerProtocol
 }
 
 - (PLVLCLinkMicAreaView *)linkMicAreaView{
-    PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if (!_linkMicAreaView && videoType == PLVChannelVideoType_Live) {
+    if (!_linkMicAreaView && self.videoType == PLVChannelVideoType_Live) {
         _linkMicAreaView = [[PLVLCLinkMicAreaView alloc] init];
         _linkMicAreaView.delegate = self;
         _linkMicAreaView.hidden = YES;
@@ -363,14 +376,21 @@ PLVRoomDataManagerProtocol
 }
 
 - (PLVInteractView *)interactView{
-    PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if (!_interactView && videoType == PLVChannelVideoType_Live) {
+    if (!_interactView && self.videoType == PLVChannelVideoType_Live) {
         _interactView = [[PLVInteractView alloc] init];
         _interactView.frame = self.view.bounds;
         _interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [_interactView loadOnlineInteract];
     }
     return _interactView;
+}
+
+- (PLVChannelType)channelType{
+    return [PLVRoomDataManager sharedManager].roomData.channelType;
+}
+
+- (PLVChannelVideoType)videoType{
+    return [PLVRoomDataManager sharedManager].roomData.videoType;
 }
 
 
@@ -441,16 +461,22 @@ PLVRoomDataManagerProtocol
     [self exitCurrentController];
 }
 
-/// 媒体区域视图需要得知当前的连麦状态
+/// 媒体区域视图需要得知当前‘是否正在连麦’
 - (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView{
     return self.linkMicAreaView.inLinkMic;
 }
 
+/// 媒体区域视图需要得知当前‘是否在RTC房间中’
+- (BOOL)plvLCMediaAreaViewGetInRTCRoom:(PLVLCMediaAreaView *)mediaAreaView{
+    return self.linkMicAreaView.inRTCRoom;
+}
+
+/// 直播 ‘流状态’ 更新
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerStateDidChange:(PLVChannelLiveStreamState)livePlayerState{
     if (livePlayerState == PLVChannelLiveStreamState_Live) {
         [self stopCountdownTimer];
         if (self.linkMicAreaView.inLinkMic == NO) {
-            [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living];
+            [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
         }
     }else if (livePlayerState == PLVChannelLiveStreamState_Stop){
         [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
@@ -461,6 +487,15 @@ PLVRoomDataManagerProtocol
         [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
     }
     [self.menuAreaView updateliveStatue:(livePlayerState == PLVChannelLiveStreamState_Live)];
+}
+
+/// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveStartUpdate:(BOOL)noDelayLiveStart{
+    [self.linkMicAreaView startWatchNoDelay:noDelayLiveStart];
+    if (noDelayLiveStart) {
+        /// 告知 媒体区域视图
+        [self.mediaAreaView switchAreaViewLiveSceneTypeTo:PLVLCMediaAreaViewLiveSceneType_WatchNoDelay];
+    }
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playerPlayingDidChange:(BOOL)playing{
@@ -546,18 +581,51 @@ PLVRoomDataManagerProtocol
     [self.mediaAreaView displayContentView:externalView];
 }
 
+/// ‘是否在RTC房间中’ 状态值发生改变
+- (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView inRTCRoomChanged:(BOOL)inRTCRoom{
+    /// 告知 媒体区域视图
+    PLVLCMediaAreaViewLiveSceneType sceneType;
+    if (inRTCRoom) {
+        sceneType = self.mediaAreaView.channelWatchNoDelay ? PLVLCMediaAreaViewLiveSceneType_WatchNoDelay : PLVLCMediaAreaViewLiveSceneType_InLinkMic;
+    }else{
+        sceneType = PLVLCMediaAreaViewLiveSceneType_WatchCDN;
+    }
+    [self.mediaAreaView switchAreaViewLiveSceneTypeTo:sceneType];
+
+    /// 告知 横屏 皮肤视图
+    PLVLCBasePlayerSkinViewLiveStatus skinViewLiveStatus;
+    if (inRTCRoom) {
+        skinViewLiveStatus = PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay;
+    }else{
+        PLVChannelLiveStreamState liveState = [PLVRoomDataManager sharedManager].roomData.liveState;
+        if (liveState == PLVChannelLiveStreamState_Live) {
+            // 直播中
+            [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
+        }else{
+            // 非直播中
+            [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+        }
+    }
+}
+
+/// ‘RTC房间在线用户数’ 发生改变
+- (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView currentRTCRoomUserCountChanged:(NSInteger)currentRTCRoomUserCount{
+    /// 更新 观看间 UI布局
+    [self updateUI];
+}
+
 /// ‘是否正在连麦’状态值改变
 - (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic{
-    /// 更新 观看间 UI 布局
-    [self updateUI];
-    
-    /// 告知 连麦区域视图 是否允许出现
-    [self.linkMicAreaView showAreaView:inLinkMic];
-    
     /// 告知 媒体区域视图
-    [self.mediaAreaView switchAreaViewLiveSceneTypeTo:inLinkMic ? PLVLCMediaAreaViewLiveSceneType_InLinkMic : PLVLCMediaAreaViewLiveSceneType_WatchCDN];
+    PLVLCMediaAreaViewLiveSceneType sceneType;
+    if (inLinkMic) {
+        sceneType = PLVLCMediaAreaViewLiveSceneType_InLinkMic;
+    }else{
+        sceneType = self.mediaAreaView.channelWatchNoDelay ? PLVLCMediaAreaViewLiveSceneType_WatchNoDelay : PLVLCMediaAreaViewLiveSceneType_WatchCDN;
+    }
+    [self.mediaAreaView switchAreaViewLiveSceneTypeTo:sceneType];
     
-    /// 告知 横屏皮肤视图
+    /// 告知 横屏 皮肤视图
     if (inLinkMic) {
         if (linkMicAreaView.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc) {
             [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC];
@@ -570,14 +638,12 @@ PLVRoomDataManagerProtocol
         PLVChannelLiveStreamState liveState = [PLVRoomDataManager sharedManager].roomData.liveState;
         if (liveState == PLVChannelLiveStreamState_Live) {
             // 直播中
-            [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living];
+            [self.liveRoomSkinView switchSkinViewLiveStatusTo:self.mediaAreaView.channelWatchNoDelay ? PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay : PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
         }else{
             // 非直播中
             [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
         }
     }
-    
-    /// 更新布局
-    [self updateUI];
 }
+
 @end

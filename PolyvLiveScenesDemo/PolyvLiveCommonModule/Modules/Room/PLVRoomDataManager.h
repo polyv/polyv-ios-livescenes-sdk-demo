@@ -20,18 +20,25 @@ NS_ASSUME_NONNULL_BEGIN
 
 @optional
 
+/// 在线人数 onlineCount 更新
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount;
 
+/// 点赞数 likeCount 更新
 - (void)roomDataManager_didLikeCountChanged:(NSUInteger)likeCount;
 
+/// 观看数 watchCount 更新
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount;
 
+/// 播放状态 playing 更新
 - (void)roomDataManager_didPlayingStatusChanged:(BOOL)playing;
 
+/// 直播频道信息 channelInfo 更新
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo;
 
+/// 菜单信息 menuInfo 更新
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo;
 
+/// 直播状态 liveState 更新
 - (void)roomDataManager_didLiveStateChanged:(PLVChannelLiveStreamState)liveState;
 
 @end

@@ -15,16 +15,18 @@
 
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
-#define PLVColor_AreaView_BgBlack UIColorFromRGB(@"#0E141E")
-
-@interface PLVLCLinkMicAreaView () <PLVLinkMicPresenterDelegate,PLVLCLinkMicControlBarDelegate,PLVLCLinkMicWindowsViewDelegate>
+@interface PLVLCLinkMicAreaView () <
+PLVLinkMicPresenterDelegate,
+PLVLCLinkMicControlBarDelegate,
+PLVLCLinkMicWindowsViewDelegate
+>
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL areaViewShow;
-@property (nonatomic, assign) BOOL inLinkMic;
 
 #pragma mark 数据
 @property (nonatomic, assign) BOOL currentLandscape; // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
+@property (nonatomic, assign) NSInteger currentRTCRoomUserCount;
 
 #pragma mark 对象
 @property (nonatomic, strong) PLVLinkMicPresenter * presenter; // 连麦逻辑处理模块
@@ -36,11 +38,11 @@
 ///  ├── (PLVLCLinkMicAreaView) self (lowest)
 ///  │    └── (PLVLCLinkMicWindowsView) windowsView
 ///  │
-///  ├── (PLVLCLinkMicVerticalControlBar) controlBarV
-///  └── (PLVLCLinkMicHorizontalControlBar) controlBarH
+///  ├── (PLVLCLinkMicPortraitControlBar) portraitControlBar
+///  └── (PLVLCLinkMicLandscapeControlBar) landscapeControlBar
 @property (nonatomic, strong) PLVLCLinkMicWindowsView * windowsView;          // 连麦窗口列表视图 (负责展示 多个连麦成员RTC画面窗口，该视图支持左右滑动浏览)
-@property (nonatomic, strong) PLVLCLinkMicVerticalControlBar * controlBarV;   // 连麦悬浮控制栏 (竖屏时出现)
-@property (nonatomic, strong) PLVLCLinkMicHorizontalControlBar * controlBarH; // 连麦悬浮控制栏 (横屏时出现)
+@property (nonatomic, strong) PLVLCLinkMicPortraitControlBar * portraitControlBar;   // 连麦悬浮控制栏 (竖屏时出现)
+@property (nonatomic, strong) PLVLCLinkMicLandscapeControlBar * landscapeControlBar; // 连麦悬浮控制栏 (横屏时出现)
 @property (nonatomic, strong) id <PLVLCLinkMicControlBarProtocol> currentControlBar; // 当前连麦悬浮控制栏 (当前显示在屏幕上的 悬浮控制栏)
 @property (nonatomic, strong) PLVLCLinkMicSpeakingView * landscapeSpeakingView; // 横屏‘某某正在发言’ 视图
 
@@ -74,14 +76,14 @@
         // 竖屏
         /// 添加 竖屏连麦悬浮控制栏
         /// (注:不可添加在window上，否则页面push时将一并带去)
-        if (self.superview && !_controlBarV.superview) { [self.superview addSubview:self.controlBarV]; }
-        self.currentControlBar = self.controlBarV; /// 设置当前的控制栏、同步另一控制栏的状态
+        if (self.superview && !_portraitControlBar.superview) { [self.superview addSubview:self.portraitControlBar]; }
+        self.currentControlBar = self.portraitControlBar; /// 设置当前的控制栏、同步另一控制栏的状态
     } else {
         // 横屏
         /// 添加 横屏连麦悬浮控制栏
         /// (注:不可添加在window上，否则页面push时将一并带去)
-        if (self.superview && !_controlBarH.superview) { [self.superview addSubview:self.controlBarH]; }
-        self.currentControlBar = self.controlBarH; /// 设置当前的控制栏、同步另一控制栏的状态
+        if (self.superview && !_landscapeControlBar.superview) { [self.superview addSubview:self.landscapeControlBar]; }
+        self.currentControlBar = self.landscapeControlBar; /// 设置当前的控制栏、同步另一控制栏的状态
         
         /// 添加 某某正在发言 视图
         if (self.superview && !_landscapeSpeakingView.superview) { [self.superview addSubview:self.landscapeSpeakingView]; }
@@ -89,14 +91,18 @@
     
     if (fullScreenDifferent) {
         /// 布局 连麦控制栏
-        [self.controlBarV refreshControlBarFrame];
-        [self.controlBarH refreshControlBarFrame];
+        [self.portraitControlBar refreshControlBarFrame];
+        [self.landscapeControlBar refreshControlBarFrame];
     }
 }
 
 
 #pragma mark - [ Public Methods ]
 - (void)showAreaView:(BOOL)showStatus{
+    if (!self.inRTCRoom) {
+        NSLog(@"PLVLCLinkMicAreaView - showAreaView failed, not in RTC Room");
+        return;
+    }
     self.areaViewShow = showStatus;
     __weak typeof(self) weakSelf = self;
     CGFloat toAlpha = showStatus ? 1.0 : 0.0;
@@ -109,20 +115,34 @@
     [self.currentControlBar showSelfViewWithAnimation:showStatus];
 }
 
+- (void)startWatchNoDelay:(BOOL)startWatch{
+    if (startWatch) {
+        [self.presenter startWatchNoDelay];
+    }else{
+        [self.presenter stopWatchNoDelay];
+    }
+}
+
 #pragma mark Getter
+- (BOOL)inRTCRoom{
+    return self.presenter.inRTCRoom;
+}
+
 - (PLVChannelLinkMicSceneType)linkMicSceneType{
     return self.presenter.linkMicSceneType;
+}
+
+- (BOOL)inLinkMic{
+    return self.presenter.inLinkMic;
 }
 
 
 #pragma mark - [ Private Methods ]
 - (void)setup{
-    // 原始数据
-    self.inLinkMic = NO;
-    
     // 添加 连麦功能模块
     self.presenter = [[PLVLinkMicPresenter alloc] init];
-    self.presenter.viewDelegate = self;
+    self.presenter.delegate = self;
+    self.presenter.preRenderContainer = self;
     
     // 配置默认值
     /* 默认值以 连麦悬浮控制栏 中声明的为准 (详见 PLVLCLinkMicControlBarProtocol.h)
@@ -134,13 +154,12 @@
 
 - (void)setupUI{
     self.alpha = 0;
-    self.backgroundColor = PLVColor_AreaView_BgBlack;
     
     // 添加 连麦窗口列表视图
     [self addSubview:self.windowsView];
     
-    [self controlBarV];
-    self.currentControlBar = self.controlBarH;
+    [self portraitControlBar];
+    self.currentControlBar = self.landscapeControlBar;
 }
 
 - (void)updateLandscapeSpeakingViewLayout{
@@ -156,20 +175,20 @@
 }
 
 #pragma mark Getter
-- (PLVLCLinkMicVerticalControlBar *)controlBarV{
-    if (!_controlBarV) {
-        _controlBarV = [[PLVLCLinkMicVerticalControlBar alloc] init];
-        _controlBarV.delegate = self;
+- (PLVLCLinkMicPortraitControlBar *)portraitControlBar{
+    if (!_portraitControlBar) {
+        _portraitControlBar = [[PLVLCLinkMicPortraitControlBar alloc] init];
+        _portraitControlBar.delegate = self;
     }
-    return _controlBarV;
+    return _portraitControlBar;
 }
 
-- (PLVLCLinkMicHorizontalControlBar *)controlBarH{
-    if (!_controlBarH) {
-        _controlBarH = [[PLVLCLinkMicHorizontalControlBar alloc] init];
-        _controlBarH.delegate = self;
+- (PLVLCLinkMicLandscapeControlBar *)landscapeControlBar{
+    if (!_landscapeControlBar) {
+        _landscapeControlBar = [[PLVLCLinkMicLandscapeControlBar alloc] init];
+        _landscapeControlBar.delegate = self;
     }
-    return _controlBarH;
+    return _landscapeControlBar;
 }
 
 - (PLVLCLinkMicWindowsView *)windowsView{
@@ -212,7 +231,7 @@
     }else if (status == PLVLCLinkMicControlBarStatus_Joined){
         // Bar 处于已连麦，点击表示希望取消申请连麦
         [PLVFdUtil showAlertWithTitle:@"确认挂断连麦吗？" message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"挂断" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
-            [weakSelf.presenter quitLinkMic];
+            [weakSelf.presenter leaveLinkMic];
         }];
     }
 }
@@ -247,7 +266,7 @@
 }
 
 /// 连麦窗口被点击事件 (表示用户希望视图位置交换)
-- (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView windowCellDidClicked:(NSIndexPath *)indexPath linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser canvasView:(UIView *)canvasView{
+- (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView wantExchangeWithExternalViewForLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser canvasView:(UIView *)canvasView{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:rtcWindowDidClickedCanvasView:)]) {
         return [self.delegate plvLCLinkMicAreaView:self rtcWindowDidClickedCanvasView:canvasView];
     }else{
@@ -265,7 +284,7 @@
 
 /// 连麦窗口被点击事件 (表示用户希望某个窗口成为‘第一画面’)
 - (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView linkMicUserWantToBecomeFirstSite:(NSInteger)index{
-    [self.presenter changeMainSpeakerWithLinkMicUserIndex:index];
+    [self.presenter changeMainSpeakerInLocalWithLinkMicUserIndex:index];
 }
 
 /// 连麦窗口列表视图 需要获取当前用户数组
@@ -284,26 +303,34 @@
 }
 
 #pragma mark PLVLinkMicPresenterDelegate
+/// 房间加入状态发生改变
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter currentRtcRoomJoinStatus:(PLVLinkMicPresenterRoomJoinStatus)currentRtcRoomJoinStatus inRTCRoomChanged:(BOOL)inRTCRoomChanged inRTCRoom:(BOOL)inRTCRoom{
+    if (inRTCRoomChanged) {
+        [self showAreaView:inRTCRoom]; /// 作为默认显示状态
+        
+        if ([self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:inRTCRoomChanged:)]) {
+            [self.delegate plvLCLinkMicAreaView:self inRTCRoomChanged:inRTCRoom];
+        }
+    }
+}
+
 /// 连麦状态 发生改变
-- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicStatusChanged:(PLVLinkMicStatus)currentStatus{
-    BOOL currentInLinkMic = (currentStatus == PLVLinkMicStatus_Joined);
-    BOOL needCallToInLinkMicChanged = (self.inLinkMic != currentInLinkMic);
-    self.inLinkMic = currentInLinkMic;
-    if (needCallToInLinkMicChanged) {
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter currentLinkMicStatus:(PLVLinkMicStatus)currentLinkMicStatus inLinkMicChanged:(BOOL)inLinkMicChanged inLinkMic:(BOOL)inLinkMic{
+    if (inLinkMicChanged) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:inLinkMicChanged:)]) {
-            [self.delegate plvLCLinkMicAreaView:self inLinkMicChanged:self.inLinkMic];
+            [self.delegate plvLCLinkMicAreaView:self inLinkMicChanged:inLinkMic];
         }
     }
     
-    if (currentStatus == PLVLinkMicStatus_NotOpen) {
+    if (currentLinkMicStatus == PLVLinkMicStatus_NotOpen) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Default];
-    }else if (currentStatus == PLVLinkMicStatus_Open) {
+    }else if (currentLinkMicStatus == PLVLinkMicStatus_Open) {
         PLVLCLinkMicControlBarType barType = presenter.linkMicMediaType == PLVLinkMicMediaType_Audio ? PLVLCLinkMicControlBarType_Audio : PLVLCLinkMicControlBarType_Video;
         self.currentControlBar.barType = barType;
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Open];
-    }else if (currentStatus == PLVLinkMicStatus_Waiting) {
+    }else if (currentLinkMicStatus == PLVLinkMicStatus_Waiting) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Waiting];
-    }else if (currentStatus == PLVLinkMicStatus_Joined) {
+    }else if (currentLinkMicStatus == PLVLinkMicStatus_Joined) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Joined];
     }
 }
@@ -329,11 +356,20 @@
 
 /// 连麦在线用户数组 发生变化
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicOnlineUserListRefresh:(NSArray *)onlineUserArray{
+    NSInteger userCount = onlineUserArray.count;
+    BOOL needCallback = (self.currentRTCRoomUserCount != userCount);
+    self.currentRTCRoomUserCount = userCount;
+    if (needCallback) {
+        if ([self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:currentRTCRoomUserCountChanged:)]) {
+            [self.delegate plvLCLinkMicAreaView:self currentRTCRoomUserCountChanged:self.currentRTCRoomUserCount];
+        }
+    }
+    
     [self.windowsView reloadLinkMicUserWindows];
 }
 
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerLinkMicUserId:(NSString *)mainSpeakerLinkMicUserId mainSpeakerToMainScreen:(BOOL)mainSpeakerToMainScreen{
-    if (presenter.linkMicStatus == PLVLinkMicStatus_Joined) {
+    if (presenter.inRTCRoom) {
         [self.windowsView linkMicWindowMainSpeaker:mainSpeakerLinkMicUserId toMainScreen:mainSpeakerToMainScreen];
     }else{
         NSLog(@"PLVLCLinkMicAreaView -  call [linkMicWindowLinkMicUserId:wannaBecomeFirstSite:] failed, not in linkmic");
@@ -399,7 +435,7 @@
             msg = [NSString stringWithFormat:@"%ld,%ld",(long)errorCode,(long)extraCode];
         }
         
-        [PLVLCUtils showHUDWithTitle:@"连麦中发生错误" detail:msg view:currentVC.view];
+        [PLVLCUtils showHUDWithTitle:@"RTC遇到错误" detail:msg view:currentVC.view];
     } else if (errorCode >= PLVLinkMicErrorCode_LeaveChannelFailedStatusIllegal &&
                errorCode <= PLVLinkMicErrorCode_LeaveChannelFailedSocketCannotSend){ /// 退出连麦失败
         NSString * msg = @"";

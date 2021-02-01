@@ -31,13 +31,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换至 显示默认内容视图
 ///
 /// @note 切换至 显示默认内容视图后，PLVLCLinkMicWindowCell 将处于 ’状态一‘(即 PLVLCLinkMicWindowCellLayoutType_Default) 的布局层级。
-///       此方法会对 canvasView 重新布局，同时移除 外部视图。
+///       此方法会对 rtcCanvasView 重新布局，同时移除 外部视图。
 - (void)switchToShowRtcContentView:(UIView *)rtcCanvasView;
 
 /// 切换至 显示外部内容视图
 ///
 /// @note 切换至 显示外部内容视图后，PLVLCLinkMicWindowCell 将处于 ’状态二‘(即 PLVLCLinkMicWindowCellLayoutType_External)  的布局层级。
-///       此方法不会对 canvasView 作处理。
+///       此方法不会对 rtcCanvasView 作处理。
 - (void)switchToShowExternalContentView:(UIView *)externalContentView;
 
 @end

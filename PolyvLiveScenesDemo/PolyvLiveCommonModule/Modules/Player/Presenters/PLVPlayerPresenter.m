@@ -25,6 +25,7 @@ PLVAdvViewDelegate
 @property (nonatomic, assign) PLVChannelVideoType currentVideoType;
 @property (nonatomic, assign) BOOL needShowLoading;
 @property (nonatomic, assign) BOOL keepShowAdv;
+@property (nonatomic, assign) BOOL currentNoDelayLiveStart;
 
 #pragma mark UI
 /// view hierarchy
@@ -100,6 +101,10 @@ PLVAdvViewDelegate
 
 - (NSString *)advLinkUrl {
     return [PLVRoomDataManager sharedManager].roomData.channelInfo.advertHref;
+}
+
+- (BOOL)channelWatchNoDelay{
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay;
 }
 
 #pragma mark 通用
@@ -218,6 +223,7 @@ PLVAdvViewDelegate
         self.livePlayer = [[PLVLivePlayer alloc] initWithPolyvAccountUserId:userIdForAccount channelId:roomData.channelId];
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
+        self.livePlayer.channelWatchNoDelay = roomData.menuInfo.watchNoDelay;
         [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
         
         self.livePlayer.chaseFrame = NO;
@@ -249,6 +255,9 @@ PLVAdvViewDelegate
     self.warmUpImageView.frame = self.backgroundView.bounds;
     
     UIView * superView = self.backgroundView;
+    if (CGSizeEqualToSize(superView.frame.size, CGSizeZero)) {
+        superView.frame = CGRectMake(0, 0, 30, 70);
+    }
     UIActivityIndicatorView * activityView = self.activityView;
     NSDictionary * activityViewViews = NSDictionaryOfVariableBindings(activityView, superView);
     [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[activityView]-|" options:NSLayoutFormatAlignAllCenterY metrics:nil views:activityViewViews]];
@@ -485,6 +494,15 @@ PLVAdvViewDelegate
     if ([self.delegate respondsToSelector:@selector(playerPresenter:streamStateUpdate:streamStateDidChanged:)]) {
         [self.delegate playerPresenter:self streamStateUpdate:newestStreamState streamStateDidChanged:streamStateDidChanged];
     }
+    
+    if (livePlayer.channelWatchNoDelay) {
+        BOOL noDelayLiveStart = (newestStreamState == PLVChannelLiveStreamState_Live);
+        BOOL noDelayLiveStartDidChanged = (noDelayLiveStart != self.currentNoDelayLiveStart);
+        self.currentNoDelayLiveStart = noDelayLiveStart;
+        if ([self.delegate respondsToSelector:@selector(playerPresenter:noDelayLiveStartUpdate:noDelayLiveStartDidChanged:)]) {
+            [self.delegate playerPresenter:self noDelayLiveStartUpdate:noDelayLiveStart noDelayLiveStartDidChanged:noDelayLiveStartDidChanged];
+        }
+    }
 }
 
 /// 直播播放器 发生错误
@@ -494,27 +512,27 @@ PLVAdvViewDelegate
     if ((error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_PlayRestrict] &&
          error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_RequestFailed])) {
         /// 限制信息
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     } else if ((error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_RequestFailed] &&
                 error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_CodeError]) ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_ParameterError]){
         /// 频道信息请求失败
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     } else if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeNetwork_NotGoodNetwork]){
         /// 网络不佳视频加载缓
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     } else if ((error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetStreamState_DataError] &&
                 error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetStreamState_RequestFailed]) ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetStreamState_ParameterError]){
         /// 直播流状态信息 请求失败
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     } else if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetSessionID_RequestFailed] ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetSessionID_ParameterError]){
         /// 直播SessionID 请求失败
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     } else {
         /// 其他错误 (如网络错误)
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     }
     
     if ([self.delegate respondsToSelector:@selector(playerPresenter:loadPlayerFailureWithMessage:)]) {
@@ -566,12 +584,12 @@ PLVAdvViewDelegate
          error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_RequestFailed]) ||
         error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_ParameterError]) {
         /// 回放信息请求失败
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     } else if ((error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_RequestFailed] &&
                 error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_CodeError]) ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_ParameterError]){
         /// 频道信息请求失败
-        message = [NSString stringWithFormat:@"%ld %@",error.code,error.localizedDescription];
+        message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     }
     
     if ([self.delegate respondsToSelector:@selector(playerPresenter:loadPlayerFailureWithMessage:)]) {
@@ -600,7 +618,7 @@ PLVAdvViewDelegate
     }
 }
 
-#pragma mark - PLVAdvViewDelegate
+#pragma mark PLVAdvViewDelegate
 /// 广告状态回调
 - (void)advView:(PLVAdvView *)advView status:(PLVAdvViewStatus)status {
     if (status == PLVAdvViewStatusPlay) {

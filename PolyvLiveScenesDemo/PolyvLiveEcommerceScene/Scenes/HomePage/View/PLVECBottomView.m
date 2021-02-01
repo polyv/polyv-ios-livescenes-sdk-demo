@@ -42,6 +42,7 @@
 #pragma mark - Action
 
 - (void)closeButtonAction:(UIButton *)button {
+    self.hidden = YES;
     if (self.closeButtonActionBlock) {
         self.closeButtonActionBlock(self);
     }

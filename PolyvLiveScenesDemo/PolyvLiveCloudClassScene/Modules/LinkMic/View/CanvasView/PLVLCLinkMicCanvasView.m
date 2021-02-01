@@ -8,8 +8,6 @@
 
 #import "PLVLCLinkMicCanvasView.h"
 
-#define PLVColor_View_DarkBlue UIColorFromRGB(@"2B3145")
-
 #import "PLVLCUtils.h"
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
@@ -21,7 +19,7 @@
 ///  ├── (UIImageView) placeholderImageView
 ///  └── (UIView) external rtc View
 @property (nonatomic, strong) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
-@property (nonatomic, weak) UIView * rtcView; // RTC画面视图 (弱引用；仅用作记录)
+@property (nonatomic, weak) UIView * rtcView; // rtcView (弱引用；仅用作记录)
 
 @end
 
@@ -82,7 +80,8 @@
 
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
-    self.backgroundColor = PLVColor_View_DarkBlue;
+    self.clipsToBounds = YES;
+    self.backgroundColor = UIColorFromRGB(@"2B3145");
     
     /// 添加视图
     [self addSubview:self.placeholderImageView];

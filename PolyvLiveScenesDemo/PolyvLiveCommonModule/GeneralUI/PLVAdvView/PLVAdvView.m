@@ -43,7 +43,10 @@ PLVPlayerDelegate
     CGRect lbFrame = _lbTime.frame;
     lbFrame.origin.x = PLVScreenWidth + (CGRectGetWidth(self.bounds) - PLVScreenWidth) / 2.0f - 15 - lbFrame.size.width;
     lbFrame.origin.y = 15;
-    if (CGRectGetHeight(self.bounds) == CGRectGetHeight([UIScreen mainScreen].bounds)) {
+    
+    CGFloat selfHeight = CGRectGetHeight(self.bounds);
+    
+    if (selfHeight >= PLVScreenHeight || PLVScreenHeight - selfHeight < 116) {
         lbFrame.origin.y = [PLVFdUtil isiPhoneXSeries] ? (116 + P_SafeAreaTopEdgeInsets()) : 116;
     }
     _lbTime.frame = lbFrame;

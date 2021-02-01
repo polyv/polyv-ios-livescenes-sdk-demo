@@ -94,7 +94,6 @@ UITableViewDataSource
 - (void)dealloc {
     [self removeOrientationObserver];
     [self removeObserveTableView];
-    [[PLVLCChatroomViewModel sharedViewModel] removeDelegate:self];
 }
 
 #pragma mark - Getter & Setter

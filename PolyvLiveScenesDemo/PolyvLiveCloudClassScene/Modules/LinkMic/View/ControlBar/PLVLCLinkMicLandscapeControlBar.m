@@ -1,12 +1,12 @@
 //
-//  PLVLCLinkMicHorizontalControlBar.m
+//  PLVLCLinkMicLandscapeControlBar.m
 //  PolyvLiveScenesDemo
 //
 //  Created by Lincal on 2020/8/31.
 //  Copyright © 2020 polyv. All rights reserved.
 //
 
-#import "PLVLCLinkMicHorizontalControlBar.h"
+#import "PLVLCLinkMicLandscapeControlBar.h"
 
 #import "PLVLCUtils.h"
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
@@ -19,7 +19,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarNormalHeight = 77.0; // Bar
 static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Video = 200.0; // Bar 最大高度 (视频连麦类型)
 static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; // Bar 最大高度 (音频连麦类型)
 
-@interface PLVLCLinkMicHorizontalControlBar ()
+@interface PLVLCLinkMicLandscapeControlBar ()
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL phoneRotated; // 当前电话图标是否已旋转 (NO未旋转:倾斜 YES已旋转:水平)
@@ -31,7 +31,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 @property (nonatomic, strong) UITapGestureRecognizer * tapGR;
 /// view hierarchy
 ///
-/// (PLVLCLinkMicHorizontalControlBar) self
+/// (PLVLCLinkMicLandscapeControlBar) self
 /// ├── (UIView) backgroundView (lowest)
 /// ├── (UIButton) onOffButton
 /// ├── (UILabel) textLabel
@@ -41,7 +41,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 
 @end
 
-@implementation PLVLCLinkMicHorizontalControlBar
+@implementation PLVLCLinkMicLandscapeControlBar
 
 @synthesize delegate = _delegate;
 @synthesize canMove = _canMove;
@@ -185,7 +185,6 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
         self.barType = controlBar.barType;
         self.cameraButton.selected = controlBar.cameraButton.selected;
         self.switchCameraButton.selected = controlBar.switchCameraButton.selected;
-        self.switchCameraButton.userInteractionEnabled = controlBar.switchCameraButton.enabled;
         self.switchCameraButton.alpha = _mediaControlButtonsShow ? (self.switchCameraButton.selected ? 0.5 : 1.0) : 0.0;
         self.switchCameraButtonFront = controlBar.switchCameraButtonFront;
         self.micButton.selected = controlBar.micButton.selected;
@@ -244,7 +243,6 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
     // 恢复默认值
     _cameraButton.selected = !PLVLCLinkMicControlBarCameraDefaultOpen;
     _switchCameraButton.selected = !PLVLCLinkMicControlBarCameraDefaultOpen;
-    _switchCameraButton.userInteractionEnabled = PLVLCLinkMicControlBarCameraDefaultOpen;
     _switchCameraButtonFront = PLVLCLinkMicControlBarSwitchCameraDefaultFront;
     _micButton.selected = !PLVLCLinkMicControlBarMicDefaultOpen;
 }
@@ -427,7 +425,9 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 
 #pragma mark Action
 - (void)tapGestureAction:(UITapGestureRecognizer *)tapGR {
-    [self onOffButtonAction:self.onOffButton];
+    if (self.status == PLVLCLinkMicControlBarStatus_Open || self.status == PLVLCLinkMicControlBarStatus_Waiting) {
+        [self onOffButtonAction:self.onOffButton];
+    }
 }
 
 - (void)onOffButtonAction:(UIButton *)button{
@@ -447,7 +447,6 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
                 if (openResult) {
                     button.selected = !wannaOpen;
                     weakSelf.switchCameraButton.selected = !wannaOpen;
-                    weakSelf.switchCameraButton.userInteractionEnabled = wannaOpen;
                     weakSelf.switchCameraButton.alpha = wannaOpen ? 1.0 : 0.5;
                 }
             });
@@ -456,6 +455,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 }
 
 - (void)switchCameraButtonAction:(UIButton *)button{
+    if (_switchCameraButton.selected) { return; }
     _switchCameraButtonFront = !_switchCameraButtonFront;
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicControlBar:switchCameraButtonClicked:)]) {
         [self.delegate plvLCLinkMicControlBar:self switchCameraButtonClicked:_switchCameraButtonFront];

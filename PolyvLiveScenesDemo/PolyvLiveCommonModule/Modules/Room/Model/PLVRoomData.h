@@ -60,7 +60,7 @@ extern NSString *PLVLCChatroomFunctionGotNotification;
 @property (nonatomic, assign) BOOL welcomeShowDisable;
 
 /// 获取频道菜单信息
-- (void)requestChannelDetail;
+- (void)requestChannelDetail:(void(^)(PLVLiveVideoChannelMenuInfo *channelMenuInfo))completion;
 
 /// 上报观看热度
 - (void)reportViewerIncrease;
@@ -70,6 +70,9 @@ extern NSString *PLVLCChatroomFunctionGotNotification;
 
 /// 设置 roomUser
 - (void)setupRoomUser:(PLVRoomUser *)roomUser;
+
+/// 获取商品列表
+- (void)requestCommodityList:(NSUInteger)channelId rank:(NSUInteger)rank count:(NSUInteger)count completion:(void (^)(NSUInteger total, NSArray<PLVCommodityModel *> *commoditys))completion failure:(void (^)(NSError *))failure;
 
 @end
 

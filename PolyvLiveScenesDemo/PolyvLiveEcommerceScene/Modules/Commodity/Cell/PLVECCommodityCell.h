@@ -1,5 +1,5 @@
 //
-//  PLVECCommodityCell.h
+//  PLVECCommodityCellNew.h
 //  PolyvLiveScenesDemo
 //
 //  Created by ftao on 2020/6/29.
@@ -7,9 +7,17 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "PLVECCommodityCellModel.h"
+#import <PLVLiveScenesSDK/PLVCommodityModel.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+@class PLVECCommodityCell;
+
+@protocol PLVECCommodityCellDelegate <NSObject>
+
+- (void)didSelectWithCommodityCell:(PLVECCommodityCell *)commodityCell;
+
+@end
 
 @interface PLVECCommodityCell : UITableViewCell
 
@@ -25,9 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) UIButton *selectButton;
 
-@property (nonatomic, strong) PLVECCommodityCellModel *cellModel;
+@property (nonatomic, strong) PLVCommodityModel *model;
 
-@property (nonatomic, weak) id<PLVECCommodityDelegate> delegate;
+@property (nonatomic, weak) id<PLVECCommodityCellDelegate> delegate;
+
+@property (nonatomic, strong, readonly) NSURL *jumpLinkUrl;
 
 @end
 

@@ -73,6 +73,9 @@ PLVRoomDataManagerProtocol
         
         self.pageController = [[PLVPageController alloc] init];
         [self addSubview:self.pageController.view];
+        
+        PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;
+        if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
     }
     return self;
 }

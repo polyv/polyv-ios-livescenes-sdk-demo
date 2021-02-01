@@ -249,6 +249,7 @@ PLVPlayerPresenterDelegate
         [self.audioAnimalView stopAnimating];
         self.displayView.hidden = NO;
     }
+    self.logoMainView.hidden = self.displayView.hidden;
     [self.playerPresenter switchLiveToAudioMode:audioMode];
 }
 
@@ -331,8 +332,8 @@ PLVPlayerPresenterDelegate
     }
     
     if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(updateDowloadProgress:playedProgress:currentPlaybackTime:duration:)]) {
-        [self.delegate updateDowloadProgress:downloadProgress playedProgress:playedProgress currentPlaybackTime:playedTimeString duration:durationTimeString];
+        [self.delegate respondsToSelector:@selector(updateDowloadProgress:playedProgress:duration:currentPlaybackTime:durationTime:)]) {
+        [self.delegate updateDowloadProgress:downloadProgress playedProgress:playedProgress duration:playerPresenter.duration currentPlaybackTime:playedTimeString durationTime:durationTimeString];
     }
 }
 

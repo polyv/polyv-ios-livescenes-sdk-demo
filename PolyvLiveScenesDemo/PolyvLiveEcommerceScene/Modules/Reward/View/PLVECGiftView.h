@@ -13,11 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 打赏礼物视图
 @interface PLVECGiftView : UIView
 
-@property (nonatomic, strong) UILabel *nameLabel;
-
-@property (nonatomic, strong) UILabel *messageLable;
-
-@property (nonatomic, strong) UIImageView *giftImgView;
+- (void)showGiftAnimation:(NSString *)userName giftName:(NSString *)giftName giftType:(NSString *)giftType;
 
 @end
 

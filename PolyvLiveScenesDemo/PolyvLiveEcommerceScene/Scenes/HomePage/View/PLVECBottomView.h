@@ -12,11 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @class PLVECBottomView;
 
-typedef void(^CloseButtonActionBlock)(PLVECBottomView *view);
-
 @interface PLVECBottomView : UIView
 
-@property (nonatomic, copy) CloseButtonActionBlock closeButtonActionBlock;
+@property (nonatomic, copy) void(^closeButtonActionBlock)(PLVECBottomView *view);
 
 @end
 

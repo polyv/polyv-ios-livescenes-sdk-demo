@@ -4,7 +4,7 @@
 //
 //  Created by ftao on 2020/8/20.
 //  Copyright © 2020 polyv. All rights reserved.
-//
+//  推送商品
 
 #import "PLVECCommodityPushView.h"
 #import <PolyvFoundationSDK/PLVFdUtil.h>
@@ -114,23 +114,49 @@
 
 #pragma mark - Setter
 
-- (void)setCellModel:(PLVECCommodityCellModel *)cellModel {
-    _cellModel = cellModel;
-    if (!cellModel) {
+- (void)setModel:(PLVCommodityModel *)model {
+    _model = model;
+    if (!model) {
         return;
     }
     
+    // 实际价格显示逻辑
+    NSString *realPriceStr = [NSString stringWithFormat:@"¥ %@",model.realPrice];
+    if ([model.realPrice isEqualToString:@"0"]) {
+        realPriceStr = @"免费";
+    }
+    
+    // 原价格显示逻辑
+    NSAttributedString *priceAtrrStr = nil;
+    if (model.realPrice && ![model.price isEqualToString:@"0"]) {
+        UIColor *grayColor = [UIColor colorWithRed:173/255.f green:173/255.f blue:192/255.f alpha:1];
+        NSDictionary *attrParams = @{NSForegroundColorAttributeName:grayColor,
+                                     NSFontAttributeName:[UIFont systemFontOfSize:12],
+                                     NSStrikethroughStyleAttributeName:@(NSUnderlineStyleSingle),
+                                     NSStrikethroughColorAttributeName:grayColor,
+                                     NSBaselineOffsetAttributeName:@(0)};
+        priceAtrrStr = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"¥ %@",model.price] attributes:attrParams];
+    }
+    
+    // 封面地址
+    NSURL *coverUrl;
+    if ([model.cover hasPrefix:@"http"]) {
+        coverUrl = [NSURL URLWithString:model.cover];
+    } else if (model.cover) {
+        coverUrl = [NSURL URLWithString:[@"https:" stringByAppendingString:model.cover]];
+    }
+    
     self.hidden = NO;
-    self.nameLabel.text = cellModel.model.name;
-    self.realPriceLabel.text = cellModel.realPriceStr;
-    self.priceLabel.attributedText = cellModel.priceAtrrStr;
-    self.showIdLabel.text = [NSString stringWithFormat:@"%ld",cellModel.model.showId];
+    self.nameLabel.text = model.name;
+    self.realPriceLabel.text = realPriceStr;
+    self.priceLabel.attributedText = priceAtrrStr;
+    self.showIdLabel.text = [NSString stringWithFormat:@"%ld",model.showId];
     
     [self.realPriceLabel sizeToFit];
     self.priceLabel.frame = CGRectMake(CGRectGetMaxX(self.realPriceLabel.frame)+4, CGRectGetMinY(self.realPriceLabel.frame)+4, 120, 17);
        
     self.coverImageView.image = nil;
-    [PLVFdUtil setImageWithURL:cellModel.coverUrl inImageView:self.coverImageView completed:^(UIImage *image, NSError *error, NSURL *imageURL) {
+    [PLVFdUtil setImageWithURL:coverUrl inImageView:self.coverImageView completed:^(UIImage *image, NSError *error, NSURL *imageURL) {
         if (error) {
             NSLog(@"-setCellModel:图片加载失败，%@",imageURL);
         }
@@ -152,8 +178,21 @@
 }
 
 - (void)jumpButtonAction {
-    if (self.cellModel && [self.delegate respondsToSelector:@selector(commodity:didSelect:)]) {
-        [self.delegate commodity:self didSelect:self.cellModel];
+    NSURL *jumpLinkUrl;
+    // 跳转地址
+    if (10 == self.model.linkType) { // 通用链接
+        jumpLinkUrl = [NSURL URLWithString:self.model.link];
+    } else if (11 == self.model.linkType) { // 多平台链接
+        jumpLinkUrl = [NSURL URLWithString:self.model.mobileAppLink];
+    } else {
+        jumpLinkUrl = nil;
+    }
+    if (jumpLinkUrl && !jumpLinkUrl.scheme) {
+        jumpLinkUrl = [NSURL URLWithString:[@"http://" stringByAppendingString:jumpLinkUrl.absoluteString]];
+    }
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(jumpToGoodsDetail:)]) {
+        [self.delegate jumpToGoodsDetail:jumpLinkUrl];
     }
 }
 

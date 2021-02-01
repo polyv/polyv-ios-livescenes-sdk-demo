@@ -29,6 +29,7 @@
 ///      ├── (UIView) contentBackgroudView (lowest)
 ///      │   └── (PLVLCLinkMicCanvasView) canvasView
 ///      │
+///      ├── (CAGradientLayer) shadowLayerLeft
 ///      ├── (CAGradientLayer) shadowLayer
 ///      ├── (UIButton) micButton
 ///      └── (UILabel) nicknameLabel (top)
@@ -36,14 +37,15 @@
 /// 状态二 (显示PPT画面时；contentBackgroudView 将移至最上层，并承载一个未知具体类型的外部view):
 /// (PLVLCLinkMicWindowCell) self
 /// └── (UIView) contentView
-///     ├── (CAGradientLayer) shadowLayer (lowest)
+///     ├── (CAGradientLayer) shadowLayerLeft (lowest)
+///     ├── (CAGradientLayer) shadowLayer
 ///     ├── (UIButton) micButton
 ///     ├── (UILabel) nicknameLabel
 ///     │
 ///     └── (UIView) contentBackgroudView (top)
 ///         └── (UIView) unknown external View
 @property (nonatomic, strong) UIView * contentBackgroudView;      // 内容背景视图 (负责承载 不同类型的内容画面[RTC画面、PPT画面]；直接决定了’内容画面‘在Cell中的布局、图层、圆角)
-@property (nonatomic, strong) CAGradientLayer * shadowLayerLeft;  // 左边阴影背景   (负责展示 阴影背景)
+@property (nonatomic, strong) CAGradientLayer * shadowLayerLeft;  // 左边阴影背景 (负责展示 阴影背景)
 @property (nonatomic, strong) CAGradientLayer * shadowLayer;      // 阴影背景   (负责展示 阴影背景)
 @property (nonatomic, strong) UIButton * micButton;               // 麦克风按钮 (负责展示 不同状态下的麦克风图标)
 @property (nonatomic, strong) UILabel * nicknameLabel;            // 昵称文本框 (负责展示 用户昵称)
@@ -66,13 +68,6 @@
 
 - (void)layoutSubviews{
     [super layoutSubviews];
-    [self layoutCellSubviews];
-
-    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    [self windowCellCornerShow:fullScreen];
-}
-
-- (void)layoutCellSubviews{
     CGFloat cellWidth = CGRectGetWidth(self.bounds);
     CGFloat cellHeight = CGRectGetHeight(self.bounds);
     
@@ -93,6 +88,9 @@
                                           cellHeight - 2 - nicknameLabelHeight,
                                           cellWidth - 20 - 8,
                                           nicknameLabelHeight);
+
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    [self windowCellCornerShow:fullScreen];
 }
 
 
@@ -116,9 +114,9 @@
     };
     
     /// 摄像画面
-    [userModel.canvasView rtcViewShow:userModel.currentCameraOpen];
-    userModel.cameraOpenChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-        [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraOpen];
+    [userModel.canvasView rtcViewShow:userModel.currentCameraShouldShow];
+    userModel.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
     };
     
     /// 音量
@@ -130,16 +128,7 @@
     };
 }
 
-- (void)switchToShowExternalContentView:(UIView *)externalContentView{
-    // contentBackgroudView 移至 contentView 的最顶层
-    [self.contentView bringSubviewToFront:self.contentBackgroudView];
-    
-    // contentBackgroudView 承载外部未知具体类型的视图
-    [self contentBackgroudViewAddView:externalContentView];
-
-    self.layoutType = PLVLCLinkMicWindowCellLayoutType_External;
-}
-
+/// 切换至 显示默认内容视图
 - (void)switchToShowRtcContentView:(UIView *)rtcCanvasView{
     // 移除 contentBackgroudView 上的外部视图
     [self removeSubview:self.contentBackgroudView];
@@ -153,12 +142,15 @@
     self.layoutType = PLVLCLinkMicWindowCellLayoutType_Default;
 }
 
-- (void)windowCellCornerShow:(BOOL)cornerShow{
-    if (cornerShow) {
-        self.contentBackgroudView.layer.cornerRadius = 8.0;
-    }else{
-        self.contentBackgroudView.layer.cornerRadius = 0;
-    }
+/// 切换至 显示外部内容视图
+- (void)switchToShowExternalContentView:(UIView *)externalContentView{
+    // contentBackgroudView 移至 contentView 的最顶层
+    [self.contentView bringSubviewToFront:self.contentBackgroudView];
+    
+    // contentBackgroudView 承载外部未知具体类型的视图
+    [self contentBackgroudViewAddView:externalContentView];
+
+    self.layoutType = PLVLCLinkMicWindowCellLayoutType_External;
 }
 
 
@@ -172,7 +164,6 @@
 }
 
 - (void)contentBackgroudViewAddView:(UIView *)contentView{
-    if (contentView.constraints.count > 0) { [NSLayoutConstraint deactivateConstraints:contentView.constraints]; }
     contentView.frame = self.contentBackgroudView.bounds;
     contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self.contentBackgroudView addSubview:contentView];
@@ -182,6 +173,14 @@
     int volumeLevel = ((int)(micVolume * 100 / 10)) * 10;
     NSString * micImageName = [NSString stringWithFormat:@"plvlc_linkmic_mic_volume_%d",volumeLevel];
     [self.micButton setImage:[self getImageWithName:micImageName] forState:UIControlStateNormal];
+}
+
+- (void)windowCellCornerShow:(BOOL)cornerShow{
+    if (cornerShow) {
+        self.contentBackgroudView.layer.cornerRadius = 8.0;
+    }else{
+        self.contentBackgroudView.layer.cornerRadius = 0;
+    }
 }
 
 #pragma mark UI

@@ -91,6 +91,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     self.delegate = nil;
     [self.chatCachTimer invalidate];
     self.chatCachTimer = nil;
+    
+    self.getHistoryTime = 0;
 }
 
 #pragma mark - 发送消息

@@ -40,11 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVECMoreViewDelegate> delegate;
 
-@property (nonatomic, copy, readonly) NSArray<PLVECMoreViewItem *> *items;
-
 - (void)reloadData;
-
-- (void)setItemsHidden:(BOOL)hidden;
 
 @end
 

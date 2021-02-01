@@ -54,7 +54,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     self.roomData = roomData;
     [self addRoomDataObserver];
     
-    [self.roomData requestChannelDetail];
+    //[self.roomData requestChannelDetail:nil];
     [self.roomData reportViewerIncrease];
 }
 

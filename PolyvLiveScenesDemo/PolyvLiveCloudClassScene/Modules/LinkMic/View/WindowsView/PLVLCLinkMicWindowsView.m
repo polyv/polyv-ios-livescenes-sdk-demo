@@ -26,6 +26,7 @@ UICollectionViewDelegate
 @property (nonatomic, assign) BOOL hadShowedGuide;  // 是否已展示过’左滑引导‘
 @property (nonatomic, assign) BOOL guideShowing;    // 是否正在展示’左滑引导‘
 @property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType; /// 只读，当前频道连麦场景类型
+@property (nonatomic, assign, readonly) BOOL showingExternalView;
 
 #pragma mark 数据
 @property (nonatomic, readonly) NSArray <PLVLinkMicOnlineUser *> * dataArray; // 只读，当前连麦在线用户数组
@@ -34,6 +35,7 @@ UICollectionViewDelegate
 @property (nonatomic, copy) NSString * currentMainSpeakerUserId;
 @property (nonatomic, assign) float lastOffsetX;    // collectionView 滑动上次停留的x点位置
 @property (nonatomic, copy) NSString * manualSwitchMainSpeakerUserId; // 当前由用户触发的、切去主屏显示的、成为第一画面的用户连麦id
+@property (nonatomic, copy) void (^collectionReloadBlock) (void);
 
 #pragma mark UI
 @property (nonatomic, weak) UIView * externalView; // 外部视图 (正在被显示在 PLVLCLinkMicWindowsView 窗口列表中的外部视图；弱引用)
@@ -99,6 +101,11 @@ UICollectionViewDelegate
         [self showGuideView];
     }
     [self.collectionView setCollectionViewLayout:self.collectionViewLayout animated:YES];
+    
+    if (selfHeight > 0 && self.collectionReloadBlock) {
+        self.collectionReloadBlock();
+        self.collectionReloadBlock = nil;
+    }
 }
 
 - (void)layoutGuideView{
@@ -122,29 +129,25 @@ UICollectionViewDelegate
 
 #pragma mark - [ Public Methods ]
 - (void)reloadLinkMicUserWindows{
-    [self.collectionView reloadData];
-    [self showGuideView];
-        
+    NSInteger finalCellNum = self.dataArray.count;
+    PLVLinkMicOnlineUser * firstSiteOnlineUser = self.dataArray.firstObject;
+
     if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc) { /// 完全RTC (云课堂连麦)
-        BOOL originalShowingExternalCellIndexPath = (self.showingExternalCellIndexPath != nil);
-        if (![self.currentMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
-            if (self.showingExternalCellIndexPath) {
-                NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
+        if (self.showingExternalView) {
+            if (![self.showingExternalCellLinkMicUserId isEqualToString:firstSiteOnlineUser.linkMicUserId]) {
+                /// 若 “第一画面” 发生变更
                 [self rollbackExternalView];
-                [self rollbackLinkMicCanvasView:oriIndexPath];
+                [self wantExchangeWithExternalViewForLinkMicUser:firstSiteOnlineUser needReload:NO];
             }
-        }
-        
-        if (self.dataArray.count >= 1) {
-            if (originalShowingExternalCellIndexPath) {
-                [self collectionView:_collectionView didSelectItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]];
-            } else if ([PLVFdUtil checkStringUseable:self.manualSwitchMainSpeakerUserId] && [self.manualSwitchMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
-                [self collectionView:_collectionView didSelectItemAtIndexPath:[NSIndexPath indexPathForRow:0 inSection:0]];
+        }else{
+            /// 若是手动点击触发的
+            if ([PLVFdUtil checkStringUseable:self.manualSwitchMainSpeakerUserId] &&
+                [self.manualSwitchMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
+                [self wantExchangeWithExternalViewForLinkMicUser:self.dataArray.firstObject needReload:NO];
                 self.manualSwitchMainSpeakerUserId = nil;
             }
         }
     } else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){ /// 完全RTC (新版普通直播连麦)
-        PLVLinkMicOnlineUser * firstSiteOnlineUser = self.dataArray.firstObject;
         if (firstSiteOnlineUser) {
             [self checkUserModelAndSetupLinkMicCanvasView:firstSiteOnlineUser];
             [self setupUserModelWillDeallocBlock:firstSiteOnlineUser];
@@ -153,6 +156,18 @@ UICollectionViewDelegate
                 [self.delegate plvLCLinkMicWindowsView:self showFirstSiteCanvasViewOnExternal:firstSiteOnlineUser.canvasView];
             }
         }
+        finalCellNum = (finalCellNum - 1) <= 0 ? 0 : (finalCellNum - 1);
+    }
+
+    if (!CGRectGetHeight(self.bounds) && finalCellNum > 0) {
+        __weak typeof(self) weakSelf = self;
+        self.collectionReloadBlock = ^{
+            [weakSelf.collectionView reloadData];
+            [weakSelf showGuideView];
+        };
+    }else{
+        [self.collectionView reloadData];
+        [self showGuideView];
     }
     
     if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
@@ -169,25 +184,13 @@ UICollectionViewDelegate
         return;
     }
     
-    if (mainSpeakerToMainScreen) {
-        // 切换至主屏
-        if (self.showingExternalCellLinkMicUserId) {
-            /// 已显示在主屏视图中，无需处理
-        }else{
-            /// 未显示在主视图中，将对应rtcView切换至主视图中
-            NSIndexPath * cellIndexPath = [self.collectionView indexPathForCell:[self findCellWithUserId:linkMicUserId]];
-            [self collectionView:self.collectionView didSelectItemAtIndexPath:cellIndexPath];
-        }
-    }else{
-        // 切换至小窗
-        if (self.showingExternalCellIndexPath == nil) {
-            /// 已显示在小窗视图中，无需处理
-        }else{
-            /// 未显示在小窗视图中，将对应rtcView切换至小窗视图中
-            NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
-            [self rollbackExternalView];
-            [self rollbackLinkMicCanvasView:oriIndexPath];
-        }
+    if (mainSpeakerToMainScreen && !self.showingExternalView) {
+        [self wantExchangeWithExternalViewForLinkMicUser:[self readUserModelFromDataArray:[self findCellIndexWithUserId:linkMicUserId]] needReload:YES];
+        
+    }else if(!mainSpeakerToMainScreen && self.showingExternalView){
+        NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
+        [self rollbackExternalView];
+        [self rollbackLinkMicCanvasView:oriIndexPath];
     }
 }
 
@@ -205,6 +208,10 @@ UICollectionViewDelegate
 }
 
 - (PLVLCLinkMicWindowCell *)findCellWithUserId:(NSString *)userId{
+    return [self getWindowCellWithIndex:[self findCellIndexWithUserId:userId]];
+}
+
+- (NSInteger)findCellIndexWithUserId:(NSString *)userId{
     NSInteger targetUserIndex = -1;
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:findUserModelIndexWithFiltrateBlock:)]) {
         targetUserIndex = [self.delegate plvLCLinkMicWindowsView:self findUserModelIndexWithFiltrateBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
@@ -212,7 +219,7 @@ UICollectionViewDelegate
             return NO;
         }];
     }
-    return [self getWindowCellWithIndex:targetUserIndex];
+    return targetUserIndex;
 }
 
 - (PLVLCLinkMicWindowCell *)getWindowCellWithIndex:(NSInteger)cellIndex{
@@ -222,16 +229,15 @@ UICollectionViewDelegate
     return cell;
 }
 
-- (PLVLinkMicOnlineUser *)readUserModelFromDataArray:(NSIndexPath *)indexPath{
-    NSInteger targetIndexPathRow = indexPath.row;
+- (PLVLinkMicOnlineUser *)readUserModelFromDataArray:(NSInteger)targetIndex{
     if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc ||
         self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){
-        targetIndexPathRow++;
+        targetIndex++;
     }
     
     PLVLinkMicOnlineUser * user;
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:getUserModelFromOnlineUserArrayWithIndex:)]) {
-        user = [self.delegate plvLCLinkMicWindowsView:self getUserModelFromOnlineUserArrayWithIndex:targetIndexPathRow];
+        user = [self.delegate plvLCLinkMicWindowsView:self getUserModelFromOnlineUserArrayWithIndex:targetIndex];
     }
     return user;
 }
@@ -266,6 +272,23 @@ UICollectionViewDelegate
     } completion:nil];
 }
 
+- (void)wantExchangeWithExternalViewForLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser needReload:(BOOL)reload{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:wantExchangeWithExternalViewForLinkMicUser:canvasView:)]) {
+        UIView * returnView = [self.delegate plvLCLinkMicWindowsView:self wantExchangeWithExternalViewForLinkMicUser:linkMicUser canvasView:linkMicUser.canvasView];
+        
+        if (returnView && [returnView isKindOfClass:UIView.class]) {
+            self.showingExternalCellLinkMicUserId = linkMicUser.linkMicUserId;
+            self.externalView = returnView;
+            if (reload) {
+                NSIndexPath * targetCellIndexPath = [NSIndexPath indexPathForRow:[self findCellIndexWithUserId:linkMicUser.linkMicUserId] inSection:0];
+                [self.collectionView reloadItemsAtIndexPaths:@[targetCellIndexPath]];
+            }
+        }else{
+            NSLog(@"PLVLCLinkMicWindowsView - return view illegal, returnView:%@",returnView);
+        }
+    }
+}
+
 - (void)rollbackExternalView{
     // 告知外部对象，进行视图位置回退、恢复
     if (self.externalView) {
@@ -279,7 +302,7 @@ UICollectionViewDelegate
 }
 
 - (void)rollbackLinkMicCanvasView:(NSIndexPath *)oriIndexPath{
-    PLVLinkMicOnlineUser * oriUserModel = [self readUserModelFromDataArray:oriIndexPath];
+    PLVLinkMicOnlineUser * oriUserModel = [self readUserModelFromDataArray:oriIndexPath.row];
     if (oriUserModel){
         // 将播放画布视图恢复至默认位置
         PLVLCLinkMicWindowCell * showingExternalCell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:oriIndexPath];
@@ -340,7 +363,7 @@ UICollectionViewDelegate
         layout.footerReferenceSize = CGSizeZero;
         
         _collectionView = [[UICollectionView alloc] initWithFrame:self.bounds collectionViewLayout:layout];
-        _collectionView.backgroundColor = PLVColor_View_Black;
+        _collectionView.backgroundColor = [UIColor clearColor];
         _collectionView.dataSource = self;
         _collectionView.delegate = self;
         _collectionView.showsVerticalScrollIndicator = NO;
@@ -423,6 +446,10 @@ UICollectionViewDelegate
     return nil;
 }
 
+- (BOOL)showingExternalView{
+    return [PLVFdUtil checkStringUseable:self.showingExternalCellLinkMicUserId];
+}
+
 #pragma mark - [ Delegate ]
 #pragma mark UIScrollViewDelegate
 - (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView{
@@ -443,14 +470,15 @@ UICollectionViewDelegate
         return dataNum; /// 此场景下，全部连麦用户在连麦窗口列表中，均有座位
     } else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc ||
                self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){
-        return (dataNum - 1); /// 此场景下，第一位连麦用户，不需在连麦窗口列表中拥有座位
+        NSInteger finalCellNum = (dataNum - 1) <= 0 ? 0 : (dataNum - 1);
+        return finalCellNum; /// 此场景下，第一位连麦用户，不需在连麦窗口列表中拥有座位
     }
     return dataNum;
 }
 
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath{
     BOOL thisCellShowingExternalView = NO;
-    PLVLinkMicOnlineUser * linkMicUserModel = [self readUserModelFromDataArray:indexPath];
+    PLVLinkMicOnlineUser * linkMicUserModel = [self readUserModelFromDataArray:indexPath.row];
     if (!linkMicUserModel) {
         NSLog(@"PLVLCLinkMicWindowsView - cellForItemAtIndexPath for %@ error",indexPath);
         return [collectionView dequeueReusableCellWithReuseIdentifier:@"PLVLCLinkMicWindowCellID" forIndexPath:indexPath];
@@ -500,7 +528,7 @@ UICollectionViewDelegate
         return;
     }
     
-    PLVLinkMicOnlineUser * currentTapUserModel = [self readUserModelFromDataArray:indexPath];
+    PLVLinkMicOnlineUser * currentTapUserModel = [self readUserModelFromDataArray:indexPath.row];
     if (!currentTapUserModel) {
         NSLog(@"PLVLCLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ can't get userModel",indexPath);
         return;
@@ -513,37 +541,16 @@ UICollectionViewDelegate
             [self.delegate plvLCLinkMicWindowsView:self linkMicUserWantToBecomeFirstSite:targetUserIndex];
         }
         self.manualSwitchMainSpeakerUserId = currentTapUserModel.linkMicUserId;
-        return;
-    }
-    
-    if (self.showingExternalCellIndexPath) {
-        NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
-
-        // 将 外部视图 交回给外部，并将rtc视图显示回列表中
-        [self rollbackExternalView];
-        [self rollbackLinkMicCanvasView:oriIndexPath];
-
-        // 若点击的是 窗口列表中的外部视图，则仅回退恢复即可
-        if ([oriIndexPath compare:indexPath] == NSOrderedSame) { return; }
-    }
-    
-    PLVLCLinkMicWindowCell * cell = (PLVLCLinkMicWindowCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    UIView * returnView;
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:windowCellDidClicked:linkMicUser:canvasView:)]) {
-        // 告知外部对象，进行视图位置交换。同时将连麦播放画布视图，传予外部对象
-        returnView = [self.delegate plvLCLinkMicWindowsView:self windowCellDidClicked:indexPath linkMicUser:currentTapUserModel canvasView:currentTapUserModel.canvasView];
-        
-        // 外部对象返回的，是需要交换显示位置的外部视图
-        if (returnView && [returnView isKindOfClass:UIView.class]) {
-            [cell switchToShowExternalContentView:returnView];
-            self.showingExternalCellIndexPath = indexPath;
-            self.showingExternalCellLinkMicUserId = currentTapUserModel.linkMicUserId;
-            self.externalView = returnView;
-        }else{
-            NSLog(@"PLVLCLinkMicWindowsView - return view illegal, returnView:%@",returnView);
+    } else {
+        if (self.showingExternalView) {
+            // 将 外部视图 交回给外部，并将rtc视图显示回列表中
+            NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
+            [self rollbackExternalView];
+            [self rollbackLinkMicCanvasView:oriIndexPath];
+        } else {
+            [self wantExchangeWithExternalViewForLinkMicUser:currentTapUserModel needReload:YES];
         }
     }
 }
-
 
 @end

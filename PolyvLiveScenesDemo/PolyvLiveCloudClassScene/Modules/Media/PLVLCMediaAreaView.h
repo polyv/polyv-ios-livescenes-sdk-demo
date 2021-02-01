@@ -24,9 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///       该枚举与 ‘直播状态’ 没有直接的关系；
 ///       因为不由 ‘直播流的变化’ 来触发，而是由 ‘业务交互’ 触发；
 typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
-    PLVLCMediaAreaViewLiveSceneType_WatchCDN = 0,     /// 观看 ‘CDN’ 场景（包含 直播中、直播结束）
-    PLVLCMediaAreaViewLiveSceneType_WatchNoDelay = 2, /// 观看 ‘无延迟’ 场景
-    PLVLCMediaAreaViewLiveSceneType_InLinkMic = 4,    /// 正在 ‘连麦’ 场景
+    PLVLCMediaAreaViewLiveSceneType_WatchCDN = 0,     /// 正在观看 ‘CDN’ 场景（包含 直播中、直播结束）
+    PLVLCMediaAreaViewLiveSceneType_WatchNoDelay = 2, /// 正在观看 ‘无延迟’ 场景
+    PLVLCMediaAreaViewLiveSceneType_InLinkMic = 4,    /// 正在进行 ‘连麦’ 场景
 };
 
 @protocol PLVLCMediaAreaViewDelegate;
@@ -60,7 +60,13 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 当前播放器类型
 ///
 /// @note 可通过 [switchAreaViewLiveSceneTypeTo:] 方法进行切换；仅适用在视频类型为 ‘直播’ 时使用此类型值
-@property (nonatomic, assign, readonly) PLVLCMediaAreaViewLiveSceneType liveSceneType;
+@property (nonatomic, assign, readonly) PLVLCMediaAreaViewLiveSceneType currentLiveSceneType;
+
+/// 该频道是否观看 ‘无延迟直播’
+@property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
+
+/// 无延迟直播的当前 ‘开始结束状态’
+@property (nonatomic, assign, readonly) BOOL noDelayLiveStart;
 
 #pragma mark UI
 /// 媒体播放器皮肤视图 (用于 竖屏时 显示)
@@ -77,6 +83,7 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
+
 
 #pragma mark - [ 方法 ]
 /// 显示或隐藏弹幕
@@ -114,15 +121,25 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param mediaAreaView 连麦区域视图
 - (void)plvLCMediaAreaViewWannaBack:(PLVLCMediaAreaView *)mediaAreaView;
 
-/// 媒体区域视图需要得知当前的连麦状态
+/// 媒体区域视图需要得知当前‘是否正在连麦’
 ///
 /// @note 此回调不保证在主线程触发
-
+///
 /// @param mediaAreaView 媒体区域视图
 ///
 /// @return BOOL 由外部告知的当前是否连麦中 (YES:正在连麦中 NO:不在连麦中)
 - (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView;
 
+/// 媒体区域视图需要得知当前‘是否在RTC房间中’
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param mediaAreaView 媒体区域视图
+///
+/// @return BOOL 由外部告知的当前是否在RTC房间中 (YES:在RTC房间中 NO:不在RTC房间中)
+- (BOOL)plvLCMediaAreaViewGetInRTCRoom:(PLVLCMediaAreaView *)mediaAreaView;
+
+/// 直播 ‘流状态’ 更新
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerStateDidChange:(PLVChannelLiveStreamState)livePlayerState;
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playerPlayingDidChange:(BOOL)playing;
@@ -136,7 +153,7 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 媒体区域视图询问是否有 外部视图 处理此次触摸事件
 ///
 /// @note 并非任何触摸事件，都将回调此方法，因为有些触摸事件是点击 皮肤视图skinView 上的有效控件的。
-///       此方法，主要是为了解决 “一些触摸事件被皮肤视图遮挡” 的场景。
+///       此方法，主要是为了解决 “一些触摸事件被皮肤视图遮挡” 的场景问题。
 ///
 /// @param mediaAreaView 媒体区域视图
 /// @param point 此次触摸事件的 CGPoint (相对于皮肤视图skinView；可用于判断该触摸，是否在某个外部视图的范围内)
@@ -147,6 +164,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// 用户希望连麦区域视图 隐藏/显示
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView userWannaLinkMicAreaViewShow:(BOOL)wannaShow onSkinView:(PLVLCBasePlayerSkinView *)skinView;
+
+/// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveStartUpdate:(BOOL)noDelayLiveStart;
 
 /// 回放场景
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;

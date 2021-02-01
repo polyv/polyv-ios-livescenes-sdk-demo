@@ -11,10 +11,16 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVECSwitchView;
+
 @protocol PLVPlayerSwitchViewDelegate <NSObject>
 
+- (NSArray<NSString *> *)dataSourceOfSwitchView:(PLVECSwitchView *)switchView;
+
 @optional
-- (void)playerSwitchView:(PLVECSwitchView *)playerSwitchView didSelectItem:(NSString *)item;
+
+- (void)playerSwitchView:(PLVECSwitchView *)playerSwitchView
+        didSelectedIndex:(NSUInteger)selectedIndex
+            selectedItem:(NSString *)selectedItem;
 
 @end
 
@@ -25,9 +31,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) UILabel *titleLable;
 
-@property (nonatomic, copy) NSArray<NSString *> *items;
-
 @property (nonatomic, assign) NSUInteger selectedIndex;
+
+- (void)reloadData;
 
 @end
 

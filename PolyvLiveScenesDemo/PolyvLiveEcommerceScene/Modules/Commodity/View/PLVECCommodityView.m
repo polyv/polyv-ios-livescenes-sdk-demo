@@ -4,25 +4,88 @@
 //
 //  Created by ftao on 2020/6/28.
 //  Copyright © 2020 polyv. All rights reserved.
-//
+//  商品列表View
 
 #import "PLVECCommodityView.h"
 #import "PLVECUtils.h"
 
 @interface PLVECCommodityView ()
 
-@property (nonatomic, strong) PLVECCommodityPresenter *presenter;
+@property (nonatomic, strong) UIImageView *iconImageView;
+
+@property (nonatomic, strong) UIImageView *notAddedImageView;
+
+@property (nonatomic, strong) UILabel *tipLabel;
+
+@property (nonatomic, strong) UILabel *titleLabel;
+
+@property (nonatomic, strong) UITableView *tableView;
+
+@property (nonatomic, strong) UIActivityIndicatorView *indicatorView;
 
 @end
 
 @implementation PLVECCommodityView
 
-#pragma mark - <PLVECCommodityViewProtocol>
+#pragma mark - [ Life Period ]
+- (instancetype)initWithFrame:(CGRect)frame {
+    if (self = [super initWithFrame:frame]) {
+        [self setupUI];
+    }
+    
+    return self;
+}
 
-@synthesize channelId;
-@synthesize titleLabel;
-@synthesize tableView;
-@synthesize indicatorView;
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    
+    self.iconImageView.frame = CGRectMake(16, 21, 12, 12);
+    self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.iconImageView.frame)+4, 18, 100, 17);
+    self.indicatorView.center = CGPointMake(CGRectGetWidth(self.bounds)/2, CGRectGetHeight(self.bounds)/2);
+    self.tableView.frame = CGRectMake(16, 55, CGRectGetWidth(self.bounds)-32, CGRectGetHeight(self.bounds)-55);
+}
+
+#pragma mark - [ Public Methods ]
+- (void)setDataSource:(id<UITableViewDataSource>)dataSource {
+    self.tableView.dataSource = dataSource;
+}
+
+- (void)setDelegate:(id<UITableViewDelegate>)delegate {
+    self.tableView.delegate = delegate;
+}
+
+- (void)startLoading {
+    [self.indicatorView startAnimating];
+}
+
+- (void)stopLoading {
+    [self.indicatorView stopAnimating];
+}
+
+- (void)reloadData:(NSInteger)total {
+    if (total < 0) {
+        total = 0;
+    }
+    
+    [self setupUIOfNoGoods:total == 0];
+    
+    UIFont *font = [UIFont systemFontOfSize:12.0];
+    NSMutableAttributedString *mAttriStr = [[NSMutableAttributedString alloc] initWithString:@"共件商品" attributes:@{NSFontAttributeName:font, NSForegroundColorAttributeName:UIColor.whiteColor}];
+    NSAttributedString *countStr = [[NSAttributedString alloc] initWithString:@(total).stringValue attributes:@{NSFontAttributeName:font, NSForegroundColorAttributeName:[UIColor colorWithRed:1 green:153/255.0 blue:17/255.0 alpha:1]}];
+    [mAttriStr insertAttributedString:countStr atIndex:1];
+    
+    self.titleLabel.attributedText = mAttriStr;
+    
+    [self.tableView reloadData];
+}
+
+#pragma mark - [ Private Methods ]
+- (void)setupUI {
+    [self addSubview:self.iconImageView];
+    [self addSubview:self.titleLabel];
+    [self addSubview:self.indicatorView];
+    [self addSubview:self.tableView];
+}
 
 - (void)setupUIOfNoGoods:(BOOL)noGoods {
     if (noGoods) {
@@ -38,86 +101,53 @@
     }
 }
 
-- (void)jumpToGoodsDetail:(NSURL *)goodsURL {
-    self.hidden = YES;
-    [self clearCommodityInfo];
-    
-    if (self.goodsSelectedHandler) {
-        self.goodsSelectedHandler(goodsURL);
+#pragma mark Getter
+- (UIImageView *)iconImageView {
+    if (! _iconImageView) {
+        _iconImageView = [[UIImageView alloc] init];
+        _iconImageView.image = [PLVECUtils imageForWatchResource:@"plv_commodity_icon"];
     }
+    
+    return _iconImageView;
 }
 
-#pragma mark - <PLVECCommodityPresenterProtocol>
-
-- (void)setChannelId:(NSString *)channelId {
-    self.presenter.channelId = channelId;
-}
-
-- (void)loadCommodityInfo {
-    [self.presenter loadCommodityInfo];
-}
-
-- (void)clearCommodityInfo {
-    [self.presenter clearCommodityInfo];
-}
-
-- (void)receiveProductMessage:(NSInteger)status content:(id)content {
-    [self.presenter receiveProductMessage:status content:content];
-}
-
-#pragma mark - Self methods
-
-- (instancetype)initWithFrame:(CGRect)frame
-{
-    self = [super initWithFrame:frame];
-    if (self) {
-        [self setupUI];
-        
-        self.presenter = [[PLVECCommodityPresenter alloc] init];
-        self.presenter.view = self;
+- (UILabel *)titleLabel {
+    if (! _titleLabel) {
+        _titleLabel = [[UILabel alloc] init];
+        _titleLabel.textAlignment = NSTextAlignmentLeft;
     }
-    return self;
+    
+    return _titleLabel;
 }
 
-- (void)setupUI {
-    self.iconImageView = [[UIImageView alloc] init];
-    self.iconImageView.image = [PLVECUtils imageForWatchResource:@"plv_commodity_icon"];
-    [self addSubview:self.iconImageView];
-    
-    self.titleLabel = [[UILabel alloc] init];
-    self.titleLabel.textAlignment = NSTextAlignmentLeft;
-    [self addSubview:self.titleLabel];
-    
-    if (@available(iOS 13.0, *)) {
-#ifdef __IPHONE_13_0
-        self.indicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
-#else
-        self.indicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
-#endif
-    } else {
-        self.indicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+- (UIActivityIndicatorView *)indicatorView {
+    if (! _indicatorView) {
+        if (@available(iOS 13.0, *)) {
+    #ifdef __IPHONE_13_0
+            _indicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleLarge];
+    #else
+            _indicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+    #endif
+        } else {
+            _indicatorView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge];
+        }
     }
-    [self addSubview:self.indicatorView];
     
-    self.tableView = [[UITableView alloc] init];
-    self.tableView.backgroundColor = UIColor.clearColor;
-    self.tableView.allowsSelection =  NO;
-    self.tableView.showsVerticalScrollIndicator = NO;
-    self.tableView.showsHorizontalScrollIndicator = NO;
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-    [self addSubview:self.tableView];
+    return _indicatorView;
 }
 
-- (void)layoutSubviews {
-    [super layoutSubviews];
+- (UITableView *)tableView {
+    if (! _tableView) {
+        _tableView = [[UITableView alloc] init];
+        _tableView.backgroundColor = UIColor.clearColor;
+        _tableView.allowsSelection =  NO;
+        _tableView.showsVerticalScrollIndicator = NO;
+        _tableView.showsHorizontalScrollIndicator = NO;
+        _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    }
     
-    self.iconImageView.frame = CGRectMake(16, 21, 12, 12);
-    self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.iconImageView.frame)+4, 18, 100, 17);
-    self.indicatorView.center = CGPointMake(CGRectGetWidth(self.bounds)/2, CGRectGetHeight(self.bounds)/2);
-    self.tableView.frame = CGRectMake(16, 55, CGRectGetWidth(self.bounds)-32, CGRectGetHeight(self.bounds)-55);
+    return _tableView;
 }
-
-#pragma mark - Getter
 
 - (UIImageView *)notAddedImageView {
     if (!_notAddedImageView) {

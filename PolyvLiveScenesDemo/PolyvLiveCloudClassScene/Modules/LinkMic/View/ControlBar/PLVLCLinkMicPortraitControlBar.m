@@ -1,12 +1,12 @@
 //
-//  PLVLCLinkMicVerticalControlBar.m
+//  PLVLCLinkMicPortraitControlBar.m
 //  PolyvLiveScenesDemo
 //
 //  Created by Lincal on 2020/7/29.
 //  Copyright © 2020 polyv. All rights reserved.
 //
 
-#import "PLVLCLinkMicVerticalControlBar.h"
+#import "PLVLCLinkMicPortraitControlBar.h"
 
 #import "PLVLCUtils.h"
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
@@ -22,7 +22,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarNormalWidth = 128.0; // Bar �
 static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Video = 200.0; // Bar 最大宽度 (视频连麦类型)
 static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Bar 最大宽度 (音频连麦类型)
 
-@interface PLVLCLinkMicVerticalControlBar () <CAAnimationDelegate>
+@interface PLVLCLinkMicPortraitControlBar () <CAAnimationDelegate>
 
 #pragma mark 对象
 @property (nonatomic, strong) NSTimer * timer;   // 定时器 (负责到指定时间，收起控制栏横条)
@@ -41,7 +41,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 @property (nonatomic, strong) UITapGestureRecognizer * tapGR;
 /// view hierarchy
 ///
-/// (PLVLCLinkMicVerticalControlBar) self
+/// (PLVLCLinkMicPortraitControlBar) self
 /// ├── (UIView) backgroundView (lowest)
 /// ├── (UIButton) onOffButton
 /// ├── (UILabel) textLabel
@@ -52,7 +52,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 
 @end
 
-@implementation PLVLCLinkMicVerticalControlBar
+@implementation PLVLCLinkMicPortraitControlBar
 
 @synthesize delegate = _delegate;
 @synthesize canMove = _canMove;
@@ -221,7 +221,6 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
         self.barType = controlBar.barType;
         self.cameraButton.selected = controlBar.cameraButton.selected;
         self.switchCameraButton.selected = controlBar.switchCameraButton.selected;
-        self.switchCameraButton.userInteractionEnabled = controlBar.switchCameraButton.enabled;
         self.switchCameraButton.alpha = _mediaControlButtonsShow ? (self.switchCameraButton.selected ? 0.5 : 1.0) : 0.0;
         self.switchCameraButtonFront = controlBar.switchCameraButtonFront;
         self.micButton.selected = controlBar.micButton.selected;
@@ -285,7 +284,6 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
     // 恢复默认值
     _cameraButton.selected = !PLVLCLinkMicControlBarCameraDefaultOpen;
     _switchCameraButton.selected = !PLVLCLinkMicControlBarCameraDefaultOpen;
-    _switchCameraButton.userInteractionEnabled = PLVLCLinkMicControlBarCameraDefaultOpen;
     _switchCameraButtonFront = PLVLCLinkMicControlBarSwitchCameraDefaultFront;
     _micButton.selected = !PLVLCLinkMicControlBarMicDefaultOpen;
 }
@@ -428,13 +426,13 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
         [self textLabelShow:YES];
     }
     
+    [self controlBarUserInteractionEnabled:NO];
     __weak typeof(self) weakSelf = self;
-    weakSelf.userInteractionEnabled = NO;
     [UIView animateWithDuration:PLVLCLinkMicControlBar_ShiftTime delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         [weakSelf refreshControlBarFrame];
         weakSelf.alpha = 1;
     } completion:^(BOOL finished) {
-        weakSelf.userInteractionEnabled = YES;
+        [weakSelf controlBarUserInteractionEnabled:YES];
         [weakSelf startHideSelfViewTimer];
     }];
 }
@@ -458,14 +456,14 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
             [self textLabelShow:NO];
         }
         
+        [self controlBarUserInteractionEnabled:NO];
         __weak typeof(self) weakSelf = self;
         CGRect __block oriFrame = weakSelf.frame;
-        weakSelf.userInteractionEnabled = NO;
         [UIView animateWithDuration:PLVLCLinkMicControlBar_ShiftTime delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             oriFrame.origin.x = CGRectGetMaxX(weakSelf.rangeRect) - weakSelf.selfWidth;
             weakSelf.frame = oriFrame;
         } completion:^(BOOL finished) {
-            weakSelf.userInteractionEnabled = YES;
+            [weakSelf controlBarUserInteractionEnabled:YES];
             /// 需延后设置长度
             oriFrame.size.width = weakSelf.selfWidth;
             weakSelf.frame = oriFrame;
@@ -480,13 +478,13 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
         
         [self textLabelShow:NO];
         
+        [self controlBarUserInteractionEnabled:NO];
         __weak typeof(self) weakSelf = self;
-        weakSelf.userInteractionEnabled = NO;
         [UIView animateWithDuration:PLVLCLinkMicControlBar_ShiftTime delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
             [weakSelf refreshControlBarFrame];
             weakSelf.alpha = 0;
         } completion:^(BOOL finished) {
-            weakSelf.userInteractionEnabled = YES;
+            [weakSelf controlBarUserInteractionEnabled:YES];
         }];
     }
 }
@@ -612,7 +610,9 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 }
 
 - (void)tapGestureAction:(UITapGestureRecognizer *)tapGR {
-    [self onOffButtonAction:self.onOffButton];
+    if (self.status == PLVLCLinkMicControlBarStatus_Open || self.status == PLVLCLinkMicControlBarStatus_Waiting) {
+        [self onOffButtonAction:self.onOffButton];
+    }
 }
 
 - (void)onOffButtonAction:(UIButton *)button{
@@ -640,7 +640,6 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
                 if (openResult) {
                     button.selected = !wannaOpen;
                     weakSelf.switchCameraButton.selected = !wannaOpen;
-                    weakSelf.switchCameraButton.userInteractionEnabled = wannaOpen;
                     weakSelf.switchCameraButton.alpha = wannaOpen ? 1.0 : 0.5;
                 }
             });
@@ -649,6 +648,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 }
 
 - (void)switchCameraButtonAction:(UIButton *)button{
+    if (_switchCameraButton.selected) { return; }
     [self startHideSelfViewTimer];
     _switchCameraButtonFront = !_switchCameraButtonFront;
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicControlBar:switchCameraButtonClicked:)]) {

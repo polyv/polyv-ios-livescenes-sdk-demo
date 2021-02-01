@@ -57,7 +57,7 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 
 #pragma mark - 接口请求
 
-- (void)requestChannelDetail {
+- (void)requestChannelDetail:(void (^)(PLVLiveVideoChannelMenuInfo *))completion{
     if (!self.channelId || ![self.channelId isKindOfClass:[NSString class]]) {
         return;
     }
@@ -72,8 +72,10 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
     [PLVLiveVideoAPI getChannelMenuInfos:self.channelId.integerValue completion:^(PLVLiveVideoChannelMenuInfo *channelMenuInfo) {
         loading = NO;
         [weakSelf updateMenuInfo:channelMenuInfo];
+        if (completion) { completion(channelMenuInfo); }
     } failure:^(NSError *error) {
         loading = NO;
+        if (completion) { completion(nil); }
     }];
 }
 
@@ -108,6 +110,11 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
             [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomFunctionGotNotification object:switchInfo];
         }
     } failure:nil];
+}
+
+#pragma mark 获取商品列表
+- (void)requestCommodityList:(NSUInteger)channelId rank:(NSUInteger)rank count:(NSUInteger)count completion:(void (^)(NSUInteger total, NSArray<PLVCommodityModel *> *commoditys))completion failure:(void (^)(NSError *))failure {
+    [PLVLiveVideoAPI loadCommodityList:channelId rank:rank count:count completion:completion failure:failure];
 }
 
 @end

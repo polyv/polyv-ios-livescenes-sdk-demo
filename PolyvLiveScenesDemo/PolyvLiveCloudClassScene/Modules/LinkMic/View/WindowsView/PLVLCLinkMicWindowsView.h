@@ -50,12 +50,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 通过此回调，和外部对象，进行视图位置交换
 ///
 /// @param windowsView 连麦窗口列表视图
-/// @param indexPath 被点击窗口 对应的下标
-/// @param linkMicUser 被点击窗口 对应的连麦用户数据
+/// @param linkMicUser 被点击窗口 对应的连麦用户模型
 /// @param canvasView 被点击窗口 对应的连麦画布视图
 ///
 /// @return UIView 外部对象返回的视图，将显示在被点击窗口的位置
-- (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView windowCellDidClicked:(NSIndexPath *)indexPath linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser canvasView:(UIView *)canvasView;
+- (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView wantExchangeWithExternalViewForLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser canvasView:(UIView *)canvasView;
 
 /// 连麦窗口需要回退外部视图
 ///

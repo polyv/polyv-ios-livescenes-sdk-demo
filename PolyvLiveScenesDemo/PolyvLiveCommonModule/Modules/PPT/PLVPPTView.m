@@ -56,6 +56,12 @@
                                                (viewHeight - backgroudImageViewHeight) / 2.0,
                                                backgroudImageViewWidth,
                                                backgroudImageViewHeight);
+
+    if (!CGSizeEqualToSize(self.bounds.size, CGSizeZero) && !self.pptWebview.autoresizingMask) {
+        self.pptWebview.frame = self.bounds;
+        self.pptWebview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [self.pptWebview loadOnlinePPT];
+    }
 }
 
 
@@ -98,9 +104,6 @@
     [self addSubview:self.backgroudImageView];
 
     [self addSubview:self.pptWebview];
-    self.pptWebview.frame = self.bounds;
-    self.pptWebview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    [self.pptWebview loadOnlinePPT];
 }
 
 #pragma mark Getter

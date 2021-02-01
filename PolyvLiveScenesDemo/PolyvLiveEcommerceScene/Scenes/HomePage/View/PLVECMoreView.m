@@ -27,16 +27,12 @@
 
 @implementation PLVECMoreView
 
+#pragma mark - Public
+
 - (void)reloadData {
     if (self.delegate) {
         NSArray *items = [self.delegate dataSourceOfMoreView:self];
         [self setupUIWithItems:items];
-    }
-}
-
-- (void)setItemsHidden:(BOOL)hidden {
-    for (PLVECMoreViewItem *item in self.items) {
-        [[self viewWithTag:item.tag] setHidden:hidden];
     }
 }
 

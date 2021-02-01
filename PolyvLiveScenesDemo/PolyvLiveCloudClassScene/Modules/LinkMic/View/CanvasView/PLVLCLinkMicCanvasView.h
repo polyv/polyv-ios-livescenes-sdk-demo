@@ -10,27 +10,26 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-/// 连麦RTC画布视图
+/// 云课堂场景下 PLVLinkMicOnlineUser 的 rtcview 的容器
 ///
-/// @note 负责承载 RTC画面；
-///       此View应仅负责承载，可通过调用 [addRTCView:] 添加RTC画面 (RTC画面不应直接渲染在此View上，避免画面变动而产生多次渲染问题)
+/// @note 负责承载 PLVLinkMicOnlineUser 的 rtcview；并负责云课堂场景的UI业务；
+///       PLVLCLinkMicCanvasView 应仅负责承载，可通过调用 [addRTCView:] 添加 rtcview；
 @interface PLVLCLinkMicCanvasView : UIView
 
-@property (nonatomic, strong, readonly) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
+#pragma mark - [ 属性 ]
+/// 背景视图 (负责展示 占位图)
+@property (nonatomic, strong, readonly) UIImageView * placeholderImageView;
 
-/// 添加RTC画面
-///
-/// @note 仅负责承载
-///
-/// @param rtcView RTC画面视图
+#pragma mark - [ 方法 ]
+/// 添加 rtcview
 - (void)addRTCView:(UIView *)rtcView;
 
-/// 移除RTC画面视图
+/// 移除 rtcview
 - (void)removeRTCView;
 
-/// RTC画面 关闭/打开
+/// rtcview 隐藏/显示
 ///
-/// @param rtcViewShow RTC画面 关闭或打开 (YES:打开展示 NO:关闭隐藏)
+/// @param rtcViewShow rtcview 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)rtcViewShow:(BOOL)rtcViewShow;
 
 @end

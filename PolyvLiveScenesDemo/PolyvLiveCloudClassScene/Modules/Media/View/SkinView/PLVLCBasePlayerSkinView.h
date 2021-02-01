@@ -29,9 +29,10 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewType) {
 /// @note 仅在直播场景类型 PLVLCBasePlayerSkinViewType_AloneLive、PLVLCBasePlayerSkinViewType_PPTLive 中 会使用以下枚举；回放场景不涉及此枚举；
 typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
     PLVLCBasePlayerSkinViewLiveStatus_None = 0,      // 无直播状态
-    PLVLCBasePlayerSkinViewLiveStatus_Living = 2,    // 直播中 观看CDN 状态 (完全CDN)
-    PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC = 4, // 直播中 正在连麦 状态 (部分RTC)
-    PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC = 6, // 直播中 正在连麦 状态 (完全RTC)
+    PLVLCBasePlayerSkinViewLiveStatus_Living_CDN = 2,    // 直播中 观看CDN 状态 (完全CDN)
+    PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay = 4,    // 直播中 观看无延迟 状态 (完全RTC)
+    PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC = 6, // 直播中 正在连麦 状态 (部分RTC)
+    PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC = 8, // 直播中 正在连麦 状态 (完全RTC)
 };
 
 @protocol PLVLCBasePlayerSkinViewDelegate;

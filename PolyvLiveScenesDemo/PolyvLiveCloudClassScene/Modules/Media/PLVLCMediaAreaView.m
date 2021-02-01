@@ -41,12 +41,13 @@ PLVPlayerPresenterDelegate
 
 #pragma mark 状态
 @property (nonatomic, assign, readonly) BOOL inLinkMic; // 只读，是否正在连麦
+@property (nonatomic, assign, readonly) BOOL inRTCRoom; // 只读，是否正在RTC房间中
 @property (nonatomic, assign, readonly) PLVChannelType channelType; // 只读，当前 频道类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType videoType; // 只读，当前 视频类型
 @property (nonatomic, assign, readonly) PLVChannelLiveStreamState liveState; // 只读，当前 直播流状态
 @property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType; // 只读，当前 连麦场景类型
 @property (nonatomic, assign) PLVChannelLinkMicSceneType lastLinkMicSceneType; // 上次 连麦场景类型
-@property (nonatomic, assign) PLVLCMediaAreaViewLiveSceneType liveSceneType;
+@property (nonatomic, assign) PLVLCMediaAreaViewLiveSceneType currentLiveSceneType;
 @property (nonatomic, assign, readonly) BOOL pptOnMainSite;     // 只读，PPT当前是否处于主屏 (此属性仅适合判断PPT是否在主屏，不适合判断其他视图所处位置)
 
 #pragma mark 模块
@@ -200,7 +201,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)switchAreaViewLiveSceneTypeTo:(PLVLCMediaAreaViewLiveSceneType)toType{
-    if (self.liveSceneType == toType) {
+    if (self.currentLiveSceneType == toType) {
         NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type is same");
         return;
     }else if(self.videoType != PLVChannelVideoType_Live){
@@ -228,7 +229,7 @@ PLVPlayerPresenterDelegate
             }
             
             /// 竖屏皮肤视图
-            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living];
+            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
         }else{
             // 直播已结束
             if (self.channelType == PLVChannelTypePPT) {
@@ -241,39 +242,58 @@ PLVPlayerPresenterDelegate
             /// 竖屏皮肤视图
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
         }
-    } else if (toType == PLVLCMediaAreaViewLiveSceneType_InLinkMic){ /// 正在 ‘连麦’ 场景
-        if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc) {
-            /// 直播播放器 仅作静音
-            [self.playerPresenter mute];
-            
-            /// 竖屏皮肤视图
-            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC];
-        } else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){
-            /// 直播播放器 清理
+    } else if (toType == PLVLCMediaAreaViewLiveSceneType_WatchNoDelay) {
+        if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+            /// 播放器 清理
             [self.playerPresenter cleanPlayer];
             
-            /// 竖屏皮肤视图
-            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
-        }else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc){
             /// 确保 PPT 位于主屏
-            if (!self.pptOnMainSite) { [self.floatView triggerViewExchangeEvent]; }
-            
-            /// 直播播放器清理
-            [self.playerPresenter cleanPlayer];
+            if (!self.pptOnMainSite) {
+                [self.floatView triggerViewExchangeEvent];
+            }
             
             /// 隐藏 floatView
             /// userOperat:YES 表示代表用户强制执行
             [self.floatView showFloatView:NO userOperat:YES];
             
             /// 竖屏皮肤视图
-            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
+            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay];
+        }
+    } else if (toType == PLVLCMediaAreaViewLiveSceneType_InLinkMic){ /// 正在 ‘连麦’ 场景
+        if (self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchNoDelay) {
+            if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc) {
+                /// 直播播放器 仅作静音
+                [self.playerPresenter mute];
+                
+                /// 竖屏皮肤视图
+                [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC];
+            } else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PureRtc){
+                /// 直播播放器 清理
+                [self.playerPresenter cleanPlayer];
+                
+                /// 竖屏皮肤视图
+                [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
+            }else if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc){
+                /// 确保 PPT 位于主屏
+                if (!self.pptOnMainSite) { [self.floatView triggerViewExchangeEvent]; }
+                
+                /// 直播播放器清理
+                [self.playerPresenter cleanPlayer];
+                
+                /// 隐藏 floatView
+                /// userOperat:YES 表示代表用户强制执行
+                [self.floatView showFloatView:NO userOperat:YES];
+                
+                /// 竖屏皮肤视图
+                [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
+            }
         }
         self.lastLinkMicSceneType = self.linkMicSceneType;
     } else {
         NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type%lud not support",(unsigned long)toType);
     }
     
-    self.liveSceneType = toType;
+    self.currentLiveSceneType = toType;
 }
 
 - (void)displayContentView:(UIView *)contentView{
@@ -285,7 +305,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (UIView *)getContentViewForExchange{
-    if (self.liveSceneType == PLVLCMediaAreaViewLiveSceneType_InLinkMic) {
+    if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_InLinkMic || self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchNoDelay) {
         UIView * currentContentView = self.contentBackgroudView.subviews.firstObject;
         if (currentContentView) {
             return currentContentView;
@@ -293,20 +313,27 @@ PLVPlayerPresenterDelegate
             NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, currentContentView is illegal : %@",currentContentView);
         }
     }else{
-        NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, this method should been call in LinkMic, but current liveSceneType is %lu",(unsigned long)self.liveSceneType);
+        NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, this method should been call in LinkMic or NoDelay, but current liveSceneType is %lu",(unsigned long)self.currentLiveSceneType);
     }
     return nil;
+}
+
+#pragma mark Getter
+- (BOOL)channelWatchNoDelay{
+    return self.playerPresenter.channelWatchNoDelay;
+}
+
+- (BOOL)noDelayLiveStart{
+    return self.playerPresenter.currentNoDelayLiveStart;
 }
 
 
 #pragma mark - [ Private Methods ]
 - (void)setupData{
-    self.liveSceneType = PLVLCMediaAreaViewLiveSceneType_WatchCDN;
+    self.currentLiveSceneType = PLVLCMediaAreaViewLiveSceneType_WatchCDN;
 }
 
 - (void)setupUI{
-    self.backgroundColor = UIColorFromRGB(@"2B3045");
-    
     /// 添加视图
     [self addSubview:self.contentBackgroudView];
     
@@ -559,6 +586,15 @@ PLVPlayerPresenterDelegate
     }
 }
 
+- (BOOL)inRTCRoom{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMic:)]) {
+        return [self.delegate plvLCMediaAreaViewGetInRTCRoom:self];
+    }else{
+        NSLog(@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetInRTCRoom:]");
+        return NO;
+    }
+}
+
 - (PLVChannelType)channelType{
     return [PLVRoomDataManager sharedManager].roomData.channelType;
 }
@@ -616,7 +652,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)plvLCBasePlayerSkinViewFloatViewShowButtonClicked:(PLVLCBasePlayerSkinView *)skinView userWannaShowFloatView:(BOOL)wannaShow{
-    if (!self.inLinkMic) {
+    if (!self.inRTCRoom) {
         [self.floatView showFloatView:wannaShow userOperat:YES];
     }else{
         if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:userWannaLinkMicAreaViewShow:onSkinView:)]) {
@@ -661,21 +697,13 @@ PLVPlayerPresenterDelegate
 #pragma mark PLVLCFloatViewDelegate
 /// 悬浮视图被点击
 - (UIView *)plvLCFloatViewDidTap:(PLVLCMediaFloatView *)floatView externalView:(nonnull UIView *)externalView{
-    UIView * willMoveView;
-    if (!self.inLinkMic) {
-        // 不处于 ‘连麦中’ 状态
-        willMoveView = self.contentBackgroudView.subviews.firstObject;
-        if (externalView) {
-            [self.contentBackgroudView addSubview:externalView];
-            externalView.frame = self.contentBackgroudView.bounds;
-            externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        }
-        return willMoveView;
-    }else{
-        // 处于 ‘连麦中’ 状态
-        NSLog(@"PLVLCMediaAreaView - is not in linkmic, view exchange should not be executed");
-        return nil;
+    UIView * willMoveView = self.contentBackgroudView.subviews.firstObject;
+    if (externalView) {
+        [self.contentBackgroudView addSubview:externalView];
+        externalView.frame = self.contentBackgroudView.bounds;
+        externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }
+    return willMoveView;
 }
 
 - (void)plvLCFloatViewCloseButtonClicked:(PLVLCMediaFloatView *)floatView{
@@ -693,6 +721,7 @@ PLVPlayerPresenterDelegate
 - (void)plvLCMediaMoreView:(PLVLCMediaMoreView *)moreView optionItemSelected:(PLVLCMediaMoreModel *)model{
     if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_ModeOptionTitle]) {
         // 用户点选了”模式“中的选项
+        self.logoView.hidden = model.selectedIndex != 0;
         [self.canvasView switchTypeTo:(model.selectedIndex == 0 ? PLVLCMediaPlayerCanvasViewType_Video : PLVLCMediaPlayerCanvasViewType_Audio)];
         [self.playerPresenter switchLiveToAudioMode:(model.selectedIndex == 0 ? NO : YES)];
     } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_QualityOptionTitle]) {
@@ -723,14 +752,14 @@ PLVPlayerPresenterDelegate
 #pragma mark PLVPPTViewDelegate
 /// PPT获取刷新的延迟时间
 - (unsigned int)plvPPTViewGetPPTRefreshDelayTime:(PLVPPTView *)pptView{
-    return self.inLinkMic ? 0 : 5000;
+    return self.inRTCRoom ? 0 : 5000;
 }
 
 /// PPT视图 PPT位置需切换
 - (void)plvPPTView:(PLVPPTView *)pptView changePPTPosition:(BOOL)pptToMain{
     if (self.videoType == PLVChannelVideoType_Live){ // 视频类型为 直播
-        /// 仅在 非连麦场景下 执行 (连麦场景下，由 PLVLCLinkMicAreaView 自行处理)
-        if (self.inLinkMic == NO) {
+        /// 仅在 非观看RTC场景下 执行 (观看RTC场景下，由 PLVLCLinkMicAreaView 自行处理)
+        if (self.inRTCRoom == NO) {
             if (pptToMain != self.pptOnMainSite) {
                 [self.floatView triggerViewExchangeEvent];
             }
@@ -786,9 +815,9 @@ PLVPlayerPresenterDelegate
     self.canvasView.restImageView.hidden = newestStreamState != PLVChannelLiveStreamState_Stop;
     
     if (newestStreamState == PLVChannelLiveStreamState_Live) {
-        if (self.inLinkMic == NO) {
+        if (!self.channelWatchNoDelay && self.inLinkMic == NO) {
             [self.floatView showFloatView:YES userOperat:NO];
-            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living];
+            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
             
             /// 确保 直播状态变更为‘直播中’时，PPT 位于主屏
             if (streamStateDidChanged && (self.pptView.mainSpeakerPPTOnMain != self.pptOnMainSite)) {
@@ -822,8 +851,18 @@ PLVPlayerPresenterDelegate
     [self updateMoreviewWithData];
 }
 
+/// 直播播放器 需获知外部 ‘当前是否正在连麦’
 - (BOOL)playerPresenterGetInLinkMic:(PLVPlayerPresenter *)playerPresenter{
     return self.inLinkMic;
+}
+
+/// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter noDelayLiveStartUpdate:(BOOL)noDelayLiveStart noDelayLiveStartDidChanged:(BOOL)noDelayLiveStartDidChanged{
+    if (noDelayLiveStartDidChanged) {
+        if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveStartUpdate:)]) {
+            [self.delegate plvLCMediaAreaView:self noDelayLiveStartUpdate:noDelayLiveStart];
+        }
+    }
 }
 
 // 非直播相关
@@ -832,17 +871,6 @@ PLVPlayerPresenterDelegate
     
     if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:progressUpdateWithCachedProgress:playedProgress:durationTime:currentTimeString:durationString:)]) {
         [self.delegate plvLCMediaAreaView:self progressUpdateWithCachedProgress:downloadProgress playedProgress:playedProgress durationTime:playerPresenter.duration currentTimeString:playedTimeString durationString:durationTimeString];
-    }
-}
-
-// 其他功能相关
-- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter cdnPlayerPPTSiteExchange:(BOOL)wannaCDNPlayerOnMainSite{
-    /// 仅在 非连麦场景下 执行
-    if (self.inLinkMic == NO) {
-        BOOL shouldExchange = (wannaCDNPlayerOnMainSite == self.pptOnMainSite);
-        if (shouldExchange) {
-            [self.floatView triggerViewExchangeEvent];
-        }
     }
 }
 

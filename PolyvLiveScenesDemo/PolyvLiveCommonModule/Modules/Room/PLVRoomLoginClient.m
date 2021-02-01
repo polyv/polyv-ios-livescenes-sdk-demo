@@ -69,7 +69,9 @@
                 // 将当前的roomData配置到PLVRoomDataManager进行管理
                 [[PLVRoomDataManager sharedManager] configRoomData:roomData];
                 
-                !completion ?: completion(roomData.customParam);
+                [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                    !completion ?: completion(roomData.customParam);
+                }];
             }
         } failure:^(NSError * _Nonnull error) {
             !failure ?: failure(@"获取频道类型失败");
@@ -137,7 +139,9 @@
                 // 将当前的roomData配置到PLVRoomDataManager进行管理
                 [[PLVRoomDataManager sharedManager] configRoomData:roomData];
                 
-                !completion ?: completion(roomData.customParam);
+                [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                    !completion ?: completion(roomData.customParam);
+                }];
             }
         } failure:^(NSError * _Nonnull error) {
             !failure ?: failure(@"获取频道类型失败");

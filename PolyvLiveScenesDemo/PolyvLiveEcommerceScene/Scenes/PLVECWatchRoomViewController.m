@@ -9,16 +9,17 @@
 #import "PLVECWatchRoomViewController.h"
 
 // 模块
+#import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 #import "PLVECPlayerViewController.h"
 #import "PLVECGoodsDetailViewController.h"
 #import "PLVECBaseNavigationController.h"
 #import "PLVECFloatingWindow.h"
+#import "PLVInteractView.h"
 
 // UI
-#import "PLVECLiveHomePageView.h"
+#import "PLVECHomePageView.h"
 #import "PLVECLiveDetailPageView.h"
-#import "PLVECPalybackHomePageView.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -27,10 +28,11 @@
 #import <PolyvFoundationSDK/PLVFdUtil.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
+NSString *PLVLEChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNotification";
+
 @interface PLVECWatchRoomViewController ()<
 PLVSocketManagerProtocol,
-PLVECLiveHomePageViewDelegate,
-PLVPalybackHomePageViewDelegate,
+PLVECHomePageViewDelegate,
 PLVECFloatingWindowProtocol,
 PLVECPlayerViewControllerProtocol,
 PLVRoomDataManagerProtocol,
@@ -42,12 +44,12 @@ UIGestureRecognizerDelegate
 #pragma mark 模块
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
 @property (nonatomic, strong) PLVECGoodsDetailViewController *goodsDetailVC; // 商品详情页控制器
+@property (nonatomic, strong) PLVInteractView *interactView; // 互动
 
 #pragma mark UI
 @property (nonatomic, strong) UIScrollView * scrollView;
-@property (nonatomic, strong) PLVECLiveHomePageView * liveHomePageView;
+@property (nonatomic, strong) PLVECHomePageView *homePageView;
 @property (nonatomic, strong) PLVECLiveDetailPageView * liveDetailPageView;
-@property (nonatomic, strong) PLVECPalybackHomePageView * livePlaybackHomePageView;
 @property (nonatomic, strong) UIButton * closeButton;
 
 @end
@@ -160,6 +162,22 @@ UIGestureRecognizerDelegate
 }
 
 #pragma mark - [ Private Methods ]
+- (void)setupModule{
+    // 通用的 配置
+//    [[NSNotificationCenter defaultCenter] addObserver:self
+//                                             selector:@selector(interfaceOrientationDidChange:)
+//                                                 name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        /// 监听事件
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLEChatroomOpenBulletinNotification object:nil];
+        
+    } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
+    
+    }
+}
+
 - (void)setupUI{
     /// 注意：1. 此处不建议将共同拥有的图层，提炼在 if 判断外，来做“代码简化”
     ///         因为此处涉及到添加顺序，而影响图层顺序。放置在 if 内，能更加准确地配置图层顺序，也更清晰地预览图层顺序。
@@ -169,7 +187,7 @@ UIGestureRecognizerDelegate
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 创建添加视图
         [self.view addSubview:self.scrollView];
-        [self.scrollView addSubview:self.liveHomePageView];
+        [self.scrollView addSubview:self.homePageView];
         [self.scrollView addSubview:self.liveDetailPageView];
         [self.view addSubview:self.closeButton];
         
@@ -178,14 +196,25 @@ UIGestureRecognizerDelegate
         self.scrollView.frame = scrollViewFrame;
         self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
         
-        self.liveHomePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
+        self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         
         self.liveDetailPageView.frame = CGRectMake(0, 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
+        
+        /// 互动
+        [self.view addSubview:self.interactView];
+
+        /// 配置
+        self.interactView.frame = self.view.bounds;
+        self.interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [self.interactView loadOnlineInteract];
+
+        if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
+        
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 创建添加视图
         [self.view addSubview:self.scrollView];
-        [self.scrollView addSubview:self.livePlaybackHomePageView];
+        [self.scrollView addSubview:self.homePageView];
         [self.scrollView addSubview:self.liveDetailPageView];
         [self.view addSubview:self.closeButton];
         
@@ -194,10 +223,12 @@ UIGestureRecognizerDelegate
         self.scrollView.frame = scrollViewFrame;
         self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
         
-        self.livePlaybackHomePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
+        self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         
         self.liveDetailPageView.frame = CGRectMake(0, 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
+        
+        if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
     }
 }
 
@@ -214,9 +245,9 @@ UIGestureRecognizerDelegate
 }
 
 - (void)exitCurrentController {
+    [PLVRoomLoginClient logout];
     [[PLVSocketManager sharedManager] logout];
-    [self.liveHomePageView destroy];
-    [self.livePlaybackHomePageView destroy];
+    [self.homePageView destroy];
 
     if (self.navigationController) {
         [self.navigationController popViewControllerAnimated:YES];
@@ -242,12 +273,18 @@ UIGestureRecognizerDelegate
     return _scrollView;
 }
 
-- (PLVECLiveHomePageView *)liveHomePageView{
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (!_liveHomePageView && roomData.videoType == PLVChannelVideoType_Live) {
-        _liveHomePageView = [[PLVECLiveHomePageView alloc] initWithDelegate:self];
+- (PLVECHomePageView *)homePageView{
+    if (!_homePageView) {
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        PLVECHomePageType homePageType = -1;
+        if (roomData.videoType == PLVChannelVideoType_Live) {
+            homePageType = PLVECHomePageType_Live;
+        } else if (roomData.videoType == PLVChannelVideoType_Playback) {
+            homePageType = PLVECHomePageType_Playback;
+        }
+        _homePageView = [[PLVECHomePageView alloc] initWithType:homePageType delegate:self];
     }
-    return _liveHomePageView;
+    return _homePageView;
 }
 
 - (PLVECLiveDetailPageView *)liveDetailPageView{
@@ -257,12 +294,15 @@ UIGestureRecognizerDelegate
     return _liveDetailPageView;
 }
 
-- (PLVECPalybackHomePageView *)livePlaybackHomePageView{
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (!_livePlaybackHomePageView && roomData.videoType == PLVChannelVideoType_Playback) {
-        _livePlaybackHomePageView = [[PLVECPalybackHomePageView alloc] initWithDelegate:self];
+- (PLVInteractView *)interactView{
+    PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
+    if (!_interactView && videoType == PLVChannelVideoType_Live) {
+        _interactView = [[PLVInteractView alloc] init];
+        _interactView.frame = self.view.bounds;
+        _interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [_interactView loadOnlineInteract];
     }
-    return _livePlaybackHomePageView;
+    return _interactView;
 }
 
 - (UIButton *)closeButton{
@@ -303,20 +343,24 @@ UIGestureRecognizerDelegate
     }
 }
 
+#pragma mark Notification
+- (void)notificationForOpenBulletin:(NSNotification *)notif {
+    [self.interactView openLastBulletin];
+}
+
 #pragma mark - [ Delegate ]
 #pragma mark PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
-    [self.liveHomePageView updateOnlineCount:onlineCount];
-    [self.livePlaybackHomePageView updateWatchViewCount:onlineCount];
+    [self.homePageView updateRoomInfoCount:onlineCount];
 }
 
 - (void)roomDataManager_didLikeCountChanged:(NSUInteger)likeCount {
-    [self.liveHomePageView updateLikeCount:likeCount];
+    [self.homePageView updateLikeCount:likeCount];
 }
 
 - (void)roomDataManager_didPlayingStatusChanged:(BOOL)playing {
-    [self.livePlaybackHomePageView updatePlayButtonState:playing];
+    [self.homePageView updatePlayerState:playing];
 }
 
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
@@ -325,19 +369,20 @@ UIGestureRecognizerDelegate
         if ([menu.menuType isEqualToString:@"desc"]) {
             [self.liveDetailPageView addLiveInfoCardView:menu.content];
         } else if ([menu.menuType isEqualToString:@"buy"] && roomData.videoType == PLVChannelVideoType_Live) {
-            self.liveHomePageView.shoppingCardButton.hidden = NO;
+            [self.homePageView showShoppingCart:YES];
         }
     }
     
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
-        [self.liveHomePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
+        [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
+        [self.homePageView updateLikeCount:roomData.likeCount];
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
-        [self.livePlaybackHomePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
+        [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
     }
 }
 
 - (void)roomDataManager_didLiveStateChanged:(PLVChannelLiveStreamState)liveState {
-    [self.liveHomePageView updatePlayerState:liveState == PLVChannelLiveStreamState_Live];
+    [self.homePageView updatePlayerState:liveState == PLVChannelLiveStreamState_Live];
 }
 
 #pragma mark PLVSocketManagerProtocol
@@ -356,6 +401,40 @@ UIGestureRecognizerDelegate
             [weakSelf exitCurrentController];
         } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
     }
+}
+
+- (void)socketMananger_didReceiveMessage:(NSString *)subEvent
+                                    json:(NSString *)jsonString
+                              jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    if ([subEvent isEqualToString:@"LOGIN"]) {   // someone logged in chatroom
+        [self loginEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"LOGOUT"]) { // someone logged in chatroom
+        [self logoutEvent:jsonDict];
+    }
+}
+
+#pragma mark socket 数据解析
+
+/// 有用户登陆
+- (void)loginEvent:(NSDictionary *)data {
+    NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
+    [self updateOnlineCount:onlineCount];
+}
+
+/// 有用户登出
+- (void)logoutEvent:(NSDictionary *)data {
+    NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
+    [self updateOnlineCount:onlineCount];
+}
+
+#pragma mark 更新 RoomData 属性
+
+- (void)updateOnlineCount:(NSInteger)onlineCount {
+    [PLVRoomDataManager sharedManager].roomData.onlineCount = onlineCount;
 }
 
 #pragma mark PLVECFloatingWindowProtocol
@@ -379,33 +458,33 @@ UIGestureRecognizerDelegate
                 codeRate:(NSString *)codeRate
                    lines:(NSUInteger)lines
                     line:(NSInteger)line {
-    [self.liveHomePageView updateCodeRateItems:codeRateItems defaultCodeRate:codeRate];
-    [self.liveHomePageView updateLineCount:lines defaultLine:line];
+    [self.homePageView updateCodeRateItems:codeRateItems defaultCodeRate:codeRate];
+    [self.homePageView updateLineCount:lines defaultLine:line];
 }
 
-- (void)updateDowloadProgress:(CGFloat)dowloadProgress playedProgress:(CGFloat)playedProgress currentPlaybackTime:(NSString *)currentPlaybackTime duration:(NSString *)duration {
-    [self.livePlaybackHomePageView updateDowloadProgress:dowloadProgress playedProgress:playedProgress currentPlaybackTime:currentPlaybackTime duration:duration];
+- (void)updateDowloadProgress:(CGFloat)dowloadProgress
+               playedProgress:(CGFloat)playedProgress
+                     duration:(NSTimeInterval)duration
+          currentPlaybackTime:(NSString *)currentPlaybackTime
+                 durationTime:(NSString *)durationTime {
+    [self.homePageView updateDowloadProgress:dowloadProgress playedProgress:playedProgress duration:duration currentPlaybackTime:currentPlaybackTime durationTime:durationTime];
 }
 
-#pragma mark PLVECLiveHomePageView Delegate
+#pragma mark PLVECHomePageView Delegate
 
-- (void)homePageView:(PLVECLiveHomePageView *)homePageView switchPlayLine:(NSUInteger)line {
+- (void)homePageView:(PLVECHomePageView *)homePageView switchPlayLine:(NSUInteger)line {
     [self.playerVC switchPlayLine:line showHud:NO];
 }
 
-- (void)homePageView:(PLVECLiveHomePageView *)homePageView switchCodeRate:(NSString *)codeRate {
+- (void)homePageView:(PLVECHomePageView *)homePageView switchCodeRate:(NSString *)codeRate {
     [self.playerVC switchPlayCodeRate:codeRate showHud:NO];
 }
 
-- (void)homePageView:(PLVECLiveHomePageView *)homePageView switchAudioMode:(BOOL)audioMode {
+- (void)homePageView:(PLVECHomePageView *)homePageView switchAudioMode:(BOOL)audioMode {
     [self.playerVC switchAudioMode:audioMode];
 }
 
-- (BOOL)playerIsPlaying {
-    return self.playerVC.playing;
-}
-
-- (void)homePageView:(PLVECLiveHomePageView *)homePageView receiveBulletinMessage:(NSString *)content open:(BOOL)open {
+- (void)homePageView:(PLVECHomePageView *)homePageView receiveBulletinMessage:(NSString * _Nullable)content open:(BOOL)open {
     dispatch_async(dispatch_get_main_queue(), ^{
         if (open) {
             [self.liveDetailPageView addBulletinCardView:content];
@@ -415,9 +494,7 @@ UIGestureRecognizerDelegate
     });
 }
 
-- (void)homePageView:(PLVECLiveHomePageView *)homePageView openGoodsDetail:(NSURL *)goodsURL {
-    NSLog(@"商品详情 %@", goodsURL);
-    
+- (void)homePageView:(PLVECHomePageView *)homePageView openGoodsDetail:(NSURL *)goodsURL {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
         [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view]; // 打开悬浮窗
@@ -436,8 +513,7 @@ UIGestureRecognizerDelegate
     }
 }
 
-#pragma mark PLVPalybackHomePageViewDelegate
-- (void)homePageView:(PLVECPalybackHomePageView *)homePageView switchPause:(BOOL)pause {
+- (void)homePageView:(PLVECHomePageView *)homePageView switchPause:(BOOL)pause {
     /** 播放广告中，点击屏幕跳转广告链接 */
     if (self.playerVC.advPlaying) {
         if ([PLVFdUtil checkStringUseable:self.playerVC.advLinkUrl]) {
@@ -453,22 +529,12 @@ UIGestureRecognizerDelegate
     }
 }
 
-- (void)homePageView:(PLVECPalybackHomePageView *)homePageView seekToTime:(NSTimeInterval)time {
+- (void)homePageView:(PLVECHomePageView *)homePageView seekToTime:(NSTimeInterval)time {
     [self.playerVC seek:time];
 }
 
-- (void)homePageView:(PLVECPalybackHomePageView *)homePageView switchSpeed:(CGFloat)speed {
+- (void)homePageView:(PLVECHomePageView *)homePageView switchSpeed:(CGFloat)speed {
     [self.playerVC speedRate:speed];
-}
-
-- (void)palyback_homePageView:(PLVECPalybackHomePageView *)homePageView receiveBulletinMessage:(NSString *)content open:(BOOL)open {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if (open) {
-            [self.liveDetailPageView addBulletinCardView:content];
-        } else {
-            [self.liveDetailPageView removeBulletinCardView];
-        }
-    });
 }
 
 #pragma mark - UIGestureRecognizerDelegate

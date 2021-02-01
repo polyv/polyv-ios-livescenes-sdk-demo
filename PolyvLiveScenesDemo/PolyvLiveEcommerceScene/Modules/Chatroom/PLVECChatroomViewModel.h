@@ -47,10 +47,10 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /*
- scene层聊天室管理类，主要负责scene层聊天室与common层的通信
- 1. 对view层提供发送消息的接口、提供view层必要的回调
+ scene层聊天室核心类，负责scene层聊天室视图与common层聊天室核心类的通信：
+ 1. 对view层提供发送消息的接口
  2. 管理common层返回的消息模型
- 3. 提供包括欢迎语逻辑等其他scene层所需要的回调（暂未完成）
+ 3. 在view层需要刷新UI、更新列表数据时，通过回调通知view层
  */
 @interface PLVECChatroomViewModel : NSObject
 
@@ -84,6 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送礼物消息
 /// @param data 礼物消息data字段
 /// @param tip 礼物消息tip字段
+/// @return 是否成功发送的布尔值
 - (BOOL)sendGiftMessageWithData:(NSDictionary *)data tip:(NSString *)tip;
 
 /// 发送自定义消息

@@ -12,14 +12,21 @@
 
 @interface PLVLinkMicOnlineUser ()
 
-@property (nonatomic, copy) NSString * linkMicUserId;  // 用户连麦Id
-@property (nonatomic, assign) BOOL localUser;          // 是否为本地用户(自己)
+#pragma mark 对象
+@property (nonatomic, strong) UIView * rtcView;
 
-@property (nonatomic, strong) UIView * rtcView; // RTC渲染画面 (详细说明见 .h 声明文件)
+#pragma mark 数据
+@property (nonatomic, copy) NSString * linkMicUserId;
+@property (nonatomic, copy, nullable) NSString * actor;
+@property (nonatomic, copy, nullable) NSString * nickname;
+@property (nonatomic, copy, nullable) NSString * avatarPic;
+@property (nonatomic, assign) PLVLinkMicOnlineUserType userType;
+@property (nonatomic, assign) BOOL localUser;
 
-@property (nonatomic, assign) CGFloat currentVolume; /// 用户的当前连麦音量
-@property (nonatomic, assign) BOOL currentMicOpen; /// 用户麦克风 当前是否开启
-@property (nonatomic, assign) BOOL currentCameraOpen; /// 用户摄像头 当前是否开启
+#pragma mark 状态
+@property (nonatomic, assign) CGFloat currentVolume;
+@property (nonatomic, assign) BOOL currentMicOpen;
+@property (nonatomic, assign) BOOL currentCameraOpen;
 
 @end
 
@@ -35,6 +42,21 @@
 
 
 #pragma mark - [ Public Methods ]
+#pragma mark Getter
+- (UIView *)rtcView{
+    if (!_rtcView) {
+        _rtcView = [[UIView alloc] init];
+        _rtcView.frame = CGRectMake(0, 0, 1, 1);
+        _rtcView.clipsToBounds = YES;
+    }
+    return _rtcView;
+}
+
+- (BOOL)rtcRendered{
+    return (_rtcView && (_rtcView.subviews.count > 0 || _rtcView.layer.sublayers.count > 0));
+}
+
+#pragma mark 创建
 + (instancetype)modelWithDictionary:(NSDictionary *)dictionary{
     if ([PLVFdUtil checkDictionaryUseable:dictionary]) {
         PLVLinkMicOnlineUser * user = [[PLVLinkMicOnlineUser alloc]init];
@@ -85,6 +107,7 @@
     return nil;
 }
 
+#pragma mark 状态更新
 - (void)updateUserCurrentVolume:(CGFloat)volume{
     if (volume < 0.0) {
         volume = 0.0;
@@ -95,45 +118,43 @@
     _currentVolume = volume;
     if (needCallBack && self.volumeChangedBlock) {
         __weak typeof(self) weakSelf = self;
-        dispatch_async(dispatch_get_main_queue(), ^{
+        plv_dispatch_main_async_safe(^{
             weakSelf.volumeChangedBlock(weakSelf);
-        });
+        })
     }
 }
 
-- (void)updateUserCurrentMicOpen:(BOOL)open{
-    BOOL needCallBack = (_currentMicOpen != open);
-    _currentMicOpen = open;
+- (void)updateUserCurrentMicOpen:(BOOL)micOpen{
+    BOOL needCallBack = (_currentMicOpen != micOpen);
+    _currentMicOpen = micOpen;
     if (needCallBack && self.micOpenChangedBlock) {
         __weak typeof(self) weakSelf = self;
-        dispatch_async(dispatch_get_main_queue(), ^{
+        plv_dispatch_main_async_safe(^{
             weakSelf.micOpenChangedBlock(weakSelf);
-        });
+        })
     }
 }
 
-- (void)updateUserCurrentCameraOpen:(BOOL)open{
-    BOOL needCallBack = (_currentCameraOpen != open);
-    _currentCameraOpen = open;
+- (void)updateUserCurrentCameraOpen:(BOOL)cameraOpen{
+    BOOL cameraOpenResult = cameraOpen;
+    
+    BOOL needCallBackCameraShouldOpen = (_currentCameraShouldShow != cameraOpenResult);
+    _currentCameraShouldShow = cameraOpenResult;
+    if (needCallBackCameraShouldOpen && self.cameraShouldShowChangedBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            weakSelf.cameraShouldShowChangedBlock(weakSelf);
+        })
+    }
+    
+    BOOL needCallBack = (_currentCameraOpen != cameraOpen);
+    _currentCameraOpen = cameraOpen;
     if (needCallBack && self.cameraOpenChangedBlock) {
         __weak typeof(self) weakSelf = self;
-        dispatch_async(dispatch_get_main_queue(), ^{
+        plv_dispatch_main_async_safe(^{
             weakSelf.cameraOpenChangedBlock(weakSelf);
-        });
+        })
     }
-}
-
-#pragma mark - [ Private Methods ]
-#pragma Getter
-- (UIView *)rtcView{
-    if (!_rtcView) {
-        _rtcView = [[UIView alloc] init];
-    }
-    return _rtcView;
-}
-
-- (BOOL)rtcRendered{
-    return (self.rtcView.subviews.count > 0 || self.rtcView.layer.sublayers.count > 0);
 }
 
 @end
