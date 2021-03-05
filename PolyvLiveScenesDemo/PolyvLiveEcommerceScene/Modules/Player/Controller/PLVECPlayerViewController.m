@@ -270,7 +270,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter loadPlayerFailureWithMessage:(NSString *)errorMessage{
-    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
     hud.mode = PLVProgressHUDModeText;
     [hud.label setText:@"播放器加载失败"];
     hud.detailsLabel.text = errorMessage;

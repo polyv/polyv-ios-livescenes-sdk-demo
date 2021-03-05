@@ -511,7 +511,7 @@ PLVLinkMicManagerDelegate
 
         PLVRoomUser * currentUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
         PLVRoomUserType currentUserViewerType = currentUser.viewerType;
-        if (currentUserViewerType == PLVRoomUserTypeSlice) {
+        if (currentUserViewerType == PLVRoomUserTypeSlice || currentUserViewerType == PLVRoomUserTypeStudent) {
             getTokenModel.userType = @"audience";
         }
         __weak typeof(self) weakSelf = self;
@@ -551,9 +551,11 @@ PLVLinkMicManagerDelegate
         self.rtcRoomJoinStatus == PLVLinkMicPresenterRoomJoinStatus_Joining) {
         [self changeRoomJoinStatusAndCallback:PLVLinkMicPresenterRoomJoinStatus_Leaving];
         [self callbackForOperationInProgress:YES];
-        [self.linkMicManager leaveRtcChannel];
+        plv_dispatch_main_async_safe(^{
+            [self.linkMicManager leaveRtcChannel]; /// 注意勿使用 weakSelf
+        })
     }else{
-        NSLog(@"PLVLinkMicPresenter - leaveRTCChannel failed %lu",(unsigned long)self.rtcRoomJoinStatus);
+        // NSLog(@"PLVLinkMicPresenter - leaveRTCChannel failed %lu",(unsigned long)self.rtcRoomJoinStatus);
     }
 }
 
@@ -612,13 +614,13 @@ PLVLinkMicManagerDelegate
         if (resultUser) {
             if ([weakSelf.linkMicUserId isEqualToString:linkMicUserId]) {
                 // 目标用户 是 本地用户
-                dispatch_async(dispatch_get_main_queue(), ^{
+                plv_dispatch_main_async_safe(^{
                     if ([@"video" isEqualToString:mediaType]) {
                         [weakSelf cameraOpen:!mute];
                     }else{
                         [weakSelf micOpen:!mute];
                     }
-                });
+                })
             }else{
                 // 目标用户 是 远端用户
                 if ([@"video" isEqualToString:mediaType]) {
@@ -753,13 +755,13 @@ PLVLinkMicManagerDelegate
                         if (weakSelf.rtcAudioSubEnabled && !user.isRealMainSpeaker) { mediaType = PLVBRTCSubscribeStreamMediaType_Audio; }
                         
                         NSString * linkmicUserId = user.linkMicUserId;
-                        dispatch_async(dispatch_get_main_queue(), ^{
+                        plv_dispatch_main_async_safe(^{
                             UIView * rtcView = user.rtcView;
                             if (!rtcView.superview) {
                                 [weakSelf.preRenderContainer insertSubview:rtcView atIndex:0];
                             }
                             [weakSelf.linkMicManager subscribeStreamWithRTCUserId:linkmicUserId renderOnView:rtcView mediaType:mediaType];
-                        });
+                        })
                     }
                     
                     if (user.localUser) {

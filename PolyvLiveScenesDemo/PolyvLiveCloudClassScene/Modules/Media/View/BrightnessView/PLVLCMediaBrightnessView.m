@@ -135,8 +135,7 @@
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context {
     if (!self.addedInSubview) {
         self.addedInSubview = YES;
-        UIWindow *window = [UIApplication sharedApplication].delegate.window;
-        [window addSubview:self];
+        [[UIApplication sharedApplication].keyWindow addSubview:self];
         
         self.frame = CGRectMake(0, 0, BrightnessViewWidth, BrightnessViewHeight);
         [self setSelfCenter];

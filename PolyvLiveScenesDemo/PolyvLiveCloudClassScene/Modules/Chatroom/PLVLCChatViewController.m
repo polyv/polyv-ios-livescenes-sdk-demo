@@ -398,6 +398,10 @@ UITableViewDataSource
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
+        return [UITableViewCell new];
+    }
+    
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
     
@@ -442,6 +446,9 @@ UITableViewDataSource
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     CGFloat cellHeight =  44.0;
+    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
+        return cellHeight;
+    }
     
     PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVLCSpeakMessageCell isModelValid:model]) {

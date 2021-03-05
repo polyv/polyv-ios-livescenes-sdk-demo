@@ -23,7 +23,7 @@
 #import "PLVInteractView.h"
 
 // 工具
-#import "PLVECUtils.h"
+#import "PLVLCUtils.h"
 
 @interface PLVLCCloudClassViewController ()<
 PLVSocketManagerProtocol,
@@ -79,6 +79,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
 @property (nonatomic, strong) PLVLCLiveRoomPlayerSkinView * liveRoomSkinView;// 横屏频道皮肤
 
+@property (nonatomic, assign) BOOL inBackground;
+
 @end
 
 @implementation PLVLCCloudClassViewController {
@@ -131,6 +133,11 @@ PLVRoomDataManagerProtocol
     return UIStatusBarStyleLightContent;
 }
 
+- (BOOL)shouldAutorotate{
+    if (self.inBackground) { return NO; }
+    return YES;
+}
+
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations{
     return (UIInterfaceOrientationMaskPortrait | UIInterfaceOrientationMaskLandscapeRight);
 }
@@ -139,9 +146,9 @@ PLVRoomDataManagerProtocol
 #pragma mark - [ Private Methods ]
 - (void)setupModule{
     // 通用的 配置
-    [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(interfaceOrientationDidChange:)
-                                                 name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(willResignActive:) name:UIApplicationWillResignActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interfaceOrientationDidChange:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     
     if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
@@ -396,6 +403,14 @@ PLVRoomDataManagerProtocol
 
 #pragma mark - [ Event ]
 #pragma mark Notification
+- (void)didBecomeActive:(NSNotification *)notification {
+    self.inBackground = NO;
+}
+
+- (void)willResignActive:(NSNotification *)notification {
+    self.inBackground = YES;
+}
+
 - (void)interfaceOrientationDidChange:(NSNotification *)notification {
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     self.fullScreenDifferent = (self.currentLandscape != fullScreen);

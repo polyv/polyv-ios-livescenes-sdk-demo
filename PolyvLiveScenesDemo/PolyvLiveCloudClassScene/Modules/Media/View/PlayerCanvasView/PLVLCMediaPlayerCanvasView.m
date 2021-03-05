@@ -155,6 +155,7 @@
         videoScale = 0;
     }else{
         videoScale = self.videoSize.width / self.videoSize.height;
+        if (isnan(videoScale)) { videoScale = 0; }
     }
     
     CGFloat playerSuperviewX;

@@ -14,6 +14,13 @@
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 #import "PLVAdvView.h"
 
+@interface PLVPlayerPresenterBackgroundView : UIView /// 仅 PLVPlayerPresenter 内部使用的背景视图类
+
+/// 子视图布局时机回调
+@property (nonatomic, strong) void (^layoutSubviewsBlock) (BOOL sizeAvailable);
+
+@end
+
 @interface PLVPlayerPresenter ()<
 PLVPlayerDelegate,
 PLVLivePlayerDelegate,
@@ -31,13 +38,13 @@ PLVAdvViewDelegate
 /// view hierarchy
 ///
 /// (UIView) displayView (外部通过 [setupPlayerWithDisplayView:] 方法传入)
-///  └── (UIView) backgroundView
+///  └── (PLVPlayerPresenterBackgroundView) backgroundView
 ///      ├── (UIView) playerBackgroundView
 ///      ├── (UIImageView) warmUpImageView
 ///      ├── (UIActivityIndicatorView) activityView
 ///      └── (UILabel) loadSpeedLabel
 @property (nonatomic, weak) UIView * displayView;
-@property (nonatomic, strong) UIView * backgroundView;
+@property (nonatomic, strong) PLVPlayerPresenterBackgroundView * backgroundView;
 @property (nonatomic, strong) UIView * playerBackgroundView;
 @property (nonatomic, strong) UIImageView * warmUpImageView;
 @property (nonatomic, strong) UIActivityIndicatorView * activityView;
@@ -253,22 +260,24 @@ PLVAdvViewDelegate
     
     self.warmUpImageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.warmUpImageView.frame = self.backgroundView.bounds;
-    
-    UIView * superView = self.backgroundView;
-    if (CGSizeEqualToSize(superView.frame.size, CGSizeZero)) {
-        superView.frame = CGRectMake(0, 0, 30, 70);
-    }
-    UIActivityIndicatorView * activityView = self.activityView;
-    NSDictionary * activityViewViews = NSDictionaryOfVariableBindings(activityView, superView);
-    [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[activityView]-|" options:NSLayoutFormatAlignAllCenterY metrics:nil views:activityViewViews]];
-    [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-[activityView]-30-|" options:NSLayoutFormatAlignAllCenterX metrics:nil views:activityViewViews]];
-    [self.activityView setTranslatesAutoresizingMaskIntoConstraints:NO];
-    
-    UILabel * loadSpeedLabel = self.loadSpeedLabel;
-    NSDictionary * loadSpeedLabelViews = NSDictionaryOfVariableBindings(loadSpeedLabel, superView);
-    [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[loadSpeedLabel]-|" options:NSLayoutFormatAlignAllCenterY metrics:nil views:loadSpeedLabelViews]];
-    [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-30-[loadSpeedLabel]-|" options:NSLayoutFormatAlignAllCenterX metrics:nil views:loadSpeedLabelViews]];
-    [self.loadSpeedLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
+        
+    __weak typeof(self) weakSelf = self;
+    self.backgroundView.layoutSubviewsBlock = ^(BOOL sizeAvailable) {
+        if (sizeAvailable && !weakSelf.activityView.constraints.count) {
+            UIView * superView = weakSelf.backgroundView;
+            UIActivityIndicatorView * activityView = weakSelf.activityView;
+            NSDictionary * activityViewViews = NSDictionaryOfVariableBindings(activityView, superView);
+            [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[activityView]-|" options:NSLayoutFormatAlignAllCenterY metrics:nil views:activityViewViews]];
+            [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-[activityView]-30-|" options:NSLayoutFormatAlignAllCenterX metrics:nil views:activityViewViews]];
+            [weakSelf.activityView setTranslatesAutoresizingMaskIntoConstraints:NO];
+            
+            UILabel * loadSpeedLabel = weakSelf.loadSpeedLabel;
+            NSDictionary * loadSpeedLabelViews = NSDictionaryOfVariableBindings(loadSpeedLabel, superView);
+            [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"H:|-[loadSpeedLabel]-|" options:NSLayoutFormatAlignAllCenterY metrics:nil views:loadSpeedLabelViews]];
+            [superView addConstraints:[NSLayoutConstraint constraintsWithVisualFormat:@"V:|-30-[loadSpeedLabel]-|" options:NSLayoutFormatAlignAllCenterX metrics:nil views:loadSpeedLabelViews]];
+            [weakSelf.loadSpeedLabel setTranslatesAutoresizingMaskIntoConstraints:NO];
+        }
+    };
 }
 
 - (void)showAdv {
@@ -301,9 +310,9 @@ PLVAdvViewDelegate
 }
 
 #pragma mark Getter
-- (UIView *)backgroundView{
+- (PLVPlayerPresenterBackgroundView *)backgroundView{
     if (!_backgroundView) {
-        _backgroundView = [[UIView alloc] init];
+        _backgroundView = [[PLVPlayerPresenterBackgroundView alloc] init];
     }
     return _backgroundView;
 }
@@ -634,6 +643,15 @@ PLVAdvViewDelegate
             _keepShowAdv = YES;
         }
     }
+}
+
+@end
+
+@implementation PLVPlayerPresenterBackgroundView
+
+- (void)layoutSubviews{
+    BOOL sizeAvailable = !CGSizeEqualToSize(self.frame.size, CGSizeZero);
+    if (self.layoutSubviewsBlock) { self.layoutSubviewsBlock(sizeAvailable); }
 }
 
 @end

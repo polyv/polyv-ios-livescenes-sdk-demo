@@ -314,7 +314,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
         !self.channelIdTF.text || self.channelIdTF.text.length == 0) {
         return NO;
     }
-    if (!live && (!self.vid || self.vid.length == 0)) {
+    if (!live && (!self.vIdTF.text || self.vIdTF.text.length == 0)) {
         return NO;
     }
     return YES;
@@ -331,7 +331,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 /// 云课堂场景-直播间
 - (void)loginCloudClassLiveRoomWithChannelType:(PLVChannelType)channelType
                                 successHandler:(void (^)(void))successHandler {
-    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
     [hud.label setText:@"登录中..."];
     
     __weak typeof(self)weakSelf = self;
@@ -359,7 +359,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 /// 云课堂场景-直播回放
 - (void)loginCloudClassPlaybackRoomWithChannelType:(PLVChannelType)channelType
                                     successHandler:(void (^)(void))successHandler {
-    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
     [hud.label setText:@"登录中..."];
     
     __weak typeof(self)weakSelf = self;
@@ -388,7 +388,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 /// 直播带货场景-直播间
 - (void)loginEcommerceLiveRoomWithChannelType:(PLVChannelType)channelType
                                successHandler:(void (^)(void))successHandler {
-    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
     [hud.label setText:@"登录中..."];
     
     __weak typeof(self)weakSelf = self;
@@ -414,7 +414,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 /// 直播带货场景-直播间
 - (void)loginEcommercePlaybackRoomWithChannelType:(PLVChannelType)channelType
                                    successHandler:(void (^)(void))successHandler {
-    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
     [hud.label setText:@"登录中..."];
     
     __weak typeof(self)weakSelf = self;

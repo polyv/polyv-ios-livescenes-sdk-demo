@@ -148,13 +148,13 @@
 - (void)dragWindow:(UIPanGestureRecognizer *)gesture {
     CGSize screenSize = [UIScreen mainScreen].bounds.size;
     
-    CGPoint translatedPoint = [gesture translationInView:[UIApplication sharedApplication].delegate.window];
+    CGPoint translatedPoint = [gesture translationInView:[UIApplication sharedApplication].keyWindow];
     CGFloat x = gesture.view.center.x + translatedPoint.x;
     CGFloat y = gesture.view.center.y + translatedPoint.y;
     
     if (gesture.state == UIGestureRecognizerStateBegan || gesture.state == UIGestureRecognizerStateChanged) {
         gesture.view.center = CGPointMake(x, y);
-        [gesture setTranslation:CGPointMake(0, 0) inView:[UIApplication sharedApplication].delegate.window];
+        [gesture setTranslation:CGPointMake(0, 0) inView:[UIApplication sharedApplication].keyWindow];
         return;
     }
     
@@ -175,7 +175,7 @@
     }
     
     gesture.view.center = CGPointMake(x, y);
-    [gesture setTranslation:CGPointMake(0, 0) inView:[UIApplication sharedApplication].delegate.window];
+    [gesture setTranslation:CGPointMake(0, 0) inView:[UIApplication sharedApplication].keyWindow];
 }
 
 @end

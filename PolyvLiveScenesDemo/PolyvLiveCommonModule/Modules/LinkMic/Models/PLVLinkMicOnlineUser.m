@@ -38,6 +38,10 @@
         self.willDeallocBlock(self);
         self.willDeallocBlock = nil;
     }
+    
+    _volumeChangedBlock = nil;
+    _micOpenChangedBlock = nil;
+    _cameraOpenChangedBlock = nil;
 }
 
 
