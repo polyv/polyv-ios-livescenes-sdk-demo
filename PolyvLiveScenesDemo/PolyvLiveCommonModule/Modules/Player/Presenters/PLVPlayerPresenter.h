@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) id <PLVPlayerPresenterDelegate> delegate;
 
 #pragma mark 数据
-/// 当期播放器的类型
+/// 当前播放器的类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType currentVideoType;
 
 /// 当前直播的 可选线路数量 (暂时仅直播支持)

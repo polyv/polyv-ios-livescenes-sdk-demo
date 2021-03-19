@@ -811,8 +811,8 @@ PLVPlayerPresenterDelegate
 // 直播相关
 /// 直播 ‘流状态’ 更新
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter streamStateUpdate:(PLVChannelLiveStreamState)newestStreamState streamStateDidChanged:(BOOL)streamStateDidChanged{
-    // 设置休息一会视图显示/隐藏
-    self.canvasView.restImageView.hidden = newestStreamState != PLVChannelLiveStreamState_Stop;
+    /// 根据直播流状态，刷新 ‘画布视图’
+    [self.canvasView refreshCanvasViewWithStreamState:newestStreamState];
     
     if (newestStreamState == PLVChannelLiveStreamState_Live) {
         if (!self.channelWatchNoDelay && self.inLinkMic == NO) {

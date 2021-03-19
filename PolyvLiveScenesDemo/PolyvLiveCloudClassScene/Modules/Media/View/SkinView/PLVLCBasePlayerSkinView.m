@@ -138,10 +138,10 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
             self.floatViewShowButton.hidden = NO;
             self.floatViewShowButton.selected = NO; /// 连麦中场景，默认显示‘开’
         } else {
-            NSLog(@"PLVLCBasePlayerSkinView - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",skinViewLiveStatus);
+            NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",NSStringFromClass(self.class),skinViewLiveStatus);
         }
     }else{
-        NSLog(@"PLVLCBasePlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
+        NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",NSStringFromClass(self.class),self.skinViewType);
     }
 }
 
@@ -152,7 +152,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         }
         self.titleLabel.text = titleText;
     }else{
-        NSLog(@"PLVLCBasePlayerSkinView - setTitleLabelWithText failed, titleText:%@",titleText);
+        NSLog(@"PLVLCBasePlayerSkinView[%@] - setTitleLabelWithText failed, titleText:%@",NSStringFromClass(self.class),titleText);
     }
 }
 
@@ -185,7 +185,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (void)showFloatViewShowButtonTipsLabelAnimation:(BOOL)showTips{
-    NSLog(@"PLVLCBasePlayerSkinView - showFloatViewShowButtonTipsLabelAnimation failed, the method was not overridden by subclass");
+    NSLog(@"PLVLCBasePlayerSkinView[%@] - showFloatViewShowButtonTipsLabelAnimation failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
 - (void)synchOtherSkinViewState:(PLVLCBasePlayerSkinView *)otherSkinView{
@@ -194,7 +194,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         self.playButton.selected = otherSkinView.playButton.selected;
         self.floatViewShowButton.selected = otherSkinView.floatViewShowButton.selected;
     }else{
-        NSLog(@"PLVLCBasePlayerSkinView - synchOtherSkinViewState failed, other skin view:%@",otherSkinView);
+        NSLog(@"PLVLCBasePlayerSkinView[%@] - synchOtherSkinViewState failed, other skin view:%@",NSStringFromClass(self.class),otherSkinView);
     }
 }
 
@@ -254,7 +254,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 }
 
 - (void)refreshPlayTimesLabelFrame{
-    NSLog(@"PLVLCBasePlayerSkinView - refreshPlayTimesLabelFrame failed, the method was not overridden by subclass");
+    NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshPlayTimesLabelFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView{
@@ -269,7 +269,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 #pragma mark Animation
 - (void)controlsSwitchShowStatusWithAnimation:(BOOL)showStatus{
     if (self.skinShow == showStatus) {
-        NSLog(@"PLVLCBasePlayerSkinView - controlsSwitchShowAnimationWithShow failed , state is same");
+        NSLog(@"PLVLCBasePlayerSkinView[%@] - controlsSwitchShowAnimationWithShow failed , state is same",NSStringFromClass(self.class));
         return;
     }
     

@@ -13,9 +13,12 @@
 
 @interface PLVLCMediaPlayerCanvasView ()
 
+#pragma mark 状态
 @property (nonatomic, assign) PLVLCMediaPlayerCanvasViewType type; // 视图类型
 @property (nonatomic, assign, readonly) BOOL isMiniScreen; // 是否处于小屏中 (若“父视图宽度”小于“屏幕宽度”的一半，则认定为“小屏”；比如悬浮小窗)
+@property (nonatomic, assign) PLVChannelLiveStreamState externalCurrentStreamState; // 当前外部的播放器直播流状态
 
+#pragma mark UI
 /// view hierarchy
 ///
 /// 视频模式 时:
@@ -116,7 +119,8 @@
             // 若处于小屏中
             self.tipsLabel.hidden = YES;
         }else{
-            self.tipsLabel.hidden = NO;
+            BOOL showNoLiveTipsLabel = (self.externalCurrentStreamState == PLVChannelLiveStreamState_End || self.externalCurrentStreamState == PLVChannelLiveStreamState_Unknown);
+            self.tipsLabel.hidden = !showNoLiveTipsLabel;
         }
     }else if (toType == PLVLCMediaPlayerCanvasViewType_Audio){
         self.placeholderImageView.image = [self getImageWithName:@"plvlc_media_audio_placeholder"];
@@ -129,6 +133,16 @@
         }
     }
     _type = toType;
+}
+
+- (void)refreshCanvasViewWithStreamState:(PLVChannelLiveStreamState)newestStreamState{
+    self.externalCurrentStreamState = newestStreamState;
+    
+    self.restImageView.hidden = (newestStreamState != PLVChannelLiveStreamState_Stop);
+
+    BOOL showNoLiveTipsLabel = (newestStreamState == PLVChannelLiveStreamState_End || newestStreamState == PLVChannelLiveStreamState_Unknown);
+    showNoLiveTipsLabel = self.isMiniScreen ? NO : showNoLiveTipsLabel;
+    self.tipsLabel.hidden = !showNoLiveTipsLabel;
 }
 
 

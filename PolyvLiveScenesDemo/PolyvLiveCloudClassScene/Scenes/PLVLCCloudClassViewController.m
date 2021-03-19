@@ -508,8 +508,12 @@ PLVRoomDataManagerProtocol
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveStartUpdate:(BOOL)noDelayLiveStart{
     [self.linkMicAreaView startWatchNoDelay:noDelayLiveStart];
     if (noDelayLiveStart) {
+        /// 仅无延迟直播开始，需由此触发更新，让UI及时更新
         /// 告知 媒体区域视图
         [self.mediaAreaView switchAreaViewLiveSceneTypeTo:PLVLCMediaAreaViewLiveSceneType_WatchNoDelay];
+        
+        /// 告知 横屏 皮肤视图
+        [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay];
     }
 }
 
