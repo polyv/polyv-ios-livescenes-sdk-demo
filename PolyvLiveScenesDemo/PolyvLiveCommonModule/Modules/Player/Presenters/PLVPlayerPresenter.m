@@ -233,6 +233,7 @@ PLVAdvViewDelegate
         self.livePlayer.channelWatchNoDelay = roomData.menuInfo.watchNoDelay;
         [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
         
+        self.livePlayer.videoToolBox = NO;
         self.livePlayer.chaseFrame = NO;
         self.livePlayer.customParam = roomData.customParam;
     }else if (self.currentVideoType == PLVChannelVideoType_Playback){ /// 回放
@@ -241,7 +242,8 @@ PLVAdvViewDelegate
         self.livePlaybackPlayer.livePlaybackDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
 
-        self.livePlayer.customParam = roomData.customParam;
+        self.livePlaybackPlayer.videoToolBox = NO;
+        self.livePlaybackPlayer.customParam = roomData.customParam;
     }
 }
 
