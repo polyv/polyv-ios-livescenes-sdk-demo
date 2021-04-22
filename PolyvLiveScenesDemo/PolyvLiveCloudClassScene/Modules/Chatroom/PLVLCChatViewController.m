@@ -14,8 +14,8 @@
 #import "PLVLCSpeakMessageCell.h"
 #import "PLVLCImageMessageCell.h"
 #import "PLVLCQuoteMessageCell.h"
-#import "ZNavigationController.h"
-#import "ZPickerController.h"
+#import "PLVAlbumNavigationController.h"
+#import "PLVPickerController.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatroomViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
@@ -23,7 +23,7 @@
 #import <PolyvFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
 #import "PLVCameraViewController.h"
-#import "MyTool.h"
+#import "PLVAlbumTool.h"
 #import "PLVLCUtils.h"
 #import <PolyvFoundationSDK/PLVAuthorizationManager.h>
 
@@ -32,7 +32,7 @@ NSString *PLVLCChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNot
 @interface PLVLCChatViewController ()<
 PLVKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
-ZPickerControllerDelegate,
+PLVPickerControllerDelegate,
 PLVCameraViewControllerDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
@@ -58,7 +58,7 @@ UITableViewDataSource
 /// 聊天室顶部公告横幅
 @property (nonatomic, strong) PLVLCNotifyMarqueeView *notifyMarqueeView;
 
-@property (nonatomic, assign) id<ZPickerControllerDelegate> delegate;
+@property (nonatomic, assign) id<PLVPickerControllerDelegate> delegate;
 
 @end
 
@@ -291,7 +291,7 @@ UITableViewDataSource
 }
 
 - (void)presentAlertController:(NSString *)message {
-    [MyTool presentAlertController:message inViewController:self];
+    [PLVAlbumTool presentAlertController:message inViewController:self];
 }
 
 #pragma mark - PLVRoomDataManagerProtocol
@@ -499,9 +499,9 @@ UITableViewDataSource
     [PLVLiveVideoConfig sharedInstance].unableRotate = YES;
     [PLVFdUtil changeDeviceOrientationToPortrait];
     
-    ZPickerController *vctrl = [[ZPickerController alloc] initWithPickerModer:PickerModerOfNormal];
+    PLVPickerController *vctrl = [[PLVPickerController alloc] initWithPickerModer:PickerModerOfNormal];
     vctrl.delegate = self;
-    ZNavigationController *nav = [[ZNavigationController alloc] initWithRootViewController:vctrl];
+    PLVAlbumNavigationController *nav = [[PLVAlbumNavigationController alloc] initWithRootViewController:vctrl];
     nav.modalPresentationStyle = UIModalPresentationFullScreen;
     [self.liveRoom presentViewController:nav animated:YES completion:nil];
 }
@@ -542,16 +542,16 @@ UITableViewDataSource
     [[PLVLCChatroomViewModel sharedViewModel] sendLike];
 }
 
-#pragma mark - ZPickerController Delegate
+#pragma mark - PLVPickerController Delegate
 
-- (void)pickerController:(ZPickerController*)pVC uploadImage:(UIImage *)uploadImage {
+- (void)pickerController:(PLVPickerController*)pVC uploadImage:(UIImage *)uploadImage {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendImageMessage:uploadImage];
     if (!success) {
         [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
     }
 }
 
-- (void)dismissPickerController:(ZPickerController*)pVC {
+- (void)dismissPickerController:(PLVPickerController*)pVC {
     UIViewController *liveRoomVC = (UIViewController *)self.liveRoom;
     [liveRoomVC dismissViewControllerAnimated:YES completion:^{
         [PLVLiveVideoConfig sharedInstance].unableRotate = NO;

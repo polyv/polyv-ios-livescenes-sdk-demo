@@ -14,7 +14,7 @@
 #import <PolyvFoundationSDK/PLVProgressHUD.h>
 
 #import "PLVPlayerPresenter.h"
-#import "PLVLCPlayerLogo.h"
+#import "PLVPlayerLogoView.h"
 
 @interface PLVECPlayerViewController ()<
 PLVPlayerPresenterDelegate
@@ -346,7 +346,7 @@ PLVPlayerPresenterDelegate
         
         [self.view insertSubview:self.logoMainView aboveSubview:self.displayView];
         
-        PLVLCPlayerLogoParam *logoParam = [[PLVLCPlayerLogoParam alloc] init];
+        PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
         logoParam.logoUrl = channel.logoImageUrl;
         logoParam.position = channel.logoPosition;
         logoParam.logoAlpha = channel.logoOpacity;
@@ -355,13 +355,13 @@ PLVPlayerPresenterDelegate
         logoParam.xOffsetScale = 0;
         logoParam.yOffsetScale = 0;
 
-        PLVLCPlayerLogo *playerLogo = [[PLVLCPlayerLogo alloc] init];
+        PLVPlayerLogoView *playerLogo = [[PLVPlayerLogoView alloc] init];
         [playerLogo insertLogoWithParam:logoParam];
         [self addPlayerLogo:playerLogo];
     }
 }
 
-- (void)addPlayerLogo:(PLVLCPlayerLogo *)logo {
+- (void)addPlayerLogo:(PLVPlayerLogoView *)logo {
     if (self.logoMainView) {
         [logo addAtView:self.logoMainView];
     }

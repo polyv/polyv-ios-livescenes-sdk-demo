@@ -11,11 +11,11 @@
 // UI
 #import "PLVLCMediaPlayerCanvasView.h"
 #import "PLVLCMediaMoreView.h"
-#import "PLVLCPlayerLogo.h"
+#import "PLVPlayerLogoView.h"
 
 // 模块
 #import "PLVPPTView.h"
-#import "ZJZDanMu.h"
+#import "PLVDanMu.h"
 #import "PLVEmoticonManager.h"
 #import "PLVPlayerPresenter.h"
 #import "PLVRoomDataManager.h"
@@ -116,7 +116,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) PLVLCMediaPlayerSkinView * skinView;     // 竖屏播放器皮肤视图 (负责承载 播放器的控制按钮)
 @property (nonatomic, strong) PLVLCMediaFloatView * floatView;
 @property (nonatomic, strong) PLVLCMediaMoreView * moreView;
-@property (nonatomic, strong) ZJZDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
+@property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) UIView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) UIView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
 
@@ -532,9 +532,9 @@ PLVPlayerPresenterDelegate
     return _marqueeView;
 }
 
-- (ZJZDanMu *)danmuView {
+- (PLVDanMu *)danmuView {
     if (!_danmuView) {
-        _danmuView = [[ZJZDanMu alloc] init];
+        _danmuView = [[PLVDanMu alloc] init];
         _danmuView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         _danmuView.hidden = YES;
         _danmuView.userInteractionEnabled = NO;
@@ -877,20 +877,20 @@ PLVPlayerPresenterDelegate
 #pragma mark - 播放器LOGO
 - (void)setupPlayerLogoImage:(PLVChannelInfoModel *)channel {
     if ([PLVFdUtil checkStringUseable:channel.logoImageUrl]) {
-        PLVLCPlayerLogoParam *logoParam = [[PLVLCPlayerLogoParam alloc] init];
+        PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
         logoParam.logoUrl = channel.logoImageUrl;
         logoParam.position = channel.logoPosition;
         logoParam.logoAlpha = channel.logoOpacity;
         logoParam.logoWidthScale = 0.14;
         logoParam.logoHeightScale = 0.25;
 
-        PLVLCPlayerLogo *playerLogo = [[PLVLCPlayerLogo alloc] init];
+        PLVPlayerLogoView *playerLogo = [[PLVPlayerLogoView alloc] init];
         [playerLogo insertLogoWithParam:logoParam];
         [self addPlayerLogo:playerLogo];
     }
 }
 
-- (void)addPlayerLogo:(PLVLCPlayerLogo *)logo {
+- (void)addPlayerLogo:(PLVPlayerLogoView *)logo {
     if (self.canvasView) {
         self.logoView = logo;
         [logo addAtView:self.canvasView];
