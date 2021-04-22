@@ -69,7 +69,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.chatArray = [[NSMutableArray alloc] initWithCapacity:500];
     
     // 初始化聊天室Presenter并设置delegate
-    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10];
+    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10 childRoomAllow:YES];
     self.presenter.delegate = self;
     
     // 监听socket消息
@@ -286,10 +286,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if ([subEvent isEqualToString:@"LOGIN"]) {   // someone logged in chatroom
         [self loginEvent:jsonDict];
     }
-}
-
-- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
-    [self loadHistory];// 登陆成功再加载聊天记录，否则分房间开启时，会使用频道号而不是房间号
 }
 
 #pragma mark - PLVChatroomPresenterProtocol

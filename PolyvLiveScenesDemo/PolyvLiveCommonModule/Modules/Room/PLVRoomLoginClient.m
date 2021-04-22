@@ -20,7 +20,7 @@
                               userId:(NSString *)userId
                                appId:(NSString *)appId
                            appSecret:(NSString *)appSecret
-                            roomUser:(PLVRoomUser *(^ _Nullable)(void))roomUserHandler
+                            roomUser:(void(^ _Nullable)(PLVRoomUser *roomUser))roomUserHandler
                           completion:(void (^)(PLVViewLogCustomParam *customParam))completion
                              failure:(void (^)(NSString *errorMessage))failure {
     if (channelType <= PLVChannelTypeUnknown) {
@@ -52,12 +52,9 @@
                 roomData.channelId = channelId;
 
                 // 使用roomUserHandler配置用户对象
-                PLVRoomUser *roomUser = nil;
+                PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:apiChannelType];
                 if (roomUserHandler) {
-                    roomUser = roomUserHandler();
-                }
-                if (!roomUser) {
-                    roomUser = [[PLVRoomUser alloc] init];
+                    roomUserHandler(roomUser);
                 }
                 [roomData setupRoomUser:roomUser];
                 
@@ -87,7 +84,7 @@
                                   userId:(NSString *)userId
                                    appId:(NSString *)appId
                                appSecret:(NSString *)appSecret
-                                roomUser:(PLVRoomUser *(^ _Nullable)(void))roomUserHandler
+                                roomUser:(void(^ _Nullable)(PLVRoomUser *roomUser))roomUserHandler
                               completion:(void (^)(PLVViewLogCustomParam *customParam))completion
                                  failure:(void (^)(NSString *errorMessage))failure {
     if (channelType <= PLVChannelTypeUnknown) {
@@ -122,12 +119,9 @@
                 roomData.vid = vid;
 
                 // 使用roomUserHandler配置用户对象
-                PLVRoomUser *roomUser = nil;
+                PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:apiChannelType];
                 if (roomUserHandler) {
-                    roomUser = roomUserHandler();
-                }
-                if (!roomUser) {
-                    roomUser = [[PLVRoomUser alloc] init];
+                    roomUserHandler(roomUser);
                 }
                 [roomData setupRoomUser:roomUser];
                 

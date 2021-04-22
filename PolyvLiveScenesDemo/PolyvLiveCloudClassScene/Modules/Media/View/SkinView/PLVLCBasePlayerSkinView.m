@@ -201,6 +201,9 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 - (void)setProgressWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString{
     [self.progressSlider setProgressWithCachedProgress:cachedProgress playedProgress:playedProgress];
     self.progressSlider.userInteractionEnabled = (durationTime > 0 ? YES : NO);
+    if (self.currentTimeLabel.text.length !=  currentTimeString.length) {
+        [self setNeedsLayout];
+    }
     
     self.currentTimeLabel.text = [PLVFdUtil checkStringUseable:currentTimeString] ? currentTimeString : @"00:00";
     if (! [self.durationLabel.text isEqualToString:durationString]) {

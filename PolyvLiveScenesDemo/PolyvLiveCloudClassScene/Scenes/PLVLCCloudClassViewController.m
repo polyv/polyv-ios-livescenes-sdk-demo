@@ -99,19 +99,14 @@ PLVRoomDataManagerProtocol
     self = [super init];
     if (self) {
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        PLVRoomUser *roomUser = roomData.roomUser;
-        
-        /// Socket 登录管理
-        PLVSocketUserType userType = roomUser.viewerType == PLVRoomUserTypeStudent ? PLVSocketUserTypeStudent : PLVSocketUserTypeSlice;
-        [[PLVSocketManager sharedManager] loginWithChannelId:roomData.channelId viewerId:roomUser.viewerId viewerName:roomUser.viewerName avatarUrl:roomUser.viewerAvatar actor:nil userType:userType];
-        
-        socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
-        [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
         
         // 启动聊天室管理器
         [[PLVLCChatroomViewModel sharedViewModel] setup];
         [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        
+        // 监听socket消息
+        socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
+        [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
     }
     return self;
 }

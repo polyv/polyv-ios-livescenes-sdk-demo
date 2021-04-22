@@ -55,7 +55,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 初始化方法
 /// @param count 每次调用接口获取的聊天消息条数，不得小于1
-- (instancetype)initWithLoadingHistoryCount:(NSUInteger)count;
+/// @param allow 是否允许使用分房间功能
+- (instancetype)initWithLoadingHistoryCount:(NSUInteger)count childRoomAllow:(BOOL)allow;
 
 /// 销毁方法
 /// 退出前调用，用于资源释放、状态位清零
@@ -83,9 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param emitMode 自定义消息emitMode字段
 /// @return 是否成功发送的布尔值
 - (BOOL)sendCustomMessageWithEvent:(NSString *)event
-                                            data:(NSDictionary *)data
-                                             tip:(NSString * _Nullable)tip
-                                        emitMode:(int)emitMode;
+                              data:(NSDictionary *)data
+                               tip:(NSString * _Nullable)tip
+                          emitMode:(int)emitMode;
 
 /// 本地生成一条教师消息，作为私聊窗口的第一条消息
 /// 生成后的消息数据模型通过回调 '-chatroomPresenter_didReceiveAnswerChatModel:' 返回

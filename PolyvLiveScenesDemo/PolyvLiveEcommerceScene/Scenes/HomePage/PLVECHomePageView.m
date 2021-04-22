@@ -347,6 +347,9 @@ PLVSocketManagerProtocol
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime {
     self.duration = self.playerContolView.duration = duration;
+    if (self.playerContolView.currentTimeLabel.text.length != currentPlaybackTime.length) {
+        [self.playerContolView setNeedsLayout];
+    }
     self.playerContolView.currentTimeLabel.text = currentPlaybackTime;
     
     if (![self.playerContolView.totalTimeLabel.text isEqualToString:durationTime]) {

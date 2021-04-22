@@ -40,47 +40,51 @@
         self.hidden = NO;
         [self controlsSwitchShowStatusWithAnimation:YES];
 
+        // 基础数据
+        CGFloat leftPadding = 2.0;
+        CGFloat bottomPadding = 12.0;
+        CGFloat commonHeight = 20.0;
+        
         // 顶部UI
         CGFloat topShadowLayerHeight = 83.0;
         self.topShadowLayer.frame = CGRectMake(0, 0, viewWidth, topShadowLayerHeight);
         
-        CGFloat leftPadding = 2.0;
-        CGSize backButtonSize = CGSizeMake(40.0, 20.0);
-        CGFloat countdownTimeViewHeigh = 32.0;
+        CGSize backButtonSize = CGSizeMake(40.0, 40.0);
         self.backButton.frame = CGRectMake(leftPadding, toppadding, backButtonSize.width, backButtonSize.height);
+        self.backButton.imageEdgeInsets = UIEdgeInsetsMake(0, 0, 20, 0);
         
-        self.countdownTimeView.frame = CGRectMake(0, toppadding - (countdownTimeViewHeigh - backButtonSize.height) / 2.0f,
+        CGFloat countdownTimeViewHeigh = 32.0;
+        self.countdownTimeView.frame = CGRectMake(0, toppadding - (countdownTimeViewHeigh - commonHeight) / 2.0f,
                                                   viewWidth, countdownTimeViewHeigh);
-//        self.countdownTimeView.timeTopPadding = toppadding - 24;
         
         CGFloat titleLabelWidthScale = 200.0 / 375.0;
         CGFloat titleLabelWidth = viewWidth * titleLabelWidthScale;
-        self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), CGRectGetMinY(self.backButton.frame), titleLabelWidth, backButtonSize.height);
+        self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), CGRectGetMinY(self.backButton.frame), titleLabelWidth, commonHeight);
         
         [self refreshPlayTimesLabelFrame];
         
         CGFloat rightPadding = 2.0;
-        self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
+        self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, commonHeight);
         
         // 底部UI
         CGFloat bottomShadowLayerHeight = 70.0;
         self.bottomShadowLayer.frame = CGRectMake(0, viewHeight - bottomShadowLayerHeight, viewWidth, bottomShadowLayerHeight);
         
-        CGFloat bottomPadding = 12.0;
-        self.playButton.frame = CGRectMake(leftPadding, viewHeight - bottomPadding - backButtonSize.height, backButtonSize.width, backButtonSize.height);
+        self.playButton.frame = CGRectMake(leftPadding, viewHeight - bottomPadding - commonHeight, backButtonSize.width, commonHeight);
         
         [self refreshRefreshButtonFrame];
         
-        self.fullScreenButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.playButton.frame), backButtonSize.width, backButtonSize.height);
+        self.fullScreenButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
         
-        self.floatViewShowButton.frame = CGRectMake(CGRectGetMinX(self.fullScreenButton.frame) - backButtonSize.width, CGRectGetMinY(self.playButton.frame), backButtonSize.width, backButtonSize.height);
+        self.floatViewShowButton.frame = CGRectMake(CGRectGetMinX(self.fullScreenButton.frame) - backButtonSize.width, CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
         
         CGFloat timeLabelWidth = [self getLabelTextWidth:self.currentTimeLabel];
-        self.currentTimeLabel.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame) + 10, CGRectGetMinY(self.playButton.frame), timeLabelWidth, backButtonSize.height);
+        self.currentTimeLabel.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame) + 10, CGRectGetMinY(self.playButton.frame), timeLabelWidth, commonHeight);
         
-        self.diagonalsLabel.frame = CGRectMake(CGRectGetMaxX(self.currentTimeLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), 5, backButtonSize.height);
+        self.diagonalsLabel.frame = CGRectMake(CGRectGetMaxX(self.currentTimeLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), 5, commonHeight);
         
-        self.durationLabel.frame = CGRectMake(CGRectGetMaxX(self.diagonalsLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), timeLabelWidth, backButtonSize.height);
+        timeLabelWidth = [self getLabelTextWidth:self.durationLabel];
+        self.durationLabel.frame = CGRectMake(CGRectGetMaxX(self.diagonalsLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), timeLabelWidth, commonHeight);
         
         UIButton *progressSliderNextButton = self.floatViewShowButton ?: self.fullScreenButton;
         CGFloat progressSliderLeftRightPadding = 16;
@@ -131,7 +135,7 @@
 
 - (void)refreshPlayTimesLabelFrame{
     CGSize playTimesLabelFitSize = [self.playTimesLabel sizeThatFits:CGSizeMake(150, 18)];
-    self.playTimesLabel.frame = CGRectMake(CGRectGetMinX(self.titleLabel.frame), CGRectGetMaxY(self.backButton.frame) + 1, playTimesLabelFitSize.width + 8, 18);
+    self.playTimesLabel.frame = CGRectMake(CGRectGetMinX(self.titleLabel.frame), CGRectGetMaxY(self.titleLabel.frame) + 1, playTimesLabelFitSize.width + 8, 18);
 }
 
 - (void)switchSkinViewLiveStatusTo:(PLVLCBasePlayerSkinViewLiveStatus)skinViewLiveStatus{

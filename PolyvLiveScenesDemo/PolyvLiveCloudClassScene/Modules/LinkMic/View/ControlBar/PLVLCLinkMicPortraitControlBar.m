@@ -235,6 +235,13 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
     }];
 }
 
+- (void)changeCameraButtonOpenUIWithoutEvent:(BOOL)toCameraOpen{
+    self.cameraButton.selected = !toCameraOpen;
+    BOOL currentOpen = !self.cameraButton.selected;
+    self.switchCameraButton.selected = !currentOpen;
+    self.switchCameraButton.alpha = currentOpen ? 1.0 : 0.5;
+}
+
 #pragma mark Setter
 - (void)setBarType:(PLVLCLinkMicControlBarType)barType{
     _barType = barType;

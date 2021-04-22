@@ -108,6 +108,7 @@
         
         self.diagonalsLabel.frame = CGRectMake(CGRectGetMaxX(self.currentTimeLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), 5, backButtonSize.height);
         
+        timeLabelWidth = [self getLabelTextWidth:self.durationLabel];
         self.durationLabel.frame = CGRectMake(CGRectGetMaxX(self.diagonalsLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), timeLabelWidth, backButtonSize.height);
         
         CGFloat progressSliderOriginX = CGRectGetMaxX(self.durationLabel.frame) + 16;
@@ -199,6 +200,7 @@
 - (UIButton *)danmuButton{
     if (!_danmuButton) {
         _danmuButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _danmuButton.hidden = YES;
         [_danmuButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_chatroom_open"] forState:UIControlStateNormal];
         [_danmuButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_chatroom_close"] forState:UIControlStateSelected];
         _danmuButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
@@ -243,9 +245,6 @@
 #pragma mark Private Setter
 
 - (void)setDanmuButtonShow:(BOOL)danmuButtonShow {
-    if (_danmuButtonShow == danmuButtonShow) {
-        return;
-    }
     _danmuButtonShow = danmuButtonShow;
     self.danmuButton.hidden = !danmuButtonShow;
 }

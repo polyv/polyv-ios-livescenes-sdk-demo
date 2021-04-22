@@ -28,6 +28,12 @@
     return self;
 }
 
+- (void)layoutSubviews{
+    [super layoutSubviews];
+    self.titleLabel.frame = self.bounds;
+    self.indicatorView.center = CGPointMake(self.bounds.size.width/2, self.indicatorView.center.y);
+}
+
 #pragma mark - Getter & Setter
 
 - (UILabel *)titleLabel {

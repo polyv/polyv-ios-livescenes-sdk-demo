@@ -51,10 +51,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 #pragma mark - 生命周期
 
 - (instancetype)init {
-    return [self initWithLoadingHistoryCount:20];
+    return [self initWithLoadingHistoryCount:20 childRoomAllow:NO];
 }
 
-- (instancetype)initWithLoadingHistoryCount:(NSUInteger)count {
+- (instancetype)initWithLoadingHistoryCount:(NSUInteger)count childRoomAllow:(BOOL)allow {
     self = [super init];
     if (self) {
         // 获取聊天消息条数初始化
@@ -69,16 +69,30 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
                                                             userInfo:nil
                                                              repeats:YES];
         
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        PLVRoomUser *roomUser = roomData.roomUser;
+        
+        // Socket 登录管理
+        PLVSocketUserType userType = [PLVRoomUser sockerUserTypeWithRoomUserType:roomUser.viewerType];
+        [PLVSocketManager sharedManager].allowChildRoom = allow;
+        [[PLVSocketManager sharedManager] loginWithChannelId:roomData.channelId viewerId:roomUser.viewerId viewerName:roomUser.viewerName avatarUrl:roomUser.viewerAvatar actor:nil userType:userType];
+        
         // 监听socket消息
         socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
         
         // 监听聊天室SDK管理类回调
-        NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
-        [[PLVChatroomManager sharedManager] setupWithDelegate:self channelId:channelId];
+        PLVChatroomManager *chatroomManager = [PLVChatroomManager sharedManager];
+        [chatroomManager setupWithDelegate:self channelId:roomData.channelId];
+        
+        if (roomData.channelInfo) {
+            chatroomManager.sessionId = roomData.channelInfo.sessionId;
+        }
         
         // 监听直播间数据管理器回调
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT)];
+        
+        [self loadHistory];
     }
     return self;
 }
@@ -240,6 +254,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     __weak typeof(self) weakSelf = self;
     NSString *roomId = [PLVSocketManager sharedManager].roomId;
+    if ((!roomId || roomId.length == 0) && [PLVSocketManager sharedManager].allowChildRoom) {
+        self.delayRequestHistory = YES;
+        self.loadingHistory = NO;
+        return;
+    }
+    
     if (!roomId || roomId.length == 0) {
         roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
     }
@@ -449,6 +469,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 }
 
 #pragma mark - PLVSocketManager Protocol
+
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
+    if (self.delayRequestHistory) {
+        [self loadHistory];
+    }
+}
 
 - (void)socketMananger_didReceiveMessage:(NSString *)subEvent
                                     json:(NSString *)jsonString

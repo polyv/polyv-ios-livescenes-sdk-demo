@@ -13,7 +13,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVECPlayerViewController.h"
 #import "PLVECGoodsDetailViewController.h"
-#import "PLVECBaseNavigationController.h"
+#import "PLVBaseNavigationController.h"
 #import "PLVECFloatingWindow.h"
 #import "PLVInteractView.h"
 
@@ -62,13 +62,6 @@ UIGestureRecognizerDelegate
     self = [super init];
     if (self) {
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        PLVRoomUser *roomUser = roomData.roomUser;
-        
-        /// Socket 登录管理
-        PLVSocketUserType userType = roomUser.viewerType == PLVRoomUserTypeStudent ? PLVSocketUserTypeStudent : PLVSocketUserTypeSlice;
-        [PLVSocketManager sharedManager].allowChildRoom = YES;
-        [[PLVSocketManager sharedManager] loginWithChannelId:roomData.channelId viewerId:roomUser.viewerId viewerName:roomUser.viewerName avatarUrl:roomUser.viewerAvatar actor:nil userType:userType];
         
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
     }
@@ -506,7 +499,7 @@ UIGestureRecognizerDelegate
         self.navigationController.navigationBarHidden = NO;
         [self.navigationController pushViewController:self.goodsDetailVC animated:YES];
     } else {
-        PLVECBaseNavigationController *nav = [[PLVECBaseNavigationController alloc] initWithRootViewController:self.goodsDetailVC];
+        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.goodsDetailVC];
         nav.navigationBarHidden = NO;
         nav.modalPresentationStyle = UIModalPresentationFullScreen;
         [self presentViewController:nav animated:YES completion:nil];

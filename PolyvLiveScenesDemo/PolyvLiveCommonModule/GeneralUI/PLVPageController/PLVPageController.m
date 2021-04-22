@@ -230,8 +230,10 @@ willTransitionToViewControllers:(NSArray *)pendingViewControllers {
       transitionCompleted:(BOOL)completed {
     if (completed) {
         NSUInteger index = [self indexOfViewController:previousViewControllers.firstObject];
-        [self deselectAtIndex:index];
-        [self selecteAtIndex:self.nextIndex];
+        if (index != self.nextIndex) {
+            [self deselectAtIndex:index];
+            [self selecteAtIndex:self.nextIndex];
+        }
     }
 }
 

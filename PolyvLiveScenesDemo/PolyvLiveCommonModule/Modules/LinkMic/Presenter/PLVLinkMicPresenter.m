@@ -60,7 +60,7 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, assign) BOOL inLinkMic;
 @property (nonatomic, assign) BOOL inProgress;
 @property (nonatomic, assign) BOOL watchingNoDelay;
-@property (nonatomic, assign) BOOL originalIdleTimerDisabled;
+@property (nonatomic, assign) int originalIdleTimerDisabled; // 0 表示未记录；负值小于0 对应NO状态；正值大于0 对应YES状态；
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * linkMicSocketToken; // 当前连麦 SocketToken (不为空时重连后需发送 reJoinMic)
@@ -100,6 +100,7 @@ PLVLinkMicManagerDelegate
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
+    if (self.inRTCRoom) { [self resumeOriginalScreenOnStatus]; }
     [self stopLinkMicUserListTimer];
     [self leaveRTCChannel];
     NSLog(@"%s",__FUNCTION__);
@@ -142,9 +143,7 @@ PLVLinkMicManagerDelegate
     if (self.watchingNoDelay) {
         [self leaveLinkMic];
         [self leaveRTCChannel];
-        self.watchingNoDelay = NO;
-    } else {
-        NSLog(@"PLVLinkMicPresenter - startWatchNoDelay failed, watchNoDelay already 'NO'");
+        self.watchingNoDelay = NO; /// 必需在最后置NO
     }
 }
 
@@ -178,6 +177,7 @@ PLVLinkMicManagerDelegate
 
 - (void)leaveLinkMic{
     if (self.linkMicStatus == PLVLinkMicStatus_Joining || self.linkMicStatus == PLVLinkMicStatus_Joined) {
+        if (!self.watchingNoDelay) { [self resumeOriginalScreenOnStatus]; }
         [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Leaving];
         if (self.watchingNoDelay) {
             [self emitSocketMessge_JoinLeave];
@@ -252,6 +252,7 @@ PLVLinkMicManagerDelegate
     self.inLinkMic = NO;
     self.inRTCRoom = NO;
     self.linkMicSceneType = PLVChannelLinkMicSceneType_Unknown;
+    self.originalIdleTimerDisabled = 0;
     [PLVRoomDataManager sharedManager].roomData.linkMicSceneType = self.linkMicSceneType; /// 同步值
 
     self.onlineUserMuArray = [[NSMutableArray<PLVLinkMicOnlineUser *> alloc] init];
@@ -481,18 +482,21 @@ PLVLinkMicManagerDelegate
 }
 
 - (void)setScreenAlwaysOn{
-    __weak typeof(self) weakSelf = self;
     plv_dispatch_main_async_safe(^{
-        weakSelf.originalIdleTimerDisabled = [UIApplication sharedApplication].idleTimerDisabled;
-        [UIApplication sharedApplication].idleTimerDisabled = YES;
+        if (![UIApplication sharedApplication].idleTimerDisabled) {
+            self.originalIdleTimerDisabled = -1;
+            [UIApplication sharedApplication].idleTimerDisabled = YES;
+        }
     });
 }
 
 - (void)resumeOriginalScreenOnStatus{
-    __weak typeof(self) weakSelf = self;
-    plv_dispatch_main_async_safe(^{
-        [UIApplication sharedApplication].idleTimerDisabled = weakSelf.originalIdleTimerDisabled;
-    });
+    if (self.originalIdleTimerDisabled != 0) {
+        plv_dispatch_main_async_safe(^{
+            [UIApplication sharedApplication].idleTimerDisabled = self.originalIdleTimerDisabled < 0 ? NO : YES;
+            self.originalIdleTimerDisabled = 0;
+        });
+    }
 }
 
 #pragma mark Join RTC Room
@@ -520,7 +524,6 @@ PLVLinkMicManagerDelegate
             [weakSelf callbackForOperationInProgress:NO];
             if (updateResult) {
                 [weakSelf callbackForOperationInProgress:YES];
-                [weakSelf setScreenAlwaysOn];
                 int res = [weakSelf.linkMicManager joinRtcChannelWithChannelId:weakSelf.channelId userLinkMicId:weakSelf.linkMicUserId];
                 if(res != 0){
                     [weakSelf changeRoomJoinStatusAndCallback:PLVLinkMicPresenterRoomJoinStatus_NotJoin];
@@ -1155,11 +1158,16 @@ PLVLinkMicManagerDelegate
         [PLVSocketManager sharedManager].status == PLVSocketConnectStatusConnected) {
         NSMutableDictionary *jsonDict = [NSMutableDictionary dictionary];
         NSString *roomId = [PLVSocketManager sharedManager].roomId; // 此处不可使用频道号，因存在分房间的可能
+        PLVBSocketUserType bUserType = (PLVBSocketUserType)[PLVSocketManager sharedManager].userType;
+        NSString *userTypeString = [PLVBSocketUser userTypeStringWithUserType:bUserType english:YES];
+        if (![PLVFdUtil checkStringUseable:userTypeString]) {
+            userTypeString = [PLVSocketManager sharedManager].userType == PLVSocketUserTypeStudent ? @"student" : @"slice";
+        }
         jsonDict[@"roomId"]  = [NSString stringWithFormat:@"%@",roomId];
         jsonDict[@"user"]    = @{@"nick" : [NSString stringWithFormat:@"%@",self.linkMicUserNickname],
                                  @"pic" : [NSString stringWithFormat:@"%@",self.linkMicUserAvatar],
                                  @"userId" : [NSString stringWithFormat:@"%@",self.linkMicUserId],
-                                 @"userType" : @"slice"};
+                                 @"userType" : userTypeString};
         if ([eventType isEqualToString:@"joinLeave"] && [PLVFdUtil checkStringUseable:self.linkMicSocketToken]) {
             jsonDict[@"token"] = self.linkMicSocketToken;
         }
@@ -1342,6 +1350,11 @@ PLVLinkMicManagerDelegate
             // 连麦Token不为空，需发送 reJoinMic 进行重连
             [self emitSocketMessge_reJoinMic];
         }
+    } else if ([subEvent containsString:@"finishClass"]){ // 下课事件
+        if (self.watchingNoDelay) {
+            [self resumeOriginalScreenOnStatus];
+            [self stopWatchNoDelay];
+        }
     }
 }
 
@@ -1377,10 +1390,15 @@ PLVLinkMicManagerDelegate
     if (self.linkMicStatus == PLVLinkMicStatus_Joining) {
         [self emitSocketMessge_JoinSuccess];
     }
+    
+    /// 允许2秒内外部模块作最终的“常亮”配置
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [weakSelf setScreenAlwaysOn];
+    });
 }
 
 - (void)plvLinkMicManager:(PLVLinkMicManager *)manager leaveRTCChannelComplete:(NSString * _Nonnull)channelID{
-    [self resumeOriginalScreenOnStatus];
     [self callbackForOperationInProgress:NO];
     [self changeRoomJoinStatusAndCallback:PLVLinkMicPresenterRoomJoinStatus_NotJoin];
     

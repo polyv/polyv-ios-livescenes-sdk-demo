@@ -1,18 +1,18 @@
 //
-//  PLVECBaseNavigationController.m
+//  PLVBaseNavigationController.m
 //  PolyvLiveEcommerceDemo
 //
 //  Created by Lincal on 2020/4/30.
 //  Copyright © 2020 polyv. All rights reserved.
 //
 
-#import "PLVECBaseNavigationController.h"
+#import "PLVBaseNavigationController.h"
 
-@interface PLVECBaseNavigationController ()
+@interface PLVBaseNavigationController ()
 
 @end
 
-@implementation PLVECBaseNavigationController
+@implementation PLVBaseNavigationController
 
 - (void)viewDidLoad {
     [super viewDidLoad];

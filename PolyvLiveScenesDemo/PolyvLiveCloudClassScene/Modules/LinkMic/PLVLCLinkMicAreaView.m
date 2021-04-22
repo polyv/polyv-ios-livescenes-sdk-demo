@@ -341,7 +341,7 @@ PLVLCLinkMicWindowsViewDelegate
         if ([mediaType isEqualToString:@"audio"]) {
             self.currentControlBar.micButton.selected = !linkMicUser.currentMicOpen;
         }else if ([mediaType isEqualToString:@"video"]){
-            self.currentControlBar.cameraButton.selected = !linkMicUser.currentCameraOpen;
+            [self.currentControlBar changeCameraButtonOpenUIWithoutEvent:linkMicUser.currentCameraOpen];
         }
     }else{
         /// 远端用户

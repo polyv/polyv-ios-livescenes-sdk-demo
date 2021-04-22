@@ -105,6 +105,14 @@ typedef NS_ENUM(NSUInteger, PLVLCLinkMicControlBarType) {
 
 - (void)showSelfViewWithAnimation:(BOOL)show;
 
+/// 改变 ’摄像头按钮的 开启关闭UI状态‘
+///
+/// @note 仅UI变化，不触发按钮对应的回调；
+///       当 摄像头按钮的 开启关闭UI状态 被改变时，切换前后置摄像头按钮 的UI状态，也会同步更新；
+///
+/// @param toCameraOpen ’摄像头按钮’ 的开启关闭目标值
+- (void)changeCameraButtonOpenUIWithoutEvent:(BOOL)toCameraOpen;
+
 @optional
 #pragma mark UI Optional
 @property (nonatomic, strong) UIButton * hideButton;   // 收起按钮 (点击 将收起控制栏)

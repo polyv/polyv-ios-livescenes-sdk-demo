@@ -340,9 +340,11 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                               userId:self.userIDTF.text
                                                appId:self.appIDTF.text
                                            appSecret:self.appSecretTF.text
-                                            roomUser:^PLVRoomUser * _Nonnull{
-        PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithViewerId:nil viewerName:nil viewerAvatar:nil viewerType:PLVRoomUserTypeSlice];
-        return roomUser;
+                                            roomUser:^(PLVRoomUser * _Nonnull roomUser) {
+        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+//        roomUser.viewerId = @"用户ID";
+//        roomUser.viewerName = @"用户昵称";
+//        roomUser.viewerAvatar = @"用户头像";
     } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
         [hud hideAnimated:YES];
         [weakSelf saveParamsToFile];
@@ -369,9 +371,11 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                                   userId:self.userIDTF.text
                                                    appId:self.appIDTF.text
                                                appSecret:self.appSecretTF.text
-                                                roomUser:^PLVRoomUser * _Nonnull{
-        PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithViewerId:nil viewerName:nil viewerAvatar:nil viewerType:PLVRoomUserTypeSlice];
-        return roomUser;
+                                                roomUser:^(PLVRoomUser * _Nonnull roomUser) {
+        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+//        roomUser.viewerId = @"用户ID";
+//        roomUser.viewerName = @"用户昵称";
+//        roomUser.viewerAvatar = @"用户头像";
     } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
         [hud hideAnimated:YES];
         [weakSelf saveParamsToFile];
@@ -397,8 +401,12 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                               userId:self.userIDTF.text
                                                appId:self.appIDTF.text
                                            appSecret:self.appSecretTF.text
-                                            roomUser:nil
-                                          completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
+                                            roomUser:^(PLVRoomUser * _Nonnull roomUser) {
+        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+//        roomUser.viewerId = @"用户ID";
+//        roomUser.viewerName = @"用户昵称";
+//        roomUser.viewerAvatar = @"用户头像";
+    } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
         [hud hideAnimated:YES];
         [weakSelf saveParamsToFile];
         
@@ -424,8 +432,12 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                                   userId:self.userIDTF.text
                                                    appId:self.appIDTF.text
                                                appSecret:self.appSecretTF.text
-                                                roomUser:nil
-                                              completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
+                                                roomUser:^(PLVRoomUser * _Nonnull roomUser) {
+        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+//        roomUser.viewerId = @"用户ID";
+//        roomUser.viewerName = @"用户昵称";
+//        roomUser.viewerAvatar = @"用户头像";
+    } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
         [hud hideAnimated:YES];
         [weakSelf saveParamsToFile];
         

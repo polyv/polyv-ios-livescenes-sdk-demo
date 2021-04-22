@@ -1,5 +1,5 @@
 //
-//  PLVECBaseNavigationController.h
+//  PLVBaseNavigationController.h
 //  PolyvLiveEcommerceDemo
 //
 //  Created by Lincal on 2020/4/30.
@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface PLVECBaseNavigationController : UINavigationController
+@interface PLVBaseNavigationController : UINavigationController
 
 @end
 

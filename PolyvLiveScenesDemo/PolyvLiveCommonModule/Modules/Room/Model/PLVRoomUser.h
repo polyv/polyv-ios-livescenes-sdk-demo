@@ -7,6 +7,8 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <PLVLiveScenesSDK/PLVSocketManager.h>
+#import <PLVLiveScenesSDK/PLVLiveDefine.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -32,13 +34,13 @@ typedef NS_ENUM(NSUInteger, PLVRoomUserType) {
 @interface PLVRoomUser : NSObject
 
 /// 用户唯一标识，用于登录socket、发送日志
-@property (nonatomic, copy, readonly) NSString *viewerId;
+@property (nonatomic, copy) NSString *viewerId;
 
 /// 用户昵称，用于登录socket、发送日志
-@property (nonatomic, copy, readonly) NSString *viewerName;
+@property (nonatomic, copy) NSString *viewerName;
 
 /// 用户头像地址，用于登陆socket
-@property (nonatomic, copy, readonly) NSString *viewerAvatar;
+@property (nonatomic, copy) NSString *viewerAvatar;
 
 /// 用户类型/角色，用于登陆socket
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -46,17 +48,10 @@ typedef NS_ENUM(NSUInteger, PLVRoomUserType) {
 /// 初始化方法1
 /// 使用自动生成的 viewerId、viewerName
 /// 使用默认viewerAvatar
-/// vieweType默认为PLVRoomUserTypeStudent
-- (instancetype)init;
+/// @param channelType 频道类型（不同频道类型对应不同viewerType）
+- (instancetype)initWithChannelType:(PLVChannelType)channelType;
 
 /// 初始化方法2
-/// 使用默认viewerAvatar
-/// vieweType默认为PLVRoomUserTypeStudent
-/// @param viewerId 用户ID
-/// @param viewerName 用户昵称
-- (instancetype)initWithViewerId:(NSString *)viewerId viewerName:(NSString *)viewerName;
-
-/// 初始化方法3
 /// @param viewerId 用户ID
 /// @param viewerName 用户昵称
 /// @param viewerAvatar 用户头像
@@ -65,6 +60,17 @@ typedef NS_ENUM(NSUInteger, PLVRoomUserType) {
                       viewerName:(NSString * _Nullable)viewerName
                     viewerAvatar:(NSString * _Nullable)viewerAvatar
                       viewerType:(PLVRoomUserType)viewerType;
+
+/// 根据频道类型返回用户类型
+/// PLVChannelTypePPT 对应 PLVRoomUserTypeSlice
+/// PLVChannelTypeAlone 对应 PLVRoomUserTypeStudent
+/// 非以上频道类型，返回 PLVRoomUserTypeViewer
+/// @param channelType 频道类型（不同频道类型对应不同viewerType）
++ (PLVRoomUserType)userTypeWithChannelType:(PLVChannelType)channelType;
+
+/// 根据roomUser用户类型返回socket模块用户类型
+/// @param userType roomUser用户类型
++ (PLVSocketUserType)sockerUserTypeWithRoomUserType:(PLVRoomUserType)userType;
 
 /// 根据用户类型枚举值判断是否是有身份用户
 + (BOOL)isSpecialIdentityWithUserType:(PLVRoomUserType)userType;

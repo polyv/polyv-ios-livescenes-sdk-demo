@@ -42,13 +42,15 @@
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
 
-    CGFloat progressViewHeight = 3.0;
+    CGFloat progressViewHeight = 2.5;
     CGFloat progressViewY = (viewHeight - progressViewHeight) / 2.0;
-    CGFloat progressViewX = 2.0;
+    CGFloat progressViewX = 3.0;
     CGFloat progressViewWidth = viewWidth - progressViewX * 2;
     self.progressView.frame = CGRectMake(progressViewX, progressViewY, progressViewWidth, progressViewHeight);
     
     self.slider.frame = self.bounds;
+    CGFloat midY =  ceilf(CGRectGetMidY(self.slider.frame));
+    self.progressView.center = CGPointMake(CGRectGetMidX(self.progressView.frame), midY);
 }
 
 

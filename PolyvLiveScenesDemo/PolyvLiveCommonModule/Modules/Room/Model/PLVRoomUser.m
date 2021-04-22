@@ -20,9 +20,6 @@ static NSString *kRoomUserTypeDummy = @"dummy";
 
 @interface PLVRoomUser ()
 
-@property (nonatomic, copy) NSString *viewerId;
-@property (nonatomic, copy) NSString *viewerName;
-@property (nonatomic, copy) NSString *viewerAvatar;
 @property (nonatomic, assign) PLVRoomUserType viewerType;
 
 @end
@@ -31,12 +28,9 @@ static NSString *kRoomUserTypeDummy = @"dummy";
 
 #pragma mark - 初始化
 
-- (instancetype)init {
-    return [[PLVRoomUser alloc] initWithViewerId:nil viewerName:nil viewerAvatar:nil viewerType:PLVRoomUserTypeStudent];
-}
-
-- (instancetype)initWithViewerId:(NSString *)viewerId viewerName:(NSString *)viewerName {
-    return [[PLVRoomUser alloc] initWithViewerId:viewerId viewerName:viewerName viewerAvatar:nil viewerType:PLVRoomUserTypeStudent];
+- (instancetype)initWithChannelType:(PLVChannelType)channelType {
+    PLVRoomUserType userType = [PLVRoomUser userTypeWithChannelType:channelType];
+    return [[PLVRoomUser alloc] initWithViewerId:nil viewerName:nil viewerAvatar:nil viewerType:userType];
 }
 
 - (instancetype)initWithViewerId:(NSString * _Nullable)viewerId
@@ -87,6 +81,16 @@ static NSString *kRoomUserTypeDummy = @"dummy";
 
 #pragma mark - 用户类型相关工具方法
 
++ (PLVRoomUserType)userTypeWithChannelType:(PLVChannelType)channelType {
+    if ((channelType & PLVChannelTypePPT) > 0) {
+        return PLVRoomUserTypeSlice;
+    } else if ((channelType & PLVChannelTypeAlone) > 0) {
+        return PLVRoomUserTypeStudent;
+    } else {
+        return PLVRoomUserTypeViewer;
+    }
+}
+
 + (BOOL)isSpecialIdentityWithUserType:(PLVRoomUserType)userType {
     if (userType == PLVRoomUserTypeGuest ||
         userType == PLVRoomUserTypeTeacher ||
@@ -96,6 +100,28 @@ static NSString *kRoomUserTypeDummy = @"dummy";
     } else {
         return NO;
     }
+}
+
++ (PLVSocketUserType)sockerUserTypeWithRoomUserType:(PLVRoomUserType)userType {
+    PLVSocketUserType socketUserType = PLVSocketUserTypeUnknown;
+    if (userType == PLVRoomUserTypeStudent) {
+        socketUserType = PLVSocketUserTypeStudent;
+    } else if (userType == PLVRoomUserTypeSlice) {
+        socketUserType = PLVSocketUserTypeSlice;
+    } else if (userType == PLVRoomUserTypeViewer) {
+        socketUserType = PLVSocketUserTypeViewer;
+    } else if (userType == PLVRoomUserTypeGuest) {
+        socketUserType = PLVSocketUserTypeGuest;
+    } else if (userType == PLVRoomUserTypeTeacher) {
+        socketUserType = PLVSocketUserTypeTeacher;
+    } else if (userType == PLVRoomUserTypeAssistant) {
+        socketUserType = PLVSocketUserTypeAssistant;
+    } else if (userType == PLVRoomUserTypeManager) {
+        socketUserType = PLVSocketUserTypeManager;
+    } else {
+        socketUserType = PLVSocketUserTypeViewer;
+    }
+    return socketUserType;
 }
 
 + (PLVRoomUserType)userTypeWithUserTypeString:(NSString *)userTypeString {

@@ -21,7 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param userId 用户id
 /// @param appId 应用id
 /// @param appSecret 应用secret
-/// @param roomUserHandler 为登陆提供观看用户的实例对象，可用来配置viewerId、viewerName等参数
+/// @param roomUserHandler 返回带有默认值的观看用户实例对象，可在block中配置viewerId、viewerName、viewerAvatar属性
 /// @param completion 登录成功，带上自定义参数对象，用户可在回调里面设置后台统计所需的自定义参数
 /// @param failure 登录失败
 + (void)loginLiveRoomWithChannelType:(PLVChannelType)channelType
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
                               userId:(NSString *)userId
                                appId:(NSString *)appId
                            appSecret:(NSString *)appSecret
-                            roomUser:(PLVRoomUser *(^ _Nullable)(void))roomUserHandler
+                            roomUser:(void(^ _Nullable)(PLVRoomUser *roomUser))roomUserHandler
                           completion:(void (^)(PLVViewLogCustomParam *customParam))completion
                              failure:(void (^)(NSString *errorMessage))failure;
 
@@ -40,7 +40,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param userId 用户id
 /// @param appId 应用id
 /// @param appSecret 应用secret
-/// @param roomUserHandler 为登陆提供观看用户的实例对象，可用来配置viewerId、viewerName等参数
+/// @param roomUserHandler 返回带有默认值的观看用户实例对象，可在block中配置viewerId、viewerName、viewerAvatar属性
 /// @param completion 登录成功，带上自定义参数对象，用户可在回调里面设置后台统计所需的自定义参数
 /// @param failure 登录失败
 + (void)loginPlaybackRoomWithChannelType:(PLVChannelType)channelType
@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
                                   userId:(NSString *)userId
                                    appId:(NSString *)appId
                                appSecret:(NSString *)appSecret
-                                roomUser:(PLVRoomUser *(^ _Nullable)(void))roomUserHandler
+                                roomUser:(void(^ _Nullable)(PLVRoomUser *roomUser))roomUserHandler
                               completion:(void (^)(PLVViewLogCustomParam *customParam))completion
                                  failure:(void (^)(NSString *errorMessage))failure;
 
