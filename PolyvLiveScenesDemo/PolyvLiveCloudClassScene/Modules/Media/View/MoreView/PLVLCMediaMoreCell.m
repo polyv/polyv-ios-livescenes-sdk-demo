@@ -151,7 +151,7 @@
     UIButton * button = [UIButton buttonWithType:UIButtonTypeCustom];
     [button setTitle:optionItemTitle forState:UIControlStateNormal];
     [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [button setTitleColor:UIColorFromRGB(@"6DA7FF") forState:UIControlStateSelected];
+    [button setTitleColor:PLV_UIColorFromRGB(@"6DA7FF") forState:UIControlStateSelected];
     button.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
     [button.layer setMasksToBounds:YES];
     [button.layer setCornerRadius:13.0];
@@ -172,7 +172,7 @@
 #pragma mark Setter
 - (void)setCurrentSelectedButton:(UIButton *)currentSelectedButton{
     currentSelectedButton.selected = YES;
-    currentSelectedButton.layer.borderColor = UIColorFromRGB(@"6DA7FF").CGColor;
+    currentSelectedButton.layer.borderColor = PLV_UIColorFromRGB(@"6DA7FF").CGColor;
     _currentSelectedButton = currentSelectedButton;
 }
 
@@ -181,7 +181,7 @@
     if (!_optionTitleLabel) {
         _optionTitleLabel = [[UILabel alloc] init];
         _optionTitleLabel.text = @"选项标题";
-        _optionTitleLabel.textColor = UIColorFromRGB(@"C2C2C2");
+        _optionTitleLabel.textColor = PLV_UIColorFromRGB(@"C2C2C2");
         _optionTitleLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
     }
     return _optionTitleLabel;

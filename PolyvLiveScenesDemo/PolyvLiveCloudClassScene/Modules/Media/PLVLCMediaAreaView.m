@@ -17,7 +17,6 @@
 #import "PLVPPTView.h"
 #import "PLVDanMu.h"
 #import "PLVEmoticonManager.h"
-#import "PLVPlayerPresenter.h"
 #import "PLVRoomDataManager.h"
 
 // 工具
@@ -319,6 +318,10 @@ PLVPlayerPresenterDelegate
 }
 
 #pragma mark Getter
+- (BOOL)channelInLive{
+    return self.playerPresenter.channelInLive;
+}
+
 - (BOOL)channelWatchNoDelay{
     return self.playerPresenter.channelWatchNoDelay;
 }
@@ -327,6 +330,9 @@ PLVPlayerPresenterDelegate
     return self.playerPresenter.currentNoDelayLiveStart;
 }
 
+- (BOOL)mainSpeakerPPTOnMain{
+    return self.pptView.mainSpeakerPPTOnMain;
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setupData{
@@ -428,7 +434,7 @@ PLVPlayerPresenterDelegate
     UIFont *font = [UIFont systemFontOfSize:14];
     NSShadow *shadow = [NSShadow new];
     shadow.shadowOffset = CGSizeMake(1, 1);
-    shadow.shadowColor = UIColorFromRGB(@"#333333");
+    shadow.shadowColor = PLV_UIColorFromRGB(@"#333333");
     NSDictionary *dict = @{NSFontAttributeName:font,
                            NSForegroundColorAttributeName:[UIColor whiteColor],
                            NSShadowAttributeName:shadow};
@@ -759,7 +765,9 @@ PLVPlayerPresenterDelegate
 - (void)plvPPTView:(PLVPPTView *)pptView changePPTPosition:(BOOL)pptToMain{
     if (self.videoType == PLVChannelVideoType_Live){ // 视频类型为 直播
         /// 仅在 非观看RTC场景下 执行 (观看RTC场景下，由 PLVLCLinkMicAreaView 自行处理)
-        if (self.inRTCRoom == NO) {
+        if (self.inRTCRoom == NO &&
+            self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchNoDelay &&
+            self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_InLinkMic) {
             if (pptToMain != self.pptOnMainSite) {
                 [self.floatView triggerViewExchangeEvent];
             }
@@ -820,7 +828,7 @@ PLVPlayerPresenterDelegate
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
             
             /// 确保 直播状态变更为‘直播中’时，PPT 位于主屏
-            if (streamStateDidChanged && (self.pptView.mainSpeakerPPTOnMain != self.pptOnMainSite)) {
+            if (streamStateDidChanged && (self.mainSpeakerPPTOnMain != self.pptOnMainSite)) {
                 [self.floatView triggerViewExchangeEvent];
             }
         }

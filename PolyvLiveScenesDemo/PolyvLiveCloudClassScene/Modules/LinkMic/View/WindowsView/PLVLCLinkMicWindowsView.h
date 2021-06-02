@@ -18,14 +18,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// 连麦窗口列表视图
 @interface PLVLCLinkMicWindowsView : UIView
 
+#pragma mark - [ 属性 ]
 /// delegate
 @property (nonatomic, weak) id <PLVLCLinkMicWindowsViewDelegate> delegate;
 
+
+#pragma mark - [ 方法 ]
 /// 刷新 连麦窗口列表
 ///
 /// @note 将触发 [plvLCLinkMicWindowsViewGetCurrentUserModelArray:] 此代理方法；
-///       外部需实现此方法，以让 连麦窗口列表视图 正确获得当前连麦用户数据
-- (void)reloadLinkMicUserWindows;
+///       外部需实现此代理方法，以让 连麦窗口列表视图 正确获得当前连麦用户数据
+///
+/// @param reloadCompleteBlock 列表刷新完成Block
+- (void)reloadLinkMicUserWindowsWithCompleteBlock:(nullable void (^)(void))reloadCompleteBlock;
 
 - (void)linkMicWindowMainSpeaker:(NSString *)linkMicUserId toMainScreen:(BOOL)mainSpeakerToMainScreen;
 
@@ -86,6 +91,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param windowsView 连麦窗口列表视图
 /// @param targetIndex 目标下标值
 - (PLVLinkMicOnlineUser *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex;
+
+/// 连麦窗口列表视图 需获知 ‘主讲的PPT 当前是否在主屏’
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param windowsView 连麦窗口列表视图
+- (BOOL)plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:(PLVLCLinkMicWindowsView *)windowsView;
 
 @end
 

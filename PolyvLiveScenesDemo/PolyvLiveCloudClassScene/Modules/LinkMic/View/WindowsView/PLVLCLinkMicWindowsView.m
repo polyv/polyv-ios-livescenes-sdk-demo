@@ -13,7 +13,7 @@
 #import "PLVLinkMicOnlineUser+LC.h"
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
-#define PLVColor_View_Black UIColorFromRGB(@"1A1B1F")
+#define PLVColor_View_Black PLV_UIColorFromRGB(@"1A1B1F")
 
 static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 
@@ -27,6 +27,8 @@ UICollectionViewDelegate
 @property (nonatomic, assign) BOOL guideShowing;    // 是否正在展示’左滑引导‘
 @property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType; /// 只读，当前频道连麦场景类型
 @property (nonatomic, assign, readonly) BOOL showingExternalView;
+@property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;
+@property (nonatomic, assign) BOOL hadAlignMainSpeakerSite; // 是否已对齐过主讲主副屏位置 (每次“从无用户到开始展示用户”，都需执行一次对齐)
 
 #pragma mark 数据
 @property (nonatomic, readonly) NSArray <PLVLinkMicOnlineUser *> * dataArray; // 只读，当前连麦在线用户数组
@@ -128,7 +130,8 @@ UICollectionViewDelegate
 
 
 #pragma mark - [ Public Methods ]
-- (void)reloadLinkMicUserWindows{
+- (void)reloadLinkMicUserWindowsWithCompleteBlock:(void (^)(void))reloadCompleteBlock{
+    NSArray * currentDataArray = self.dataArray;
     NSInteger finalCellNum = self.dataArray.count;
     PLVLinkMicOnlineUser * firstSiteOnlineUser = self.dataArray.firstObject;
 
@@ -142,8 +145,8 @@ UICollectionViewDelegate
         }else{
             /// 若是手动点击触发的
             if ([PLVFdUtil checkStringUseable:self.manualSwitchMainSpeakerUserId] &&
-                [self.manualSwitchMainSpeakerUserId isEqualToString:self.dataArray.firstObject.linkMicUserId]) {
-                [self wantExchangeWithExternalViewForLinkMicUser:self.dataArray.firstObject needReload:NO];
+                [self.manualSwitchMainSpeakerUserId isEqualToString:firstSiteOnlineUser.linkMicUserId]) {
+                [self wantExchangeWithExternalViewForLinkMicUser:firstSiteOnlineUser needReload:NO];
                 self.manualSwitchMainSpeakerUserId = nil;
             }
         }
@@ -164,14 +167,22 @@ UICollectionViewDelegate
         self.collectionReloadBlock = ^{
             [weakSelf.collectionView reloadData];
             [weakSelf showGuideView];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [weakSelf alignMainSpeakerSite];
+                if (reloadCompleteBlock) { reloadCompleteBlock(); }
+            });
         };
     }else{
         [self.collectionView reloadData];
         [self showGuideView];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self alignMainSpeakerSite];
+            if (reloadCompleteBlock) { reloadCompleteBlock(); }
+        });
     }
     
-    if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
-        self.currentMainSpeakerUserId = self.dataArray.firstObject.linkMicUserId;
+    if ([PLVFdUtil checkArrayUseable:currentDataArray]) {
+        self.currentMainSpeakerUserId = firstSiteOnlineUser.linkMicUserId;
     }else{
         self.currentMainSpeakerUserId = nil;
         self.manualSwitchMainSpeakerUserId = nil;
@@ -191,6 +202,16 @@ UICollectionViewDelegate
         NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
         [self rollbackExternalView];
         [self rollbackLinkMicCanvasView:oriIndexPath];
+    }
+}
+
+#pragma mark Getter
+- (BOOL)mainSpeakerPPTOnMain{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:)]) {
+        return [self.delegate plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:self];
+    }else{
+        NSLog(@"PLVLCLinkMicWindowsView - delegate not implement method:[plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:]");
+        return YES; /// 默认 YES
     }
 }
 
@@ -280,8 +301,15 @@ UICollectionViewDelegate
             self.showingExternalCellLinkMicUserId = linkMicUser.linkMicUserId;
             self.externalView = returnView;
             if (reload) {
-                NSIndexPath * targetCellIndexPath = [NSIndexPath indexPathForRow:[self findCellIndexWithUserId:linkMicUser.linkMicUserId] inSection:0];
-                [self.collectionView reloadItemsAtIndexPaths:@[targetCellIndexPath]];
+                NSInteger targetCellIndex = [self findCellIndexWithUserId:linkMicUser.linkMicUserId];
+                if (targetCellIndex >= 0) {
+                    NSIndexPath * targetCellIndexPath = [NSIndexPath indexPathForRow:targetCellIndex inSection:0];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self.collectionView reloadItemsAtIndexPaths:@[targetCellIndexPath]];
+                    });
+                }else{
+                    NSLog(@"PLVLCLinkMicWindowsView - wantExchangeWithExternalViewForLinkMicUser failed, targetCellIndex illegal:%ld",(long)targetCellIndex);
+                }
             }
         }else{
             NSLog(@"PLVLCLinkMicWindowsView - return view illegal, returnView:%@",returnView);
@@ -309,6 +337,19 @@ UICollectionViewDelegate
         [showingExternalCell switchToShowRtcContentView:oriUserModel.canvasView];
     } else {
         NSLog(@"PLVLCLinkMicWindowsView - rollbackLinkMicCanvasView failed, oriIndexPath %@ can't get userModel",oriIndexPath);
+    }
+}
+
+/// 对齐主讲主副屏位置
+- (void)alignMainSpeakerSite{
+    if (!self.hadAlignMainSpeakerSite) {
+        self.hadAlignMainSpeakerSite = YES;
+        
+        BOOL currentMainSpeakerPPTOnMain = self.mainSpeakerPPTOnMain;
+        if (self.linkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc &&
+            self.showingExternalView == currentMainSpeakerPPTOnMain) {
+            [self linkMicWindowMainSpeaker:self.dataArray.firstObject.linkMicUserId toMainScreen:!currentMainSpeakerPPTOnMain];
+        }
     }
 }
 
@@ -441,7 +482,11 @@ UICollectionViewDelegate
 
 - (NSArray<PLVLinkMicOnlineUser *> *)dataArray{
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsViewGetCurrentUserModelArray:)]) {
-        return [self.delegate plvLCLinkMicWindowsViewGetCurrentUserModelArray:self];
+        NSArray * dataArray = [self.delegate plvLCLinkMicWindowsViewGetCurrentUserModelArray:self];
+        if (dataArray.count == 0) {
+            self.hadAlignMainSpeakerSite = NO;
+        }
+        return dataArray;
     }
     return nil;
 }
@@ -449,6 +494,7 @@ UICollectionViewDelegate
 - (BOOL)showingExternalView{
     return [PLVFdUtil checkStringUseable:self.showingExternalCellLinkMicUserId];
 }
+
 
 #pragma mark - [ Delegate ]
 #pragma mark UIScrollViewDelegate

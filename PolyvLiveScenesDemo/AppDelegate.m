@@ -7,7 +7,19 @@
 //
 
 #import "AppDelegate.h"
-#import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
+
+#if SCENE == 1
+#import "PLVEnteranceViewController.h"
+#endif
+
+#if SCENE == 2
+#import "PLVLiveStreamerLoginViewController.h"
+#endif
+
+#if SCENE == 3
+#endif
+
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @interface AppDelegate ()
 
@@ -16,11 +28,37 @@
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    
+#if SCENE == 1
     // HttpDNS默认开启，如需关闭，解开注释
 //    [PLVLiveVideoConfig sharedInstance].enableHttpDNS = NO;
     // 如需启用IPV6，解开注释，启用IPV6之后，将自动选择IP，取消HttpDNS
 //    [PLVLiveVideoConfig sharedInstance].enableIPV6 = YES;
+    
+    
+    PLVEnteranceViewController *vctrl = [[PLVEnteranceViewController alloc] init];
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    self.window.rootViewController = vctrl;
+    [self.window makeKeyAndVisible];
+#endif
+    
+#if SCENE == 2
+    PLVLiveStreamerLoginViewController *vctrl = [[PLVLiveStreamerLoginViewController alloc] init];
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    self.window.rootViewController = vctrl;
+    [self.window makeKeyAndVisible];
+#endif
+    
+#if SCENE == 3
+    // HttpDNS默认开启，如需关闭，解开注释
+//    [PLVLiveVideoConfig sharedInstance].enableHttpDNS = NO;
+    // 如需启用IPV6，解开注释，启用IPV6之后，将自动选择IP，取消HttpDNS
+//    [PLVLiveVideoConfig sharedInstance].enableIPV6 = YES;
+    
+#endif
+    
+    // DEBUG模式下控制台日志打印
+    // 当logLevel为PLVFConsoleLogLevelOFF时关闭所有PLV控制台日志
+    [PLVConsoleLogger defaultLogger].logLevel = PLVFConsoleLogLevelALL;
     
     return YES;
 }

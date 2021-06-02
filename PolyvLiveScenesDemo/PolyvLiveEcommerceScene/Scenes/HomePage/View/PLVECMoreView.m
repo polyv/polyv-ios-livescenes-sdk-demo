@@ -36,14 +36,17 @@
     }
 }
 
-#pragma mark - Private
-
-- (void)setupUIWithItems:(NSArray<PLVECMoreViewItem *> *)item {
-    for (PLVECMoreViewItem *item in self.items) {// 移除原来的子视图
+- (void)removeMoreViewItems {
+    for (PLVECMoreViewItem *item in self.items) {
         UIView *subView = [self viewWithTag:item.tag];
         [subView removeFromSuperview];
     }
-    
+}
+
+#pragma mark - Private
+
+- (void)setupUIWithItems:(NSArray<PLVECMoreViewItem *> *)item {
+    [self removeMoreViewItems];
     self.items = item;
     for (int i = 0; i < self.items.count; i++) {
         PLVECMoreViewItem *item = self.items[i];

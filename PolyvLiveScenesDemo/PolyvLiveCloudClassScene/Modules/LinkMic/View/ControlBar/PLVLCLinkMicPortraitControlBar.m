@@ -348,7 +348,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 - (UIView *)backgroundView{
     if (!_backgroundView) {
         _backgroundView = [[UIView alloc] init];
-        _backgroundView.backgroundColor = UIColorFromRGBA(@"333344",0.8);
+        _backgroundView.backgroundColor = PLV_UIColorFromRGBA(@"333344",0.8);
     }
     return _backgroundView;
 }

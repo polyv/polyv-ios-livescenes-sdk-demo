@@ -20,6 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @optional
 
+/// 直播场次ID sessionId 更新
+- (void)roomDataManager_didSessionIdChanged:(NSString *)sessionId;
+
 /// 在线人数 onlineCount 更新
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount;
 

@@ -81,7 +81,7 @@
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
     self.clipsToBounds = YES;
-    self.backgroundColor = UIColorFromRGB(@"2B3145");
+    self.backgroundColor = PLV_UIColorFromRGB(@"2B3145");
     
     /// 添加视图
     [self addSubview:self.placeholderImageView];

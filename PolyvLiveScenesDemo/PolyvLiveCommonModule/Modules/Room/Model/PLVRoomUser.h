@@ -45,6 +45,12 @@ typedef NS_ENUM(NSUInteger, PLVRoomUserType) {
 /// 用户类型/角色，用于登陆socket
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 
+/// 用户身份（中文），开播时用于登录socket
+@property (nonatomic, copy) NSString *actor;
+
+/// 用户身份（英文），开播时用于登录socket
+@property (nonatomic, copy) NSString *role;
+
 /// 初始化方法1
 /// 使用自动生成的 viewerId、viewerName
 /// 使用默认viewerAvatar

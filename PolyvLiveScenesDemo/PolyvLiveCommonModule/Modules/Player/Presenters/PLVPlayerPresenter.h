@@ -31,6 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// delegate
 @property (nonatomic, weak) id <PLVPlayerPresenterDelegate> delegate;
 
+@property (nonatomic, strong, readonly) PLVLivePlayer *livePlayer;
+
 #pragma mark 数据
 /// 当前播放器的类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType currentVideoType;
@@ -63,6 +65,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL openAdv;
 
 #pragma mark 状态
+/// 当前频道的 ‘直播流状态’
+///
+/// @note 此属性也可通过 [PLVRoomDataManager sharedManager].roomData.liveState 进行访问
+@property (nonatomic, assign, readonly) PLVChannelLiveStreamState currentStreamState;
+
+/// 该频道是否 ‘直播中’ (以 ‘直播流状态’ 作为依据)
+@property (nonatomic, assign, readonly) BOOL channelInLive;
+
 /// 该频道是否观看 ‘无延迟直播’
 @property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
 

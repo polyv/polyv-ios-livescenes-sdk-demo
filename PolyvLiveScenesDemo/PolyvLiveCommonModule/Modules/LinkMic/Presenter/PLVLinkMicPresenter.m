@@ -55,7 +55,7 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, assign) BOOL inRTCRoom;
 @property (nonatomic, assign) BOOL linkMicOpen;
 @property (nonatomic, assign) PLVChannelLinkMicSceneType linkMicSceneType;
-@property (nonatomic, assign) PLVLinkMicMediaType linkMicMediaType;
+@property (nonatomic, assign) PLVChannelLinkMicSceneType linkMicMediaType;
 @property (nonatomic, assign) PLVLinkMicStatus linkMicStatus;
 @property (nonatomic, assign) BOOL inLinkMic;
 @property (nonatomic, assign) BOOL inProgress;
@@ -82,6 +82,7 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, copy, readonly) NSString * linkMicUserNickname;
 @property (nonatomic, copy, readonly) NSString * linkMicUserAvatar;
 @property (nonatomic, assign, readonly) BOOL rtcAudioSubEnabled; /// 只读，是否只订阅第一画面的视频
+@property (nonatomic, assign, readonly) BOOL channelInLive;
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVLinkMicManager * linkMicManager; // 连麦管理器
@@ -222,27 +223,17 @@ PLVLinkMicManagerDelegate
 
 #pragma mark 设备控制
 - (void)micOpen:(BOOL)open{
-    int enableResult = [self.linkMicManager enableLocalAudio:open];
-    int muteResult = [self.linkMicManager muteLocalAudioStream:!open];
-    if (enableResult == 0 && muteResult == 0) {
-        [self.currentLocalLinkMicUser updateUserCurrentMicOpen:open];
-    }else{
-        NSLog(@"PLVLinkMicPresenter - micOpen failed, enableResult %u, muteResult %u",enableResult,muteResult);
-    }
+    [self.linkMicManager openLocalUserMic:open];
+    [self.currentLocalLinkMicUser updateUserCurrentMicOpen:open];
 }
 
 - (void)cameraOpen:(BOOL)open{
-    int enableResult = [self.linkMicManager enableLocalVideo:open];
-    int muteResult = [self.linkMicManager muteLocalVideoStream:!open];
-    if (enableResult == 0 && muteResult == 0) {
-        [self.currentLocalLinkMicUser updateUserCurrentCameraOpen:open];
-    }else{
-        NSLog(@"PLVLinkMicPresenter - cameraOpen failed, enableResult %u, muteResult %u",enableResult,muteResult);
-    }
+    [self.linkMicManager openLocalUserCamera:open];
+    [self.currentLocalLinkMicUser updateUserCurrentCameraOpen:open];
 }
 
 - (void)cameraSwitch:(BOOL)front{
-    [self.linkMicManager switchCamera];
+    [self.linkMicManager switchLocalUserCamera:front];
 }
 
 
@@ -303,7 +294,7 @@ PLVLinkMicManagerDelegate
 
 - (NSString *)sessionId{
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    return roomData.channelInfo.sessionId;
+    return roomData.sessionId;
 }
 
 - (NSString *)userId{
@@ -324,6 +315,10 @@ PLVLinkMicManagerDelegate
 
 - (BOOL)rtcAudioSubEnabled{
     return [PLVRoomDataManager sharedManager].roomData.menuInfo.rtcAudioSubEnabled;
+}
+
+- (BOOL)channelInLive{
+    return [self callbackForChannelInLive];
 }
 
 #pragma mark Callback
@@ -429,6 +424,15 @@ PLVLinkMicManagerDelegate
     })
 }
 
+- (BOOL)callbackForChannelInLive{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLinkMicPresenterGetChannelInLive:)]) {
+        return [self.delegate plvLinkMicPresenterGetChannelInLive:self];
+    }else{
+        NSLog(@"PLVLinkMicPresenter - delegate not implement method:[plvLinkMicPresenterGetChannelInLive:]");
+        return NO;
+    }
+}
+
 #pragma mark RTC Prepare
 - (void)updateLinkMicSceneTypeWithSuccessBlock:(void (^)(void))successBlock{
     if (self.linkMicSceneType != PLVChannelLinkMicSceneType_Unknown) {
@@ -473,7 +477,7 @@ PLVLinkMicManagerDelegate
     if (_linkMicManager == nil) {
         _linkMicManager = [PLVLinkMicManager linkMicManagerWithRTCType:self.rtcType];
         _linkMicManager.delegate = self;
-        _linkMicManager.linkMicOnAudio = self.linkMicMediaType == PLVLinkMicMediaType_Audio;
+        _linkMicManager.linkMicOnAudio = (self.linkMicMediaType == PLVChannelLinkMicMediaType_Audio);
         _linkMicManager.micDefaultOpen = self.micDefaultOpen;
         _linkMicManager.cameraDefaultOpen = self.cameraDefaultOpen;
         _linkMicManager.cameraDefaultFront = self.cameraDefaultFront;
@@ -592,9 +596,9 @@ PLVLinkMicManagerDelegate
             
             if ([PLVFdUtil checkStringUseable:mediaType]) {
                 if ([mediaType isEqualToString:@"audio"]) {
-                    self.linkMicMediaType = PLVLinkMicMediaType_Audio; // 音频连麦
+                    self.linkMicMediaType = PLVChannelLinkMicMediaType_Audio; // 音频连麦
                 }else if ([mediaType isEqualToString:@"video"]) {
-                    self.linkMicMediaType = PLVLinkMicMediaType_Video; // 视频连麦
+                    self.linkMicMediaType = PLVChannelLinkMicMediaType_Video; // 视频连麦
                 }
             }
             [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Open];
@@ -605,7 +609,7 @@ PLVLinkMicManagerDelegate
                 [self callbackForOperationInProgress:YES];
                 [self leaveLinkMic];
             }
-            self.linkMicMediaType = PLVLinkMicMediaType_Unknown;
+            self.linkMicMediaType = PLVChannelLinkMicMediaType_Unknown;
             [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_NotOpen];
         }
     }
@@ -724,7 +728,8 @@ PLVLinkMicManagerDelegate
 - (void)addLocalUserIntoOnlineUserList{
     __weak typeof(self) weakSelf = self;
     self.addLocalUserBlock = ^{
-        PLVLinkMicOnlineUser * localUser = [PLVLinkMicOnlineUser localUserModelWithUserId:weakSelf.linkMicUserId nickname:weakSelf.linkMicUserNickname avatarPic:weakSelf.linkMicUserAvatar];
+        PLVSocketUserType localUserType = [PLVSocketManager sharedManager].userType;
+        PLVLinkMicOnlineUser * localUser = [PLVLinkMicOnlineUser localUserModelWithUserId:weakSelf.userId linkMicUserId:weakSelf.linkMicUserId nickname:weakSelf.linkMicUserNickname avatarPic:weakSelf.linkMicUserAvatar userType:localUserType];
         [weakSelf addUserIntoOnlineUserList:localUser];
     };
     
@@ -799,6 +804,10 @@ PLVLinkMicManagerDelegate
 }
 
 - (void)removeUserFromOnlineUserList:(NSString *)linkMicUserId{
+    if (self.rtcRoomJoinStatus != PLVLinkMicPresenterRoomJoinStatus_Joined) {
+        return;
+    }
+    
     if ([PLVFdUtil checkStringUseable:linkMicUserId]) {
         if (self.arraySafeQueue) {
             __weak typeof(self) weakSelf = self;
@@ -1030,8 +1039,14 @@ PLVLinkMicManagerDelegate
         PLVLinkMicOnlineUser * onlineUser = [PLVLinkMicOnlineUser modelWithDictionary:userInfo];
         
         // 更新讲师连麦Id
-        if (![PLVFdUtil checkStringUseable:self.teacherLinkMicUserId] && onlineUser.userType == PLVLinkMicOnlineUserType_Teacher && [PLVFdUtil checkStringUseable:onlineUser.linkMicUserId]) {
+        if (![PLVFdUtil checkStringUseable:self.teacherLinkMicUserId] && onlineUser.userType == PLVSocketUserTypeTeacher && [PLVFdUtil checkStringUseable:onlineUser.linkMicUserId]) {
             self.teacherLinkMicUserId = onlineUser.linkMicUserId;
+        }
+        
+        // 若是未上麦嘉宾，则不作添加
+        if (onlineUser.userType == PLVSocketUserTypeGuest &&
+            !onlineUser.currentStatusVoice) {
+            return includeTargetLinkMicUser;
         }
         
         // 若是本地用户，则不作解析
@@ -1290,6 +1305,8 @@ PLVLinkMicManagerDelegate
 #pragma mark - [ Event ]
 #pragma mark Timer
 - (void)linkMicTimerEvent:(NSTimer *)timer{
+    if (!self.channelInLive) { return; }
+    
     /// Socket 断开时不作刷新请求，因连麦业务基本均依赖于 Scoket 服务
     if ([PLVSocketManager sharedManager].login) {
         __weak typeof(self) weakSelf = self;
@@ -1351,6 +1368,9 @@ PLVLinkMicManagerDelegate
             [self emitSocketMessge_reJoinMic];
         }
     } else if ([subEvent containsString:@"finishClass"]){ // 下课事件
+        self.socketRefreshOpenStatusDate = [NSDate date].timeIntervalSince1970;
+        [self refreshLinkMicOpenStatus:@"close" mediaType:@""];
+        
         if (self.watchingNoDelay) {
             [self resumeOriginalScreenOnStatus];
             [self stopWatchNoDelay];
@@ -1440,9 +1460,7 @@ PLVLinkMicManagerDelegate
 }
 
 - (void)plvLinkMicManager:(PLVLinkMicManager *)manager remoteUserTotalStreamsDidLeaveRoom:(NSString *)uid{
-    if (self.rtcRoomJoinStatus == PLVLinkMicPresenterRoomJoinStatus_Joined) {
-        [self removeUserFromOnlineUserList:uid];
-    }
+    [self removeUserFromOnlineUserList:uid];
 }
 
 - (void)plvLinkMicManager:(PLVLinkMicManager *)manager reportAudioVolumeOfSpeakers:(NSDictionary<NSString *,NSNumber *> *)volumeDict{

@@ -40,6 +40,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVECMoreViewDelegate> delegate;
 
+// 移除原来的子视图
+- (void)removeMoreViewItems;
+
 - (void)reloadData;
 
 @end

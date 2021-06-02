@@ -36,7 +36,7 @@
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeInteract, @"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{
@@ -248,7 +248,7 @@ didReceiveInteractMessageString:(NSString *)msgString
 // 接收到js打开链接请求
 - (void)linkClick:(NSString *)linkString {
     if (![PLVFdUtil checkStringUseable:linkString]) {
-        NSLog(@"PLVInteractView - [js call] linkClick param illegal %@",linkString);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractView - [js call] linkClick param illegal %@",linkString);
         return;
     }
     dispatch_async(dispatch_get_main_queue(), ^{

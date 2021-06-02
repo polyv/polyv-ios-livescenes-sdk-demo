@@ -30,12 +30,6 @@ typedef NS_ENUM(NSUInteger, PLVLinkMicStatus) {
     PLVLinkMicStatus_NotOpen = 12 // 讲师未开启连麦
 };
 
-typedef NS_ENUM(NSUInteger, PLVLinkMicMediaType) {
-    PLVLinkMicMediaType_Unknown = 0, // 未知类型
-    PLVLinkMicMediaType_Audio = 1,   // 音频连麦
-    PLVLinkMicMediaType_Video = 2,   // 视频连麦
-};
-
 typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
     /** 0: 未知错误 */
     PLVLinkMicErrorCode_NoError = 0,
@@ -126,8 +120,8 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// 当前 频道连麦场景类型
 @property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType;
 
-/// 当前 连麦媒体类型
-@property (nonatomic, assign, readonly) PLVLinkMicMediaType linkMicMediaType;
+/// 当前 频道连麦媒体类型
+@property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicMediaType;
 
 /// 当前 连麦状态
 @property (nonatomic, assign, readonly) PLVLinkMicStatus linkMicStatus;
@@ -273,15 +267,19 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 
 /// 全部连麦成员的音频音量 回调
 ///
+/// @note 两种方式获知 “某位连麦成员的音频音量变化“，或说是以下两种回调均会被触发
+///       方式一：通过此回调 [plvLinkMicPresenter:reportAudioVolumeOfSpeakers:]
+///       方式二：通过 某位连麦成员的模型 PLVLinkMicOnlineUser 中的 volumeChangedBlock（适用于Cell场景）
+///
 /// @param presenter 连麦管理器
-/// @param volumeDict 连麦成员音量字典 (key:用户连麦ID，value:对应的流的音量值；value取值范围为 0.0 ~ 1.0)
+/// @param volumeDict 连麦成员音量字典 (key:用户连麦ID字符串，value:对应的流的音量值；value取值范围为 0.0 ~ 1.0)
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter
 reportAudioVolumeOfSpeakers:(NSDictionary<NSString *, NSNumber *> * _Nonnull)volumeDict;
 
 /// 当前正在讲话的连麦成员
 ///
 /// @param presenter 连麦管理器
-/// @param currentSpeakingUsers 当前正在讲话的连麦成员
+/// @param currentSpeakingUsers 当前正在讲话的连麦成员数组
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter
  reportCurrentSpeakingUsers:(NSArray<PLVLinkMicOnlineUser *> * _Nonnull)currentSpeakingUsers;
 
@@ -290,6 +288,13 @@ reportAudioVolumeOfSpeakers:(NSDictionary<NSString *, NSNumber *> * _Nonnull)vol
               didMediaMuted:(BOOL)mute
                   mediaType:(NSString *)mediaType
                 linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser;
+
+/// 需获知 ‘当前频道是否直播中’
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param presenter 连麦管理器
+- (BOOL)plvLinkMicPresenterGetChannelInLive:(PLVLinkMicPresenter *)presenter;
 
 @end
 

@@ -10,7 +10,7 @@
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
-#define PLVColor_BackgroudImageView_BlueBlack UIColorFromRGB(@"2B3045")
+#define PLVColor_BackgroudImageView_BlueBlack PLV_UIColorFromRGB(@"2B3045")
 
 @interface PLVPPTView () <PLVSocketManagerProtocol, PLVPPTWebviewDelegate>
 
@@ -34,7 +34,7 @@
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
-    NSLog(@"%s", __FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePPT, @"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{

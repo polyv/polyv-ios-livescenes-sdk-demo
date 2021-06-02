@@ -124,6 +124,26 @@ PLVRoomDataManagerProtocol
     [self updateUI];
 }
 
+- (void)viewWillDisappear:(BOOL)animated {
+    [super viewWillDisappear:animated];
+    
+    if (self.navigationController) {
+        self.navigationController.navigationBarHidden = NO;
+    }
+}
+
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    
+    if (self.navigationController) {
+        self.navigationController.navigationBarHidden = YES;
+    }
+    
+    if (self.mediaAreaView.playerPresenter.currentVideoType == PLVChannelVideoType_Live) {
+        [self.mediaAreaView.playerPresenter cancelMute];
+    }
+}
+
 - (UIStatusBarStyle)preferredStatusBarStyle{
     return UIStatusBarStyleLightContent;
 }
@@ -149,13 +169,14 @@ PLVRoomDataManagerProtocol
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLCChatroomOpenBulletinNotification object:nil];
         
+        
     } else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     
     }
 }
 
 - (void)setupUI {
-    self.view.backgroundColor = UIColorFromRGB(@"#0E141E");
+    self.view.backgroundColor = PLV_UIColorFromRGB(@"#0E141E");
     
     /// 注意：1. 此处不建议将共同拥有的图层，提炼在 if 判断外，来做“代码简化”
     ///         因为此处涉及到添加顺序，而影响图层顺序。放置在 if 内，能更加准确地配置图层顺序，也更清晰地预览图层顺序。
@@ -180,6 +201,7 @@ PLVRoomDataManagerProtocol
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
+
         
     }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 创建添加视图
@@ -283,8 +305,9 @@ PLVRoomDataManagerProtocol
     [PLVRoomLoginClient logout];
     [[PLVSocketManager sharedManager] logout];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-
-    if (self.navigationController) {
+    if (self.navigationController && [self.navigationController.viewControllers count] == 1) {
+        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
+    } else if (self.navigationController) {
         [self.navigationController popViewControllerAnimated:YES];
     } else {
         [self dismissViewControllerAnimated:YES completion:nil];
@@ -414,6 +437,9 @@ PLVRoomDataManagerProtocol
     // 全屏播放器皮肤 liveRoomSkinView 的弹幕按钮 danmuButton 为显示状态，且为非选中状态，且当前为横屏时，才显示弹幕
     BOOL danmuEnable = !self.liveRoomSkinView.danmuButton.selected && !self.liveRoomSkinView.danmuButton.hidden;
     [self.mediaAreaView showDanmu:fullScreen && danmuEnable];
+    // 可在此处控制 “横屏聊天区”，是否跟随 “弹幕” 一并显示/隐藏；注释或移除此句，则不跟随；
+    // 其他相关代码，可在此文件中，搜索 “self.chatLandscapeView.hidden = ”
+    self.chatLandscapeView.hidden = !(fullScreen && danmuEnable);
     
     // 调用setStatusBarHidden后状态栏旋转横屏不自动隐藏
     [[UIApplication sharedApplication] setStatusBarHidden:fullScreen];
@@ -571,6 +597,9 @@ PLVRoomDataManagerProtocol
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaShowDanmu:(BOOL)showDanmu{
     [self.mediaAreaView showDanmu:showDanmu];
+    // 可在此处控制 “横屏聊天区”，是否跟随 “弹幕” 一并显示/隐藏；注释或移除此句，则不跟随；
+    // 其他相关代码，可在此文件中，搜索 “self.chatLandscapeView.hidden = ”
+    self.chatLandscapeView.hidden = !showDanmu;
 }
 
 - (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaSendChatContent:(NSString *)chatContent {
@@ -658,6 +687,16 @@ PLVRoomDataManagerProtocol
             [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
         }
     }
+}
+
+/// 需获知 ‘当前频道是否直播中’
+- (BOOL)plvLCLinkMicAreaViewGetChannelInLive:(PLVLCLinkMicAreaView *)linkMicAreaView{
+    return self.mediaAreaView.channelInLive;
+}
+
+/// 需获知 ‘主讲的PPT 当前是否在主屏’
+- (BOOL)plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:(PLVLCLinkMicAreaView *)linkMicAreaView{
+    return self.mediaAreaView.mainSpeakerPPTOnMain;
 }
 
 @end

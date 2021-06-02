@@ -173,7 +173,7 @@
 - (UIView *)shdowBackgroundView{
     if (!_shdowBackgroundView) {
         _shdowBackgroundView = [[UIView alloc] init];
-        _shdowBackgroundView.backgroundColor = UIColorFromRGBA(@"000000", 0.85);
+        _shdowBackgroundView.backgroundColor = PLV_UIColorFromRGBA(@"000000", 0.85);
     }
     return _shdowBackgroundView;
 }

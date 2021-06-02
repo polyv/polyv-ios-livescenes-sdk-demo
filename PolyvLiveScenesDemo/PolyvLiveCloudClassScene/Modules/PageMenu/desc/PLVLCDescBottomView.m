@@ -83,16 +83,18 @@ WKNavigationDelegate
 - (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation; {
     self.webView.hidden = NO;
     
-    // 滚到顶部
-    NSString *scriptString = @"window.scrollTo(0,0);";
-    [self.webView evaluateJavaScript:scriptString completionHandler:nil];
-    
     // 禁止双指缩放
     NSString *noScaleJS = @"var script = document.createElement('meta');"
     "script.name = 'viewport';"
     "script.content=\"user-scalable=no,width=device-width,initial-scale=1.0,maximum-scale=1.0\";"
     "document.getElementsByTagName('head')[0].appendChild(script);";
-    [self.webView evaluateJavaScript:noScaleJS completionHandler:nil];
+    [self.webView evaluateJavaScript:noScaleJS completionHandler:^(id result, NSError * _Nullable error) {
+       dispatch_time_t delayTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC));
+       dispatch_after(delayTime, dispatch_get_main_queue(), ^{
+           // 滚到顶部
+           [self.webView evaluateJavaScript:@"window.scrollTo(0,0);" completionHandler:nil];
+       });
+    }];
 }
 
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {

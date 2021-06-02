@@ -201,31 +201,41 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)notifyListenerDidSendMessage {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_didSendMessage)]) {
-        [self.delegate chatroomManager_didSendMessage];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_didSendMessage];
+        });
     }
 }
 
 - (void)notifyListenerDidReceiveMessages {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_didReceiveMessages)]) {
-        [self.delegate chatroomManager_didReceiveMessages];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_didReceiveMessages];
+        });
     }
 }
 
 - (void)notifyListenerDidMessageDeleted {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_didMessageDeleted)]) {
-        [self.delegate chatroomManager_didMessageDeleted];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_didMessageDeleted];
+        });
     }
 }
 
 - (void)notifyListenerLoadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_loadHistorySuccess:firstTime:)]) {
-        [self.delegate chatroomManager_loadHistorySuccess:noMore firstTime:first];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_loadHistorySuccess:noMore firstTime:first];
+        });
     }
 }
 
 - (void)notifyListenerLoadHistoryFailure {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_loadHistoryFailure)]) {
-        [self.delegate chatroomManager_loadHistoryFailure];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_loadHistoryFailure];
+        });
     }
 }
 
@@ -253,18 +263,24 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_loginUsers:)]) {
         if (self.isMyselfLogin) {
             self.isMyselfLogin = NO;
-            [self.delegate chatroomManager_loginUsers:nil];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.delegate chatroomManager_loginUsers:nil];
+            });
         } else {
             if ([self.loginUserArray count] >= 10) {
                 NSArray *loginUserArray = [self.loginUserArray copy];
-                [self.delegate chatroomManager_loginUsers:loginUserArray];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.delegate chatroomManager_loginUsers:loginUserArray];
+                });
                 
                 dispatch_semaphore_wait(_loginArrayLock, DISPATCH_TIME_FOREVER);
                 [self.loginUserArray removeAllObjects];
                 dispatch_semaphore_signal(_loginArrayLock);
             } else if ([self.loginUserArray count] > 0) {
                 PLVChatUser *user = self.loginUserArray[0];
-                [self.delegate chatroomManager_loginUsers:@[user]];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.delegate chatroomManager_loginUsers:@[user]];
+                });
                 
                 dispatch_semaphore_wait(_loginArrayLock, DISPATCH_TIME_FOREVER);
                 [self.loginUserArray removeObjectAtIndex:0];
@@ -301,6 +317,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)chatroomPresenter_didReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray {
     [self addPublicChatModels:modelArray];
 }
+
 - (void)chatroomPresenter_didMessageDeleted:(NSString *)msgId {
     [self deletePublicChatModelWithMsgId:msgId];
 }

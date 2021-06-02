@@ -10,6 +10,8 @@
 
 #import "PLVInteractBaseApp+General.h"
 
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+
 @interface PLVInteractQuestionnaire ()
 
 @property (nonatomic, copy) NSString * questionnaireJson; /// 问卷内容
@@ -71,7 +73,7 @@
 // 向app发送问卷结果
 - (void)endQuestionnaireAnswer:(NSDictionary *)dict {
     if (![PLVFdUtil checkDictionaryUseable:dict]) {
-        NSLog(@"[js call] endQuestionnaireAnswer param illegal %@",dict);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"[js call] endQuestionnaireAnswer param illegal %@",dict);
         return;
     }
         

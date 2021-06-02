@@ -7,10 +7,11 @@
 //
 
 #import "PLVRoomData.h"
-#import <PLVLiveScenesSDK/PLVLiveVideoAPI.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NSString *PLVLCChatroomFunctionGotNotification = @"PLVLCChatroomFunctionGotNotification";
 
+NSString *PLVRoomDataKeyPathSessionId   = @"sessionId";
 NSString *PLVRoomDataKeyPathOnlineCount = @"onlineCount";
 NSString *PLVRoomDataKeyPathLikeCount   = @"likeCount";
 NSString *PLVRoomDataKeyPathWatchCount  = @"watchCount";
@@ -28,6 +29,16 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 @end
 
 @implementation PLVRoomData
+
+#pragma mark - Getter
+
+- (NSString *)sessionId {
+    if (self.channelInfo) {
+        return self.channelInfo.sessionId;
+    } else {
+        return _sessionId;
+    }
+}
 
 #pragma mark - 修改属性
 
@@ -59,11 +70,13 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 
 - (void)requestChannelDetail:(void (^)(PLVLiveVideoChannelMenuInfo *))completion{
     if (!self.channelId || ![self.channelId isKindOfClass:[NSString class]]) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request channel failed with 【param illegal】(channelId:%@)", __FUNCTION__, self.channelId);
         return;
     }
     
     static BOOL loading = NO;
     if (loading) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request channel failed with 【repeat request】", __FUNCTION__);
         return;
     }
     loading = YES;
@@ -76,16 +89,19 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
     } failure:^(NSError *error) {
         loading = NO;
         if (completion) { completion(nil); }
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request channel failed with 【%@】", __FUNCTION__, error);
     }];
 }
 
 - (void)reportViewerIncrease {
     if (!self.channelId || ![self.channelId isKindOfClass:[NSString class]]) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s report viewer increase failed with 【param illegal】(channelId:%@)", __FUNCTION__, self.channelId);
         return;
     }
     
     static BOOL loading = NO;
     if (loading) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s report viewer increase failed with 【repeat request】", __FUNCTION__);
         return;
     }
     loading = YES;
@@ -96,6 +112,7 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
         weakSelf.watchCount++;
     } failure:^(NSError *error) {
         loading = NO;
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s report viewer increase failed with 【%@】", __FUNCTION__, error);
     }];
 }
 
@@ -109,7 +126,9 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
             weakSelf.sendLikeDisable = ![switchInfo[@"sendFlowersEnabled"] boolValue];
             [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomFunctionGotNotification object:switchInfo];
         }
-    } failure:nil];
+    } failure:^(NSError * _Nonnull error) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request channel function switch failed with 【%@】", __FUNCTION__, error);
+    }];
 }
 
 #pragma mark 获取商品列表

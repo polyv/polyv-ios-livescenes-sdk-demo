@@ -112,6 +112,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param inLinkMic 当前是否正在连麦 (YES:正在连麦中 NO:不在连麦中)
 - (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic;
 
+/// 需获知 ‘当前频道是否直播中’
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param linkMicAreaView 连麦区域视图
+- (BOOL)plvLCLinkMicAreaViewGetChannelInLive:(PLVLCLinkMicAreaView *)linkMicAreaView;
+
+/// 需获知 ‘主讲的PPT 当前是否在主屏’
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param linkMicAreaView 连麦区域视图
+- (BOOL)plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:(PLVLCLinkMicAreaView *)linkMicAreaView;
+
 @end
 
 NS_ASSUME_NONNULL_END

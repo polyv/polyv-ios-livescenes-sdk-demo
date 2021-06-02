@@ -379,11 +379,12 @@ PLVSocketManagerProtocol
 
 - (void)moreButtonAction:(id)sender {
     if (self.type == PLVECHomePageType_Live) {
-        if (!self.isPlaying) {
-            return;
+        if (self.isPlaying) {
+            [self.moreView reloadData];
+        } else {
+            [self.moreView removeMoreViewItems];
         }
         self.moreView.hidden = NO;
-        [self.moreView reloadData];
     } else if (self.type == PLVECHomePageType_Playback) {
         [self updateSwitchView:PLVECSwitchViewType_Speed];
     }

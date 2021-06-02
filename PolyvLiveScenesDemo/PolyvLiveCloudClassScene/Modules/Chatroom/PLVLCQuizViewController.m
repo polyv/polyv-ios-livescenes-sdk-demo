@@ -8,14 +8,14 @@
 
 #import "PLVLCQuizViewController.h"
 #import "PLVRoomDataManager.h"
-#import "PLVKeyboardToolView.h"
+#import "PLVLCKeyboardToolView.h"
 #import "PLVLCNewMessageView.h"
 #import "PLVLCSpeakMessageCell.h"
 #import "PLVLCChatroomViewModel.h"
 #import "PLVLCUtils.h"
 
 @interface PLVLCQuizViewController ()<
-PLVKeyboardToolViewDelegate,
+PLVLCKeyboardToolViewDelegate,
 PLVLCChatroomViewModelProtocol,
 UITableViewDelegate,
 UITableViewDataSource
@@ -29,7 +29,7 @@ UITableViewDataSource
 /// 新消息提示条幅
 @property (nonatomic, strong) PLVLCNewMessageView *receiveNewMessageView;
 /// 聊天室置底控件
-@property (nonatomic, strong) PLVKeyboardToolView *keyboardToolView;
+@property (nonatomic, strong) PLVLCKeyboardToolView *keyboardToolView;
 
 /// 未读消息条数
 @property (nonatomic, assign) NSUInteger newMessageCount;
@@ -55,7 +55,7 @@ UITableViewDataSource
     [super viewWillLayoutSubviews];
     
     if (self.hasLayoutSubView) { // 调整布局
-        CGFloat height = PLVKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+        CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
         self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
         
         CGFloat keyboardToolOriginY = CGRectGetHeight(self.view.bounds) - height;
@@ -65,7 +65,7 @@ UITableViewDataSource
     
 - (void)viewDidLayoutSubviews {
     if (!self.hasLayoutSubView) { // 初次布局
-        CGFloat height = PLVKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+        CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
         CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
         [self.keyboardToolView addAtView:self.view frame:inputRect];
         self.receiveNewMessageView.frame = CGRectMake(0, inputRect.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
@@ -93,9 +93,9 @@ UITableViewDataSource
     return _tableView;
 }
 
-- (PLVKeyboardToolView *)keyboardToolView {
+- (PLVLCKeyboardToolView *)keyboardToolView {
     if (!_keyboardToolView) {
-        _keyboardToolView = [[PLVKeyboardToolView alloc] initWithMode:PLVKeyboardToolModeSimple];
+        _keyboardToolView = [[PLVLCKeyboardToolView alloc] initWithMode:PLVLCKeyboardToolModeSimple];
         _keyboardToolView.delegate = self;
     }
     return _keyboardToolView;
@@ -138,13 +138,13 @@ UITableViewDataSource
     [self.receiveNewMessageView hidden];
 }
 
-#pragma mark - PLVKeyboardToolView Delegate
+#pragma mark - PLVLCKeyboardToolView Delegate
 
-- (BOOL)keyboardToolView_shouldInteract:(PLVKeyboardToolView *)toolView {
+- (BOOL)keyboardToolView_shouldInteract:(PLVLCKeyboardToolView *)toolView {
     return YES;
 }
 
-- (void)keyboardToolView:(PLVKeyboardToolView *)toolView sendText:(NSString *)text {
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendQuesstionMessage:text];
     if (!success) {
         [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];

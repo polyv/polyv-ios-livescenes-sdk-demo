@@ -191,7 +191,7 @@
     if (!position){
         if (toBeString.length > 0) {
             self.sendButton.enabled = YES;
-            [self.sendButton setBackgroundColor:UIColorFromRGB(@"2196F3")];
+            [self.sendButton setBackgroundColor:PLV_UIColorFromRGB(@"2196F3")];
         }else{
             self.sendButton.enabled = NO;
             [self.sendButton setBackgroundColor:[UIColor colorWithWhite:1 alpha:0.3]];
@@ -209,5 +209,6 @@
 
 - (void)keyboardWillHide:(NSNotification *)noti {
     [self layoutRefreshForKeyboardShow:NO keyboardHeight:0];
+    [self showInputView:NO];
 }
 @end

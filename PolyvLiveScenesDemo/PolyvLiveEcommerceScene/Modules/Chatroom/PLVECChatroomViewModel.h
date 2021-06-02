@@ -20,6 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 返回本地发送的公聊消息（包含禁言的情况）
 /// 用于刷新列表、滚动列表到底部
+/// @note 在主线程回调
 - (void)chatroomManager_didSendMessage;
 
 /// 返回socket接收到的公聊消息

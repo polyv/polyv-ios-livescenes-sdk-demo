@@ -10,6 +10,8 @@
 
 #import "PLVInteractBaseApp+General.h"
 
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+
 @interface PLVInteractSignIn ()
 
 @property (nonatomic, copy) NSString * checkinId; /// 签到Id (可用于判断，当前是否正在显示签到)
@@ -55,7 +57,7 @@
         [self.jsBridge call:@"stopSign" params:nil];
         [self callWebviewShow];
     }else{
-        NSLog(@"PLVInteractAnswer - stopSign failed, not signId exsit:%@",self.checkinId);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractAnswer - stopSign failed, not signId exsit:%@",self.checkinId);
     }
 }
 

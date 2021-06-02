@@ -253,7 +253,12 @@
         } else if (rect.origin.y > self.rangeRect.origin.y + self.rangeRect.size.height - rect.size.height) {
             rect.origin.y = self.rangeRect.origin.y + self.rangeRect.size.height - rect.size.height;
         }
-        self.frame = rect;
+        [UIView animateWithDuration:0 delay:0 options:UIViewAnimationOptionCurveLinear animations:^{
+            self.frame = rect;
+        } completion:^(BOOL finished) {
+            
+        }];
+        
     }
     self.lastPoint = p;
 }

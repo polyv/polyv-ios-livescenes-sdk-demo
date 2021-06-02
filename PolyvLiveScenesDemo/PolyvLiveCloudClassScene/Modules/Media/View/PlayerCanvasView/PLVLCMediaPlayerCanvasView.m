@@ -46,6 +46,7 @@
 - (instancetype)initWithFrame:(CGRect)frame{
     if (self = [super initWithFrame:frame]) {
         [self setupUI];
+        _externalCurrentStreamState = PLVChannelLiveStreamState_Unknown;
     }
     return self;
 }
@@ -119,7 +120,7 @@
             // 若处于小屏中
             self.tipsLabel.hidden = YES;
         }else{
-            BOOL showNoLiveTipsLabel = (self.externalCurrentStreamState == PLVChannelLiveStreamState_End || self.externalCurrentStreamState == PLVChannelLiveStreamState_Unknown);
+            BOOL showNoLiveTipsLabel = (self.externalCurrentStreamState == PLVChannelLiveStreamState_End);
             self.tipsLabel.hidden = !showNoLiveTipsLabel;
         }
     }else if (toType == PLVLCMediaPlayerCanvasViewType_Audio){
@@ -140,7 +141,7 @@
     
     self.restImageView.hidden = (newestStreamState != PLVChannelLiveStreamState_Stop);
 
-    BOOL showNoLiveTipsLabel = (newestStreamState == PLVChannelLiveStreamState_End || newestStreamState == PLVChannelLiveStreamState_Unknown);
+    BOOL showNoLiveTipsLabel = (newestStreamState == PLVChannelLiveStreamState_End);
     showNoLiveTipsLabel = self.isMiniScreen ? NO : showNoLiveTipsLabel;
     self.tipsLabel.hidden = !showNoLiveTipsLabel;
 }
@@ -148,7 +149,7 @@
 
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
-    self.backgroundColor = UIColorFromRGB(@"2B3145");
+    self.backgroundColor = PLV_UIColorFromRGB(@"2B3145");
     [self addSubview:self.placeholderImageView];
     [self addSubview:self.tipsLabel];
     [self addSubview:self.restImageView];
@@ -209,8 +210,9 @@
         _tipsLabel = [[UILabel alloc] init];
         _tipsLabel.text = @"当前暂无直播";
         _tipsLabel.textAlignment = NSTextAlignmentCenter;
-        _tipsLabel.textColor = UIColorFromRGB(@"E4E4E4");
+        _tipsLabel.textColor = PLV_UIColorFromRGB(@"E4E4E4");
         _tipsLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
+        _tipsLabel.hidden = YES;
     }
     return _tipsLabel;
 }
@@ -220,6 +222,7 @@
         _restImageView = [UIImageView new];
         _restImageView.image = [self getImageWithName:@"plvlc_media_video_rest"];
         _restImageView.hidden = YES;
+        _restImageView.contentMode = UIViewContentModeScaleAspectFill;
     }
     return _restImageView;
 }

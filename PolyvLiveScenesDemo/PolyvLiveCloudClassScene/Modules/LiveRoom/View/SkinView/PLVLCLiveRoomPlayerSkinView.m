@@ -84,7 +84,6 @@
         self.moreButton.frame = CGRectMake(viewWidth - rightSafePadding - backButtonSize.width, topPadding, backButtonSize.width, backButtonSize.height);
         
         [self refreshBulletinButtonFrame];
-        
         // 底部UI
         CGFloat bottomShadowLayerHeight = 90.0;
         self.bottomShadowLayer.frame = CGRectMake(0, viewHeight - bottomShadowLayerHeight, viewWidth, bottomShadowLayerHeight);
@@ -292,6 +291,7 @@
     // 横屏不需要显示提示，仅重写覆盖即可
 }
 
+
 #pragma mark Father Animation
 - (void)controlsSwitchShowStatusWithAnimation:(BOOL)showStatus{
     if (self.skinShow == showStatus) {
@@ -334,7 +334,7 @@
         _playTimesLabel = [[UILabel alloc] init];
         _playTimesLabel.text = @"播放量";
         _playTimesLabel.textAlignment = NSTextAlignmentLeft;
-        _playTimesLabel.textColor = UIColorFromRGB(@"D0D0D0");
+        _playTimesLabel.textColor = PLV_UIColorFromRGB(@"D0D0D0");
         _playTimesLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
     }
     return _playTimesLabel;

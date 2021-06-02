@@ -7,7 +7,7 @@
 //
 
 #import "PLVLCQuoteMessageCell.h"
-#import "PLVLCChatTextView.h"
+#import "PLVChatTextView.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVEmoticonManager.h"
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
@@ -20,7 +20,7 @@
 @property (nonatomic, strong) UILabel *quoteContentLabel; /// 被引用的消息文本（如果为图片消息，label不可见）
 @property (nonatomic, strong) UIImageView *quoteImageView; /// 被引用的消息图片（如果为文本消息，imageView不可见）
 @property (nonatomic, strong) UIView *line; /// 引用消息与回复消息分割线
-@property (nonatomic, strong) PLVLCChatTextView *textView; /// 回复消息文本
+@property (nonatomic, strong) PLVChatTextView *textView; /// 回复消息文本
 @property (nonatomic, strong) UIView *bubbleView; /// 聊天气泡
 
 @property (nonatomic, strong) PLVPhotoBrowser *photoBrowser; /// 聊天消息图片Browser
@@ -161,9 +161,10 @@
     return _line;
 }
 
-- (PLVLCChatTextView *)textView {
+- (PLVChatTextView *)textView {
     if (!_textView) {
-        _textView = [[PLVLCChatTextView alloc] init];
+        _textView = [[PLVChatTextView alloc] init];
+        _textView.showMenu = YES;
     }
     return _textView;
 }

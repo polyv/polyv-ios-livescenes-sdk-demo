@@ -7,7 +7,7 @@
 //
 
 #import "PLVLCLivePageMenuAreaView.h"
-#import "PLVPageController.h"
+#import "PLVLCPageController.h"
 #import "PLVLCDescViewController.h"
 #import "PLVLCQuizViewController.h"
 #import "PLVLCTuwenViewController.h"
@@ -42,7 +42,7 @@ PLVLCTuwenDelegate,
 PLVRoomDataManagerProtocol
 >
 
-@property (nonatomic, strong) PLVPageController *pageController;
+@property (nonatomic, strong) PLVLCPageController *pageController;
 /// 直播介绍页，直播状态更改时需改变其 UI 文本
 @property (nonatomic, strong) PLVLCDescViewController *descVctrl;
 /// 提问咨询页
@@ -71,7 +71,7 @@ PLVRoomDataManagerProtocol
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         self.liveRoom = liveRoom;
         
-        self.pageController = [[PLVPageController alloc] init];
+        self.pageController = [[PLVLCPageController alloc] init];
         [self addSubview:self.pageController.view];
         
         PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;

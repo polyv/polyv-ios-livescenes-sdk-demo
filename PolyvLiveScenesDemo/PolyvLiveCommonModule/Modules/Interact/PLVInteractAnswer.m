@@ -10,6 +10,8 @@
 
 #import "PLVInteractBaseApp+General.h"
 
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+
 @interface PLVInteractAnswer ()
 
 @property (nonatomic, copy) NSString * quesitonId; /// 问题Id (哪个题目；能判断用户是否回答了题目)
@@ -73,7 +75,7 @@
 // 接收到js答题卡结果
 - (void)chooseAnswer:(NSDictionary *)dict {
     if (![PLVFdUtil checkDictionaryUseable:dict]) {
-        NSLog(@"PLVInteractAnswer - [js call] chooseAnswer param illegal %@",dict);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractAnswer - [js call] chooseAnswer param illegal %@",dict);
         return;
     }
         

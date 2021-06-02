@@ -40,6 +40,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// socket通知所有聊天消息被清空
 - (void)chatroomPresenter_didAllMessageDeleted;
 
+/// 发送消息包含严禁词时触发
+/// @param message 后端返回的message提示文本
+/// @param word 触发的严禁词
+- (void)chatroomPresenter_receiveWarning:(NSString *)message prohibitWord:(NSString *)word;
+
+/// 发送图片违规时触发
+/// @param msgId 后端返回的消息ID
+- (void)chatroomPresenter_receiveImageWarningWithMsgId:(NSString *)msgId;
+
 @end
 
 /*
@@ -52,6 +61,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVChatroomPresenter : NSObject
 
 @property (nonatomic, weak) id<PLVChatroomPresenterProtocol> delegate;
+
+/// 当前登陆用户是否是特殊身份（譬如讲师），默认为NO，为YES时字段closeRoom、banned永远为NO
+@property (nonatomic, assign) BOOL specialRole;
 
 /// 初始化方法
 /// @param count 每次调用接口获取的聊天消息条数，不得小于1
@@ -71,6 +83,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param content 消息文本
 /// @return 消息数据模型
 - (PLVChatModel * _Nullable)sendSpeakMessage:(NSString *)content;
+
+/// 发送文本消息
+/// @param content 消息文本
+/// @param replyChatModel 被回复消息模型（非回复消息该字段为nil），仅在属性specialRole为YES时生效
+/// @return 消息数据模型
+- (PLVChatModel * _Nullable)sendSpeakMessage:(NSString *)content
+                    replyChatModel:(PLVChatModel * _Nullable)replyChatModel;
 
 /// 发送图片消息
 /// @param image 图片

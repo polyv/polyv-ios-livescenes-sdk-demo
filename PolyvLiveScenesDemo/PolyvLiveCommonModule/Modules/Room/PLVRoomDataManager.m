@@ -8,7 +8,9 @@
 
 #import "PLVRoomDataManager.h"
 #import <PolyvFoundationSDK/PLVMulticastDelegate.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
+extern NSString *PLVRoomDataKeyPathSessionId;
 extern NSString *PLVRoomDataKeyPathOnlineCount;
 extern NSString *PLVRoomDataKeyPathLikeCount;
 extern NSString *PLVRoomDataKeyPathWatchCount;
@@ -59,6 +61,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
 }
 
 - (void)removeRoomData {
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeRoom, @"%s", __FUNCTION__);
     [self removeAllDelegates];
     [self removeRoomDataObserver];
     self.roomData = nil;
@@ -67,6 +70,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
 #pragma mark - KVO
 
 - (void)addRoomDataObserver {
+    [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathSessionId options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathOnlineCount options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathLikeCount options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathWatchCount options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
@@ -77,6 +81,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
 }
 
 - (void)removeRoomDataObserver {
+    [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathSessionId];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathOnlineCount];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathLikeCount];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathWatchCount];
@@ -90,8 +95,10 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     if (![object isKindOfClass:[PLVRoomData class]]) {
         return;
     }
-    
-    if ([keyPath isEqualToString:PLVRoomDataKeyPathOnlineCount]) {
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeRoom, @"observeValueForKeyPath (keyPath:%@)", keyPath);
+    if ([keyPath isEqualToString:PLVRoomDataKeyPathSessionId]) {
+        [self notifyDelegatesDidSessionIdChanged:self.roomData.sessionId];
+    } else if ([keyPath isEqualToString:PLVRoomDataKeyPathOnlineCount]) {
         [self notifyDelegatesDidOnlineCountChanged:self.roomData.onlineCount];
     } else if ([keyPath isEqualToString:PLVRoomDataKeyPathLikeCount]) {
         [self notifyDelegatesDidLikeCountChanged:self.roomData.likeCount];
@@ -125,6 +132,12 @@ extern NSString *PLVRoomDataKeyPathLiveState;
 - (void)removeAllDelegates {
     dispatch_barrier_async(multicastQueue, ^{
         [self->multicastDelegate removeAllDelegates];
+    });
+}
+
+- (void)notifyDelegatesDidSessionIdChanged:(NSString *)sessionId {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate roomDataManager_didSessionIdChanged:sessionId];
     });
 }
 

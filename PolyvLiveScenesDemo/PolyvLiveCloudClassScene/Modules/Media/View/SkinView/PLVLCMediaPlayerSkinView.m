@@ -64,7 +64,7 @@
         [self refreshPlayTimesLabelFrame];
         
         CGFloat rightPadding = 2.0;
-        self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, commonHeight);
+        self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
         
         // 底部UI
         CGFloat bottomShadowLayerHeight = 70.0;

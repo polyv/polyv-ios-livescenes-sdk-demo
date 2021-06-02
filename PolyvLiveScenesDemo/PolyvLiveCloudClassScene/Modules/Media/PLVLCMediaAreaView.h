@@ -10,6 +10,7 @@
 
 #import "PLVLCMediaPlayerSkinView.h"
 #import "PLVLCMediaFloatView.h"
+#import "PLVPlayerPresenter.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define PPTPlayerViewScale (9.0 / 16.0)
@@ -62,11 +63,17 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @note 可通过 [switchAreaViewLiveSceneTypeTo:] 方法进行切换；仅适用在视频类型为 ‘直播’ 时使用此类型值
 @property (nonatomic, assign, readonly) PLVLCMediaAreaViewLiveSceneType currentLiveSceneType;
 
+/// 该频道是否 ‘直播中’ (以 ‘直播流状态’ 作为依据)
+@property (nonatomic, assign, readonly) BOOL channelInLive;
+
 /// 该频道是否观看 ‘无延迟直播’
 @property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
 
 /// 无延迟直播的当前 ‘开始结束状态’
 @property (nonatomic, assign, readonly) BOOL noDelayLiveStart;
+
+/// 直播场景中 主讲的PPT 当前是否在主屏
+@property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;
 
 #pragma mark UI
 /// 媒体播放器皮肤视图 (用于 竖屏时 显示)
@@ -83,6 +90,8 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
+/// 播放器 功能模块
+@property (nonatomic, strong, readonly) PLVPlayerPresenter *playerPresenter;
 
 
 #pragma mark - [ 方法 ]

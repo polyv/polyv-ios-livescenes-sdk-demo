@@ -7,7 +7,7 @@
 //
 
 #import "PLVLCLandscapeSpeakCell.h"
-#import "PLVLCChatTextView.h"
+#import "PLVChatTextView.h"
 #import "PLVEmoticonManager.h"
 #import <PLVLiveScenesSDK/PLVSpeakMessage.h>
 #import <PolyvFoundationSDK/PLVColorUtil.h>
@@ -22,7 +22,7 @@
 
 #pragma mark UI
 
-@property (nonatomic, strong) PLVLCChatTextView *textView; /// 消息文本内容视图
+@property (nonatomic, strong) PLVChatTextView *textView; /// 消息文本内容视图
 @property (nonatomic, strong) UIView *bubbleView; /// 背景气泡
 
 @end
@@ -70,9 +70,10 @@
     return _bubbleView;
 }
 
-- (PLVLCChatTextView *)textView {
+- (PLVChatTextView *)textView {
     if (!_textView) {
-        _textView = [[PLVLCChatTextView alloc] init];
+        _textView = [[PLVChatTextView alloc] init];
+        _textView.showMenu = YES;
     }
     return _textView;
 }

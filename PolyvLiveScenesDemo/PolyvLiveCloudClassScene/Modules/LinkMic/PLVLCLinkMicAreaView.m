@@ -23,6 +23,8 @@ PLVLCLinkMicWindowsViewDelegate
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL areaViewShow;
+@property (nonatomic, assign, readonly) BOOL channelInLive;
+@property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;
 
 #pragma mark 数据
 @property (nonatomic, assign) BOOL currentLandscape; // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
@@ -206,6 +208,24 @@ PLVLCLinkMicWindowsViewDelegate
     return _landscapeSpeakingView;
 }
 
+- (BOOL)channelInLive{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaViewGetChannelInLive:)]) {
+        return [self.delegate plvLCLinkMicAreaViewGetChannelInLive:self];
+    }else{
+        NSLog(@"PLVLCLinkMicAreaView - delegate not implement method:[plvLCLinkMicAreaViewGetChannelInLive:]");
+        return NO;
+    }
+}
+
+- (BOOL)mainSpeakerPPTOnMain{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:)]) {
+        return [self.delegate plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:self];
+    }else{
+        NSLog(@"PLVLCLinkMicAreaView - delegate not implement method:[plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:]");
+        return YES; /// 默认 YES
+    }
+}
+
 #pragma mark Setter
 - (void)setCurrentControlBar:(id<PLVLCLinkMicControlBarProtocol>)currentControlBar{
     if (currentControlBar && currentControlBar != _currentControlBar) {
@@ -302,6 +322,11 @@ PLVLCLinkMicWindowsViewDelegate
     return [self.presenter getUserModelFromOnlineUserArrayWithIndex:targetIndex];
 }
 
+/// 连麦窗口列表视图 需获知 ‘主讲的PPT 当前是否在主屏’
+- (BOOL)plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:(PLVLCLinkMicWindowsView *)windowsView{
+    return self.mainSpeakerPPTOnMain;
+}
+
 #pragma mark PLVLinkMicPresenterDelegate
 /// 房间加入状态发生改变
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter currentRtcRoomJoinStatus:(PLVLinkMicPresenterRoomJoinStatus)currentRtcRoomJoinStatus inRTCRoomChanged:(BOOL)inRTCRoomChanged inRTCRoom:(BOOL)inRTCRoom{
@@ -325,7 +350,7 @@ PLVLCLinkMicWindowsViewDelegate
     if (currentLinkMicStatus == PLVLinkMicStatus_NotOpen) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Default];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Open) {
-        PLVLCLinkMicControlBarType barType = presenter.linkMicMediaType == PLVLinkMicMediaType_Audio ? PLVLCLinkMicControlBarType_Audio : PLVLCLinkMicControlBarType_Video;
+        PLVLCLinkMicControlBarType barType = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio ? PLVLCLinkMicControlBarType_Audio : PLVLCLinkMicControlBarType_Video);
         self.currentControlBar.barType = barType;
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Open];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Waiting) {
@@ -365,7 +390,7 @@ PLVLCLinkMicWindowsViewDelegate
         }
     }
     
-    [self.windowsView reloadLinkMicUserWindows];
+    [self.windowsView reloadLinkMicUserWindowsWithCompleteBlock:nil];
 }
 
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerLinkMicUserId:(NSString *)mainSpeakerLinkMicUserId mainSpeakerToMainScreen:(BOOL)mainSpeakerToMainScreen{
@@ -461,6 +486,10 @@ PLVLCLinkMicWindowsViewDelegate
         [self.landscapeSpeakingView updateSpeakingInfoWithNicknames:[currentSpeakingUsers valueForKeyPath:@"nickname"]];
         [self updateLandscapeSpeakingViewLayout];
     }
+}
+
+- (BOOL)plvLinkMicPresenterGetChannelInLive:(PLVLinkMicPresenter *)presenter{
+    return self.channelInLive;
 }
 
 @end

@@ -340,10 +340,10 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         _playTimesLabel = [[UILabel alloc] init];
         _playTimesLabel.text = @"播放量";
         _playTimesLabel.textAlignment = NSTextAlignmentCenter;
-        _playTimesLabel.textColor = UIColorFromRGB(@"D0D0D0");
+        _playTimesLabel.textColor = PLV_UIColorFromRGB(@"D0D0D0");
         _playTimesLabel.font = [UIFont fontWithName:@"PingFang SC" size:10];
         _playTimesLabel.layer.cornerRadius = 9.0;
-        _playTimesLabel.backgroundColor = UIColorFromRGBA(@"000000", 0.5);
+        _playTimesLabel.backgroundColor = PLV_UIColorFromRGBA(@"000000", 0.5);
         _playTimesLabel.clipsToBounds = YES;
     }
     return _playTimesLabel;
@@ -405,10 +405,10 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         _floatViewShowButtonTipsLabel = [[UILabel alloc] init];
         _floatViewShowButtonTipsLabel.text = @"可从此处重新打开浮窗";
         _floatViewShowButtonTipsLabel.textAlignment = NSTextAlignmentCenter;
-        _floatViewShowButtonTipsLabel.textColor = UIColorFromRGB(@"FFFFFF");
+        _floatViewShowButtonTipsLabel.textColor = PLV_UIColorFromRGB(@"FFFFFF");
         _floatViewShowButtonTipsLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
         _floatViewShowButtonTipsLabel.layer.cornerRadius = 12.5;
-        _floatViewShowButtonTipsLabel.backgroundColor = UIColorFromRGBA(@"000000", 0.5);
+        _floatViewShowButtonTipsLabel.backgroundColor = PLV_UIColorFromRGBA(@"000000", 0.5);
         _floatViewShowButtonTipsLabel.clipsToBounds = YES;
         _floatViewShowButtonTipsLabel.hidden = YES;
     }
@@ -436,6 +436,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
     }
     return _fullScreenButton;
 }
+
 
 - (UILabel *)currentTimeLabel{
     if (!_currentTimeLabel && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
@@ -475,7 +476,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         _progressSlider = [[PLVProgressSlider alloc] init];
         _progressSlider.delegate = self;
         _progressSlider.userInteractionEnabled = NO;
-        _progressSlider.slider.minimumTrackTintColor = UIColorFromRGB(@"6DA7FF");
+        _progressSlider.slider.minimumTrackTintColor = PLV_UIColorFromRGB(@"6DA7FF");
         [_progressSlider.slider setThumbImage:[self getImageWithName:@"plvlc_media_skin_slider_thumbimage"] forState:UIControlStateNormal];
     }
     return _progressSlider;

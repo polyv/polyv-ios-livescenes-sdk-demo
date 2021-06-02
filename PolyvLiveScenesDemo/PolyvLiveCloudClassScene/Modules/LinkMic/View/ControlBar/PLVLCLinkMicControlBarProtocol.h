@@ -12,11 +12,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark - [ Define ]
 /// 默认值
-#define PLVColor_OnOffButton_BgBlack UIColorFromRGB(@"3E3E4E")
-#define PLVColor_OnOffButton_Green UIColorFromRGB(@"49d59b")
-#define PLVColor_OnOffButton_Red UIColorFromRGB(@"fd5d5f")
-#define PLVColor_OnOffButton_LightGray UIColorFromRGB(@"ededef")
-#define PLVColor_OnOffButton_Gray UIColorFromRGB(@"565662")
+#define PLVColor_OnOffButton_BgBlack PLV_UIColorFromRGB(@"3E3E4E")
+#define PLVColor_OnOffButton_Green PLV_UIColorFromRGB(@"49d59b")
+#define PLVColor_OnOffButton_Red PLV_UIColorFromRGB(@"fd5d5f")
+#define PLVColor_OnOffButton_LightGray PLV_UIColorFromRGB(@"ededef")
+#define PLVColor_OnOffButton_Gray PLV_UIColorFromRGB(@"565662")
 #define PLVColor_OnOffButton_Clear [UIColor clearColor]
 
 #define PLVLCLinkMicControlBar_ShiftTime 0.3  // 位移时长 (控制栏展开、收起、隐藏过程的位移时长)

@@ -113,7 +113,9 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
     }
     
     if (self.scale < oldScale) {
-        CGFloat imageWidth = SCREEN_WIDTH;
+        BOOL landscape = SCREEN_WIDTH > SCREEN_HEIGHT;
+        CGSize imageSize = imageView.image.size;
+        CGFloat imageWidth = landscape ? SCREEN_HEIGHT * imageSize.width / imageSize.height : SCREEN_WIDTH;
         CGFloat dw = imageWidth * self.scale - SCREEN_WIDTH;
         CGFloat dx = imageView.center.x;
         if (dw > 0.0) {
@@ -126,7 +128,7 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
             dx = SCREEN_WIDTH * 0.5;
         }
 
-        CGFloat imageHeight = SCREEN_WIDTH * imageView.image.size.height / imageView.image.size.width;
+        CGFloat imageHeight = landscape ? SCREEN_HEIGHT : SCREEN_WIDTH * imageView.image.size.height / imageView.image.size.width;
         CGFloat dh = imageHeight * self.scale - SCREEN_HEIGHT;
         CGFloat dy = imageView.center.y;
         if (dh > 0.0) {
@@ -149,7 +151,9 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
     UIImageView *imageView = [self.backgroundView viewWithTag:10];
     CGPoint translation = [recognizer translationInView:self.backgroundView];
     
-    CGFloat imageWidth = SCREEN_WIDTH;
+    BOOL landscape = SCREEN_WIDTH > SCREEN_HEIGHT;
+    CGSize imageSize = imageView.image.size;
+    CGFloat imageWidth = landscape ? SCREEN_HEIGHT * imageSize.width / imageSize.height : SCREEN_WIDTH;
     CGFloat dw = imageWidth * self.scale - SCREEN_WIDTH;
     CGFloat dx = imageView.center.x;
     if (dw > 0.0) {
@@ -161,7 +165,7 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
         }
     }
     
-    CGFloat imageHeight = SCREEN_WIDTH * imageView.image.size.height / imageView.image.size.width;
+    CGFloat imageHeight = landscape? SCREEN_HEIGHT : SCREEN_WIDTH * imageView.image.size.height / imageView.image.size.width;
     CGFloat dh = imageHeight * self.scale - SCREEN_HEIGHT;
     CGFloat dy = imageView.center.y;
     if (dh > 0.0) {

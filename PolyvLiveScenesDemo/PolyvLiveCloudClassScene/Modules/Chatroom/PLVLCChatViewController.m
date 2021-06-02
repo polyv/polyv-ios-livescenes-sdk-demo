@@ -7,7 +7,7 @@
 //
 
 #import "PLVLCChatViewController.h"
-#import "PLVKeyboardToolView.h"
+#import "PLVLCKeyboardToolView.h"
 #import "PLVLCNewMessageView.h"
 #import "PLVLCWelcomeView.h"
 #import "PLVLCNotifyMarqueeView.h"
@@ -30,7 +30,7 @@
 NSString *PLVLCChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNotification";
 
 @interface PLVLCChatViewController ()<
-PLVKeyboardToolViewDelegate,
+PLVLCKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
 PLVPickerControllerDelegate,
 PLVCameraViewControllerDelegate,
@@ -52,7 +52,7 @@ UITableViewDataSource
 /// 未读消息条数
 @property (nonatomic, assign) NSUInteger newMessageCount;
 /// 聊天室置底控件
-@property (nonatomic, strong) PLVKeyboardToolView *keyboardToolView;
+@property (nonatomic, strong) PLVLCKeyboardToolView *keyboardToolView;
 /// 聊天室顶部欢迎横幅
 @property (nonatomic, strong) PLVLCWelcomeView *welcomeView;
 /// 聊天室顶部公告横幅
@@ -80,7 +80,7 @@ UITableViewDataSource
     [super viewWillLayoutSubviews];
      
     if (self.hasLayoutSubView) { // 调整布局
-        CGFloat height = PLVKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+        CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
         self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
         
         CGFloat keyboardToolOriginY = CGRectGetHeight(self.view.bounds) - height;
@@ -90,7 +90,7 @@ UITableViewDataSource
 
 - (void)viewDidLayoutSubviews {
     if (!self.hasLayoutSubView) { // 初次布局
-        CGFloat height = PLVKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+        CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
         CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
         [self.keyboardToolView addAtView:self.view frame:inputRect];
         self.receiveNewMessageView.frame = CGRectMake(0, inputRect.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
@@ -106,7 +106,7 @@ UITableViewDataSource
 }
 
 - (void)refreshLikeButtonViewFrame{
-    CGFloat height = PLVKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+    CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
     CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
     self.likeButtonView.frame = CGRectMake(self.view.bounds.size.width - PLVLCLikeButtonViewWidth - 16, inputRect.origin.y - 17 - PLVLCLikeButtonViewHeight, PLVLCLikeButtonViewWidth, PLVLCLikeButtonViewHeight);
 }
@@ -140,9 +140,9 @@ UITableViewDataSource
     return _refresher;
 }
 
-- (PLVKeyboardToolView *)keyboardToolView {
+- (PLVLCKeyboardToolView *)keyboardToolView {
     if (!_keyboardToolView) {
-        _keyboardToolView = [[PLVKeyboardToolView alloc] init];
+        _keyboardToolView = [[PLVLCKeyboardToolView alloc] init];
         _keyboardToolView.delegate = self;
         _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live);
     }
@@ -473,29 +473,29 @@ UITableViewDataSource
     }
 }
 
-#pragma mark - PLVKeyboardToolView Delegate
+#pragma mark - PLVLCKeyboardToolView Delegate
 
-- (BOOL)keyboardToolView_shouldInteract:(PLVKeyboardToolView *)toolView {
+- (BOOL)keyboardToolView_shouldInteract:(PLVLCKeyboardToolView *)toolView {
     return YES;
 }
 
-- (void)keyboardToolView:(PLVKeyboardToolView *)toolView popBoard:(BOOL)show {
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show {
     NSLog(@"keyboardToolView - popBoard %@", show ? @"YES" : @"NO");
 }
 
-- (void)keyboardToolView:(PLVKeyboardToolView *)toolView sendText:(NSString *)text {
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:text];
     if (!success) {
         [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
     }
 }
 
-- (void)keyboardToolView:(PLVKeyboardToolView *)toolView onlyTeacher:(BOOL)on {
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView onlyTeacher:(BOOL)on {
     [PLVLCChatroomViewModel sharedViewModel].onlyTeacher = on;
     [self.tableView reloadData];
 }
 
-- (void)keyboardToolView_openAlbum:(PLVKeyboardToolView *)toolView {
+- (void)keyboardToolView_openAlbum:(PLVLCKeyboardToolView *)toolView {
     [PLVLiveVideoConfig sharedInstance].unableRotate = YES;
     [PLVFdUtil changeDeviceOrientationToPortrait];
     
@@ -506,7 +506,7 @@ UITableViewDataSource
     [self.liveRoom presentViewController:nav animated:YES completion:nil];
 }
 
-- (void)keyboardToolView_openCamera:(PLVKeyboardToolView *)toolView {
+- (void)keyboardToolView_openCamera:(PLVLCKeyboardToolView *)toolView {
     __weak typeof(self) weakSelf = self;
     PLVAuthorizationStatus status = [PLVAuthorizationManager authorizationStatusWithType:PLVAuthorizationTypeMediaVideo];
     switch (status) {
@@ -532,7 +532,7 @@ UITableViewDataSource
     }
 }
 
-- (void)keyboardToolView_readBulletin:(PLVKeyboardToolView *)toolView {
+- (void)keyboardToolView_readBulletin:(PLVLCKeyboardToolView *)toolView {
     [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenBulletinNotification object:nil];
 }
 

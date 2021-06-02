@@ -11,6 +11,8 @@
 #import "PLVRoomDataManager.h"
 #import "PLVInteractBaseApp+General.h"
 
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+
 @interface PLVInteractLottery ()
 
 @property (nonatomic, copy) NSString * lotteryId; /// 本次抽奖Id
@@ -64,7 +66,7 @@
         [self.jsBridge call:@"startLottery" params:nil];
         [self callWebviewShow];
     }else{
-        NSLog(@"PLVInteractLottery - startLottery failed, error:%@ jsonDict:%@",jsonError,jsonDict);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - startLottery failed, error:%@ jsonDict:%@",jsonError,jsonDict);
     }
 }
 
@@ -88,10 +90,10 @@
             }
             [self callWebviewShow];
         }else{
-            NSLog(@"PLVInteractLottery - stopLottery failed, EVENT illegal, jsonDict:%@",jsonDict);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - stopLottery failed, EVENT illegal, jsonDict:%@",jsonDict);
         }
     }else{
-        NSLog(@"PLVInteractLottery - stopLottery failed, error:%@ jsonDict:%@",jsonError,jsonDict);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - stopLottery failed, error:%@ jsonDict:%@",jsonError,jsonDict);
     }
     
     if (self.winner) {
@@ -109,7 +111,7 @@
     if (jsonData && error == nil) {
         receiveInfo = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     }else{
-        NSLog(@"PLVInteractLottery - generateLotteryCollectString failed, error:%@ jsonData:%@",error,jsonData);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - generateLotteryCollectString failed, error:%@ jsonData:%@",error,jsonData);
     }
     return receiveInfo;
 }
@@ -120,7 +122,7 @@
 // 接收到js中奖信息
 - (void)sendWinData:(NSDictionary *)dict {
     if (![PLVFdUtil checkDictionaryUseable:dict]) {
-        NSLog(@"PLVInteractLottery - [js call] sendWinData param illegal %@",dict);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - [js call] sendWinData param illegal %@",dict);
         return;
     }
         
@@ -139,7 +141,7 @@
     [PLVLiveVideoAPI newPostLotteryWithData:jsonDict completion:^{
         [weakSelf triviaCardAckHandleNoRetry:@[@"{\"code\":200}"] event:@"LOTTERY"];
     } failure:^(NSError *error) {
-        NSLog(@"PLVInteractLottery - newPostLotteryWithData failed, error:%@", error.description);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - newPostLotteryWithData failed, error:%@", error.description);
         [weakSelf triviaCardAckHandleNoRetry:@[@"{\"code\":400}"] event:@"LOTTERY"];
     }];
 }
@@ -147,9 +149,9 @@
 // 接收到js放弃中奖消息
 - (void)abandonLottery:(id)placeholder {
     [PLVLiveVideoAPI giveUpReceiveWithChannelId:[PLVRoomDataManager sharedManager].roomData.channelId userId:self.viewerId completion:^(NSString *str) {
-        NSLog(@"PLVInteractLottery - abandonLottery success, str:%@", str);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - abandonLottery success, str:%@", str);
     } failure:^(NSError *error) {
-        NSLog(@"PLVInteractLottery - abandonLottery failed, error:%@", error.description);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract, @"PLVInteractLottery - abandonLottery failed, error:%@", error.description);
     }];
 }
 

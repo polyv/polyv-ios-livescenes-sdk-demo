@@ -110,6 +110,15 @@ PLVAdvViewDelegate
     return [PLVRoomDataManager sharedManager].roomData.channelInfo.advertHref;
 }
 
+- (BOOL)channelInLive{
+    BOOL channelInLive = (self.currentStreamState == PLVChannelLiveStreamState_Live);
+    return channelInLive;
+}
+
+- (PLVChannelLiveStreamState)currentStreamState{
+    return self.livePlayer.currentStreamState;
+}
+
 - (BOOL)channelWatchNoDelay{
     return [PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay;
 }
@@ -237,7 +246,7 @@ PLVAdvViewDelegate
         self.livePlayer.chaseFrame = NO;
         self.livePlayer.customParam = roomData.customParam;
     }else if (self.currentVideoType == PLVChannelVideoType_Playback){ /// 回放
-        self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPolyvAccountUserId:userIdForAccount channelId:roomData.channelId vodId:roomData.vid vodList:NO];
+        self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPolyvAccountUserId:userIdForAccount channelId:roomData.channelId vodId:roomData.vid vodList:roomData.vodList];
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
@@ -368,7 +377,7 @@ PLVAdvViewDelegate
     /** 断网后联网回看重新播放-从广告开始 */
     if (self.currentVideoType == PLVChannelVideoType_Playback) {
         PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
-        if (networkStatus != NotReachable && self.keepShowAdv &&
+        if (networkStatus != PLVNotReachable && self.keepShowAdv &&
             self.livePlaybackPlayer.showingContent) {
             _keepShowAdv = NO;
             [self showAdv];
@@ -490,7 +499,7 @@ PLVAdvViewDelegate
     if (newestStreamState != PLVChannelLiveStreamState_Live) {
 //        _keepShowAdv = YES;
         PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
-        if (networkStatus == NotReachable) {
+        if (networkStatus == PLVNotReachable) {
             if (self.advView.playing) { // 广告在播放则不后续操作
                 return;
             }
@@ -636,7 +645,7 @@ PLVAdvViewDelegate
         
     } else if (status == PLVAdvViewStatusFinish) {
         PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
-        if (networkStatus != NotReachable &&
+        if (networkStatus != PLVNotReachable &&
             (!self.keepShowAdv || self.livePlaybackPlayer.downloadProgress == 1)) {
             [self.advView distroy];
             self.advView = nil;

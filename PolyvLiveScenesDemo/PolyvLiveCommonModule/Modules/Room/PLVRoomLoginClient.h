@@ -53,6 +53,20 @@ NS_ASSUME_NONNULL_BEGIN
                               completion:(void (^)(PLVViewLogCustomParam *customParam))completion
                                  failure:(void (^)(NSString *errorMessage))failure;
 
+/// 登录三分屏开播直播间
+/// @param channelType 频道类型，目前只支持 PLVChannelTypeAlone 或者 PLVChannelTypePPT
+/// @param channelId 频道号
+/// @param password 频道密码
+/// @param nickName 教师昵称
+/// @param completion 登录成功
+/// @param failure 登录失败
++ (void)loginStreamerRoomWithChannelType:(PLVChannelType)channelType
+                               channelId:(NSString *)channelId
+                                password:(NSString *)password
+                                nickName:(NSString * _Nullable)nickName
+                              completion:(void (^)(void))completion
+                                 failure:(void (^)(NSString *errorMessage))failure;
+
 /// 离开直播间时调用
 + (void)logout;
 

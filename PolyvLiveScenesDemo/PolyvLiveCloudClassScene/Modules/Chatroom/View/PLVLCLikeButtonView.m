@@ -94,7 +94,7 @@
 #pragma mark - Private Method
 
 - (void)likeAnimation {
-    NSArray *colors = @[UIColorFromRGB(@"9D86D2"), UIColorFromRGB(@"F25268"), UIColorFromRGB(@"5890FF"), UIColorFromRGB(@"FCBC71")];
+    NSArray *colors = @[PLV_UIColorFromRGB(@"9D86D2"), PLV_UIColorFromRGB(@"F25268"), PLV_UIColorFromRGB(@"5890FF"), PLV_UIColorFromRGB(@"FCBC71")];
     
     CGRect originRect = self.frame;
     UIImage *image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_like_icon"];
