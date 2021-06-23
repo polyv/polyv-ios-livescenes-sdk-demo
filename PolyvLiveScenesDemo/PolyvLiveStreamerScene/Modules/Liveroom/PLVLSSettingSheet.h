@@ -15,7 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)settingSheet_didTapLogoutButton;
 
-- (void)settingSheet_didChangeResolution:(PLVLSResolutionType)resolution;
+- (void)settingSheet_didChangeResolution:(PLVResolutionType)resolution;
 
 @end
 
@@ -23,7 +23,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVLSSettingSheet : PLVLSSideSheet
 
 /// 当前 清晰度
-@property (nonatomic, assign) PLVLSResolutionType resolution;
+@property (nonatomic, assign) PLVResolutionType resolution;
 
 @property (nonatomic, weak) id<PLVLSSettingSheetProtocol> delegate;
 

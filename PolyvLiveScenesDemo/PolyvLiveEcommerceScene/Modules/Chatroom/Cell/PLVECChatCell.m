@@ -129,11 +129,13 @@
         self.model = nil;
         self.chatImageView.hidden = YES;
         self.chatLabel.text = @"";
+        self.bubbleView.hidden = YES;
         return;
     }
     
     self.cellWidth = cellWidth;
     self.model = model;
+    self.bubbleView.hidden = NO;
     
     // 设置聊天图片，如果是图片消息的话
     NSURL *imageURL = [PLVECChatCell chatImageURLWithMessage:model.message];

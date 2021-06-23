@@ -175,28 +175,42 @@
 
         return;
     }
-    if (channelType != PLVChannelTypePPT) {
+    if ((channelType & PLVChannelTypePPT) == 0 &&
+        (channelType & PLVChannelTypeAlone) == 0) {
         !failure ?: failure(@"暂不支持该频道");
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login streamer room failed with【暂不支持该频道】(channelType:%zd)", __FUNCTION__, channelType);
         return;
     }
     [PLVLiveVideoAPI loadPushInfoWithChannelId:channelId password:password channelType:channelType completion:^(NSDictionary * _Nonnull data, NSString * _Nonnull rtmpUrl) {
+        // 获取频道类型
+        NSString *liveScene = PLV_SafeStringForDictKey(data, @"liveScene");
+        PLVChannelType apiChannelType = PLVChannelTypeUnknown;
+        if ([liveScene isEqualToString:@"ppt"]) {
+            apiChannelType = PLVChannelTypePPT;
+        } else if ([liveScene isEqualToString:@"alone"]) {
+            apiChannelType = PLVChannelTypeAlone;
+        }
+        
+        if ((apiChannelType & channelType) <= 0) {
+            !failure ?: failure(@"频道类型出错");
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login streamer room failed with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
+        }
         
         [PLVLiveVideoConfig setPrivateDomainWithData:data];
         
         NSInteger rtcMaxResolution = [data[@"rtcMaxResolution"] integerValue];
-        PLVLSResolutionType videoResolution = PLVLSResolutionType180P;
+        PLVResolutionType videoResolution = PLVResolutionType180P;
         if (rtcMaxResolution >= 720) {
-            videoResolution = PLVLSResolutionType720P;
+            videoResolution = PLVResolutionType720P;
         } else if (rtcMaxResolution == 360) {
-            videoResolution = PLVLSResolutionType360P;
+            videoResolution = PLVResolutionType360P;
         }
         
         // 初始化直播间数据
         PLVRoomData *roomData = [[PLVRoomData alloc] init];
         roomData.maxResolution = videoResolution;
         roomData.videoType = PLVChannelVideoType_Streamer;
-        roomData.channelType = PLVChannelTypePPT;
+        roomData.channelType = apiChannelType;
         roomData.channelId = channelId;
         roomData.stream = PLV_SafeStringForDictKey(data, @"stream");
         roomData.channelName = PLV_SafeStringForDictKey(data, @"nickname");

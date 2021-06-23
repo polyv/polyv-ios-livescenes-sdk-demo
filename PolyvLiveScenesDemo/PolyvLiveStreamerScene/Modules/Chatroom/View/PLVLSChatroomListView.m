@@ -275,7 +275,12 @@ UITableViewDataSource
         
         return cell;
     } else {
-        return [UITableViewCell new];
+        static NSString *cellIdentify = @"cellIdentify";
+        UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
+        if (!cell) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+        }
+        return cell;
     }
 }
 

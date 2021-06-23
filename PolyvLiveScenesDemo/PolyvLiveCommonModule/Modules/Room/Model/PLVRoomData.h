@@ -15,10 +15,10 @@ NS_ASSUME_NONNULL_BEGIN
 extern NSString *PLVLCChatroomFunctionGotNotification;
 
 /// 推流分辨率设置
-typedef NS_ENUM (NSInteger, PLVLSResolutionType) {
-    PLVLSResolutionType720P = 0, // 超清
-    PLVLSResolutionType360P = 1, // 高清
-    PLVLSResolutionType180P = 2 // 标清
+typedef NS_ENUM (NSInteger, PLVResolutionType) {
+    PLVResolutionType180P = 0, // 180p（标清）
+    PLVResolutionType360P = 4, // 360p（高清）
+    PLVResolutionType720P = 8, // 720p（超清）
 };
 
 @interface PLVRoomData : NSObject
@@ -48,12 +48,6 @@ typedef NS_ENUM (NSInteger, PLVLSResolutionType) {
 @property (nonatomic, strong, readonly) PLVRoomUser *roomUser;
 /// 播放器发送ViewLog日志所需要的后台统计参数数据模型，只读属性
 @property (nonatomic, strong, readonly) PLVViewLogCustomParam *customParam;
-/// 本地用户的麦克风 是否默认开启 (默认值 NO)
-@property (nonatomic, assign) BOOL localUserMicDefaultOpen;
-/// 本地用户的摄像头 是否默认开启 (默认值 NO)
-@property (nonatomic, assign) BOOL localUserCameraDefaultOpen;
-/// 本地用户的摄像头 是否默认前置 (默认值 NO)
-@property (nonatomic, assign) BOOL localUserCameraDefaultFront;
 
 
 #pragma mark 直播独有属性
@@ -95,11 +89,14 @@ typedef NS_ENUM (NSInteger, PLVLSResolutionType) {
 /// 待补充，只读属性
 @property (nonatomic, assign) BOOL multiplexingEnabled;
 /// 推流最大清晰度，默认为 PLVLSResolutionType720P
-@property (nonatomic, assign) PLVLSResolutionType maxResolution;
+@property (nonatomic, assign) PLVResolutionType maxResolution;
 /// 开始推流的时间戳（单位秒；以 sessionId 成功获取为起始时间）
 @property (nonatomic, assign) NSTimeInterval startTimestamp;
 /// 已推流时长（单位秒；不包含退至后台时间）
 @property (nonatomic, assign) NSTimeInterval liveDuration;
+
+/// 设置 roomUser
+- (void)setupRoomUser:(PLVRoomUser *)roomUser;
 
 /// 获取频道菜单信息
 - (void)requestChannelDetail:(void(^)(PLVLiveVideoChannelMenuInfo *channelMenuInfo))completion;
@@ -110,11 +107,15 @@ typedef NS_ENUM (NSInteger, PLVLSResolutionType) {
 /// 获取功能开关
 - (void)requestChannelFunctionSwitch;
 
-/// 设置 roomUser
-- (void)setupRoomUser:(PLVRoomUser *)roomUser;
+/// 将清晰度枚举值转换成字符串
+/// @return 返回值为nil时表示参数resolutionType出错，无法转换
++ (NSString * _Nullable)resolutionStringWithType:(PLVResolutionType)resolutionType;
 
-/// 获取商品列表
-- (void)requestCommodityList:(NSUInteger)channelId rank:(NSUInteger)rank count:(NSUInteger)count completion:(void (^)(NSUInteger total, NSArray<PLVCommodityModel *> *commoditys))completion failure:(void (^)(NSError *))failure;
+/// 将枚举 PLVBLinkMicStreamQuality 转换为 PLVResolutionType 枚举
++ (PLVResolutionType)resolutionTypeWithStreamQuality:(PLVBLinkMicStreamQuality)streamQuality;
+
+/// 将枚举 PLVResolutionType 转换为 PLVBLinkMicStreamQuality 枚举
++ (PLVBLinkMicStreamQuality)streamQualityWithResolutionType:(PLVResolutionType)resolution;
 
 @end
 

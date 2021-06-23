@@ -25,7 +25,8 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
 @property (nonatomic, strong) PLVLSMemberCellEditView *editView;
 @property (nonatomic, strong) UIView *gestureView;
 @property (nonatomic, strong) UIImageView *avatarImageView;
-@property (nonatomic, strong) UIImageView *userTypeImageView;
+@property (nonatomic, strong) UIImageView *actorBgView;
+@property (nonatomic, strong) UILabel *actorLabel;
 @property (nonatomic, strong) UILabel *nickNameLabel;
 @property (nonatomic, strong) UIButton *microPhoneButton;
 @property (nonatomic, strong) UIButton *cameraButton;
@@ -64,12 +65,14 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
         
         [self.gestureView addSubview:self.leftDragingView];
         [self.gestureView addSubview:self.avatarImageView];
-        [self.gestureView addSubview:self.userTypeImageView];
+        [self.gestureView addSubview:self.actorBgView];
         [self.gestureView addSubview:self.nickNameLabel];
         [self.gestureView addSubview:self.microPhoneButton];
         [self.gestureView addSubview:self.cameraButton];
         [self.gestureView addSubview:self.cameraSwitchButton];
         [self.gestureView addSubview:self.linkmicButton];
+        
+        [self.actorBgView addSubview:self.actorLabel];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationAction:) name:PLVLSMemberCellNotification object:nil];
     }
@@ -90,11 +93,16 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
     
     self.avatarImageView.frame = CGRectMake(0, 10, 28, 28);
     
+    // 配置头衔（如果有的话）位置
     CGFloat originX = CGRectGetMaxX(self.avatarImageView.frame) + 8;
-    if (!self.userTypeImageView.hidden) {
-        UIImage *image = self.userTypeImageView.image;
-        self.userTypeImageView.frame = CGRectMake(originX, 17, image.size.width, image.size.height);
-        originX += image.size.width + 4;
+    if (!self.actorBgView.hidden) {
+        CGFloat actorTextWidth = [self.actorLabel.text boundingRectWithSize:CGSizeMake(100, 14)
+                                                                    options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                                 attributes:@{NSFontAttributeName:self.actorLabel.font}
+                                                                    context:nil].size.width;
+        self.actorBgView.frame = CGRectMake(originX, (self.gestureView.bounds.size.height - 14)/2.0, actorTextWidth + 2 * 4, 14);
+        self.actorLabel.frame = self.actorBgView.bounds;
+        originX += self.actorBgView.frame.size.width + 4;
     }
     
     self.nickNameLabel.frame = CGRectMake(originX, 15, self.bounds.size.width - 44 * 3 + 8 - originX, 18);
@@ -146,12 +154,24 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
     return _avatarImageView;
 }
 
-- (UIImageView *)userTypeImageView {
-    if (!_userTypeImageView) {
-        _userTypeImageView = [[UIImageView alloc] init];
-        _userTypeImageView.hidden = YES;
+- (UIImageView *)actorBgView {
+    if (!_actorBgView) {
+        _actorBgView = [[UIImageView alloc] init];
+        _actorBgView.layer.cornerRadius = 4;
+        _actorBgView.layer.masksToBounds = YES;
+        _actorBgView.hidden = YES;
     }
-    return _userTypeImageView;
+    return _actorBgView;
+}
+
+- (UILabel *)actorLabel {
+    if (!_actorLabel) {
+        _actorLabel = [[UILabel alloc] init];
+        _actorLabel.font = [UIFont systemFontOfSize:12];
+        _actorLabel.textColor = PLV_UIColorFromRGB(@"#313540");
+        _actorLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _actorLabel;
 }
 
 - (UILabel *)nickNameLabel {
@@ -315,11 +335,20 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
     [self.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl]
                             placeholderImage:placeholder];
     
-    UIImage *userTypeImage = [self userTypeImage:user.userType];
-    if (userTypeImage) {
-        self.userTypeImageView.image = userTypeImage;
+    // 配置头衔标志
+    self.actorBgView.hidden = !specialType;
+    self.actorLabel.hidden = !specialType;
+    if (specialType) {
+        self.actorLabel.text = user.actor;
     }
-    self.userTypeImageView.hidden = !userTypeImage;
+    
+    // 配置头衔背景渐变
+    if (specialType) {
+        NSString *hexString = [self actorBgColorHexstringWithUserType:user.userType];
+        if (hexString) {
+            self.actorBgView.backgroundColor = PLV_UIColorFromRGB(hexString);
+        }
+    }
     
     self.nickNameLabel.text = [PLVFdUtil cutSting:user.userName WithCharacterLength:8];
     
@@ -499,29 +528,25 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
 
 #pragma mark - Private
 
-- (UIImage *)userTypeImage:(PLVRoomUserType)userType {
-    NSString *imageName = nil;
+- (NSString *)actorBgColorHexstringWithUserType:(PLVRoomUserType)userType {
+    NSString *hexString = nil;
     switch (userType) {
         case PLVRoomUserTypeGuest:
-            imageName = @"plvls_member_guest_icon";
+            hexString = @"#4399FF";
             break;
         case PLVRoomUserTypeTeacher:
-            imageName = @"plvls_member_teacher_icon";
+            hexString = @"#FFC161";
             break;
         case PLVRoomUserTypeAssistant:
-            imageName = @"plvls_member_assistant_icon";
+            hexString = @"#33BBC5";
             break;
         case PLVRoomUserTypeManager:
-            imageName = @"plvls_member_manager_icon";
+            hexString = @"#EB6165";
             break;
         default:
             break;
     }
-    if (imageName) {
-        return [PLVLSUtils imageForMemberResource:imageName];
-    }
-    
-    return nil;
+    return hexString;
 }
 
 - (BOOL)isLoginUser:(NSString *)userId {

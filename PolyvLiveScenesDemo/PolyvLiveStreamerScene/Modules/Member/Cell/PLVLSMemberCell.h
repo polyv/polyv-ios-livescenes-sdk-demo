@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString *PLVLSMemberCellNotification;
 
-@protocol PLVLSMemberCellProtocol <NSObject>
+@protocol PLVLSMemberCellDelegate <NSObject>
 
 - (void)memberCell_didEditing:(BOOL)editing;
 
@@ -28,10 +28,9 @@ extern NSString *PLVLSMemberCellNotification;
 
 @interface PLVLSMemberCell : UITableViewCell
 
-@property (nonatomic, weak) id<PLVLSMemberCellProtocol> delegate;
+@property (nonatomic, weak) id<PLVLSMemberCellDelegate> delegate;
 
 - (void)updateUser:(PLVChatUser *)user;
-
 
 /// 显示左滑动画
 - (void)showLeftDragAnimation;

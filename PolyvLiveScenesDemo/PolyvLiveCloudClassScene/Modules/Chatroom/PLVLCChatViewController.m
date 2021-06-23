@@ -434,10 +434,7 @@ UITableViewDataSource
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
         if (!cell) {
             cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
-            cell.textLabel.textColor = [UIColor whiteColor];
-            cell.backgroundColor = [UIColor clearColor];
         }
-        cell.textLabel.text = [model content];
         return cell;
     }
 }
@@ -445,10 +442,11 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    CGFloat cellHeight =  44.0;
     if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
-        return cellHeight;
+        return 0;
     }
+    
+    CGFloat cellHeight = 44.0;
     
     PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
@@ -457,6 +455,8 @@ UITableViewDataSource
         cellHeight = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
         cellHeight = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else {
+        cellHeight = 0;
     }
     
     return cellHeight;

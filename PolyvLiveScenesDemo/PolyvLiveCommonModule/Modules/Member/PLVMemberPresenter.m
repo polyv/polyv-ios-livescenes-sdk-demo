@@ -92,12 +92,14 @@ PLVSocketManagerProtocol // socket协议
         
         if (count > 0) {
             NSArray *userArray = data[@"userlist"];
-            NSMutableArray *userMuArray = [[NSMutableArray alloc] initWithCapacity:[userArray count]];
-            for (NSDictionary *userDict in userArray) {
-                PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
-                [userMuArray addObject:user];
+            if ([userArray count] > 0) {
+                NSMutableArray *userMuArray = [[NSMutableArray alloc] initWithCapacity:[userArray count]];
+                for (NSDictionary *userDict in userArray) {
+                    PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+                    [userMuArray addObject:user];
+                }
+                [weakSelf addUsers:[userMuArray copy]];
             }
-            [weakSelf addUsers:[userMuArray copy]];
         }
         if (autoly) {
             [weakSelf loadOnlineUserListLater];
@@ -144,6 +146,8 @@ PLVSocketManagerProtocol // socket协议
         [self shieldEvent:jsonDict banned:YES];
     } else if ([subEvent isEqualToString:@"REMOVE_SHIELD"]) {
         [self shieldEvent:jsonDict banned:NO];
+    } else if ([subEvent isEqualToString:@"SET_NICK"]) {
+        [self setNickEvent:jsonDict];
     }
 }
 
@@ -172,6 +176,16 @@ PLVSocketManagerProtocol // socket协议
 - (void)shieldEvent:(NSDictionary *)data banned:(BOOL)banned {
     NSString *userId = data[@"data"][@"userId"];
     [self banUserWithUserId:userId banned:banned];
+}
+
+/// 有用户修改昵称
+- (void)setNickEvent:(NSDictionary *)data {
+    NSString *status = data[@"status"];
+    if ([status isEqualToString:@"success"]) {
+        NSString *userId = data[@"userId"];
+        NSString *userName = data[@"nick"];
+        [self setNickNameWithUserId:userId nickName:userName];
+    }
 }
 
 #pragma mark - 用户数组增删改
@@ -225,6 +239,7 @@ PLVSocketManagerProtocol // socket协议
     dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
     if ([user isKindOfClass:[PLVChatUser class]]) {
         [self.userArray addObject:user];
+        self.userCount++;
     }
     dispatch_semaphore_signal(_userArrayLock);
     
@@ -242,7 +257,23 @@ PLVSocketManagerProtocol // socket协议
     }
     dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
     [self.userArray removeObject:user];
+    self.userCount--;
     dispatch_semaphore_signal(_userArrayLock);
+    // 数据变更通知
+    [self notifyUserArrayChanged];
+}
+
+/// socket 接收到用户修改昵称的消息时
+- (void)setNickNameWithUserId:(NSString *)userId nickName:(NSString *)nickName {
+    if (![PLVFdUtil checkStringUseable:userId] ||
+        ![PLVFdUtil checkStringUseable:nickName]) {
+        return;
+    }
+    PLVChatUser *user = [self searchUserInUserArrayWithUserId:userId];
+    if (!user) {
+        return;
+    }
+    user.userName = nickName;
     // 数据变更通知
     [self notifyUserArrayChanged];
 }
@@ -339,7 +370,7 @@ PLVSocketManagerProtocol // socket协议
     
     BOOL isCurrentUser = [self isLoginUser:user.userId];
     if (isCurrentUser) {
-        orderIndex -= 1;
+        orderIndex = user.specialIdentity ? PLVMemberOrderIndex_SpecialLoginUser : (orderIndex - 1);
     }
     return orderIndex;
 }
@@ -347,8 +378,9 @@ PLVSocketManagerProtocol // socket协议
 #pragma mark - 用户数组变动通知
 
 - (void)notifyUserArrayChanged {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(userListChanged)]) {
-        [self.delegate userListChanged];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(userListChangedInMemberPresenter:)]) {
+        [self.delegate userListChangedInMemberPresenter:self];
     }
 }
 
@@ -364,97 +396,104 @@ PLVSocketManagerProtocol // socket协议
 }
 
 #pragma mark - 连麦业务相关
-- (void)refreshUserListWithLinkMicWaitUserArray:(NSArray <PLVLinkMicWaitUser *>*)linkMicWaitUserArray{
-    if (![PLVFdUtil checkArrayUseable:linkMicWaitUserArray]) { return; }
+- (void)refreshUserListWithLinkMicWaitUserArray:(NSArray <PLVLinkMicWaitUser *>*)linkMicWaitUserArray {
+    if (!linkMicWaitUserArray ||
+        ![linkMicWaitUserArray isKindOfClass:[NSArray class]]) {
+        return;
+    }
     
-    /// 添加 waitUser
-    NSArray <NSString *> * userIdArray = [self.userArray valueForKeyPath:@"userId"];
+    NSArray *originUserArray = [self.userArray copy];
+    NSArray <NSString *> *userIdArray = [originUserArray valueForKeyPath:@"userId"];
     for (int i = 0; i < linkMicWaitUserArray.count; i++) {
-        PLVLinkMicWaitUser * waitUser = linkMicWaitUserArray[i];
-        if ([userIdArray containsObject:waitUser.userId]) {
-            /// 原本已经存在 对应聊天室UserId 的对象
-            for (int j = 0; j < self.userArray.count; j++) {
-                PLVChatUser * chatUser = self.userArray[j];
-                if ([chatUser.userId isEqualToString:waitUser.userId]){
-                    [self setupWaitUser:waitUser forChatUser:chatUser];
-                    // 等待连麦用户刷新
+        PLVLinkMicWaitUser *waitUser = linkMicWaitUserArray[i];
+        if ([userIdArray containsObject:waitUser.userId]) { // 原本已经存在对应聊天室UserId的对象
+            for (int j = 0; j < originUserArray.count; j++) {
+                PLVChatUser *chatUser = originUserArray[j];
+                if ([chatUser.userId isEqualToString:waitUser.userId]) {
+                    chatUser.onlineUser = nil;
+                    chatUser.waitUser = waitUser;
                     [self sortUsers];
                     [self notifyUserArrayChanged];
                     break;
                 }
             }
-        }else{
-            if ([PLVFdUtil checkDictionaryUseable:waitUser.originalUserDict]) {
-                /// 原本不存在 对应聊天室UserId 的对象
+        } else {
+            if ([PLVFdUtil checkDictionaryUseable:waitUser.originalUserDict]) { // 原本不存在对应聊天室UserId的对象
                 PLVChatUser * chatUser = [[PLVChatUser alloc] initWithUserInfo:waitUser.originalUserDict];
-                [self setupWaitUser:waitUser forChatUser:chatUser];
+                chatUser.onlineUser = nil;
+                chatUser.waitUser = waitUser;
                 [self addUser:chatUser];
             }else{
                 NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, waitUser.originalUserDict illegal %@",waitUser.userId);
             }
         }
     }
-}
-
-- (void)setupWaitUser:(PLVLinkMicWaitUser *)waitUser forChatUser:(PLVChatUser *)chatUser{
-    if (!waitUser || !chatUser) { return; }
-    chatUser.onlineUser = nil;
-    chatUser.waitUser = waitUser;
-    __weak typeof(self) weakSelf = self;
-    PLVLinkMicWaitUserWillDeallocBlock block = ^(PLVLinkMicWaitUser * _Nonnull waitUser) {
-        chatUser.waitUser = nil;
-        [weakSelf sortUsers];
-        [weakSelf notifyUserArrayChanged];
-    };
-    [chatUser.waitUser addWillDeallocBlock:block blockKey:self];
+    
+    NSArray <NSString *> *waitUserIdArray = [linkMicWaitUserArray valueForKeyPath:@"userId"];
+    for (int i = 0; i < originUserArray.count; i++) { // 取保linkMicOnlineUserArray数组之外，不存在任何chatUser对象持有onlineUser属性
+        PLVChatUser *chatUser = originUserArray[i];
+        if (![PLVFdUtil checkStringUseable:chatUser.userId]) {
+            NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, chatUser.userId illegal %@", chatUser.userId);
+            continue;
+        }
+        if (![waitUserIdArray containsObject:chatUser.userId]) {
+            chatUser.waitUser = nil;
+            [self sortUsers];
+            [self notifyUserArrayChanged];
+        }
+    }
 }
 
 - (void)refreshUserListWithLinkMicOnlineUserArray:(NSArray <PLVLinkMicOnlineUser *>*)linkMicOnlineUserArray{
-    if (![PLVFdUtil checkArrayUseable:linkMicOnlineUserArray]) { return; }
+    if (!linkMicOnlineUserArray ||
+        ![linkMicOnlineUserArray isKindOfClass:[NSArray class]]) {
+        return;
+    }
     
-    NSArray <NSString *> * userIdArray = [self.userArray valueForKeyPath:@"userId"];
+    NSArray *originUserArray = [self.userArray copy];
+    NSArray <NSString *> *userIdArray = [originUserArray valueForKeyPath:@"userId"];
     for (int i = 0; i < linkMicOnlineUserArray.count; i++) {
-        PLVLinkMicOnlineUser * onlineUser = linkMicOnlineUserArray[i];
+        PLVLinkMicOnlineUser *onlineUser = linkMicOnlineUserArray[i];
         if (![PLVFdUtil checkStringUseable:onlineUser.userId]) {
-            NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.userId illegal %@",onlineUser.userId);
+            NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.userId illegal %@", onlineUser.userId);
             continue;
         }
-        if ([userIdArray containsObject:onlineUser.userId]) {
-            /// 原本已经存在 对应聊天室UserId 的对象
-            for (int j = 0; j < self.userArray.count; j++) {
-                PLVChatUser * chatUser = self.userArray[j];
-                if ([chatUser.userId isEqualToString:onlineUser.userId]){
-                    [self setupOnlineUser:onlineUser forChatUser:chatUser];
-                    // 正在连麦用户刷新
+        if ([userIdArray containsObject:onlineUser.userId]) { // 原本已经存在对应聊天室UserId的对象
+            for (int j = 0; j < originUserArray.count; j++) {
+                PLVChatUser *chatUser = originUserArray[j];
+                if ([chatUser.userId isEqualToString:onlineUser.userId]) {
+                    chatUser.waitUser = nil;
+                    chatUser.onlineUser = onlineUser;
                     [self sortUsers];
                     [self notifyUserArrayChanged];
                     break;
                 }
             }
-        }else{
-            if ([PLVFdUtil checkDictionaryUseable:onlineUser.originalUserDict]) {
-                /// 原本不存在 对应聊天室UserId 的对象
+        } else {
+            if ([PLVFdUtil checkDictionaryUseable:onlineUser.originalUserDict]) { // 原本不存在对应聊天室UserId的对象
                 PLVChatUser * chatUser = [[PLVChatUser alloc] initWithUserInfo:onlineUser.originalUserDict];
-                [self setupOnlineUser:onlineUser forChatUser:chatUser];
+                chatUser.waitUser = nil;
+                chatUser.onlineUser = onlineUser;
                 [self addUser:chatUser];
             }else{
-                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.originalUserDict illegal %@",onlineUser.userId);
+                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.originalUserDict illegal %@", onlineUser.userId);
             }
         }
     }
-}
-
-- (void)setupOnlineUser:(PLVLinkMicOnlineUser *)onlineUser forChatUser:(PLVChatUser *)chatUser{
-    if (!onlineUser || !chatUser) { return; }
-    chatUser.waitUser = nil;
-    chatUser.onlineUser = onlineUser;
-    __weak typeof(self) weakSelf = self;
-    PLVLinkMicOnlineUserWillDeallocBlock block = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-        chatUser.onlineUser = nil;
-        [weakSelf sortUsers];
-        [weakSelf notifyUserArrayChanged];
-    };
-    [chatUser.onlineUser addWillDeallocBlock:block blockKey:self];
+    
+    NSArray <NSString *> *onlineUserIdArray = [linkMicOnlineUserArray valueForKeyPath:@"userId"];
+    for (int i = 0; i < originUserArray.count; i++) { // 取保linkMicOnlineUserArray数组之外，不存在任何chatUser对象持有onlineUser属性
+        PLVChatUser *chatUser = originUserArray[i];
+        if (![PLVFdUtil checkStringUseable:chatUser.userId]) {
+            NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, chatUser.userId illegal %@", chatUser.userId);
+            continue;
+        }
+        if (![onlineUserIdArray containsObject:chatUser.userId]) {
+            chatUser.onlineUser = nil;
+            [self sortUsers];
+            [self notifyUserArrayChanged];
+        }
+    }
 }
 
 @end

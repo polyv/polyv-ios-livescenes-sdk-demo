@@ -328,17 +328,23 @@ UITableViewDataSource
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
     } else {
-        return [UITableViewCell new];
+        static NSString *cellIdentify = @"cellIdentify";
+        UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
+        if (!cell) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+        }
+        return cell;
     }
 }
 
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    CGFloat cellHeight =  44.0;
     if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
-        return cellHeight;
+        return 0;
     }
+    
+    CGFloat cellHeight = 44.0;
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];

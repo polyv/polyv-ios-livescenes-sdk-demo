@@ -27,6 +27,7 @@
 #import "PLVDocumentConvertManager.h"
 #import "PLVLSChatroomViewModel.h"
 #import "PLVStreamerPresenter.h"
+#import "PLVMemberPresenter.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -39,13 +40,15 @@ PLVLSSettingSheetProtocol,
 PLVLSStatusAreaViewProtocol,
 PLVLSDocumentAreaViewDelegate,
 PLVLSChatroomAreaViewProtocol,
-PLVLSMemberSheetProtocol,
+PLVLSMemberSheetDelegate,
 PLVLSLinkMicAreaViewDelegate,
-PLVRTCStreamerPresenterDelegate
+PLVStreamerPresenterDelegate,
+PLVMemberPresenterDelegate
 >
 
 #pragma mark 功能
-@property (nonatomic, strong) PLVStreamerPresenter * streamerPresenter;
+@property (nonatomic, strong) PLVStreamerPresenter *streamerPresenter;
+@property (nonatomic, strong) PLVMemberPresenter *memberPresenter;
 
 #pragma mark UI
 @property (nonatomic, assign, getter=isFullscreen) BOOL fullscreen; // 是否处于文档区域全屏状态，默认为NO
@@ -134,7 +137,6 @@ PLVRTCStreamerPresenterDelegate
     [self.view addSubview:self.statusAreaView];
     
     // 初始化
-    [self.memberSheet showInView:nil]; /// 仅用于初始化
     [self.settingSheet showInView:nil]; /// 仅用于初始化
 
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
@@ -147,10 +149,16 @@ PLVRTCStreamerPresenterDelegate
     self.streamerPresenter = [[PLVStreamerPresenter alloc] init];
     self.streamerPresenter.delegate = self;
     self.streamerPresenter.previewType = PLVStreamerPresenterPreviewType_UserArray;
-    self.streamerPresenter.micDefaultOpen = [PLVRoomDataManager sharedManager].roomData.localUserMicDefaultOpen;
-    self.streamerPresenter.cameraDefaultOpen = [PLVRoomDataManager sharedManager].roomData.localUserCameraDefaultOpen;
-    self.streamerPresenter.cameraDefaultFront = [PLVRoomDataManager sharedManager].roomData.localUserCameraDefaultFront;
-    [self.streamerPresenter setupStreamQuality:[self transformResolutionTypeToStreamQuality:self.settingSheet.resolution]];
+    self.streamerPresenter.micDefaultOpen = YES;
+    self.streamerPresenter.cameraDefaultOpen = YES;
+    self.streamerPresenter.cameraDefaultFront = YES;
+    PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:self.settingSheet.resolution];
+    [self.streamerPresenter setupStreamQuality:streamQuality];
+    [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_MainSpeaker];
+    
+    self.memberPresenter = [[PLVMemberPresenter alloc] init];
+    self.memberPresenter.delegate = self;
+    [self.memberPresenter start];// 开始获取成员列表数据并开启自动更新
 }
 
 - (void)getEdgeInset {
@@ -207,7 +215,7 @@ PLVRTCStreamerPresenterDelegate
 
 - (PLVLSMemberSheet *)memberSheet {
     if (!_memberSheet) {
-        _memberSheet = [[PLVLSMemberSheet alloc] init];
+        _memberSheet = [[PLVLSMemberSheet alloc] initWithUserList:[self.memberPresenter userList] userCount:self.memberPresenter.userCount];
         _memberSheet.delegate = self;
     }
     return _memberSheet;
@@ -277,6 +285,7 @@ PLVRTCStreamerPresenterDelegate
     [[PLVLSChatroomViewModel sharedViewModel] clear];
     [[PLVDocumentUploadClient sharedClient] stopAllUpload]; // 停止一切上传任务
     [[PLVDocumentConvertManager sharedManager] clear]; // 清空文档转码轮询队列
+    [self.memberPresenter stop]; // 成员列表数据停止自动更新
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((self.streamerPresenter.classStarted ? 0.5 : 0) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [[PLVSocketManager sharedManager] logout];
@@ -285,25 +294,17 @@ PLVRTCStreamerPresenterDelegate
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-- (PLVBLinkMicStreamQuality)transformResolutionTypeToStreamQuality:(PLVLSResolutionType)resolution{
-    PLVBLinkMicStreamQuality streamQuality = PLVBLinkMicStreamQuality180P;
-    if (resolution == PLVLSResolutionType180P) {
-        streamQuality = PLVBLinkMicStreamQuality180P;
-    }else if (resolution == PLVLSResolutionType360P){
-        streamQuality = PLVBLinkMicStreamQuality360P;
-    }else if (resolution == PLVLSResolutionType720P){
-        streamQuality = PLVBLinkMicStreamQuality720P;
-    }
-    return streamQuality;
-}
-
 #pragma mark - Start Class
 
 - (void)preapareStartClass {
     __weak typeof(self) weakSelf = self;
-    [self.streamerPresenter prepareLocalPreviewCompletion:^(BOOL prepareSuccess) {
+    [self.streamerPresenter prepareLocalPreviewCompletion:^(BOOL granted, BOOL prepareSuccess) {
         if (prepareSuccess) {
             [weakSelf.streamerPresenter setupLocalPreviewWithCanvaView:nil];
+        }
+        if (!granted) {
+            NSString *msg = [NSString stringWithFormat:@"需要获取您的音视频权限，请前往设置"];
+            [PLVAuthorizationManager showAlertWithTitle:@"提示" message:msg viewController:weakSelf];
         }
     }];
 }
@@ -434,8 +435,9 @@ PLVRTCStreamerPresenterDelegate
     }];
 }
 
-- (void)settingSheet_didChangeResolution:(PLVLSResolutionType)resolution {
-    [self.streamerPresenter setupStreamQuality:[self transformResolutionTypeToStreamQuality:resolution]];
+- (void)settingSheet_didChangeResolution:(PLVResolutionType)resolution {
+    PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:resolution];
+    [self.streamerPresenter setupStreamQuality:streamQuality];
 }
 
 #pragma mark - PLVLSChatroomAreaView Protocol
@@ -452,8 +454,10 @@ PLVRTCStreamerPresenterDelegate
     [self.streamerPresenter switchLocalUserFrontCamera];
 }
 
-#pragma mark - PLVLSMemberSheet Protocol
-- (void)memberSheet_didTapCloseAllUserLinkMicChangeBlock:(void (^)(BOOL))changeBlock{
+#pragma mark - PLVLSMemberSheetDelegate
+
+- (void)didTapCloseAllUserLinkMicInMemberSheet:(PLVLSMemberSheet *)memberSheet
+                                   changeBlock:(void(^ _Nullable)(BOOL needChange))changeBlock {
     if (!self.streamerPresenter.pushStreamStarted) {
         [PLVLSUtils showToastWithMessage:@"请先上课" inView:self.view];
         if (changeBlock) { changeBlock(NO); }
@@ -467,7 +471,9 @@ PLVRTCStreamerPresenterDelegate
     }
 }
 
-- (void)memberSheet_didTapMuteAllUserMic:(BOOL)mute changeBlock:(nonnull void (^)(BOOL))changeBlock{
+- (void)didTapMuteAllUserMicInMemberSheet:(PLVLSMemberSheet *)memberSheet
+                                     mute:(BOOL)mute
+                              changeBlock:(void(^)(BOOL needChange))changeBlock {
     if (!self.streamerPresenter.pushStreamStarted) {
         [PLVLSUtils showToastWithMessage:@"请先上课" inView:self.view];
         if (changeBlock) { changeBlock(NO); }
@@ -481,6 +487,17 @@ PLVRTCStreamerPresenterDelegate
             if (changeBlock) { changeBlock(YES); }
         }];
     }
+}
+
+- (void)banUsersInMemberSheet:(PLVLSMemberSheet *)memberSheet
+                       userId:(NSString *)userId
+                       banned:(BOOL)banned {
+    [self.memberPresenter banUserWithUserId:userId banned:banned];
+}
+
+- (void)kickUsersInMemberSheet:(PLVLSMemberSheet *)memberSheet
+                        userId:(NSString *)userId {
+    [self.memberPresenter removeUserWithUserId:userId];
 }
 
 #pragma mark - PLVSDocumentAreaView Delegate
@@ -522,7 +539,14 @@ PLVRTCStreamerPresenterDelegate
 //    NSLog(@"receiveMessage: %@", subEvent);
 }
 
-#pragma mark - PLVRTCStreamerPresenterDelegate
+#pragma mark PLVMemberPresenterDelegate
+
+- (void)userListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter {
+    [_memberSheet updateUserList:[self.memberPresenter userList] userCount:self.memberPresenter.userCount];
+}
+
+#pragma mark - PLVStreamerPresenterDelegate
+
 /// ‘房间加入状态’ 发生改变
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRtcRoomJoinStatus:(PLVStreamerPresenterRoomJoinStatus)currentRtcRoomJoinStatus inRTCRoomChanged:(BOOL)inRTCRoomChanged inRTCRoom:(BOOL)inRTCRoom{
     if (inRTCRoomChanged) {
@@ -539,17 +563,17 @@ PLVRTCStreamerPresenterDelegate
 }
 
 /// ’等待连麦用户数组‘ 发生改变
-- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicWaitUserListRefresh:(NSArray *)waitUserArray newWaitUserAdded:(BOOL)newWaitUserAdded{
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicWaitUserListRefresh:(NSArray <PLVLinkMicWaitUser *>*)waitUserArray newWaitUserAdded:(BOOL)newWaitUserAdded{
     if (newWaitUserAdded) {
         [self.statusAreaView receivedNewJoinLinkMicRequest];
     }
-    [self.memberSheet refreshUserListWithLinkMicWaitUserArray:waitUserArray];
+    [self.memberPresenter refreshUserListWithLinkMicWaitUserArray:waitUserArray];
 }
 
 /// ’RTC房间在线用户数组‘ 发生改变
-- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicOnlineUserListRefresh:(NSArray *)onlineUserArray{
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray{
     [self.linkMicAreaView reloadLinkMicUserWindows];
-    [self.memberSheet refreshUserListWithLinkMicOnlineUserArray:onlineUserArray];
+    [self.memberPresenter refreshUserListWithLinkMicOnlineUserArray:onlineUserArray];
 }
 
 /// ‘是否推流已开始’ 发生变化
@@ -557,7 +581,7 @@ PLVRTCStreamerPresenterDelegate
 }
 
 /// ’已有效推流时长‘ 发生变化
-- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter pushStreamValidDurationDidChanged:(NSTimeInterval)pushStreamValidDuration{
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentPushStreamValidDuration:(NSTimeInterval)pushStreamValidDuration{
     self.statusAreaView.duration = pushStreamValidDuration;
 }
 

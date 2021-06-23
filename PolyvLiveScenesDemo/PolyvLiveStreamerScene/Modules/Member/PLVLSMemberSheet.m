@@ -16,23 +16,18 @@
 
 /// 模块
 #import "PLVRoomDataManager.h"
-#import "PLVMemberPresenter.h"
 #import "PLVChatUser.h"
 
 /// 依赖库
-#import <PLVLiveScenesSDK/PLVChatroomManager.h>
-#import <PolyvFoundationSDK/PLVColorUtil.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
 
 @interface PLVLSMemberSheet ()<
-PLVMemberPresenterProtocol,
-PLVLSMemberCellProtocol,
+PLVLSMemberCellDelegate,
 UITableViewDelegate,
 UITableViewDataSource
 >
-
-/// 模块
-@property (nonatomic, strong) PLVMemberPresenter *presenter;
 
 /// UI
 @property (nonatomic, strong) UILabel *titleLabel;
@@ -43,31 +38,25 @@ UITableViewDataSource
 @property (nonatomic, strong) UITableView *tableView;
 
 /// 数据
-@property (nonatomic, copy) NSArray *userArray;
+@property (nonatomic, strong) NSArray <PLVChatUser *> *userList;
+@property (nonatomic, assign) NSInteger userCount;
 @property (nonatomic, assign) BOOL tableViewEditing; // 列表是否处于左滑中状态
 @property (nonatomic, assign) BOOL delayReload; // 是否在左滑时遇到列表刷新通知
-@property (nonatomic, assign) CGFloat sheetWidth; // 父类数据
 @property (nonatomic, assign) BOOL showLeftDragAnimation; // 显示左滑动画
 @end
 
 @implementation PLVLSMemberSheet
 
-@synthesize sheetWidth = _sheetWidth;
+#pragma mark - [ Life Cycle ]
 
-#pragma mark - Life Cycle
-
-- (instancetype)init {
+- (instancetype)initWithUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount {
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
     self = [super initWithSheetWidth:screenWidth * 0.52];
     if (self) {
-        [self.presenter start];
+        self.userList = userList;
+        self.userCount = userCount;
         
-        [self.contentView addSubview:self.titleLabel];
-        [self.contentView addSubview:self.countLabel];
-        [self.contentView addSubview:self.leaveMicButton];
-        [self.contentView addSubview:self.muteButton];
-        [self.contentView addSubview:self.titleLine];
-        [self.contentView addSubview:self.tableView];
+        [self setupUI];
     }
     return self;
 }
@@ -92,18 +81,39 @@ UITableViewDataSource
     self.tableView.frame = CGRectMake(16, tableViewOriginY, CGRectGetWidth(self.titleLine.frame), self.bounds.size.height - tableViewOriginY);
 }
 
-- (void)dealloc {
-    [_presenter stop];
+#pragma mark - [ Public Method ]
+
+- (void)updateUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount {
+    self.userList = userList;
+    self.userCount = userCount;
+    
+    [self updateUI];
 }
 
-#pragma mark - Override
-- (void)showInView:(UIView *)parentView{
-    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-    self.sheetWidth = screenWidth * 0.52;
-    [super showInView:parentView]; /// TODO: 改造初始化该类的过程
+#pragma mark - [Private Method ]
+
+- (void)setupUI {
+    [self.contentView addSubview:self.titleLabel];
+    [self.contentView addSubview:self.countLabel];
+    [self.contentView addSubview:self.leaveMicButton];
+    [self.contentView addSubview:self.muteButton];
+    [self.contentView addSubview:self.titleLine];
+    [self.contentView addSubview:self.tableView];
 }
 
-#pragma mark - Getter & Setter
+- (void)updateUI {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.countLabel.text = [NSString stringWithFormat:@"(%zd人)", self.userCount];
+        
+        if (self.tableViewEditing) {
+            self.delayReload = YES;
+        } else {
+            [self.tableView reloadData];
+        }
+    });
+}
+
+#pragma mark Getter & Setter
 
 - (UILabel *)titleLabel {
     if (!_titleLabel) {
@@ -120,6 +130,7 @@ UITableViewDataSource
         _countLabel = [[UILabel alloc] init];
         _countLabel.font = [UIFont systemFontOfSize:12];
         _countLabel.textColor = [PLVColorUtil colorFromHexString:@"#cfd1d6"];
+        _countLabel.text = [NSString stringWithFormat:@"(%zd人)", self.userCount];
     }
     return _countLabel;
 }
@@ -181,48 +192,7 @@ UITableViewDataSource
     return _tableView;
 }
 
-- (PLVMemberPresenter *)presenter {
-    if (!_presenter) {
-        _presenter = [[PLVMemberPresenter alloc] init];
-        _presenter.delegate = self;
-    }
-    return _presenter;
-}
-
-#pragma mark - Action
-
-- (void)leaveMicButtonAction {
-    if ([self.delegate respondsToSelector:@selector(memberSheet_didTapCloseAllUserLinkMicChangeBlock:)]) {
-        [self.delegate memberSheet_didTapCloseAllUserLinkMicChangeBlock:^(BOOL needChange) {
-        }];
-    }
-}
-
-- (void)muteButtonAction {
-    if ([self.delegate respondsToSelector:@selector(memberSheet_didTapMuteAllUserMic:changeBlock:)]) {
-        __weak typeof(self) weakSelf = self;
-        [self.delegate memberSheet_didTapMuteAllUserMic:!self.muteButton.selected changeBlock:^(BOOL needChange) {
-            if (needChange) {
-                weakSelf.muteButton.selected = !weakSelf.muteButton.selected;
-            }
-        }];
-    }
-}
-
-#pragma mark - Public
-- (void)refreshUserListWithLinkMicWaitUserArray:(NSArray *)linkMicWaitUserArray{
-    [self.presenter refreshUserListWithLinkMicWaitUserArray:linkMicWaitUserArray];
-}
-
-- (void)refreshUserListWithLinkMicOnlineUserArray:(NSArray *)linkMicOnlineUserArray{
-    [self.presenter refreshUserListWithLinkMicOnlineUserArray:linkMicOnlineUserArray];
-}
-
-#pragma mark - Private
-
-- (void)updateMemberCount {
-    self.countLabel.text = [NSString stringWithFormat:@"(%zd人)", self.presenter.userCount];
-}
+#pragma mark Utils
 
 - (BOOL)isLoginUser:(NSString *)userId {
     if (!userId || ![userId isKindOfClass:[NSString class]]) {
@@ -233,31 +203,33 @@ UITableViewDataSource
     return isLoginUser;
 }
 
-- (BOOL)isGeneralUserType:(PLVRoomUserType)userType {
-    // 普通观众
-    return !(userType == PLVRoomUserTypeGuest ||
-            userType == PLVRoomUserTypeManager ||
-            userType == PLVRoomUserTypeTeacher ||
-            userType == PLVRoomUserTypeAssistant);
+#pragma mark - [ Event ]
+
+#pragma mark Action
+
+- (void)leaveMicButtonAction {
+    if ([self.delegate respondsToSelector:@selector(didTapCloseAllUserLinkMicInMemberSheet:changeBlock:)]) {
+        [self.delegate didTapCloseAllUserLinkMicInMemberSheet:self
+                                                  changeBlock:nil];
+    }
 }
 
-#pragma mark - PLVMemberPresenterProtocol
-
-- (void)userListChanged {
-    self.userArray = [self.presenter userList];
-    
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self updateMemberCount];
-        
-        if (self.tableViewEditing) {
-            self.delayReload = YES;
-        } else {
-            [self.tableView reloadData];
-        }
-    });
+- (void)muteButtonAction {
+    if ([self.delegate respondsToSelector:@selector(didTapMuteAllUserMicInMemberSheet:mute:changeBlock:)]) {
+        __weak typeof(self) weakSelf = self;
+        [self.delegate didTapMuteAllUserMicInMemberSheet:self
+                                                    mute:!self.muteButton.selected
+                                             changeBlock:^(BOOL needChange) {
+            if (needChange) {
+                weakSelf.muteButton.selected = !weakSelf.muteButton.selected;
+            }
+        }];
+    }
 }
 
-#pragma mark - PLVLSMemberCell Protocol
+#pragma mark - [ Delegate ]
+
+#pragma mark PLVLSMemberCellDelegate
 
 - (void)memberCell_didEditing:(BOOL)editing {
     self.tableViewEditing = editing;
@@ -273,25 +245,31 @@ UITableViewDataSource
 - (void)memberCell_didTapBan:(BOOL)banned withUer:(PLVChatUser *)user {
     BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:banned bannedUserId:user.userId];
     if (success) {
-        [self.presenter banUserWithUserId:user.userId banned:banned];
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(banUsersInMemberSheet:userId:banned:)]) {
+            [self.delegate banUsersInMemberSheet:self userId:user.userId banned:banned];
+        }
     }
 }
 
 - (void)memberCell_didTapKickWithUer:(PLVChatUser *)user {
     BOOL success = [[PLVChatroomManager sharedManager] sendKickMessageWithUserId:user.userId];
     if (success) {
-        [self.presenter removeUserWithUserId:user.userId];
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(kickUsersInMemberSheet:userId:)]) {
+            [self.delegate kickUsersInMemberSheet:self userId:user.userId];
+        }
     }
 }
 
-#pragma mark -  UITableViewDelegate & DataSource
+#pragma mark UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [self.userArray count];;
+    return [self.userList count];;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row >= [self.userArray count]) {
+    if (indexPath.row >= [self.userList count]) {
         return [PLVLSMemberCell new];
     }
     
@@ -301,12 +279,12 @@ UITableViewDataSource
         cell = [[PLVLSMemberCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
         cell.delegate = self;
     }
-    PLVChatUser *user = self.userArray[indexPath.row];
+    PLVChatUser *user = self.userList[indexPath.row];
     [cell updateUser:user];
     
     // 第一个普通观众显示左滑动画
     if (!self.showLeftDragAnimation &&
-        [self isGeneralUserType:user.userType]) {
+        !user.specialIdentity) {
         self.showLeftDragAnimation = YES;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [cell showLeftDragAnimation];
@@ -316,12 +294,16 @@ UITableViewDataSource
     return cell;
 }
 
+#pragma mark UITableViewDelegate
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     [tableView deselectRowAtIndexPath:indexPath animated:NO];
     if (self.tableViewEditing) {
         [[NSNotificationCenter defaultCenter] postNotificationName:PLVLSMemberCellNotification object:nil];
     }
 }
+
+#pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     if (self.tableViewEditing) {

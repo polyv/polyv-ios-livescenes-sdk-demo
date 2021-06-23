@@ -49,6 +49,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param msgId 后端返回的消息ID
 - (void)chatroomPresenter_receiveImageWarningWithMsgId:(NSString *)msgId;
 
+/// 发送图片失败时触发
+/// @param message 图片消息数据模型
+- (void)chatroomPresenter_sendImageMessageFaild:(PLVImageMessage *)message;
+
+/// 发送图片成功时（收到socket消息回调）触发
+/// @param message 图片消息数据模型(已更新了数据模型中的msgId字段)
+- (void)chatroomPresenter_sendImageMessageSuccess:(PLVImageMessage *)message;
+
 @end
 
 /*
@@ -65,6 +73,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前登陆用户是否是特殊身份（譬如讲师），默认为NO，为YES时字段closeRoom、banned永远为NO
 @property (nonatomic, assign) BOOL specialRole;
 
+/// 聊天室是否被关闭，默认为NO
+@property (nonatomic, assign, readonly) BOOL closeRoom;
+
 /// 初始化方法
 /// @param count 每次调用接口获取的聊天消息条数，不得小于1
 /// @param allow 是否允许使用分房间功能
@@ -76,24 +87,32 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 发送私聊提问消息
 /// @param content 消息文本
-/// @return 消息数据模型
+/// @return 消息数据模型, 发送失败时，返回nil
 - (PLVChatModel * _Nullable)sendQuesstionMessage:(NSString *)content;
 
 /// 发送文本消息
 /// @param content 消息文本
-/// @return 消息数据模型
+/// @return 消息数据模型, 发送失败时，返回nil
 - (PLVChatModel * _Nullable)sendSpeakMessage:(NSString *)content;
 
-/// 发送文本消息
+/// 发送文本消息（包括回复类型的文本消息）
 /// @param content 消息文本
 /// @param replyChatModel 被回复消息模型（非回复消息该字段为nil），仅在属性specialRole为YES时生效
-/// @return 消息数据模型
+/// @return 消息数据模型, 发送失败时，返回nil
 - (PLVChatModel * _Nullable)sendSpeakMessage:(NSString *)content
-                    replyChatModel:(PLVChatModel * _Nullable)replyChatModel;
+                              replyChatModel:(PLVChatModel * _Nullable)replyChatModel;
+
+/// 发送文本消息（包括回复类型的文本消息）
+/// @param content 消息文本
+/// @param replyChatModel 被回复消息模型（非回复消息该字段为nil），仅在属性specialRole为YES时生效
+/// @return 消息数据模型（开始进入socket发送环节即返回消息数据模型，否则返回nil，发送成功与否关注属性msgState的变化）
+- (PLVChatModel * _Nullable)chatModelWithMsgStateForSendSpeakMessage:(NSString *)content
+                                                      replyChatModel:(PLVChatModel * _Nullable)replyChatModel;
+
 
 /// 发送图片消息
 /// @param image 图片
-/// @return 消息数据模型
+/// @return 消息数据模型（开始上传图片即返回消息数据模型，否则返回nil）
 - (PLVChatModel * _Nullable)sendImageMessage:(UIImage *)image;
 
 /// 发送自定义消息
@@ -106,6 +125,10 @@ NS_ASSUME_NONNULL_BEGIN
                               data:(NSDictionary *)data
                                tip:(NSString * _Nullable)tip
                           emitMode:(int)emitMode;
+
+/// 发送全体禁言、解禁消息，，讲师端专用接口
+/// @param closeRoom YES:全体禁言；NO：全体解禁
+- (BOOL)sendCloseRoom:(BOOL)closeRoom;
 
 /// 本地生成一条教师消息，作为私聊窗口的第一条消息
 /// 生成后的消息数据模型通过回调 '-chatroomPresenter_didReceiveAnswerChatModel:' 返回

@@ -34,6 +34,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 获取历史记录成功的次数
 @property (nonatomic, assign) NSInteger getHistoryTime;
 
+#pragma mark 只读属性
+/// socket处于已连接且登陆成功的状态时为YES，默认为NO
+@property (nonatomic, assign, readonly) BOOL online;
+
 @end
 
 @implementation PLVChatroomPresenter {
@@ -119,6 +123,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     return [PLVChatroomManager sharedManager].specialRole;
 }
 
+- (BOOL)closeRoom {
+    return [PLVChatroomManager sharedManager].closeRoom;
+}
+
+- (BOOL)online {
+    return [PLVChatroomManager sharedManager].online;
+}
+
 #pragma mark - 发送消息
 
 /// 根据roomData生成当前用户模型
@@ -167,7 +179,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
         return nil;
     }
-    if ([PLVChatroomManager sharedManager].closeRoom || ![PLVChatroomManager sharedManager].online) {
+    if (!self.online ||
+        (!self.specialRole && self.closeRoom)) {
         return nil;
     }
     
@@ -208,13 +221,68 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     return success ? model : nil;
 }
 
+- (PLVChatModel *)chatModelWithMsgStateForSendSpeakMessage:(NSString *)content
+                                            replyChatModel:(PLVChatModel *)replyChatModel {
+    if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
+        return nil;
+    }
+    if (!self.online ||
+        (!self.specialRole && self.closeRoom)) {
+        return nil;
+    }
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = [self loginChatUser];
+    
+    PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
+    message.content = content;
+    model.message = message;
+    
+    if (replyChatModel && replyChatModel.message &&
+        ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]] ||
+         [replyChatModel.message isKindOfClass:[PLVImageMessage class]] ||
+         [replyChatModel.message isKindOfClass:[PLVQuoteMessage class]])) {
+        PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
+        message.content = content;
+        message.quoteUserId = replyChatModel.user.userId;
+        message.quoteUserName = replyChatModel.user.userName;
+        if ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]]) {
+            PLVSpeakMessage *speakMessage = replyChatModel.message;
+            message.quoteContent = speakMessage.content;
+        } else if ([replyChatModel.message isKindOfClass:[PLVImageMessage class]]) {
+            PLVImageMessage *imageMessage = replyChatModel.message;
+            message.quoteImageUrl = imageMessage.imageUrl;
+            message.quoteImageSize = imageMessage.imageSize;
+        } else if ([replyChatModel.message isKindOfClass:[PLVQuoteMessage class]]) {
+            PLVQuoteMessage *quoteMessage = replyChatModel.message;
+            message.quoteContent = quoteMessage.content;
+        }
+        model.message = message;
+    }
+    
+    if ([PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
+        model.msgState = PLVChatMsgStateFail;
+        return model;
+    }
+    
+    model.msgState = PLVChatMsgStateSending;
+    BOOL success  = [[PLVChatroomManager sharedManager] sendSpeakMessage:model.message replyMsgId:replyChatModel.msgId needIdCallback:YES callback:^(NSString * _Nonnull msgId) {
+        model.msgState = msgId ? PLVChatMsgStateSuccess : PLVChatMsgStateFail;
+    }];
+    if (!success) {
+        model.msgState = PLVChatMsgStateFail;
+    }
+    return model;
+}
+
 #pragma mark 图片消息
 
 - (PLVChatModel *)sendImageMessage:(UIImage *)image {
     if (!image || ![image isKindOfClass:[UIImage class]]) {
         return nil;
     }
-    if ([PLVChatroomManager sharedManager].closeRoom || ![PLVChatroomManager sharedManager].online) {
+    if (!self.online ||
+        (!self.specialRole && self.closeRoom)) {
         return nil;
     }
     
@@ -242,7 +310,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         !tip || ![tip isKindOfClass:[NSString class]] || tip.length == 0) {
         return NO;
     }
-    if ([PLVChatroomManager sharedManager].closeRoom || ![PLVChatroomManager sharedManager].online) {
+    if (!self.online ||
+        (!self.specialRole && self.closeRoom)) {
         return nil;
     }
     
@@ -258,6 +327,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     BOOL success = [[PLVChatroomManager sharedManager] sendCustonMessage:message];
     return success;
+}
+
+#pragma mark 全体禁言、解禁
+
+- (BOOL)sendCloseRoom:(BOOL)closeRoom {
+    return [[PLVChatroomManager sharedManager] sendCloseRoom:closeRoom];
 }
 
 #pragma mark 生成教师回复信息
@@ -344,6 +419,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         return [self modelQuoteChatDict:dict];
     } else if ([msgType isEqualToString:@"image"]) {
         return [self modelImageChatDict:dict];
+    } else if ([msgType isEqualToString:@"reward"]) {
+        return [self modelRewardChatDict:dict];
     }
     return model;
 }
@@ -352,6 +429,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 图片消息 @"image"
 /// 文本消息 @"speak"
 /// 引用消息 @"quote"
+/// 打赏消息 @"reward"
 - (NSString *)messageTypeWithHistoryDict:(NSDictionary *)dict {
     NSString *msgSource = PLV_SafeStringForDictKey(dict, @"msgSource");
     NSString *msgType = PLV_SafeStringForDictKey(dict, @"msgType");
@@ -366,6 +444,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
             NSDictionary *quoteDict = PLV_SafeDictionaryForDictKey(dict, @"quote");
             return quoteDict ? @"quote" : @"speak";
         }
+    } else if (msgSource &&
+               [msgSource isEqualToString:@"reward"]) { // 打赏消息：红包、礼物
+        return @"reward";
     }
     return nil;
 }
@@ -436,6 +517,40 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.imageId = imageId;
     message.imageUrl = imageUrl;
     message.imageSize = CGSizeMake(width, height);
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = user;
+    model.message = message;
+    return model;
+}
+
+- (PLVChatModel *)modelRewardChatDict:(NSDictionary *)dict {
+    NSDictionary *userDict = PLV_SafeDictionaryForDictKey(dict, @"user");
+    PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+    
+    NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
+    
+    // 礼物消息
+    NSDictionary *content = PLV_SafeDictionaryForDictKey(dict, @"content");
+
+    // 打赏的用户
+    NSString *unick = PLV_SafeStringForDictKey(content, @"unick");
+    
+    // 打赏内容：礼物打赏为礼物名称，现金打赏为金额
+    NSString *rewardContent = PLV_SafeStringForDictKey(content, @"rewardContent");
+    
+    // 礼物打赏为礼物图片，现金打赏为空
+    NSString *gimg = PLV_SafeStringForDictKey(content, @"gimg");
+    if ([PLVFdUtil checkStringUseable:gimg] &&
+        ![gimg containsString:@"http"]) {
+        gimg = [NSString stringWithFormat:@"https:%@", gimg];
+    }
+    
+    PLVRewardMessage *message = [[PLVRewardMessage alloc] init];
+    message.msgId = msgId;
+    message.unick = unick;
+    message.rewardContent = rewardContent;
+    message.gimg = gimg;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;
@@ -540,6 +655,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self removeContentEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"REMOVE_HISTORY"]) { // admin emptied the chatroom
         [self removeHistoryEvent];
+    } else if ([subEvent isEqualToString:@"REWARD"]) {
+        [self rewardMessageEvent:jsonDict];
     }
 }
 
@@ -680,6 +797,52 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
 }
 
+/// 有用户发送打赏消息
+- (void)rewardMessageEvent:(NSDictionary *)data {
+    NSString *status = PLV_SafeStringForDictKey(data, @"status");
+    // status存在时为单播消息
+    if (status) {
+        return;
+    }
+    
+    NSDictionary *content = PLV_SafeDictionaryForDictKey(data, @"content");
+    if (!content ||
+        ![content isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    
+    NSDictionary *rewardUser = PLV_SafeDictionaryForDictKey(content, @"rewardUser");
+    if (!rewardUser ||
+        ![rewardUser isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    
+    NSString *userId = PLV_SafeStringForDictKey(rewardUser, @"userId");
+    NSString *gimg = PLV_SafeStringForDictKey(content, @"gimg");
+    NSString *goodNum = PLV_SafeStringForDictKey(content, @"goodNum");
+    NSString *rewardContent = PLV_SafeStringForDictKey(content, @"rewardContent");
+    NSString *unick = PLV_SafeStringForDictKey(content, @"unick");
+    
+    if ([PLVFdUtil checkStringUseable:gimg] &&
+        ![gimg containsString:@"http"]) {
+        gimg = [NSString stringWithFormat:@"https:%@", gimg];
+    }
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    PLVChatUser *chatUser = [[PLVChatUser alloc] init];
+    chatUser.userId = userId;
+    chatUser.userName = unick;
+    model.user = chatUser;
+    
+    PLVRewardMessage *message = [[PLVRewardMessage alloc] init];
+    message.gimg = gimg;
+    message.goodNum = goodNum;
+    message.rewardContent = rewardContent;
+    message.unick = unick;
+    model.message = message;
+    [self cachChatModel:model];
+}
+
 /// 删除一条消息事件
 - (void)removeContentEvent:(NSDictionary *)data {
     NSString *msgId = PLV_SafeStringForDictKey(data, @"id");
@@ -732,11 +895,17 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 }
 
 - (void)chatroomManager_sendImageMessageFaild:(PLVImageMessage *)message {
-    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomPresenter_sendImageMessageFaild:)]) {
+        [self.delegate chatroomPresenter_sendImageMessageFaild:message];
+    }
 }
 
 - (void)chatroomManager_sendImageMessageSuccess:(PLVImageMessage *)message {
-    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomPresenter_sendImageMessageSuccess:)]) {
+        [self.delegate chatroomPresenter_sendImageMessageSuccess:message];
+    }
 }
 
 - (void)chatroomManager_sendImageMessage:(PLVImageMessage *)message updateProgress:(CGFloat)progress {

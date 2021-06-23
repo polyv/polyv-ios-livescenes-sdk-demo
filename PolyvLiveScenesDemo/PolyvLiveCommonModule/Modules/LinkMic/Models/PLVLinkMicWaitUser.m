@@ -115,7 +115,7 @@
     if (self.wantAllowJoinLinkMicBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.wantAllowJoinLinkMicBlock(weakSelf);
+            if (weakSelf) { weakSelf.wantAllowJoinLinkMicBlock(weakSelf); }
         })
     }
 }

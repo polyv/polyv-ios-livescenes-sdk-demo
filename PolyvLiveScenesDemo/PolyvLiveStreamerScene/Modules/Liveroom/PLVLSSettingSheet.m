@@ -162,12 +162,12 @@ UITableViewDelegate
 - (NSArray *)resolutionTypeArray {
     if (!_resolutionTypeArray) {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        if (roomData.maxResolution == PLVLSResolutionType720P) {
-            _resolutionTypeArray = @[@(PLVLSResolutionType720P), @(PLVLSResolutionType360P), @(PLVLSResolutionType180P)];
-        } else if (roomData.maxResolution == PLVLSResolutionType360P) {
-            _resolutionTypeArray = @[@(PLVLSResolutionType360P), @(PLVLSResolutionType180P)];
+        if (roomData.maxResolution == PLVResolutionType720P) {
+            _resolutionTypeArray = @[@(PLVResolutionType720P), @(PLVResolutionType360P), @(PLVResolutionType180P)];
+        } else if (roomData.maxResolution == PLVResolutionType360P) {
+            _resolutionTypeArray = @[@(PLVResolutionType360P), @(PLVResolutionType180P)];
         } else {
-            _resolutionTypeArray = @[@(PLVLSResolutionType180P)];
+            _resolutionTypeArray = @[@(PLVResolutionType180P)];
         }
     }
     return _resolutionTypeArray;
@@ -177,7 +177,7 @@ UITableViewDelegate
     if (!_resolutionStringArray) {
         NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:self.resolutionTypeArray.count];
         for (int i = 0; i < [self.resolutionTypeArray count]; i++) {
-            PLVLSResolutionType resolutionType = [self.resolutionTypeArray[i] integerValue];
+            PLVResolutionType resolutionType = [self.resolutionTypeArray[i] integerValue];
             NSString *string = [self stringWithResolutionType:resolutionType];
             [muArray addObject:string];
         }
@@ -209,7 +209,7 @@ UITableViewDelegate
         [cell setTitle:@"清晰度" optionsArray:self.resolutionStringArray selectedIndex:selectedIndex];
         __weak typeof(self) weakSelf = self;
         [cell setDidSelectedAtIndex:^(NSInteger index) {
-            PLVLSResolutionType resolutionType = [weakSelf.resolutionTypeArray[index] integerValue];
+            PLVResolutionType resolutionType = [weakSelf.resolutionTypeArray[index] integerValue];
             [weakSelf saveSelectedResolution:resolutionType];
             if (weakSelf.delegate) {
                 [weakSelf.delegate settingSheet_didChangeResolution:resolutionType];
@@ -227,9 +227,9 @@ UITableViewDelegate
 
 #pragma mark - Public
 
-- (PLVLSResolutionType)resolution{
+- (PLVResolutionType)resolution{
     NSInteger index = [self selectedResolutionIndex];
-    PLVLSResolutionType resolutionType = [self.resolutionTypeArray[index] integerValue];
+    PLVResolutionType resolutionType = [self.resolutionTypeArray[index] integerValue];
     return resolutionType;
 }
 
@@ -237,16 +237,16 @@ UITableViewDelegate
 #pragma mark - Private
 
 /// 将清晰度枚举值转换成字符串
-- (NSString *)stringWithResolutionType:(PLVLSResolutionType)resolutionType {
+- (NSString *)stringWithResolutionType:(PLVResolutionType)resolutionType {
     NSString *string = nil;
     switch (resolutionType) {
-        case PLVLSResolutionType720P:
+        case PLVResolutionType720P:
             string = @"超清";
             break;
-        case PLVLSResolutionType360P:
+        case PLVResolutionType360P:
             string = @"高清";
             break;
-        case PLVLSResolutionType180P:
+        case PLVResolutionType180P:
             string = @"标清";
             break;
     }
@@ -257,9 +257,9 @@ UITableViewDelegate
 - (NSInteger)selectedResolutionIndex {
     NSInteger selectedIndex = 0;
     
-    PLVLSResolutionType saveResolution = [[NSUserDefaults standardUserDefaults] integerForKey:kSettingResolutionKey];
+    PLVResolutionType saveResolution = [[NSUserDefaults standardUserDefaults] integerForKey:kSettingResolutionKey];
     for (int i = 0; i < [self.resolutionTypeArray count]; i++) {
-        PLVLSResolutionType resolutionType = [self.resolutionTypeArray[i] integerValue];
+        PLVResolutionType resolutionType = [self.resolutionTypeArray[i] integerValue];
         if (resolutionType == saveResolution) {
             selectedIndex = i;
             break;
@@ -269,7 +269,7 @@ UITableViewDelegate
 }
 
 /// 保存当前选择的清晰度到本地
-- (void)saveSelectedResolution:(PLVLSResolutionType)resolutionType {
+- (void)saveSelectedResolution:(PLVResolutionType)resolutionType {
     [[NSUserDefaults standardUserDefaults] setInteger:resolutionType forKey:kSettingResolutionKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }

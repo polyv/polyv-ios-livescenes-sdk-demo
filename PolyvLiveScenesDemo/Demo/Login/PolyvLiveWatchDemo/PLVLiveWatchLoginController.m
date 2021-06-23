@@ -266,10 +266,8 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
             if (PushOrModel) {
                 [self.navigationController pushViewController:cloudClassVC animated:YES];
             }else{
-                UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:cloudClassVC];
-                nav.navigationBarHidden = YES;
-                nav.modalPresentationStyle = UIModalPresentationFullScreen;
-                [self presentViewController:nav animated:YES completion:nil];
+                cloudClassVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                [self presentViewController:cloudClassVC animated:YES completion:nil];
             }
             
             PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;

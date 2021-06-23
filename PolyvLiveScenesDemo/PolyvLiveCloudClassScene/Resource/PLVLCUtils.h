@@ -25,8 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIImage *)imageForChatroomResource:(NSString *)imageName;
 
-+ (UIImage *)imageForCastResource:(NSString *)imageName;
-
 @end
 
 NS_ASSUME_NONNULL_END

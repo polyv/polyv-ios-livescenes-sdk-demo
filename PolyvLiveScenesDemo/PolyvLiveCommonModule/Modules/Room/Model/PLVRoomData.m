@@ -30,24 +30,7 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 
 @implementation PLVRoomData
 
-#pragma mark - Getter
-
-- (NSString *)sessionId {
-    if (self.channelInfo) {
-        return self.channelInfo.sessionId;
-    } else {
-        return _sessionId;
-    }
-}
-
-#pragma mark - 修改属性
-
-/// 配置菜单信息
-- (void)updateMenuInfo:(PLVLiveVideoChannelMenuInfo *)menuInfo {
-    self.menuInfo = menuInfo;
-    self.likeCount = menuInfo.likes.unsignedIntegerValue;
-    self.watchCount = menuInfo.pageView.unsignedIntegerValue;
-}
+#pragma mark - [ Public Method ]
 
 - (void)setupRoomUser:(PLVRoomUser *)roomUser {
     if (!roomUser) {
@@ -66,7 +49,7 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
     self.customParam = param;
 }
 
-#pragma mark - 接口请求
+#pragma mark HTTP Request
 
 - (void)requestChannelDetail:(void (^)(PLVLiveVideoChannelMenuInfo *))completion{
     if (!self.channelId || ![self.channelId isKindOfClass:[NSString class]]) {
@@ -131,9 +114,65 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
     }];
 }
 
-#pragma mark 获取商品列表
-- (void)requestCommodityList:(NSUInteger)channelId rank:(NSUInteger)rank count:(NSUInteger)count completion:(void (^)(NSUInteger total, NSArray<PLVCommodityModel *> *commoditys))completion failure:(void (^)(NSError *))failure {
-    [PLVLiveVideoAPI loadCommodityList:channelId rank:rank count:count completion:completion failure:failure];
+#pragma mark Utils
+
++ (NSString * _Nullable)resolutionStringWithType:(PLVResolutionType)resolutionType {
+    NSString *string = nil;
+    switch (resolutionType) {
+        case PLVResolutionType720P:
+            string = @"超清";
+            break;
+        case PLVResolutionType360P:
+            string = @"高清";
+            break;
+        case PLVResolutionType180P:
+            string = @"标清";
+            break;
+    }
+    return string;
+}
+
++ (PLVResolutionType)resolutionTypeWithStreamQuality:(PLVBLinkMicStreamQuality)streamQuality {
+    PLVResolutionType resolution = PLVResolutionType180P;
+    if (streamQuality == PLVBLinkMicStreamQuality180P) {
+        resolution = PLVResolutionType180P;
+    }else if (streamQuality == PLVBLinkMicStreamQuality360P){
+        resolution = PLVResolutionType360P;
+    }else if (streamQuality == PLVBLinkMicStreamQuality720P){
+        resolution = PLVResolutionType720P;
+    }
+    return resolution;
+}
+
++ (PLVBLinkMicStreamQuality)streamQualityWithResolutionType:(PLVResolutionType)resolution {
+    PLVBLinkMicStreamQuality streamQuality = PLVBLinkMicStreamQuality180P;
+    if (resolution == PLVResolutionType180P) {
+        streamQuality = PLVBLinkMicStreamQuality180P;
+    }else if (resolution == PLVResolutionType360P){
+        streamQuality = PLVBLinkMicStreamQuality360P;
+    }else if (resolution == PLVResolutionType720P){
+        streamQuality = PLVBLinkMicStreamQuality720P;
+    }
+    return streamQuality;
+}
+
+#pragma mark - [ Private Method ]
+
+/// 配置菜单信息
+- (void)updateMenuInfo:(PLVLiveVideoChannelMenuInfo *)menuInfo {
+    self.menuInfo = menuInfo;
+    self.likeCount = menuInfo.likes.unsignedIntegerValue;
+    self.watchCount = menuInfo.pageView.unsignedIntegerValue;
+}
+
+#pragma mark Getter
+
+- (NSString *)sessionId {
+    if (self.channelInfo) {
+        return self.channelInfo.sessionId;
+    } else {
+        return _sessionId;
+    }
 }
 
 @end

@@ -10,7 +10,9 @@
 
 #import "PLVLiveStreamerPrivacyViewController.h"
 #import "PLVLSStreamerViewController.h"
+#import "PLVSAStreamerViewController.h"
 
+#import "PLVLoginTextField.h"
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 #import "PLVBugReporter.h"
@@ -20,22 +22,20 @@
 static NSString * const kPrivacyPolicy = @"https://s2.videocc.net/app-simple-pages/privacy-policy/index.html";
 static NSString * const kUserProtocol = @"https://s2.videocc.net/app-simple-pages/user-agreement/index.html";
 static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserProtocol";
+static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 
 @interface PLVLiveStreamerLoginViewController () <UITextFieldDelegate>
 
+@property (nonatomic, strong) UIImageView *backgroundImageView; //背景图
 @property (nonatomic, strong) UILabel *lbTitle;             // 标题
-@property (nonatomic, strong) UITextField *tfChannelId;     // 频道文本
-@property (nonatomic, strong) UITextField *tfNickName;      // 昵称文本
-@property (nonatomic, strong) UITextField *tfPassword;      // 密码文本
+@property (nonatomic, strong) PLVLoginTextField *tfChannelId;     // 频道文本
+@property (nonatomic, strong) PLVLoginTextField *tfNickName;      // 昵称文本
+@property (nonatomic, strong) PLVLoginTextField *tfPassword;      // 密码文本
 @property (nonatomic, strong) UIButton *btnLogin;           // 登录按钮
+@property (nonatomic, strong) UIButton *rememberPasswordButton; // 记住密码按钮
 @property (nonatomic, strong) UIButton * btnAgree;          // 协议
 @property (nonatomic, strong) UIButton * btnPrivacyPolicy;  // 隐私协议
 @property (nonatomic, strong) UIButton * btnUserProtocol;   // 使用协议
-@property (nonatomic, strong) UIButton * btnMicSwitch;      // 麦克风开关
-@property (nonatomic, strong) UIButton * btnCameraSwitch;   // 照相机开关
-@property (nonatomic, strong) UIButton * btnCameraFront;    // 照相机方向
-@property (nonatomic, strong) UIView *lineView;             // 底部横线
-@property (nonatomic, strong) UILabel *lbLiveState;         //直播状态提示
 
 @end
 
@@ -47,12 +47,19 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     [super viewDidLoad];
     
     [self setupUI];
+    
+    [self writeUserInfo];
 }
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
     [self updateUI];
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    [PLVNetworkAccessibility stop];
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle{
@@ -69,27 +76,33 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
 
 #pragma mark - [ Private Methods ]
 - (void)setupUI {
-    self.view.backgroundColor = PLV_UIColorFromRGB(@"#1B202D");
-    
+    [self.view addSubview:self.backgroundImageView];
+
     [self.view addSubview:self.lbTitle];
     [self.view addSubview:self.tfChannelId];
-    [self.view addSubview:self.tfNickName];
     [self.view addSubview:self.tfPassword];
+    [self.view addSubview:self.tfNickName];
     [self.view addSubview:self.btnLogin];
+    [self.view addSubview:self.rememberPasswordButton];
     [self.view addSubview:self.btnAgree];
     [self.view addSubview:self.btnPrivacyPolicy];
     [self.view addSubview:self.btnUserProtocol];
-    [self.view addSubview:self.btnMicSwitch];
-    [self.view addSubview:self.btnCameraSwitch];
-    [self.view addSubview:self.btnCameraFront];
-    [self.view addSubview:self.lineView];
-    [self.view addSubview:self.lbLiveState];
     
     UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction:)];
     [self.view addGestureRecognizer:tapGes];
+    
+    for (UIView *textField in self.view.subviews) {
+        if ([textField isKindOfClass:PLVLoginTextField.class]) {
+            //使用了私有的实现修改UITextField里clearButton的图片
+            UIButton *clearButton = [textField valueForKey:@"_clearButton"];
+            [clearButton setImage:[[self class] imageWithImageName:@"plvls_login_clear_btn"] forState:UIControlStateNormal];
+        }
+    }
 }
 
 - (void)updateUI {
+    self.backgroundImageView.frame = self.view.bounds;
+    
     CGFloat marginTop = UIViewGetHeight(self.view) > 568 ? 90 : 45;
     
     self.lbTitle.frame = CGRectMake(0, marginTop + P_SafeAreaTopEdgeInsets(), UIViewGetWidth(self.view), 42);
@@ -98,23 +111,25 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     self.tfChannelId.frame = uiFrame;
     
     uiFrame.origin.y = UIViewGetBottom(self.tfChannelId) + 16;
-    self.tfNickName.frame = uiFrame;
-    
-    uiFrame.origin.y = UIViewGetBottom(self.tfNickName) + 16;
     self.tfPassword.frame = uiFrame;
     
-    uiFrame.origin.y = UIViewGetBottom(self.tfPassword) + 70;
+    uiFrame.origin.y = UIViewGetBottom(self.tfPassword) + 16;
+    self.tfNickName.frame = uiFrame;
+    
+    uiFrame.origin.y = UIViewGetBottom(self.tfNickName) + 29;
     self.btnLogin.frame = uiFrame;
     
+    // 记住密码
+    NSAttributedString *rememberPasswordAttributedTitle = [self.rememberPasswordButton attributedTitleForState:UIControlStateNormal];
+    self.rememberPasswordButton.frame = CGRectMake(63, UIViewGetBottom(self.btnLogin) + 24, rememberPasswordAttributedTitle.size.width + 22, 22);
+    
     // 协议
-    NSAttributedString *attributedTitle = [self.btnAgree attributedTitleForState:UIControlStateNormal];
-    self.btnAgree.frame = CGRectMake(0, UIViewGetBottom(self.btnLogin) + 13, 22 + attributedTitle.size.width, 22);
-    self.btnAgree.center = CGPointMake(self.btnLogin.center.x, self.btnAgree.center.y);
+    NSAttributedString *agreeAttributedTitle = [self.btnAgree attributedTitleForState:UIControlStateNormal];
+    self.btnAgree.frame = CGRectMake(UIViewGetLeft(self.rememberPasswordButton), UIViewGetBottom(self.rememberPasswordButton) + 16, 22 + agreeAttributedTitle.size.width, 22);
+    NSAttributedString *attrPrivacyPolicy = [agreeAttributedTitle attributedSubstringFromRange:NSMakeRange(7, 6)];
+    NSAttributedString *attrPrivacyPolicyRight = [agreeAttributedTitle attributedSubstringFromRange:NSMakeRange(13, 7)];
     
-    NSAttributedString *attrPrivacyPolicy = [attributedTitle attributedSubstringFromRange:NSMakeRange(7, 6)];
-    NSAttributedString *attrPrivacyPolicyRight = [attributedTitle attributedSubstringFromRange:NSMakeRange(13, 7)];
-    
-    NSAttributedString *attrUserProtocol = [attributedTitle attributedSubstringFromRange:NSMakeRange(14, 6)];
+    NSAttributedString *attrUserProtocol = [agreeAttributedTitle attributedSubstringFromRange:NSMakeRange(14, 6)];
     
     uiFrame = self.btnAgree.frame;
     uiFrame.size.width = attrPrivacyPolicy.size.width;
@@ -125,44 +140,33 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     uiFrame.origin.x = UIViewGetRight(self.btnAgree) - uiFrame.size.width;
     self.btnUserProtocol.frame = uiFrame;
     
-
-    // 开关
-    CGFloat marginLeft = 48, btnWidth = 36, tipHeight = 20 + 1 + 12 + 17;
-    CGFloat x = (UIViewGetWidth(self.view) - 3 * btnWidth - 2 * marginLeft) / 2.0f;
-    CGFloat y = UIViewGetBottom(self.btnAgree) + 145;
-    if (y + btnWidth + 30 + tipHeight > UIViewGetHeight(self.view)) { // 针对小屏手机
-        y = UIViewGetBottom(self.btnAgree) + (UIViewGetHeight(self.view) - UIViewGetBottom(self.btnAgree) - btnWidth - tipHeight) / 2.0f;
-    }
-    
-    uiFrame = CGRectMake(x, y, btnWidth, btnWidth);
-    self.btnMicSwitch.frame = uiFrame;
-    
-    uiFrame.origin.x += marginLeft + btnWidth;
-    self.btnCameraSwitch.frame = uiFrame;
-    
-    uiFrame.origin.x += marginLeft + btnWidth;
-    self.btnCameraFront.frame = uiFrame;
-    
-    // 底部提示
-    CGFloat labelWidth = 60;
-    CGFloat tipX = (UIViewGetWidth(self.view) - labelWidth)/2;
-    CGFloat lineWidth = UIViewGetWidth(self.view) - 85 * 2;
-
-    uiFrame = CGRectMake(x, y + btnWidth + 20, lineWidth, 1);
-    self.lineView.frame = uiFrame;
-    
-    uiFrame = CGRectMake(tipX, uiFrame.origin.y + 1 + 12, labelWidth, 17);
-    self.lbLiveState.frame = uiFrame;
-    
 }
 
-/// 手机开播场景
+// 自动填充用户信息
+- (void)writeUserInfo {
+    NSArray *userInfoArray = [[NSUserDefaults standardUserDefaults]objectForKey:kUserDefaultUserInfo];
+    if (userInfoArray && userInfoArray.count) {
+        self.tfChannelId.text = userInfoArray[1];
+        self.tfPassword.text = userInfoArray[2];
+        self.tfNickName.text = userInfoArray[3];
+        self.btnLogin.enabled = YES;
+    }
+}
+
 - (void)loginStreamerRoomWithCompletionHandler:(void (^)(void))completion {
+    if (!self.btnAgree.selected) {
+        PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.view animated:YES];
+        hud.mode = PLVProgressHUDModeText;
+        hud.label.text = @"请勾选协议";
+        hud.detailsLabel.text = nil;
+        [hud hideAnimated:YES afterDelay:2.0];
+        return;
+    }
     PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
     [hud.label setText:@"登录中..."];
     
     __weak typeof(self)weakSelf = self;
-    [PLVRoomLoginClient loginStreamerRoomWithChannelType:PLVChannelTypePPT
+    [PLVRoomLoginClient loginStreamerRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone
                                                channelId:self.tfChannelId.text
                                                 password:self.tfPassword.text
                                                 nickName:self.tfNickName.text
@@ -182,7 +186,7 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     }];
 }
 
-- (void)setTFStyle:(UITextField *)tf placeholder:(NSString *)placeholder {
+- (void)setTFStyle:(PLVLoginTextField *)tf placeholder:(NSString *)placeholder {
     NSAttributedString *attrString = [[NSAttributedString alloc] initWithString:placeholder attributes:@{NSForegroundColorAttributeName:PLV_UIColorFromRGBA(@"#F0F1F5", 0.6f)}];
     
     tf.backgroundColor = PLV_UIColorFromRGBA(@"#FFFFFF", 0.16f);
@@ -201,9 +205,9 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
 - (UILabel *)lbTitle {
     if (! _lbTitle) {
         _lbTitle = [[UILabel alloc] init];
-        _lbTitle.font = [UIFont systemFontOfSize:30];
+        _lbTitle.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:30];
         _lbTitle.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _lbTitle.text = @"云直播-手机开播";
+        _lbTitle.text = @"手机开播";
         _lbTitle.textAlignment = NSTextAlignmentCenter;
         [self.view addSubview:_lbTitle];
     }
@@ -211,9 +215,16 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     return _lbTitle;
 }
 
-- (UITextField *)tfChannelId {
+- (UIImageView *)backgroundImageView {
+    if (!_backgroundImageView) {
+        _backgroundImageView = [[UIImageView alloc]initWithImage:[[self class] imageWithImageName:@"plvls_login_bg"]];
+    }
+    return _backgroundImageView;
+}
+
+- (PLVLoginTextField *)tfChannelId {
     if (! _tfChannelId) {
-        _tfChannelId = [[UITextField alloc] init];
+        _tfChannelId = [[PLVLoginTextField alloc] init];
         _tfChannelId.keyboardType = UIKeyboardTypeNumberPad;
         [self.view addSubview:_tfChannelId];
         
@@ -223,9 +234,9 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     return _tfChannelId;
 }
 
-- (UITextField *)tfNickName {
+- (PLVLoginTextField *)tfNickName {
     if (! _tfNickName) {
-        _tfNickName = [[UITextField alloc] init];
+        _tfNickName = [[PLVLoginTextField alloc] init];
         [self.view addSubview:_tfNickName];
         
         [self setTFStyle:_tfNickName placeholder:@"请输入昵称"];
@@ -234,9 +245,9 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     return _tfNickName;
 }
 
-- (UITextField *)tfPassword {
+- (PLVLoginTextField *)tfPassword {
     if (! _tfPassword) {
-        _tfPassword = [[UITextField alloc] init];
+        _tfPassword = [[PLVLoginTextField alloc] init];
         _tfPassword.secureTextEntry = YES;
         [self.view addSubview:_tfPassword];
         
@@ -273,7 +284,7 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
         _btnAgree = [UIButton buttonWithType:UIButtonTypeCustom];
         [_btnAgree setImage:[[self class] imageWithImageName:@"plvls_login_ck_normal"] forState:UIControlStateNormal];
         [_btnAgree setImage:[[self class] imageWithImageName:@"plvls_login_ck_selected"] forState:UIControlStateSelected];
-        _btnAgree.imageEdgeInsets = UIEdgeInsetsMake(4, 4, 4, 4);
+        _btnAgree.imageEdgeInsets = UIEdgeInsetsMake(4, 0, 4, 0);
         _btnAgree.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_btnAgree addTarget:self action:@selector(agreeClickAction) forControlEvents:UIControlEventTouchUpInside];
         
@@ -302,6 +313,34 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     return _btnAgree;
 }
 
+- (UIButton *)rememberPasswordButton {
+    if (!_rememberPasswordButton) {
+        _rememberPasswordButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_rememberPasswordButton setImage:[[self class] imageWithImageName:@"plvls_login_ck_normal"] forState:UIControlStateNormal];
+        [_rememberPasswordButton setImage:[[self class] imageWithImageName:@"plvls_login_ck_selected"] forState:UIControlStateSelected];
+        _rememberPasswordButton.imageEdgeInsets = UIEdgeInsetsMake(4, 0, 4, 0);
+        _rememberPasswordButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_rememberPasswordButton addTarget:self action:@selector(rememberPasswordClickAction) forControlEvents:UIControlEventTouchUpInside];
+        
+        UIFont *font = [UIFont fontWithName:@"PingFangSC-Regular" size: 12];
+        UIColor *color = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6f);
+        NSDictionary *attributes = @{NSFontAttributeName:font,
+                                              NSForegroundColorAttributeName:color};
+        NSString *string = @" 记住密码";
+        NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:string attributes:attributes];
+        [_rememberPasswordButton setAttributedTitle:attributedString forState:UIControlStateNormal];
+
+        NSArray *userInfoArray = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultUserInfo];
+        if (userInfoArray && userInfoArray.count) {
+            BOOL rememberPassword = [userInfoArray.firstObject boolValue];
+            if (rememberPassword) {
+                _rememberPasswordButton.selected = YES;
+            }
+        }
+    }
+    return _rememberPasswordButton;
+}
+
 - (UIButton *)btnPrivacyPolicy {
     if (!_btnPrivacyPolicy) {
         _btnPrivacyPolicy = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -320,65 +359,6 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     return _btnUserProtocol;
 }
 
-- (UIButton *)btnMicSwitch {
-    if (! _btnMicSwitch) {
-        _btnMicSwitch = [UIButton buttonWithType:UIButtonTypeCustom];
-        _btnMicSwitch.selected = YES;
-        [_btnMicSwitch setImage:[[self class] imageWithImageName:@"plvls_login_btn_mic_close"] forState:UIControlStateNormal];
-        [_btnMicSwitch setImage:[[self class] imageWithImageName:@"plvls_login_btn_mic_open"] forState:UIControlStateSelected];
-        [_btnMicSwitch addTarget:self action:@selector(micSwitchClickAction) forControlEvents:UIControlEventTouchUpInside];
-    }
-    
-    return _btnMicSwitch;
-}
-
-- (UIButton *)btnCameraSwitch {
-    if (! _btnCameraSwitch) {
-        _btnCameraSwitch = [UIButton buttonWithType:UIButtonTypeCustom];
-        _btnCameraSwitch.selected = YES;
-        [_btnCameraSwitch setImage:[[self class] imageWithImageName:@"plvls_login_btn_camera_close"] forState:UIControlStateNormal];
-        [_btnCameraSwitch setImage:[[self class] imageWithImageName:@"plvls_login_btn_camera_open"] forState:UIControlStateSelected];
-        [_btnCameraSwitch addTarget:self action:@selector(cameraSwitchClickAction) forControlEvents:UIControlEventTouchUpInside];
-    }
-    
-    return _btnCameraSwitch;
-}
-
-- (UIButton *)btnCameraFront {
-    if (! _btnCameraFront) {
-        _btnCameraFront = [UIButton buttonWithType:UIButtonTypeCustom];
-        _btnCameraFront.selected = YES;
-        [_btnCameraFront setImage:[[self class] imageWithImageName:@"plvls_login_btn_camera_front_close"] forState:UIControlStateNormal];
-        [_btnCameraFront setImage:[[self class] imageWithImageName:@"plvls_login_btn_camera_front_open"] forState:UIControlStateSelected];
-        [_btnCameraFront addTarget:self action:@selector(cameraFrontClickAction) forControlEvents:UIControlEventTouchUpInside];
-    }
-     
-    return _btnCameraFront;
-}
-
-- (UIView *)lineView {
-    if (!_lineView) {
-        _lineView = [[UIView alloc] init];
-        _lineView.backgroundColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _lineView.alpha = 0.1;
-        [self.view addSubview:_lineView];
-    }
-    return _lineView;
-}
-
-- (UILabel *)lbLiveState {
-    if (!_lbLiveState) {
-        _lbLiveState = [[UILabel alloc] init];
-        _lbLiveState.font = [UIFont systemFontOfSize:12];
-        _lbLiveState.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _lbLiveState.text = @"直播状态";
-        _lbLiveState.textAlignment = NSTextAlignmentCenter;
-        _lbLiveState.alpha = 0.6;
-        [self.view addSubview:_lbLiveState];
-    }
-    return _lbLiveState;
-}
-
 #pragma mark Utils
 
 + (UIImage *)imageWithImageName:(NSString *)imageName {
@@ -390,6 +370,22 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     return image;
 }
 
+/// 计算输入框文本长度
+- (double)calculateTextLengthWithString:(NSString *)text {
+    double strLength = 0;
+    for (int i = 0; i < text.length; i++) {
+        NSRange range = NSMakeRange(i, 1);
+        NSString *strFromSubStr = [text substringWithRange:range];
+        const char * cStringFromstr = [strFromSubStr UTF8String];
+        if (cStringFromstr != NULL && strlen(cStringFromstr) == 3){
+            strLength += 1;
+        } else {
+            strLength += 0.5;
+        }
+    }
+    return round(strLength);
+}
+
 #pragma mark - Action
 - (void)tapAction:(UIGestureRecognizer *)gestureRecognizer {
     [self.view endEditing:NO];
@@ -398,19 +394,31 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
 - (void)loginButtonClickAction {
     __weak typeof(self) weakSelf = self;
     [self loginStreamerRoomWithCompletionHandler:^{
+        // 记住密码
+        if (self.rememberPasswordButton.selected) {
+            NSArray *userInfoArray = @[@(YES), self.tfChannelId.text, self.tfPassword.text, self.tfNickName.text];
+            [[NSUserDefaults standardUserDefaults] setObject:userInfoArray forKey:kUserDefaultUserInfo];
+        } else {
+            [[NSUserDefaults standardUserDefaults] removeObjectForKey:kUserDefaultUserInfo];
+        }
+        [[NSUserDefaults standardUserDefaults] synchronize];
 
-        /// 配置默认值
-        PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;
-        roomData.localUserMicDefaultOpen = weakSelf.btnMicSwitch.selected;
-        roomData.localUserCameraDefaultOpen = weakSelf.btnCameraSwitch.selected;
-        roomData.localUserCameraDefaultFront = weakSelf.btnCameraFront.selected;
-        
-        PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
 
-        PLVLSStreamerViewController *vctrl = [[PLVLSStreamerViewController alloc] init];
-        vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
-        [weakSelf presentViewController:vctrl animated:YES completion:nil];
+        if (roomData.channelType == PLVChannelTypePPT) {
+            PLVLSStreamerViewController *vctrl = [[PLVLSStreamerViewController alloc] init];
+            vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
+            [weakSelf presentViewController:vctrl animated:YES completion:nil];
+        } else if (roomData.channelType == PLVChannelTypeAlone) {
+            PLVSAStreamerViewController *vctrl = [[PLVSAStreamerViewController alloc] init];
+            vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
+            [weakSelf presentViewController:vctrl animated:YES completion:nil];
+        }
     }];
+}
+
+- (void)rememberPasswordClickAction {
+    self.rememberPasswordButton.selected = !self.rememberPasswordButton.selected;
 }
 
 - (void)agreeClickAction{
@@ -419,9 +427,6 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     [[NSUserDefaults standardUserDefaults] setObject:@(self.btnAgree.isSelected)
                                               forKey:kUserDefaultAgreeUserProtocol];
     [[NSUserDefaults standardUserDefaults] synchronize];
-    
-    BOOL enabled = self.tfChannelId.text.length > 0 && self.tfPassword.text.length > 0 && self.btnAgree.isSelected;
-    self.btnLogin.enabled = enabled;
 }
 
 - (void)privacyPolicyClickAction {
@@ -438,36 +443,45 @@ static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserPr
     [self presentViewController:nav animated:YES completion:nil];
 }
 
-- (void)micSwitchClickAction {
-    self.btnMicSwitch.selected = !self.btnMicSwitch.isSelected;
-}
-
-- (void)cameraSwitchClickAction {
-    self.btnCameraSwitch.selected = !self.btnCameraSwitch.isSelected;
-    self.btnCameraFront.selected = self.btnCameraSwitch.isSelected;
-}
-
-- (void)cameraFrontClickAction {
-    self.btnCameraFront.selected = !self.btnCameraFront.isSelected;
-}
 
 #pragma mark - [ Delegate ]
 #pragma mark UITextFieldDelegate
-- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+- (void)textFieldDidEndEditing:(UITextField *)textField {
     BOOL enabled = NO;
-    if (textField == self.tfChannelId) {
-        enabled = self.tfPassword.text.length > 0;
-    } else if (textField == self.tfPassword) {
-        enabled = self.tfChannelId.text.length > 0;
-    } else if (textField == self.tfNickName){
-        enabled = self.tfPassword.text.length >0 ;
-    }
-    
-    enabled = enabled && (string.length > 0 || textField.text.length > 1) && self.btnAgree.isSelected;
+    enabled = self.tfChannelId.text.length && self.tfPassword.text.length;
     
     self.btnLogin.enabled = enabled;
+}
+
+- (BOOL)textField:(UITextField *)textField shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string {
+    if ([string isEqualToString:@"\n"]) {
+        [textField resignFirstResponder];
+        return NO;
+    }
     
-    return YES;
+    if(range.length + range.location > textField.text.length) {
+        return NO;
+    }
+    
+    NSString *toBeString = [textField.text stringByReplacingCharactersInRange:range withString:string];
+    int maxLength;
+    double newLength;
+    if ([textField isEqual:self.tfChannelId]) {
+        maxLength = 20;
+        newLength = toBeString.length;
+    } else if ([textField isEqual:self.tfPassword]) {
+        maxLength = 16;
+        newLength = toBeString.length;
+    } else {
+        maxLength = 25;
+        newLength = [self calculateTextLengthWithString:toBeString];
+    }
+    
+    if (newLength <= maxLength) {
+        return YES;
+    } else {
+        return NO;
+    }
 }
 
 @end

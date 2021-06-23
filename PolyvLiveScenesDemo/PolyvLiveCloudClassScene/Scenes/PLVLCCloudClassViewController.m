@@ -124,26 +124,6 @@ PLVRoomDataManagerProtocol
     [self updateUI];
 }
 
-- (void)viewWillDisappear:(BOOL)animated {
-    [super viewWillDisappear:animated];
-    
-    if (self.navigationController) {
-        self.navigationController.navigationBarHidden = NO;
-    }
-}
-
-- (void)viewWillAppear:(BOOL)animated {
-    [super viewWillAppear:animated];
-    
-    if (self.navigationController) {
-        self.navigationController.navigationBarHidden = YES;
-    }
-    
-    if (self.mediaAreaView.playerPresenter.currentVideoType == PLVChannelVideoType_Live) {
-        [self.mediaAreaView.playerPresenter cancelMute];
-    }
-}
-
 - (UIStatusBarStyle)preferredStatusBarStyle{
     return UIStatusBarStyleLightContent;
 }
@@ -305,9 +285,8 @@ PLVRoomDataManagerProtocol
     [PLVRoomLoginClient logout];
     [[PLVSocketManager sharedManager] logout];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    if (self.navigationController && [self.navigationController.viewControllers count] == 1) {
-        [self.navigationController dismissViewControllerAnimated:YES completion:nil];
-    } else if (self.navigationController) {
+
+    if (self.navigationController) {
         [self.navigationController popViewControllerAnimated:YES];
     } else {
         [self dismissViewControllerAnimated:YES completion:nil];

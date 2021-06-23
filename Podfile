@@ -5,7 +5,7 @@ target 'PolyvLiveScenesDemo' do
   use_frameworks!
 
   # 保利威 多场景 SDK
-  pod 'PLVLiveScenesSDK', '1.4.1'
+  pod 'PLVLiveScenesSDK', '1.5.0'
 
   # 保利威 UI源码 需依赖的库
   pod 'SDWebImage', '4.4.0'

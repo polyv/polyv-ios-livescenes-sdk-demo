@@ -8,12 +8,19 @@
 
 #import "AppDelegate.h"
 
+/*
+ SCENE = 1: 多场景通用入口
+ SCENE = 2: 多场景-手机开播
+ SCENE = 3: 多场景-手机观看
+ */
+
 #if SCENE == 1
 #import "PLVEnteranceViewController.h"
 #endif
 
 #if SCENE == 2
 #import "PLVLiveStreamerLoginViewController.h"
+#import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 #endif
 
 #if SCENE == 3
@@ -42,6 +49,10 @@
 #endif
     
 #if SCENE == 2
+    if (@available(iOS 10.0, *)) {
+        [PLVNetworkAccessibility setAlertEnable:YES];
+        [PLVNetworkAccessibility start];
+    }
     PLVLiveStreamerLoginViewController *vctrl = [[PLVLiveStreamerLoginViewController alloc] init];
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     self.window.rootViewController = vctrl;

@@ -90,8 +90,6 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
-/// 播放器 功能模块
-@property (nonatomic, strong, readonly) PLVPlayerPresenter *playerPresenter;
 
 
 #pragma mark - [ 方法 ]

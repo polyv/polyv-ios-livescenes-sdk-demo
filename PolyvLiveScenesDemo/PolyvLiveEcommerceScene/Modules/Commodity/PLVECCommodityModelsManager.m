@@ -7,8 +7,9 @@
 //  商品数据管理
 
 #import "PLVECCommodityModelsManager.h"
-#import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 #import "PLVRoomDataManager.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PolyvFoundationSDK/PolyvFoundationSDK.h>
 
 @interface PLVECCommodityModelsManager ()
 
@@ -127,10 +128,10 @@
     }
     
     __weak typeof(self)weakSelf = self;
-    [roomData requestCommodityList:roomData.channelId.integerValue
-                              rank:rank
-                             count:20
-                        completion:^(NSUInteger total, NSArray<PLVCommodityModel *> *commoditys) {
+    [PLVLiveVideoAPI loadCommodityList:roomData.channelId.integerValue
+                                  rank:rank
+                                 count:20
+                            completion:^(NSUInteger total, NSArray<PLVCommodityModel *> * _Nonnull commoditys) {
         weakSelf.loading = NO;
         weakSelf.totalItems = total;
         
@@ -141,7 +142,6 @@
         }
     } failure:^(NSError * _Nonnull error) {
         weakSelf.loading = NO;
-        NSLog(@"requestCommodityInfo error description: %@",error.localizedDescription);
         if (completion) {
             completion(error);
         }

@@ -7,9 +7,7 @@
 //
 
 #import "PLVChatModel.h"
-#import <PLVLiveScenesSDK/PLVQuoteMessage.h>
-#import <PLVLiveScenesSDK/PLVSpeakMessage.h>
-#import <PLVLiveScenesSDK/PLVImageMessage.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @implementation PLVChatModel
 
@@ -24,6 +22,9 @@
         msgId = message.msgId;
     } else if ([messageObject isKindOfClass:[PLVImageMessage class]]) {
         PLVImageMessage *message = (PLVImageMessage *)messageObject;
+        msgId = message.msgId;
+    } else if ([messageObject isKindOfClass:[PLVRewardMessage class]]) {
+        PLVRewardMessage *message = (PLVRewardMessage *)messageObject;
         msgId = message.msgId;
     }
     return msgId;

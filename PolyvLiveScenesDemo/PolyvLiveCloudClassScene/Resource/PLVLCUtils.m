@@ -45,10 +45,6 @@
     return [self imageFromBundle:@"PLVChatroom" imageName:imageName];
 }
 
-+ (UIImage *)imageForCastResource:(NSString *)imageName {
-    return [self imageFromBundle:@"PLVCast" imageName:imageName];
-}
-
 #pragma mark - [ Private Methods ]
 + (NSBundle *)LCBundle {
     return [NSBundle bundleForClass:[PLVLCUtils class]];

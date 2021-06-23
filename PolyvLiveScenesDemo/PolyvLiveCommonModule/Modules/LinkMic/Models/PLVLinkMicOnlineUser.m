@@ -16,6 +16,7 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserMicOpenChangedBlock> * micOpenChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraShouldShowChangedBlock> * cameraShouldShowChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraFrontChangedBlock> * cameraFrontChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraTorchOpenChangedBlock> * cameraTorchOpenChanged_MultiReceiverMap;
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * userId;
@@ -33,10 +34,12 @@
 @property (nonatomic, assign) BOOL updateUserCurrentCameraOpenCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentCameraShouldShowCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentCameraFrontCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentCameraTorchOpenCallbackBefore;
 @property (nonatomic, assign) CGFloat currentVolume;
 @property (nonatomic, assign) BOOL currentMicOpen;
 @property (nonatomic, assign) BOOL currentCameraOpen;
 @property (nonatomic, assign) BOOL currentCameraFront;
+@property (nonatomic, assign) BOOL currentCameraTorchOpen;
 @property (nonatomic, assign) BOOL currentStatusVoice;
 
 @end
@@ -92,6 +95,13 @@
         _cameraFrontChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
     }
     return _cameraFrontChanged_MultiReceiverMap;
+}
+
+- (NSMapTable<id,PLVLinkMicOnlineUserCameraTorchOpenChangedBlock> *)cameraTorchOpenChanged_MultiReceiverMap{
+    if (!_cameraTorchOpenChanged_MultiReceiverMap) {
+        _cameraTorchOpenChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
+    }
+    return _cameraTorchOpenChanged_MultiReceiverMap;
 }
 
 
@@ -185,7 +195,7 @@
     if (needCallBack && self.volumeChangedBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.volumeChangedBlock(weakSelf);
+            if (weakSelf) { weakSelf.volumeChangedBlock(weakSelf); }
         })
     }
 }
@@ -201,7 +211,7 @@
     if (needCallBack && self.micOpenChangedBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.micOpenChangedBlock(weakSelf);
+            if (weakSelf) { weakSelf.micOpenChangedBlock(weakSelf); }
         })
     }
     
@@ -211,7 +221,7 @@
         __weak typeof(self) weakSelf = self;
         while ((block = [enumerator nextObject])) {
             plv_dispatch_main_async_safe(^{
-                block(weakSelf);
+                if (weakSelf) { block(weakSelf); }
             })
         }
     }
@@ -233,7 +243,7 @@
     if (needCallBackCameraShouldOpen && self.cameraShouldShowChangedBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.cameraShouldShowChangedBlock(weakSelf);
+            if (weakSelf) { weakSelf.cameraShouldShowChangedBlock(weakSelf); }
         })
     }
     
@@ -243,7 +253,7 @@
         __weak typeof(self) weakSelf = self;
         while ((block = [enumerator nextObject])) {
             plv_dispatch_main_async_safe(^{
-                block(weakSelf);
+                if (weakSelf) { block(weakSelf); }
             })
         }
     }
@@ -257,7 +267,7 @@
     if (needCallBack && self.cameraOpenChangedBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.cameraOpenChangedBlock(weakSelf);
+            if (weakSelf) { weakSelf.cameraOpenChangedBlock(weakSelf); }
         })
     }
 }
@@ -273,7 +283,7 @@
     if (needCallBack && self.cameraFrontChangedBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.cameraFrontChangedBlock(weakSelf);
+            if (weakSelf) { weakSelf.cameraFrontChangedBlock(weakSelf); }
         })
     }
     
@@ -283,7 +293,34 @@
         __weak typeof(self) weakSelf = self;
         while ((block = [enumerator nextObject])) {
             plv_dispatch_main_async_safe(^{
-                block(weakSelf);
+                if (weakSelf) { block(weakSelf); }
+            })
+        }
+    }
+}
+
+- (void)updateUserCurrentCameraTorchOpen:(BOOL)cameraTorchOpen{
+    BOOL needCallBack = (_currentCameraTorchOpen != cameraTorchOpen);
+    if (!_updateUserCurrentCameraTorchOpenCallbackBefore) {
+        needCallBack = YES;
+        _updateUserCurrentCameraTorchOpenCallbackBefore = YES;
+    }
+    
+    _currentCameraTorchOpen = cameraTorchOpen;
+    if (needCallBack && self.cameraTorchOpenChangedBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.cameraTorchOpenChangedBlock(weakSelf); }
+        })
+    }
+    
+    if (needCallBack && _cameraTorchOpenChanged_MultiReceiverMap.count > 0) {
+        NSEnumerator * enumerator = [_cameraTorchOpenChanged_MultiReceiverMap objectEnumerator];
+        PLVLinkMicOnlineUserCameraTorchOpenChangedBlock block;
+        __weak typeof(self) weakSelf = self;
+        while ((block = [enumerator nextObject])) {
+            plv_dispatch_main_async_safe(^{
+                if (weakSelf) { block(weakSelf); }
             })
         }
     }
@@ -294,7 +331,7 @@
     if (self.wantOpenMicBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.wantOpenMicBlock(weakSelf, openMic);
+            if (weakSelf) { weakSelf.wantOpenMicBlock(weakSelf, openMic); }
         })
     }
 }
@@ -303,7 +340,7 @@
     if (self.wantOpenCameraBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.wantOpenCameraBlock(weakSelf, openCamera);
+            if (weakSelf) { weakSelf.wantOpenCameraBlock(weakSelf, openCamera); }
         })
     }
 }
@@ -312,7 +349,7 @@
     if (self.wantSwitchFrontCameraBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.wantSwitchFrontCameraBlock(weakSelf, frontCamera);
+            if (weakSelf) { weakSelf.wantSwitchFrontCameraBlock(weakSelf, frontCamera); }
         })
     }
 }
@@ -321,7 +358,7 @@
     if (self.wantCloseLinkMicBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            weakSelf.wantCloseLinkMicBlock(weakSelf);
+            if (weakSelf) { weakSelf.wantCloseLinkMicBlock(weakSelf); }
         })
     }
 }
@@ -389,6 +426,22 @@
         return;
     }
     [self.cameraFrontChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
+}
+
+- (void)addCameraTorchOpenChangedBlock:(PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey{
+    if (!strongBlock) {
+        NSLog(@"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，strongBlock illegal");
+        return;
+    }
+    if (!weakBlockKey) {
+        NSLog(@"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        return;
+    }
+    if (self.cameraTorchOpenChanged_MultiReceiverMap.count > 20) {
+        NSLog(@"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，block registration limit has been reached");
+        return;
+    }
+    [self.cameraTorchOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
 }
 
 @end

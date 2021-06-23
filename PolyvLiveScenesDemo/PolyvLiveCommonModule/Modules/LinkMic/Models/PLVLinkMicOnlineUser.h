@@ -26,6 +26,8 @@ typedef void (^PLVLinkMicOnlineUserCameraOpenChangedBlock)(PLVLinkMicOnlineUser 
 typedef void (^PLVLinkMicOnlineUserCameraShouldShowChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’摄像头前后置状态值‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserCameraFrontChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户的 ’闪光灯开关状态‘ 改变Block
+typedef void (^PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 ///
 /// [事件] 用户模型 即将销毁 回调Block
 typedef void (^PLVLinkMicOnlineUserWillDeallocBlock)(PLVLinkMicOnlineUser * onlineUser);
@@ -79,6 +81,12 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// @note 仅在 currentCameraFront开关值 有改变时会触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCameraFrontChangedBlock cameraFrontChangedBlock;
+
+/// [状态] 用户的 ’闪光灯开关状态‘ 改变Block
+///
+/// @note 仅在 currentCameraTorchOpen开关值 有改变时会触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCameraTorchOpenChangedBlock cameraTorchOpenChangedBlock;
 
 /// [事件] 用户模型 即将销毁 回调Block
 ///
@@ -165,6 +173,9 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// 用户的 摄像头 当前是否前置 (注意：当前业务场景下，决定了此值仅在 [localUser] 为YES，即该对象代表本地用户时，此值有意义)
 @property (nonatomic, assign, readonly) BOOL currentCameraFront;
 
+/// 用户的 闪光灯 当前是否开启 (注意：当前业务场景下，决定了此值仅在 [localUser] 为YES，即该对象代表本地用户时，此值有意义)
+@property (nonatomic, assign, readonly) BOOL currentCameraTorchOpen;
+
 /// rtvView 此时是否已经渲染了 ’RTC画面‘
 @property (nonatomic, assign, readonly) BOOL rtcRendered;
 
@@ -200,6 +211,11 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 ///
 /// @note 若最终 摄像头前后置状态值 有所改变，则将触发 [cameraFrontChangedBlock]；
 - (void)updateUserCurrentCameraFront:(BOOL)cameraFront;
+
+/// 更新用户的 ‘当前闪光灯开关状态值’
+///
+/// @note 若最终 闪光灯开关状态值 有所改变，则将触发 [cameraTorchOpenChangedBlock]；
+- (void)updateUserCurrentCameraTorchOpen:(BOOL)cameraTorchOpen;
 
 #pragma mark 通知机制
 /// 希望开关该用户的麦克风
@@ -276,6 +292,17 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// @param strongBlock ’摄像头前后置状态值‘ 改变Block (强引用)
 /// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
 - (void)addCameraFrontChangedBlock:(PLVLinkMicOnlineUserCameraFrontChangedBlock)strongBlock blockKey:(id)weakBlockKey;
+
+/// 使用 blockKey 添加一个 ’闪光灯开关状态‘ 改变Block
+///
+/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
+///           否则，建议直接使用属性声明中的 [cameraTorchOpenChangedBlock]，将更加便捷；
+///       (2) 具体回调规则，与 [cameraTorchOpenChangedBlock] 相同无异；
+///       (3) 无需考虑 ‘什么时机去释放、去解除绑定’，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
+///
+/// @param strongBlock ’闪光灯开关状态‘ 改变Block (强引用)
+/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
+- (void)addCameraTorchOpenChangedBlock:(PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey;
 
 @end
 
