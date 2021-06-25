@@ -2,6 +2,7 @@
 ### 1 简介
 此项目是保利威 iOS 多场景 Demo，文件的目录树如下：
 
+```
 ├── AppDelegate.h/m
 ├── Demo
 │   ├── Bugly
@@ -26,6 +27,10 @@
 │   ├── Modules
 │   └── Resource
 └── Supporting Files
+```
+
+
+
 
 
 
@@ -34,9 +39,15 @@
 
 
 
+
+
+
 ### 3 API 文档
 
 1.5.0 版 API 文档请看 [v1.5.0 API](http://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.5.0-20210623/index.html)
+
+
+
 
 
 
@@ -54,6 +65,9 @@
 | 1.5.0         | 1.5.0       | ✅       | ✅          | ✅            | ✅                      |✅                      |
 
 更多版本更新详情，可在 [版本更新列表](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/releases)，了解 **对应版本更新说明**，以及 **下载源码**
+
+
+
 
 
 
