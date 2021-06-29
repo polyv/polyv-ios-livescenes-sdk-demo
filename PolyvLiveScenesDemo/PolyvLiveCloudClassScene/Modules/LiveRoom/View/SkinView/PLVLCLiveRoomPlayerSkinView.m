@@ -57,18 +57,22 @@
     }else{
         self.hidden = NO;
         [self controlsSwitchShowStatusWithAnimation:YES];
-
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
         // 顶部UI
         CGFloat topShadowLayerHeight = 90.0;
         self.topShadowLayer.frame = CGRectMake(0, 0, viewWidth, topShadowLayerHeight);
         
         CGSize backButtonSize = CGSizeMake(40.0, 20.0f);
         CGFloat countdownTimeViewHeight = 32.0;
-        CGFloat topPadding = 16.0;
-        
+        CGFloat topPadding = isPad ? 30.0 : 16.0;
+
         if (![PLVFdUtil isiPhoneXSeries]) {
             leftSafePadding = 6;
             rightSafePadding = 6;
+        }
+        if (isPad) {
+            leftSafePadding = 20;
+            rightSafePadding = 20;
         }
         
         self.backButton.frame = CGRectMake(leftSafePadding, topPadding - 10, backButtonSize.width, 40);
@@ -84,6 +88,9 @@
         self.moreButton.frame = CGRectMake(viewWidth - rightSafePadding - backButtonSize.width, topPadding, backButtonSize.width, backButtonSize.height);
         
         [self refreshBulletinButtonFrame];
+        
+        [self refreshTitleLabelFrameInSmallScreen];
+        
         // 底部UI
         CGFloat bottomShadowLayerHeight = 90.0;
         self.bottomShadowLayer.frame = CGRectMake(0, viewHeight - bottomShadowLayerHeight, viewWidth, bottomShadowLayerHeight);
@@ -94,13 +101,10 @@
         [self refreshRefreshButtonFrame];
         [self refreshFloatViewShowButtonFrame];
         [self refreshDanmuButtonFrame];
-
-        CGFloat guideChatLabelWidth = 0.3572 * viewWidth;
-        CGFloat guideChatLabelHeight = 36.0;
-        self.guideChatLabel.frame = CGRectMake((viewWidth - guideChatLabelWidth) / 2.0, viewHeight - (bottomPadding - 6) - guideChatLabelHeight, guideChatLabelWidth, guideChatLabelHeight);
+        [self refreshGuideChatLabelFrame];
         
         CGFloat likeButtonWidth = 46.0;
-        self.likeButtonBackgroudView.frame = CGRectMake(viewWidth - rightSafePadding - likeButtonWidth, self.playButton.center.y - likeButtonWidth / 2.0f, likeButtonWidth, likeButtonWidth);
+        self.likeButtonBackgroudView.frame = CGRectMake(viewWidth - rightSafePadding - 10 - likeButtonWidth, self.playButton.center.y - likeButtonWidth / 2.0f, likeButtonWidth, likeButtonWidth);
         
         CGFloat timeLabelWidth = [self getLabelTextWidth:self.currentTimeLabel];
         self.currentTimeLabel.frame = CGRectMake(CGRectGetMinX(self.playButton.frame), CGRectGetMinY(self.playButton.frame) - 14 - backButtonSize.height, timeLabelWidth, backButtonSize.height);
@@ -140,14 +144,45 @@
 - (void)refreshBulletinButtonFrame{
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat rightSafePadding = 0;
+    CGFloat topPadding = 16.0;
+    CGFloat intervalPadding = 0;
+
     if (@available(iOS 11.0, *)) {
         rightSafePadding = self.safeAreaInsets.right;
     }
+    // iPad适配
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        rightSafePadding = 20.0;
+        topPadding = 30.0;
+        intervalPadding = 10.0;
+    }
     
-    CGFloat topPadding = 16.0;
     CGSize backButtonSize = CGSizeMake(40.0, 20.0);
-    CGFloat bulletinButtonX = self.moreButton.hidden ? (viewWidth - rightSafePadding - backButtonSize.width) : (CGRectGetMinX(self.moreButton.frame) - backButtonSize.width);
+    CGFloat bulletinButtonX = self.moreButton.hidden ? (viewWidth - rightSafePadding - backButtonSize.width) : (CGRectGetMinX(self.moreButton.frame) - backButtonSize.width - intervalPadding);
     self.bulletinButton.frame = CGRectMake(bulletinButtonX, topPadding, backButtonSize.width, backButtonSize.height);
+}
+
+- (void)refreshTitleLabelFrameInSmallScreen{
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGSize backButtonSize = CGSizeMake(40.0, 20.0);
+    CGFloat topPadding = isPad ? 30.0 : 16.0;
+
+    // iPad小分屏适配（横屏1:2），标题宽度调整，观看次数隐藏
+    Boolean isSmallScreen = CGRectGetWidth(self.bounds) <= PLVScreenWidth / 3 ? YES : NO;
+    if (isPad) {
+        if (isSmallScreen) {
+            self.playTimesLabel.hidden = YES;
+            
+            CGFloat titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame);
+            self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
+
+        } else {
+            self.playTimesLabel.hidden = NO;
+
+            CGFloat titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame) - CGRectGetWidth(self.playTimesLabel.frame) - 10;
+            self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
+        }
+    }
 }
 
 - (void)refreshRefreshButtonFrame {
@@ -184,6 +219,29 @@
         originX += CGRectGetWidth(self.floatViewShowButton.frame) + 5;
     }
     self.danmuButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
+}
+
+- (void)refreshGuideChatLabelFrame {
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat viewHeight = CGRectGetHeight(self.bounds);
+    CGFloat bottomPadding = 28.0;
+
+    CGFloat guideChatLabelWidth = 0.3572 * viewWidth;
+    CGFloat guideChatLabelHeight = 36.0;
+
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    Boolean isSmallScreen = viewWidth <= PLVScreenWidth / 3 ? YES : NO;
+    if (isPad && isSmallScreen) {
+        // iPad小分屏适配（横屏1:2），聊天引导栏布局上调
+        self.guideChatLabel.frame = CGRectMake(30, viewHeight - (bottomPadding - 6) - guideChatLabelHeight * 2 - 10, CGRectGetWidth(self.bounds) - 30 * 2 , guideChatLabelHeight);
+        
+    } else {
+        CGFloat middleOriginX = (viewWidth - guideChatLabelWidth) / 2.0;
+        CGFloat danmuButtonMaxOriginX = CGRectGetMaxX(self.danmuButton.frame) + 10.0;
+        CGFloat guideChatLabelOriginX = MAX(middleOriginX,danmuButtonMaxOriginX);
+        self.guideChatLabel.frame = CGRectMake(guideChatLabelOriginX, viewHeight - (bottomPadding - 6) - guideChatLabelHeight, guideChatLabelWidth, guideChatLabelHeight);
+    }
+
 }
 
 #pragma mark Private Getter
@@ -274,9 +332,11 @@
         
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshBulletinButtonFrame];
+        [self refreshTitleLabelFrameInSmallScreen];
         [self refreshRefreshButtonFrame];
         [self refreshFloatViewShowButtonFrame];
         [self refreshDanmuButtonFrame];
+        [self refreshGuideChatLabelFrame];
     }else{
         NSLog(@"PLVLCLiveRoomPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
     }

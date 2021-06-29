@@ -60,6 +60,12 @@
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<td>" withString:@"<td width=\"36\">"];
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<p>" withString:@"<p style=\"word-break:break-all;color:#ADADC0;\">"];
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<div>" withString:@"<div style=\"word-break:break-all;color:#ADADC0;\">"];
+    
+    // 设置边距
+    int verticalPadding = 12;
+    int horizontalPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20 : 16;
+    processedContent = [NSString stringWithFormat:@"<html>\n<body style=\" position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;\">%@</body></html>", horizontalPadding, horizontalPadding, verticalPadding, verticalPadding, processedContent];
+
     /*
     NSString *header = @"<!DOCTYPE html><html><head><meta charset=\"utf-8\" /><title></title></head><body>";
     NSString *bodyEnd = @"</body></html>";

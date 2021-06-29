@@ -115,7 +115,14 @@
     
     CGFloat backButtonRightPadding = viewWidth * 0.0493;
     CGFloat backButtonWidth = 44.0;
-    self.backButton.frame = CGRectMake(viewWidth - backButtonRightPadding - backButtonWidth, CGRectGetMinY(self.textField.frame) - 6, backButtonWidth, backButtonWidth);
+    CGFloat backButtonOriginX = viewWidth - backButtonRightPadding - backButtonWidth;
+    // iPad小分屏适配（横屏1:2），隐藏连麦窗口
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    Boolean isSmallScreen = viewWidth <= PLVScreenWidth / 3 ? YES : NO;
+    if (isPad && isSmallScreen) {
+        backButtonOriginX = 5;
+    }
+    self.backButton.frame = CGRectMake(backButtonOriginX, CGRectGetMinY(self.textField.frame) - 6, backButtonWidth, backButtonWidth);
 }
 
 #pragma mark Getter

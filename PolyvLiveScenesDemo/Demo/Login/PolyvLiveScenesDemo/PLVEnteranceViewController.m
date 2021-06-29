@@ -67,7 +67,7 @@
         _bgImageView = [[UIImageView alloc] init];
         UIImage *image = [[self class] imageWithImageName:@"plv_enterance_bg"];
         _bgImageView.image = image;
-        _bgImageView.contentMode = UIViewContentModeTop;
+        _bgImageView.contentMode = UIViewContentModeScaleAspectFill;
     }
     return _bgImageView;
 }

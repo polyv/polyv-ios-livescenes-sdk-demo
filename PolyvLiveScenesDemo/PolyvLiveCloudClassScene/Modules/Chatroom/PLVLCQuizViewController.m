@@ -60,6 +60,18 @@ UITableViewDataSource
         
         CGFloat keyboardToolOriginY = CGRectGetHeight(self.view.bounds) - height;
         [self.keyboardToolView changeFrameForNewOriginY:keyboardToolOriginY];
+        
+        // iPad分屏尺寸变动，刷新布局
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            // 聊天区布局调整
+            [self.tableView reloadData];
+
+            // 键盘宽度调整 内部控件布局调整
+            CGRect rect = self.keyboardToolView.frame;
+            rect.size.width = CGRectGetWidth(self.view.bounds);
+            self.keyboardToolView.frame = rect;
+            [self.keyboardToolView updateTextViewAndButton];
+        }
     }
 }
     

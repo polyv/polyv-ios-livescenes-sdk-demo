@@ -140,6 +140,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         } else {
             NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",NSStringFromClass(self.class),skinViewLiveStatus);
         }
+
     }else{
         NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",NSStringFromClass(self.class),self.skinViewType);
     }
@@ -147,7 +148,7 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
 - (void)setTitleLabelWithText:(NSString *)titleText{
     if ([PLVFdUtil checkStringUseable:titleText]) {
-        if (titleText.length > 12) {
+        if (titleText.length > 12 && [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
             titleText = [NSString stringWithFormat:@"%@...", [titleText substringToIndex:12]];
         }
         self.titleLabel.text = titleText;
@@ -433,6 +434,8 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         [_fullScreenButton setImage:[self getImageWithName:@"plvlc_media_skin_fullscreen"] forState:UIControlStateNormal];
         [_fullScreenButton setImage:[self getImageWithName:@"plvlc_media_skin_fullscreen"] forState:UIControlStateSelected];
         [_fullScreenButton addTarget:self action:@selector(fullScreenButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        // iPad时隐藏全屏按钮
+        _fullScreenButton.hidden = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? YES : NO;
     }
     return _fullScreenButton;
 }

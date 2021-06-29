@@ -41,8 +41,8 @@
 - (void)layoutSubviews{
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
+    CGFloat placeholderImageViewHeight = MIN(viewHeight , viewWidth)  * 0.485;
     
-    CGFloat placeholderImageViewHeight = viewHeight * 0.485;
     self.placeholderImageView.frame = CGRectMake((viewWidth - placeholderImageViewHeight) / 2.0,
                                                  (viewHeight - placeholderImageViewHeight) / 2.0,
                                                  placeholderImageViewHeight,
@@ -95,7 +95,9 @@
 - (UIImageView *)placeholderImageView{
     if (!_placeholderImageView) {
         _placeholderImageView = [[UIImageView alloc]init];
-        _placeholderImageView.image = [self getImageWithName:@"plvlc_linkmic_window_placeholder"];
+        // iPad占位图适配
+        NSString *imageName = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? @"plvlc_linkmic_window_placeholder_ipad" : @"plvlc_linkmic_window_placeholder";
+        _placeholderImageView.image = [self getImageWithName:imageName];
     }
     return _placeholderImageView;
 }

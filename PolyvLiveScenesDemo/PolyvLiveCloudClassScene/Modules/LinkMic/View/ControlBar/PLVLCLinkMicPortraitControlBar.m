@@ -322,9 +322,10 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 #pragma mark Getter
 - (CGFloat)selfWidth{
     // 业务变更时，可直接修改此文件顶部的固定值
-    CGFloat w = PLVLCLinkMicVerticalControlBarNormalWidth;
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 4 : 0;// 适配iPad
+    CGFloat w = PLVLCLinkMicVerticalControlBarNormalWidth + xPadding;
     if (_foldSelf) {
-        w = PLVLCLinkMicVerticalControlBarFoldWidth;
+        w = PLVLCLinkMicVerticalControlBarFoldWidth + xPadding;
     } else if(_status == PLVLCLinkMicControlBarStatus_Joined){
         w = self.maxWidth;
     }
@@ -333,10 +334,11 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 
 - (CGFloat)maxWidth{
     // 业务变更时，可直接修改此文件顶部的固定值
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 4 : 0;// 适配iPad
     if (self.barType == PLVLCLinkMicControlBarType_Audio) {
-        return PLVLCLinkMicVerticalControlBarMaxWidth_Audio;
+        return PLVLCLinkMicVerticalControlBarMaxWidth_Audio + xPadding;
     }else{
-        return PLVLCLinkMicVerticalControlBarMaxWidth_Video;
+        return PLVLCLinkMicVerticalControlBarMaxWidth_Video + xPadding;
     }
 }
 

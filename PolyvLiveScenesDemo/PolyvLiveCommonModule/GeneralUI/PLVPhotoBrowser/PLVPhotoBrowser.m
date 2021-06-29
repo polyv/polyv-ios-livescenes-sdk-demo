@@ -22,6 +22,8 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
 @property (nonatomic, strong) UIView *backgroundView;
 @property (nonatomic, assign) CGRect originFrame;
 @property (nonatomic, assign) CGFloat scale;
+@property (nonatomic, assign) CGFloat windowWidth;
+@property (nonatomic, assign) CGFloat windowHeight;
 
 @end
 
@@ -34,8 +36,10 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
     }
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     self.scale = 1.0;
-    
-    self.backgroundView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT)];
+    self.windowWidth =  CGRectGetWidth(window.bounds);
+    self.windowHeight =  CGRectGetHeight(window.bounds);
+
+    self.backgroundView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, self.windowWidth, self.windowHeight)];
     [self.backgroundView setBackgroundColor:[UIColor blackColor]];
     [self.backgroundView setAlpha:0];
     [window addSubview:self.backgroundView];
@@ -62,8 +66,8 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
     
     BOOL landscape = SCREEN_WIDTH > SCREEN_HEIGHT;
     CGSize imageSize = imageView.image.size;
-    CGFloat newWidth = landscape ? SCREEN_HEIGHT * imageSize.width / imageSize.height : SCREEN_WIDTH;
-    CGFloat newHeight = landscape ? SCREEN_HEIGHT : SCREEN_WIDTH * imageSize.height / imageSize.width;
+    CGFloat newWidth = landscape ? self.windowHeight * imageSize.width / imageSize.height : self.windowWidth;
+    CGFloat newHeight = landscape ? self.windowHeight : self.windowWidth * imageSize.height / imageSize.width;
     [UIView animateWithDuration:0.3 animations:^{
         [largeImageView setFrame:CGRectMake(0, 0, newWidth, newHeight)];
         [largeImageView setCenter:self.backgroundView.center];
@@ -115,30 +119,30 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
     if (self.scale < oldScale) {
         BOOL landscape = SCREEN_WIDTH > SCREEN_HEIGHT;
         CGSize imageSize = imageView.image.size;
-        CGFloat imageWidth = landscape ? SCREEN_HEIGHT * imageSize.width / imageSize.height : SCREEN_WIDTH;
-        CGFloat dw = imageWidth * self.scale - SCREEN_WIDTH;
+        CGFloat imageWidth = landscape ? self.windowHeight * imageSize.width / imageSize.height : self.windowWidth;
+        CGFloat dw = imageWidth * self.scale - self.windowWidth;
         CGFloat dx = imageView.center.x;
         if (dw > 0.0) {
-            if (dx < (SCREEN_WIDTH - dw) * 0.5) {
-                dx = (SCREEN_WIDTH - dw) * 0.5;
-            } else if (dx > (SCREEN_WIDTH + dw) * 0.5) {
-                dx = (SCREEN_WIDTH + dw) * 0.5;
+            if (dx < (self.windowWidth - dw) * 0.5) {
+                dx = (self.windowWidth - dw) * 0.5;
+            } else if (dx > (self.windowWidth + dw) * 0.5) {
+                dx = (self.windowWidth + dw) * 0.5;
             }
         } else {
-            dx = SCREEN_WIDTH * 0.5;
+            dx = self.windowWidth * 0.5;
         }
 
-        CGFloat imageHeight = landscape ? SCREEN_HEIGHT : SCREEN_WIDTH * imageView.image.size.height / imageView.image.size.width;
-        CGFloat dh = imageHeight * self.scale - SCREEN_HEIGHT;
+        CGFloat imageHeight = landscape ? self.windowHeight : self.windowWidth * imageView.image.size.height / imageView.image.size.width;
+        CGFloat dh = imageHeight * self.scale - self.windowHeight;
         CGFloat dy = imageView.center.y;
         if (dh > 0.0) {
-            if (dy < (SCREEN_HEIGHT - dh) * 0.5) {
-                dy = (SCREEN_HEIGHT - dh) * 0.5;
-            } else if (dy > (SCREEN_HEIGHT + dh) * 0.5) {
-                dy = (SCREEN_HEIGHT + dh) * 0.5;
+            if (dy < (self.windowHeight - dh) * 0.5) {
+                dy = (self.windowHeight - dh) * 0.5;
+            } else if (dy > (self.windowHeight + dh) * 0.5) {
+                dy = (self.windowHeight + dh) * 0.5;
             }
         } else {
-            dy = SCREEN_HEIGHT * 0.5;
+            dy = self.windowHeight * 0.5;
         }
 
         [imageView setCenter:CGPointMake(dx, dy)];
@@ -153,27 +157,27 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
     
     BOOL landscape = SCREEN_WIDTH > SCREEN_HEIGHT;
     CGSize imageSize = imageView.image.size;
-    CGFloat imageWidth = landscape ? SCREEN_HEIGHT * imageSize.width / imageSize.height : SCREEN_WIDTH;
-    CGFloat dw = imageWidth * self.scale - SCREEN_WIDTH;
+    CGFloat imageWidth = landscape ? self.windowHeight * imageSize.width / imageSize.height : self.windowWidth;
+    CGFloat dw = imageWidth * self.scale - self.windowWidth;
     CGFloat dx = imageView.center.x;
     if (dw > 0.0) {
         dx = imageView.center.x + translation.x;
-        if (dx < (SCREEN_WIDTH - dw) * 0.5) {
-            dx = (SCREEN_WIDTH - dw) * 0.5;
-        } else if (dx > (SCREEN_WIDTH + dw) * 0.5) {
-            dx = (SCREEN_WIDTH + dw) * 0.5;
+        if (dx < (self.windowWidth - dw) * 0.5) {
+            dx = (self.windowWidth - dw) * 0.5;
+        } else if (dx > (self.windowWidth + dw) * 0.5) {
+            dx = (self.windowWidth + dw) * 0.5;
         }
     }
     
-    CGFloat imageHeight = landscape? SCREEN_HEIGHT : SCREEN_WIDTH * imageView.image.size.height / imageView.image.size.width;
-    CGFloat dh = imageHeight * self.scale - SCREEN_HEIGHT;
+    CGFloat imageHeight = landscape? self.windowHeight : self.windowWidth * imageView.image.size.height / imageView.image.size.width;
+    CGFloat dh = imageHeight * self.scale - self.windowHeight;
     CGFloat dy = imageView.center.y;
     if (dh > 0.0) {
         dy = imageView.center.y + translation.y;
-        if (dy < (SCREEN_HEIGHT - dh) * 0.5) {
-            dy = (SCREEN_HEIGHT - dh) * 0.5;
-        } else if (dy > (SCREEN_HEIGHT + dh) * 0.5) {
-            dy = (SCREEN_HEIGHT + dh) * 0.5;
+        if (dy < (self.windowHeight - dh) * 0.5) {
+            dy = (self.windowHeight - dh) * 0.5;
+        } else if (dy > (self.windowHeight + dh) * 0.5) {
+            dy = (self.windowHeight + dh) * 0.5;
         }
     }
     

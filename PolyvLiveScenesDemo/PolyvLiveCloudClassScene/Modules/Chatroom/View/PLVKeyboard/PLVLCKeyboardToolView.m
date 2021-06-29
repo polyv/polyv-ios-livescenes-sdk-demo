@@ -257,6 +257,16 @@ PLVLCKeyboardMoreViewDelegate
     [self updateUI];
 }
 
+- (void)updateTextViewAndButton {
+    CGRect rect = self.frame;
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 左右边距
+    CGFloat textViewWidth = rect.size.width - xPadding - (self.mode == PLVLCKeyboardToolModeSimple ? 40 + xPadding : 80 + xPadding);
+    [self.textView setupWithFrame:CGRectMake(xPadding, 8, textViewWidth, 40)];
+
+    self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
+    self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
+}
+
 - (void)changeFrameForNewOriginY:(CGFloat)originY {
     if (self.originY == originY) {
         return;
@@ -281,15 +291,9 @@ PLVLCKeyboardMoreViewDelegate
 }
 
 #pragma mark - Private Method
-
 - (void)updateUI {
-    CGRect rect = self.frame;
-    CGFloat textViewWidth = rect.size.width - 16 - (self.mode == PLVLCKeyboardToolModeSimple ? 48 : 96);
-    [self.textView setupWithFrame:CGRectMake(16, 8, textViewWidth, 40)];
+    [self updateTextViewAndButton];
     self.lastTextViewHeight = ceilf([self.textView sizeThatFits:self.textView.frame.size].height);
-    
-    self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
-    self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
     
     CGFloat emojiboardHeight = 200.0 + self.bottomHeight;
     CGFloat moreboardHeight = 115.0 + self.bottomHeight;
