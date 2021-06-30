@@ -4,7 +4,7 @@
 
 多场景项目的项目架构图如下：
 
-![多场景架构简图](./多场景架构简图.png)
+![多场景架构简图](https://repo.polyv.net/android/resource/hierarchy.png)
 
 多场景项目的文件目录结构如下：
 
