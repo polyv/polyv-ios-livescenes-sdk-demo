@@ -3846,8 +3846,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = "1.5.0-beta";
 				PRODUCT_BUNDLE_IDENTIFIER = net.polyv.PolyvLiveWatchDemo;
-				MARKETING_VERSION = "1.5.1-beta";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -3874,8 +3874,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				MARKETING_VERSION = "1.5.0-beta";
 				PRODUCT_BUNDLE_IDENTIFIER = net.polyv.PolyvLiveWatchDemo;
-				MARKETING_VERSION = "1.5.1-beta";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
