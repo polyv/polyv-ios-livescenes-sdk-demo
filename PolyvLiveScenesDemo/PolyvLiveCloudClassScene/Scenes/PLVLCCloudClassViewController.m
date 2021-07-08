@@ -225,10 +225,10 @@ PLVRoomDataManagerProtocol
                 self.hideLinkMicAreaViewInSmallScreen = NO;
             }
         }
+        
+        [self.mediaAreaView.skinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
+        [self.liveRoomSkinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
     }
-    
-    [self.mediaAreaView.skinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
-    [self.liveRoomSkinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
     
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {

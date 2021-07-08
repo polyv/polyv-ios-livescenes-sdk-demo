@@ -83,14 +83,13 @@
         CGSize titleLabelFitSize = [self.titleLabel sizeThatFits:CGSizeMake(200, 22)];
         self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelFitSize.width, backButtonSize.height);
         
-        [self refreshPlayTimesLabelFrame];
-        
         self.moreButton.frame = CGRectMake(viewWidth - rightSafePadding - backButtonSize.width, topPadding, backButtonSize.width, backButtonSize.height);
         
         [self refreshBulletinButtonFrame];
         
         [self refreshTitleLabelFrameInSmallScreen];
-        
+        [self refreshPlayTimesLabelFrame];
+
         // 底部UI
         CGFloat bottomShadowLayerHeight = 90.0;
         self.bottomShadowLayer.frame = CGRectMake(0, viewHeight - bottomShadowLayerHeight, viewWidth, bottomShadowLayerHeight);
@@ -166,6 +165,7 @@
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGSize backButtonSize = CGSizeMake(40.0, 20.0);
     CGFloat topPadding = isPad ? 30.0 : 16.0;
+    CGSize titleLabelFitSize = [self.titleLabel sizeThatFits:CGSizeMake(200, 22)];
 
     // iPad小分屏适配（横屏1:2），标题宽度调整，观看次数隐藏
     Boolean isSmallScreen = CGRectGetWidth(self.bounds) <= PLVScreenWidth / 3 ? YES : NO;
@@ -174,12 +174,15 @@
             self.playTimesLabel.hidden = YES;
             
             CGFloat titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame);
+            titleLabelWidth = MIN(titleLabelWidth, titleLabelFitSize.width);
             self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
 
         } else {
             self.playTimesLabel.hidden = NO;
 
-            CGFloat titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame) - CGRectGetWidth(self.playTimesLabel.frame) - 10;
+            CGFloat playTimesLabelMaxWidth = 100;
+            CGFloat titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame) - playTimesLabelMaxWidth - 16;
+            titleLabelWidth = MIN(titleLabelWidth, titleLabelFitSize.width);
             self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
         }
     }
@@ -333,6 +336,7 @@
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshBulletinButtonFrame];
         [self refreshTitleLabelFrameInSmallScreen];
+        [self refreshPlayTimesLabelFrame];
         [self refreshRefreshButtonFrame];
         [self refreshFloatViewShowButtonFrame];
         [self refreshDanmuButtonFrame];
@@ -343,7 +347,7 @@
 }
 
 - (void)refreshPlayTimesLabelFrame{
-    CGSize playTimesLabelFitSize = [self.playTimesLabel sizeThatFits:CGSizeMake(150, 20.0)];
+    CGSize playTimesLabelFitSize = [self.playTimesLabel sizeThatFits:CGSizeMake(100, 20.0)];
     self.playTimesLabel.frame = CGRectMake(CGRectGetMaxX(self.titleLabel.frame) + 16, CGRectGetMinY(self.titleLabel.frame), playTimesLabelFitSize.width, 20.0);
 }
 
