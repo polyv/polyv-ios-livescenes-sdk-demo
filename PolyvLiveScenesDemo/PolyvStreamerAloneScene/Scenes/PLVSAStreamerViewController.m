@@ -256,6 +256,7 @@ PLVSAStreamerHomeViewDelegate
     self.streamerPresenter.cameraDefaultFront = YES;
     
     self.streamerPresenter.previewType = PLVStreamerPresenterPreviewType_UserArray;
+    [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:[PLVRoomDataManager sharedManager].roomData.maxResolution]];
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
     [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_Tile];

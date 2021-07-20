@@ -31,8 +31,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// delegate
 @property (nonatomic, weak) id <PLVPlayerPresenterDelegate> delegate;
 
-@property (nonatomic, strong, readonly) PLVLivePlayer *livePlayer;
-
 #pragma mark 数据
 /// 当前播放器的类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType currentVideoType;

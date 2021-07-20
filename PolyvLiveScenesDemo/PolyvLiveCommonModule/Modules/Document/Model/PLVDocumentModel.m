@@ -1,15 +1,16 @@
 //
-//  PLVLSDocumentModel.m
-//  PLVCloudClassStreamerModul
+//  PLVDocumentModel.m
+//  PolyvLiveScenesDemo
 //
-//  Created by MissYasiky on 2019/10/15.
-//  Copyright © 2019 easefun. All rights reserved.
+//  Created by lijingtong on 2021/7/1.
+//  Copyright © 2021 polyv. All rights reserved.
 //
 
-#import "PLVLSDocumentModel.h"
+#import "PLVDocumentModel.h"
+
 #import <PolyvFoundationSDK/PLVFdUtil.h>
 
-@interface PLVLSDocumentModel ()
+@interface PLVDocumentModel ()
 
 @property (nonatomic, assign) NSUInteger autoId;
 
@@ -29,10 +30,10 @@
 
 @end
 
-@implementation PLVLSDocumentModel
+@implementation PLVDocumentModel
 
-+ (PLVLSDocumentModel *)modelWithDictionary:(NSDictionary *)dict {
-    PLVLSDocumentModel *model = [[PLVLSDocumentModel alloc] init];
++ (PLVDocumentModel *)modelWithDictionary:(NSDictionary *)dict {
+    PLVDocumentModel *model = [[PLVDocumentModel alloc] init];
     model.autoId = [dict[@"autoId"] integerValue];
     model.fileId = dict[@"fileId"];
     model.fileName = dict[@"fileName"];

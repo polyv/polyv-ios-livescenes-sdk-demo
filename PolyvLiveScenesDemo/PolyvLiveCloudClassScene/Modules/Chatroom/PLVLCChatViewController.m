@@ -101,8 +101,9 @@ UITableViewDataSource
         self.hasLayoutSubView = YES;
         
         [self scrollsToBottom:NO];
+        
+        [self refreshLikeButtonViewFrame];
     }
-    [self refreshLikeButtonViewFrame];
 }
 
 - (void)refreshLikeButtonViewFrame{

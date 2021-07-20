@@ -15,15 +15,15 @@
 #import "PLVLSChatroomViewModel.h"
 #import "PLVEmoticonManager.h"
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
-#import <TZImagePickerController/TZImagePickerController.h>
+#import <PLVImagePickerController/PLVImagePickerController.h>
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
 
-@interface TZImagePickerController (PLVLSOverwrite)
+@interface PLVImagePickerController (PLVLSOverwrite)
 @end
 
-@implementation TZImagePickerController (PLVLSOverwrite)
+@implementation PLVImagePickerController (PLVLSOverwrite)
 
 - (void)setColumnNumber:(NSInteger)columnNumber {
     if (columnNumber <= 2) {
@@ -34,9 +34,9 @@
 
     [self setValue:@(columnNumber) forKey:@"_columnNumber"];
     
-    TZAlbumPickerController *albumPickerVc = [self.childViewControllers firstObject];
+    PLVAlbumPickerController *albumPickerVc = [self.childViewControllers firstObject];
     albumPickerVc.columnNumber = columnNumber;
-    [TZImageManager manager].columnNumber = columnNumber;
+    [PLVImageManager manager].columnNumber = columnNumber;
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
@@ -54,7 +54,7 @@ UITextViewDelegate
 @property (nonatomic, strong) PLVLSRepliedMsgView *repliedMsgView; // 被回复消息视图
 @property (nonatomic, strong) PLVLSSendMessageToolView *toolView;
 @property (nonatomic, strong) PLVLSEmojiSelectView *emojiboard;
-@property (nonatomic, strong) TZImagePickerController *imagePicker;
+@property (nonatomic, strong) PLVImagePickerController *imagePicker;
 @property (nonatomic, strong) UIView *tempInputView; // 使用局部变量代替属性会在 iOS 9.3.1 上产生内存问题
 
 @property (nonatomic, assign) CGFloat bottomHeight; // 设备底部安全区域，默认为 10
@@ -137,9 +137,9 @@ UITextViewDelegate
     return _emojiboard;
 }
 
-- (TZImagePickerController *)imagePicker {
+- (PLVImagePickerController *)imagePicker {
     if (!_imagePicker) {
-        _imagePicker = [[TZImagePickerController alloc] initWithMaxImagesCount:1 columnNumber:8 delegate:nil];
+        _imagePicker = [[PLVImagePickerController alloc] initWithMaxImagesCount:1 columnNumber:8 delegate:nil];
         _imagePicker.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
         _imagePicker.showSelectBtn = YES;
         _imagePicker.allowTakeVideo = NO;
@@ -187,7 +187,7 @@ UITextViewDelegate
             numberImageView.hidden = YES;
         }];
 
-        [_imagePicker setAlbumCellDidLayoutSubviewsBlock:^(TZAlbumCell *cell, UIImageView *posterImageView, UILabel *titleLabel) {
+        [_imagePicker setAlbumCellDidLayoutSubviewsBlock:^(PLVAlbumCell *cell, UIImageView *posterImageView, UILabel *titleLabel) {
             titleLabel.textColor = UIColor.lightGrayColor;
             [(UITableViewCell *)cell setBackgroundColor:UIColor.clearColor];
             [(UITableViewCell *)cell setSelectionStyle:UITableViewCellSelectionStyleNone];

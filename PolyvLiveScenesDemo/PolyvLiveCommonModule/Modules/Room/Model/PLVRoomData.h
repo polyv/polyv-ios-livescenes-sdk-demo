@@ -74,7 +74,7 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 #pragma mark 连麦独有属性
 
 /// 当前 频道连麦媒体类型
-@property (nonatomic, assign) PLVChannelLinkMicSceneType channelLinkMicMediaType;
+@property (nonatomic, assign) PLVChannelLinkMicMediaType channelLinkMicMediaType;
 /// 当前 频道嘉宾是否手动上麦
 @property (nonatomic, assign) BOOL channelGuestManualJoinLinkMic;
 

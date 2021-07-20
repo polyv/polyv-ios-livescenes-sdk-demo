@@ -288,7 +288,6 @@
 		005F187B264BBC4F0093E874 /* PLVLSDocumentListView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40A26098208003783D8 /* PLVLSDocumentListView.m */; };
 		005F187F264BBC510093E874 /* PLVLSDocumentPagesView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40C26098208003783D8 /* PLVLSDocumentPagesView.m */; };
 		005F1883264BBC540093E874 /* PLVLSDocumentListViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00C75C87261FDAFC00F141C5 /* PLVLSDocumentListViewModel.m */; };
-		005F1887264BBC580093E874 /* PLVLSDocumentModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40426098208003783D8 /* PLVLSDocumentModel.m */; };
 		005F1888264BBC5A0093E874 /* PLVLSDocumentPagesCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3FE26098208003783D8 /* PLVLSDocumentPagesCell.m */; };
 		005F188C264BBC5D0093E874 /* PLVLSDocumentListUploadCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3FC26098208003783D8 /* PLVLSDocumentListUploadCell.m */; };
 		005F1890264BBC5F0093E874 /* PLVLSDocumentListCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00C75C8E26204F1700F141C5 /* PLVLSDocumentListCell.m */; };
@@ -344,7 +343,6 @@
 		007CD43526098241003783D8 /* PLVLSDocumentSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40126098208003783D8 /* PLVLSDocumentSheet.m */; };
 		007CD43C2609824D003783D8 /* PLVLSDocumentPagesCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3FE26098208003783D8 /* PLVLSDocumentPagesCell.m */; };
 		007CD44826098253003783D8 /* PLVLSDocumentListUploadCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3FC26098208003783D8 /* PLVLSDocumentListUploadCell.m */; };
-		007CD44B26098256003783D8 /* PLVLSDocumentModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40426098208003783D8 /* PLVLSDocumentModel.m */; };
 		007CD4502609826D003783D8 /* PLVLSDocumentDeleteView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40D26098208003783D8 /* PLVLSDocumentDeleteView.m */; };
 		007CD45726098270003783D8 /* PLVLSDocumentUploadTipsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40826098208003783D8 /* PLVLSDocumentUploadTipsView.m */; };
 		007CD45C26098272003783D8 /* PLVLSDocumentListView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40A26098208003783D8 /* PLVLSDocumentListView.m */; };
@@ -496,7 +494,6 @@
 		21795DD3260730D4001E3668 /* PLVLSEmojiSelectView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21795DD2260730D4001E3668 /* PLVLSEmojiSelectView.m */; };
 		21795DD826073F3B001E3668 /* PLVLSSendMessageTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21795DD626073F3A001E3668 /* PLVLSSendMessageTextView.m */; };
 		21795DDD26077D7A001E3668 /* PLVLSSendMessageToolView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21795DDC26077D7A001E3668 /* PLVLSSendMessageToolView.m */; };
-		40F621CE7B174AF4F8BE666F /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CF80EA8FBD004A15923350C4 /* Pods_PolyvLiveScenesDemo.framework */; };
 		6306571124DCF01B00EAA430 /* PLVLCUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 6306571024DCF01B00EAA430 /* PLVLCUtils.m */; };
 		6306571624DCF17500EAA430 /* PLVLinkMic.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 6306571524DCF17500EAA430 /* PLVLinkMic.bundle */; };
 		630A462824ED13E90041EE0E /* PLVLinkMicOnlineUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 630A462724ED13E90041EE0E /* PLVLinkMicOnlineUser.m */; };
@@ -569,6 +566,8 @@
 		8F1C83D7266A0E5000B9374D /* PLVSAChatroomWelcomView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F1C83CB266A0DCE00B9374D /* PLVSAChatroomWelcomView.m */; };
 		8F1C8419266D026600B9374D /* PLVSAProhibitWordTipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F1C8418266D026600B9374D /* PLVSAProhibitWordTipView.m */; };
 		8F1C8420266D026A00B9374D /* PLVSAProhibitWordTipView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F1C8418266D026600B9374D /* PLVSAProhibitWordTipView.m */; };
+		8F4C7BEF26A57974005F968B /* PLVDocumentModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F4C7BEE26A57974005F968B /* PLVDocumentModel.m */; };
+		8F4C7BF026A57974005F968B /* PLVDocumentModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F4C7BEE26A57974005F968B /* PLVDocumentModel.m */; };
 		8F6FD6DF2670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F6FD6DE2670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m */; };
 		8F6FD6E02670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F6FD6DE2670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m */; };
 		8F789519267B892B00A7C2A7 /* PLVSARewardMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F789518267B892B00A7C2A7 /* PLVSARewardMessageCell.m */; };
@@ -619,6 +618,7 @@
 		BF7CFC6625BA636B0084C160 /* PLVECCommodityViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC6025BA636B0084C160 /* PLVECCommodityViewController.m */; };
 		BFC50CEB2592F6B800362138 /* PLVAdvView.m in Sources */ = {isa = PBXBuildFile; fileRef = BFC50CEA2592F6B800362138 /* PLVAdvView.m */; };
 		CD74BCD331ECDD7BBD09D92F /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
+		F16CB9D12422A3E3A085F258 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 238896CA7E24F4C9542F405F /* Pods_PolyvLiveScenesDemo.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -855,8 +855,6 @@
 		007CD3FE26098208003783D8 /* PLVLSDocumentPagesCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentPagesCell.m; sourceTree = "<group>"; };
 		007CD40026098208003783D8 /* PLVLSDocumentListUploadCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentListUploadCell.h; sourceTree = "<group>"; };
 		007CD40126098208003783D8 /* PLVLSDocumentSheet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentSheet.m; sourceTree = "<group>"; };
-		007CD40326098208003783D8 /* PLVLSDocumentModel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentModel.h; sourceTree = "<group>"; };
-		007CD40426098208003783D8 /* PLVLSDocumentModel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentModel.m; sourceTree = "<group>"; };
 		007CD40626098208003783D8 /* PLVLSDocumentDeleteView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentDeleteView.h; sourceTree = "<group>"; };
 		007CD40726098208003783D8 /* PLVLSDocumentPagesView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentPagesView.h; sourceTree = "<group>"; };
 		007CD40826098208003783D8 /* PLVLSDocumentUploadTipsView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentUploadTipsView.m; sourceTree = "<group>"; };
@@ -951,6 +949,7 @@
 		21795DD726073F3A001E3668 /* PLVLSSendMessageTextView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSSendMessageTextView.h; sourceTree = "<group>"; };
 		21795DDB26077D7A001E3668 /* PLVLSSendMessageToolView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLSSendMessageToolView.h; sourceTree = "<group>"; };
 		21795DDC26077D7A001E3668 /* PLVLSSendMessageToolView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLSSendMessageToolView.m; sourceTree = "<group>"; };
+		238896CA7E24F4C9542F405F /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3AFD93E604C59290FC339D1A /* Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemoUITests/Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		430C9CF57975329ADA06E5C9 /* Pods_PolyvLiveEcommerceDemoUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveEcommerceDemoUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6306570F24DCF01B00EAA430 /* PLVLCUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCUtils.h; sourceTree = "<group>"; };
@@ -1097,6 +1096,8 @@
 		8F1C83D1266A0E4A00B9374D /* PLVSAChatroomGiftView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVSAChatroomGiftView.m; sourceTree = "<group>"; };
 		8F1C8417266D026600B9374D /* PLVSAProhibitWordTipView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSAProhibitWordTipView.h; sourceTree = "<group>"; };
 		8F1C8418266D026600B9374D /* PLVSAProhibitWordTipView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVSAProhibitWordTipView.m; sourceTree = "<group>"; };
+		8F4C7BED26A57974005F968B /* PLVDocumentModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVDocumentModel.h; sourceTree = "<group>"; };
+		8F4C7BEE26A57974005F968B /* PLVDocumentModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVDocumentModel.m; sourceTree = "<group>"; };
 		8F6FD6DD2670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSALinkMicUserInfoSheet.h; sourceTree = "<group>"; };
 		8F6FD6DE2670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVSALinkMicUserInfoSheet.m; sourceTree = "<group>"; };
 		8F789517267B892B00A7C2A7 /* PLVSARewardMessageCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSARewardMessageCell.h; sourceTree = "<group>"; };
@@ -1164,7 +1165,6 @@
 		BFC50CE92592F6B800362138 /* PLVAdvView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVAdvView.h; sourceTree = "<group>"; };
 		BFC50CEA2592F6B800362138 /* PLVAdvView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVAdvView.m; sourceTree = "<group>"; };
 		C8C0B1BDBA08B5A1387EB520 /* Pods-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
-		CF80EA8FBD004A15923350C4 /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		D12BFA48BFD11F80E5A2FAA5 /* Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		D9C6F1C98177E8003A3399A9 /* Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveStreamerDemo/Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig"; sourceTree = "<group>"; };
 		FE0ED85B45376486CC1BFE2E /* Pods-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1194,7 +1194,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				633E425D257DCD710039D35D /* PLVLiveScenesSDK.framework in Frameworks */,
-				40F621CE7B174AF4F8BE666F /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
+				F16CB9D12422A3E3A085F258 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1492,6 +1492,7 @@
 		00511F7C263AC58B008CE5E3 /* Document */ = {
 			isa = PBXGroup;
 			children = (
+				8F4C7BEC26A57948005F968B /* Model */,
 				007CD4212609821B003783D8 /* PLVDocumentView.h */,
 				007CD4222609821B003783D8 /* PLVDocumentView.m */,
 				00511F7D263AC58B008CE5E3 /* Manager */,
@@ -1698,7 +1699,6 @@
 			children = (
 				005B1B5226551ABE00F77307 /* PLVSAToolbarAreaView.h */,
 				005B1B5326551ABE00F77307 /* PLVSAToolbarAreaView.m */,
-				8FD08EA0265E3B4A007F8457 /* View */,
 			);
 			path = Toolbar;
 			sourceTree = "<group>";
@@ -1908,8 +1908,6 @@
 		007CD40226098208003783D8 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				007CD40326098208003783D8 /* PLVLSDocumentModel.h */,
-				007CD40426098208003783D8 /* PLVLSDocumentModel.m */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -2808,9 +2806,18 @@
 				670B80B424C54D8800D94478 /* PolyvFoundationSDK.framework */,
 				430C9CF57975329ADA06E5C9 /* Pods_PolyvLiveEcommerceDemoUITests.framework */,
 				6ED5072918A006C94EB83D86 /* Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework */,
-				CF80EA8FBD004A15923350C4 /* Pods_PolyvLiveScenesDemo.framework */,
+				238896CA7E24F4C9542F405F /* Pods_PolyvLiveScenesDemo.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		8F4C7BEC26A57948005F968B /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				8F4C7BED26A57974005F968B /* PLVDocumentModel.h */,
+				8F4C7BEE26A57974005F968B /* PLVDocumentModel.m */,
+			);
+			path = Model;
 			sourceTree = "<group>";
 		};
 		8FD08C37265CAD7E007F8457 /* View */ = {
@@ -2822,7 +2829,7 @@
 			path = View;
 			sourceTree = "<group>";
 		};
-		8FD08EA0265E3B4A007F8457 /* View */ = {
+		8FD08EA0265E3B4A007F8457 /* SendMsgView */ = {
 			isa = PBXGroup;
 			children = (
 				8FD08EA1265E3B93007F8457 /* PLVSASendMessageView.h */,
@@ -2836,7 +2843,7 @@
 				8FD08EBD265E43FE007F8457 /* PLVSARepliedMsgView.h */,
 				8FD08EBE265E43FE007F8457 /* PLVSARepliedMsgView.m */,
 			);
-			path = View;
+			path = SendMsgView;
 			sourceTree = "<group>";
 		};
 		8FD08EC5265E4430007F8457 /* ViewModel */ = {
@@ -2851,6 +2858,7 @@
 		8FD08EC6265E4437007F8457 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				8FD08EA0265E3B4A007F8457 /* SendMsgView */,
 				8FD08F84265FA1D6007F8457 /* PLVSAChatroomListView.h */,
 				8FD08F85265FA1D6007F8457 /* PLVSAChatroomListView.m */,
 				8FD08FA0265FC1CA007F8457 /* PLVSANewMessgaeTipView.h */,
@@ -3394,6 +3402,7 @@
 				00572A3A2669D4040000784B /* PLVSAMemberCell.m in Sources */,
 				215D04292605875300E86BEF /* PLVLinkMicPresenter.m in Sources */,
 				6395DE4E26217E66000D0A44 /* PLVLinkMicOnlineUser+LS.m in Sources */,
+				8F4C7BF026A57974005F968B /* PLVDocumentModel.m in Sources */,
 				007CD43C2609824D003783D8 /* PLVLSDocumentPagesCell.m in Sources */,
 				007CD46B26098288003783D8 /* PLVLSDocumentBrushView.m in Sources */,
 				215D04352605875300E86BEF /* PLVChatModel.m in Sources */,
@@ -3494,7 +3503,6 @@
 				045EF2492664E2AE009275C4 /* PLVSASlideRightTipsView.m in Sources */,
 				215D04862605875300E86BEF /* PLVDanMuLabel.m in Sources */,
 				215D05262605896800E86BEF /* PLVLSCountDownView.m in Sources */,
-				007CD44B26098256003783D8 /* PLVLSDocumentModel.m in Sources */,
 				215D04892605875300E86BEF /* PLVRoomData.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3512,7 +3520,6 @@
 				005F1898264BBC680093E874 /* PLVLSDocumentAreaView.m in Sources */,
 				633E4220257A094A0039D35D /* PLVLCLinkMicWindowsView.m in Sources */,
 				633E422A257A09F80039D35D /* PLVLCLiveRoomPlayerSkinView.m in Sources */,
-				005F1887264BBC580093E874 /* PLVLSDocumentModel.m in Sources */,
 				005B1AF02654C3CE00F77307 /* PLVSAStreamerViewController.m in Sources */,
 				0057291E265DE0B20000784B /* PLVSALinkMicCanvasView.m in Sources */,
 				005B1B5426551ABE00F77307 /* PLVSAToolbarAreaView.m in Sources */,
@@ -3694,6 +3701,7 @@
 				00476BB9259194C000460F8E /* PLVImageInfo.m in Sources */,
 				00476BEF2591959000460F8E /* PLVECPlayerContolView.m in Sources */,
 				00476BF02591959000460F8E /* PLVECMoreView.m in Sources */,
+				8F4C7BEF26A57974005F968B /* PLVDocumentModel.m in Sources */,
 				633E42092579EC2F0039D35D /* PLVLCMediaPlayerCanvasView.m in Sources */,
 				63D24307255A97A600CB569E /* PLVLCCloudClassViewController.m in Sources */,
 				00539C5F25EE48B50016B2BD /* PLVAlertViewController.m in Sources */,

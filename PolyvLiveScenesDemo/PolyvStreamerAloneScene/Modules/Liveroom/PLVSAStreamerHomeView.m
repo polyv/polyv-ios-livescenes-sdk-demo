@@ -29,6 +29,8 @@
 #import "PLVRoomDataManager.h"
 #import "PLVLinkMicOnlineUser.h"
 
+static NSString * const kUserDefaultShowedSlideRightTips = @"UserDefaultShowedSlideRightTips";
+
 @interface PLVSAStreamerHomeView ()<
 UIScrollViewDelegate,
 PLVSABitRateSheetDelegate,
@@ -556,8 +558,13 @@ PLVSALinkMicTipViewDelegate
 #pragma mark PLVSAChatroomAreaViewDelegate
 
 - (void)chatroomAreaView_showSlideRightView {
-    self.slideRightTipsView.hidden = NO;
-    self.scrollView.scrollEnabled = NO;
+    BOOL showedSlideRightTipsView = [[NSUserDefaults standardUserDefaults] boolForKey:kUserDefaultShowedSlideRightTips];
+    if (!showedSlideRightTipsView) {
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kUserDefaultShowedSlideRightTips];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        self.slideRightTipsView.hidden = NO;
+        self.scrollView.scrollEnabled = NO;
+    }
 }
 
 - (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView DidChangeCloseRoom:(BOOL)closeRoom {

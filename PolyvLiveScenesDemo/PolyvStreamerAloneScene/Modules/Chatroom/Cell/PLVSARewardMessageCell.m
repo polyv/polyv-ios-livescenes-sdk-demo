@@ -42,7 +42,8 @@ static int cellHeight = 32 + 8;
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.allowReply = self.allowCopy = NO;
+        self.allowReply =NO;
+        self.allowCopy = NO;
         
         [self.contentView addSubview:self.bubbleView];
         [self.bubbleView addSubview:self.contentLabel];
@@ -83,12 +84,6 @@ static int cellHeight = 32 + 8;
  
     self.rewardImageView.frame = CGRectMake(CGRectGetMaxX(self.contentLabel.frame) + rewardPadding, (bubbleHeight - rewardHeight ) / 2 , rewardWidth, rewardHeight);
 }
-
-- (void)customCopy:(id)sender {
-    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
-    pasteboard.string = self.contentLabel.attributedText.string;
-}
-
 
 #pragma mark - [ Public Method ]
 

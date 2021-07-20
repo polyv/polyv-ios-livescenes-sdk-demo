@@ -9,7 +9,7 @@
 
 #import <UIKit/UIKit.h>
 
-@class PLVDocumentUploadModel, PLVLSDocumentModel;
+@class PLVDocumentUploadModel, PLVDocumentModel;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -29,7 +29,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setUploadModel:(PLVDocumentUploadModel *)uploadModel;
 
-- (void)setDocumentModel:(PLVLSDocumentModel *)documentModel;
+- (void)setDocumentModel:(PLVDocumentModel *)documentModel;
 
 @end
 

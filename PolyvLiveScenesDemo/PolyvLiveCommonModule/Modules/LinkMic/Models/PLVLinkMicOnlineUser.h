@@ -51,6 +51,7 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// [状态] 用户的 ’音量‘ 改变Block
 ///
 /// @note 仅在 currentVolume音量值 有改变时会触发；
+///       若当前 currentMicOpen麦克风开关值 为NO时，则必定不触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserVolumeChangedBlock volumeChangedBlock;
 

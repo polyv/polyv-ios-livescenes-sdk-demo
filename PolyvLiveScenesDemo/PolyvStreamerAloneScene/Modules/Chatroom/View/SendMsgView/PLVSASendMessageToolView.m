@@ -41,17 +41,14 @@
 - (void)layoutSubviews {
     
     CGFloat margin = 8;
-    CGFloat padding = 8;
-    CGFloat top = 8;
-    self.imageButton.frame = CGRectMake(self.bounds.size.width -  margin - 28, top, 28, 28);
-    self.emojiButton.frame = CGRectMake(CGRectGetMinX(self.imageButton.frame) - 28 - margin, top, 28, 28);
+    self.imageButton.frame = CGRectMake(self.bounds.size.width -  margin - 28, margin, 28, 28);
+    self.emojiButton.frame = CGRectMake(CGRectGetMinX(self.imageButton.frame) - 28 - margin, margin, 28, 28);
     
     CGFloat textViewBgWidth = self.emojiButton.frame.origin.x - margin *2 ;
     self.textViewBgView.frame = CGRectMake(margin, 6, textViewBgWidth, 32);
-    self.textView.frame = CGRectMake(padding, 0, textViewBgWidth - 2 * 12, 32);
+    self.textView.frame = CGRectMake(margin, 0, textViewBgWidth - 2 * 12, 32);
 }
 
-#pragma mark - [ Public Method ]
 #pragma mark - [ Private Method ]
 
 #pragma mark Getter

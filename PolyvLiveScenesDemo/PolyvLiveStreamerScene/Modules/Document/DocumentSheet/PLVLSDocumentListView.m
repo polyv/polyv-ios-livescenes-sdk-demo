@@ -281,7 +281,7 @@ PLVSDocumentListProtocol
             PLVDocumentUploadModel *uploadModel = (PLVDocumentUploadModel *)model;
             identifier = uploadModel.fileId;
         } else {
-            PLVLSDocumentModel *uploadedModel = (PLVLSDocumentModel *)model;
+            PLVDocumentModel *uploadedModel = (PLVDocumentModel *)model;
             identifier = uploadedModel.fileId;
         }
         
@@ -291,7 +291,7 @@ PLVSDocumentListProtocol
             PLVDocumentUploadModel *uploadModel = (PLVDocumentUploadModel *)model;
             [cell setUploadModel:uploadModel];
         } else {
-            PLVLSDocumentModel *uploadedModel = (PLVLSDocumentModel *)model;
+            PLVDocumentModel *uploadedModel = (PLVDocumentModel *)model;
             [cell setDocumentModel:uploadedModel];
         }
         cell.tag = indexPath.item;
@@ -328,12 +328,12 @@ PLVSDocumentListProtocol
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
     if ([self.viewModel selectAtIndex:indexPath.item]) {
         id model = [self.viewModel documetModelAtIndex:indexPath.item];
-        PLVLSDocumentModel *docModel = (PLVLSDocumentModel *)model;
+        PLVDocumentModel *docModel = (PLVDocumentModel *)model;
         
         if (self.delegate &&
             [self.delegate respondsToSelector:@selector(documentListView:didSelectItemModel:changeDocument:)] &&
             docModel &&
-            [docModel isKindOfClass:[PLVLSDocumentModel class]]) {
+            [docModel isKindOfClass:[PLVDocumentModel class]]) {
             BOOL isChangeDocument = self.selectAutoId != self.viewModel.selectedAutoId;
             self.selectAutoId = self.viewModel.selectedAutoId;
             [self.delegate documentListView:self didSelectItemModel:docModel changeDocument:isChangeDocument];

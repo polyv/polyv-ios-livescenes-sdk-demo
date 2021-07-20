@@ -18,6 +18,7 @@
 #import "PLVDanMu.h"
 #import "PLVEmoticonManager.h"
 #import "PLVRoomDataManager.h"
+#import "PLVPlayerPresenter.h"
 
 // 工具
 #import "PLVLCUtils.h"

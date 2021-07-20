@@ -9,7 +9,7 @@
 #import "PLVDocumentConvertManager.h"
 #import "PLVDocumentConvertRequester.h"
 #import "PLVRoomDataManager.h"
-#import "PLVLSDocumentModel.h"
+#import "PLVDocumentModel.h"
 #import <PLVLiveScenesSDK/PLVDocumentUploadModel.h>
 
 extern NSString *PLVDocumentConvertNormalNotification;
@@ -81,8 +81,8 @@ NSString *PLVDocumentConvertAnimateLossCacheKey = @"PLVDocumentConvertAnimateLos
     [self.convertArray removeAllObjects];
 }
 
-- (void)checkupConvertArrayFromNormalList:(NSArray <PLVLSDocumentModel *> *)normalList {
-    for (PLVLSDocumentModel *normalModel in normalList) {
+- (void)checkupConvertArrayFromNormalList:(NSArray <PLVDocumentModel *> *)normalList {
+    for (PLVDocumentModel *normalModel in normalList) {
         NSString *normalFileId = normalModel.fileId;
         PLVDocumentUploadModel *convertModel = [self modelWithFileId:normalFileId];
         if (convertModel) {

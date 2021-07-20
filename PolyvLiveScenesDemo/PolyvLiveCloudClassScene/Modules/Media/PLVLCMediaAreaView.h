@@ -10,7 +10,6 @@
 
 #import "PLVLCMediaPlayerSkinView.h"
 #import "PLVLCMediaFloatView.h"
-#import "PLVPlayerPresenter.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define PPTPlayerViewScale (9.0 / 16.0)

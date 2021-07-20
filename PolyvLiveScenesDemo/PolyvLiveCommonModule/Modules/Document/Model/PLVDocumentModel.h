@@ -1,17 +1,16 @@
 //
-//  PLVLSDocumentModel.h
-//  PLVCloudClassStreamerModul
-//  文档列表 PLVSDocumentListViewController 数据模型，每一个模型包含一个文档的基本数据
+//  PLVDocumentModel.h
+//  PolyvLiveScenesDemo
 //
-//  Created by MissYasiky on 2019/10/15.
-//  Copyright © 2019 easefun. All rights reserved.
-//
+//  Created by lijingtong on 2021/7/1.
+//  Copyright © 2021 polyv. All rights reserved.
+// 文档列表数据模型，每一个模型包含一个文档的基本数据
 
 #import <Foundation/Foundation.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface PLVLSDocumentModel : NSObject
+@interface PLVDocumentModel : NSObject
 
 /// 文档Id
 @property (nonatomic, assign, readonly) NSUInteger autoId;
@@ -30,7 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 预览原图
 @property (nonatomic, copy, readonly) NSString *previewBigImage;
 
-+ (PLVLSDocumentModel *)modelWithDictionary:(NSDictionary *)dict;
+/// 将字典数据源 转成PLVDocumentModel模型
+/// @param dict 数据源
++ (PLVDocumentModel *)modelWithDictionary:(NSDictionary *)dict;
 
 @end
 

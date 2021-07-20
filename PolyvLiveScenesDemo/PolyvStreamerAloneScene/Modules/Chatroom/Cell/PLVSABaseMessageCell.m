@@ -90,8 +90,11 @@
 #pragma mark Gesture
 
 - (void)longPressAction:(id)sender {
+    if (!self.allowCopy &&
+        !self.allowReply) {
+        return;
+    }
     [self becomeFirstResponder];
-
     [self setMenuItem];
     
     UIMenuController *menuController = [UIMenuController sharedMenuController];

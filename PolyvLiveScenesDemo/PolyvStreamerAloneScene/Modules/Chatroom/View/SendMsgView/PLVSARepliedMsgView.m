@@ -13,6 +13,7 @@
 
 // Model
 #import "PLVChatModel.h"
+#import "PLVEmoticonManager.h"
 
 // SDK
 #import <PolyvFoundationSDK/PolyvFoundationSDK.h>
@@ -98,7 +99,10 @@
         content.length > 0) { // 消息文本
         [mutString appendString:content];
     }
-    _label.text = [mutString copy];
+    
+    NSMutableAttributedString *conentString = [[NSMutableAttributedString alloc] initWithString:[mutString copy] attributes:@{NSFontAttributeName:_label.font}];
+    NSMutableAttributedString *emojiContentString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:conentString font:_label.font];
+    _label.attributedText = emojiContentString;
     
     if (imageMsg) { // 设置图片消息的图片
         _imageMsg = imageMsg; // _imageMsg不为nil时则证明为图片消息
@@ -121,7 +125,7 @@
 
 - (void)layoutUI {
     CGFloat width = PLVScreenWidth;
-    CGFloat originX = [PLVSAUtils sharedUtils].areaInsets.left;
+    CGFloat originX = [PLVSAUtils sharedUtils].areaInsets.left + 8;
     
     CGFloat closeButtonOriginX = width - originX - 30;
     CGFloat labelWidth = closeButtonOriginX - originX;

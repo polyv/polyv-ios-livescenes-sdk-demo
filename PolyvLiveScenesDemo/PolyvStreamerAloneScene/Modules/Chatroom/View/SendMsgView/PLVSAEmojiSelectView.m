@@ -81,7 +81,7 @@
     
     self.deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
     self.deleteButton.backgroundColor = PLV_UIColorFromRGB(@"#3E3E4E");
-    UIImage *deleteImage = [PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_emoji"];
+    UIImage *deleteImage = [PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_emojiDelete"];
     [self.deleteButton setImage:deleteImage forState:UIControlStateNormal];
     [self.deleteButton addTarget:self action:@selector(deleteButtonTouchBegin)forControlEvents:UIControlEventTouchDown];
     [self.deleteButton addTarget:self action:@selector(deleteButtonTouchEnd)forControlEvents:UIControlEventTouchUpInside];
@@ -115,7 +115,6 @@
                 [self.scrollView addSubview:button];
                 [button setBackgroundColor:[UIColor clearColor]];
                 [button setFrame:CGRectMake(col * itemWidth + addtionWidth, (row-decreaseRow) * itemHeight, itemWidth, itemHeight)];
-                button.showsTouchWhenHighlighted = YES;
                 button.tag = index;
                 [button addTarget:self action:@selector(emoticonButtonAction:) forControlEvents:UIControlEventTouchUpInside];
                 

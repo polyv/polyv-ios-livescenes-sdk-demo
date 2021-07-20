@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString *PLVDocumentConvertAnimateLossCacheKey;
 
-@class PLVLSDocumentModel, PLVDocumentUploadModel;
+@class PLVDocumentModel, PLVDocumentUploadModel;
 
 @protocol PLVDocumentConvertManagerDelegate <NSObject>
 
@@ -48,7 +48,7 @@ extern NSString *PLVDocumentConvertAnimateLossCacheKey;
 
 /// 转码队列（校正）去重
 /// @param normalList 文档列表接口返回的 normal 数据类型
-- (void)checkupConvertArrayFromNormalList:(NSArray <PLVLSDocumentModel *> *)normalList;
+- (void)checkupConvertArrayFromNormalList:(NSArray <PLVDocumentModel *> *)normalList;
 
 /// 移除动态丢失本地标记
 + (void)removeAnimateLossCacheWithFileId:(NSString *)fileId;

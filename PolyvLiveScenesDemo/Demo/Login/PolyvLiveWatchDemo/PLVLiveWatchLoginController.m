@@ -44,12 +44,6 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 @property (weak, nonatomic) IBOutlet UISwitch *vodListSwitch;
 @property (weak, nonatomic) IBOutlet UILabel *vodListSwitchLabel;
 
-@property (nonatomic, copy) NSString *userId;
-@property (nonatomic, copy) NSString *appId;
-@property (nonatomic, copy) NSString *appSecret;
-@property (nonatomic, copy) NSString *channelId;
-@property (nonatomic, copy) NSString *vid;
-
 @end
 
 @implementation PLVLiveWatchLoginController
@@ -61,10 +55,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     
     [self initUI];
     
-    if (!self.appId || !self.appSecret || !self.userId) {
-        [self recoverParamsFromFile];
-    }
-    [self configUIData];
+    [self recoverParamsFromFile];
     
     [self addNotification];
     
@@ -120,14 +111,6 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     NSDictionary *attrs = @{NSForegroundColorAttributeName: [UIColor systemGrayColor]};
     tf.attributedPlaceholder = [[NSAttributedString alloc] initWithString:tf.placeholder attributes:attrs];
     tf.textColor = [UIColor blackColor];
-}
-
-- (void)configUIData {
-    self.appIDTF.text = self.appId;
-    self.userIDTF.text = self.userId;
-    self.appSecretTF.text = self.appSecret;
-    self.channelIdTF.text = self.channelId;
-    self.vIdTF.text = self.vid;
 }
 
 - (BOOL)checkTextField:(UITextField *)textField {
@@ -460,11 +443,11 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     if (loginInfo.count < 5) {
         return;
     }
-    self.appId = loginInfo[0];
-    self.userId = loginInfo[1];
-    self.appSecret = loginInfo[2];
-    self.channelId = loginInfo[3];
-    self.vid = loginInfo[4];
+    self.appIDTF.text = loginInfo[0];
+    self.userIDTF.text = loginInfo[1];
+    self.appSecretTF.text = loginInfo[2];
+    self.channelIdTF.text = loginInfo[3];
+    self.vIdTF.text = loginInfo[4];
 }
 
 - (void)saveParamsToFile {

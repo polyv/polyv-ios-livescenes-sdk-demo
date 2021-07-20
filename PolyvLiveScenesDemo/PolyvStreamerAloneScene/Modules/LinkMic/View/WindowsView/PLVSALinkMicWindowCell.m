@@ -107,6 +107,7 @@
         [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
         if (hide) {
             if (onlineUser.currentCameraShouldShow) {
+                onlineUser.canvasView.frame = weakSelf.contentBackgroudView.bounds;
                 [weakSelf.contentBackgroudView addSubview:onlineUser.canvasView];
             } else {
                 [onlineUser.canvasView removeFromSuperview];

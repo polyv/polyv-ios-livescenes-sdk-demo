@@ -144,7 +144,7 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 @property (nonatomic, assign, readonly) BOOL channelLinkMicOpen;
 
 /// 当前 频道连麦媒体类型
-@property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType channelLinkMicMediaType;
+@property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType channelLinkMicMediaType;
 
 /// 当前 流宽高比 (默认值:PLVBLinkMicStreamScale16_9)
 @property (nonatomic, assign, readonly) PLVBLinkMicStreamScale streamScale;

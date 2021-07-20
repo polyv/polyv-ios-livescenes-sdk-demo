@@ -7,7 +7,7 @@
 //
 
 #import "PLVLSDocumentListViewModel.h"
-#import "PLVLSDocumentModel.h"
+#import "PLVDocumentModel.h"
 #import "PLVLSUtils.h"
 #import "PLVRoomDataManager.h"
 #import "PLVDocumentConvertManager.h"
@@ -31,7 +31,7 @@ PLVDocumentConvertManagerDelegate
 
 @property (nonatomic, copy) NSMutableArray <PLVDocumentUploadModel *> *unConvertArray;
 
-@property (nonatomic, copy) NSMutableArray <PLVLSDocumentModel *> *normalArray;
+@property (nonatomic, copy) NSMutableArray <PLVDocumentModel *> *normalArray;
 
 /// 被选中的文档索引
 @property (nonatomic, assign) NSInteger selectedIndex;
@@ -120,7 +120,7 @@ PLVDocumentConvertManagerDelegate
         PLVDocumentUploadModel *model = self.unConvertArray[arrayIndex];
         return model;
     } else if (dataType == PLVSDocumentDataTypeNormal && arrayIndex != -1) {
-        PLVLSDocumentModel *model = self.normalArray[arrayIndex];
+        PLVDocumentModel *model = self.normalArray[arrayIndex];
         return model;
     }
     return nil;
@@ -142,8 +142,8 @@ PLVDocumentConvertManagerDelegate
     }
     
     id model = [self documetModelAtIndex:index];
-    if (model && [model isKindOfClass:[PLVLSDocumentModel class]]) {
-        PLVLSDocumentModel *uploadedModel = (PLVLSDocumentModel *)model;
+    if (model && [model isKindOfClass:[PLVDocumentModel class]]) {
+        PLVDocumentModel *uploadedModel = (PLVDocumentModel *)model;
         self.selectedIndex = index;
         self.selectedAutoId = uploadedModel.autoId;
         return YES;
@@ -175,7 +175,7 @@ PLVDocumentConvertManagerDelegate
         loading = YES;
 
         realDeletingIndex -= [self.unUploadArray count] + [self.unConvertArray count];
-        PLVLSDocumentModel *model = self.normalArray[arrayIndex];
+        PLVDocumentModel *model = self.normalArray[arrayIndex];
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         NSString *channelId = roomData.channelId;
 
@@ -212,7 +212,7 @@ PLVDocumentConvertManagerDelegate
     
     NSInteger arrayIndex = -1;
     for (int i = 0; i < [self.normalArray count]; i++) {
-        PLVLSDocumentModel *model = self.normalArray[i];
+        PLVDocumentModel *model = self.normalArray[i];
         if (model.autoId == self.selectedAutoId) {
             arrayIndex = i;
             break;
@@ -255,7 +255,7 @@ PLVDocumentConvertManagerDelegate
         [weakSelf.normalArray removeAllObjects];
         for (NSDictionary *dict in responseArray) {
             if ([@"normal" isEqualToString:dict[@"status"]]) {
-                PLVLSDocumentModel *documentModel = [PLVLSDocumentModel plv_modelWithJSON:dict];
+                PLVDocumentModel *documentModel = [PLVDocumentModel plv_modelWithJSON:dict];
                 [weakSelf.normalArray addObject:documentModel];
             }
         }

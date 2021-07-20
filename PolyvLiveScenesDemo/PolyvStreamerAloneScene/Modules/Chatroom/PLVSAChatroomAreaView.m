@@ -49,7 +49,6 @@ PLVSAChatroomListViewDelegate
 
 /// 数据
 @property (nonatomic, assign) NSUInteger newMessageCount; // 未读消息条数
-@property (nonatomic, assign) BOOL showSlideRightView; // 是否显示清屏手势提示
 @property (nonatomic, assign) CGRect originWelcomViewFrame; // 新用户进入欢迎视图原frame
 
 @end
@@ -73,7 +72,6 @@ PLVSAChatroomListViewDelegate
         
         [PLVSAChatroomViewModel sharedViewModel].delegate = self;
         
-        self.showSlideRightView = YES;
         // 提前初始化 sendMsgView，避免弹出时才初始化导致卡顿
         [self sendMsgView];
     }
@@ -227,8 +225,7 @@ PLVSAChatroomListViewDelegate
     [self.chatroomListView didSendMessage];
     [self clearNewMessageCount];
     
-    if ([PLVSAChatroomViewModel sharedViewModel].chatArray.count > 10 && self.showSlideRightView) {
-        self.showSlideRightView = NO;
+    if ([PLVSAChatroomViewModel sharedViewModel].chatArray.count > 10) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomAreaView_showSlideRightView)]) {
             [self.delegate chatroomAreaView_showSlideRightView];
         }
@@ -243,8 +240,7 @@ PLVSAChatroomListViewDelegate
         // 统计未读消息数
         [self addNewMessageCount];
     }
-    if ([PLVSAChatroomViewModel sharedViewModel].chatArray.count > 10 && self.showSlideRightView) {
-        self.showSlideRightView = NO;
+    if ([PLVSAChatroomViewModel sharedViewModel].chatArray.count > 10) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomAreaView_showSlideRightView)]) {
             [self.delegate chatroomAreaView_showSlideRightView];
         }

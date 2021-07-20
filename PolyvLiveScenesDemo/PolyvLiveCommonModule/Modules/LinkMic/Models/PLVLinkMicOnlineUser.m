@@ -188,11 +188,12 @@
     BOOL needCallBack = (_currentVolume != volume);
     if (!_updateUserCurrentVolumeCallbackBefore) {
         needCallBack = YES;
-        _updateUserCurrentVolumeCallbackBefore = YES;
     }
+    needCallBack = self.currentMicOpen ? needCallBack : NO;
     
     _currentVolume = volume;
     if (needCallBack && self.volumeChangedBlock) {
+        _updateUserCurrentVolumeCallbackBefore = YES;
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.volumeChangedBlock(weakSelf); }
@@ -204,11 +205,11 @@
     BOOL needCallBack = (_currentMicOpen != micOpen);
     if (!_updateUserCurrentMicOpenCallbackBefore) {
         needCallBack = YES;
-        _updateUserCurrentMicOpenCallbackBefore = YES;
     }
     
     _currentMicOpen = micOpen;
     if (needCallBack && self.micOpenChangedBlock) {
+        _updateUserCurrentMicOpenCallbackBefore = YES;
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.micOpenChangedBlock(weakSelf); }
@@ -216,6 +217,7 @@
     }
     
     if (needCallBack && _micOpenChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentMicOpenCallbackBefore = YES;
         NSEnumerator * enumerator = [_micOpenChanged_MultiReceiverMap objectEnumerator];
         PLVLinkMicOnlineUserMicOpenChangedBlock block;
         __weak typeof(self) weakSelf = self;
@@ -236,11 +238,17 @@
     BOOL needCallBackCameraShouldOpen = (_currentCameraShouldShow != cameraOpenResult);
     if (!_updateUserCurrentCameraShouldShowCallbackBefore) {
         needCallBackCameraShouldOpen = YES;
-        _updateUserCurrentCameraShouldShowCallbackBefore = YES;
     }
-    
     _currentCameraShouldShow = cameraOpenResult;
+    
+    BOOL needCallBack = (_currentCameraOpen != cameraOpen);
+    if (!_updateUserCurrentCameraOpenCallbackBefore) {
+        needCallBack = YES;
+    }
+    _currentCameraOpen = cameraOpen;
+    
     if (needCallBackCameraShouldOpen && self.cameraShouldShowChangedBlock) {
+        _updateUserCurrentCameraShouldShowCallbackBefore = YES;
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.cameraShouldShowChangedBlock(weakSelf); }
@@ -248,6 +256,7 @@
     }
     
     if (needCallBackCameraShouldOpen && _cameraShouldShowChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentCameraShouldShowCallbackBefore = YES;
         NSEnumerator * enumerator = [_cameraShouldShowChanged_MultiReceiverMap objectEnumerator];
         PLVLinkMicOnlineUserCameraShouldShowChangedBlock block;
         __weak typeof(self) weakSelf = self;
@@ -257,14 +266,9 @@
             })
         }
     }
-    
-    BOOL needCallBack = (_currentCameraOpen != cameraOpen);
-    if (!_updateUserCurrentCameraOpenCallbackBefore) {
-        needCallBack = YES;
-        _updateUserCurrentCameraOpenCallbackBefore = YES;
-    }
-    _currentCameraOpen = cameraOpen;
+
     if (needCallBack && self.cameraOpenChangedBlock) {
+        _updateUserCurrentCameraOpenCallbackBefore = YES;
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.cameraOpenChangedBlock(weakSelf); }
@@ -276,11 +280,11 @@
     BOOL needCallBack = (_currentCameraFront != cameraFront);
     if (!_updateUserCurrentCameraFrontCallbackBefore) {
         needCallBack = YES;
-        _updateUserCurrentCameraFrontCallbackBefore = YES;
     }
     
     _currentCameraFront = cameraFront;
     if (needCallBack && self.cameraFrontChangedBlock) {
+        _updateUserCurrentCameraFrontCallbackBefore = YES;
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.cameraFrontChangedBlock(weakSelf); }
@@ -288,6 +292,7 @@
     }
     
     if (needCallBack && _cameraFrontChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentCameraFrontCallbackBefore = YES;
         NSEnumerator * enumerator = [_cameraFrontChanged_MultiReceiverMap objectEnumerator];
         PLVLinkMicOnlineUserCameraFrontChangedBlock block;
         __weak typeof(self) weakSelf = self;
@@ -303,11 +308,11 @@
     BOOL needCallBack = (_currentCameraTorchOpen != cameraTorchOpen);
     if (!_updateUserCurrentCameraTorchOpenCallbackBefore) {
         needCallBack = YES;
-        _updateUserCurrentCameraTorchOpenCallbackBefore = YES;
     }
     
     _currentCameraTorchOpen = cameraTorchOpen;
     if (needCallBack && self.cameraTorchOpenChangedBlock) {
+        _updateUserCurrentCameraTorchOpenCallbackBefore = YES;
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.cameraTorchOpenChangedBlock(weakSelf); }
@@ -315,6 +320,7 @@
     }
     
     if (needCallBack && _cameraTorchOpenChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentCameraTorchOpenCallbackBefore = YES;
         NSEnumerator * enumerator = [_cameraTorchOpenChanged_MultiReceiverMap objectEnumerator];
         PLVLinkMicOnlineUserCameraTorchOpenChangedBlock block;
         __weak typeof(self) weakSelf = self;

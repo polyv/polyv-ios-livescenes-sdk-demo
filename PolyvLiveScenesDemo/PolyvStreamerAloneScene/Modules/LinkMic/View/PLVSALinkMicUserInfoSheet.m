@@ -34,7 +34,7 @@
 @property (nonatomic, strong) UIButton *stopLinkMicButton; // 下麦按钮
 
 // Data
-@property (nonatomic, strong) PLVLinkMicOnlineUser *user;
+@property (nonatomic, weak) PLVLinkMicOnlineUser *user;
 
 @end
 
@@ -129,6 +129,9 @@
 
     // 设置按钮状态
     [self refreshButtonState];
+    // 添加信息变动回调监听
+    [self addUserInfoChangedBlock:user];
+    
     // 刷新UI
     [self setNeedsLayout];
     [self layoutIfNeeded];
@@ -289,6 +292,29 @@
     self.micphoneButton.selected = self.user.currentMicOpen;
 }
 
+- (void)addUserInfoChangedBlock:(PLVLinkMicOnlineUser *)user{
+    __weak typeof(self) weakSelf = self;
+    [user addCameraShouldShowChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        plv_dispatch_main_async_safe(^{
+            weakSelf.cameraButton.selected = onlineUser.currentCameraShouldShow;
+            weakSelf.cameraButton.enabled = YES;
+        })
+    } blockKey:self];
+    
+    [user addMicOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        plv_dispatch_main_async_safe(^{
+            weakSelf.micphoneButton.selected = onlineUser.currentMicOpen;
+            weakSelf.micphoneButton.enabled = YES;
+        })
+    } blockKey:self];
+    
+    [user addWillDeallocBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        plv_dispatch_main_async_safe(^{
+            [weakSelf dismiss];
+        })
+    } blockKey:self];
+}
+
 #pragma mark - Event
 
 #pragma mark Action
@@ -296,11 +322,13 @@
 - (void)cameraButtonAction {
     self.cameraButton.selected = !self.cameraButton.selected;
     [self.user wantOpenUserCamera:self.cameraButton.selected];
+    self.cameraButton.enabled = NO;
 }
 
 - (void)micphoneButtonAction {
     self.micphoneButton.selected = !self.micphoneButton.selected;
     [self.user wantOpenUserMic:self.micphoneButton.selected];
+    self.micphoneButton.enabled = NO;
 }
 
 - (void)stopLinkMicButtonAction {

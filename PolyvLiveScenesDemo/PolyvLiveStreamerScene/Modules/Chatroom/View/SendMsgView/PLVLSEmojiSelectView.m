@@ -95,7 +95,6 @@
                 [self.scrollView addSubview:button];
                 [button setBackgroundColor:[UIColor clearColor]];
                 [button setFrame:CGRectMake(col * itemWidth + addtionWidth, (row-decreaseRow) * itemHeight, itemWidth, itemHeight)];
-                button.showsTouchWhenHighlighted = YES;
                 button.tag = index;
                 [button addTarget:self action:@selector(emoticonButtonAction:) forControlEvents:UIControlEventTouchUpInside];
                 

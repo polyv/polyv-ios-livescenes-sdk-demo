@@ -37,6 +37,7 @@ PLVRTCStreamerManagerDelegate
 @property (nonatomic, copy) NSArray <PLVLinkMicWaitUser *> * waitUserArray; // 提供外部读取的数据数组，保存最新的用户数据
 @property (nonatomic, copy) NSArray <PLVLinkMicOnlineUser *> * onlineUserArray; // 提供外部读取的数据数组，保存最新的用户数据
 @property (nonatomic, strong) NSMutableDictionary <NSString *,NSString *> * guestAllowLinkMicDict; // 嘉宾允许上麦状态记录字典 (value:@"allowed"-讲师已允许；value:@"allowedWithRaiseHand"-讲师已允许嘉宾已举手；value:@"joined"-嘉宾已上麦；其他情况视为讲师未同意)
+@property (nonatomic, strong) NSMutableDictionary <NSString *, NSDictionary*> * prerecordUserMediaStatusDict; // 用于提前记录用户媒体状态的字典
 
 #pragma mark 外部数据封装
 @property (nonatomic, copy, readonly) NSString * stream;
@@ -226,6 +227,7 @@ PLVRTCStreamerManagerDelegate
 - (void)openLocalUserCamera:(BOOL)openCamera{
     [self.rtcStreamerManager openLocalUserCamera:openCamera completion:nil];
     [self.localOnlineUser updateUserCurrentCameraOpen:openCamera];
+    [self updateMixUserList];
 }
 
 - (void)switchLocalUserCamera:(BOOL)frontCamera{
@@ -488,7 +490,7 @@ PLVRTCStreamerManagerDelegate
     return self.rtcStreamerManager.channelLinkMicOpen;
 }
 
-- (PLVChannelLinkMicSceneType)channelLinkMicMediaType{
+- (PLVChannelLinkMicMediaType)channelLinkMicMediaType{
     return self.rtcStreamerManager.channelLinkMicMediaType;
 }
 
@@ -509,6 +511,7 @@ PLVRTCStreamerManagerDelegate
     self.guestAllowLinkMicDict = [[NSMutableDictionary <NSString *,NSString *> alloc] init];
     self.arraySafeQueue = dispatch_queue_create("PLVStreamerPresenterArraySafeQueue", DISPATCH_QUEUE_SERIAL);
     self.requestLinkMicOnlineListSafeQueue = dispatch_queue_create("PLVStreamerPresenterRequestLinkMicOnlineListSafeQueue", DISPATCH_QUEUE_SERIAL);
+    self.prerecordUserMediaStatusDict = [[NSMutableDictionary alloc] init];
 
     /// 创建 获取连麦在线用户列表 定时器
     self.linkMicTimer = [NSTimer scheduledTimerWithTimeInterval:5.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(linkMicTimerEvent:) userInfo:nil repeats:YES];
@@ -691,6 +694,7 @@ PLVRTCStreamerManagerDelegate
                 // 目标用户 是 远端用户
                 if ([@"video" isEqualToString:mediaType]) {
                     [resultUser updateUserCurrentCameraOpen:!mute];
+                    [weakSelf updateMixUserList];
                 }else{
                     [resultUser updateUserCurrentMicOpen:!mute];
                 }
@@ -701,9 +705,43 @@ PLVRTCStreamerManagerDelegate
                 [weakSelf callbackForLinkMicUser:resultUser videoMuted:mute];
             }
         } else {
-            //[weakSelf prerecordWithLinkMicUserId:linkMicUserId mediaType:mediaType muteStatus:mute];
+            [weakSelf prerecordWithLinkMicUserId:linkMicUserId mediaType:mediaType muteStatus:mute];
         }
     }];
+}
+
+- (BOOL)readPrerecordWithLinkMicUserId:(NSString *)linkMicUserId mediaType:(NSString *)mediaType defaultMuteStatus:(BOOL)status{
+    BOOL resultStatus = status;
+    if ([PLVFdUtil checkStringUseable:linkMicUserId] && [PLVFdUtil checkStringUseable:mediaType]) {
+        NSDictionary * lastMediaStatusDict = [self.prerecordUserMediaStatusDict objectForKey:linkMicUserId];
+        if ([PLVFdUtil checkDictionaryUseable:lastMediaStatusDict]) {
+            NSNumber * mediaStatusNumber = [lastMediaStatusDict objectForKey:mediaType];
+            if (mediaStatusNumber && [mediaStatusNumber isKindOfClass:NSNumber.class]) {
+                resultStatus = mediaStatusNumber.boolValue;
+            }
+        }
+    }
+    return resultStatus;
+}
+
+- (void)prerecordWithLinkMicUserId:(NSString *)linkMicUserId mediaType:(NSString *)mediaType muteStatus:(BOOL)mute{
+    if ([PLVFdUtil checkStringUseable:linkMicUserId] && [PLVFdUtil checkStringUseable:mediaType]) {
+        NSDictionary * lastMediaStatusDict = [self.prerecordUserMediaStatusDict objectForKey:linkMicUserId];
+        NSMutableDictionary * updateMediaStatusDict;
+        if ([PLVFdUtil checkDictionaryUseable:lastMediaStatusDict]) {
+            updateMediaStatusDict = [[NSMutableDictionary alloc] initWithDictionary:lastMediaStatusDict];
+        } else {
+            updateMediaStatusDict = [[NSMutableDictionary alloc] init];
+        }
+        [updateMediaStatusDict setObject:@(mute) forKey:mediaType];
+        [self.prerecordUserMediaStatusDict setObject:updateMediaStatusDict forKey:linkMicUserId];
+    }
+}
+
+- (void)removePrerecordWithLinkMicUserId:(NSString *)linkMicUserId{
+    if ([PLVFdUtil checkStringUseable:linkMicUserId]) {
+        [self.prerecordUserMediaStatusDict removeObjectForKey:linkMicUserId];
+    }
 }
 
 #pragma mark LinkMic User Manage
@@ -739,6 +777,7 @@ PLVRTCStreamerManagerDelegate
             PLVRTCStreamerMixUser * mixUser = [[PLVRTCStreamerMixUser alloc] init];
             mixUser.userRTCId = onlineUser.linkMicUserId;
             mixUser.renderMode = PLVRTCStreamerMixUserRenderMode_Fill;
+            mixUser.inputType = onlineUser.currentCameraOpen ? PLVRTCStreamerMixUserInputType_AudioVideo : PLVRTCStreamerMixUserInputType_Audio;
             [mixUserList addObject:mixUser];
         }else{
             continue;
@@ -879,8 +918,8 @@ PLVRTCStreamerManagerDelegate
                         [weakSelf.onlineUserMuArray addObject:onlineUser];
                     }
                     [weakSelf updateGuestToJoinedLinkMic:onlineUser.linkMicUserId];
-                    
-                    if (!onlineUser.rtcRendered) {
+                                        
+                    if (!onlineUser.localUser && !onlineUser.rtcRendered) {
                         PLVBRTCSubscribeStreamMediaType mediaType = PLVBRTCSubscribeStreamMediaType_Audio | PLVBRTCSubscribeStreamMediaType_Video;
                         
                         NSString * linkmicUserId = onlineUser.linkMicUserId;
@@ -894,9 +933,15 @@ PLVRTCStreamerManagerDelegate
                     }
                     
                     if (!onlineUser.localUser) {
+                        BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"audio" defaultMuteStatus:NO];
+                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"video" defaultMuteStatus:NO];
+                        
                         /// 设置初始值
-                        [onlineUser updateUserCurrentMicOpen:YES];
-                        [onlineUser updateUserCurrentCameraOpen:YES];
+                        [onlineUser updateUserCurrentMicOpen:micOpen];
+                        [onlineUser updateUserCurrentCameraOpen:cameraOpen];
+                        
+                        [weakSelf removePrerecordWithLinkMicUserId:onlineUser.linkMicUserId];
+                        [weakSelf removePrerecordWithLinkMicUserId:onlineUser.linkMicUserId];
                     }
                     
                     weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;

@@ -9,7 +9,7 @@
 #import "PLVLSDocumentListCell.h"
 #import "PLVLSDocumentLoadingView.h"
 #import "PLVLSDocumentListCellMaskView.h"
-#import "PLVLSDocumentModel.h"
+#import "PLVDocumentModel.h"
 #import "PLVLSUtils.h"
 #import "PLVDocumentConvertManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -185,7 +185,7 @@
     };
 }
 
-- (void)setDocumentModel:(PLVLSDocumentModel *)documentModel {
+- (void)setDocumentModel:(PLVDocumentModel *)documentModel {
     NSString *titleLabelString = [self getName:documentModel.fileName fileType:documentModel.fileType cutCount:0];
     self.titleLabel.text = titleLabelString;
     

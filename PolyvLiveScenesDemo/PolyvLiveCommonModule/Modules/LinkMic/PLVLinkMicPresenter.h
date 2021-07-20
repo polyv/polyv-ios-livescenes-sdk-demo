@@ -121,7 +121,7 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 @property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicSceneType;
 
 /// 当前 频道连麦媒体类型
-@property (nonatomic, assign, readonly) PLVChannelLinkMicSceneType linkMicMediaType;
+@property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType linkMicMediaType;
 
 /// 当前 连麦状态
 @property (nonatomic, assign, readonly) PLVLinkMicStatus linkMicStatus;

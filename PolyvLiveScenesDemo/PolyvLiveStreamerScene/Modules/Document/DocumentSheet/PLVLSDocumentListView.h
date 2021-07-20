@@ -7,7 +7,7 @@
 //  文档列表
 
 #import <UIKit/UIKit.h>
-#import "PLVLSDocumentModel.h"
+#import "PLVDocumentModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -30,7 +30,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param documentListView 文档列表对象
 /// @param model 选择的文档数据对象
 /// @param isChangeDocument YES 切换文档，NO 没有切换只是单纯的二次点击
-- (void)documentListView:(PLVLSDocumentListView *)documentListView didSelectItemModel:(PLVLSDocumentModel *)model changeDocument:(BOOL)isChangeDocument;
+- (void)documentListView:(PLVLSDocumentListView *)documentListView didSelectItemModel:(PLVDocumentModel *)model changeDocument:(BOOL)isChangeDocument;
 
 @end
 

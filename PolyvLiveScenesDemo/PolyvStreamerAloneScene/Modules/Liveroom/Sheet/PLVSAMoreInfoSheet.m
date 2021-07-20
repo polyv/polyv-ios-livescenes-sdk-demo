@@ -144,10 +144,12 @@
         _cameraButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _cameraButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_cameraButton setTitle:@"摄像头" forState:UIControlStateNormal];
+        [_cameraButton setTitle:@"摄像头" forState:UIControlStateSelected];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_close"] forState:UIControlStateNormal];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_open"] forState:UIControlStateSelected];
         [_cameraButton addTarget:self action:@selector(cameraButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
+    
     return _cameraButton;
 }
 
@@ -157,6 +159,7 @@
         _micphoneButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _micphoneButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_micphoneButton setTitle:@"麦克风" forState:UIControlStateNormal];
+        [_micphoneButton setTitle:@"麦克风" forState:UIControlStateSelected];
         [_micphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
         [_micphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
         [_micphoneButton addTarget:self action:@selector(micphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -182,6 +185,7 @@
         _mirrorButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _mirrorButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_mirrorButton setTitle:@"镜像" forState:UIControlStateNormal];
+        [_mirrorButton setTitle:@"镜像" forState:UIControlStateSelected];
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorClose"] forState:UIControlStateNormal];
 
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorOpen"] forState:UIControlStateSelected];
@@ -196,6 +200,7 @@
         _flashButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _flashButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_flashButton setTitle:@"闪光灯" forState:UIControlStateNormal];
+        [_flashButton setTitle:@"闪光灯" forState:UIControlStateSelected];
         [_flashButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_flash_close"] forState:UIControlStateNormal];
         [_flashButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_flash_open"] forState:UIControlStateSelected];
         [_flashButton addTarget:self action:@selector(flashButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -234,13 +239,27 @@
 
 #pragma mark setButtonFrame
 
+- (CGFloat)getMaxButtonWidthWithArray:(NSArray *)buttonArray {
+    CGFloat maxButtonWidth = 28;
+    for (int i = 0; i < buttonArray.count ; i++) {
+        UIButton *button = buttonArray[i];
+        
+        // width
+        NSAttributedString *attr = [[NSAttributedString alloc] initWithString:button.titleLabel.text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12]}];
+        CGSize titleSize = [attr boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+        maxButtonWidth = MAX(titleSize.width, maxButtonWidth);
+    }
+    return maxButtonWidth;
+}
+
 - (void)setButtonFrameWithArray:(NSArray *)buttonArray {
     
+    CGFloat titleLabelMaxY =  ([UIScreen mainScreen].bounds.size.height > 667 ? 32 : 18) + 18;
     CGFloat buttonX = 21.5;
-    CGFloat buttonY =  self.bounds.size.height > 667 ? CGRectGetMaxY(self.titleLabel.frame) + 12 : CGRectGetMaxY(self.titleLabel.frame) + 10;
-    CGFloat buttonWidth = 28;
+    CGFloat buttonY =  self.bounds.size.height > 667 ? CGRectGetMaxY(self.titleLabel.frame) + 12 : titleLabelMaxY + 10;
+    CGFloat buttonWidth = [self getMaxButtonWidthWithArray:buttonArray];
     CGFloat buttonHeight = 28 + 12 +14;
-    CGFloat padding = (self.bounds.size.width - buttonWidth * 5) / 6;
+    CGFloat padding = (self.bounds.size.width - buttonX * 2 - buttonWidth * 5) / 4;
     CGFloat margin = self.bounds.size.height > 667 ? 18 : 16;
     
     for (int i = 0; i < buttonArray.count ; i++) {
