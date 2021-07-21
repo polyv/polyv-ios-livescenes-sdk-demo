@@ -77,6 +77,7 @@ Demo [下载链接](https://www.pgyer.com/IzFQ ) （密码：polyv）
 | 1.3.0         | 1.3.0       | ✅       | ✅          | ✅            |                        |                      |
 | 1.4.1         | 1.4.1       | ✅       | ✅          | ✅            | ✅                      |                      |
 | 1.5.0         | 1.5.0       | ✅       | ✅          | ✅            | ✅                      |✅                      |
+| 1.5.1         | 1.5.1       | ✅       | ✅          |            | ✅                      |✅                      |
 
 更多版本更新详情，可在 [版本更新列表](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/releases)，了解 **对应版本更新说明**，以及 **下载源码**
 
