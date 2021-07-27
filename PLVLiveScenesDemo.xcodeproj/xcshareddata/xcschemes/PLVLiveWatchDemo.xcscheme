@@ -14,9 +14,9 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "215D04032605875300E86BEF"
-               BuildableName = "PolyvLiveStreamerDemo.app"
-               BlueprintName = "PolyvLiveStreamerDemo"
+               BlueprintIdentifier = "005F1746264BBB410093E874"
+               BuildableName = "PLVLiveWatchDemo.app"
+               BlueprintName = "PLVLiveWatchDemo"
                ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -44,9 +44,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "215D04032605875300E86BEF"
-            BuildableName = "PolyvLiveStreamerDemo.app"
-            BlueprintName = "PolyvLiveStreamerDemo"
+            BlueprintIdentifier = "005F1746264BBB410093E874"
+            BuildableName = "PLVLiveWatchDemo.app"
+            BlueprintName = "PLVLiveWatchDemo"
             ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -61,9 +61,9 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "215D04032605875300E86BEF"
-            BuildableName = "PolyvLiveStreamerDemo.app"
-            BlueprintName = "PolyvLiveStreamerDemo"
+            BlueprintIdentifier = "005F1746264BBB410093E874"
+            BuildableName = "PLVLiveWatchDemo.app"
+            BlueprintName = "PLVLiveWatchDemo"
             ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
