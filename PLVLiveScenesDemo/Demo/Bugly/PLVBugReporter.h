@@ -17,6 +17,12 @@ typedef NS_ENUM(NSInteger, PLVBuglyBundleType) {
 
 @interface PLVBugReporter : NSObject
 
+/// 启动异常上报功能，默认不启动
++ (void)openWithType:(PLVBuglyBundleType)type;
+
+/// 使用用户的 viewerID 设置用户标识
++ (void)setUserIdentifier:(NSString *)userId;
+
 @end
 
 NS_ASSUME_NONNULL_END

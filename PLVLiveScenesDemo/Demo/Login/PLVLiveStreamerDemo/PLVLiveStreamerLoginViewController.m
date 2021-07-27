@@ -15,7 +15,6 @@
 #import "PLVLoginTextField.h"
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
-#import "PLVBugReporter.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -41,10 +40,6 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 
 @implementation PLVLiveStreamerLoginViewController
 
-/// 开发时调试方法，该方法的代码修改不要提交
-- (void)developerTest {
-
-}
 
 #pragma mark - [ Life Period ]
 
@@ -55,7 +50,6 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     
     [self writeUserInfo];
     
-    [self developerTest];
 }
 
 - (void)viewWillLayoutSubviews {

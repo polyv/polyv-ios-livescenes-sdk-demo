@@ -32,10 +32,11 @@ static BOOL _on = NO;
 #pragma mark - Public
 
 + (void)openWithType:(PLVBuglyBundleType)type {
-
+  
 }
 
 + (void)setUserIdentifier:(NSString *)userId {
+   
 }
 
 #pragma mark - Private

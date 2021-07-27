@@ -236,7 +236,7 @@ PLVAdvViewDelegate
     PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;
     NSString * userIdForAccount = [PLVLiveVideoConfig sharedInstance].userId;
     if (self.currentVideoType == PLVChannelVideoType_Live) { /// 直播
-        self.livePlayer = [[PLVLivePlayer alloc] initWithPolyvAccountUserId:userIdForAccount channelId:roomData.channelId];
+        self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId];
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.channelWatchNoDelay = roomData.menuInfo.watchNoDelay;
@@ -246,7 +246,7 @@ PLVAdvViewDelegate
         self.livePlayer.chaseFrame = NO;
         self.livePlayer.customParam = roomData.customParam;
     }else if (self.currentVideoType == PLVChannelVideoType_Playback){ /// 回放
-        self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPolyvAccountUserId:userIdForAccount channelId:roomData.channelId vodId:roomData.vid vodList:roomData.vodList];
+        self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId vodId:roomData.vid vodList:roomData.vodList];
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];

@@ -14,7 +14,6 @@
 
 #import "PLVLCCloudClassViewController.h"
 #import "PLVECWatchRoomViewController.h"
-#import "PLVBugReporter.h"
 
 #define PushOrModel 0 // 进入页面方式（1-push、0-model）
 static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_demo";
@@ -48,10 +47,6 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 @implementation PLVLiveWatchLoginController
 
-/// 开发时调试方法，该方法的代码修改不要提交
-- (void)developerTest {
-
-}
 
 #pragma mark - Life Cycle
 
@@ -61,9 +56,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     [self initUI];
     
     [self recoverParamsFromFile];
-    
-    [self developerTest];
-    
+        
     [self addNotification];
     
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction)];
