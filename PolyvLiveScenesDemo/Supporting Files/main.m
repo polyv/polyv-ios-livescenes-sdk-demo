@@ -1,9 +1,9 @@
 //
 //  main.m
-//  PolyvLiveEcommerceDemo
+//  PLVLiveEcommerceDemo
 //
 //  Created by Lincal on 2020/4/29.
-//  Copyright © 2020 polyv. All rights reserved.
+//  Copyright © 2020 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
