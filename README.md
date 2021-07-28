@@ -1,4 +1,4 @@
-# polyv-ios-livescenes-sdk-demo
+# plv-ios-livescenes-sdk-demo
 ### 1 简介
 此项目是保利威 iOS 多场景 Demo。
 
@@ -13,22 +13,22 @@
 ├── Demo
 │   ├── Bugly
 │   └── Login
-├── PolyvLiveCommonModule（通用业务层）
+├── PLVLiveCommonModule（通用业务层）
 │   ├── GeneralUI
 │   ├── Modules
-├── PolyvLiveCloudClassScene（观看端-云课堂场景）
+├── PLVLiveCloudClassScene（观看端-云课堂场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
-├── PolyvLiveEcommerceScene（观看端-直播带货场景）
+├── PLVLiveEcommerceScene（观看端-直播带货场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
-├── PolyvLiveStreamerScene（开播端-手机开播三分屏场景）
+├── PLVLiveStreamerScene（开播端-手机开播三分屏场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
-├── PolyvStreamerAloneScene（开播端-手机开播纯视频场景）
+├── PLVStreamerAloneScene（开播端-手机开播纯视频场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
