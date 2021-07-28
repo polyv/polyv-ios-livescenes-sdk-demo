@@ -1,7 +1,5 @@
 # plv-ios-livescenes-sdk-demo
 ### 1 简介
-此项目是保利威 iOS 多场景 Demo。
-
 多场景项目的项目架构图如下：
 
 ![多场景架构简图](https://repo.polyv.net/android/resource/hierarchy.png)
@@ -38,34 +36,14 @@
 
 
 
-
-### 2 体验 Demo
-
-Demo [下载链接](https://www.pgyer.com/IzFQ ) （密码：polyv）
-
-
-
-
-
-
-### 3 Wiki 文档
-可在 [Wiki 文档](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/wiki) 中，了解 **项目结构、SDK能力、源码释义** 等内容
-
-
-
-
-
-
-### 4 API 文档
+### 2 API 文档
 
 1.5.0 版 API 文档请看 [v1.5.0 API](http://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.5.0-20210623/index.html)
 
 
 
 
-
-
-### 5 Released 版本更新
+### 3 Released 版本更新
 以下表格反映：
 
 1、Demo 的每个 Release 版本，所依赖的 SDK 版本
