@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 重发 图片消息 回调
 - (void)chatroomListView:(PLVSAChatroomListView *)listView resendImageMessage:(NSString *)imageId image:(UIImage *)image;
 
+/// 重发 图片表情消息 回调
+- (void)chatroomListView:(PLVSAChatroomListView *)listView resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl;
+
 /// 重发 回复消息 回调
 - (void)chatroomListView:(PLVSAChatroomListView *)listView resendReplyMessage:(NSString *)message replyModel:(PLVChatModel *)model;
 

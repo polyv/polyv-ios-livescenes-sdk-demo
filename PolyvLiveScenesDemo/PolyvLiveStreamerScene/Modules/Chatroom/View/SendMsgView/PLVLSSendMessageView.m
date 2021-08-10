@@ -66,7 +66,7 @@ UITextViewDelegate
 
 @end
 
-@implementation PLVLSSendMessageView
+@implementation PLVLSSendMessageView 
 
 #pragma mark - Life Cycle
 
@@ -84,10 +84,14 @@ UITextViewDelegate
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         
+        
         // 提前初始化 sendMsgView，避免弹出时才初始化导致卡顿
         [self bgView];
         [self toolView];
         [self emojiboard];
+        
+        //只用加载一次 图片表情资源
+        [[PLVLSChatroomViewModel sharedViewModel] loadImageEmotions];
     }
     return self;
 }
@@ -96,7 +100,7 @@ UITextViewDelegate
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
-#pragma mark - Getter
+#pragma mark - Getter && Setter
 
 - (UIView *)bgView {
     if (!_bgView) {
@@ -220,6 +224,10 @@ UITextViewDelegate
     return _imagePicker;
 }
 
+- (void)setImageEmotionArray:(NSArray *)imageEmotionArray {
+    self.emojiboard.imageEmotions = imageEmotionArray;
+}
+
 #pragma mark - Action
 
 - (void)tapAction {
@@ -279,6 +287,7 @@ UITextViewDelegate
 
 - (void)dismiss {
     self.toolView.textView.inputView = nil;
+    self.toolView.tapGesture.enabled = NO;
     [self.toolView.textView reloadInputViews];
     [self.toolView.textView becomeFirstResponder];
     [self.toolView.textView resignFirstResponder];
@@ -425,6 +434,19 @@ UITextViewDelegate
         [self dismiss];
     }
 }
+
+- (void)emojiSelectView_sendImageEmoticon:(PLVImageEmotion *)emoticon {
+    if (!emoticon.imageId || ![emoticon.imageId isKindOfClass:[NSString class]]) {
+        return;
+    }
+    BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendImageEmotionMessage:emoticon.imageId imageUrl:emoticon.url];
+     if (!success) {
+         [PLVLSUtils showToastInHomeVCWithMessage:@"发送消息失败"];
+     } else {
+         //隐藏面板
+         [self dismiss];
+     }
+ }
 
 #pragma mark - UITextView Delegate
 

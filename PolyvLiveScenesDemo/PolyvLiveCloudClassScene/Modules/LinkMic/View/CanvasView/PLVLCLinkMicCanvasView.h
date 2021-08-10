@@ -8,6 +8,8 @@
 
 #import <UIKit/UIKit.h>
 
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+
 NS_ASSUME_NONNULL_BEGIN
 
 /// 云课堂场景下 PLVLinkMicOnlineUser 的 rtcview 的容器
@@ -31,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param rtcViewShow rtcview 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)rtcViewShow:(BOOL)rtcViewShow;
+
+/// 更新 ‘网络状态视图’ 状态
+///
+/// @param status 网络状态值 (对应不同的网络状态图标)
+- (void)updateNetworkQualityImageViewWithStatus:(PLVBLinkMicNetworkQuality)status;
 
 @end
 

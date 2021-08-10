@@ -71,6 +71,11 @@
     id message = chatModel.message;
     if ([message isKindOfClass:[PLVImageMessage class]]) {
         imageMsg = (PLVImageMessage *)message;
+    } else if ([message isKindOfClass:[PLVImageEmotionMessage class]]){
+        imageMsg = [[PLVImageMessage alloc] init];
+        imageMsg.imageId = ((PLVImageEmotionMessage *)message).imageId;
+        imageMsg.imageUrl = ((PLVImageEmotionMessage *)message).imageUrl;
+        imageMsg.imageSize = ((PLVImageEmotionMessage *)message).imageSize;
     } else if ([message isKindOfClass:[PLVSpeakMessage class]] ||
                [message isKindOfClass:[PLVQuoteMessage class]]) {
         if ([message isKindOfClass:[PLVSpeakMessage class]]) {

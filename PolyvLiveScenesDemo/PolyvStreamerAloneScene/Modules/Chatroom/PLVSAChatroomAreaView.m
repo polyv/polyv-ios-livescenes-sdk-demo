@@ -299,6 +299,10 @@ PLVSAChatroomListViewDelegate
     [self.giftView showGiftAnimation:nickName cashGiftContent:cashGiftContent];
 }
 
+- (void)chatroomViewModel_loadEmotionSuccess {
+    self.sendMsgView.imageEmotionArray = [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
+}
+
 #pragma mark PLVSAChatroomListViewDelegate
 
 - (void)chatroomListViewDidScrollTableViewUp:(PLVSAChatroomListView *)listView {
@@ -319,6 +323,14 @@ PLVSAChatroomListViewDelegate
         return;
     }
     [[PLVSAChatroomViewModel sharedViewModel] resendImageMessage:image imageId:imageId];
+}
+
+- (void)chatroomListView:(PLVSAChatroomListView *)listView resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl {
+    if (![self netCan]) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
+        return;
+    }
+    [[PLVSAChatroomViewModel sharedViewModel] resendImageEmotionMessage:imageId imageUrl:imageUrl];
 }
 
 - (void)chatroomListView:(PLVSAChatroomListView *)listView resendReplyMessage:(NSString *)message replyModel:(PLVChatModel *)model {

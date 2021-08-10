@@ -37,6 +37,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show;
 /// 发送消息文本
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text;
+/// 发送图片表情消息
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView
+      sendImageEmotionId:(NSString *)imageId
+                imageUrl:(NSString *)imageUrl;
 /// 点击【查看全部】或【只看讲师】
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView onlyTeacher:(BOOL)on;
 /// 打开相册
@@ -57,6 +61,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL enableSendImage;
 /// 是否隐藏公告按钮，默认 NO；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hiddenBulletin;
+///键盘的图片表情
+@property (nonatomic, strong) NSArray *imageEmotions;
 
 /// 面板状态
 @property (nonatomic, assign, readonly) PLVLCKeyboardToolState toolState;

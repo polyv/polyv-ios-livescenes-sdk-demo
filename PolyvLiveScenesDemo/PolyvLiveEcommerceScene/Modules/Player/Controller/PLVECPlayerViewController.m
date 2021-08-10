@@ -337,6 +337,10 @@ PLVPlayerPresenterDelegate
     }
 }
 
+- (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter {
+    self.playButton.hidden = NO;
+}
+
 #pragma mark - 播放器LOGO
 - (void)setupPlayerLogoImage:(PLVChannelInfoModel *)channel {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;

@@ -92,7 +92,7 @@ UITextViewDelegate
         self.bottomHeight = MAX(10, P_SafeAreaBottomEdgeInsets());
         self.toolViewHeight = 44 + self.bottomHeight;
         
-        CGFloat emojiboardHeight = 209.0 + self.bottomHeight;
+        CGFloat emojiboardHeight = 249.0 + self.bottomHeight;
         if ([@"iPad" isEqualToString:[UIDevice currentDevice].model]) {
             emojiboardHeight += 55.0;
         }
@@ -160,6 +160,7 @@ UITextViewDelegate
 - (void)dismiss {
     self.customKeyboardHide = NO;
     self.toolView.textView.inputView = nil;
+    self.toolView.tapGesture.enabled = NO;
     [self.toolView.textView reloadInputViews];
     [self.toolView.textView becomeFirstResponder];
     [self.toolView.textView resignFirstResponder];
@@ -250,7 +251,7 @@ UITextViewDelegate
     self.toolView.textView.enablesReturnKeyAutomatically = enable; //键盘上的发送按钮
 }
 
-#pragma mark Getter
+#pragma mark Getter && Setter
 
 - (UIView *)bgView {
     if (!_bgView) {
@@ -373,6 +374,13 @@ UITextViewDelegate
     return _imagePicker;
 }
 
+- (void)setImageEmotionArray:(NSArray *)imageEmotionArray {
+    if (!_imageEmotionArray) {
+        _imageEmotionArray = imageEmotionArray;
+        self.emojiboard.imageEmotions = imageEmotionArray;
+    }
+}
+
 #pragma mark 网络是否可用
 - (BOOL)netCan{
     return self.netState > 0 && self.netState < 4;
@@ -480,6 +488,23 @@ UITextViewDelegate
     } else { // 发送消息
         [self sendMessageAndClearTextView];
         [self dismiss];
+    }
+}
+
+- (void)emojiSelectView_sendImageEmoticon:(PLVImageEmotion *)emoticon {
+    if (!emoticon.imageId || ![emoticon.imageId isKindOfClass:[NSString class]]) {
+        return;
+    }
+    if (![self netCan]) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
+    } else {
+        BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendImageEmotionMessage:emoticon.imageId imageUrl:emoticon.url];;
+        if (!success) {
+            [PLVSAUtils showToastInHomeVCWithMessage:@"发送消息失败"];
+        } else {
+            //隐藏面板
+            [self dismiss];
+        }
     }
 }
 

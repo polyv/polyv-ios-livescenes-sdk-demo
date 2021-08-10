@@ -1772,6 +1772,10 @@ PLVRTCStreamerManagerDelegate
         finalErrorCode = PLVStreamerPresenterErrorCode_StartClassFailedNetError;
     }
     
+    if (error.code == PLVRTCStreamerManagerErrorCode_UpdateRTCTokenFailedAuthError) {
+        finalErrorCode = PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError;
+    }
+    
     NSError * finalError = [self errorWithCode:finalErrorCode errorDescription:nil];
     finalError = PLVErrorWithUnderlyingError(finalError, error);
     [self callbackForDidOccurError:finalError];

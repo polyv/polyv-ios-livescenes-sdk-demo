@@ -21,6 +21,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@interface PLVImageEmotion : NSObject
+
+@property (nonatomic, copy) NSString *title;
+
+@property (nonatomic, copy) NSString *url;
+//图片id
+@property (nonatomic, copy) NSString *imageId;
+
++ (instancetype)imageEmoticonWithDictionary:(NSDictionary *)diction;
+
+@end
+
 @interface PLVEmoticonManager : NSObject
 
 @property (class, nonatomic, readonly) PLVEmoticonManager *sharedManager;

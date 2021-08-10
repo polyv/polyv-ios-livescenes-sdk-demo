@@ -404,6 +404,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         [[NSUserDefaults standardUserDefaults] synchronize];
 
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        [PLVBugReporter setUserIdentifier:roomData.roomUser.viewerId];
 
         if (roomData.channelType == PLVChannelTypePPT) {
             PLVLSStreamerViewController *vctrl = [[PLVLSStreamerViewController alloc] init];

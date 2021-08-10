@@ -274,17 +274,25 @@
 
 /// 获取聊天图片URL
 + (NSURL *)chatImageURLWithMessage:(id)message {
-    if (![message isKindOfClass:[PLVImageMessage class]]) {
-        return nil;
+    if ([message isKindOfClass:[PLVImageMessage class]]) {
+        PLVImageMessage *imageMessage = (PLVImageMessage *)message;
+        NSString *imageUrl = imageMessage.imageUrl;
+        if (!imageUrl || ![imageUrl isKindOfClass:[NSString class]] || imageUrl.length == 0) {
+            return nil;
+        }
+        
+        return [NSURL URLWithString:imageUrl];
     }
-    
-    PLVImageMessage *imageMessage = (PLVImageMessage *)message;
-    NSString *imageUrl = imageMessage.imageUrl;
-    if (!imageUrl || ![imageUrl isKindOfClass:[NSString class]] || imageUrl.length == 0) {
-        return nil;
+    if ([message isKindOfClass:[PLVImageEmotionMessage class]]) {
+        PLVImageEmotionMessage *imageMessage = (PLVImageEmotionMessage *)message;
+        NSString *imageUrl = imageMessage.imageUrl;
+        if (!imageUrl || ![imageUrl isKindOfClass:[NSString class]] || imageUrl.length == 0) {
+            return nil;
+        }
+        
+        return [NSURL URLWithString:imageUrl];
     }
-    
-    return [NSURL URLWithString:imageUrl];
+    return nil;
 }
 
 #pragma mark - 高度、尺寸计算
@@ -331,6 +339,11 @@
         bubbleHeight += imageViewSize.height + 4;
     }
     
+    if ([model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
+        imageViewSize = [PLVECChatCell calculateImageViewSizeWithImageSize:CGSizeMake(60.0, 60.0)];
+        bubbleHeight += imageViewSize.height + 4;
+    }
+    
     return bubbleHeight + 4;
 }
 
@@ -347,7 +360,8 @@
     if (!user || ![user isKindOfClass:[PLVChatUser class]] || !message ||
         (![message isKindOfClass:[PLVSpeakMessage class]] &&
          ![message isKindOfClass:[PLVQuoteMessage class]] &&
-         ![message isKindOfClass:[PLVImageMessage class]])) {
+         ![message isKindOfClass:[PLVImageMessage class]] &&
+         ![message isKindOfClass:[PLVImageEmotionMessage class]])) {
         return NO;
     }
     

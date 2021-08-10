@@ -25,6 +25,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取历史聊天消息失败时触发
 - (void)chatroomPresenter_loadHistoryFailure;
 
+/// 获取图片表情数据
+/// @param dictArray 图片表情列表
+- (void)chatroomPresenter_loadImageEmotionsSuccess:(NSArray <NSDictionary *> *)dictArray;
+
+/// 获取图片表情数据失败时触发
+- (void)chatroomPresenter_loadImageEmotionsFailure;
+
 /// 返回socket接收到的消息
 /// @param modelArray 消息队列，不为空
 - (void)chatroomPresenter_didReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray;
@@ -57,6 +64,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param message 图片消息数据模型(已更新了数据模型中的msgId字段)
 - (void)chatroomPresenter_sendImageMessageSuccess:(PLVImageMessage *)message;
 
+/// 发送图片表情状态更新（收到socket消息回调）触发
+/// @param message 图片表情消息数据模型(更新了数据模型中的msgId字段和发送状态字段sendState)
+- (void)chatroomPresenter_sendImageEmotionMessageStatus:(PLVImageEmotionMessage *)message;
 @end
 
 /*
@@ -115,6 +125,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @return 消息数据模型（开始上传图片即返回消息数据模型，否则返回nil）
 - (PLVChatModel * _Nullable)sendImageMessage:(UIImage *)image;
 
+/// 发送图片表情消息
+/// @param imageId 图片id
+/// @return 消息数据模型, 发送失败时，返回nil
+- (PLVChatModel * _Nullable)sendImageEmotionId:(NSString *)imageId;
+
+
 /// 发送自定义消息
 /// @param event 自定义消息event字段
 /// @param data 自定义消息data字段
@@ -139,6 +155,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 加载历史聊天记录
 - (void)loadHistory;
+
+///加载图片表情
+- (void)loadImageEmotions;
 
 @end
 

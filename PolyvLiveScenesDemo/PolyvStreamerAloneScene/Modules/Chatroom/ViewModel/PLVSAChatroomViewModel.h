@@ -47,6 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 在主线程触发
 - (void)chatroomViewModelLoadHistoryFailure:(PLVSAChatroomViewModel *)viewModel;
 
+/// 获取图片表情列表数据成功
+- (void)chatroomViewModel_loadEmotionSuccess;
+
 /// 当前时间段内如果有用户登录聊天室（包括自己），间隔2秒触发一次
 /// @note 在主线程触发
 /// @param userArray 登录聊天室的用户数组，如果为nil，表示当前时间段内当前用户有登录事件
@@ -84,6 +87,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 全部消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 
+/// 图片表情数组
+@property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
+
 /// 只读属性，当前是否开启【全体禁言】
 @property (nonatomic, assign, readonly) BOOL closeRoom;
 
@@ -101,6 +107,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 加载历史聊天记录，每次加载条数10条
 - (void)loadHistory;
 
+///加载图片表情资源列表
+- (void)loadImageEmotions;
+
 /// 发送文本消息
 /// @param content 消息文本
 /// @param replyChatModel 回复消息模型（非回复消息该字段为nil）
@@ -111,6 +120,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param image 图片
 /// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
 - (BOOL)sendImageMessage:(UIImage *)image;
+
+/// 发送图片表情消息
+/// @param imageId 图片表情id
+/// @param imageUrl 图片表情的url
+/// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
+- (BOOL)sendImageEmotionMessage:(NSString *)imageId
+                       imageUrl:(NSString *)imageUrl;
 
 /// 重新发送文本消息
 /// @param content 消息文本
@@ -124,6 +140,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
 - (BOOL)resendImageMessage:(UIImage *)image imageId:(NSString *)imageId;
 
+/// 重新发送图片表情消息
+/// @param imageId 图片id
+/// @param imageUrl 图片imageUrl
+/// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
+- (BOOL)resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl;
 
 /// 全体禁言
 /// @param closeRoom YES:全体禁言；NO：全体解禁

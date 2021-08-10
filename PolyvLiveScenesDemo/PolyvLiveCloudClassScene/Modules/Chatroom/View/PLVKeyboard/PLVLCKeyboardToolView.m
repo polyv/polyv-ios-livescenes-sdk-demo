@@ -59,6 +59,8 @@ PLVLCKeyboardMoreViewDelegate
 @property (nonatomic, assign) BOOL onlySeeTeacher;
 /// 当前是否正在切换 toolState，否则切换emoji键盘会触发keyboardHidden通知导致输入栏下移
 @property (nonatomic, assign) BOOL changingToolState;
+//textView 的点击手势 当处于表情面板时点击切换输入法面板
+@property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
 
 @end
 
@@ -81,6 +83,7 @@ PLVLCKeyboardMoreViewDelegate
     
     [self addSubview:self.textView];
     [self addSubview:self.emojiButton];
+    [self.textView addGestureRecognizer:self.tapGesture];
     if (self.mode == PLVLCKeyboardToolModeDefault) {
         [self addSubview:self.moreButton];
     }
@@ -119,7 +122,8 @@ PLVLCKeyboardMoreViewDelegate
 
 - (PLVLCEmojiSelectView *)emojiboard {
     if (!_emojiboard) {
-        _emojiboard = [[PLVLCEmojiSelectView alloc] init];
+        PLVLCEmojiSelectToolMode emojiMode = _mode == PLVLCKeyboardToolModeDefault ? PLVLCEmojiSelectToolModeDefault : PLVLCEmojiSelectToolModeSimple;
+        _emojiboard = [[PLVLCEmojiSelectView alloc] initWithMode:emojiMode];
         _emojiboard.delegate = self;
     }
     return _emojiboard;
@@ -142,6 +146,14 @@ PLVLCKeyboardMoreViewDelegate
         [_gestureView addGestureRecognizer:tap];
     }
     return _gestureView;
+}
+
+- (UITapGestureRecognizer *)tapGesture {
+    if (!_tapGesture) {
+        _tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(textViewTapGestureRecognizer)];
+        _tapGesture.enabled = NO;
+    }
+    return _tapGesture;
 }
 
 - (void)setEnableSendImage:(BOOL)enableSendImage {
@@ -208,12 +220,18 @@ PLVLCKeyboardMoreViewDelegate
     self.changingToolState = NO;
 }
 
-#pragma mark - Action
+- (void)setImageEmotions:(NSArray *)imageEmotions {
+    self.emojiboard.imageEmotions = imageEmotions;
+}
+
+#pragma mark - [ Event ]
+#pragma mark Action
 
 - (void)emojiAction:(UIButton *)sender {
     if (![self shouldInteract]) {
         return;
     }
+    self.tapGesture.enabled = !self.emojiButton.selected;
     self.emojiButton.selected = !self.emojiButton.selected;
     self.toolState = self.emojiButton.selected ? PLVLCKeyboardToolStateEmojiboard : PLVLCKeyboardToolStateKeyboard;
 }
@@ -227,6 +245,12 @@ PLVLCKeyboardMoreViewDelegate
 
 - (void)tapAction:(id)sender {
     self.toolState = PLVLCKeyboardToolStateNormal;
+}
+
+- (void)textViewTapGestureRecognizer {
+    if (self.emojiButton.selected) {
+        [self emojiAction:nil];
+    }
 }
 
 #pragma mark - Public Method
@@ -291,7 +315,10 @@ PLVLCKeyboardMoreViewDelegate
     self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
     self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
     
-    CGFloat emojiboardHeight = 200.0 + self.bottomHeight;
+    CGFloat emojiboardHeight = 190.0 + self.bottomHeight;
+    if (self.mode == PLVLCKeyboardToolModeDefault) {
+        emojiboardHeight += 40;
+    }
     CGFloat moreboardHeight = 115.0 + self.bottomHeight;
     if ([@"iPad" isEqualToString:[UIDevice currentDevice].model]) {
         emojiboardHeight += 55.0;
@@ -377,6 +404,7 @@ PLVLCKeyboardMoreViewDelegate
     [self.gestureView removeFromSuperview];
     [self.moreboard removeFromSuperview];
     [self.emojiboard removeFromSuperview];
+    self.tapGesture.enabled = NO;
     // 将 self 添加到原先的父视图
     [self.normalSuperView addSubview:self];
     // 设置视图 frame 值
@@ -539,6 +567,20 @@ PLVLCKeyboardMoreViewDelegate
     [self.textView replaceCharactersInRange:cursorRange withAttributedString:emojiAttrStr];
     self.textView.selectedRange = NSMakeRange(cursorRange.location + emojiAttrStr.length, 0);
     [self textViewDidChange:self.textView];
+}
+
+- (void)selectImageEmotions:(PLVImageEmotion *)emojiModel {
+    if (!emojiModel.imageId ||
+        ![emojiModel.imageId isKindOfClass:[NSString class]]) {
+        return;
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:sendImageEmotionId:imageUrl:)]) {
+        [self.delegate keyboardToolView:self
+                     sendImageEmotionId:emojiModel.imageId
+                               imageUrl:emojiModel.url];
+    }
+    //隐藏面板
+    [self tapAction:nil];
 }
 
 - (void)deleteEmoji {

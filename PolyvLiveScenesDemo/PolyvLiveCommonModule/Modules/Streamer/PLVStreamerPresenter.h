@@ -40,6 +40,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
     
     /// 300: 推流失败，网络错误
     PLVStreamerPresenterErrorCode_StartClassFailedNetError = 300,
+    
+    /// 400: 更新RTCToken失败，网络错误
+    PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError = 400,
 };
 
 @protocol PLVStreamerPresenterDelegate;
@@ -413,7 +416,7 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param inRTCRoom 当前 ‘是否处于RTC房间中’
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRtcRoomJoinStatus:(PLVStreamerPresenterRoomJoinStatus)currentRtcRoomJoinStatus inRTCRoomChanged:(BOOL)inRTCRoomChanged inRTCRoom:(BOOL)inRTCRoom;
 
-/// ‘网络状态’ 发生变化
+/// 本地用户 ‘网络状态’ 发生变化
 ///
 /// @note 仅在 处于RTC房间内 期间，会定时(每2秒)返回一次网络状态
 ///

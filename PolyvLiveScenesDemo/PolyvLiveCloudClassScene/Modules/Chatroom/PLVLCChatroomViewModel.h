@@ -65,6 +65,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param content 弹幕文本
 - (void)chatroomManager_danmu:(NSString * )content;
 
+/// 获取图片表情数据
+- (void)chatroomManager_loadImageEmotions;
+
 @end
 
 /*
@@ -85,6 +88,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 /// 私聊消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *privateChatArray;
+/// 图片表情数组
+@property (nonatomic, strong, readonly) NSArray *emotionImageArray;
 
 #pragma mark API
 
@@ -100,6 +105,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 加载历史聊天记录，每次加载条数10条
 - (void)loadHistory;
 
+/// 加载表情图片
+- (void)loadImageEmotions;
+
 /// 发送私聊提问消息
 /// @param content 消息文本
 /// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
@@ -114,6 +122,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param image 图片
 /// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
 - (BOOL)sendImageMessage:(UIImage *)image;
+
+/// 发送图片表情消息
+/// @param imageId 图片id
+/// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
+- (BOOL)sendImageEmotionId:(NSString *)imageId
+                  imageUrl:(NSString *)imageUrl;
 
 /// 发送点赞消息
 /// 点赞数的实时更新通过监听roomData的likeCount获得

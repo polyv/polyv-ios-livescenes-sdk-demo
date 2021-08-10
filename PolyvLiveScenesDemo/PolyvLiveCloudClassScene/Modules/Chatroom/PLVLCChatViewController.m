@@ -13,6 +13,7 @@
 #import "PLVLCNotifyMarqueeView.h"
 #import "PLVLCSpeakMessageCell.h"
 #import "PLVLCImageMessageCell.h"
+#import "PLVLCImageEmotionMessageCell.h"
 #import "PLVLCQuoteMessageCell.h"
 #import "PLVAlbumNavigationController.h"
 #import "PLVPickerController.h"
@@ -245,6 +246,9 @@ UITableViewDataSource
         [self addObserver];
         
         [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        
+        //加载图片表情数据
+        [[PLVLCChatroomViewModel sharedViewModel] loadImageEmotions];
     }
     return self;
 }
@@ -348,6 +352,10 @@ UITableViewDataSource
     [PLVLCUtils showHUDWithTitle:@"历史记录获取失败" detail:@"" view:self.view];
 }
 
+- (void)chatroomManager_loadImageEmotions {
+    self.keyboardToolView.imageEmotions = [PLVLCChatroomViewModel sharedViewModel].emotionImageArray;
+}
+
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray {
     if ([PLVRoomDataManager sharedManager].roomData.welcomeShowDisable) {
         return;
@@ -422,6 +430,14 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVLCImageEmotionMessageCell isModelValid:model]) {
+        static NSString *imageMessageCellIdentify = @"PLVLCImageEmotionMessageCell";
+        PLVLCImageEmotionMessageCell *cell = (PLVLCImageEmotionMessageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCImageEmotionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVLCQuoteMessageCell";
         PLVLCQuoteMessageCell *cell = (PLVLCQuoteMessageCell *)[tableView dequeueReusableCellWithIdentifier:quoteMessageCellIdentify];
@@ -454,6 +470,8 @@ UITableViewDataSource
         cellHeight = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCImageMessageCell isModelValid:model]) {
         cellHeight = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCImageEmotionMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
         cellHeight = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else {
@@ -482,12 +500,24 @@ UITableViewDataSource
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show {
     NSLog(@"keyboardToolView - popBoard %@", show ? @"YES" : @"NO");
+  
 }
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:text];
     if (!success) {
         [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+    }
+}
+
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView
+      sendImageEmotionId:(NSString *)imageId
+                imageUrl:(nonnull NSString *)imageUrl {
+    BOOL success = [[PLVLCChatroomViewModel sharedViewModel]
+                    sendImageEmotionId:imageId
+                    imageUrl:imageUrl];
+    if (!success) {
+        [PLVLCUtils showHUDWithTitle:@"图片表情消息发送失败" detail:@"" view:self.view];
     }
 }
 

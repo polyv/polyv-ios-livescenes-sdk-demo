@@ -466,11 +466,23 @@ PLVAdvViewDelegate
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
             if ([self.delegate respondsToSelector:@selector(playerPresenter:downloadProgress:playedProgress:playedTimeString:durationTimeString:)]) {
                 [self.delegate playerPresenter:self downloadProgress:0 playedProgress:1 playedTimeString:self.livePlaybackPlayer.playedTimeString durationTimeString:self.livePlaybackPlayer.durationTimeString];
+                /// 断网导致播放停止的情况
+                if (self.duration - self.currentPlaybackTime >= 1) {
+                    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPlaybackInterrupted:)]) {
+                        [self.delegate playerPresenterPlaybackInterrupted:self];
+                    }
+                }
             }
         }
     } else if (finishReson == IJKMPMovieFinishReasonPlaybackError) {
         errorMessage = @"视频播放失败，请退出重新登录";
         [self.activityView stopAnimating];
+        
+        if (self.currentVideoType == PLVChannelVideoType_Playback) {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPlaybackInterrupted:)]) {
+                [self.delegate playerPresenterPlaybackInterrupted:self];
+            }
+        }
     }
     
     if ([PLVFdUtil checkStringUseable:errorMessage]) {

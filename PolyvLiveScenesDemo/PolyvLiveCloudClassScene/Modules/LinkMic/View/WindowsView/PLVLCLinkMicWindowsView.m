@@ -375,6 +375,9 @@ UICollectionViewDelegate
         PLVLCLinkMicCanvasView * canvasView = [[PLVLCLinkMicCanvasView alloc] init];
         [canvasView addRTCView:linkMicUserModel.rtcView];
         linkMicUserModel.canvasView = canvasView;
+        linkMicUserModel.networkQualityChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if (onlineUser.canvasView) { [onlineUser.canvasView updateNetworkQualityImageViewWithStatus:onlineUser.currentNetworkQuality]; }
+        };
     }
 }
 

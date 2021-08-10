@@ -23,6 +23,22 @@
 
 @end
 
+@implementation PLVImageEmotion
+
++ (instancetype)imageEmoticonWithDictionary:(NSDictionary *)dictionary {
+    if (dictionary && [dictionary isKindOfClass:NSDictionary.class]) {
+        PLVImageEmotion *emoticon = [[PLVImageEmotion alloc] init];
+        emoticon.title  = dictionary[@"title"];
+        emoticon.url  = dictionary[@"url"];
+        emoticon.imageId  = dictionary[@"id"];
+        return emoticon;
+    }  else {
+        return nil;
+    }
+}
+
+@end
+
 @interface PLVEmoticonManager ()
 
 @property (nonatomic, strong) NSBundle *emoticonBundle;
