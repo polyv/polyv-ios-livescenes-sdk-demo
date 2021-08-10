@@ -10,6 +10,7 @@
 
 #import "PLVLCMediaPlayerSkinView.h"
 #import "PLVLCMediaFloatView.h"
+#import "PLVLCRetryPlayView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define PPTPlayerViewScale (9.0 / 16.0)
@@ -89,6 +90,11 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
+
+/// 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
+///
+/// @note 便于外部作图层管理
+@property (nonatomic, strong, readonly) PLVLCRetryPlayView *retryPlayView;
 
 
 #pragma mark - [ 方法 ]

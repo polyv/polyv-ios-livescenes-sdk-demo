@@ -30,8 +30,9 @@
         [self addSubview:self.emojiButton];
         [self addSubview:self.imageButton];
         [self addSubview:self.textViewBgView];
-        
         [self.textViewBgView addSubview:self.textView];
+        
+        [self.textView addGestureRecognizer:self.tapGesture];
     }
     return self;
 }
@@ -92,9 +93,19 @@
     return _textView;
 }
 
+- (UITapGestureRecognizer *)tapGesture {
+    if (!_tapGesture) {
+        _tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(textViewTapGestureRecognizer)];
+        _tapGesture.enabled = NO;
+    }
+    return _tapGesture;
+}
+
+#pragma mark - [ Event ]
 #pragma mark Action
 
 - (void)emojiButtonAction {
+    self.tapGesture.enabled = !self.emojiButton.selected;
     self.emojiButton.selected = !self.emojiButton.selected;
     if (self.didTapEmojiButton) {
         self.didTapEmojiButton(self.emojiButton.selected);
@@ -104,6 +115,12 @@
 - (void)imageButtonAction {
     if (self.didTapImagePickerButton) {
         self.didTapImagePickerButton();
+    }
+}
+
+- (void)textViewTapGestureRecognizer {
+    if (self.emojiButton.selected) {
+        [self emojiButtonAction];
     }
 }
 

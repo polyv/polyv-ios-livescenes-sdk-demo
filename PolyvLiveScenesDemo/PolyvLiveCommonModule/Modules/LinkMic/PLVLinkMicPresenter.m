@@ -61,6 +61,7 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, assign) BOOL inProgress;
 @property (nonatomic, assign) BOOL watchingNoDelay;
 @property (nonatomic, assign) int originalIdleTimerDisabled; // 0 表示未记录；负值小于0 对应NO状态；正值大于0 对应YES状态；
+@property (nonatomic, assign) BOOL roomAllMicMute; // 当前是否‘房间全体静音’
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * linkMicSocketToken; // 当前连麦 SocketToken (不为空时重连后需发送 reJoinMic)
@@ -478,6 +479,8 @@ PLVLinkMicManagerDelegate
         _linkMicManager = [PLVLinkMicManager linkMicManagerWithRTCType:self.rtcType];
         _linkMicManager.delegate = self;
         _linkMicManager.linkMicOnAudio = (self.linkMicMediaType == PLVChannelLinkMicMediaType_Audio);
+
+        /// 硬件默认值配置
         _linkMicManager.micDefaultOpen = self.micDefaultOpen;
         _linkMicManager.cameraDefaultOpen = self.cameraDefaultOpen;
         _linkMicManager.cameraDefaultFront = self.cameraDefaultFront;
@@ -774,9 +777,17 @@ PLVLinkMicManagerDelegate
                     
                     if (user.localUser) {
                         weakSelf.currentLocalLinkMicUser = user;
+                        
+                        /// 根据‘全体静音’得出最终的麦克风开关状态
+                        BOOL finalMicOpen = self.roomAllMicMute ? NO : weakSelf.micDefaultOpen;
+                        
                         /// 设置初始值
-                        [user updateUserCurrentMicOpen:weakSelf.micDefaultOpen];
+                        [user updateUserCurrentMicOpen:finalMicOpen];
                         [user updateUserCurrentCameraOpen:weakSelf.cameraDefaultOpen];
+                        
+                        if (self.roomAllMicMute) {
+                            [weakSelf muteUser:user.linkMicUserId mediaType:@"audio" mute:!finalMicOpen];
+                        }
                     }else{
                         BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"audio" defaultMuteStatus:NO];
                         BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"video" defaultMuteStatus:NO];
@@ -785,7 +796,6 @@ PLVLinkMicManagerDelegate
                         [user updateUserCurrentMicOpen:micOpen];
                         [user updateUserCurrentCameraOpen:cameraOpen];
                         
-                        [weakSelf removePrerecordWithLinkMicUserId:user.linkMicUserId];
                         [weakSelf removePrerecordWithLinkMicUserId:user.linkMicUserId];
                     }
                     
@@ -1276,6 +1286,9 @@ PLVLinkMicManagerDelegate
         // 讲师打开或关闭，你的摄像头或麦克风（单播消息 unicast）
         case PLVLinkMicEventType_MuteUserMedia: {
             BOOL mute = ((NSNumber *)jsonDict[@"mute"]).boolValue;
+            if (![PLVFdUtil checkStringUseable:jsonDict[@"userId"]]) { /// 全体静音处理
+                self.roomAllMicMute = mute;
+            }
             [self muteUser:self.linkMicUserId mediaType:jsonDict[@"type"] mute:mute];
         } break;
             
@@ -1367,6 +1380,10 @@ PLVLinkMicManagerDelegate
             // 连麦Token不为空，需发送 reJoinMic 进行重连
             [self emitSocketMessge_reJoinMic];
         }
+    } else if ([subEvent isEqualToString:PLVSocketIOPPT_onSliceID_key]) { // 是否开启全体静音
+        if ([jsonDict[@"data"][@"avConnectMode"] isEqualToString:@"audio"]) { self.roomAllMicMute = YES; }
+    } else if ([subEvent isEqualToString:@"MUTE_USER_MICRO"]) {
+        [self handleSocketEvent:PLVLinkMicEventType_MuteUserMedia jsonDict:jsonDict];
     } else if ([subEvent containsString:@"finishClass"]){ // 下课事件
         self.socketRefreshOpenStatusDate = [NSDate date].timeIntervalSince1970;
         [self refreshLinkMicOpenStatus:@"close" mediaType:@""];
@@ -1395,8 +1412,6 @@ PLVLinkMicManagerDelegate
         [self handleSocketEvent:PLVLinkMicEventType_JOIN_SUCCESS jsonDict:jsonDict];
     } else if ([event isEqualToString:PLVSocketIOLinkMic_JOIN_LEAVE_key]) {
         [self handleSocketEvent:PLVLinkMicEventType_JOIN_LEAVE jsonDict:jsonDict];
-    } else if ([event isEqualToString:PLVSocketLinkMicEventType_MuteUserMedia_key]) {
-        [self handleSocketEvent:PLVLinkMicEventType_MuteUserMedia jsonDict:jsonDict];
     } else if ([event isEqualToString:PLVSocketLinkMicEventType_SwitchView_key]) {
         [self handleSocketEvent:PLVLinkMicEventType_SwitchView jsonDict:jsonDict];
     }
@@ -1466,6 +1481,22 @@ PLVLinkMicManagerDelegate
 - (void)plvLinkMicManager:(PLVLinkMicManager *)manager reportAudioVolumeOfSpeakers:(NSDictionary<NSString *,NSNumber *> *)volumeDict{
     [self updateLinkMicUserVolumeWithVolumeDictionary:volumeDict];
     [self callbackForReportAudioVolumeOfSpeakers:volumeDict];
+}
+
+- (void)plvLinkMicManager:(PLVLinkMicManager *)manager networkQualityDidChanged:(PLVBLinkMicNetworkQuality)networkQuality{
+
+}
+
+- (void)plvLinkMicManager:(PLVLinkMicManager *)manager userNetworkQualityDidChanged:(NSString *)userRTCId txQuality:(PLVBLinkMicNetworkQuality)txQuality rxQuality:(PLVBLinkMicNetworkQuality)rxQuality{
+    PLVBLinkMicNetworkQuality finalQuality;
+    if (txQuality != PLVBLinkMicNetworkQualityUnknown) {
+        finalQuality = txQuality;
+    }else{
+        finalQuality = rxQuality;
+    }
+    if ([userRTCId isEqualToString:self.currentLocalLinkMicUser.linkMicUserId]) {
+        [self.currentLocalLinkMicUser updateUserCurrentNetworkQuality:finalQuality];
+    }
 }
 
 @end

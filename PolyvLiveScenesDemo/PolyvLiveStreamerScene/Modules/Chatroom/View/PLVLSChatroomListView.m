@@ -12,6 +12,7 @@
 #import "PLVLSSpeakMessageCell.h"
 #import "PLVLSImageMessageCell.h"
 #import "PLVLSQuoteMessageCell.h"
+#import "PLVLSImageEmotionMessageCell.h"
 
 /// 数据
 #import "PLVChatModel.h"
@@ -258,6 +259,22 @@ UITableViewDataSource
         }];
         
         return cell;
+    } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {
+        static NSString *imageMessageCellIdentify = @"PLVLSImageEmotionMessageCell";
+        PLVLSImageEmotionMessageCell *cell = (PLVLSImageEmotionMessageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLSImageEmotionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        
+        __weak typeof(self) weakSelf = self;
+        [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
+            if (weakSelf.didTapReplyMenuItem) {
+                weakSelf.didTapReplyMenuItem(model);
+            }
+        }];
+        
+        return cell;
     } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVLSQuoteMessageCell";
         PLVLSQuoteMessageCell *cell = (PLVLSQuoteMessageCell *)[tableView dequeueReusableCellWithIdentifier:quoteMessageCellIdentify];
@@ -295,6 +312,8 @@ UITableViewDataSource
         cellHeight = [PLVLSSpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLSImageMessageCell isModelValid:model]) {
         cellHeight = [PLVLSImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {
+        cellHeight = [PLVLSImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
         cellHeight = [PLVLSQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else {

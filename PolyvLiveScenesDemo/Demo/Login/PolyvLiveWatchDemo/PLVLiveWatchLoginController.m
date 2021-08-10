@@ -254,6 +254,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
             }
             
             PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+            [PLVBugReporter setUserIdentifier:roomUser.viewerId];
         };
         
         if (self.liveSelectView.hidden) { // 回放
@@ -272,6 +273,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
             }
             
             PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+            [PLVBugReporter setUserIdentifier:roomUser.viewerId];
         };
         
         if (self.liveSelectView.hidden) { // 回放

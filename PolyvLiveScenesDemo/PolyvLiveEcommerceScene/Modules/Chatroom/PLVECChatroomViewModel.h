@@ -41,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于停止【下拉加载更多】控件的动画
 - (void)chatroomManager_loadHistoryFailure;
 
+/// 获取图片表情成功时触发
+- (void)chatroomManager_loadImageEmotionSuccess;
+
 /// 当前时间段内如果有用户登录聊天室（包括自己），间隔2秒触发一次
 /// @param userArray 登录聊天室的用户数组，如果为nil，表示当前时间段内当前用户有登录事件
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray;
@@ -63,6 +66,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 全部消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 
+/// 图片表情数组
+@property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
+
 #pragma mark API
 
 /// 单例方法
@@ -76,6 +82,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 加载历史聊天记录，每次加载条数10条
 - (void)loadHistory;
+
+/// 加载图片表情消息
+- (void)loadImageEmotions;
 
 /// 发送文本消息
 /// @param content 消息文本

@@ -13,6 +13,7 @@
 #import "PLVLCChatroomViewModel.h"
 #import "PLVLCLandscapeSpeakCell.h"
 #import "PLVLCLandscapeImageCell.h"
+#import "PLVLCLandscapeImageEmotionCell.h"
 #import "PLVLCLandscapeQuoteCell.h"
 #import <PolyvFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
@@ -319,6 +320,14 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
+        static NSString *imageMessageCellIdentify = @"PLVLCLandscapeImageEmotionCell";
+        PLVLCLandscapeImageEmotionCell *cell = (PLVLCLandscapeImageEmotionCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLandscapeImageEmotionCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else if ([PLVLCLandscapeQuoteCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVLCLandscapeQuoteCell";
         PLVLCLandscapeQuoteCell *cell = (PLVLCLandscapeQuoteCell *)[tableView dequeueReusableCellWithIdentifier:quoteMessageCellIdentify];
@@ -352,6 +361,8 @@ UITableViewDataSource
         cellHeight = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeImageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
+        cellHeight = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeQuoteCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else {

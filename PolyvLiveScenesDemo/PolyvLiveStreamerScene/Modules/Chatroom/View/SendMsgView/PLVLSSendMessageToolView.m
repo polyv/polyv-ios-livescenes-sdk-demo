@@ -12,10 +12,6 @@
 #import <PolyvFoundationSDK/PLVFdUtil.h>
 #import <PolyvFoundationSDK/PLVColorUtil.h>
 
-@interface PLVLSSendMessageToolView ()
-
-@end
-
 @implementation PLVLSSendMessageToolView
 
 #pragma mark - Life Cycle
@@ -29,8 +25,9 @@
         [self addSubview:self.imageButton];
         [self addSubview:self.textViewBgView];
         [self addSubview:self.sendButton];
-        
         [self.textViewBgView addSubview:self.textView];
+    
+        [self.textView addGestureRecognizer:self.tapGesture];
     }
     return self;
 }
@@ -104,9 +101,19 @@
     return _sendButton;
 }
 
-#pragma mark - Action
+- (UITapGestureRecognizer *)tapGesture {
+    if (!_tapGesture) {
+        _tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(textViewTapGestureRecognizer)];
+        _tapGesture.enabled = NO;
+    }
+    return _tapGesture;
+}
+
+#pragma mark - [ Event ]
+#pragma mark Action
 
 - (void)emojiButtonAction {
+    self.tapGesture.enabled = !self.emojiButton.selected;
     self.emojiButton.selected = !self.emojiButton.selected;
     if (self.didTapEmojiButton) {
         self.didTapEmojiButton(self.emojiButton.selected);
@@ -122,6 +129,12 @@
 - (void)sendButtonAction {
     if (self.didTapSendButton) {
         self.didTapSendButton();
+    }
+}
+
+- (void)textViewTapGestureRecognizer {
+    if (self.emojiButton.selected) {
+        [self emojiButtonAction];
     }
 }
 

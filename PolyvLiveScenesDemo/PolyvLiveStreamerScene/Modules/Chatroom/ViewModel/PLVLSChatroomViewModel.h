@@ -41,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于停止【下拉加载更多】控件的动画
 - (void)chatroomViewModel_loadHistoryFailure;
 
+/// 获取图片表情消息列表
+- (void)chatroomViewModel_loadEmotionSuccess;
+
 @end
 
 /*
@@ -59,6 +62,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 全部消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 
+/// 图片表情数组
+@property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
+
 #pragma mark API
 
 /// 单例方法
@@ -73,6 +79,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 加载历史聊天记录，每次加载条数10条
 - (void)loadHistory;
 
+///加载图片表情资源列表
+- (void)loadImageEmotions;
+
 /// 发送文本消息
 /// @param content 消息文本
 /// @param replyChatModel 回复消息模型（非回复消息该字段为nil）
@@ -83,6 +92,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param image 图片
 /// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
 - (BOOL)sendImageMessage:(UIImage *)image;
+
+/// 发送图片表情消息
+/// @param imageId 图片表情id
+/// @param imageUrl 图片表情地址
+- (BOOL)sendImageEmotionMessage:(NSString *)imageId
+                       imageUrl:(NSString *)imageUrl;
 
 @end
 

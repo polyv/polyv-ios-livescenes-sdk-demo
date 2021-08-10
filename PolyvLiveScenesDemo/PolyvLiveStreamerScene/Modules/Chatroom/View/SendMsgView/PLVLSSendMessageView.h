@@ -16,6 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送消息界面
 @interface PLVLSSendMessageView : UIView
 
+//图片表情资源
+@property (nonatomic, strong) NSArray *imageEmotionArray;
+
 /// 发送回复消息时，显示发送消息界面到主窗口上
 - (void)showWithChatModel:(PLVChatModel *)model;
 

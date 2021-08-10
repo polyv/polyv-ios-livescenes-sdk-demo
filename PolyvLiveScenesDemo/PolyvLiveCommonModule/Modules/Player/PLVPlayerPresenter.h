@@ -210,6 +210,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param durationTimeString 总时长字符串 (示例 "01:23")
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter downloadProgress:(CGFloat)downloadProgress playedProgress:(CGFloat)playedProgress playedTimeString:(NSString *)playedTimeString durationTimeString:(NSString *)durationTimeString;
 
+/// 直播回放播放器 播放中断（网络原因或者其它原因）
+- (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter;
+
 @end
 
 NS_ASSUME_NONNULL_END

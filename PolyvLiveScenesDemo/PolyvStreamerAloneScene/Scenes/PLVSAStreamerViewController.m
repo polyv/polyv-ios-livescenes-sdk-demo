@@ -542,6 +542,8 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         message = @"上课错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedNetError){
         message = @"推流请求错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError){
+        message = @"更新Token错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
         message = @"未知错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){

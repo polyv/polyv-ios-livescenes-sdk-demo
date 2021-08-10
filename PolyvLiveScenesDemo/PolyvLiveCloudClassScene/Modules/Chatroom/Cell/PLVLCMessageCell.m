@@ -156,6 +156,7 @@
         (![message isKindOfClass:[PLVSpeakMessage class]] &&
          ![message isKindOfClass:[PLVQuoteMessage class]] &&
          ![message isKindOfClass:[PLVImageMessage class]] &&
+         ![message isKindOfClass:[PLVImageEmotionMessage class]] &&
          ![message isKindOfClass:[NSString class]])) {
         return NO;
     }

@@ -222,4 +222,9 @@ PLVLSChatroomViewModelProtocol
     [self.chatroomListView loadHistoryFailure];;
 }
 
+- (void)chatroomViewModel_loadEmotionSuccess {
+    //图片表情资源加载成功
+    self.sendMsgView.imageEmotionArray = [PLVLSChatroomViewModel sharedViewModel].imageEmotionArray;
+}
+
 @end

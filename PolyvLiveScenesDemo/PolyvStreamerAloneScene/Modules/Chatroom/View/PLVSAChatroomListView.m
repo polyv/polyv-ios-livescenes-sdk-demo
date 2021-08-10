@@ -11,6 +11,7 @@
 /// UI
 #import "PLVSASpeakMessageCell.h"
 #import "PLVSAImageMessageCell.h"
+#import "PLVSAImageEmotionMessageCell.h"
 #import "PLVSAQuoteMessageCell.h"
 #import "PLVSARewardMessageCell.h"
 
@@ -189,6 +190,13 @@ UITableViewDataSource
     }
 }
 
+- (void)resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl{
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomListView:resendImageEmotionMessage:imageUrl:)]) {
+        [self.delegate chatroomListView:self resendImageEmotionMessage:imageId imageUrl:imageUrl];
+    }
+}
+
 - (void)resendReplyMessage:(NSString *)message replyModel:(PLVChatModel *)model{
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(chatroomListView:resendReplyMessage:replyModel:)]) {
@@ -280,6 +288,28 @@ UITableViewDataSource
         }];
         
         return cell;
+    } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
+        static NSString *imageMessageCellIdentify = @"PLVSAImageEmotionMessageCell";
+        PLVSAImageEmotionMessageCell *cell = (PLVSAImageEmotionMessageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVSAImageEmotionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        
+        __weak typeof(self) weakSelf = self;
+        [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapReplyMenuItem:model];
+        }];
+        
+        [cell setDismissHandler:^{
+            [weakSelf.tableView reloadData];
+        }];
+        
+        [cell setResendImageEmotionHandler:^(NSString * _Nonnull imageId, NSString * _Nonnull imageUrl) {
+            [weakSelf resendImageEmotionMessage:imageId imageUrl:imageUrl];
+        }];
+        
+        return cell;
     } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVSAQuoteMessageCell";
         PLVSAQuoteMessageCell *cell = (PLVSAQuoteMessageCell *)[tableView dequeueReusableCellWithIdentifier:quoteMessageCellIdentify];
@@ -326,6 +356,8 @@ UITableViewDataSource
         cellHeight = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVSAImageMessageCell isModelValid:model]) {
         cellHeight = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
+        cellHeight = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
         cellHeight = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVSARewardMessageCell isModelValid:model]) {

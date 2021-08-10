@@ -28,6 +28,8 @@ typedef void (^PLVLinkMicOnlineUserCameraShouldShowChangedBlock)(PLVLinkMicOnlin
 typedef void (^PLVLinkMicOnlineUserCameraFrontChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’闪光灯开关状态‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户的 ’网络状态‘ 改变Block
+typedef void (^PLVLinkMicOnlineUserNetworkQualityChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 ///
 /// [事件] 用户模型 即将销毁 回调Block
 typedef void (^PLVLinkMicOnlineUserWillDeallocBlock)(PLVLinkMicOnlineUser * onlineUser);
@@ -88,6 +90,12 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// @note 仅在 currentCameraTorchOpen开关值 有改变时会触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCameraTorchOpenChangedBlock cameraTorchOpenChangedBlock;
+
+/// [状态] 用户的 ’网络状态‘ 改变Block
+///
+/// @note 仅在 currentNetworkQuality状态值 有改变时会触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserNetworkQualityChangedBlock networkQualityChangedBlock;
 
 /// [事件] 用户模型 即将销毁 回调Block
 ///
@@ -177,6 +185,9 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// 用户的 闪光灯 当前是否开启 (注意：当前业务场景下，决定了此值仅在 [localUser] 为YES，即该对象代表本地用户时，此值有意义)
 @property (nonatomic, assign, readonly) BOOL currentCameraTorchOpen;
 
+/// 用户的 当前网络状态
+@property (nonatomic, assign, readonly) PLVBLinkMicNetworkQuality currentNetworkQuality;
+
 /// rtvView 此时是否已经渲染了 ’RTC画面‘
 @property (nonatomic, assign, readonly) BOOL rtcRendered;
 
@@ -217,6 +228,11 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 ///
 /// @note 若最终 闪光灯开关状态值 有所改变，则将触发 [cameraTorchOpenChangedBlock]；
 - (void)updateUserCurrentCameraTorchOpen:(BOOL)cameraTorchOpen;
+
+/// 更新用户的 ‘当前网络状态值’
+///
+/// @note 若最终 网络状态值 有所改变，则将触发 [networkQualityChangedBlock]；
+- (void)updateUserCurrentNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality;
 
 #pragma mark 通知机制
 /// 希望开关该用户的麦克风

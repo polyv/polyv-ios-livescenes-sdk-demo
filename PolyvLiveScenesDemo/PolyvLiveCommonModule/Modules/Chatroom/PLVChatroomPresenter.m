@@ -194,6 +194,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (replyChatModel && replyChatModel.message &&
         ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]] ||
          [replyChatModel.message isKindOfClass:[PLVImageMessage class]] ||
+         [replyChatModel.message isKindOfClass:[PLVImageEmotionMessage class]] ||
          [replyChatModel.message isKindOfClass:[PLVQuoteMessage class]])) {
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.content = content;
@@ -204,6 +205,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
             message.quoteContent = speakMessage.content;
         } else if ([replyChatModel.message isKindOfClass:[PLVImageMessage class]]) {
             PLVImageMessage *imageMessage = replyChatModel.message;
+            message.quoteImageUrl = imageMessage.imageUrl;
+            message.quoteImageSize = imageMessage.imageSize;
+        } else if ([replyChatModel.message isKindOfClass:[PLVImageEmotionMessage class]]) {
+            PLVImageEmotionMessage *imageMessage = replyChatModel.message;
             message.quoteImageUrl = imageMessage.imageUrl;
             message.quoteImageSize = imageMessage.imageSize;
         } else if ([replyChatModel.message isKindOfClass:[PLVQuoteMessage class]]) {
@@ -241,6 +246,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (replyChatModel && replyChatModel.message &&
         ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]] ||
          [replyChatModel.message isKindOfClass:[PLVImageMessage class]] ||
+         [replyChatModel.message isKindOfClass:[PLVImageEmotionMessage class]] ||
          [replyChatModel.message isKindOfClass:[PLVQuoteMessage class]])) {
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.content = content;
@@ -251,6 +257,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
             message.quoteContent = speakMessage.content;
         } else if ([replyChatModel.message isKindOfClass:[PLVImageMessage class]]) {
             PLVImageMessage *imageMessage = replyChatModel.message;
+            message.quoteImageUrl = imageMessage.imageUrl;
+            message.quoteImageSize = imageMessage.imageSize;
+        } else if ([replyChatModel.message isKindOfClass:[PLVImageEmotionMessage class]]) {
+            PLVImageEmotionMessage *imageMessage = replyChatModel.message;
             message.quoteImageUrl = imageMessage.imageUrl;
             message.quoteImageSize = imageMessage.imageSize;
         } else if ([replyChatModel.message isKindOfClass:[PLVQuoteMessage class]]) {
@@ -295,6 +305,43 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     if (![PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
         [[PLVChatroomManager sharedManager] sendImageMessage:message];
+    }
+    return model;
+}
+
+#pragma mark 图片表情消息
+
+- (PLVChatModel * _Nullable)sendImageEmotionId:(NSString *)imageId {
+    if (!imageId || ![imageId isKindOfClass:[NSString class]]) {
+        return nil;
+    }
+    if (!self.online ||
+        (!self.specialRole && self.closeRoom)) {
+        return nil;
+    }
+    
+    PLVImageEmotionMessage *message = [[PLVImageEmotionMessage alloc] init];
+    message.imageId = imageId;
+    message.sendState = PLVImageEmotionMessageSendStateReady;
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = [self loginChatUser];
+    model.message = message;
+    
+    if (![PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
+        __weak typeof(self) weakSelf = self;
+        BOOL success = [[PLVChatroomManager sharedManager] sendImageEmotionMessage:message callback:^(PLVImageEmotionMessage * _Nonnull resMessage) {
+            //在socket返回消息状态时回调
+            if (weakSelf.delegate &&
+                [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_sendImageEmotionMessageStatus:)]) {
+                [weakSelf.delegate chatroomPresenter_sendImageEmotionMessageStatus:resMessage];
+            }
+            if (message.msgId) {
+                message.sendState = PLVImageEmotionMessageSendStateSuccess;
+            }
+        }];
+        if (!success) {
+            message.sendState = PLVImageEmotionMessageSendStateFailed;
+        }
     }
     return model;
 }
@@ -405,6 +452,25 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }];
 }
 
+#pragma mark - 获取图片表情数据
+///加载图片表情列表 设置为固定size
+- (void)loadImageEmotions {
+    __weak typeof(self) weakSelf = self;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *accountId = [PLVLiveVideoConfig sharedInstance].userId;
+    //暂时不处理分页，每页固定为50
+    [PLVLiveVideoAPI requestEmotionImagesWithRoomId:[roomData.channelId longLongValue] accountId:accountId page:1 size:50 success:^(NSDictionary * _Nonnull data) {
+        if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_loadImageEmotionsSuccess:)]) {
+            NSArray *imageEmoticons = data[@"data"][@"list"];
+            [weakSelf.delegate chatroomPresenter_loadImageEmotionsSuccess:imageEmoticons];
+        }
+    } failure:^(NSError * _Nonnull error) {
+        if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_loadImageEmotionsFailure)]) {
+            [weakSelf.delegate chatroomPresenter_loadImageEmotionsFailure];
+        }
+    }];
+}
+
 #pragma mark 历史聊天消息数据解析
 
 /// 将 json 数据转换为消息模型 PLVChatModel 对象
@@ -421,6 +487,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         return [self modelImageChatDict:dict];
     } else if ([msgType isEqualToString:@"reward"]) {
         return [self modelRewardChatDict:dict];
+    } else if ([msgType isEqualToString:@"emotion"]) {
+        return [self modelEmotionChatDict:dict];
     }
     return model;
 }
@@ -430,6 +498,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 文本消息 @"speak"
 /// 引用消息 @"quote"
 /// 打赏消息 @"reward"
+/// 图片表情消息 @"emotion"
 - (NSString *)messageTypeWithHistoryDict:(NSDictionary *)dict {
     NSString *msgSource = PLV_SafeStringForDictKey(dict, @"msgSource");
     NSString *msgType = PLV_SafeStringForDictKey(dict, @"msgType");
@@ -438,6 +507,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *uid = PLV_SafeStringForDictKey(userDict, @"uid");
     
     if (msgSource && [msgSource isEqualToString:@"chatImg"]) { // 图片消息
+        //图片消息分为 直接发送的图片消息和图片表情消息
+        NSDictionary *imageContent = PLV_SafeDictionaryForDictKey(dict, @"content");
+        if (imageContent) {
+            NSString *imageType = PLV_SafeStringForDictKey(imageContent, @"type");
+            if (imageType && [imageType isEqualToString:@"emotion"]) {
+                return @"emotion";
+            }
+        }
         return @"image";
     } else if (!msgType && !msgSource && ![uid isEqualToString:@"1"] && ![uid isEqualToString:@"2"]) { // 文本/引用消息
         if (PLV_SafeStringForDictKey(dict, @"content")) {
@@ -558,6 +635,31 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     return model;
 }
 
+- (PLVChatModel *)modelEmotionChatDict:(NSDictionary *)dict {
+    NSDictionary *userDict = PLV_SafeDictionaryForDictKey(dict, @"user");
+    PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+    
+    NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
+    NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(dict, @"content");
+    NSString *imageUrl = PLV_SafeStringForDictKey(contentDict, @"uploadImgUrl");
+    NSString *imageId = PLV_SafeStringForDictKey(contentDict, @"id");
+    NSDictionary *sizeDict = PLV_SafeDictionaryForDictKey(contentDict, @"size");
+    CGFloat width = PLV_SafeFloatForDictKey(sizeDict, @"width");
+    CGFloat height = PLV_SafeFloatForDictKey(sizeDict, @"height");
+    
+    PLVImageEmotionMessage *message = [[PLVImageEmotionMessage alloc] init];
+    message.msgId = msgId;
+    message.imageId = imageId;
+    message.imageUrl = imageUrl;
+    message.imageSize = CGSizeMake(width, height);
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = user;
+    model.message = message;
+    return model;
+}
+
+
 #pragma mark - Listener
 
 - (void)notifyListenerDidReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray {
@@ -657,6 +759,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self removeHistoryEvent];
     } else if ([subEvent isEqualToString:@"REWARD"]) {
         [self rewardMessageEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"EMOTION"]) {// someone send a image emotion
+        [self imageEmotionMessageEvent:jsonDict];
     }
 }
 
@@ -773,6 +877,31 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     CGFloat width = PLV_SafeFloatForDictKey(sizeDict, @"width");
     CGFloat height = PLV_SafeFloatForDictKey(sizeDict, @"height");
     message.imageSize = CGSizeMake(width, height);
+    model.message = message;
+    [self cachChatModel:model];
+}
+
+///有用户发送图片表情消息为了应对高并发只返回了图片id
+- (void)imageEmotionMessageEvent:(NSDictionary *)data {
+    NSDictionary *user = PLV_SafeDictionaryForDictKey(data, @"user");
+    NSString *imageId = PLV_SafeStringForDictKey(data, @"id");
+    if (!user || !imageId) {
+        return;
+    }
+    
+    NSString *userId = PLV_SafeStringForDictKey(user, @"userId");
+    if ([self isLoginUser:userId]) {
+        return;
+    }
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    PLVChatUser *chatUser = [[PLVChatUser alloc] initWithUserInfo:user];
+    model.user = chatUser;
+    
+    PLVImageEmotionMessage *message = [[PLVImageEmotionMessage alloc] init];
+    message.msgId = PLV_SafeStringForDictKey(data, @"messageId");
+    message.imageId = imageId;
+    
     model.message = message;
     [self cachChatModel:model];
 }

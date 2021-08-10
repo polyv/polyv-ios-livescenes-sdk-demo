@@ -632,6 +632,25 @@ PLVMemberPresenterDelegate
     [PLVLSUtils showToastWithMessage:(currentCameraFront ? @"摄像头已前置" : @"摄像头已后置") inView:self.view];
 }
 
+/// 推流管理器 ‘发生错误’ 回调
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter didOccurError:(NSError *)error fullErrorCode:(NSString *)fullErrorCodeString {
+    NSString * message = @"";
+    if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed) {
+        message = @"上课错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedNetError){
+        message = @"推流请求错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError){
+        message = @"更新Token错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
+        message = @"未知错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_NoError){
+        message = @"错误";
+    }
+    message = [message stringByAppendingFormat:@" code:%@",fullErrorCodeString];
+        
+    [PLVLSUtils showToastWithMessage:message inView:self.view];
+}
+
 #pragma mark - PLVLSLinkMicAreaViewDelegate
 - (NSArray *)plvLCLinkMicWindowsViewGetCurrentUserModelArray:(PLVLSLinkMicAreaView *)linkMicAreaView{
     return self.streamerPresenter.onlineUserArray;

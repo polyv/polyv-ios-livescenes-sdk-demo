@@ -35,11 +35,13 @@
 @property (nonatomic, assign) BOOL updateUserCurrentCameraShouldShowCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentCameraFrontCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentCameraTorchOpenCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentNetworkQualityCallbackBefore;
 @property (nonatomic, assign) CGFloat currentVolume;
 @property (nonatomic, assign) BOOL currentMicOpen;
 @property (nonatomic, assign) BOOL currentCameraOpen;
 @property (nonatomic, assign) BOOL currentCameraFront;
 @property (nonatomic, assign) BOOL currentCameraTorchOpen;
+@property (nonatomic, assign) PLVBLinkMicNetworkQuality currentNetworkQuality;
 @property (nonatomic, assign) BOOL currentStatusVoice;
 
 @end
@@ -329,6 +331,22 @@
                 if (weakSelf) { block(weakSelf); }
             })
         }
+    }
+}
+
+- (void)updateUserCurrentNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality{
+    BOOL needCallBack = (_currentNetworkQuality != networkQuality);
+    if (!_updateUserCurrentNetworkQualityCallbackBefore) {
+        needCallBack = YES;
+    }
+    
+    _currentNetworkQuality = networkQuality;
+    if (needCallBack && self.networkQualityChangedBlock) {
+        _updateUserCurrentNetworkQualityCallbackBefore = YES;
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.networkQualityChangedBlock(weakSelf); }
+        })
     }
 }
 

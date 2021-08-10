@@ -48,7 +48,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *partOfPublicChatArray;
 /// 私聊消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *privateChatArray;
-
+/// 图片表情数组
+@property (nonatomic, strong) NSArray *emotionImageArray;
 @end
 
 @implementation PLVLCChatroomViewModel {
@@ -164,6 +165,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self.presenter loadHistory];
 }
 
+#pragma mark - 加载图片表情数据
+
+- (void)loadImageEmotions {
+    [self.presenter loadImageEmotions];
+}
+
 #pragma mark - 发送消息
 
 - (BOOL)sendQuesstionMessage:(NSString *)content {
@@ -186,6 +193,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (BOOL)sendImageMessage:(UIImage *)image {
     PLVChatModel *model = [self.presenter sendImageMessage:image];
     if (model) {
+        [self addPublicChatModel:model];
+    }
+    return model != nil;
+}
+
+- (BOOL)sendImageEmotionId:(NSString *)imageId imageUrl:(nonnull NSString *)imageUrl   {
+    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId];
+    if (model) {
+        ((PLVImageEmotionMessage *)model.message).imageUrl = imageUrl;
         [self addPublicChatModel:model];
     }
     return model != nil;
@@ -256,6 +272,19 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
+            
+            //当接收到公聊消息为图片表情时，因为会返回图片id所以在此处从列表中取出图片地址
+            if ([model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
+                PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
+                [self.emotionImageArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                    NSString *emotionImageId = PLV_SafeStringForDictKey(obj, @"id");
+                    if ([message.imageId isEqualToString:emotionImageId]) {
+                        message.imageUrl = PLV_SafeStringForDictKey(obj, @"url");
+                        *stop = YES;
+                    }
+                }];
+            }
+
             [self.publicChatArray addObject:model];
             if (model.user.specialIdentity) {
                 [self.partOfPublicChatArray addObject:model];
@@ -541,6 +570,13 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_loadHistoryFailure {
     [self notifyDelegatesLoadHistoryFailure];
+}
+
+- (void)chatroomPresenter_loadImageEmotionsSuccess:(NSArray<NSDictionary *> *)dictArray {
+    self.emotionImageArray = dictArray;
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_loadImageEmotions];
+    });
 }
 
 - (void)chatroomPresenter_didReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray {

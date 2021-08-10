@@ -14,6 +14,12 @@
 // UI
 #import "PLVSASendMessageView.h"
 
+/// 模块
+#import "PLVSAChatroomViewModel.h"
+
+// 依赖库
+#import <PolyvFoundationSDK/PolyvFoundationSDK.h>
+
 @interface PLVSAToolbarAreaView()
 
 /// view hierarchy
@@ -51,6 +57,9 @@
         [self addSubview:self.memberButton];
         [self addSubview:self.memberBadgeView];
         [self addSubview:self.moreButton];
+        
+        //加载图片表情资源
+        [[PLVSAChatroomViewModel sharedViewModel] loadImageEmotions];
     }
     return self;
 }
@@ -79,8 +88,10 @@
 
 - (void)setChannelLinkMicOpen:(BOOL)channelLinkMicOpen {
     _channelLinkMicOpen = channelLinkMicOpen;
-    self.linkMicButton.selected = channelLinkMicOpen;
-    self.linkMicButton.enabled = YES;
+    plv_dispatch_main_async_safe(^{
+        self.linkMicButton.selected = channelLinkMicOpen;
+        self.linkMicButton.enabled = YES;
+    })
 }
 
 - (void)setNetState:(NSInteger)netState {
@@ -161,6 +172,8 @@
 #pragma mark Action
 - (void)chatButtonAction {
     [self.sendMessageView show];
+    ///图片表情数据
+    self.sendMessageView.imageEmotionArray = [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
 }
 
 - (void)linkMicButtonAction {

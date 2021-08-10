@@ -208,7 +208,8 @@
     
     NSAttributedString *nickNameString = [[NSAttributedString alloc] initWithString:content attributes:nickNameAttDict];
     NSAttributedString *conentString = [[NSAttributedString alloc] initWithString:message.content attributes:contentAttDict];
-    NSMutableAttributedString *emojiContentString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:conentString font:font];
+    //云课堂小表情显示需要变大 用font 22；
+    NSMutableAttributedString *emojiContentString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:conentString font:[UIFont systemFontOfSize:22.0]];
     
     NSMutableAttributedString *contentLabelString = [[NSMutableAttributedString alloc] init];
     [contentLabelString appendAttributedString:nickNameString];

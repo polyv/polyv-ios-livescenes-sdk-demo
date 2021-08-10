@@ -36,7 +36,8 @@ PLVLCFloatViewDelegate,
 PLVLCMediaMoreViewDelegate,
 PLVLCMediaPlayerCanvasViewDelegate,
 PLVPPTViewDelegate,
-PLVPlayerPresenterDelegate
+PLVPlayerPresenterDelegate,
+PLVLCRetryPlayViewDelegate
 >
 
 #pragma mark 状态
@@ -119,6 +120,8 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) UIView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) UIView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
+@property (nonatomic, strong) PLVLCRetryPlayView *retryPlayView; // 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
+@property (nonatomic, assign) NSTimeInterval interruptionTime;
 
 @end
 
@@ -190,6 +193,7 @@ PLVPlayerPresenterDelegate
     
     if (self.superview && !self.marqueeView.superview) { [self.superview addSubview:self.marqueeView]; }
     self.marqueeView.frame = self.contentBackgroudView.frame;
+    self.retryPlayView.frame = self.frame;
 }
 
 
@@ -349,6 +353,8 @@ PLVPlayerPresenterDelegate
     [self addSubview:self.danmuView];
     
     [self addSubview:self.skinView];
+    
+    [self addSubview:self.retryPlayView];
 }
 
 - (void)contentBackgroundViewDisplaySubview:(UIView *)subview{
@@ -582,6 +588,16 @@ PLVPlayerPresenterDelegate
         _pptView.backgroudImageView.image = [self getImageWithName:@"plvlc_media_ppt_placeholder"];
     }
     return _pptView;
+}
+
+- (PLVLCRetryPlayView *)retryPlayView {
+    if (!_retryPlayView) {
+        _retryPlayView = [[PLVLCRetryPlayView alloc]init];
+        _retryPlayView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.1);
+        _retryPlayView.hidden = YES;
+        _retryPlayView.delegate = self;
+    }
+    return _retryPlayView;
 }
 
 - (BOOL)inLinkMic{
@@ -881,6 +897,18 @@ PLVPlayerPresenterDelegate
     if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:progressUpdateWithCachedProgress:playedProgress:durationTime:currentTimeString:durationString:)]) {
         [self.delegate plvLCMediaAreaView:self progressUpdateWithCachedProgress:downloadProgress playedProgress:playedProgress durationTime:playerPresenter.duration currentTimeString:playedTimeString durationString:durationTimeString];
     }
+}
+
+// 回放视频播放中断
+- (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter {
+    self.retryPlayView.hidden = NO;
+}
+
+#pragma mark PLVLCRetryPlayViewDelegate
+/// 重试按钮被点击
+- (void)plvLCRetryPlayViewReplayButtonClicked {
+    self.retryPlayView.hidden = YES;
+    [self.playerPresenter resumePlay];
 }
 
 #pragma mark - 播放器LOGO

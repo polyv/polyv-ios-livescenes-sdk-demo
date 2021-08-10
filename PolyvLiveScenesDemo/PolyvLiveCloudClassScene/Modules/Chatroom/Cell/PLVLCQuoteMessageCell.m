@@ -244,7 +244,8 @@
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#777786"]
     };
     NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:content attributes:attributeDict];
-    NSMutableAttributedString *emojiAttributedString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:attributedString font:[UIFont systemFontOfSize:16.0]];
+    //云课堂小表情显示需要变大 用font 22；
+    NSMutableAttributedString *emojiAttributedString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:attributedString font:[UIFont systemFontOfSize:22.0]];
     return [emojiAttributedString copy];
 }
 
@@ -270,7 +271,8 @@
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#78A7ED"]
     };
     NSAttributedString *string = [[NSAttributedString alloc] initWithString:content attributes:attributeDict];
-    NSMutableAttributedString *emojiAttributedString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:string font:[UIFont systemFontOfSize:16.0]];
+    //云课堂小表情显示需要变大 用font 22；
+    NSMutableAttributedString *emojiAttributedString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:string font:[UIFont systemFontOfSize:22.0]];
     return emojiAttributedString;
 }
 
