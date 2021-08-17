@@ -1,6 +1,6 @@
 # polyv-ios-livescenes-sdk-demo
 ### 1 简介
-此项目是保利威 iOS 多场景 Demo。
+本项目从属于广州易方信息科技股份有限公司，是一款基于保利威多场景 SDK，包含了云课堂场景、直播带货场景、手机开播场景等多个场景的 Demo。想要集成本项目提供的 SDK，需要在[保利威视频云平台](https://www.polyv.net)注册账号，并开通相关服务。我们推荐的集成方式，是在使用 Demo 中的开源代码的基础上进行集成。关于如何使用开源代码进行集成，详见 [wiki](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/wiki)。
 
 多场景项目的项目架构图如下：
 
@@ -35,19 +35,23 @@
 └── Supporting Files
 ```
 
+### 2 环境要求
 
+| 名称      | 要求        |
+| :-------- | ----------- |
+| iOS 系统  | iOS 9.0+    |
+| CocoaPods | 1.7.0+      |
+| 集成工具  | Xcode 11.0+ |
 
-
-
-### 2 体验 Demo
+### 3 体验 Demo
 
 Demo [下载链接](https://www.pgyer.com/IzFQ) （密码：polyv）
 
-### 3 Wiki 文档
+### 4 Wiki 文档
 
 可在 [Wiki 文档](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/wiki) 中，了解 **项目结构、SDK 能力、源码释义** 等内容
 
-### 4 Released 版本更新
+### 5 Released 版本更新
 
 以下表格反映：
 
