@@ -1,14 +1,14 @@
 //
 //  PLVLoginViewController.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by Hank on 2020/11/4.
-//  Copyright © 2020 polyv. All rights reserved.
+//  Copyright © 2020 PLV. All rights reserved.
 //
 
 #import "PLVLiveWatchLoginController.h"
 
-#import <PolyvFoundationSDK/PLVProgressHUD.h>
+#import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 

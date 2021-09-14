@@ -17,30 +17,6 @@
 		00368E9F2555516700E4FE71 /* PLVLCLandscapeNewMessageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00368E9E2555516700E4FE71 /* PLVLCLandscapeNewMessageView.m */; };
 		00436F9D253155FB00A146A0 /* PLVLCLikeButtonView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00436F9C253155FB00A146A0 /* PLVLCLikeButtonView.m */; };
 		00436F9F2531591800A146A0 /* PLVChatroom.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00436F9E2531591800A146A0 /* PLVChatroom.bundle */; };
-		00476BB0259194C000460F8E /* PLVMarqueeLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B66259194C000460F8E /* PLVMarqueeLabel.m */; };
-		00476BB1259194C000460F8E /* PLVAlbumTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B6A259194C000460F8E /* PLVAlbumTool.m */; };
-		00476BB2259194C000460F8E /* PLVWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B6B259194C000460F8E /* PLVWebImageDecoder.m */; };
-		00476BB3259194C000460F8E /* PLVPhotoPreBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B71259194C000460F8E /* PLVPhotoPreBaseViewController.m */; };
-		00476BB4259194C000460F8E /* PLVCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B72259194C000460F8E /* PLVCameraViewController.m */; };
-		00476BB5259194C000460F8E /* PLVPickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B73259194C000460F8E /* PLVPickerController.m */; };
-		00476BB6259194C000460F8E /* PLVAlbumNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B74259194C000460F8E /* PLVAlbumNavigationController.m */; };
-		00476BB7259194C000460F8E /* PLVAlbumsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B75259194C000460F8E /* PLVAlbumsViewController.m */; };
-		00476BB8259194C000460F8E /* PLVPhotoPreViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B77259194C000460F8E /* PLVPhotoPreViewController.m */; };
-		00476BB9259194C000460F8E /* PLVImageInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B7D259194C000460F8E /* PLVImageInfo.m */; };
-		00476BBA259194C000460F8E /* PLVAlbumInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B7E259194C000460F8E /* PLVAlbumInfo.m */; };
-		00476BBB259194C000460F8E /* PLVPreCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B82259194C000460F8E /* PLVPreCollectionViewCell.m */; };
-		00476BBC259194C000460F8E /* PLVPhotoCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B84259194C000460F8E /* PLVPhotoCollectionViewCell.m */; };
-		00476BBD259194C000460F8E /* PLVPhotoCollectionFooterView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B88259194C000460F8E /* PLVPhotoCollectionFooterView.m */; };
-		00476BBE259194C000460F8E /* PLVAlbumTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B89259194C000460F8E /* PLVAlbumTableViewCell.m */; };
-		00476BBF259194C000460F8E /* PLVAlbum.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B8A259194C000460F8E /* PLVAlbum.bundle */; };
-		00476BC0259194C000460F8E /* PLVDanMu.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B8D259194C000460F8E /* PLVDanMu.m */; };
-		00476BC1259194C000460F8E /* PLVDanMuLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B8F259194C000460F8E /* PLVDanMuLabel.m */; };
-		00476BC2259194C000460F8E /* PLVEmoticonManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B92259194C000460F8E /* PLVEmoticonManager.m */; };
-		00476BC3259194C000460F8E /* PLVEmoticon.plist in Resources */ = {isa = PBXBuildFile; fileRef = 00476B95259194C000460F8E /* PLVEmoticon.plist */; };
-		00476BC4259194C000460F8E /* PLVEmoticons.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B96259194C000460F8E /* PLVEmoticons.bundle */; };
-		00476BC5259194C000460F8E /* PLVProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B98259194C000460F8E /* PLVProgressSlider.m */; };
-		00476BC6259194C000460F8E /* PLVPhotoBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B9B259194C000460F8E /* PLVPhotoBrowser.m */; };
-		00476BC7259194C000460F8E /* PLVPhotoBrowser.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B9C259194C000460F8E /* PLVPhotoBrowser.bundle */; };
 		00476BC8259194C000460F8E /* PLVLCPageController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B9F259194C000460F8E /* PLVLCPageController.m */; };
 		00476BC9259194C000460F8E /* PLVLCPageViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BA0259194C000460F8E /* PLVLCPageViewCell.m */; };
 		00476BCA259194C000460F8E /* PLVLCKeyboardTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BA6259194C000460F8E /* PLVLCKeyboardTextView.m */; };
@@ -64,8 +40,6 @@
 		00511F83263AC58B008CE5E3 /* PLVDocumentConvertManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 00511F7E263AC58B008CE5E3 /* PLVDocumentConvertManager.m */; };
 		00511F84263AC58B008CE5E3 /* PLVDocumentConvertRequester.m in Sources */ = {isa = PBXBuildFile; fileRef = 00511F80263AC58B008CE5E3 /* PLVDocumentConvertRequester.m */; };
 		00511F85263AC58B008CE5E3 /* PLVDocumentConvertRequester.m in Sources */ = {isa = PBXBuildFile; fileRef = 00511F80263AC58B008CE5E3 /* PLVDocumentConvertRequester.m */; };
-		00539C5B25EE489F0016B2BD /* PLVToast.m in Sources */ = {isa = PBXBuildFile; fileRef = 00539C4625ECD9090016B2BD /* PLVToast.m */; };
-		00539C5F25EE48B50016B2BD /* PLVAlertViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00539C4B25EDCFBB0016B2BD /* PLVAlertViewController.m */; };
 		005584EA2533F6A200B9373C /* PLVLCWelcomeView.m in Sources */ = {isa = PBXBuildFile; fileRef = 005584E92533F6A200B9373C /* PLVLCWelcomeView.m */; };
 		0055860E25354A8800B9373C /* PLVLCNotifyMarqueeView..m in Sources */ = {isa = PBXBuildFile; fileRef = 0055860D25354A8800B9373C /* PLVLCNotifyMarqueeView..m */; };
 		005728FD265D08CE0000784B /* PLVSALinkMicWindowsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 005728FC265D08CE0000784B /* PLVSALinkMicWindowsView.m */; };
@@ -105,22 +79,15 @@
 		005B1B8126551D4800F77307 /* PLVSALinkMic.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 005B1B8026551D4800F77307 /* PLVSALinkMic.bundle */; };
 		005F15CE2649272F0093E874 /* PLVLSRepliedMsgView.m in Sources */ = {isa = PBXBuildFile; fileRef = 005F15CD2649272F0093E874 /* PLVLSRepliedMsgView.m */; };
 		005F1749264BBB410093E874 /* PLVECRewardController.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C228782546BB2400410292 /* PLVECRewardController.m */; };
-		005F174A264BBB410093E874 /* PLVPhotoCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B84259194C000460F8E /* PLVPhotoCollectionViewCell.m */; };
-		005F174B264BBB410093E874 /* PLVPreCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B82259194C000460F8E /* PLVPreCollectionViewCell.m */; };
 		005F174D264BBB410093E874 /* PLVLCLinkMicWindowsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E4216257A09490039D35D /* PLVLCLinkMicWindowsView.m */; };
 		005F174E264BBB410093E874 /* PLVLCLiveRoomPlayerSkinView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E4227257A09F80039D35D /* PLVLCLiveRoomPlayerSkinView.m */; };
 		005F174F264BBB410093E874 /* PLVLCMediaMoreCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E41F62579EC2F0039D35D /* PLVLCMediaMoreCell.m */; };
-		005F1750264BBB410093E874 /* PLVToast.m in Sources */ = {isa = PBXBuildFile; fileRef = 00539C4625ECD9090016B2BD /* PLVToast.m */; };
 		005F1751264BBB410093E874 /* PLVECCommodityModelsManager.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC5F25BA636B0084C160 /* PLVECCommodityModelsManager.m */; };
 		005F1752264BBB410093E874 /* PLVLCChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00EF599D251C984F00A65197 /* PLVLCChatViewController.m */; };
-		005F1753264BBB410093E874 /* PLVWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B6B259194C000460F8E /* PLVWebImageDecoder.m */; };
 		005F1754264BBB410093E874 /* PLVLCMediaMoreView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E41F52579EC2F0039D35D /* PLVLCMediaMoreView.m */; };
 		005F1755264BBB410093E874 /* PLVLCImageMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 006862EB25771D0C00E319EA /* PLVLCImageMessageCell.m */; };
-		005F1756264BBB410093E874 /* PLVPhotoBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B9B259194C000460F8E /* PLVPhotoBrowser.m */; };
 		005F1757264BBB410093E874 /* PLVECNewMessageView.m in Sources */ = {isa = PBXBuildFile; fileRef = BF574403255D204500283C2D /* PLVECNewMessageView.m */; };
 		005F1758264BBB410093E874 /* PLVLCChatroomViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00059B0E256F956A00495223 /* PLVLCChatroomViewModel.m */; };
-		005F1759264BBB410093E874 /* PLVAdvView.m in Sources */ = {isa = PBXBuildFile; fileRef = BFC50CEA2592F6B800362138 /* PLVAdvView.m */; };
-		005F175A264BBB410093E874 /* PLVPlayerLogoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 046F8B61264933CF00C92565 /* PLVPlayerLogoView.m */; };
 		005F175B264BBB410093E874 /* PLVECRewardView.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C2287C2546BB2400410292 /* PLVECRewardView.m */; };
 		005F175C264BBB410093E874 /* PLVRoomLoginClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A47258B2EB80068C884 /* PLVRoomLoginClient.m */; };
 		005F175D264BBB410093E874 /* PLVInteractQuestionnaire.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976753250F420300D1F16B /* PLVInteractQuestionnaire.m */; };
@@ -128,14 +95,10 @@
 		005F1760264BBB410093E874 /* PLVECChatCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 006862FF2577261800E319EA /* PLVECChatCell.m */; };
 		005F1761264BBB410093E874 /* PLVLCLinkMicLandscapeControlBar.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E420F257A09490039D35D /* PLVLCLinkMicLandscapeControlBar.m */; };
 		005F1762264BBB410093E874 /* PLVECPlayerBackgroundView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00686322257899EB00E319EA /* PLVECPlayerBackgroundView.m */; };
-		005F1763264BBB410093E874 /* PLVPickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B73259194C000460F8E /* PLVPickerController.m */; };
 		005F1764264BBB410093E874 /* PLVLCMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 006862E425771D0C00E319EA /* PLVLCMessageCell.m */; };
-		005F1765264BBB410093E874 /* PLVEmoticonManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B92259194C000460F8E /* PLVEmoticonManager.m */; };
 		005F1766264BBB410093E874 /* PLVLCLandscapeNewMessageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00368E9E2555516700E4FE71 /* PLVLCLandscapeNewMessageView.m */; };
 		005F1767264BBB410093E874 /* PLVECHomePageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0077D58425BA627B008A1AE0 /* PLVECHomePageView.m */; };
-		005F1768264BBB410093E874 /* PLVChatTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00A57AF32603016400EEA84D /* PLVChatTextView.m */; };
 		005F1769264BBB410093E874 /* PLVInteractAnswer.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976743250B190E00D1F16B /* PLVInteractAnswer.m */; };
-		005F176A264BBB410093E874 /* PLVPhotoPreBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B71259194C000460F8E /* PLVPhotoPreBaseViewController.m */; };
 		005F176B264BBB410093E874 /* PLVChatroomPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0068630C2577270800E319EA /* PLVChatroomPresenter.m */; };
 		005F176D264BBB410093E874 /* PLVLCBasePlayerSkinView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E42032579EC2F0039D35D /* PLVLCBasePlayerSkinView.m */; };
 		005F176E264BBB410093E874 /* PLVLinkMicPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 6333EF6924C842C100E196C2 /* PLVLinkMicPresenter.m */; };
@@ -151,16 +114,12 @@
 		005F1778264BBB410093E874 /* PLVECBulletinView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BDE2591959000460F8E /* PLVECBulletinView.m */; };
 		005F1779264BBB410093E874 /* PLVLCUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 6306571024DCF01B00EAA430 /* PLVLCUtils.m */; };
 		005F177A264BBB410093E874 /* PLVChatModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 0068630A2577270800E319EA /* PLVChatModel.m */; };
-		005F177B264BBB410093E874 /* PLVProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B98259194C000460F8E /* PLVProgressSlider.m */; };
 		005F177C264BBB410093E874 /* PLVLinkMicOnlineUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 630A462724ED13E90041EE0E /* PLVLinkMicOnlineUser.m */; };
 		005F177D264BBB410093E874 /* PLVLCLinkMicSpeakingView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E421C257A09490039D35D /* PLVLCLinkMicSpeakingView.m */; };
 		005F177E264BBB410093E874 /* PLVDocumentView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD4222609821B003783D8 /* PLVDocumentView.m */; };
 		005F177F264BBB410093E874 /* PLVECChatroomView.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C2288A2546BB2400410292 /* PLVECChatroomView.m */; };
-		005F1780264BBB410093E874 /* PLVBaseNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 63264EE0245A630500C7199C /* PLVBaseNavigationController.m */; };
-		005F1781264BBB410093E874 /* PLVAlbumNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B74259194C000460F8E /* PLVAlbumNavigationController.m */; };
 		005F1782264BBB410093E874 /* PLVLCKeyboardTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BA6259194C000460F8E /* PLVLCKeyboardTextView.m */; };
 		005F1784264BBB410093E874 /* PLVLCIframeViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C228442546BAFD00410292 /* PLVLCIframeViewController.m */; };
-		005F1785264BBB410093E874 /* PLVAlbumInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B7E259194C000460F8E /* PLVAlbumInfo.m */; };
 		005F1786264BBB410093E874 /* PLVDocumentConvertRequester.m in Sources */ = {isa = PBXBuildFile; fileRef = 00511F80263AC58B008CE5E3 /* PLVDocumentConvertRequester.m */; };
 		005F1787264BBB410093E874 /* PLVLCLiveRoomLandscapeInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E4224257A09F80039D35D /* PLVLCLiveRoomLandscapeInputView.m */; };
 		005F1788264BBB410093E874 /* PLVChatUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 006863082577270800E319EA /* PLVChatUser.m */; };
@@ -169,7 +128,6 @@
 		005F178B264BBB410093E874 /* PLVECCommodityCell.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC5725BA636B0084C160 /* PLVECCommodityCell.m */; };
 		005F178C264BBB410093E874 /* PLVLCNewMessageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00368E9B2555411300E4FE71 /* PLVLCNewMessageView.m */; };
 		005F178D264BBB410093E874 /* PLVECCardView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BE72591959000460F8E /* PLVECCardView.m */; };
-		005F178E264BBB410093E874 /* PLVDanMu.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B8D259194C000460F8E /* PLVDanMu.m */; };
 		005F1790264BBB410093E874 /* PLVInteractSignIn.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976756250F47A600D1F16B /* PLVInteractSignIn.m */; };
 		005F1791264BBB410093E874 /* PLVDocumentConvertManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 00511F7E263AC58B008CE5E3 /* PLVDocumentConvertManager.m */; };
 		005F1792264BBB410093E874 /* PLVLCTuwenViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C228472546BAFD00410292 /* PLVLCTuwenViewController.m */; };
@@ -177,14 +135,11 @@
 		005F1794264BBB410093E874 /* PLVECLiveRoomInfoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BDA2591959000460F8E /* PLVECLiveRoomInfoView.m */; };
 		005F1795264BBB410093E874 /* PLVInteractBulletin.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976747250F0DF900D1F16B /* PLVInteractBulletin.m */; };
 		005F1797264BBB410093E874 /* PLVRoomDataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A4B258B38F20068C884 /* PLVRoomDataManager.m */; };
-		005F1798264BBB410093E874 /* PLVMarqueeLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B66259194C000460F8E /* PLVMarqueeLabel.m */; };
 		005F1799264BBB410093E874 /* PLVLCMediaPlayerSkinView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E42022579EC2F0039D35D /* PLVLCMediaPlayerSkinView.m */; };
 		005F179A264BBB410093E874 /* PLVLCDescTopView.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C2284B2546BAFD00410292 /* PLVLCDescTopView.m */; };
 		005F179B264BBB410093E874 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 633923A82459877B00C0ACE9 /* AppDelegate.m */; };
 		005F179C264BBB410093E874 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 633923B92459877D00C0ACE9 /* main.m */; };
-		005F179D264BBB410093E874 /* PLVPhotoCollectionFooterView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B88259194C000460F8E /* PLVPhotoCollectionFooterView.m */; };
 		005F179E264BBB410093E874 /* PLVECBulletinCardView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BE52591959000460F8E /* PLVECBulletinCardView.m */; };
-		005F179F264BBB410093E874 /* PLVActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD42726098231003783D8 /* PLVActionSheet.m */; };
 		005F17A0264BBB410093E874 /* PLVLCLandscapeQuoteCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 006862EF25771D0C00E319EA /* PLVLCLandscapeQuoteCell.m */; };
 		005F17A1264BBB410093E874 /* PLVInteractView.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976736250A2C4800D1F16B /* PLVInteractView.m */; };
 		005F17A2264BBB410093E874 /* PLVLCLivePageMenuAreaView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6766B8C024C984CA0037B438 /* PLVLCLivePageMenuAreaView.m */; };
@@ -201,18 +156,14 @@
 		005F17AE264BBB410093E874 /* PLVLCLinkMicPortraitControlBar.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E4210257A09490039D35D /* PLVLCLinkMicPortraitControlBar.m */; };
 		005F17AF264BBB410093E874 /* PLVLCMediaBrightnessView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E41F32579EC2F0039D35D /* PLVLCMediaBrightnessView.m */; };
 		005F17B0264BBB410093E874 /* PLVECChatroomViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00059B112570AB8100495223 /* PLVECChatroomViewModel.m */; };
-		005F17B1264BBB410093E874 /* PLVAlbumTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B89259194C000460F8E /* PLVAlbumTableViewCell.m */; };
 		005F17B2264BBB410093E874 /* PLVInteractLottery.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976750250F14F400D1F16B /* PLVInteractLottery.m */; };
-		005F17B3264BBB410093E874 /* PLVImageInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B7D259194C000460F8E /* PLVImageInfo.m */; };
 		005F17B4264BBB410093E874 /* PLVECPlayerContolView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BD72591959000460F8E /* PLVECPlayerContolView.m */; };
 		005F17B5264BBB410093E874 /* PLVECMoreView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BD82591959000460F8E /* PLVECMoreView.m */; };
 		005F17B6264BBB410093E874 /* PLVLCMediaPlayerCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E41FD2579EC2F0039D35D /* PLVLCMediaPlayerCanvasView.m */; };
 		005F17B7264BBB410093E874 /* PLVLCCloudClassViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 63D24306255A97A600CB569E /* PLVLCCloudClassViewController.m */; };
-		005F17B8264BBB410093E874 /* PLVAlertViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00539C4B25EDCFBB0016B2BD /* PLVAlertViewController.m */; };
 		005F17B9264BBB410093E874 /* PLVECLiveDetailPageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BE32591959000460F8E /* PLVECLiveDetailPageView.m */; };
 		005F17BA264BBB410093E874 /* PLVLCKeyboardToolView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476BA9259194C000460F8E /* PLVLCKeyboardToolView.m */; };
 		005F17BB264BBB410093E874 /* PLVLiveWatchLoginController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF1A9C8025525B62000AA79E /* PLVLiveWatchLoginController.m */; };
-		005F17BC264BBB410093E874 /* PLVCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B72259194C000460F8E /* PLVCameraViewController.m */; };
 		005F17BD264BBB410093E874 /* PLVECGiftView.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C2287B2546BB2400410292 /* PLVECGiftView.m */; };
 		005F17BE264BBB410093E874 /* PLVLCMediaFloatView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E41FB2579EC2F0039D35D /* PLVLCMediaFloatView.m */; };
 		005F17BF264BBB410093E874 /* PLVPPTView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A42258A05270068C884 /* PLVPPTView.m */; };
@@ -222,19 +173,15 @@
 		005F17C4264BBB410093E874 /* PLVLCLinkMicAreaView.m in Sources */ = {isa = PBXBuildFile; fileRef = 6766B8BD24C9849D0037B438 /* PLVLCLinkMicAreaView.m */; };
 		005F17C5264BBB410093E874 /* PLVInteractBaseApp+General.m in Sources */ = {isa = PBXBuildFile; fileRef = 6397674D250F128D00D1F16B /* PLVInteractBaseApp+General.m */; };
 		005F17C6264BBB410093E874 /* PLVECCommodityViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC6025BA636B0084C160 /* PLVECCommodityViewController.m */; };
-		005F17C7264BBB410093E874 /* PLVAlbumsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B75259194C000460F8E /* PLVAlbumsViewController.m */; };
 		005F17C8264BBB410093E874 /* PLVLCLandscapeSpeakCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 006862ED25771D0C00E319EA /* PLVLCLandscapeSpeakCell.m */; };
 		005F17C9264BBB410093E874 /* PLVECWatchRoomViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 634597B025764FD0006DEEF8 /* PLVECWatchRoomViewController.m */; };
 		005F17CA264BBB410093E874 /* PLVLCMediaMoreModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 63D24303255A948400CB569E /* PLVLCMediaMoreModel.m */; };
 		005F17CB264BBB410093E874 /* PLVLCLinkMicCanvasView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E4219257A09490039D35D /* PLVLCLinkMicCanvasView.m */; };
-		005F17CC264BBB410093E874 /* PLVAlbumTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B6A259194C000460F8E /* PLVAlbumTool.m */; };
-		005F17CD264BBB410093E874 /* PLVPhotoPreViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B77259194C000460F8E /* PLVPhotoPreViewController.m */; };
 		005F17CE264BBB410093E874 /* PLVRoomUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A4F258B3FA10068C884 /* PLVRoomUser.m */; };
 		005F17CF264BBB410093E874 /* PLVECPlayerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00F2A0502578E985002ED0F3 /* PLVECPlayerViewController.m */; };
 		005F17D0264BBB410093E874 /* PLVECCommodityView.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC5C25BA636B0084C160 /* PLVECCommodityView.m */; };
 		005F17D1264BBB410093E874 /* PLVLCChatLandscapeView.m in Sources */ = {isa = PBXBuildFile; fileRef = 67C3FE2124D3C75D00CD0020 /* PLVLCChatLandscapeView.m */; };
 		005F17D2264BBB410093E874 /* PLVMemberPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 00727A2225CD4C16001CE398 /* PLVMemberPresenter.m */; };
-		005F17D3264BBB410093E874 /* PLVDanMuLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B8F259194C000460F8E /* PLVDanMuLabel.m */; };
 		005F17D5264BBB410093E874 /* PLVLCDescBottomView.m in Sources */ = {isa = PBXBuildFile; fileRef = 63C2284C2546BAFD00410292 /* PLVLCDescBottomView.m */; };
 		005F17D6264BBB410093E874 /* PLVECLikeButtonView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0077D58125B91D60008A1AE0 /* PLVECLikeButtonView.m */; };
 		005F17D7264BBB410093E874 /* PLVRoomData.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A52258B502A0068C884 /* PLVRoomData.m */; };
@@ -243,15 +190,11 @@
 		005F17DB264BBB410093E874 /* PLVLiveScenesSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 633E425C257DCD710039D35D /* PLVLiveScenesSDK.framework */; };
 		005F17DF264BBB410093E874 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63D2430A255AB12500CB569E /* Settings.bundle */; };
 		005F17E0264BBB410093E874 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 633923B52459877D00C0ACE9 /* LaunchScreen.storyboard */; };
-		005F17E1264BBB410093E874 /* PLVPhotoBrowser.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B9C259194C000460F8E /* PLVPhotoBrowser.bundle */; };
 		005F17E3264BBB410093E874 /* PLVMedia.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 6397675B2511A43700D1F16B /* PLVMedia.bundle */; };
 		005F17E5264BBB410093E874 /* PLVMenu.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00EF59BA251D9FDC00A65197 /* PLVMenu.bundle */; };
-		005F17E8264BBB410093E874 /* PLVEmoticons.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B96259194C000460F8E /* PLVEmoticons.bundle */; };
 		005F17E9264BBB410093E874 /* PLVLinkMic.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 6306571524DCF17500EAA430 /* PLVLinkMic.bundle */; };
-		005F17EA264BBB410093E874 /* PLVAlbum.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B8A259194C000460F8E /* PLVAlbum.bundle */; };
 		005F17EB264BBB410093E874 /* PLVLiveRoom.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 632486BA252EBF48001EE3F0 /* PLVLiveRoom.bundle */; };
 		005F17EC264BBB410093E874 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 633923B32459877D00C0ACE9 /* Assets.xcassets */; };
-		005F17ED264BBB410093E874 /* PLVEmoticon.plist in Resources */ = {isa = PBXBuildFile; fileRef = 00476B95259194C000460F8E /* PLVEmoticon.plist */; };
 		005F17EE264BBB410093E874 /* PLVChatroom.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00436F9E2531591800A146A0 /* PLVChatroom.bundle */; };
 		005F17EF264BBB410093E874 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 633923B02459877B00C0ACE9 /* Main.storyboard */; };
 		005F17F1264BBB410093E874 /* WatchResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 67D700C42476807200429B55 /* WatchResource.bundle */; };
@@ -294,7 +237,7 @@
 		005F1894264BBC610093E874 /* PLVLSDocumentListCellMaskView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00C75C9026204F1700F141C5 /* PLVLSDocumentListCellMaskView.m */; };
 		005F1898264BBC680093E874 /* PLVLSDocumentAreaView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F626098208003783D8 /* PLVLSDocumentAreaView.m */; };
 		005F189C264BBC6B0093E874 /* PLVLSDocumentBrushView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F426098208003783D8 /* PLVLSDocumentBrushView.m */; };
-		005F18A0264BBC6D0093E874 /* PLVLSDocumentBrushColorView..m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView..m */; };
+		005F18A0264BBC6D0093E874 /* PLVLSDocumentBrushColorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView.m */; };
 		005F18A4264BBC6F0093E874 /* PLVLSDocumentToolView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F226098208003783D8 /* PLVLSDocumentToolView.m */; };
 		005F18A8264BBC720093E874 /* PLVLSDocumentInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F126098208003783D8 /* PLVLSDocumentInputView.m */; };
 		005F18AC264BBC740093E874 /* PLVLSDocumentNumView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD499260B4E0C003783D8 /* PLVLSDocumentNumView.m */; };
@@ -304,8 +247,6 @@
 		005F18BC264BBC820093E874 /* PLVLSStatus.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 0050641025E3B094007A3277 /* PLVLSStatus.bundle */; };
 		005F18C0264BBC840093E874 /* PLVLSChatroom.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00A57ACA25FF038300EEA84D /* PLVLSChatroom.bundle */; };
 		005F18C4264BBC860093E874 /* PLVLSMember.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 0012061E2612B44E00473968 /* PLVLSMember.bundle */; };
-		005F18CF264BBC9F0093E874 /* PLVBaseNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 63264EE0245A630500C7199C /* PLVBaseNavigationController.m */; };
-		005F18FB264BBCFC0093E874 /* PLVPlayerLogoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 046F8B61264933CF00C92565 /* PLVPlayerLogoView.m */; };
 		005F18FF264BBDA10093E874 /* PLVStreamerPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 6395DE28262074E1000D0A44 /* PLVStreamerPresenter.m */; };
 		005F1903264BBDA10093E874 /* PLVStreamerPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 6395DE28262074E1000D0A44 /* PLVStreamerPresenter.m */; };
 		005F1904264BBDA30093E874 /* BuildFile in Sources */ = {isa = PBXBuildFile; };
@@ -336,8 +277,6 @@
 		0077D58225B91D60008A1AE0 /* PLVECLikeButtonView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0077D58125B91D60008A1AE0 /* PLVECLikeButtonView.m */; };
 		0077D58525BA627B008A1AE0 /* PLVECHomePageView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0077D58425BA627B008A1AE0 /* PLVECHomePageView.m */; };
 		007CD4232609821C003783D8 /* PLVDocumentView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD4222609821B003783D8 /* PLVDocumentView.m */; };
-		007CD42926098231003783D8 /* PLVActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD42726098231003783D8 /* PLVActionSheet.m */; };
-		007CD42A26098231003783D8 /* PLVActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD42726098231003783D8 /* PLVActionSheet.m */; };
 		007CD42D26098238003783D8 /* PLVDocumentView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD4222609821B003783D8 /* PLVDocumentView.m */; };
 		007CD4322609823C003783D8 /* PLVLSDocumentAreaView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F626098208003783D8 /* PLVLSDocumentAreaView.m */; };
 		007CD43526098241003783D8 /* PLVLSDocumentSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40126098208003783D8 /* PLVLSDocumentSheet.m */; };
@@ -349,7 +288,7 @@
 		007CD46126098275003783D8 /* PLVLSDocumentPagesView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40C26098208003783D8 /* PLVLSDocumentPagesView.m */; };
 		007CD46426098277003783D8 /* PLVLSDocumentLoadingView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD40E26098208003783D8 /* PLVLSDocumentLoadingView.m */; };
 		007CD46B26098288003783D8 /* PLVLSDocumentBrushView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F426098208003783D8 /* PLVLSDocumentBrushView.m */; };
-		007CD4702609828A003783D8 /* PLVLSDocumentBrushColorView..m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView..m */; };
+		007CD4702609828A003783D8 /* PLVLSDocumentBrushColorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView.m */; };
 		007CD4732609828C003783D8 /* PLVLSDocumentToolView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F226098208003783D8 /* PLVLSDocumentToolView.m */; };
 		007CD47A2609828F003783D8 /* PLVLSDocumentInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD3F126098208003783D8 /* PLVLSDocumentInputView.m */; };
 		007CD49A260B4E0C003783D8 /* PLVLSDocumentNumView.m in Sources */ = {isa = PBXBuildFile; fileRef = 007CD499260B4E0C003783D8 /* PLVLSDocumentNumView.m */; };
@@ -382,7 +321,6 @@
 		00877A0F264BD84200AD9245 /* PLVLiveWatchLoginController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF1A9C8025525B62000AA79E /* PLVLiveWatchLoginController.m */; };
 		00877A13264BD9D500AD9245 /* PLVLiveStreamerLoginViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0072798525CA8704001CE398 /* PLVLiveStreamerLoginViewController.m */; };
 		00877A17264BD9D700AD9245 /* PLVLiveStreamerPrivacyViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 005063D225E3511E007A3277 /* PLVLiveStreamerPrivacyViewController.m */; };
-		00A57AF42603016500EEA84D /* PLVChatTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00A57AF32603016400EEA84D /* PLVChatTextView.m */; };
 		00A57D092604774500EEA84D /* PLVPlayerPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 63CBC7012583231500E80897 /* PLVPlayerPresenter.m */; };
 		00C75C89261FDAFC00F141C5 /* PLVLSDocumentListViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00C75C87261FDAFC00F141C5 /* PLVLSDocumentListViewModel.m */; };
 		00C75C9226204F1700F141C5 /* PLVLSDocumentListCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00C75C8E26204F1700F141C5 /* PLVLSDocumentListCell.m */; };
@@ -410,66 +348,37 @@
 		04504769265F744800D801A2 /* PLVSABottomSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 04504764265F744800D801A2 /* PLVSABottomSheet.m */; };
 		045EF2482664E2AE009275C4 /* PLVSASlideRightTipsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045EF2472664E2AE009275C4 /* PLVSASlideRightTipsView.m */; };
 		045EF2492664E2AE009275C4 /* PLVSASlideRightTipsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045EF2472664E2AE009275C4 /* PLVSASlideRightTipsView.m */; };
-		046F8B62264933CF00C92565 /* PLVPlayerLogoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 046F8B61264933CF00C92565 /* PLVPlayerLogoView.m */; };
 		04BDBB4E269D3D1500287C97 /* PLVLCRetryPlayView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BDBB4D269D3D1500287C97 /* PLVLCRetryPlayView.m */; };
 		04BDBB4F269D3D1500287C97 /* PLVLCRetryPlayView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BDBB4D269D3D1500287C97 /* PLVLCRetryPlayView.m */; };
 		137FB1FE691748EDA157EF8A /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
-		215D04072605875300E86BEF /* PLVPhotoCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B84259194C000460F8E /* PLVPhotoCollectionViewCell.m */; };
-		215D04082605875300E86BEF /* PLVPreCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B82259194C000460F8E /* PLVPreCollectionViewCell.m */; };
-		215D040C2605875300E86BEF /* PLVToast.m in Sources */ = {isa = PBXBuildFile; fileRef = 00539C4625ECD9090016B2BD /* PLVToast.m */; };
-		215D040F2605875300E86BEF /* PLVWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B6B259194C000460F8E /* PLVWebImageDecoder.m */; };
-		215D04142605875300E86BEF /* PLVPhotoBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B9B259194C000460F8E /* PLVPhotoBrowser.m */; };
-		215D04172605875300E86BEF /* PLVAdvView.m in Sources */ = {isa = PBXBuildFile; fileRef = BFC50CEA2592F6B800362138 /* PLVAdvView.m */; };
 		215D04192605875300E86BEF /* PLVRoomLoginClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A47258B2EB80068C884 /* PLVRoomLoginClient.m */; };
 		215D041A2605875300E86BEF /* PLVInteractQuestionnaire.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976753250F420300D1F16B /* PLVInteractQuestionnaire.m */; };
-		215D041F2605875300E86BEF /* PLVPickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B73259194C000460F8E /* PLVPickerController.m */; };
-		215D04212605875300E86BEF /* PLVEmoticonManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B92259194C000460F8E /* PLVEmoticonManager.m */; };
-		215D04242605875300E86BEF /* PLVChatTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00A57AF32603016400EEA84D /* PLVChatTextView.m */; };
 		215D04252605875300E86BEF /* PLVInteractAnswer.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976743250B190E00D1F16B /* PLVInteractAnswer.m */; };
-		215D04262605875300E86BEF /* PLVPhotoPreBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B71259194C000460F8E /* PLVPhotoPreBaseViewController.m */; };
 		215D04272605875300E86BEF /* PLVChatroomPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 0068630C2577270800E319EA /* PLVChatroomPresenter.m */; };
 		215D04292605875300E86BEF /* PLVLinkMicPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 6333EF6924C842C100E196C2 /* PLVLinkMicPresenter.m */; };
 		215D04352605875300E86BEF /* PLVChatModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 0068630A2577270800E319EA /* PLVChatModel.m */; };
-		215D04362605875300E86BEF /* PLVProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B98259194C000460F8E /* PLVProgressSlider.m */; };
 		215D04372605875300E86BEF /* PLVLinkMicOnlineUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 630A462724ED13E90041EE0E /* PLVLinkMicOnlineUser.m */; };
-		215D043B2605875300E86BEF /* PLVAlbumNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B74259194C000460F8E /* PLVAlbumNavigationController.m */; };
-		215D043E2605875300E86BEF /* PLVAlbumInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B7E259194C000460F8E /* PLVAlbumInfo.m */; };
 		215D04402605875300E86BEF /* PLVChatUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 006863082577270800E319EA /* PLVChatUser.m */; };
 		215D04422605875300E86BEF /* PLVBugReporter.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476C0E2595918400460F8E /* PLVBugReporter.m */; };
-		215D04462605875300E86BEF /* PLVDanMu.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B8D259194C000460F8E /* PLVDanMu.m */; };
 		215D04472605875300E86BEF /* PLVInteractSignIn.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976756250F47A600D1F16B /* PLVInteractSignIn.m */; };
 		215D044B2605875300E86BEF /* PLVInteractBulletin.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976747250F0DF900D1F16B /* PLVInteractBulletin.m */; };
 		215D044C2605875300E86BEF /* PLVRoomDataManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A4B258B38F20068C884 /* PLVRoomDataManager.m */; };
-		215D044D2605875300E86BEF /* PLVMarqueeLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B66259194C000460F8E /* PLVMarqueeLabel.m */; };
 		215D04502605875300E86BEF /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 633923A82459877B00C0ACE9 /* AppDelegate.m */; };
 		215D04512605875300E86BEF /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 633923B92459877D00C0ACE9 /* main.m */; };
-		215D04522605875300E86BEF /* PLVPhotoCollectionFooterView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B88259194C000460F8E /* PLVPhotoCollectionFooterView.m */; };
 		215D04552605875300E86BEF /* PLVInteractView.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976736250A2C4800D1F16B /* PLVInteractView.m */; };
 		215D04582605875300E86BEF /* PLVPlayerPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 63CBC7012583231500E80897 /* PLVPlayerPresenter.m */; };
-		215D04632605875300E86BEF /* PLVAlbumTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B89259194C000460F8E /* PLVAlbumTableViewCell.m */; };
 		215D04642605875300E86BEF /* PLVInteractLottery.m in Sources */ = {isa = PBXBuildFile; fileRef = 63976750250F14F400D1F16B /* PLVInteractLottery.m */; };
-		215D04652605875300E86BEF /* PLVImageInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B7D259194C000460F8E /* PLVImageInfo.m */; };
-		215D046A2605875300E86BEF /* PLVAlertViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00539C4B25EDCFBB0016B2BD /* PLVAlertViewController.m */; };
-		215D046F2605875300E86BEF /* PLVCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B72259194C000460F8E /* PLVCameraViewController.m */; };
 		215D04722605875300E86BEF /* PLVPPTView.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A42258A05270068C884 /* PLVPPTView.m */; };
 		215D04772605875300E86BEF /* PLVInteractBaseApp+General.m in Sources */ = {isa = PBXBuildFile; fileRef = 6397674D250F128D00D1F16B /* PLVInteractBaseApp+General.m */; };
-		215D04792605875300E86BEF /* PLVAlbumsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B75259194C000460F8E /* PLVAlbumsViewController.m */; };
-		215D047F2605875300E86BEF /* PLVAlbumTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B6A259194C000460F8E /* PLVAlbumTool.m */; };
-		215D04802605875300E86BEF /* PLVPhotoPreViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B77259194C000460F8E /* PLVPhotoPreViewController.m */; };
 		215D04812605875300E86BEF /* PLVRoomUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A4F258B3FA10068C884 /* PLVRoomUser.m */; };
 		215D04852605875300E86BEF /* PLVMemberPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 00727A2225CD4C16001CE398 /* PLVMemberPresenter.m */; };
-		215D04862605875300E86BEF /* PLVDanMuLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00476B8F259194C000460F8E /* PLVDanMuLabel.m */; };
 		215D04892605875300E86BEF /* PLVRoomData.m in Sources */ = {isa = PBXBuildFile; fileRef = 00E48A52258B502A0068C884 /* PLVRoomData.m */; };
 		215D048D2605875300E86BEF /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6337C5FE25AFF64500B96127 /* MetalKit.framework */; };
 		215D048E2605875300E86BEF /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6337C5FC25AFF47000B96127 /* Metal.framework */; };
 		215D048F2605875300E86BEF /* PLVLiveScenesSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 633E425C257DCD710039D35D /* PLVLiveScenesSDK.framework */; };
 		215D04922605875300E86BEF /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63D2430A255AB12500CB569E /* Settings.bundle */; };
 		215D04932605875300E86BEF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 633923B52459877D00C0ACE9 /* LaunchScreen.storyboard */; };
-		215D04942605875300E86BEF /* PLVPhotoBrowser.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B9C259194C000460F8E /* PLVPhotoBrowser.bundle */; };
-		215D049A2605875300E86BEF /* PLVEmoticons.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B96259194C000460F8E /* PLVEmoticons.bundle */; };
-		215D049C2605875300E86BEF /* PLVAlbum.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 00476B8A259194C000460F8E /* PLVAlbum.bundle */; };
 		215D049E2605875300E86BEF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 633923B32459877D00C0ACE9 /* Assets.xcassets */; };
-		215D049F2605875300E86BEF /* PLVEmoticon.plist in Resources */ = {isa = PBXBuildFile; fileRef = 00476B95259194C000460F8E /* PLVEmoticon.plist */; };
 		215D05112605895100E86BEF /* PLVLSStreamerViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 0050643025E4DDD3007A3277 /* PLVLSStreamerViewController.m */; };
 		215D05142605895600E86BEF /* PLVLSSideSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 004FEBEB25E8929E00B0DF42 /* PLVLSSideSheet.m */; };
 		215D05172605895900E86BEF /* PLVLSBottomSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 001CA02425E8CC14007454A2 /* PLVLSBottomSheet.m */; };
@@ -496,6 +405,8 @@
 		21795DD3260730D4001E3668 /* PLVLSEmojiSelectView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21795DD2260730D4001E3668 /* PLVLSEmojiSelectView.m */; };
 		21795DD826073F3B001E3668 /* PLVLSSendMessageTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21795DD626073F3A001E3668 /* PLVLSSendMessageTextView.m */; };
 		21795DDD26077D7A001E3668 /* PLVLSSendMessageToolView.m in Sources */ = {isa = PBXBuildFile; fileRef = 21795DDC26077D7A001E3668 /* PLVLSSendMessageToolView.m */; };
+		2937E16E26E5CA5E002D3118 /* PLVLSDocumentWaitLiveView.m in Sources */ = {isa = PBXBuildFile; fileRef = 296A1DA426CDF7FD0076A0CA /* PLVLSDocumentWaitLiveView.m */; };
+		296A1DA526CDF7FE0076A0CA /* PLVLSDocumentWaitLiveView.m in Sources */ = {isa = PBXBuildFile; fileRef = 296A1DA426CDF7FD0076A0CA /* PLVLSDocumentWaitLiveView.m */; };
 		367EBD21269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 367EBD20269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.m */; };
 		367EBD22269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 367EBD20269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.m */; };
 		369417CD269FC985008BDC06 /* PLVLCEmojiPopupView.m in Sources */ = {isa = PBXBuildFile; fileRef = 369417CC269FC985008BDC06 /* PLVLCEmojiPopupView.m */; };
@@ -510,12 +421,104 @@
 		36D4021A2696A51C00FD96F2 /* PLVLCImageEmotionMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36D402182696A51C00FD96F2 /* PLVLCImageEmotionMessageCell.m */; };
 		36D402202696AEA600FD96F2 /* PLVLCLandscapeImageEmotionCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36D4021F2696AEA600FD96F2 /* PLVLCLandscapeImageEmotionCell.m */; };
 		36D402212696AEA600FD96F2 /* PLVLCLandscapeImageEmotionCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36D4021F2696AEA600FD96F2 /* PLVLCLandscapeImageEmotionCell.m */; };
-		4662F9A659692178FE0DDC80 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6BF88592BC61516927468F63 /* Pods_PolyvLiveScenesDemo.framework */; };
+		36E8E0F326DCD2FB00DAEE02 /* PLVChatTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0A726DCD2FB00DAEE02 /* PLVChatTextView.m */; };
+		36E8E0F426DCD2FB00DAEE02 /* PLVChatTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0A726DCD2FB00DAEE02 /* PLVChatTextView.m */; };
+		36E8E0F526DCD2FB00DAEE02 /* PLVChatTextView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0A726DCD2FB00DAEE02 /* PLVChatTextView.m */; };
+		36E8E0F626DCD2FB00DAEE02 /* PLVEmoticonManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0A926DCD2FB00DAEE02 /* PLVEmoticonManager.m */; };
+		36E8E0F726DCD2FB00DAEE02 /* PLVEmoticonManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0A926DCD2FB00DAEE02 /* PLVEmoticonManager.m */; };
+		36E8E0F826DCD2FB00DAEE02 /* PLVEmoticonManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0A926DCD2FB00DAEE02 /* PLVEmoticonManager.m */; };
+		36E8E0F926DCD2FB00DAEE02 /* PLVEmoticon.plist in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0AC26DCD2FB00DAEE02 /* PLVEmoticon.plist */; };
+		36E8E0FA26DCD2FB00DAEE02 /* PLVEmoticon.plist in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0AC26DCD2FB00DAEE02 /* PLVEmoticon.plist */; };
+		36E8E0FB26DCD2FB00DAEE02 /* PLVEmoticon.plist in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0AC26DCD2FB00DAEE02 /* PLVEmoticon.plist */; };
+		36E8E0FC26DCD2FB00DAEE02 /* PLVEmoticons.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0AD26DCD2FB00DAEE02 /* PLVEmoticons.bundle */; };
+		36E8E0FD26DCD2FB00DAEE02 /* PLVEmoticons.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0AD26DCD2FB00DAEE02 /* PLVEmoticons.bundle */; };
+		36E8E0FE26DCD2FB00DAEE02 /* PLVEmoticons.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0AD26DCD2FB00DAEE02 /* PLVEmoticons.bundle */; };
+		36E8E0FF26DCD2FB00DAEE02 /* PLVToast.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0AF26DCD2FB00DAEE02 /* PLVToast.m */; };
+		36E8E10026DCD2FB00DAEE02 /* PLVToast.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0AF26DCD2FB00DAEE02 /* PLVToast.m */; };
+		36E8E10126DCD2FB00DAEE02 /* PLVToast.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0AF26DCD2FB00DAEE02 /* PLVToast.m */; };
+		36E8E10226DCD2FB00DAEE02 /* PLVMarqueeLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B226DCD2FB00DAEE02 /* PLVMarqueeLabel.m */; };
+		36E8E10326DCD2FB00DAEE02 /* PLVMarqueeLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B226DCD2FB00DAEE02 /* PLVMarqueeLabel.m */; };
+		36E8E10426DCD2FB00DAEE02 /* PLVMarqueeLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B226DCD2FB00DAEE02 /* PLVMarqueeLabel.m */; };
+		36E8E10526DCD2FB00DAEE02 /* PLVPlayerLogoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B626DCD2FB00DAEE02 /* PLVPlayerLogoView.m */; };
+		36E8E10626DCD2FB00DAEE02 /* PLVPlayerLogoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B626DCD2FB00DAEE02 /* PLVPlayerLogoView.m */; };
+		36E8E10726DCD2FB00DAEE02 /* PLVPlayerLogoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B626DCD2FB00DAEE02 /* PLVPlayerLogoView.m */; };
+		36E8E10826DCD2FB00DAEE02 /* PLVAlertViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B926DCD2FB00DAEE02 /* PLVAlertViewController.m */; };
+		36E8E10926DCD2FB00DAEE02 /* PLVAlertViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B926DCD2FB00DAEE02 /* PLVAlertViewController.m */; };
+		36E8E10A26DCD2FB00DAEE02 /* PLVAlertViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0B926DCD2FB00DAEE02 /* PLVAlertViewController.m */; };
+		36E8E10B26DCD2FB00DAEE02 /* PLVDanMuLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0BD26DCD2FB00DAEE02 /* PLVDanMuLabel.m */; };
+		36E8E10C26DCD2FB00DAEE02 /* PLVDanMuLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0BD26DCD2FB00DAEE02 /* PLVDanMuLabel.m */; };
+		36E8E10D26DCD2FB00DAEE02 /* PLVDanMuLabel.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0BD26DCD2FB00DAEE02 /* PLVDanMuLabel.m */; };
+		36E8E10E26DCD2FB00DAEE02 /* PLVdanmu.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0BF26DCD2FB00DAEE02 /* PLVdanmu.m */; };
+		36E8E10F26DCD2FB00DAEE02 /* PLVdanmu.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0BF26DCD2FB00DAEE02 /* PLVdanmu.m */; };
+		36E8E11026DCD2FB00DAEE02 /* PLVdanmu.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0BF26DCD2FB00DAEE02 /* PLVdanmu.m */; };
+		36E8E11126DCD2FB00DAEE02 /* PLVProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C126DCD2FB00DAEE02 /* PLVProgressSlider.m */; };
+		36E8E11226DCD2FB00DAEE02 /* PLVProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C126DCD2FB00DAEE02 /* PLVProgressSlider.m */; };
+		36E8E11326DCD2FB00DAEE02 /* PLVProgressSlider.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C126DCD2FB00DAEE02 /* PLVProgressSlider.m */; };
+		36E8E11426DCD2FB00DAEE02 /* PLVActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C426DCD2FB00DAEE02 /* PLVActionSheet.m */; };
+		36E8E11526DCD2FB00DAEE02 /* PLVActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C426DCD2FB00DAEE02 /* PLVActionSheet.m */; };
+		36E8E11626DCD2FB00DAEE02 /* PLVActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C426DCD2FB00DAEE02 /* PLVActionSheet.m */; };
+		36E8E11726DCD2FB00DAEE02 /* PLVAlbumTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C926DCD2FB00DAEE02 /* PLVAlbumTool.m */; };
+		36E8E11826DCD2FB00DAEE02 /* PLVAlbumTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C926DCD2FB00DAEE02 /* PLVAlbumTool.m */; };
+		36E8E11926DCD2FB00DAEE02 /* PLVAlbumTool.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0C926DCD2FB00DAEE02 /* PLVAlbumTool.m */; };
+		36E8E11A26DCD2FB00DAEE02 /* PLVWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0CA26DCD2FB00DAEE02 /* PLVWebImageDecoder.m */; };
+		36E8E11B26DCD2FB00DAEE02 /* PLVWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0CA26DCD2FB00DAEE02 /* PLVWebImageDecoder.m */; };
+		36E8E11C26DCD2FB00DAEE02 /* PLVWebImageDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0CA26DCD2FB00DAEE02 /* PLVWebImageDecoder.m */; };
+		36E8E11D26DCD2FB00DAEE02 /* PLVCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0CE26DCD2FB00DAEE02 /* PLVCameraViewController.m */; };
+		36E8E11E26DCD2FB00DAEE02 /* PLVCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0CE26DCD2FB00DAEE02 /* PLVCameraViewController.m */; };
+		36E8E11F26DCD2FB00DAEE02 /* PLVCameraViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0CE26DCD2FB00DAEE02 /* PLVCameraViewController.m */; };
+		36E8E12026DCD2FB00DAEE02 /* PLVPickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D026DCD2FB00DAEE02 /* PLVPickerController.m */; };
+		36E8E12126DCD2FB00DAEE02 /* PLVPickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D026DCD2FB00DAEE02 /* PLVPickerController.m */; };
+		36E8E12226DCD2FB00DAEE02 /* PLVPickerController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D026DCD2FB00DAEE02 /* PLVPickerController.m */; };
+		36E8E12326DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D126DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m */; };
+		36E8E12426DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D126DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m */; };
+		36E8E12526DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D126DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m */; };
+		36E8E12626DCD2FB00DAEE02 /* PLVAlbumNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D226DCD2FB00DAEE02 /* PLVAlbumNavigationController.m */; };
+		36E8E12726DCD2FB00DAEE02 /* PLVAlbumNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D226DCD2FB00DAEE02 /* PLVAlbumNavigationController.m */; };
+		36E8E12826DCD2FB00DAEE02 /* PLVAlbumNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D226DCD2FB00DAEE02 /* PLVAlbumNavigationController.m */; };
+		36E8E12926DCD2FB00DAEE02 /* PLVPhotoPreViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D326DCD2FB00DAEE02 /* PLVPhotoPreViewController.m */; };
+		36E8E12A26DCD2FB00DAEE02 /* PLVPhotoPreViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D326DCD2FB00DAEE02 /* PLVPhotoPreViewController.m */; };
+		36E8E12B26DCD2FB00DAEE02 /* PLVPhotoPreViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D326DCD2FB00DAEE02 /* PLVPhotoPreViewController.m */; };
+		36E8E12C26DCD2FB00DAEE02 /* PLVAlbumsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D526DCD2FB00DAEE02 /* PLVAlbumsViewController.m */; };
+		36E8E12D26DCD2FB00DAEE02 /* PLVAlbumsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D526DCD2FB00DAEE02 /* PLVAlbumsViewController.m */; };
+		36E8E12E26DCD2FB00DAEE02 /* PLVAlbumsViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0D526DCD2FB00DAEE02 /* PLVAlbumsViewController.m */; };
+		36E8E12F26DCD2FB00DAEE02 /* PLVAlbumInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0DB26DCD2FB00DAEE02 /* PLVAlbumInfo.m */; };
+		36E8E13026DCD2FB00DAEE02 /* PLVAlbumInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0DB26DCD2FB00DAEE02 /* PLVAlbumInfo.m */; };
+		36E8E13126DCD2FB00DAEE02 /* PLVAlbumInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0DB26DCD2FB00DAEE02 /* PLVAlbumInfo.m */; };
+		36E8E13226DCD2FB00DAEE02 /* PLVImageInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0DC26DCD2FB00DAEE02 /* PLVImageInfo.m */; };
+		36E8E13326DCD2FB00DAEE02 /* PLVImageInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0DC26DCD2FB00DAEE02 /* PLVImageInfo.m */; };
+		36E8E13426DCD2FB00DAEE02 /* PLVImageInfo.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0DC26DCD2FB00DAEE02 /* PLVImageInfo.m */; };
+		36E8E13526DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E126DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m */; };
+		36E8E13626DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E126DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m */; };
+		36E8E13726DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E126DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m */; };
+		36E8E13826DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E526DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m */; };
+		36E8E13926DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E526DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m */; };
+		36E8E13A26DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E526DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m */; };
+		36E8E13B26DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E626DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m */; };
+		36E8E13C26DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E626DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m */; };
+		36E8E13D26DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E626DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m */; };
+		36E8E13E26DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E726DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m */; };
+		36E8E13F26DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E726DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m */; };
+		36E8E14026DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0E726DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m */; };
+		36E8E14126DCD2FB00DAEE02 /* PLVAlbum.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0E826DCD2FB00DAEE02 /* PLVAlbum.bundle */; };
+		36E8E14226DCD2FB00DAEE02 /* PLVAlbum.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0E826DCD2FB00DAEE02 /* PLVAlbum.bundle */; };
+		36E8E14326DCD2FB00DAEE02 /* PLVAlbum.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0E826DCD2FB00DAEE02 /* PLVAlbum.bundle */; };
+		36E8E14426DCD2FB00DAEE02 /* PLVBaseNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0EA26DCD2FB00DAEE02 /* PLVBaseNavigationController.m */; };
+		36E8E14526DCD2FB00DAEE02 /* PLVBaseNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0EA26DCD2FB00DAEE02 /* PLVBaseNavigationController.m */; };
+		36E8E14626DCD2FB00DAEE02 /* PLVBaseNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0EA26DCD2FB00DAEE02 /* PLVBaseNavigationController.m */; };
+		36E8E14726DCD2FB00DAEE02 /* PLVPhotoBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0ED26DCD2FB00DAEE02 /* PLVPhotoBrowser.m */; };
+		36E8E14826DCD2FB00DAEE02 /* PLVPhotoBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0ED26DCD2FB00DAEE02 /* PLVPhotoBrowser.m */; };
+		36E8E14926DCD2FB00DAEE02 /* PLVPhotoBrowser.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0ED26DCD2FB00DAEE02 /* PLVPhotoBrowser.m */; };
+		36E8E14A26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0EE26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle */; };
+		36E8E14B26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0EE26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle */; };
+		36E8E14C26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 36E8E0EE26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle */; };
+		36E8E14D26DCD2FB00DAEE02 /* PLVAdvView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0F226DCD2FB00DAEE02 /* PLVAdvView.m */; };
+		36E8E14E26DCD2FB00DAEE02 /* PLVAdvView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0F226DCD2FB00DAEE02 /* PLVAdvView.m */; };
+		36E8E14F26DCD2FB00DAEE02 /* PLVAdvView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0F226DCD2FB00DAEE02 /* PLVAdvView.m */; };
+		48D8BDFFB05EB4F2DD21CA85 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BDB2525A1FFFD9BEFAAFAAD6 /* Pods_PolyvLiveScenesDemo.framework */; };
 		6306571124DCF01B00EAA430 /* PLVLCUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 6306571024DCF01B00EAA430 /* PLVLCUtils.m */; };
 		6306571624DCF17500EAA430 /* PLVLinkMic.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 6306571524DCF17500EAA430 /* PLVLinkMic.bundle */; };
 		630A462824ED13E90041EE0E /* PLVLinkMicOnlineUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 630A462724ED13E90041EE0E /* PLVLinkMicOnlineUser.m */; };
 		632486BB252EBF48001EE3F0 /* PLVLiveRoom.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 632486BA252EBF48001EE3F0 /* PLVLiveRoom.bundle */; };
-		63264EE1245A630500C7199C /* PLVBaseNavigationController.m in Sources */ = {isa = PBXBuildFile; fileRef = 63264EE0245A630500C7199C /* PLVBaseNavigationController.m */; };
 		6333EF6A24C842C100E196C2 /* PLVLinkMicPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 6333EF6924C842C100E196C2 /* PLVLinkMicPresenter.m */; };
 		633923A92459877B00C0ACE9 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 633923A82459877B00C0ACE9 /* AppDelegate.m */; };
 		633923B42459877D00C0ACE9 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 633923B32459877D00C0ACE9 /* Assets.xcassets */; };
@@ -633,7 +636,6 @@
 		BF7CFC6425BA636B0084C160 /* PLVECCommodityView.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC5C25BA636B0084C160 /* PLVECCommodityView.m */; };
 		BF7CFC6525BA636B0084C160 /* PLVECCommodityModelsManager.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC5F25BA636B0084C160 /* PLVECCommodityModelsManager.m */; };
 		BF7CFC6625BA636B0084C160 /* PLVECCommodityViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC6025BA636B0084C160 /* PLVECCommodityViewController.m */; };
-		BFC50CEB2592F6B800362138 /* PLVAdvView.m in Sources */ = {isa = PBXBuildFile; fileRef = BFC50CEA2592F6B800362138 /* PLVAdvView.m */; };
 		CD74BCD331ECDD7BBD09D92F /* BuildFile in Frameworks */ = {isa = PBXBuildFile; };
 /* End PBXBuildFile section */
 
@@ -658,52 +660,6 @@
 		00436F9B253155FB00A146A0 /* PLVLCLikeButtonView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCLikeButtonView.h; sourceTree = "<group>"; };
 		00436F9C253155FB00A146A0 /* PLVLCLikeButtonView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLCLikeButtonView.m; sourceTree = "<group>"; };
 		00436F9E2531591800A146A0 /* PLVChatroom.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVChatroom.bundle; sourceTree = "<group>"; };
-		00476B66259194C000460F8E /* PLVMarqueeLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVMarqueeLabel.m; sourceTree = "<group>"; };
-		00476B67259194C000460F8E /* PLVMarqueeLabel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVMarqueeLabel.h; sourceTree = "<group>"; };
-		00476B6A259194C000460F8E /* PLVAlbumTool.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumTool.m; sourceTree = "<group>"; };
-		00476B6B259194C000460F8E /* PLVWebImageDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVWebImageDecoder.m; sourceTree = "<group>"; };
-		00476B6C259194C000460F8E /* PLVAlbumTool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumTool.h; sourceTree = "<group>"; };
-		00476B6D259194C000460F8E /* PLVPicDefine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPicDefine.h; sourceTree = "<group>"; };
-		00476B6E259194C000460F8E /* PLVWebImageDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVWebImageDecoder.h; sourceTree = "<group>"; };
-		00476B70259194C000460F8E /* PLVPhotoPreViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoPreViewController.h; sourceTree = "<group>"; };
-		00476B71259194C000460F8E /* PLVPhotoPreBaseViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoPreBaseViewController.m; sourceTree = "<group>"; };
-		00476B72259194C000460F8E /* PLVCameraViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVCameraViewController.m; sourceTree = "<group>"; };
-		00476B73259194C000460F8E /* PLVPickerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPickerController.m; sourceTree = "<group>"; };
-		00476B74259194C000460F8E /* PLVAlbumNavigationController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumNavigationController.m; sourceTree = "<group>"; };
-		00476B75259194C000460F8E /* PLVAlbumsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumsViewController.m; sourceTree = "<group>"; };
-		00476B76259194C000460F8E /* PLVPhotoPreBaseViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoPreBaseViewController.h; sourceTree = "<group>"; };
-		00476B77259194C000460F8E /* PLVPhotoPreViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoPreViewController.m; sourceTree = "<group>"; };
-		00476B78259194C000460F8E /* PLVCameraViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVCameraViewController.h; sourceTree = "<group>"; };
-		00476B79259194C000460F8E /* PLVAlbumNavigationController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumNavigationController.h; sourceTree = "<group>"; };
-		00476B7A259194C000460F8E /* PLVPickerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPickerController.h; sourceTree = "<group>"; };
-		00476B7B259194C000460F8E /* PLVAlbumsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumsViewController.h; sourceTree = "<group>"; };
-		00476B7D259194C000460F8E /* PLVImageInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVImageInfo.m; sourceTree = "<group>"; };
-		00476B7E259194C000460F8E /* PLVAlbumInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumInfo.m; sourceTree = "<group>"; };
-		00476B7F259194C000460F8E /* PLVImageInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVImageInfo.h; sourceTree = "<group>"; };
-		00476B80259194C000460F8E /* PLVAlbumInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumInfo.h; sourceTree = "<group>"; };
-		00476B82259194C000460F8E /* PLVPreCollectionViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPreCollectionViewCell.m; sourceTree = "<group>"; };
-		00476B83259194C000460F8E /* PLVPhotoCollectionFooterView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoCollectionFooterView.h; sourceTree = "<group>"; };
-		00476B84259194C000460F8E /* PLVPhotoCollectionViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoCollectionViewCell.m; sourceTree = "<group>"; };
-		00476B85259194C000460F8E /* PLVAlbumTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumTableViewCell.h; sourceTree = "<group>"; };
-		00476B86259194C000460F8E /* PLVPreCollectionViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPreCollectionViewCell.h; sourceTree = "<group>"; };
-		00476B87259194C000460F8E /* PLVPhotoCollectionViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoCollectionViewCell.h; sourceTree = "<group>"; };
-		00476B88259194C000460F8E /* PLVPhotoCollectionFooterView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoCollectionFooterView.m; sourceTree = "<group>"; };
-		00476B89259194C000460F8E /* PLVAlbumTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumTableViewCell.m; sourceTree = "<group>"; };
-		00476B8A259194C000460F8E /* PLVAlbum.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVAlbum.bundle; sourceTree = "<group>"; };
-		00476B8C259194C000460F8E /* PLVDanMuDefine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVDanMuDefine.h; sourceTree = "<group>"; };
-		00476B8D259194C000460F8E /* PLVDanMu.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVDanMu.m; sourceTree = "<group>"; };
-		00476B8E259194C000460F8E /* PLVDanMuLabel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVDanMuLabel.h; sourceTree = "<group>"; };
-		00476B8F259194C000460F8E /* PLVDanMuLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVDanMuLabel.m; sourceTree = "<group>"; };
-		00476B90259194C000460F8E /* PLVDanMu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVDanMu.h; sourceTree = "<group>"; };
-		00476B92259194C000460F8E /* PLVEmoticonManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVEmoticonManager.m; sourceTree = "<group>"; };
-		00476B93259194C000460F8E /* PLVEmoticonManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVEmoticonManager.h; sourceTree = "<group>"; };
-		00476B95259194C000460F8E /* PLVEmoticon.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PLVEmoticon.plist; sourceTree = "<group>"; };
-		00476B96259194C000460F8E /* PLVEmoticons.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVEmoticons.bundle; sourceTree = "<group>"; };
-		00476B98259194C000460F8E /* PLVProgressSlider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVProgressSlider.m; sourceTree = "<group>"; };
-		00476B99259194C000460F8E /* PLVProgressSlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVProgressSlider.h; sourceTree = "<group>"; };
-		00476B9B259194C000460F8E /* PLVPhotoBrowser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoBrowser.m; sourceTree = "<group>"; };
-		00476B9C259194C000460F8E /* PLVPhotoBrowser.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVPhotoBrowser.bundle; sourceTree = "<group>"; };
-		00476B9D259194C000460F8E /* PLVPhotoBrowser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoBrowser.h; sourceTree = "<group>"; };
 		00476B9F259194C000460F8E /* PLVLCPageController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLCPageController.m; sourceTree = "<group>"; };
 		00476BA0259194C000460F8E /* PLVLCPageViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLCPageViewCell.m; sourceTree = "<group>"; };
 		00476BA1259194C000460F8E /* PLVLCPageController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLCPageController.h; sourceTree = "<group>"; };
@@ -756,10 +712,6 @@
 		005240E825F9BD3B00981B5B /* PLVLSCountDownView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSCountDownView.h; sourceTree = "<group>"; };
 		005240F325FA169A00981B5B /* PLVLSStatusAreaView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSStatusAreaView.m; sourceTree = "<group>"; };
 		005240F425FA169A00981B5B /* PLVLSStatusAreaView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSStatusAreaView.h; sourceTree = "<group>"; };
-		00539C4525ECD9090016B2BD /* PLVToast.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVToast.h; sourceTree = "<group>"; };
-		00539C4625ECD9090016B2BD /* PLVToast.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVToast.m; sourceTree = "<group>"; };
-		00539C4A25EDCFBA0016B2BD /* PLVAlertViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVAlertViewController.h; sourceTree = "<group>"; };
-		00539C4B25EDCFBB0016B2BD /* PLVAlertViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVAlertViewController.m; sourceTree = "<group>"; };
 		00539C6225EF1F860016B2BD /* PLVLSChannelInfoSheet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLSChannelInfoSheet.h; sourceTree = "<group>"; };
 		00539C6325EF1F860016B2BD /* PLVLSChannelInfoSheet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLSChannelInfoSheet.m; sourceTree = "<group>"; };
 		00539C6725F06A5D0016B2BD /* PLVLSChannelInfoTopView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLSChannelInfoTopView.h; sourceTree = "<group>"; };
@@ -860,7 +812,7 @@
 		007CD3F026098208003783D8 /* PLVLSDocumentBrushColorView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentBrushColorView.h; sourceTree = "<group>"; };
 		007CD3F126098208003783D8 /* PLVLSDocumentInputView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentInputView.m; sourceTree = "<group>"; };
 		007CD3F226098208003783D8 /* PLVLSDocumentToolView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentToolView.m; sourceTree = "<group>"; };
-		007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView..m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentBrushColorView..m; sourceTree = "<group>"; };
+		007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentBrushColorView.m; sourceTree = "<group>"; };
 		007CD3F426098208003783D8 /* PLVLSDocumentBrushView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentBrushView.m; sourceTree = "<group>"; };
 		007CD3F526098208003783D8 /* PLVLSDocumentInputView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentInputView.h; sourceTree = "<group>"; };
 		007CD3F626098208003783D8 /* PLVLSDocumentAreaView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentAreaView.m; sourceTree = "<group>"; };
@@ -883,8 +835,6 @@
 		007CD40F26098208003783D8 /* PLVLSDocumentListView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentListView.h; sourceTree = "<group>"; };
 		007CD4212609821B003783D8 /* PLVDocumentView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVDocumentView.h; sourceTree = "<group>"; };
 		007CD4222609821B003783D8 /* PLVDocumentView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVDocumentView.m; sourceTree = "<group>"; };
-		007CD42726098231003783D8 /* PLVActionSheet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVActionSheet.m; sourceTree = "<group>"; };
-		007CD42826098231003783D8 /* PLVActionSheet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVActionSheet.h; sourceTree = "<group>"; };
 		007CD498260B4E0C003783D8 /* PLVLSDocumentNumView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentNumView.h; sourceTree = "<group>"; };
 		007CD499260B4E0C003783D8 /* PLVLSDocumentNumView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentNumView.m; sourceTree = "<group>"; };
 		008779F6264BD4A700AD9245 /* LiveScenes.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = LiveScenes.bundle; sourceTree = "<group>"; };
@@ -899,8 +849,6 @@
 		00A57AD425FF4BC100EEA84D /* PLVLSChatroomToolbar.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLSChatroomToolbar.m; sourceTree = "<group>"; };
 		00A57ADE2600953E00EEA84D /* PLVLSChatroomListView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLSChatroomListView.h; sourceTree = "<group>"; };
 		00A57ADF2600953E00EEA84D /* PLVLSChatroomListView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLSChatroomListView.m; sourceTree = "<group>"; };
-		00A57AF22603016400EEA84D /* PLVChatTextView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVChatTextView.h; sourceTree = "<group>"; };
-		00A57AF32603016400EEA84D /* PLVChatTextView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVChatTextView.m; sourceTree = "<group>"; };
 		00A57AFB2603030100EEA84D /* PLVLSImageMessageCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSImageMessageCell.m; sourceTree = "<group>"; };
 		00A57AFC2603030100EEA84D /* PLVLSImageMessageCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSImageMessageCell.h; sourceTree = "<group>"; };
 		00A57AFD2603030200EEA84D /* PLVLSQuoteMessageCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSQuoteMessageCell.h; sourceTree = "<group>"; };
@@ -950,8 +898,6 @@
 		04504765265F744800D801A2 /* PLVSABottomSheet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVSABottomSheet.h; sourceTree = "<group>"; };
 		045EF2462664E2AE009275C4 /* PLVSASlideRightTipsView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSASlideRightTipsView.h; sourceTree = "<group>"; };
 		045EF2472664E2AE009275C4 /* PLVSASlideRightTipsView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVSASlideRightTipsView.m; sourceTree = "<group>"; };
-		046F8B60264933CF00C92565 /* PLVPlayerLogoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPlayerLogoView.h; sourceTree = "<group>"; };
-		046F8B61264933CF00C92565 /* PLVPlayerLogoView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPlayerLogoView.m; sourceTree = "<group>"; };
 		04BDBB4C269D3D1500287C97 /* PLVLCRetryPlayView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCRetryPlayView.h; sourceTree = "<group>"; };
 		04BDBB4D269D3D1500287C97 /* PLVLCRetryPlayView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLCRetryPlayView.m; sourceTree = "<group>"; };
 		077C2E48E28AD1CD7FC8C0E8 /* Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -966,6 +912,8 @@
 		21795DD726073F3A001E3668 /* PLVLSSendMessageTextView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSSendMessageTextView.h; sourceTree = "<group>"; };
 		21795DDB26077D7A001E3668 /* PLVLSSendMessageToolView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLSSendMessageToolView.h; sourceTree = "<group>"; };
 		21795DDC26077D7A001E3668 /* PLVLSSendMessageToolView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLSSendMessageToolView.m; sourceTree = "<group>"; };
+		296A1DA326CDF7FD0076A0CA /* PLVLSDocumentWaitLiveView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLSDocumentWaitLiveView.h; sourceTree = "<group>"; };
+		296A1DA426CDF7FD0076A0CA /* PLVLSDocumentWaitLiveView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLSDocumentWaitLiveView.m; sourceTree = "<group>"; };
 		367EBD1F269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLSImageEmotionMessageCell.h; sourceTree = "<group>"; };
 		367EBD20269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLSImageEmotionMessageCell.m; sourceTree = "<group>"; };
 		369417CB269FC985008BDC06 /* PLVLCEmojiPopupView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCEmojiPopupView.h; sourceTree = "<group>"; };
@@ -980,6 +928,66 @@
 		36D402182696A51C00FD96F2 /* PLVLCImageEmotionMessageCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLCImageEmotionMessageCell.m; sourceTree = "<group>"; };
 		36D4021E2696AEA600FD96F2 /* PLVLCLandscapeImageEmotionCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCLandscapeImageEmotionCell.h; sourceTree = "<group>"; };
 		36D4021F2696AEA600FD96F2 /* PLVLCLandscapeImageEmotionCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLCLandscapeImageEmotionCell.m; sourceTree = "<group>"; };
+		36E8E0A626DCD2FB00DAEE02 /* PLVChatTextView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVChatTextView.h; sourceTree = "<group>"; };
+		36E8E0A726DCD2FB00DAEE02 /* PLVChatTextView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVChatTextView.m; sourceTree = "<group>"; };
+		36E8E0A926DCD2FB00DAEE02 /* PLVEmoticonManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVEmoticonManager.m; sourceTree = "<group>"; };
+		36E8E0AA26DCD2FB00DAEE02 /* PLVEmoticonManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVEmoticonManager.h; sourceTree = "<group>"; };
+		36E8E0AC26DCD2FB00DAEE02 /* PLVEmoticon.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PLVEmoticon.plist; sourceTree = "<group>"; };
+		36E8E0AD26DCD2FB00DAEE02 /* PLVEmoticons.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVEmoticons.bundle; sourceTree = "<group>"; };
+		36E8E0AF26DCD2FB00DAEE02 /* PLVToast.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVToast.m; sourceTree = "<group>"; };
+		36E8E0B026DCD2FB00DAEE02 /* PLVToast.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVToast.h; sourceTree = "<group>"; };
+		36E8E0B226DCD2FB00DAEE02 /* PLVMarqueeLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVMarqueeLabel.m; sourceTree = "<group>"; };
+		36E8E0B326DCD2FB00DAEE02 /* PLVMarqueeLabel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVMarqueeLabel.h; sourceTree = "<group>"; };
+		36E8E0B526DCD2FB00DAEE02 /* PLVPlayerLogoView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPlayerLogoView.h; sourceTree = "<group>"; };
+		36E8E0B626DCD2FB00DAEE02 /* PLVPlayerLogoView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPlayerLogoView.m; sourceTree = "<group>"; };
+		36E8E0B826DCD2FB00DAEE02 /* PLVAlertViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlertViewController.h; sourceTree = "<group>"; };
+		36E8E0B926DCD2FB00DAEE02 /* PLVAlertViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlertViewController.m; sourceTree = "<group>"; };
+		36E8E0BB26DCD2FB00DAEE02 /* PLVDanMuLabel.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVDanMuLabel.h; sourceTree = "<group>"; };
+		36E8E0BC26DCD2FB00DAEE02 /* PLVDanMu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVDanMu.h; sourceTree = "<group>"; };
+		36E8E0BD26DCD2FB00DAEE02 /* PLVDanMuLabel.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVDanMuLabel.m; sourceTree = "<group>"; };
+		36E8E0BE26DCD2FB00DAEE02 /* PLVDanMuDefine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVDanMuDefine.h; sourceTree = "<group>"; };
+		36E8E0BF26DCD2FB00DAEE02 /* PLVdanmu.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVdanmu.m; sourceTree = "<group>"; };
+		36E8E0C126DCD2FB00DAEE02 /* PLVProgressSlider.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVProgressSlider.m; sourceTree = "<group>"; };
+		36E8E0C226DCD2FB00DAEE02 /* PLVProgressSlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVProgressSlider.h; sourceTree = "<group>"; };
+		36E8E0C426DCD2FB00DAEE02 /* PLVActionSheet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVActionSheet.m; sourceTree = "<group>"; };
+		36E8E0C526DCD2FB00DAEE02 /* PLVActionSheet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVActionSheet.h; sourceTree = "<group>"; };
+		36E8E0C826DCD2FB00DAEE02 /* PLVWebImageDecoder.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVWebImageDecoder.h; sourceTree = "<group>"; };
+		36E8E0C926DCD2FB00DAEE02 /* PLVAlbumTool.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumTool.m; sourceTree = "<group>"; };
+		36E8E0CA26DCD2FB00DAEE02 /* PLVWebImageDecoder.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVWebImageDecoder.m; sourceTree = "<group>"; };
+		36E8E0CB26DCD2FB00DAEE02 /* PLVPicDefine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPicDefine.h; sourceTree = "<group>"; };
+		36E8E0CC26DCD2FB00DAEE02 /* PLVAlbumTool.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumTool.h; sourceTree = "<group>"; };
+		36E8E0CE26DCD2FB00DAEE02 /* PLVCameraViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVCameraViewController.m; sourceTree = "<group>"; };
+		36E8E0CF26DCD2FB00DAEE02 /* PLVAlbumsViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumsViewController.h; sourceTree = "<group>"; };
+		36E8E0D026DCD2FB00DAEE02 /* PLVPickerController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPickerController.m; sourceTree = "<group>"; };
+		36E8E0D126DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoPreBaseViewController.m; sourceTree = "<group>"; };
+		36E8E0D226DCD2FB00DAEE02 /* PLVAlbumNavigationController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumNavigationController.m; sourceTree = "<group>"; };
+		36E8E0D326DCD2FB00DAEE02 /* PLVPhotoPreViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoPreViewController.m; sourceTree = "<group>"; };
+		36E8E0D426DCD2FB00DAEE02 /* PLVPickerController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPickerController.h; sourceTree = "<group>"; };
+		36E8E0D526DCD2FB00DAEE02 /* PLVAlbumsViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumsViewController.m; sourceTree = "<group>"; };
+		36E8E0D626DCD2FB00DAEE02 /* PLVCameraViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVCameraViewController.h; sourceTree = "<group>"; };
+		36E8E0D726DCD2FB00DAEE02 /* PLVAlbumNavigationController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumNavigationController.h; sourceTree = "<group>"; };
+		36E8E0D826DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoPreBaseViewController.h; sourceTree = "<group>"; };
+		36E8E0D926DCD2FB00DAEE02 /* PLVPhotoPreViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoPreViewController.h; sourceTree = "<group>"; };
+		36E8E0DB26DCD2FB00DAEE02 /* PLVAlbumInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumInfo.m; sourceTree = "<group>"; };
+		36E8E0DC26DCD2FB00DAEE02 /* PLVImageInfo.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVImageInfo.m; sourceTree = "<group>"; };
+		36E8E0DD26DCD2FB00DAEE02 /* PLVAlbumInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumInfo.h; sourceTree = "<group>"; };
+		36E8E0DE26DCD2FB00DAEE02 /* PLVImageInfo.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVImageInfo.h; sourceTree = "<group>"; };
+		36E8E0E026DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoCollectionFooterView.h; sourceTree = "<group>"; };
+		36E8E0E126DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPreCollectionViewCell.m; sourceTree = "<group>"; };
+		36E8E0E226DCD2FB00DAEE02 /* PLVAlbumTableViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAlbumTableViewCell.h; sourceTree = "<group>"; };
+		36E8E0E326DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoCollectionViewCell.h; sourceTree = "<group>"; };
+		36E8E0E426DCD2FB00DAEE02 /* PLVPreCollectionViewCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPreCollectionViewCell.h; sourceTree = "<group>"; };
+		36E8E0E526DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoCollectionFooterView.m; sourceTree = "<group>"; };
+		36E8E0E626DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAlbumTableViewCell.m; sourceTree = "<group>"; };
+		36E8E0E726DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoCollectionViewCell.m; sourceTree = "<group>"; };
+		36E8E0E826DCD2FB00DAEE02 /* PLVAlbum.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVAlbum.bundle; sourceTree = "<group>"; };
+		36E8E0EA26DCD2FB00DAEE02 /* PLVBaseNavigationController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVBaseNavigationController.m; sourceTree = "<group>"; };
+		36E8E0EB26DCD2FB00DAEE02 /* PLVBaseNavigationController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVBaseNavigationController.h; sourceTree = "<group>"; };
+		36E8E0ED26DCD2FB00DAEE02 /* PLVPhotoBrowser.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPhotoBrowser.m; sourceTree = "<group>"; };
+		36E8E0EE26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVPhotoBrowser.bundle; sourceTree = "<group>"; };
+		36E8E0EF26DCD2FB00DAEE02 /* PLVPhotoBrowser.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVPhotoBrowser.h; sourceTree = "<group>"; };
+		36E8E0F126DCD2FB00DAEE02 /* PLVAdvView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVAdvView.h; sourceTree = "<group>"; };
+		36E8E0F226DCD2FB00DAEE02 /* PLVAdvView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVAdvView.m; sourceTree = "<group>"; };
 		3AFD93E604C59290FC339D1A /* Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemoUITests/Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		430C9CF57975329ADA06E5C9 /* Pods_PolyvLiveEcommerceDemoUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveEcommerceDemoUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6306570F24DCF01B00EAA430 /* PLVLCUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCUtils.h; sourceTree = "<group>"; };
@@ -988,8 +996,6 @@
 		630A462624ED13E90041EE0E /* PLVLinkMicOnlineUser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLinkMicOnlineUser.h; sourceTree = "<group>"; };
 		630A462724ED13E90041EE0E /* PLVLinkMicOnlineUser.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLinkMicOnlineUser.m; sourceTree = "<group>"; };
 		632486BA252EBF48001EE3F0 /* PLVLiveRoom.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVLiveRoom.bundle; sourceTree = "<group>"; };
-		63264EDF245A630500C7199C /* PLVBaseNavigationController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVBaseNavigationController.h; sourceTree = "<group>"; };
-		63264EE0245A630500C7199C /* PLVBaseNavigationController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVBaseNavigationController.m; sourceTree = "<group>"; };
 		6333EF6824C842C100E196C2 /* PLVLinkMicPresenter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLinkMicPresenter.h; sourceTree = "<group>"; };
 		6333EF6924C842C100E196C2 /* PLVLinkMicPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLinkMicPresenter.m; sourceTree = "<group>"; wrapsLines = 0; };
 		6337C5FC25AFF47000B96127 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -1117,7 +1123,6 @@
 		67D700C72476817500429B55 /* PLVECUtils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVECUtils.h; sourceTree = "<group>"; };
 		67D700C82476817500429B55 /* PLVECUtils.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVECUtils.m; sourceTree = "<group>"; };
 		69D86DE1574DFFCF04CB4FC0 /* Pods-PolyvLiveEcommerceDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemo.release.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemo/Pods-PolyvLiveEcommerceDemo.release.xcconfig"; sourceTree = "<group>"; };
-		6BF88592BC61516927468F63 /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		6ED5072918A006C94EB83D86 /* Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		700664EC58706B370D316A0D /* Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
 		81BB2D37856852474920C292 /* Pods-business-cloudClass-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-cloudClass-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-cloudClass-PolyvLiveScenesDemo/Pods-business-cloudClass-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
@@ -1175,6 +1180,7 @@
 		A91828FB8B935C297A2CF557 /* Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveScenesDemo/Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		BB195403DD396B7AF22FDE5F /* Pods-business-cloudClass-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-cloudClass-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-business-cloudClass-PolyvLiveScenesDemo/Pods-business-cloudClass-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
 		BC31BA32D353707672EAA4F7 /* Pods-business-liveScenes-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveScenesDemo/Pods-business-liveScenes-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
+		BDB2525A1FFFD9BEFAAFAAD6 /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BDEE85DC15A60B23D1611569 /* Pods-PolyvLiveEcommerceDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemo.debug.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemo/Pods-PolyvLiveEcommerceDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		BF1A9C7F25525B62000AA79E /* PLVLiveWatchLoginController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLiveWatchLoginController.h; sourceTree = "<group>"; };
 		BF1A9C8025525B62000AA79E /* PLVLiveWatchLoginController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLiveWatchLoginController.m; sourceTree = "<group>"; };
@@ -1193,8 +1199,6 @@
 		BF7CFC5E25BA636B0084C160 /* PLVECCommodityView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVECCommodityView.h; sourceTree = "<group>"; };
 		BF7CFC5F25BA636B0084C160 /* PLVECCommodityModelsManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVECCommodityModelsManager.m; sourceTree = "<group>"; };
 		BF7CFC6025BA636B0084C160 /* PLVECCommodityViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVECCommodityViewController.m; sourceTree = "<group>"; };
-		BFC50CE92592F6B800362138 /* PLVAdvView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVAdvView.h; sourceTree = "<group>"; };
-		BFC50CEA2592F6B800362138 /* PLVAdvView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVAdvView.m; sourceTree = "<group>"; };
 		C8C0B1BDBA08B5A1387EB520 /* Pods-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
 		D12BFA48BFD11F80E5A2FAA5 /* Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		D9C6F1C98177E8003A3399A9 /* Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveStreamerDemo/Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -1225,7 +1229,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				633E425D257DCD710039D35D /* PLVLiveScenesSDK.framework in Frameworks */,
-				4662F9A659692178FE0DDC80 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
+				48D8BDFFB05EB4F2DD21CA85 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1241,134 +1245,6 @@
 				00120625261417C800473968 /* PLVLSMemberCellEditView.m */,
 			);
 			path = Cell;
-			sourceTree = "<group>";
-		};
-		00476B65259194C000460F8E /* PLVMarquee */ = {
-			isa = PBXGroup;
-			children = (
-				00476B67259194C000460F8E /* PLVMarqueeLabel.h */,
-				00476B66259194C000460F8E /* PLVMarqueeLabel.m */,
-			);
-			path = PLVMarquee;
-			sourceTree = "<group>";
-		};
-		00476B68259194C000460F8E /* PLVAlbumView */ = {
-			isa = PBXGroup;
-			children = (
-				00476B69259194C000460F8E /* Utils */,
-				00476B6F259194C000460F8E /* Controller */,
-				00476B7C259194C000460F8E /* Model */,
-				00476B81259194C000460F8E /* View */,
-				00476B8A259194C000460F8E /* PLVAlbum.bundle */,
-			);
-			path = PLVAlbumView;
-			sourceTree = "<group>";
-		};
-		00476B69259194C000460F8E /* Utils */ = {
-			isa = PBXGroup;
-			children = (
-				00476B6D259194C000460F8E /* PLVPicDefine.h */,
-				00476B6C259194C000460F8E /* PLVAlbumTool.h */,
-				00476B6A259194C000460F8E /* PLVAlbumTool.m */,
-				00476B6E259194C000460F8E /* PLVWebImageDecoder.h */,
-				00476B6B259194C000460F8E /* PLVWebImageDecoder.m */,
-			);
-			path = Utils;
-			sourceTree = "<group>";
-		};
-		00476B6F259194C000460F8E /* Controller */ = {
-			isa = PBXGroup;
-			children = (
-				00476B76259194C000460F8E /* PLVPhotoPreBaseViewController.h */,
-				00476B71259194C000460F8E /* PLVPhotoPreBaseViewController.m */,
-				00476B7A259194C000460F8E /* PLVPickerController.h */,
-				00476B73259194C000460F8E /* PLVPickerController.m */,
-				00476B79259194C000460F8E /* PLVAlbumNavigationController.h */,
-				00476B74259194C000460F8E /* PLVAlbumNavigationController.m */,
-				00476B7B259194C000460F8E /* PLVAlbumsViewController.h */,
-				00476B75259194C000460F8E /* PLVAlbumsViewController.m */,
-				00476B70259194C000460F8E /* PLVPhotoPreViewController.h */,
-				00476B77259194C000460F8E /* PLVPhotoPreViewController.m */,
-				00476B78259194C000460F8E /* PLVCameraViewController.h */,
-				00476B72259194C000460F8E /* PLVCameraViewController.m */,
-			);
-			path = Controller;
-			sourceTree = "<group>";
-		};
-		00476B7C259194C000460F8E /* Model */ = {
-			isa = PBXGroup;
-			children = (
-				00476B80259194C000460F8E /* PLVAlbumInfo.h */,
-				00476B7E259194C000460F8E /* PLVAlbumInfo.m */,
-				00476B7F259194C000460F8E /* PLVImageInfo.h */,
-				00476B7D259194C000460F8E /* PLVImageInfo.m */,
-			);
-			path = Model;
-			sourceTree = "<group>";
-		};
-		00476B81259194C000460F8E /* View */ = {
-			isa = PBXGroup;
-			children = (
-				00476B85259194C000460F8E /* PLVAlbumTableViewCell.h */,
-				00476B89259194C000460F8E /* PLVAlbumTableViewCell.m */,
-				00476B86259194C000460F8E /* PLVPreCollectionViewCell.h */,
-				00476B82259194C000460F8E /* PLVPreCollectionViewCell.m */,
-				00476B87259194C000460F8E /* PLVPhotoCollectionViewCell.h */,
-				00476B84259194C000460F8E /* PLVPhotoCollectionViewCell.m */,
-				00476B83259194C000460F8E /* PLVPhotoCollectionFooterView.h */,
-				00476B88259194C000460F8E /* PLVPhotoCollectionFooterView.m */,
-			);
-			path = View;
-			sourceTree = "<group>";
-		};
-		00476B8B259194C000460F8E /* PLVDanMu */ = {
-			isa = PBXGroup;
-			children = (
-				00476B8C259194C000460F8E /* PLVDanMuDefine.h */,
-				00476B90259194C000460F8E /* PLVDanMu.h */,
-				00476B8D259194C000460F8E /* PLVDanMu.m */,
-				00476B8E259194C000460F8E /* PLVDanMuLabel.h */,
-				00476B8F259194C000460F8E /* PLVDanMuLabel.m */,
-			);
-			path = PLVDanMu;
-			sourceTree = "<group>";
-		};
-		00476B91259194C000460F8E /* PLVEmoticons */ = {
-			isa = PBXGroup;
-			children = (
-				00476B93259194C000460F8E /* PLVEmoticonManager.h */,
-				00476B92259194C000460F8E /* PLVEmoticonManager.m */,
-				00476B94259194C000460F8E /* Resource */,
-			);
-			path = PLVEmoticons;
-			sourceTree = "<group>";
-		};
-		00476B94259194C000460F8E /* Resource */ = {
-			isa = PBXGroup;
-			children = (
-				00476B95259194C000460F8E /* PLVEmoticon.plist */,
-				00476B96259194C000460F8E /* PLVEmoticons.bundle */,
-			);
-			path = Resource;
-			sourceTree = "<group>";
-		};
-		00476B97259194C000460F8E /* PLVProgressSlider */ = {
-			isa = PBXGroup;
-			children = (
-				00476B99259194C000460F8E /* PLVProgressSlider.h */,
-				00476B98259194C000460F8E /* PLVProgressSlider.m */,
-			);
-			path = PLVProgressSlider;
-			sourceTree = "<group>";
-		};
-		00476B9A259194C000460F8E /* PLVPhotoBrowser */ = {
-			isa = PBXGroup;
-			children = (
-				00476B9D259194C000460F8E /* PLVPhotoBrowser.h */,
-				00476B9B259194C000460F8E /* PLVPhotoBrowser.m */,
-				00476B9C259194C000460F8E /* PLVPhotoBrowser.bundle */,
-			);
-			path = PLVPhotoBrowser;
 			sourceTree = "<group>";
 		};
 		00476BA3259194C000460F8E /* PLVKeyboard */ = {
@@ -1564,24 +1440,6 @@
 			path = Member;
 			sourceTree = "<group>";
 		};
-		00539C5A25EE48950016B2BD /* PLVToast */ = {
-			isa = PBXGroup;
-			children = (
-				00539C4525ECD9090016B2BD /* PLVToast.h */,
-				00539C4625ECD9090016B2BD /* PLVToast.m */,
-			);
-			path = PLVToast;
-			sourceTree = "<group>";
-		};
-		00539C5E25EE48AD0016B2BD /* PLVAlert */ = {
-			isa = PBXGroup;
-			children = (
-				00539C4A25EDCFBA0016B2BD /* PLVAlertViewController.h */,
-				00539C4B25EDCFBB0016B2BD /* PLVAlertViewController.m */,
-			);
-			path = PLVAlert;
-			sourceTree = "<group>";
-		};
 		005728FA265D087B0000784B /* WindowsView */ = {
 			isa = PBXGroup;
 			children = (
@@ -1631,14 +1489,14 @@
 			path = View;
 			sourceTree = "<group>";
 		};
-		005B1AE52654C29800F77307 /* PolyvStreamerAloneScene */ = {
+		005B1AE52654C29800F77307 /* PLVStreamerAloneScene */ = {
 			isa = PBXGroup;
 			children = (
 				005B1AE62654C2A900F77307 /* Scenes */,
 				005B1AE72654C2B000F77307 /* Modules */,
 				005B1AE82654C2B500F77307 /* Resource */,
 			);
-			path = PolyvStreamerAloneScene;
+			path = PLVStreamerAloneScene;
 			sourceTree = "<group>";
 		};
 		005B1AE62654C2A900F77307 /* Scenes */ = {
@@ -1832,14 +1690,14 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
-		0072780525CA45F8001CE398 /* PolyvLiveStreamerScene */ = {
+		0072780525CA45F8001CE398 /* PLVLiveStreamerScene */ = {
 			isa = PBXGroup;
 			children = (
 				0072780625CA4615001CE398 /* Scenes */,
 				0072795D25CA804C001CE398 /* Modules */,
 				005063FF25E3AF45007A3277 /* Resource */,
 			);
-			path = PolyvLiveStreamerScene;
+			path = PLVLiveStreamerScene;
 			sourceTree = "<group>";
 		};
 		0072780625CA4615001CE398 /* Scenes */ = {
@@ -1901,13 +1759,15 @@
 				007CD3EF26098208003783D8 /* PLVLSDocumentBrushView.h */,
 				007CD3F426098208003783D8 /* PLVLSDocumentBrushView.m */,
 				007CD3F026098208003783D8 /* PLVLSDocumentBrushColorView.h */,
-				007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView..m */,
+				007CD3F326098208003783D8 /* PLVLSDocumentBrushColorView.m */,
 				007CD3EE26098208003783D8 /* PLVLSDocumentToolView.h */,
 				007CD3F226098208003783D8 /* PLVLSDocumentToolView.m */,
 				007CD3F526098208003783D8 /* PLVLSDocumentInputView.h */,
 				007CD3F126098208003783D8 /* PLVLSDocumentInputView.m */,
 				007CD498260B4E0C003783D8 /* PLVLSDocumentNumView.h */,
 				007CD499260B4E0C003783D8 /* PLVLSDocumentNumView.m */,
+				296A1DA326CDF7FD0076A0CA /* PLVLSDocumentWaitLiveView.h */,
+				296A1DA426CDF7FD0076A0CA /* PLVLSDocumentWaitLiveView.m */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -1964,15 +1824,6 @@
 			path = View;
 			sourceTree = "<group>";
 		};
-		007CD42626098231003783D8 /* PLVActionSheet */ = {
-			isa = PBXGroup;
-			children = (
-				007CD42826098231003783D8 /* PLVActionSheet.h */,
-				007CD42726098231003783D8 /* PLVActionSheet.m */,
-			);
-			path = PLVActionSheet;
-			sourceTree = "<group>";
-		};
 		008779D8264BCCC900AD9245 /* PolyvLiveScenesDemo */ = {
 			isa = PBXGroup;
 			children = (
@@ -2027,15 +1878,6 @@
 				0072796025CA8220001CE398 /* PLVLSChatroomViewModel.m */,
 			);
 			path = ViewModel;
-			sourceTree = "<group>";
-		};
-		00A57AF12603013500EEA84D /* PLVChatTextView */ = {
-			isa = PBXGroup;
-			children = (
-				00A57AF22603016400EEA84D /* PLVChatTextView.h */,
-				00A57AF32603016400EEA84D /* PLVChatTextView.m */,
-			);
-			path = PLVChatTextView;
 			sourceTree = "<group>";
 		};
 		00A57AFA260302DA00EEA84D /* Cell */ = {
@@ -2105,15 +1947,6 @@
 			path = Controller;
 			sourceTree = "<group>";
 		};
-		040B420F2591CDD700C51E60 /* PLVPlayerLogoView */ = {
-			isa = PBXGroup;
-			children = (
-				046F8B60264933CF00C92565 /* PLVPlayerLogoView.h */,
-				046F8B61264933CF00C92565 /* PLVPlayerLogoView.m */,
-			);
-			path = PLVPlayerLogoView;
-			sourceTree = "<group>";
-		};
 		04258B9F267845E8009F1287 /* View */ = {
 			isa = PBXGroup;
 			children = (
@@ -2121,15 +1954,6 @@
 				04258BBF267846BF009F1287 /* PLVLoginTextField.m */,
 			);
 			path = View;
-			sourceTree = "<group>";
-		};
-		044919C6262430D400C32BBE /* PLVBaseNavigation */ = {
-			isa = PBXGroup;
-			children = (
-				63264EDF245A630500C7199C /* PLVBaseNavigationController.h */,
-				63264EE0245A630500C7199C /* PLVBaseNavigationController.m */,
-			);
-			path = PLVBaseNavigation;
 			sourceTree = "<group>";
 		};
 		04504665265E1D6100D801A2 /* Alert */ = {
@@ -2177,6 +2001,217 @@
 				213639DD264C1C56004F66A7 /* plvlw_login_logo@3x.png */,
 			);
 			path = Resource;
+			sourceTree = "<group>";
+		};
+		36E8E0A426DCD2FB00DAEE02 /* GeneralUI */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0A526DCD2FB00DAEE02 /* PLVChatTextView */,
+				36E8E0A826DCD2FB00DAEE02 /* PLVEmoticons */,
+				36E8E0AE26DCD2FB00DAEE02 /* PLVToast */,
+				36E8E0B126DCD2FB00DAEE02 /* PLVMarquee */,
+				36E8E0B426DCD2FB00DAEE02 /* PLVPlayerLogoView */,
+				36E8E0B726DCD2FB00DAEE02 /* PLVAlert */,
+				36E8E0BA26DCD2FB00DAEE02 /* PLVDanMu */,
+				36E8E0C026DCD2FB00DAEE02 /* PLVProgressSlider */,
+				36E8E0C326DCD2FB00DAEE02 /* PLVActionSheet */,
+				36E8E0C626DCD2FB00DAEE02 /* PLVAlbumView */,
+				36E8E0E926DCD2FB00DAEE02 /* PLVBaseNavigation */,
+				36E8E0EC26DCD2FB00DAEE02 /* PLVPhotoBrowser */,
+				36E8E0F026DCD2FB00DAEE02 /* PLVAdvView */,
+			);
+			path = GeneralUI;
+			sourceTree = "<group>";
+		};
+		36E8E0A526DCD2FB00DAEE02 /* PLVChatTextView */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0A626DCD2FB00DAEE02 /* PLVChatTextView.h */,
+				36E8E0A726DCD2FB00DAEE02 /* PLVChatTextView.m */,
+			);
+			path = PLVChatTextView;
+			sourceTree = "<group>";
+		};
+		36E8E0A826DCD2FB00DAEE02 /* PLVEmoticons */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0A926DCD2FB00DAEE02 /* PLVEmoticonManager.m */,
+				36E8E0AA26DCD2FB00DAEE02 /* PLVEmoticonManager.h */,
+				36E8E0AB26DCD2FB00DAEE02 /* Resource */,
+			);
+			path = PLVEmoticons;
+			sourceTree = "<group>";
+		};
+		36E8E0AB26DCD2FB00DAEE02 /* Resource */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0AC26DCD2FB00DAEE02 /* PLVEmoticon.plist */,
+				36E8E0AD26DCD2FB00DAEE02 /* PLVEmoticons.bundle */,
+			);
+			path = Resource;
+			sourceTree = "<group>";
+		};
+		36E8E0AE26DCD2FB00DAEE02 /* PLVToast */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0AF26DCD2FB00DAEE02 /* PLVToast.m */,
+				36E8E0B026DCD2FB00DAEE02 /* PLVToast.h */,
+			);
+			path = PLVToast;
+			sourceTree = "<group>";
+		};
+		36E8E0B126DCD2FB00DAEE02 /* PLVMarquee */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0B226DCD2FB00DAEE02 /* PLVMarqueeLabel.m */,
+				36E8E0B326DCD2FB00DAEE02 /* PLVMarqueeLabel.h */,
+			);
+			path = PLVMarquee;
+			sourceTree = "<group>";
+		};
+		36E8E0B426DCD2FB00DAEE02 /* PLVPlayerLogoView */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0B526DCD2FB00DAEE02 /* PLVPlayerLogoView.h */,
+				36E8E0B626DCD2FB00DAEE02 /* PLVPlayerLogoView.m */,
+			);
+			path = PLVPlayerLogoView;
+			sourceTree = "<group>";
+		};
+		36E8E0B726DCD2FB00DAEE02 /* PLVAlert */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0B826DCD2FB00DAEE02 /* PLVAlertViewController.h */,
+				36E8E0B926DCD2FB00DAEE02 /* PLVAlertViewController.m */,
+			);
+			path = PLVAlert;
+			sourceTree = "<group>";
+		};
+		36E8E0BA26DCD2FB00DAEE02 /* PLVDanMu */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0BB26DCD2FB00DAEE02 /* PLVDanMuLabel.h */,
+				36E8E0BC26DCD2FB00DAEE02 /* PLVDanMu.h */,
+				36E8E0BD26DCD2FB00DAEE02 /* PLVDanMuLabel.m */,
+				36E8E0BE26DCD2FB00DAEE02 /* PLVDanMuDefine.h */,
+				36E8E0BF26DCD2FB00DAEE02 /* PLVdanmu.m */,
+			);
+			path = PLVDanMu;
+			sourceTree = "<group>";
+		};
+		36E8E0C026DCD2FB00DAEE02 /* PLVProgressSlider */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0C126DCD2FB00DAEE02 /* PLVProgressSlider.m */,
+				36E8E0C226DCD2FB00DAEE02 /* PLVProgressSlider.h */,
+			);
+			path = PLVProgressSlider;
+			sourceTree = "<group>";
+		};
+		36E8E0C326DCD2FB00DAEE02 /* PLVActionSheet */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0C426DCD2FB00DAEE02 /* PLVActionSheet.m */,
+				36E8E0C526DCD2FB00DAEE02 /* PLVActionSheet.h */,
+			);
+			path = PLVActionSheet;
+			sourceTree = "<group>";
+		};
+		36E8E0C626DCD2FB00DAEE02 /* PLVAlbumView */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0C726DCD2FB00DAEE02 /* Utils */,
+				36E8E0CD26DCD2FB00DAEE02 /* Controller */,
+				36E8E0DA26DCD2FB00DAEE02 /* Model */,
+				36E8E0DF26DCD2FB00DAEE02 /* View */,
+				36E8E0E826DCD2FB00DAEE02 /* PLVAlbum.bundle */,
+			);
+			path = PLVAlbumView;
+			sourceTree = "<group>";
+		};
+		36E8E0C726DCD2FB00DAEE02 /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0C826DCD2FB00DAEE02 /* PLVWebImageDecoder.h */,
+				36E8E0C926DCD2FB00DAEE02 /* PLVAlbumTool.m */,
+				36E8E0CA26DCD2FB00DAEE02 /* PLVWebImageDecoder.m */,
+				36E8E0CB26DCD2FB00DAEE02 /* PLVPicDefine.h */,
+				36E8E0CC26DCD2FB00DAEE02 /* PLVAlbumTool.h */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		36E8E0CD26DCD2FB00DAEE02 /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0CE26DCD2FB00DAEE02 /* PLVCameraViewController.m */,
+				36E8E0CF26DCD2FB00DAEE02 /* PLVAlbumsViewController.h */,
+				36E8E0D026DCD2FB00DAEE02 /* PLVPickerController.m */,
+				36E8E0D126DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m */,
+				36E8E0D226DCD2FB00DAEE02 /* PLVAlbumNavigationController.m */,
+				36E8E0D326DCD2FB00DAEE02 /* PLVPhotoPreViewController.m */,
+				36E8E0D426DCD2FB00DAEE02 /* PLVPickerController.h */,
+				36E8E0D526DCD2FB00DAEE02 /* PLVAlbumsViewController.m */,
+				36E8E0D626DCD2FB00DAEE02 /* PLVCameraViewController.h */,
+				36E8E0D726DCD2FB00DAEE02 /* PLVAlbumNavigationController.h */,
+				36E8E0D826DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.h */,
+				36E8E0D926DCD2FB00DAEE02 /* PLVPhotoPreViewController.h */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		36E8E0DA26DCD2FB00DAEE02 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0DB26DCD2FB00DAEE02 /* PLVAlbumInfo.m */,
+				36E8E0DC26DCD2FB00DAEE02 /* PLVImageInfo.m */,
+				36E8E0DD26DCD2FB00DAEE02 /* PLVAlbumInfo.h */,
+				36E8E0DE26DCD2FB00DAEE02 /* PLVImageInfo.h */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		36E8E0DF26DCD2FB00DAEE02 /* View */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0E026DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.h */,
+				36E8E0E126DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m */,
+				36E8E0E226DCD2FB00DAEE02 /* PLVAlbumTableViewCell.h */,
+				36E8E0E326DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.h */,
+				36E8E0E426DCD2FB00DAEE02 /* PLVPreCollectionViewCell.h */,
+				36E8E0E526DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m */,
+				36E8E0E626DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m */,
+				36E8E0E726DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		36E8E0E926DCD2FB00DAEE02 /* PLVBaseNavigation */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0EA26DCD2FB00DAEE02 /* PLVBaseNavigationController.m */,
+				36E8E0EB26DCD2FB00DAEE02 /* PLVBaseNavigationController.h */,
+			);
+			path = PLVBaseNavigation;
+			sourceTree = "<group>";
+		};
+		36E8E0EC26DCD2FB00DAEE02 /* PLVPhotoBrowser */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0ED26DCD2FB00DAEE02 /* PLVPhotoBrowser.m */,
+				36E8E0EE26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle */,
+				36E8E0EF26DCD2FB00DAEE02 /* PLVPhotoBrowser.h */,
+			);
+			path = PLVPhotoBrowser;
+			sourceTree = "<group>";
+		};
+		36E8E0F026DCD2FB00DAEE02 /* PLVAdvView */ = {
+			isa = PBXGroup;
+			children = (
+				36E8E0F126DCD2FB00DAEE02 /* PLVAdvView.h */,
+				36E8E0F226DCD2FB00DAEE02 /* PLVAdvView.m */,
+			);
+			path = PLVAdvView;
 			sourceTree = "<group>";
 		};
 		55D67ECCBE5EF97F643448DD /* Pods */ = {
@@ -2227,14 +2262,14 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
-		63264EDA245A619900C7199C /* PolyvLiveEcommerceScene */ = {
+		63264EDA245A619900C7199C /* PLVLiveEcommerceScene */ = {
 			isa = PBXGroup;
 			children = (
 				67B6A34524B7046100931A1D /* Scenes */,
 				67B941DB249333D70051AEC9 /* Modules */,
 				67B941DC249334160051AEC9 /* Resource */,
 			);
-			path = PolyvLiveEcommerceScene;
+			path = PLVLiveEcommerceScene;
 			sourceTree = "<group>";
 		};
 		6333EF2624C6F66000E196C2 /* LinkMic */ = {
@@ -2274,11 +2309,11 @@
 				633923A72459877B00C0ACE9 /* AppDelegate.h */,
 				633923A82459877B00C0ACE9 /* AppDelegate.m */,
 				67B941BA24932AE20051AEC9 /* Demo */,
-				6766B8AD24C934EC0037B438 /* PolyvLiveCloudClassScene */,
-				63264EDA245A619900C7199C /* PolyvLiveEcommerceScene */,
-				0072780525CA45F8001CE398 /* PolyvLiveStreamerScene */,
-				005B1AE52654C29800F77307 /* PolyvStreamerAloneScene */,
-				67B941BB24932B220051AEC9 /* PolyvLiveCommonModule */,
+				6766B8AD24C934EC0037B438 /* PLVLiveCloudClassScene */,
+				63264EDA245A619900C7199C /* PLVLiveEcommerceScene */,
+				0072780525CA45F8001CE398 /* PLVLiveStreamerScene */,
+				005B1AE52654C29800F77307 /* PLVStreamerAloneScene */,
+				67B941BB24932B220051AEC9 /* PLVLiveCommonModule */,
 				67B941B924932A730051AEC9 /* Supporting Files */,
 			);
 			path = PolyvLiveScenesDemo;
@@ -2622,27 +2657,6 @@
 			path = Model;
 			sourceTree = "<group>";
 		};
-		63D243B6256251B300CB569E /* GeneralUI */ = {
-			isa = PBXGroup;
-			children = (
-				044919C6262430D400C32BBE /* PLVBaseNavigation */,
-				007CD42626098231003783D8 /* PLVActionSheet */,
-				00A57AF12603013500EEA84D /* PLVChatTextView */,
-				00539C5E25EE48AD0016B2BD /* PLVAlert */,
-				00539C5A25EE48950016B2BD /* PLVToast */,
-				BFC50CE82592F68B00362138 /* PLVAdvView */,
-				040B420F2591CDD700C51E60 /* PLVPlayerLogoView */,
-				00476B68259194C000460F8E /* PLVAlbumView */,
-				00476B91259194C000460F8E /* PLVEmoticons */,
-				00476B65259194C000460F8E /* PLVMarquee */,
-				00476B9A259194C000460F8E /* PLVPhotoBrowser */,
-				00476B97259194C000460F8E /* PLVProgressSlider */,
-				00476B8B259194C000460F8E /* PLVDanMu */,
-			);
-			name = GeneralUI;
-			path = PolyvLiveScenesDemo/PolyvLiveCommonModule/GeneralUI;
-			sourceTree = SOURCE_ROOT;
-		};
 		6706BDF624C9CAD800C0AEB5 /* View */ = {
 			isa = PBXGroup;
 			children = (
@@ -2694,14 +2708,14 @@
 			path = Chatroom;
 			sourceTree = "<group>";
 		};
-		6766B8AD24C934EC0037B438 /* PolyvLiveCloudClassScene */ = {
+		6766B8AD24C934EC0037B438 /* PLVLiveCloudClassScene */ = {
 			isa = PBXGroup;
 			children = (
 				671ED49924D25C84008D2976 /* Scenes */,
 				6766B8B224C97FB20037B438 /* Modules */,
 				6306571224DCF13B00EAA430 /* Resource */,
 			);
-			path = PolyvLiveCloudClassScene;
+			path = PLVLiveCloudClassScene;
 			sourceTree = "<group>";
 		};
 		6766B8B224C97FB20037B438 /* Modules */ = {
@@ -2781,13 +2795,13 @@
 			path = Demo;
 			sourceTree = "<group>";
 		};
-		67B941BB24932B220051AEC9 /* PolyvLiveCommonModule */ = {
+		67B941BB24932B220051AEC9 /* PLVLiveCommonModule */ = {
 			isa = PBXGroup;
 			children = (
-				63D243B6256251B300CB569E /* GeneralUI */,
+				36E8E0A426DCD2FB00DAEE02 /* GeneralUI */,
 				67B941CF249332D90051AEC9 /* Modules */,
 			);
-			path = PolyvLiveCommonModule;
+			path = PLVLiveCommonModule;
 			sourceTree = "<group>";
 		};
 		67B941CF249332D90051AEC9 /* Modules */ = {
@@ -2856,7 +2870,7 @@
 				670B80B424C54D8800D94478 /* PolyvFoundationSDK.framework */,
 				430C9CF57975329ADA06E5C9 /* Pods_PolyvLiveEcommerceDemoUITests.framework */,
 				6ED5072918A006C94EB83D86 /* Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework */,
-				6BF88592BC61516927468F63 /* Pods_PolyvLiveScenesDemo.framework */,
+				BDB2525A1FFFD9BEFAAFAAD6 /* Pods_PolyvLiveScenesDemo.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -2998,15 +3012,6 @@
 			path = View;
 			sourceTree = "<group>";
 		};
-		BFC50CE82592F68B00362138 /* PLVAdvView */ = {
-			isa = PBXGroup;
-			children = (
-				BFC50CE92592F6B800362138 /* PLVAdvView.h */,
-				BFC50CEA2592F6B800362138 /* PLVAdvView.m */,
-			);
-			path = PLVAdvView;
-			sourceTree = "<group>";
-		};
 		BFE926A52552881B003E23B4 /* Login */ = {
 			isa = PBXGroup;
 			children = (
@@ -3081,7 +3086,7 @@
 			attributes = {
 				CLASSPREFIX = PLV;
 				LastUpgradeCheck = 1120;
-				ORGANIZATIONNAME = polyv;
+				ORGANIZATIONNAME = PLV;
 				TargetAttributes = {
 					633923A32459877B00C0ACE9 = {
 						CreatedOnToolsVersion = 11.2.1;
@@ -3115,21 +3120,21 @@
 			files = (
 				005F17DF264BBB410093E874 /* Settings.bundle in Resources */,
 				00749FD2264CCE5700B7A7E3 /* plvlw_login_logo@2x.png in Resources */,
+				36E8E14C26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle in Resources */,
 				00749FD4264CCE5700B7A7E3 /* plvlw_login_logo@3x.png in Resources */,
+				36E8E0FB26DCD2FB00DAEE02 /* PLVEmoticon.plist in Resources */,
 				005F17E0264BBB410093E874 /* LaunchScreen.storyboard in Resources */,
-				005F17E1264BBB410093E874 /* PLVPhotoBrowser.bundle in Resources */,
 				00749FD3264CCE5700B7A7E3 /* plvlw_login_clear@3x.png in Resources */,
 				005F17E3264BBB410093E874 /* PLVMedia.bundle in Resources */,
 				005F17E5264BBB410093E874 /* PLVMenu.bundle in Resources */,
 				00749FD5264CCE5700B7A7E3 /* plvlw_login_clear@2x.png in Resources */,
-				005F17E8264BBB410093E874 /* PLVEmoticons.bundle in Resources */,
 				005F17E9264BBB410093E874 /* PLVLinkMic.bundle in Resources */,
-				005F17EA264BBB410093E874 /* PLVAlbum.bundle in Resources */,
 				005F17EB264BBB410093E874 /* PLVLiveRoom.bundle in Resources */,
 				005F17EC264BBB410093E874 /* Assets.xcassets in Resources */,
-				005F17ED264BBB410093E874 /* PLVEmoticon.plist in Resources */,
+				36E8E14326DCD2FB00DAEE02 /* PLVAlbum.bundle in Resources */,
 				005F17EE264BBB410093E874 /* PLVChatroom.bundle in Resources */,
 				005F17EF264BBB410093E874 /* Main.storyboard in Resources */,
+				36E8E0FE26DCD2FB00DAEE02 /* PLVEmoticons.bundle in Resources */,
 				005F17F1264BBB410093E874 /* WatchResource.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3140,22 +3145,22 @@
 			files = (
 				215D04922605875300E86BEF /* Settings.bundle in Resources */,
 				63958924262ADB1500D34B21 /* PLVLSLinkMic.bundle in Resources */,
+				36E8E14B26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle in Resources */,
+				36E8E14226DCD2FB00DAEE02 /* PLVAlbum.bundle in Resources */,
 				008360E326564C56002561F3 /* PLVSAStatusbar.bundle in Resources */,
 				215D04932605875300E86BEF /* LaunchScreen.storyboard in Resources */,
 				215D0561260589C600E86BEF /* PLVLSChatroom.bundle in Resources */,
 				215D055A260589BD00E86BEF /* PLVLSDocument.bundle in Resources */,
 				008360E726564C56002561F3 /* PLVSAToolbar.bundle in Resources */,
+				36E8E0FD26DCD2FB00DAEE02 /* PLVEmoticons.bundle in Resources */,
 				215D0560260589C300E86BEF /* LiveStreamer.bundle in Resources */,
 				008360E626564C56002561F3 /* PLVSALiveroom.bundle in Resources */,
 				008360E426564C56002561F3 /* PLVSAChatroom.bundle in Resources */,
 				008360E526564C56002561F3 /* PLVSALinkMic.bundle in Resources */,
-				215D04942605875300E86BEF /* PLVPhotoBrowser.bundle in Resources */,
+				36E8E0FA26DCD2FB00DAEE02 /* PLVEmoticon.plist in Resources */,
 				00572A72266E00730000784B /* PLVSAMember.bundle in Resources */,
 				0012061F2612B44E00473968 /* PLVLSMember.bundle in Resources */,
-				215D049A2605875300E86BEF /* PLVEmoticons.bundle in Resources */,
-				215D049C2605875300E86BEF /* PLVAlbum.bundle in Resources */,
 				215D049E2605875300E86BEF /* Assets.xcassets in Resources */,
-				215D049F2605875300E86BEF /* PLVEmoticon.plist in Resources */,
 				215D055D260589C100E86BEF /* PLVLSStatus.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3167,27 +3172,27 @@
 				005B1B6026551AEC00F77307 /* PLVSAToolbar.bundle in Resources */,
 				005F18B8264BBC810093E874 /* PLVLSDocument.bundle in Resources */,
 				005B1B7126551B4300F77307 /* PLVSAChatroom.bundle in Resources */,
+				36E8E0F926DCD2FB00DAEE02 /* PLVEmoticon.plist in Resources */,
+				36E8E0FC26DCD2FB00DAEE02 /* PLVEmoticons.bundle in Resources */,
 				63D2430B255AB12500CB569E /* Settings.bundle in Resources */,
+				36E8E14A26DCD2FB00DAEE02 /* PLVPhotoBrowser.bundle in Resources */,
 				633923B72459877D00C0ACE9 /* LaunchScreen.storyboard in Resources */,
-				00476BC7259194C000460F8E /* PLVPhotoBrowser.bundle in Resources */,
 				005B1B8126551D4800F77307 /* PLVSALinkMic.bundle in Resources */,
+				36E8E14126DCD2FB00DAEE02 /* PLVAlbum.bundle in Resources */,
 				6397675C2511A43700D1F16B /* PLVMedia.bundle in Resources */,
 				005F18C4264BBC860093E874 /* PLVLSMember.bundle in Resources */,
 				00EF59BB251D9FDC00A65197 /* PLVMenu.bundle in Resources */,
 				005B1B2C2655164200F77307 /* PLVSALiveroom.bundle in Resources */,
-				00476BC4259194C000460F8E /* PLVEmoticons.bundle in Resources */,
 				00749FCD264CCE5600B7A7E3 /* plvlw_login_logo@3x.png in Resources */,
 				00572A71266E00730000784B /* PLVSAMember.bundle in Resources */,
 				00749FCC264CCE5600B7A7E3 /* plvlw_login_clear@3x.png in Resources */,
 				6306571624DCF17500EAA430 /* PLVLinkMic.bundle in Resources */,
 				005F17FE264BBB740093E874 /* LiveStreamer.bundle in Resources */,
-				00476BBF259194C000460F8E /* PLVAlbum.bundle in Resources */,
 				00749FCB264CCE5600B7A7E3 /* plvlw_login_logo@2x.png in Resources */,
 				00877A0B264BD83F00AD9245 /* Main.storyboard in Resources */,
 				632486BB252EBF48001EE3F0 /* PLVLiveRoom.bundle in Resources */,
 				633923B42459877D00C0ACE9 /* Assets.xcassets in Resources */,
 				008779F7264BD4A700AD9245 /* LiveScenes.bundle in Resources */,
-				00476BC3259194C000460F8E /* PLVEmoticon.plist in Resources */,
 				00436F9F2531591800A146A0 /* PLVChatroom.bundle in Resources */,
 				005F18C0264BBC840093E874 /* PLVLSChatroom.bundle in Resources */,
 				005F18B4264BBC7E0093E874 /* PLVLSLinkMic.bundle in Resources */,
@@ -3248,43 +3253,38 @@
 			buildActionMask = 2147483647;
 			files = (
 				005F1749264BBB410093E874 /* PLVECRewardController.m in Sources */,
-				005F174A264BBB410093E874 /* PLVPhotoCollectionViewCell.m in Sources */,
-				005F174B264BBB410093E874 /* PLVPreCollectionViewCell.m in Sources */,
-				005F174A264BBB410093E874 /* PLVPhotoCollectionViewCell.m in Sources */,
-				005F174B264BBB410093E874 /* PLVPreCollectionViewCell.m in Sources */,
 				005F174D264BBB410093E874 /* PLVLCLinkMicWindowsView.m in Sources */,
 				005F174E264BBB410093E874 /* PLVLCLiveRoomPlayerSkinView.m in Sources */,
 				005F174F264BBB410093E874 /* PLVLCMediaMoreCell.m in Sources */,
-				005F1750264BBB410093E874 /* PLVToast.m in Sources */,
 				005F1751264BBB410093E874 /* PLVECCommodityModelsManager.m in Sources */,
 				005F1752264BBB410093E874 /* PLVLCChatViewController.m in Sources */,
 				00749FE8264CD61200B7A7E3 /* PLVLinkMicWaitUser.m in Sources */,
-				005F1753264BBB410093E874 /* PLVWebImageDecoder.m in Sources */,
 				005F1754264BBB410093E874 /* PLVLCMediaMoreView.m in Sources */,
 				005F1755264BBB410093E874 /* PLVLCImageMessageCell.m in Sources */,
-				005F1756264BBB410093E874 /* PLVPhotoBrowser.m in Sources */,
 				005F1757264BBB410093E874 /* PLVECNewMessageView.m in Sources */,
 				005F1758264BBB410093E874 /* PLVLCChatroomViewModel.m in Sources */,
-				005F1759264BBB410093E874 /* PLVAdvView.m in Sources */,
-				005F175A264BBB410093E874 /* PLVPlayerLogoView.m in Sources */,
 				005F175B264BBB410093E874 /* PLVECRewardView.m in Sources */,
 				005F175C264BBB410093E874 /* PLVRoomLoginClient.m in Sources */,
+				36E8E14F26DCD2FB00DAEE02 /* PLVAdvView.m in Sources */,
+				36E8E14026DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m in Sources */,
 				005F175D264BBB410093E874 /* PLVInteractQuestionnaire.m in Sources */,
+				36E8E11F26DCD2FB00DAEE02 /* PLVCameraViewController.m in Sources */,
 				005F175E264BBB410093E874 /* PLVLCQuoteMessageCell.m in Sources */,
 				005F1760264BBB410093E874 /* PLVECChatCell.m in Sources */,
 				005F1761264BBB410093E874 /* PLVLCLinkMicLandscapeControlBar.m in Sources */,
+				36E8E12E26DCD2FB00DAEE02 /* PLVAlbumsViewController.m in Sources */,
 				005F1762264BBB410093E874 /* PLVECPlayerBackgroundView.m in Sources */,
-				005F1763264BBB410093E874 /* PLVPickerController.m in Sources */,
 				005F1764264BBB410093E874 /* PLVLCMessageCell.m in Sources */,
 				005F18FF264BBDA10093E874 /* PLVStreamerPresenter.m in Sources */,
-				005F1765264BBB410093E874 /* PLVEmoticonManager.m in Sources */,
 				005F1766264BBB410093E874 /* PLVLCLandscapeNewMessageView.m in Sources */,
 				005F1767264BBB410093E874 /* PLVECHomePageView.m in Sources */,
-				005F1768264BBB410093E874 /* PLVChatTextView.m in Sources */,
 				005F1769264BBB410093E874 /* PLVInteractAnswer.m in Sources */,
-				005F176A264BBB410093E874 /* PLVPhotoPreBaseViewController.m in Sources */,
 				005F176B264BBB410093E874 /* PLVChatroomPresenter.m in Sources */,
+				36E8E12826DCD2FB00DAEE02 /* PLVAlbumNavigationController.m in Sources */,
+				36E8E10126DCD2FB00DAEE02 /* PLVToast.m in Sources */,
+				36E8E13426DCD2FB00DAEE02 /* PLVImageInfo.m in Sources */,
 				005F176D264BBB410093E874 /* PLVLCBasePlayerSkinView.m in Sources */,
+				36E8E11626DCD2FB00DAEE02 /* PLVActionSheet.m in Sources */,
 				005F176E264BBB410093E874 /* PLVLinkMicPresenter.m in Sources */,
 				005F176F264BBB410093E874 /* PLVLCDescViewController.m in Sources */,
 				005F1904264BBDA30093E874 /* BuildFile in Sources */,
@@ -3296,22 +3296,24 @@
 				005F1775264BBB410093E874 /* PLVLCTextViewController.m in Sources */,
 				005F1776264BBB410093E874 /* PLVLCLikeButtonView.m in Sources */,
 				005F1777264BBB410093E874 /* PLVLCPageViewCell.m in Sources */,
+				36E8E10726DCD2FB00DAEE02 /* PLVPlayerLogoView.m in Sources */,
 				005F1778264BBB410093E874 /* PLVECBulletinView.m in Sources */,
 				005F1779264BBB410093E874 /* PLVLCUtils.m in Sources */,
 				005F177A264BBB410093E874 /* PLVChatModel.m in Sources */,
-				005F177B264BBB410093E874 /* PLVProgressSlider.m in Sources */,
 				005F177C264BBB410093E874 /* PLVLinkMicOnlineUser.m in Sources */,
+				36E8E13A26DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m in Sources */,
+				36E8E10426DCD2FB00DAEE02 /* PLVMarqueeLabel.m in Sources */,
+				36E8E12226DCD2FB00DAEE02 /* PLVPickerController.m in Sources */,
+				36E8E13D26DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m in Sources */,
 				005F177D264BBB410093E874 /* PLVLCLinkMicSpeakingView.m in Sources */,
 				005F177E264BBB410093E874 /* PLVDocumentView.m in Sources */,
 				005F177F264BBB410093E874 /* PLVECChatroomView.m in Sources */,
-				005F1780264BBB410093E874 /* PLVBaseNavigationController.m in Sources */,
-				005F1781264BBB410093E874 /* PLVAlbumNavigationController.m in Sources */,
 				005F1782264BBB410093E874 /* PLVLCKeyboardTextView.m in Sources */,
-				005F1781264BBB410093E874 /* PLVAlbumNavigationController.m in Sources */,
+				36E8E10D26DCD2FB00DAEE02 /* PLVDanMuLabel.m in Sources */,
 				005F1782264BBB410093E874 /* PLVLCKeyboardTextView.m in Sources */,
 				005F1784264BBB410093E874 /* PLVLCIframeViewController.m in Sources */,
-				005F1785264BBB410093E874 /* PLVAlbumInfo.m in Sources */,
 				005F1786264BBB410093E874 /* PLVDocumentConvertRequester.m in Sources */,
+				36E8E14926DCD2FB00DAEE02 /* PLVPhotoBrowser.m in Sources */,
 				005F1787264BBB410093E874 /* PLVLCLiveRoomLandscapeInputView.m in Sources */,
 				005F1788264BBB410093E874 /* PLVChatUser.m in Sources */,
 				005F1789264BBB410093E874 /* PLVLCNotifyMarqueeView..m in Sources */,
@@ -3319,23 +3321,22 @@
 				005F178B264BBB410093E874 /* PLVECCommodityCell.m in Sources */,
 				005F178C264BBB410093E874 /* PLVLCNewMessageView.m in Sources */,
 				005F178D264BBB410093E874 /* PLVECCardView.m in Sources */,
-				005F178E264BBB410093E874 /* PLVDanMu.m in Sources */,
-				005F178E264BBB410093E874 /* PLVDanMu.m in Sources */,
 				005F1790264BBB410093E874 /* PLVInteractSignIn.m in Sources */,
 				005F1791264BBB410093E874 /* PLVDocumentConvertManager.m in Sources */,
+				36E8E11026DCD2FB00DAEE02 /* PLVdanmu.m in Sources */,
 				005F1792264BBB410093E874 /* PLVLCTuwenViewController.m in Sources */,
 				005F1793264BBB410093E874 /* PLVLCEmojiSelectView.m in Sources */,
 				005F1794264BBB410093E874 /* PLVECLiveRoomInfoView.m in Sources */,
+				36E8E14626DCD2FB00DAEE02 /* PLVBaseNavigationController.m in Sources */,
 				005F1795264BBB410093E874 /* PLVInteractBulletin.m in Sources */,
 				005F1797264BBB410093E874 /* PLVRoomDataManager.m in Sources */,
-				005F1798264BBB410093E874 /* PLVMarqueeLabel.m in Sources */,
 				005F1799264BBB410093E874 /* PLVLCMediaPlayerSkinView.m in Sources */,
 				005F179A264BBB410093E874 /* PLVLCDescTopView.m in Sources */,
 				005F179B264BBB410093E874 /* AppDelegate.m in Sources */,
 				005F179C264BBB410093E874 /* main.m in Sources */,
-				005F179D264BBB410093E874 /* PLVPhotoCollectionFooterView.m in Sources */,
+				36E8E12526DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m in Sources */,
 				005F179E264BBB410093E874 /* PLVECBulletinCardView.m in Sources */,
-				005F179F264BBB410093E874 /* PLVActionSheet.m in Sources */,
+				36E8E0F826DCD2FB00DAEE02 /* PLVEmoticonManager.m in Sources */,
 				005F17A0264BBB410093E874 /* PLVLCLandscapeQuoteCell.m in Sources */,
 				005F17A1264BBB410093E874 /* PLVInteractView.m in Sources */,
 				005F17A2264BBB410093E874 /* PLVLCLivePageMenuAreaView.m in Sources */,
@@ -3352,51 +3353,50 @@
 				005F17AB264BBB410093E874 /* PLVLCSpeakMessageCell.m in Sources */,
 				005F17AC264BBB410093E874 /* PLVLCLinkMicWindowCell.m in Sources */,
 				005F17AD264BBB410093E874 /* PLVECCommodityPushView.m in Sources */,
+				36E8E11326DCD2FB00DAEE02 /* PLVProgressSlider.m in Sources */,
 				005F17AE264BBB410093E874 /* PLVLCLinkMicPortraitControlBar.m in Sources */,
 				005F17AF264BBB410093E874 /* PLVLCMediaBrightnessView.m in Sources */,
 				005F17B0264BBB410093E874 /* PLVECChatroomViewModel.m in Sources */,
-				005F17B1264BBB410093E874 /* PLVAlbumTableViewCell.m in Sources */,
 				005F17B2264BBB410093E874 /* PLVInteractLottery.m in Sources */,
-				005F17B3264BBB410093E874 /* PLVImageInfo.m in Sources */,
+				36E8E11926DCD2FB00DAEE02 /* PLVAlbumTool.m in Sources */,
 				005F17B4264BBB410093E874 /* PLVECPlayerContolView.m in Sources */,
 				005F17B5264BBB410093E874 /* PLVECMoreView.m in Sources */,
 				005F17B6264BBB410093E874 /* PLVLCMediaPlayerCanvasView.m in Sources */,
+				36E8E10A26DCD2FB00DAEE02 /* PLVAlertViewController.m in Sources */,
 				005F17B7264BBB410093E874 /* PLVLCCloudClassViewController.m in Sources */,
-				005F17B8264BBB410093E874 /* PLVAlertViewController.m in Sources */,
+				36E8E12B26DCD2FB00DAEE02 /* PLVPhotoPreViewController.m in Sources */,
 				005F17B9264BBB410093E874 /* PLVECLiveDetailPageView.m in Sources */,
 				005F17BA264BBB410093E874 /* PLVLCKeyboardToolView.m in Sources */,
 				005F17BB264BBB410093E874 /* PLVLiveWatchLoginController.m in Sources */,
-				005F17BC264BBB410093E874 /* PLVCameraViewController.m in Sources */,
 				005F17BD264BBB410093E874 /* PLVECGiftView.m in Sources */,
 				005F17BE264BBB410093E874 /* PLVLCMediaFloatView.m in Sources */,
 				005F17BF264BBB410093E874 /* PLVPPTView.m in Sources */,
 				005F17C0264BBB410093E874 /* PLVECGoodsDetailViewController.m in Sources */,
 				005F17C2264BBB410093E874 /* PLVECLiveIntroductionCardView.m in Sources */,
+				36E8E13126DCD2FB00DAEE02 /* PLVAlbumInfo.m in Sources */,
 				005F17C3264BBB410093E874 /* PLVECAudioAnimalView.m in Sources */,
 				005F17C4264BBB410093E874 /* PLVLCLinkMicAreaView.m in Sources */,
 				005F17C5264BBB410093E874 /* PLVInteractBaseApp+General.m in Sources */,
 				005F17C6264BBB410093E874 /* PLVECCommodityViewController.m in Sources */,
-				005F17C7264BBB410093E874 /* PLVAlbumsViewController.m in Sources */,
+				36E8E0F526DCD2FB00DAEE02 /* PLVChatTextView.m in Sources */,
 				005F17C8264BBB410093E874 /* PLVLCLandscapeSpeakCell.m in Sources */,
 				005F17C9264BBB410093E874 /* PLVECWatchRoomViewController.m in Sources */,
 				005F17CA264BBB410093E874 /* PLVLCMediaMoreModel.m in Sources */,
 				005F17CB264BBB410093E874 /* PLVLCLinkMicCanvasView.m in Sources */,
-				005F17CC264BBB410093E874 /* PLVAlbumTool.m in Sources */,
-				005F17CD264BBB410093E874 /* PLVPhotoPreViewController.m in Sources */,
 				005F17CE264BBB410093E874 /* PLVRoomUser.m in Sources */,
 				005F17CF264BBB410093E874 /* PLVECPlayerViewController.m in Sources */,
 				005F17D0264BBB410093E874 /* PLVECCommodityView.m in Sources */,
 				005F17D1264BBB410093E874 /* PLVLCChatLandscapeView.m in Sources */,
 				005F17D2264BBB410093E874 /* PLVMemberPresenter.m in Sources */,
-				005F17D3264BBB410093E874 /* PLVDanMuLabel.m in Sources */,
 				36D402212696AEA600FD96F2 /* PLVLCLandscapeImageEmotionCell.m in Sources */,
-				005F17D3264BBB410093E874 /* PLVDanMuLabel.m in Sources */,
 				005F17D5264BBB410093E874 /* PLVLCDescBottomView.m in Sources */,
 				369417CE269FC985008BDC06 /* PLVLCEmojiPopupView.m in Sources */,
 				005F17D6264BBB410093E874 /* PLVECLikeButtonView.m in Sources */,
 				005F17D7264BBB410093E874 /* PLVRoomData.m in Sources */,
 				36D4021A2696A51C00FD96F2 /* PLVLCImageEmotionMessageCell.m in Sources */,
 				005F17D8264BBB410093E874 /* PLVECBottomView.m in Sources */,
+				36E8E13726DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m in Sources */,
+				36E8E11C26DCD2FB00DAEE02 /* PLVWebImageDecoder.m in Sources */,
 				005F17D9264BBB410093E874 /* PLVLCMediaAreaView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -3405,36 +3405,33 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				215D04072605875300E86BEF /* PLVPhotoCollectionViewCell.m in Sources */,
-				215D04082605875300E86BEF /* PLVPreCollectionViewCell.m in Sources */,
 				8FD08FA3265FC1CA007F8457 /* PLVSANewMessgaeTipView.m in Sources */,
 				008360BB26564C28002561F3 /* PLVSAStreamerSettingView.m in Sources */,
 				6395DE3A262095BC000D0A44 /* PLVLSLinkMicAreaView.m in Sources */,
 				8FFAF0D326710D60000BBA2B /* PLVSALinkMicTipView.m in Sources */,
 				215D051D2605895F00E86BEF /* PLVLSChannelInfoTopView.m in Sources */,
+				36E8E10C26DCD2FB00DAEE02 /* PLVDanMuLabel.m in Sources */,
 				6395DE462621454E000D0A44 /* PLVLSLinkMicWindowsView.m in Sources */,
 				215D051D2605895F00E86BEF /* PLVLSChannelInfoTopView.m in Sources */,
 				00511F83263AC58B008CE5E3 /* PLVDocumentConvertManager.m in Sources */,
 				8FD08F72265F96CA007F8457 /* PLVSAImageMessageCell.m in Sources */,
-				215D040C2605875300E86BEF /* PLVToast.m in Sources */,
 				215D05112605895100E86BEF /* PLVLSStreamerViewController.m in Sources */,
 				3694188626A00D2B008BDC06 /* PLVSAEmojiPopupView.m in Sources */,
 				008360BA26564C28002561F3 /* PLVSAStreamerFinishView.m in Sources */,
 				8FD08EC0265E43FE007F8457 /* PLVSARepliedMsgView.m in Sources */,
 				007CD4322609823C003783D8 /* PLVLSDocumentAreaView.m in Sources */,
 				8FD08F87265FA1D6007F8457 /* PLVSAChatroomListView.m in Sources */,
+				36E8E12A26DCD2FB00DAEE02 /* PLVPhotoPreViewController.m in Sources */,
+				36E8E11E26DCD2FB00DAEE02 /* PLVCameraViewController.m in Sources */,
 				215D051A2605895D00E86BEF /* PLVLSChannelInfoSheet.m in Sources */,
 				21795DD826073F3B001E3668 /* PLVLSSendMessageTextView.m in Sources */,
-				215D040F2605875300E86BEF /* PLVWebImageDecoder.m in Sources */,
-				005F18CF264BBC9F0093E874 /* PLVBaseNavigationController.m in Sources */,
 				00572A2F2669D3B30000784B /* PLVSAMemberSheet.m in Sources */,
 				00C75CE12628576C00F141C5 /* PLVLSLinkMicApplyTipsView.m in Sources */,
 				00C75CCF2626E5F000F141C5 /* PLVLSBaseMessageCell.m in Sources */,
 				8FD08C82265DDB20007F8457 /* PLVSANetMenuPopup.m in Sources */,
 				008360C626564C34002561F3 /* PLVSAStatusbarAreaView.m in Sources */,
+				36E8E13626DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m in Sources */,
 				04504769265F744800D801A2 /* PLVSABottomSheet.m in Sources */,
-				215D04142605875300E86BEF /* PLVPhotoBrowser.m in Sources */,
-				215D04172605875300E86BEF /* PLVAdvView.m in Sources */,
 				215D04192605875300E86BEF /* PLVRoomLoginClient.m in Sources */,
 				005F15CE2649272F0093E874 /* PLVLSRepliedMsgView.m in Sources */,
 				008360B126564C21002561F3 /* PLVSAStreamerViewController.m in Sources */,
@@ -3442,21 +3439,19 @@
 				8FD08F8E265FA1FB007F8457 /* PLVSAChatroomViewModel.m in Sources */,
 				8F1C8420266D026A00B9374D /* PLVSAProhibitWordTipView.m in Sources */,
 				215D041A2605875300E86BEF /* PLVInteractQuestionnaire.m in Sources */,
+				36E8E0F426DCD2FB00DAEE02 /* PLVChatTextView.m in Sources */,
 				215D05322605898000E86BEF /* PLVLSQuoteMessageCell.m in Sources */,
 				6395DE4826214552000D0A44 /* PLVLSLinkMicCanvasView.m in Sources */,
 				215D05292605896D00E86BEF /* PLVLSStatusAreaView.m in Sources */,
-				215D041F2605875300E86BEF /* PLVPickerController.m in Sources */,
 				00572B0826736CDB0000784B /* PLVSAShadowMaskView.m in Sources */,
 				215D05142605895600E86BEF /* PLVLSSideSheet.m in Sources */,
-				215D04212605875300E86BEF /* PLVEmoticonManager.m in Sources */,
-				215D04242605875300E86BEF /* PLVChatTextView.m in Sources */,
 				0057291F265DE0B20000784B /* PLVSALinkMicCanvasView.m in Sources */,
 				8F6FD6E02670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m in Sources */,
 				215D04252605875300E86BEF /* PLVInteractAnswer.m in Sources */,
 				6395DE2B262083EA000D0A44 /* PLVStreamerPresenter.m in Sources */,
 				63420556264ABBE4005A7B56 /* PLVLinkMicWaitUser.m in Sources */,
-				215D04262605875300E86BEF /* PLVPhotoPreBaseViewController.m in Sources */,
-				215D04262605875300E86BEF /* PLVPhotoPreBaseViewController.m in Sources */,
+				36E8E12426DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m in Sources */,
+				36E8E0F726DCD2FB00DAEE02 /* PLVEmoticonManager.m in Sources */,
 				215D04272605875300E86BEF /* PLVChatroomPresenter.m in Sources */,
 				00572A3A2669D4040000784B /* PLVSAMemberCell.m in Sources */,
 				215D04292605875300E86BEF /* PLVLinkMicPresenter.m in Sources */,
@@ -3467,54 +3462,60 @@
 				007CD46B26098288003783D8 /* PLVLSDocumentBrushView.m in Sources */,
 				215D04352605875300E86BEF /* PLVChatModel.m in Sources */,
 				001206152611B2AA00473968 /* PLVLSMemberSheet.m in Sources */,
-				215D04362605875300E86BEF /* PLVProgressSlider.m in Sources */,
 				6395DE4726214550000D0A44 /* PLVLSLinkMicWindowCell.m in Sources */,
 				007CD43526098241003783D8 /* PLVLSDocumentSheet.m in Sources */,
 				00C75C9226204F1700F141C5 /* PLVLSDocumentListCell.m in Sources */,
+				36E8E10626DCD2FB00DAEE02 /* PLVPlayerLogoView.m in Sources */,
 				215D04372605875300E86BEF /* PLVLinkMicOnlineUser.m in Sources */,
-				215D043B2605875300E86BEF /* PLVAlbumNavigationController.m in Sources */,
+				36E8E12126DCD2FB00DAEE02 /* PLVPickerController.m in Sources */,
+				36E8E11826DCD2FB00DAEE02 /* PLVAlbumTool.m in Sources */,
 				007CD4502609826D003783D8 /* PLVLSDocumentDeleteView.m in Sources */,
 				215D05172605895900E86BEF /* PLVLSBottomSheet.m in Sources */,
 				36941813269FE7DD008BDC06 /* PLVLSEmojiPopupView.m in Sources */,
 				215D05352605898300E86BEF /* PLVLSSpeakMessageCell.m in Sources */,
+				36E8E10F26DCD2FB00DAEE02 /* PLVdanmu.m in Sources */,
 				215D05412605899000E86BEF /* PLVLSSendMessageView.m in Sources */,
-				215D043E2605875300E86BEF /* PLVAlbumInfo.m in Sources */,
 				00C75CDC2627E8A700F141C5 /* PLVLSLinkMicMenuPopup.m in Sources */,
 				215D053E2605898C00E86BEF /* PLVLSNewMessageView.m in Sources */,
 				007CD42D26098238003783D8 /* PLVDocumentView.m in Sources */,
+				36E8E10926DCD2FB00DAEE02 /* PLVAlertViewController.m in Sources */,
 				008360BC26564C28002561F3 /* PLVSACountDownView.m in Sources */,
 				215D04402605875300E86BEF /* PLVChatUser.m in Sources */,
+				36E8E11B26DCD2FB00DAEE02 /* PLVWebImageDecoder.m in Sources */,
 				005729AA2660EACF0000784B /* PLVSALinkMicWindowCell.m in Sources */,
 				00C75C89261FDAFC00F141C5 /* PLVLSDocumentListViewModel.m in Sources */,
 				215D0557260589BA00E86BEF /* PLVLSUtils.m in Sources */,
 				215D053B2605898900E86BEF /* PLVLSChatroomToolbar.m in Sources */,
+				36E8E12726DCD2FB00DAEE02 /* PLVAlbumNavigationController.m in Sources */,
 				04504767265F744800D801A2 /* PLVSABitRateSheet.m in Sources */,
 				215D04422605875300E86BEF /* PLVBugReporter.m in Sources */,
 				215D05202605896200E86BEF /* PLVLSSettingSheet.m in Sources */,
+				36E8E13326DCD2FB00DAEE02 /* PLVImageInfo.m in Sources */,
 				367EBD22269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.m in Sources */,
 				008360C726564C34002561F3 /* PLVSAChatroomAreaView.m in Sources */,
 				8FD08EA4265E3B93007F8457 /* PLVSASendMessageView.m in Sources */,
+				36E8E14826DCD2FB00DAEE02 /* PLVPhotoBrowser.m in Sources */,
+				36E8E12D26DCD2FB00DAEE02 /* PLVAlbumsViewController.m in Sources */,
 				007CD4732609828C003783D8 /* PLVLSDocumentToolView.m in Sources */,
-				215D04462605875300E86BEF /* PLVDanMu.m in Sources */,
 				0012061B2611D42500473968 /* PLVLSMemberCell.m in Sources */,
 				215D04472605875300E86BEF /* PLVInteractSignIn.m in Sources */,
 				215D044B2605875300E86BEF /* PLVInteractBulletin.m in Sources */,
 				8FD08EB2265E43D3007F8457 /* PLVSASendMessageTextView.m in Sources */,
 				215D044C2605875300E86BEF /* PLVRoomDataManager.m in Sources */,
-				215D044D2605875300E86BEF /* PLVMarqueeLabel.m in Sources */,
+				36E8E10026DCD2FB00DAEE02 /* PLVToast.m in Sources */,
 				8FD08F2D265E7BB6007F8457 /* PLVSAMoreInfoSheet.m in Sources */,
 				8FD08C3E265CADD0007F8457 /* PLVSAChannelInfoSheet.m in Sources */,
 				21795DD3260730D4001E3668 /* PLVLSEmojiSelectView.m in Sources */,
 				00572A8B266F97010000784B /* PLVSAMemberPopup.m in Sources */,
 				215D04502605875300E86BEF /* AppDelegate.m in Sources */,
 				00511ED726355B29008CE5E3 /* PLVLiveStreamerLoginViewController.m in Sources */,
-				007CD42A26098231003783D8 /* PLVActionSheet.m in Sources */,
 				215D04512605875300E86BEF /* main.m in Sources */,
 				008360DE26564C40002561F3 /* PLVSAUtils.m in Sources */,
+				36E8E14526DCD2FB00DAEE02 /* PLVBaseNavigationController.m in Sources */,
 				007CD44826098253003783D8 /* PLVLSDocumentListUploadCell.m in Sources */,
 				04258BC0267846BF009F1287 /* PLVLoginTextField.m in Sources */,
 				00511EDC26355B2E008CE5E3 /* PLVLiveStreamerPrivacyViewController.m in Sources */,
-				215D04522605875300E86BEF /* PLVPhotoCollectionFooterView.m in Sources */,
+				36E8E11226DCD2FB00DAEE02 /* PLVProgressSlider.m in Sources */,
 				00572927265DE4400000784B /* PLVLinkMicOnlineUser+SA.m in Sources */,
 				215D04552605875300E86BEF /* PLVInteractView.m in Sources */,
 				215D04582605875300E86BEF /* PLVPlayerPresenter.m in Sources */,
@@ -3524,46 +3525,45 @@
 				8FD08F80265F9714007F8457 /* PLVSASpeakMessageCell.m in Sources */,
 				215D05382605898600E86BEF /* PLVLSChatroomListView.m in Sources */,
 				8FFAF0DB26712114000BBA2B /* PLVSACameraAndMicphoneStateView.m in Sources */,
-				215D04632605875300E86BEF /* PLVAlbumTableViewCell.m in Sources */,
 				007CD46126098275003783D8 /* PLVLSDocumentPagesView.m in Sources */,
 				00511F85263AC58B008CE5E3 /* PLVDocumentConvertRequester.m in Sources */,
 				00120626261417C800473968 /* PLVLSMemberCellEditView.m in Sources */,
 				008360C826564C34002561F3 /* PLVSAToolbarAreaView.m in Sources */,
 				00C75C9326204F1700F141C5 /* PLVLSDocumentListCellMaskView.m in Sources */,
+				36E8E10326DCD2FB00DAEE02 /* PLVMarqueeLabel.m in Sources */,
 				007CD46426098277003783D8 /* PLVLSDocumentLoadingView.m in Sources */,
 				8FD08F6B265F954B007F8457 /* PLVSABaseMessageCell.m in Sources */,
+				36E8E11526DCD2FB00DAEE02 /* PLVActionSheet.m in Sources */,
 				8F1C83D7266A0E5000B9374D /* PLVSAChatroomWelcomView.m in Sources */,
 				215D04642605875300E86BEF /* PLVInteractLottery.m in Sources */,
 				00572B012672FB110000784B /* PLVSAFinishStreamerSheet.m in Sources */,
 				21795DDD26077D7A001E3668 /* PLVLSSendMessageToolView.m in Sources */,
-				215D04652605875300E86BEF /* PLVImageInfo.m in Sources */,
 				8F78951A267B892B00A7C2A7 /* PLVSARewardMessageCell.m in Sources */,
-				007CD4702609828A003783D8 /* PLVLSDocumentBrushColorView..m in Sources */,
-				215D046A2605875300E86BEF /* PLVAlertViewController.m in Sources */,
+				007CD4702609828A003783D8 /* PLVLSDocumentBrushColorView.m in Sources */,
+				36E8E13926DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m in Sources */,
 				007CD49A260B4E0C003783D8 /* PLVLSDocumentNumView.m in Sources */,
 				8FD08EB9265E43E6007F8457 /* PLVSAEmojiSelectView.m in Sources */,
-				215D046F2605875300E86BEF /* PLVCameraViewController.m in Sources */,
+				36E8E13F26DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m in Sources */,
 				007CD45C26098272003783D8 /* PLVLSDocumentListView.m in Sources */,
 				8F1C83D3266A0E4A00B9374D /* PLVSAChatroomGiftView.m in Sources */,
 				0450466C265E21D500D801A2 /* PLVSAStreamAlertController.m in Sources */,
 				215D052C2605897900E86BEF /* PLVLSChatroomAreaView.m in Sources */,
+				36E8E14E26DCD2FB00DAEE02 /* PLVAdvView.m in Sources */,
 				215D04722605875300E86BEF /* PLVPPTView.m in Sources */,
 				215D04772605875300E86BEF /* PLVInteractBaseApp+General.m in Sources */,
-				005F18FB264BBCFC0093E874 /* PLVPlayerLogoView.m in Sources */,
 				215D05232605896500E86BEF /* PLVLSSettingSheetCell.m in Sources */,
-				215D04792605875300E86BEF /* PLVAlbumsViewController.m in Sources */,
 				008360D126564C3A002561F3 /* PLVSALinkMicAreaView.m in Sources */,
 				215D05472605899800E86BEF /* PLVLSChatroomViewModel.m in Sources */,
-				215D047F2605875300E86BEF /* PLVAlbumTool.m in Sources */,
-				215D04802605875300E86BEF /* PLVPhotoPreViewController.m in Sources */,
 				215D04812605875300E86BEF /* PLVRoomUser.m in Sources */,
+				2937E16E26E5CA5E002D3118 /* PLVLSDocumentWaitLiveView.m in Sources */,
 				8FFAF0DF2671A8EF000BBA2B /* PLVSALinkMicGuiedView.m in Sources */,
+				36E8E13026DCD2FB00DAEE02 /* PLVAlbumInfo.m in Sources */,
 				008360BD26564C28002561F3 /* PLVSAStreamerHomeView.m in Sources */,
 				007CD45726098270003783D8 /* PLVLSDocumentUploadTipsView.m in Sources */,
 				215D04852605875300E86BEF /* PLVMemberPresenter.m in Sources */,
 				8FD08EAB265E43BC007F8457 /* PLVSASendMessageToolView.m in Sources */,
+				36E8E13C26DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m in Sources */,
 				045EF2492664E2AE009275C4 /* PLVSASlideRightTipsView.m in Sources */,
-				215D04862605875300E86BEF /* PLVDanMuLabel.m in Sources */,
 				215D05262605896800E86BEF /* PLVLSCountDownView.m in Sources */,
 				215D04892605875300E86BEF /* PLVRoomData.m in Sources */,
 			);
@@ -3574,11 +3574,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				63C228982546BB2400410292 /* PLVECRewardController.m in Sources */,
-				00476BBC259194C000460F8E /* PLVPhotoCollectionViewCell.m in Sources */,
 				005B1B6826551B1100F77307 /* PLVSAChatroomAreaView.m in Sources */,
-				00476BBB259194C000460F8E /* PLVPreCollectionViewCell.m in Sources */,
-				00476BBC259194C000460F8E /* PLVPhotoCollectionViewCell.m in Sources */,
-				00476BBB259194C000460F8E /* PLVPreCollectionViewCell.m in Sources */,
 				005F1898264BBC680093E874 /* PLVLSDocumentAreaView.m in Sources */,
 				633E4220257A094A0039D35D /* PLVLCLinkMicWindowsView.m in Sources */,
 				633E422A257A09F80039D35D /* PLVLCLiveRoomPlayerSkinView.m in Sources */,
@@ -3586,54 +3582,52 @@
 				0057291E265DE0B20000784B /* PLVSALinkMicCanvasView.m in Sources */,
 				005B1B5426551ABE00F77307 /* PLVSAToolbarAreaView.m in Sources */,
 				633E42072579EC2F0039D35D /* PLVLCMediaMoreCell.m in Sources */,
-				00539C5B25EE489F0016B2BD /* PLVToast.m in Sources */,
 				BF7CFC6525BA636B0084C160 /* PLVECCommodityModelsManager.m in Sources */,
 				8FFAF0DE2671A8EF000BBA2B /* PLVSALinkMicGuiedView.m in Sources */,
 				00EF599E251C984F00A65197 /* PLVLCChatViewController.m in Sources */,
 				36AD721E269BEAE200F78FCF /* PLVSAImageEmotionMessageCell.m in Sources */,
 				005F1894264BBC610093E874 /* PLVLSDocumentListCellMaskView.m in Sources */,
+				36E8E14426DCD2FB00DAEE02 /* PLVBaseNavigationController.m in Sources */,
+				36E8E12F26DCD2FB00DAEE02 /* PLVAlbumInfo.m in Sources */,
 				8FD08F2C265E7BB6007F8457 /* PLVSAMoreInfoSheet.m in Sources */,
-				00476BB2259194C000460F8E /* PLVWebImageDecoder.m in Sources */,
 				633E42062579EC2F0039D35D /* PLVLCMediaMoreView.m in Sources */,
 				006862F425771D0C00E319EA /* PLVLCImageMessageCell.m in Sources */,
 				008779D4264BC55300AD9245 /* PLVLSEmojiSelectView.m in Sources */,
-				00476BC6259194C000460F8E /* PLVPhotoBrowser.m in Sources */,
 				005F1877264BBC4D0093E874 /* PLVLSDocumentSheet.m in Sources */,
 				BF574404255D204500283C2D /* PLVECNewMessageView.m in Sources */,
 				8FD08EB8265E43E6007F8457 /* PLVSAEmojiSelectView.m in Sources */,
-				005F18A0264BBC6D0093E874 /* PLVLSDocumentBrushColorView..m in Sources */,
+				005F18A0264BBC6D0093E874 /* PLVLSDocumentBrushColorView.m in Sources */,
 				00059B0F256F956A00495223 /* PLVLCChatroomViewModel.m in Sources */,
 				005F18A8264BBC720093E874 /* PLVLSDocumentInputView.m in Sources */,
 				005F1862264BBC380093E874 /* PLVLSChatroomToolbar.m in Sources */,
-				BFC50CEB2592F6B800362138 /* PLVAdvView.m in Sources */,
-				046F8B62264933CF00C92565 /* PLVPlayerLogoView.m in Sources */,
 				04504768265F744800D801A2 /* PLVSABottomSheet.m in Sources */,
 				63C2289A2546BB2400410292 /* PLVECRewardView.m in Sources */,
 				8F1C83D2266A0E4A00B9374D /* PLVSAChatroomGiftView.m in Sources */,
 				00877A0F264BD84200AD9245 /* PLVLiveWatchLoginController.m in Sources */,
 				00E48A48258B2EB80068C884 /* PLVRoomLoginClient.m in Sources */,
 				63976754250F420300D1F16B /* PLVInteractQuestionnaire.m in Sources */,
+				36E8E13E26DCD2FB00DAEE02 /* PLVPhotoCollectionViewCell.m in Sources */,
 				00572B0726736CDB0000784B /* PLVSAShadowMaskView.m in Sources */,
 				006862F325771D0C00E319EA /* PLVLCQuoteMessageCell.m in Sources */,
 				006863002577261800E319EA /* PLVECChatCell.m in Sources */,
 				633E421D257A09490039D35D /* PLVLCLinkMicLandscapeControlBar.m in Sources */,
+				36E8E13226DCD2FB00DAEE02 /* PLVImageInfo.m in Sources */,
 				00686323257899EB00E319EA /* PLVECPlayerBackgroundView.m in Sources */,
-				00476BB5259194C000460F8E /* PLVPickerController.m in Sources */,
 				005F180E264BBBCA0093E874 /* PLVLSLinkMicAreaView.m in Sources */,
 				005F182E264BBBEA0093E874 /* PLVLSChannelInfoTopView.m in Sources */,
+				36E8E10E26DCD2FB00DAEE02 /* PLVdanmu.m in Sources */,
 				005B1AFC26550F9F00F77307 /* PLVSAStreamerSettingView.m in Sources */,
 				006862F225771D0C00E319EA /* PLVLCMessageCell.m in Sources */,
-				00476BC2259194C000460F8E /* PLVEmoticonManager.m in Sources */,
+				36E8E13526DCD2FB00DAEE02 /* PLVPreCollectionViewCell.m in Sources */,
 				00368E9F2555516700E4FE71 /* PLVLCLandscapeNewMessageView.m in Sources */,
 				8FFAF0D226710D60000BBA2B /* PLVSALinkMicTipView.m in Sources */,
 				0077D58525BA627B008A1AE0 /* PLVECHomePageView.m in Sources */,
-				00A57AF42603016500EEA84D /* PLVChatTextView.m in Sources */,
 				005B1B142655136F00F77307 /* PLVSAStreamerFinishView.m in Sources */,
 				005F184A264BBC040093E874 /* PLVLSChatroomAreaView.m in Sources */,
 				63976745250B190E00D1F16B /* PLVInteractAnswer.m in Sources */,
-				00476BB3259194C000460F8E /* PLVPhotoPreBaseViewController.m in Sources */,
 				006863112577270800E319EA /* PLVChatroomPresenter.m in Sources */,
 				633E420B2579EC2F0039D35D /* PLVLCBasePlayerSkinView.m in Sources */,
+				36E8E12926DCD2FB00DAEE02 /* PLVPhotoPreViewController.m in Sources */,
 				6333EF6A24C842C100E196C2 /* PLVLinkMicPresenter.m in Sources */,
 				005B1B7926551D2400F77307 /* PLVSALinkMicAreaView.m in Sources */,
 				63C228542546BAFD00410292 /* PLVLCDescViewController.m in Sources */,
@@ -3653,31 +3647,30 @@
 				005F1888264BBC5A0093E874 /* PLVLSDocumentPagesCell.m in Sources */,
 				6306571124DCF01B00EAA430 /* PLVLCUtils.m in Sources */,
 				00572B002672FB110000784B /* PLVSAFinishStreamerSheet.m in Sources */,
+				36E8E12026DCD2FB00DAEE02 /* PLVPickerController.m in Sources */,
 				006863102577270800E319EA /* PLVChatModel.m in Sources */,
-				00476BC5259194C000460F8E /* PLVProgressSlider.m in Sources */,
 				36941812269FE7DD008BDC06 /* PLVLSEmojiPopupView.m in Sources */,
 				005F1832264BBBEC0093E874 /* PLVLSSettingSheet.m in Sources */,
+				36E8E12626DCD2FB00DAEE02 /* PLVAlbumNavigationController.m in Sources */,
 				630A462824ED13E90041EE0E /* PLVLinkMicOnlineUser.m in Sources */,
 				005B1B402655175A00F77307 /* PLVSAStatusbarAreaView.m in Sources */,
 				008779D0264BC55100AD9245 /* PLVLSSendMessageTextView.m in Sources */,
 				633E4222257A094A0039D35D /* PLVLCLinkMicSpeakingView.m in Sources */,
 				007CD4232609821C003783D8 /* PLVDocumentView.m in Sources */,
 				63C2289E2546BB2400410292 /* PLVECChatroomView.m in Sources */,
-				63264EE1245A630500C7199C /* PLVBaseNavigationController.m in Sources */,
 				8FFAF0DA26712114000BBA2B /* PLVSACameraAndMicphoneStateView.m in Sources */,
-				00476BB6259194C000460F8E /* PLVAlbumNavigationController.m in Sources */,
 				00476BCA259194C000460F8E /* PLVLCKeyboardTextView.m in Sources */,
-				00476BB6259194C000460F8E /* PLVAlbumNavigationController.m in Sources */,
 				00476BCA259194C000460F8E /* PLVLCKeyboardTextView.m in Sources */,
 				005B1B0C2655132800F77307 /* PLVSACountDownView.m in Sources */,
 				005F182A264BBBE80093E874 /* PLVLSChannelInfoSheet.m in Sources */,
 				63C228522546BAFD00410292 /* PLVLCIframeViewController.m in Sources */,
 				8FD08F78265F96FF007F8457 /* PLVSAQuoteMessageCell.m in Sources */,
 				369417CD269FC985008BDC06 /* PLVLCEmojiPopupView.m in Sources */,
-				00476BBA259194C000460F8E /* PLVAlbumInfo.m in Sources */,
+				36E8E12326DCD2FB00DAEE02 /* PLVPhotoPreBaseViewController.m in Sources */,
 				005F18A4264BBC6F0093E874 /* PLVLSDocumentToolView.m in Sources */,
 				00511F84263AC58B008CE5E3 /* PLVDocumentConvertRequester.m in Sources */,
 				633E4229257A09F80039D35D /* PLVLCLiveRoomLandscapeInputView.m in Sources */,
+				36E8E13B26DCD2FB00DAEE02 /* PLVAlbumTableViewCell.m in Sources */,
 				0068630F2577270800E319EA /* PLVChatUser.m in Sources */,
 				0055860E25354A8800B9373C /* PLVLCNotifyMarqueeView..m in Sources */,
 				005F1872264BBC450093E874 /* PLVLSMemberCell.m in Sources */,
@@ -3687,6 +3680,7 @@
 				367EBD21269D33BE009CEA0D /* PLVLSImageEmotionMessageCell.m in Sources */,
 				00476C0F2595918400460F8E /* PLVBugReporter.m in Sources */,
 				BF7CFC6125BA636B0084C160 /* PLVECCommodityCell.m in Sources */,
+				36E8E10226DCD2FB00DAEE02 /* PLVMarqueeLabel.m in Sources */,
 				005F181E264BBBD80093E874 /* PLVLinkMicOnlineUser+LS.m in Sources */,
 				005B1B342655166A00F77307 /* PLVSAUtils.m in Sources */,
 				8FD08F6A265F954B007F8457 /* PLVSABaseMessageCell.m in Sources */,
@@ -3694,19 +3688,20 @@
 				00368E9C2555411300E4FE71 /* PLVLCNewMessageView.m in Sources */,
 				00476BF62591959000460F8E /* PLVECCardView.m in Sources */,
 				005F1846264BBBFC0093E874 /* PLVLSLinkMicApplyTipsView.m in Sources */,
-				00476BC0259194C000460F8E /* PLVDanMu.m in Sources */,
 				005F1873264BBC470093E874 /* PLVLSMemberCellEditView.m in Sources */,
 				00877A13264BD9D500AD9245 /* PLVLiveStreamerLoginViewController.m in Sources */,
 				8FD08F86265FA1D6007F8457 /* PLVSAChatroomListView.m in Sources */,
 				005F1852264BBC2F0093E874 /* PLVLSImageMessageCell.m in Sources */,
+				36E8E0F326DCD2FB00DAEE02 /* PLVChatTextView.m in Sources */,
 				005F187B264BBC4F0093E874 /* PLVLSDocumentListView.m in Sources */,
-				00476BC0259194C000460F8E /* PLVDanMu.m in Sources */,
 				63976757250F47A600D1F16B /* PLVInteractSignIn.m in Sources */,
 				008779C4264BC52100AD9245 /* PLVLSSendMessageView.m in Sources */,
 				005F18B0264BBC7C0093E874 /* PLVLSUtils.m in Sources */,
 				00511F82263AC58B008CE5E3 /* PLVDocumentConvertManager.m in Sources */,
 				63C228532546BAFD00410292 /* PLVLCTuwenViewController.m in Sources */,
+				36E8E11426DCD2FB00DAEE02 /* PLVActionSheet.m in Sources */,
 				8F1C8419266D026600B9374D /* PLVSAProhibitWordTipView.m in Sources */,
+				36E8E14726DCD2FB00DAEE02 /* PLVPhotoBrowser.m in Sources */,
 				005F1890264BBC5F0093E874 /* PLVLSDocumentListCell.m in Sources */,
 				00476BCB259194C000460F8E /* PLVLCEmojiSelectView.m in Sources */,
 				04BDBB4E269D3D1500287C97 /* PLVLCRetryPlayView.m in Sources */,
@@ -3723,17 +3718,17 @@
 				005F1816264BBBD10093E874 /* PLVLSLinkMicWindowCell.m in Sources */,
 				00E48A4C258B38F20068C884 /* PLVRoomDataManager.m in Sources */,
 				008779CC264BC54F00AD9245 /* PLVLSSendMessageToolView.m in Sources */,
-				00476BB0259194C000460F8E /* PLVMarqueeLabel.m in Sources */,
+				36E8E10B26DCD2FB00DAEE02 /* PLVDanMuLabel.m in Sources */,
 				633E420A2579EC2F0039D35D /* PLVLCMediaPlayerSkinView.m in Sources */,
+				36E8E11A26DCD2FB00DAEE02 /* PLVWebImageDecoder.m in Sources */,
 				005F1822264BBBE40093E874 /* PLVLSSideSheet.m in Sources */,
 				63C228552546BAFD00410292 /* PLVLCDescTopView.m in Sources */,
+				36E8E0F626DCD2FB00DAEE02 /* PLVEmoticonManager.m in Sources */,
 				633923A92459877B00C0ACE9 /* AppDelegate.m in Sources */,
 				8F6FD6DF2670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m in Sources */,
 				633923BA2459877D00C0ACE9 /* main.m in Sources */,
-				00476BBD259194C000460F8E /* PLVPhotoCollectionFooterView.m in Sources */,
 				005F1903264BBDA10093E874 /* PLVStreamerPresenter.m in Sources */,
 				00476BF52591959000460F8E /* PLVECBulletinCardView.m in Sources */,
-				007CD42926098231003783D8 /* PLVActionSheet.m in Sources */,
 				00572A392669D4040000784B /* PLVSAMemberCell.m in Sources */,
 				006862F625771D0C00E319EA /* PLVLCLandscapeQuoteCell.m in Sources */,
 				8FD08C63265D012E007F8457 /* PLVSANetMenuPopup.m in Sources */,
@@ -3764,30 +3759,31 @@
 				633E421E257A09490039D35D /* PLVLCLinkMicPortraitControlBar.m in Sources */,
 				633E42052579EC2F0039D35D /* PLVLCMediaBrightnessView.m in Sources */,
 				00059B122570AB8100495223 /* PLVECChatroomViewModel.m in Sources */,
-				00476BBE259194C000460F8E /* PLVAlbumTableViewCell.m in Sources */,
 				63976751250F14F400D1F16B /* PLVInteractLottery.m in Sources */,
-				00476BB9259194C000460F8E /* PLVImageInfo.m in Sources */,
 				00476BEF2591959000460F8E /* PLVECPlayerContolView.m in Sources */,
+				36E8E14D26DCD2FB00DAEE02 /* PLVAdvView.m in Sources */,
 				00476BF02591959000460F8E /* PLVECMoreView.m in Sources */,
 				8F4C7BEF26A57974005F968B /* PLVDocumentModel.m in Sources */,
 				633E42092579EC2F0039D35D /* PLVLCMediaPlayerCanvasView.m in Sources */,
 				63D24307255A97A600CB569E /* PLVLCCloudClassViewController.m in Sources */,
-				00539C5F25EE48B50016B2BD /* PLVAlertViewController.m in Sources */,
 				00476BF42591959000460F8E /* PLVECLiveDetailPageView.m in Sources */,
 				00476BCC259194C000460F8E /* PLVLCKeyboardToolView.m in Sources */,
 				8FD08EA3265E3B93007F8457 /* PLVSASendMessageView.m in Sources */,
+				36E8E10826DCD2FB00DAEE02 /* PLVAlertViewController.m in Sources */,
 				8FD08EAA265E43BC007F8457 /* PLVSASendMessageToolView.m in Sources */,
 				008779C8264BC54000AD9245 /* PLVLSRepliedMsgView.m in Sources */,
-				00476BB4259194C000460F8E /* PLVCameraViewController.m in Sources */,
 				63C228992546BB2400410292 /* PLVECGiftView.m in Sources */,
+				36E8E13826DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m in Sources */,
 				005F185A264BBC330093E874 /* PLVLSSpeakMessageCell.m in Sources */,
 				005F183E264BBBF70093E874 /* PLVLSStatusAreaView.m in Sources */,
 				005F181A264BBBD50093E874 /* PLVLSLinkMicCanvasView.m in Sources */,
+				36E8E0FF26DCD2FB00DAEE02 /* PLVToast.m in Sources */,
 				00877A17264BD9D700AD9245 /* PLVLiveStreamerPrivacyViewController.m in Sources */,
 				633E42082579EC2F0039D35D /* PLVLCMediaFloatView.m in Sources */,
 				00E48A45258A05270068C884 /* PLVPPTView.m in Sources */,
 				BF7CFC6225BA636B0084C160 /* PLVECGoodsDetailViewController.m in Sources */,
 				008779B8264BC4E400AD9245 /* PLVLSDocumentDeleteView.m in Sources */,
+				36E8E11726DCD2FB00DAEE02 /* PLVAlbumTool.m in Sources */,
 				005F183A264BBBF30093E874 /* PLVLSCountDownView.m in Sources */,
 				005B1B04265511CE00F77307 /* PLVSAStreamerHomeView.m in Sources */,
 				00476BF72591959000460F8E /* PLVECLiveIntroductionCardView.m in Sources */,
@@ -3797,16 +3793,16 @@
 				6766B8BE24C9849D0037B438 /* PLVLCLinkMicAreaView.m in Sources */,
 				6397674E250F128D00D1F16B /* PLVInteractBaseApp+General.m in Sources */,
 				BF7CFC6625BA636B0084C160 /* PLVECCommodityViewController.m in Sources */,
-				00476BB7259194C000460F8E /* PLVAlbumsViewController.m in Sources */,
 				006862F525771D0C00E319EA /* PLVLCLandscapeSpeakCell.m in Sources */,
 				634597B125764FD0006DEEF8 /* PLVECWatchRoomViewController.m in Sources */,
 				63D24304255A948400CB569E /* PLVLCMediaMoreModel.m in Sources */,
 				04504766265F744800D801A2 /* PLVSABitRateSheet.m in Sources */,
 				633E4221257A094A0039D35D /* PLVLCLinkMicCanvasView.m in Sources */,
-				00476BB1259194C000460F8E /* PLVAlbumTool.m in Sources */,
-				00476BB8259194C000460F8E /* PLVPhotoPreViewController.m in Sources */,
 				00E48A50258B3FA10068C884 /* PLVRoomUser.m in Sources */,
+				36E8E12C26DCD2FB00DAEE02 /* PLVAlbumsViewController.m in Sources */,
 				005729A92660EACF0000784B /* PLVSALinkMicWindowCell.m in Sources */,
+				296A1DA526CDF7FE0076A0CA /* PLVLSDocumentWaitLiveView.m in Sources */,
+				36E8E11D26DCD2FB00DAEE02 /* PLVCameraViewController.m in Sources */,
 				005F1908264BBDA40093E874 /* BuildFile in Sources */,
 				00F2A0512578E985002ED0F3 /* PLVECPlayerViewController.m in Sources */,
 				005F1866264BBC3A0093E874 /* PLVLSNewMessageView.m in Sources */,
@@ -3819,14 +3815,14 @@
 				04258BC4267857B0009F1287 /* PLVLoginTextField.m in Sources */,
 				00727A2325CD4C16001CE398 /* PLVMemberPresenter.m in Sources */,
 				00572A2E2669D3B30000784B /* PLVSAMemberSheet.m in Sources */,
-				00476BC1259194C000460F8E /* PLVDanMuLabel.m in Sources */,
-				00476BC1259194C000460F8E /* PLVDanMuLabel.m in Sources */,
 				8FD08EB1265E43D3007F8457 /* PLVSASendMessageTextView.m in Sources */,
 				008779BC264BC4E700AD9245 /* PLVLSDocumentUploadTipsView.m in Sources */,
+				36E8E10526DCD2FB00DAEE02 /* PLVPlayerLogoView.m in Sources */,
 				63C228562546BAFD00410292 /* PLVLCDescBottomView.m in Sources */,
 				005F1842264BBBFA0093E874 /* PLVLSLinkMicMenuPopup.m in Sources */,
 				0077D58225B91D60008A1AE0 /* PLVECLikeButtonView.m in Sources */,
 				00E48A53258B502A0068C884 /* PLVRoomData.m in Sources */,
+				36E8E11126DCD2FB00DAEE02 /* PLVProgressSlider.m in Sources */,
 				00476BEE2591959000460F8E /* PLVECBottomView.m in Sources */,
 				6766B8B624C9801B0037B438 /* PLVLCMediaAreaView.m in Sources */,
 				005F184E264BBC2D0093E874 /* PLVLSBaseMessageCell.m in Sources */,

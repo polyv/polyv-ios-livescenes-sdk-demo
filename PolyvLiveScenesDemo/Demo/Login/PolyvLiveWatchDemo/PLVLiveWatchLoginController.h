@@ -1,9 +1,9 @@
 //
 //  PLVLoginViewController.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by Hank on 2020/11/4.
-//  Copyright © 2020 polyv. All rights reserved.
+//  Copyright © 2020 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

@@ -1,13 +1,13 @@
 //
 //  PLVLiveStreamerPrivacyViewController.m
-//  PolyvCloudClassStreamerDemo
+//  PLVCloudClassStreamerDemo
 //
 //  Created by MissYasiky on 2020/2/4.
-//  Copyright © 2020 polyv. All rights reserved.
+//  Copyright © 2020 PLV. All rights reserved.
 //
 
 #import "PLVLiveStreamerPrivacyViewController.h"
-#import <PolyvFoundationSDK/PLVColorUtil.h>
+#import <PLVFoundationSDK/PLVColorUtil.h>
 #import <WebKit/WebKit.h>
 
 @interface PLVLiveStreamerPrivacyViewController ()

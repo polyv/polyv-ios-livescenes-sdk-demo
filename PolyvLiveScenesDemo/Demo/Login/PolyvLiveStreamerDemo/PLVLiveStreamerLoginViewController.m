@@ -1,9 +1,9 @@
 //
 //  PLVLSLoginViewController.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by Hank on 2021/1/12.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import "PLVLiveStreamerLoginViewController.h"
@@ -17,7 +17,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVBugReporter.h"
 
-#import <PolyvFoundationSDK/PolyvFoundationSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSString * const kPrivacyPolicy = @"https://s2.videocc.net/app-simple-pages/privacy-policy/index.html";
 static NSString * const kUserProtocol = @"https://s2.videocc.net/app-simple-pages/user-agreement/index.html";

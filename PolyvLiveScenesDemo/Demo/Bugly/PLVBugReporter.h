@@ -1,9 +1,9 @@
 //
 //  PLVBugReporter.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by MissYasiky on 2020/12/25.
-//  Copyright © 2020 polyv. All rights reserved.
+//  Copyright © 2020 PLV. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

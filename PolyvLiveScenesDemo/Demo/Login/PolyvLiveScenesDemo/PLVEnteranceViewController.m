@@ -1,9 +1,9 @@
 //
 //  PLVEnteranceViewController.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by MissYasiky on 2021/5/12.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import "PLVEnteranceViewController.h"
