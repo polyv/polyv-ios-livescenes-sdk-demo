@@ -61,6 +61,7 @@ Demo [下载链接](https://www.pgyer.com/IzFQ) （密码：polyv）
 
 | Github 仓库 Tag | 依赖 SDK 版本 | API 文档 | Comon 层 | 观看端-云课堂场景 | 观看端-直播带货场景 | 开播端-手机开播（三分屏）场景 | 开播端-手机开播（纯视频）场景 |
 | --------------- | ------------- | -------------------------------------------------------------------------------------------- | -------- | ----------------- | ------------------- | ----------------------------- | ----------------------------- |
+| 1.6.2           | 1.6.2         | [v1.6.2 API](http://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.6.2-20211015/index.html) | ✅       | ✅                | ✅                     | ✅                            | ✅                            |
 | 1.6.0           | 1.6.0         | [v1.6.0 API](http://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.6.0-20210914/index.html) | ✅       | ✅                | ✅                     | ✅                            | ✅                            |
 | 1.5.2           | 1.5.2         | [v1.5.2 API](http://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.5.2-20210810/index.html) | ✅       | ✅                | ✅                     | ✅                            | ✅                            |
 | 1.5.1           | 1.5.1         | [v1.5.1 API](http://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.5.1-20210720/index.html) | ✅       | ✅                |                     | ✅                            | ✅                            |
