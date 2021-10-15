@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view;
 
++ (void)showHUDWithTitle:(NSString * _Nullable)title detail:(NSString *)detail view:(UIView *)view afterDelay:(CGFloat)delay;
+
 + (UIImage *)imageForLiveRoomResource:(NSString *)imageName;
 
 + (UIImage *)imageForLinkMicResource:(NSString *)imageName;

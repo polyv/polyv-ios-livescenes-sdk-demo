@@ -220,7 +220,8 @@
         roomData.multiplexingEnabled = PLV_SafeBoolForDictKey(data, @"multiplexingEnabled");
         roomData.channelGuestManualJoinLinkMic = [PLV_SafeStringForDictKey(data, @"colinMicType") isEqualToString:@"manual"];
         roomData.interactNumLimit = PLV_SafeIntegerForDictKey(data, @"InteractNumLimit");
-        
+        roomData.isOnlyAudio = PLV_SafeBoolForDictKey(data, @"isOnlyAudio");
+
         // 初始化直播间用户数据
         NSString *teacherNickname = PLV_SafeStringForDictKey(data, @"teacherNickname");
         if (nickName && [nickName isKindOfClass:[NSString class]] && nickName.length > 0) {

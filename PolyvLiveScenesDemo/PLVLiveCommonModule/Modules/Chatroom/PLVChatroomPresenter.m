@@ -189,6 +189,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.content = content;
+    message.time = [PLVFdUtil curTimeInterval];
     model.message = message;
     
     if (replyChatModel && replyChatModel.message &&
@@ -241,6 +242,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.content = content;
+    message.time = [PLVFdUtil curTimeInterval];
     model.message = message;
     
     if (replyChatModel && replyChatModel.message &&
@@ -298,6 +300,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     PLVImageMessage *message = [[PLVImageMessage alloc] init];
     message.image = image;
+    message.time = [PLVFdUtil curTimeInterval];
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = [self loginChatUser];
@@ -534,9 +537,11 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
     NSString *content = PLV_SafeStringForDictKey(dict, @"content");
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.msgId = msgId;
     message.content = content;
+    message.time = time;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;
@@ -550,6 +555,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
     NSString *content = PLV_SafeStringForDictKey(dict, @"content");
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
     NSDictionary *quoteDict = PLV_SafeDictionaryForDictKey(dict, @"quote");
     NSString *quoteUserId = PLV_SafeStringForDictKey(quoteDict, @"userId");
     NSString *quoteUserName = PLV_SafeStringForDictKey(quoteDict, @"nick");
@@ -560,6 +566,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.content = content;
     message.quoteUserId = quoteUserId;
     message.quoteUserName = quoteUserName;
+    message.time = time;
     if (quoteImageDict) {
         NSString *imageUrl = PLV_SafeStringForDictKey(quoteImageDict, @"url");
         message.quoteImageUrl = [PLVFdUtil packageURLStringWithHTTPS:imageUrl];
@@ -582,6 +589,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
     
     NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
     NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(dict, @"content");
     NSString *imageUrl = PLV_SafeStringForDictKey(contentDict, @"uploadImgUrl");
     NSString *imageId = PLV_SafeStringForDictKey(contentDict, @"id");
@@ -594,6 +602,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.imageId = imageId;
     message.imageUrl = imageUrl;
     message.imageSize = CGSizeMake(width, height);
+    message.time = time;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;
@@ -815,12 +824,13 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *msgId = PLV_SafeStringForDictKey(data, @"id");
     NSDictionary *quote = PLV_SafeDictionaryForDictKey(data, @"quote");
     NSString *content = (NSString *)values.firstObject;
-    
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(data, @"time");
     if (quote) {
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.msgId = msgId;
         message.content = content;
         message.quoteUserName = PLV_SafeStringForDictKey(quote, @"nick");
+        message.time = time;
         NSDictionary *quoteImageDict = PLV_SafeDictionaryForDictKey(quote, @"image");
         if (quoteImageDict) {
             NSString *imageUrl = PLV_SafeStringForDictKey(quoteImageDict, @"url");
@@ -837,6 +847,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
         message.msgId = msgId;
         message.content = content;
+        message.time = time;
         model.message = message;
         [self cachChatModel:model];
     }
@@ -861,6 +872,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     PLVImageMessage *message = [[PLVImageMessage alloc] init];
     message.msgId = PLV_SafeStringForDictKey(data, @"id");
+    message.time = PLV_SafeIntegerForDictKey(data, @"time");
     
     NSDictionary *content = PLV_SafeDictionaryForValue(values.firstObject);
     message.imageId = PLV_SafeStringForDictKey(content, @"id");
@@ -944,13 +956,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         ![rewardUser isKindOfClass:[NSDictionary class]]) {
         return;
     }
-    
     NSString *userId = PLV_SafeStringForDictKey(rewardUser, @"userId");
     NSString *gimg = PLV_SafeStringForDictKey(content, @"gimg");
     NSString *goodNum = PLV_SafeStringForDictKey(content, @"goodNum");
     NSString *rewardContent = PLV_SafeStringForDictKey(content, @"rewardContent");
     NSString *unick = PLV_SafeStringForDictKey(content, @"unick");
-    
+
     if ([PLVFdUtil checkStringUseable:gimg] &&
         ![gimg containsString:@"http"]) {
         gimg = [NSString stringWithFormat:@"https:%@", gimg];

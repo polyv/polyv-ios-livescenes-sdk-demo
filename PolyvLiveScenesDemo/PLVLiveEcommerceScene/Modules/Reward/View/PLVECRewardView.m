@@ -133,6 +133,7 @@
             button.titleLabel.text = item.name;
             button.iconImageView.image = [PLVECUtils imageForWatchResource:item.imageName];
             [button addTarget:self action:@selector(itemButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+            [button addTarget:self action:@selector(itemButtonDoubleAction:) forControlEvents:UIControlEventTouchDownRepeat];
             [self addSubview:button];
         }
     }
@@ -146,6 +147,10 @@
     if (self.giftItems && item) {
         [self.giftItems addObject:item];
     }
+}
+
+- (void)itemButtonDoubleAction:(PLVECGiftButton *)button {
+    //拦截双击手势，避免双击事件向上传递
 }
 
 - (void)itemButtonAction:(PLVECGiftButton *)button {

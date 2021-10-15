@@ -264,7 +264,7 @@ UITableViewDataSource
 - (void)arrangeTopMarqueeViewFrame {
     self.notifyMarqueeView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), 40);
     CGFloat welcomeOriginY = self.notifyMarqueeView.hidden ? 0 : 40;
-    self.welcomeView.frame = CGRectMake(10, welcomeOriginY, CGRectGetWidth(self.view.bounds) - 10 * 2, 40);
+    self.welcomeView.frame = CGRectMake(0, welcomeOriginY, CGRectGetWidth(self.view.bounds), 24);
 }
 
 - (void)scrollsToBottom:(BOOL)animated {
@@ -388,7 +388,7 @@ UITableViewDataSource
     
     if (string.length > 0) {
         [self arrangeTopMarqueeViewFrame];
-        [self.welcomeView showWelcomeWithNickNmame:string];
+        [self.welcomeView showWelcomeWithNickName:string];
     }
 }
 

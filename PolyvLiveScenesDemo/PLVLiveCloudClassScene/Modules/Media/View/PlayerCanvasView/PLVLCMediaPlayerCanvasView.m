@@ -10,6 +10,9 @@
 
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <SDWebImage/UIImageView+WebCache.h>
+
+static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.net/default-img/channel/default-splash.png";//讲师默认封面图地址
 
 @interface PLVLCMediaPlayerCanvasView ()
 
@@ -30,9 +33,17 @@
 /// 音频模式 时:
 /// (PLVLCMediaPlayerCanvasView) self
 /// ├── (UIImageView) placeholderImageView (lowest)
+/// ├── (UIButton) playerSuperview
+/// └── (UIView) playCanvasButton (top)
+///
+/// 仅支持音频模式 时:
+/// (PLVLCMediaPlayerCanvasView) self
+/// ├── (UIImageView) placeholderImageView (lowest)
 /// ├── (UIButton) playCanvasButton
-/// └── (UIView) playerSuperview (top)
+/// ├── (UIButton) playerSuperview
+/// └── (UIView) splashImageView (top)
 @property (nonatomic, strong) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
+@property (nonatomic, strong) UIImageView *splashImageView; // 音频背景视图（只支持音频模式时显示）
 @property (nonatomic, strong) UILabel * tipsLabel;      // 提示文本框
 @property (nonatomic, strong) UIImageView * restImageView; // 休息一会视图
 @property (nonatomic, strong) UIView * playerSuperview; // 播放器父视图 (负责承载 播放器画面；决定了 播放器画面 所处在的图层层级)
@@ -94,6 +105,8 @@
     [self switchTypeTo:self.type];
     
     self.playerSuperview.frame = self.bounds;
+    self.splashImageView.frame = self.playerSuperview.bounds;
+
     //[self refreshplayerSuperviewFrame];
 }
 
@@ -146,6 +159,17 @@
     self.tipsLabel.hidden = !showNoLiveTipsLabel;
 }
 
+- (void)setSplashImageWithURLString:(NSString *)urlString {
+    if (![PLVFdUtil checkStringUseable:urlString]) {
+        urlString = kPLVLCTeacherSplashImgURLString;
+    }
+    self.splashImageView.hidden = NO;
+    [self.splashImageView sd_setImageWithURL:[NSURL URLWithString:urlString]];
+}
+
+- (void)hideSplashImageView {
+    self.splashImageView.hidden = YES;
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
@@ -153,8 +177,9 @@
     [self addSubview:self.placeholderImageView];
     [self addSubview:self.tipsLabel];
     [self addSubview:self.restImageView];
-    [self addSubview:self.playCanvasButton];
     [self addSubview:self.playerSuperview];
+    [self addSubview:self.playCanvasButton];
+    [self addSubview:self.splashImageView];
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -194,6 +219,7 @@
     }
     CGRect playerSuperviewRect = CGRectMake(playerSuperviewX, playerSuperviewY, playerSuperviewWidth, playerSuperviewHeight);
     self.playerSuperview.frame = CGSizeEqualToSize(self.videoSize, CGSizeZero) ? CGRectZero : playerSuperviewRect;
+    self.splashImageView.frame = self.playerSuperview.frame;
 }
 
 #pragma mark Getter
@@ -203,6 +229,15 @@
         _placeholderImageView.image = [self getImageWithName:@"plvlc_media_video_placeholder"];
     }
     return _placeholderImageView;
+}
+
+- (UIImageView *)splashImageView {
+    if (!_splashImageView) {
+        _splashImageView = [[UIImageView alloc] init];
+        _splashImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _splashImageView.hidden = YES;
+    }
+    return _splashImageView;
 }
 
 - (UILabel *)tipsLabel{
@@ -230,7 +265,6 @@
 - (UIView *)playerSuperview{
     if (!_playerSuperview) {
         _playerSuperview = [[UIView alloc] init];
-        _playerSuperview.userInteractionEnabled = NO;
     }
     return _playerSuperview;
 }

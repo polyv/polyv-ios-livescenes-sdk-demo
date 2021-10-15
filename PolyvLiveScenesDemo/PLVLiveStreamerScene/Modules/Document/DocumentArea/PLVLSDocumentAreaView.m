@@ -78,7 +78,6 @@ UIGestureRecognizerDelegate
             [self.toolView showBtnAddPage:NO];
             [self.toolView showBtnNexth:NO];
             [self.toolView showBtnPrevious:NO];
-            self.pageNum.guestFinishClass = YES;
         }
     }
     return self;
@@ -259,7 +258,6 @@ UIGestureRecognizerDelegate
     
     if (self.viewerType == PLVRoomUserTypeGuest) {
         self.toolView.hidden = NO;
-        self.pageNum.guestFinishClass = NO;
         [self showWaitLivePlaceholderView:NO];
     }
 }
@@ -270,7 +268,7 @@ UIGestureRecognizerDelegate
     if (self.viewerType == PLVRoomUserTypeGuest) {
         self.toolView.hidden = YES;
         [self.toolView setFullScreenButtonSelected:NO];
-        self.pageNum.guestFinishClass = YES;
+        [self.pageNum setCurrentPage:0 totalPage:0];
         [self showWaitLivePlaceholderView:YES];
     }
 }

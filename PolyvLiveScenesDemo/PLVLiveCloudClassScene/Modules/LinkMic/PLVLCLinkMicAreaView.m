@@ -454,10 +454,13 @@ PLVLCLinkMicWindowsViewDelegate
         }
         
         [PLVLCUtils showHUDWithTitle:@"加入连麦失败" detail:msg view:currentVC.view];
-    } else if (errorCode == PLVLinkMicErrorCode_JoinedOccurError){ /// 连麦中发生错误
+    } else if (errorCode >= PLVLinkMicErrorCode_JoinedOccurError &&
+               errorCode <= PLVLinkMicErrorCode_JoinedOccurErrorStartAudioFailed){ /// RTC遇到错误
         NSString * msg = @"";
         if (errorCode == PLVLinkMicErrorCode_JoinedOccurError) {
             msg = [NSString stringWithFormat:@"%ld,%ld",(long)errorCode,(long)extraCode];
+        }else if (errorCode == PLVLinkMicErrorCode_JoinedOccurErrorStartAudioFailed) {
+            msg = [NSString stringWithFormat:@"启动音频模块失败，请确认音频模块未被占用后再试 %ld,%ld",(long)errorCode,(long)extraCode];
         }
         
         [PLVLCUtils showHUDWithTitle:@"RTC遇到错误" detail:msg view:currentVC.view];

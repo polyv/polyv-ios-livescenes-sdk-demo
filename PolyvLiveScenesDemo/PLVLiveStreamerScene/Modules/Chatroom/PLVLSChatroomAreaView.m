@@ -10,6 +10,7 @@
 
 /// 模块
 #import "PLVLSChatroomViewModel.h"
+#import "PLVRoomDataManager.h"
 
 // UI
 #import "PLVLSNewMessageView.h"
@@ -66,8 +67,12 @@ PLVLSChatroomViewModelProtocol
     CGFloat areaViewHeight = self.bounds.size.height;
     self.chatroomListView.frame = CGRectMake(8, 0, areaViewWidth - 8, areaViewHeight - 36 - 8 * 2);
     self.hideListViewButton.frame = CGRectMake(8, areaViewHeight - 8 - 36, 36, 36);
-    self.toolbarView.frame = CGRectMake(CGRectGetMaxX(self.hideListViewButton.frame) + 12, CGRectGetMinY(self.hideListViewButton.frame), 252, 36);
-    
+    //根据频道是否是音频模式而导致布局不同
+    if ([PLVRoomDataManager sharedManager].roomData.isOnlyAudio) {
+        self.toolbarView.frame = CGRectMake(CGRectGetMaxX(self.hideListViewButton.frame) + 12, CGRectGetMinY(self.hideListViewButton.frame), 180, 36);
+    } else {
+        self.toolbarView.frame = CGRectMake(CGRectGetMaxX(self.hideListViewButton.frame) + 12, CGRectGetMinY(self.hideListViewButton.frame), 252, 36);
+    }
     self.receiveNewMessageView.frame = CGRectMake(0, self.chatroomListView.frame.size.height - 28, 86, 28);
 }
 

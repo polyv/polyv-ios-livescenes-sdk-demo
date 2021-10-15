@@ -290,6 +290,7 @@ PLVSALinkMicTipViewDelegate
     self.moreInfoSheet.currentMicOpen = self.localOnlineUser.currentMicOpen;
     self.moreInfoSheet.currentCameraFront = self.localOnlineUser.currentCameraFront;
     self.moreInfoSheet.closeRoom = self.chatroomAreaView.closeRoom;
+    self.moreInfoSheet.currentCameraMirror = self.localOnlineUser.localVideoMirrorMode == PLVBRTCVideoMirrorMode_Auto;
     
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentQuality:)]) {

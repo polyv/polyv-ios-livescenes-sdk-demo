@@ -39,6 +39,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param status 网络状态值 (对应不同的网络状态图标)
 - (void)updateNetworkQualityImageViewWithStatus:(PLVBLinkMicNetworkQuality)status;
 
+/// 设置讲师连麦视图的封面图
+///
+/// @param urlString 封面图的url
+- (void)setSplashImageWithURLString:(NSString *)urlString;
+
 @end
 
 NS_ASSUME_NONNULL_END

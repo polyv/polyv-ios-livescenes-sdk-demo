@@ -9,9 +9,11 @@
 #import "PLVLSLinkMicWindowCell.h"
 
 #import "PLVLSUtils.h"
-#import "PLVRoomDataManager.h"
 #import "PLVLinkMicOnlineUser+LS.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+
+///数据
+#import "PLVRoomDataManager.h"
 
 @interface PLVLSLinkMicWindowCell ()
 
@@ -87,7 +89,7 @@
 
 
 #pragma mark - [ Public Methods ]
-- (void)setModel:(PLVLinkMicOnlineUser *)userModel{
+- (void)setModel:(PLVLinkMicOnlineUser *)userModel {
     // 设置
     /// 数据模型
     self.userModel = userModel;
@@ -104,14 +106,19 @@
             weakSelf.micButton.selected = !onlineUser.currentMicOpen;
         }
     };
-    
+        
     /// 摄像画面
-    [userModel.canvasView rtcViewShow:userModel.currentCameraShouldShow];
+    BOOL isOnlyAudio = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+    BOOL showRTCView = isOnlyAudio ? NO : userModel.currentCameraShouldShow;
+    if (isOnlyAudio && userModel.userType == PLVSocketUserTypeTeacher) { //频道为音频模式 讲师需要显示封面图
+        [userModel.canvasView setSplashImageWithURLString:[PLVRoomDataManager sharedManager].roomData.menuInfo.splashImg];
+    }
+    [userModel.canvasView rtcViewShow:showRTCView];
     userModel.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
     };
     [self contentBackgroudViewAddView:userModel.canvasView];
-    
+
     /// 音量
     [self setMicButtonNormalImageWithVolume:userModel.currentVolume];
     userModel.volumeChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {

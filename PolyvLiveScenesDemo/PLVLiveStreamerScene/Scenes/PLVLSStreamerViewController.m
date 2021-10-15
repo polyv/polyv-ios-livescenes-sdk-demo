@@ -64,6 +64,7 @@ PLVMemberPresenterDelegate
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
+@property (nonatomic, assign, readonly) BOOL isOnlyAudio; // 当前频道是否为音频模式
 
 @end
 
@@ -76,7 +77,7 @@ PLVMemberPresenterDelegate
     if (self) {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         PLVRoomUser *roomUser = roomData.roomUser;
-        
+
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
         // 启动聊天室管理器
@@ -86,6 +87,7 @@ PLVMemberPresenterDelegate
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
         [PLVLSUtils sharedUtils].homeVC = self;
+        
     }
     return self;
 }
@@ -156,8 +158,9 @@ PLVMemberPresenterDelegate
     self.streamerPresenter.preRenderContainer = self.linkMicAreaView;
     self.streamerPresenter.previewType = PLVStreamerPresenterPreviewType_UserArray;
     self.streamerPresenter.micDefaultOpen = YES;
-    self.streamerPresenter.cameraDefaultOpen = YES;
+    self.streamerPresenter.cameraDefaultOpen = self.isOnlyAudio ? NO : YES;
     self.streamerPresenter.cameraDefaultFront = YES;
+    
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:self.settingSheet.resolution];
     [self.streamerPresenter setupStreamQuality:streamQuality];
     [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_MainSpeaker];
@@ -276,6 +279,10 @@ PLVMemberPresenterDelegate
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
 }
 
+- (BOOL)isOnlyAudio {
+    return [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+}
+
 #pragma mark - Private
 
 - (void)documentFullscreen:(BOOL)fullscreen {
@@ -316,8 +323,9 @@ PLVMemberPresenterDelegate
                 }
             }];
         }
+   
         if (!granted) {
-            NSString *msg = [NSString stringWithFormat:@"需要获取您的音视频权限，请前往设置"];
+            NSString *msg = weakSelf.isOnlyAudio ? @"需要获取您的音频权限，请前往设置" : @"需要获取您的音视频权限，请前往设置";
             [PLVAuthorizationManager showAlertWithTitle:@"提示" message:msg viewController:weakSelf];
         }
     }];
@@ -325,13 +333,21 @@ PLVMemberPresenterDelegate
 
 - (BOOL)tryStartClass {
     if (self.streamerPresenter.micCameraGranted) {
-        if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown ||
-            self.streamerPresenter.networkQuality >= PLVBLinkMicNetworkQualityBad) {
-            /// 网络不佳提示
-            NSString * message = (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) ? @"网络检测中，请稍后再试" : @"网络不佳，请稍后再试";
-            [PLVLSUtils showAlertWithMessage:message cancelActionTitle:@"知道了" cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
+        if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) {
+            //麦克风和摄像头当前全部关闭时
+            if (!self.streamerPresenter.currentMicOpen &&
+                !self.streamerPresenter.currentCameraOpen) {
+                /// 开始上课倒数
+                [self.coutBackView startCountDownOnView:self.view];
+                return YES;
+            } else {
+                [PLVLSUtils showAlertWithMessage:@"网络检测中，请稍后再试" cancelActionTitle:@"知道了" cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
+                return NO;
+            }
+        } else if(self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
+            [PLVLSUtils showAlertWithMessage:@"网络已断开，请检查网络" cancelActionTitle:@"知道了" cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
             return NO;
-        } else {
+        }else{
             /// 开始上课倒数
             [self.coutBackView startCountDownOnView:self.view];
             return YES;
@@ -576,13 +592,23 @@ PLVMemberPresenterDelegate
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
-    if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
-        error.code == PLVSocketLoginErrorCodeRelogin ||
-        error.code == PLVSocketLoginErrorCodeKick) &&
+    __weak typeof(self) weakSelf = self;
+    if (error.code == PLVSocketLoginErrorCodeKick) {
+        plv_dispatch_main_async_safe(^{
+            [PLVLSUtils showToastWithMessage:@"频道已被禁止直播" inView:self.view afterDelay:3.0];
+        })
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [weakSelf logout]; // 使用weakSelf，不影响self释放内存，不需要等待此函数执行完成
+        });
+    } else if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
+        error.code == PLVSocketLoginErrorCodeRelogin) &&
         error.localizedDescription) {
-        [PLVLSUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:@"确定" cancelActionBlock:^{
-            [self logout];
-        } confirmActionTitle:nil confirmActionBlock:nil];
+        plv_dispatch_main_async_safe(^{
+            [PLVLSUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:@"确定" cancelActionBlock:^{
+                [weakSelf logout];
+            } confirmActionTitle:nil confirmActionBlock:nil];
+        })
+        
     }
 }
 
@@ -734,6 +760,7 @@ PLVMemberPresenterDelegate
 
 /// 本地用户的 ’摄像头前后置状态值‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserCameraFrontChanged:(BOOL)currentCameraFront{
+    if (self.isOnlyAudio) return;
     [self.chatroomAreaView cameraSwitchButtonFront:currentCameraFront];
     [PLVLSUtils showToastWithMessage:(currentCameraFront ? @"摄像头已前置" : @"摄像头已后置") inView:self.view];
 }
@@ -747,6 +774,10 @@ PLVMemberPresenterDelegate
         message = @"推流请求错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError){
         message = @"更新Token错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerError){
+        message = @"RTC内部错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed){
+        message = @"RTC内部错误，启动音频模块失败，请退出重新登录";
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
         message = @"未知错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){

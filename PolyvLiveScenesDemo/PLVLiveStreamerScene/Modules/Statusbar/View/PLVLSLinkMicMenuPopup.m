@@ -7,6 +7,10 @@
 //
 
 #import "PLVLSLinkMicMenuPopup.h"
+
+///模块
+#import "PLVRoomDataManager.h"
+
 #import "PLVLSUtils.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
@@ -41,16 +45,23 @@
         self.linkMicButtonMask.frame = buttonFrame;
         [self addSubview:self.linkMicButtonMask];
         
-        self.firstButtonRect = CGRectMake(0, 8, frame.size.width, 44);
-        self.videoLinkMicBtn.frame = self.firstButtonRect;
-        [self.menuView addSubview:self.videoLinkMicBtn];
-        
-        self.secondButtonRect = CGRectMake(0, 44 + 8, frame.size.width, 44);
-        self.audioLinkMicBtn.frame = self.secondButtonRect;
-        [self.menuView addSubview:self.audioLinkMicBtn];
-        
-        self.line.frame = CGRectMake(12, 8 + 44, frame.size.width - 24, 1);
-        [self.menuView addSubview:self.line];
+        if ([PLVRoomDataManager sharedManager].roomData.isOnlyAudio) {
+            self.firstButtonRect = CGRectMake(0, 8, frame.size.width, 44);
+            self.secondButtonRect = CGRectMake(0, 8, frame.size.width, 44);
+            self.audioLinkMicBtn.frame = self.secondButtonRect;
+            [self.menuView addSubview:self.audioLinkMicBtn];
+        } else {
+            self.firstButtonRect = CGRectMake(0, 8, frame.size.width, 44);
+            self.videoLinkMicBtn.frame = self.firstButtonRect;
+            [self.menuView addSubview:self.videoLinkMicBtn];
+            
+            self.secondButtonRect = CGRectMake(0, 44 + 8, frame.size.width, 44);
+            self.audioLinkMicBtn.frame = self.secondButtonRect;
+            [self.menuView addSubview:self.audioLinkMicBtn];
+            
+            self.line.frame = CGRectMake(12, 8 + 44, frame.size.width - 24, 1);
+            [self.menuView addSubview:self.line];
+        }
     }
     return self;
 }
@@ -176,7 +187,7 @@
 
 - (void)updateMenu {
     BOOL unSelected = !self.videoLinkMicBtn.selected && !self.audioLinkMicBtn.selected;
-    self.menuSize = CGSizeMake(106, 44 * (unSelected ? 2 : 1) + 8);
+    self.menuSize = CGSizeMake(106, unSelected ? CGRectGetMaxY(self.secondButtonRect) : 44 + 8);
     
     UIBezierPath *bezierPath = [[self class] BezierPathWithSize:self.menuSize];
     CAShapeLayer* shapeLayer = [CAShapeLayer layer];
@@ -233,9 +244,8 @@
         if (needChange) {
             self.audioLinkMicBtn.selected = !self.audioLinkMicBtn.selected;
             self.videoLinkMicBtn.hidden = self.audioLinkMicBtn.selected;
-            [self updateMenu];
-            
             self.audioLinkMicBtn.frame = self.videoLinkMicBtn.hidden ? self.firstButtonRect : self.secondButtonRect;
+            [self updateMenu];
         }
     }
     

@@ -56,6 +56,10 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 /// 如果为私聊消息、文本消息、引用消息时，content 不为空，否则为 nil
 - (NSString *)content;
 
+/// 获取message 属性的 time，当前消息发送的时间戳
+/// 如果为文本消息、引用消息、图片消息，time不为0，否则为0
+- (NSTimeInterval)time;
+
 @end
 
 NS_ASSUME_NONNULL_END

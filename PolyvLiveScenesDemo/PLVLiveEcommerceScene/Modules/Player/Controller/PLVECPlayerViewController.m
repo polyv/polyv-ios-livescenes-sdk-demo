@@ -90,8 +90,7 @@ PLVPlayerPresenterDelegate
     logoMainViewFrame.size.height -= margin * 2 + P_SafeAreaTopEdgeInsets() + P_SafeAreaBottomEdgeInsets();
     self.logoMainView.frame = logoMainViewFrame;
     
-    self.playButton.frame = CGRectMake(0, 0, 74, 72);
-    self.playButton.center = self.view.center;
+    self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, (CGRectGetHeight(self.view.frame) - 72) / 2, 74, 72);
 }
 
 - (CGRect)getDisplayViewRect {
@@ -157,6 +156,20 @@ PLVPlayerPresenterDelegate
         _displayView = [[UIView alloc] init];
         _displayView.backgroundColor = [UIColor blackColor];
         _displayView.hidden = !([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback);;
+        // 单击、双击手势控制播放器和UI
+        UITapGestureRecognizer *doubleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+        doubleGestureRecognizer.numberOfTapsRequired = 2;
+        doubleGestureRecognizer.numberOfTouchesRequired = 1;
+        [doubleGestureRecognizer addTarget:self action:@selector(displayViewTapAction:)];
+        [_displayView addGestureRecognizer:doubleGestureRecognizer];
+        
+        UITapGestureRecognizer *singleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+        singleGestureRecognizer.numberOfTapsRequired = 1;
+        singleGestureRecognizer.numberOfTouchesRequired = 1;
+        [singleGestureRecognizer addTarget:self action:@selector(displayViewTapAction:)];
+        [_displayView addGestureRecognizer:singleGestureRecognizer];
+
+        [singleGestureRecognizer requireGestureRecognizerToFail:doubleGestureRecognizer];
     }
     return _displayView;
 }
@@ -186,6 +199,29 @@ PLVPlayerPresenterDelegate
 
 - (NSString *)advLinkUrl {
     return _playerPresenter.advLinkUrl;
+}
+
+#pragma mark - [ Action ]
+- (void)displayViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
+    /** 播放广告中，点击屏幕跳转广告链接 */
+    if (self.advPlaying) {
+        if ([PLVFdUtil checkStringUseable:self.advLinkUrl]) {
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.advLinkUrl]];
+        }
+        return;
+    }
+    
+    if (gestureRecognizer.numberOfTapsRequired == 1) {
+        if (!self.playing) {
+            [self play];
+        }
+    } else if (gestureRecognizer.numberOfTapsRequired == 2) {
+        if (self.playing) {
+            [self pause];
+        } else {
+            [self play];
+        }
+    }
 }
 
 #pragma mark - Public

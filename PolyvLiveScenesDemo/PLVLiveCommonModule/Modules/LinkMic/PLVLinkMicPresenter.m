@@ -85,6 +85,7 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, copy, readonly) NSString * linkMicUserActor;
 @property (nonatomic, assign, readonly) BOOL rtcAudioSubEnabled; /// 只读，是否只订阅第一画面的视频
 @property (nonatomic, assign, readonly) BOOL channelInLive;
+@property (nonatomic, assign, readonly) BOOL isOnlyAudio;
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVLinkMicManager * linkMicManager; // 连麦管理器
@@ -155,7 +156,8 @@ PLVLinkMicManagerDelegate
     if (self.linkMicStatus == PLVLinkMicStatus_Open) {
         __weak typeof(self) weakSelf = self;
         [self updateLinkMicSceneTypeWithSuccessBlock:^{
-            [PLVAuthorizationManager requestAuthorizationForAudioAndVideo:^(BOOL granted) { /// 申请麦克风、摄像头权限
+            PLVAuthorizationType type = weakSelf.isOnlyAudio ? PLVAuthorizationTypeMediaAudio : PLVAuthorizationTypeMediaAudioAndVideo;
+            [PLVAuthorizationManager requestAuthorizationWithType:type completion:^(BOOL granted) {
                 if (granted) {
                     [weakSelf emitJoinRequest];
                 } else {
@@ -325,6 +327,10 @@ PLVLinkMicManagerDelegate
 
 - (BOOL)channelInLive{
     return [self callbackForChannelInLive];
+}
+
+- (BOOL)isOnlyAudio {
+    return [PLVRoomDataManager sharedManager].roomData.channelInfo.isOnlyAudio;
 }
 
 #pragma mark Callback
@@ -869,6 +875,11 @@ PLVLinkMicManagerDelegate
         dispatch_async(self.arraySafeQueue, ^{
             [weakSelf.onlineUserMuArray removeAllObjects];
             weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
+            
+            // 重置处理
+            weakSelf.currentLocalLinkMicUser = nil;
+            weakSelf.linkMicSocketToken = nil;
+            
             [weakSelf callbackForLinkMicUserListRefresh];
         });
     }
@@ -1455,7 +1466,11 @@ PLVLinkMicManagerDelegate
 }
 
 - (void)plvLinkMicManager:(PLVLinkMicManager *)manager didOccurError:(NSInteger)errorCode{
-    [self callbackForDidOccurError:PLVLinkMicErrorCode_JoinedOccurError extraCode:errorCode];
+    PLVLinkMicErrorCode callbackErrorCode = PLVLinkMicErrorCode_JoinedOccurError;
+    if (errorCode == 1012) { /// 错误细分
+        callbackErrorCode = PLVLinkMicErrorCode_JoinedOccurErrorStartAudioFailed;
+    }
+    [self callbackForDidOccurError:callbackErrorCode extraCode:errorCode];
     if (self.linkMicStatus == PLVLinkMicStatus_Waiting) {
         [self cancelRequestJoinLinkMic];
     }else if (self.linkMicStatus == PLVLinkMicStatus_Joining || self.linkMicStatus == PLVLinkMicStatus_Joined){

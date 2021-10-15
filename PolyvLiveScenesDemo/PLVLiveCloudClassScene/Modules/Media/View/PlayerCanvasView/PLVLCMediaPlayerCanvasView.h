@@ -45,6 +45,14 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaPlayerCanvasViewType) {
 ///       因此 部分UI更新 逻辑，会与此方法是否被正常调用有关系；
 - (void)refreshCanvasViewWithStreamState:(PLVChannelLiveStreamState)newestStreamState;
 
+/// 设置音频观看下的音频播放器占位图
+///
+/// @param urlString 封面图的url
+- (void)setSplashImageWithURLString:(NSString *)urlString;
+
+/// 隐藏音频观看占位图
+- (void)hideSplashImageView;
+
 @end
 
 @protocol PLVLCMediaPlayerCanvasViewDelegate <NSObject>

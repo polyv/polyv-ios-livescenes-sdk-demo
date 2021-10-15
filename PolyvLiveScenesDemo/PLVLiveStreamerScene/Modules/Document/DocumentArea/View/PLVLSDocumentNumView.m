@@ -13,6 +13,7 @@
 
 @interface PLVLSDocumentNumView ()
 
+#pragma mark UI
 @property (nonatomic, strong) UIView *bgView;
 @property (nonatomic, strong) UILabel *numLabel;
 
@@ -56,7 +57,7 @@
         return;
     }
     
-    self.hidden = self.guestFinishClass;
+    self.hidden = NO;
     NSUInteger pageNum = pageId;
     if (pageId > totalPage) {
         pageNum = totalPage;
@@ -73,11 +74,6 @@
         self.numLabel.frame = self.bgView.bounds;
     })
     
-}
-
-- (void)setGuestFinishClass:(BOOL)guestFinishClass {
-    _guestFinishClass = guestFinishClass;
-    self.hidden = guestFinishClass;
 }
 
 @end

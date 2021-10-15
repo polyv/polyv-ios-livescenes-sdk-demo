@@ -8,6 +8,9 @@
 
 #import "PLVLSChatroomToolbar.h"
 
+///模块
+#import "PLVRoomDataManager.h"
+
 /// 工具类
 #import "PLVLSUtils.h"
 
@@ -41,9 +44,11 @@ static CGFloat kToolbarHeight = 36.0;
         [self addSubview:self.buttonsContainer];
         
         [self.buttonsContainer addSubview:self.microphoneButton];
-        [self.buttonsContainer addSubview:self.cameraButton];
-        [self.buttonsContainer addSubview:self.cameraSwitchButton];
         [self.buttonsContainer addSubview:self.sendMsgButton];
+        if (![PLVRoomDataManager sharedManager].roomData.isOnlyAudio) {
+            [self.buttonsContainer addSubview:self.cameraButton];
+            [self.buttonsContainer addSubview:self.cameraSwitchButton];
+        }
         
         [self foldButtonAction];
     }
@@ -64,11 +69,16 @@ static CGFloat kToolbarHeight = 36.0;
     CGFloat originY = CGRectGetMaxX(self.foldButton.frame);
     self.buttonsContainer.frame = CGRectMake(originY, 0, self.bounds.size.width - originY, 36);
     self.microphoneButton.frame = CGRectMake(5, 0, kToolbarWidth, kToolbarHeight);
-    self.cameraButton.frame = CGRectMake(CGRectGetMaxX(self.microphoneButton.frame), 0, kToolbarWidth, kToolbarHeight);
-    self.cameraSwitchButton.frame = CGRectMake(CGRectGetMaxX(self.cameraButton.frame), 0, kToolbarWidth, kToolbarHeight);
-    
-    originY = CGRectGetMaxX(self.cameraSwitchButton.frame) + 5;
-    self.sendMsgButton.frame = CGRectMake(originY, 0, self.buttonsContainer.frame.size.width - originY, kToolbarHeight);
+    if ([PLVRoomDataManager sharedManager].roomData.isOnlyAudio) {
+        originY = CGRectGetMaxX(self.microphoneButton.frame) + 5;
+        self.sendMsgButton.frame = CGRectMake(originY, 0, self.buttonsContainer.frame.size.width - originY, kToolbarHeight);
+    } else {
+        self.cameraButton.frame = CGRectMake(CGRectGetMaxX(self.microphoneButton.frame), 0, kToolbarWidth, kToolbarHeight);
+        self.cameraSwitchButton.frame = CGRectMake(CGRectGetMaxX(self.cameraButton.frame), 0, kToolbarWidth, kToolbarHeight);
+        
+        originY = CGRectGetMaxX(self.cameraSwitchButton.frame) + 5;
+        self.sendMsgButton.frame = CGRectMake(originY, 0, self.buttonsContainer.frame.size.width - originY, kToolbarHeight);
+    }
 }
 
 #pragma mark - Getter

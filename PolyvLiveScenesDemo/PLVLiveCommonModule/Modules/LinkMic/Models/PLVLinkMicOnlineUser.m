@@ -42,6 +42,7 @@
 @property (nonatomic, assign) BOOL currentCameraOpen;
 @property (nonatomic, assign) BOOL currentCameraFront;
 @property (nonatomic, assign) BOOL currentCameraTorchOpen;
+@property (nonatomic, assign) PLVBRTCVideoMirrorMode localVideoMirrorMode;
 @property (nonatomic, assign) PLVBLinkMicNetworkQuality currentNetworkQuality;
 @property (nonatomic, assign) BOOL currentStatusVoice;
 
@@ -335,6 +336,10 @@
             })
         }
     }
+}
+
+- (void)updateUserLocalVideoMirrorMode:(PLVBRTCVideoMirrorMode)localVideoMirrorMode {
+    _localVideoMirrorMode = localVideoMirrorMode;
 }
 
 - (void)updateUserCurrentNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality{

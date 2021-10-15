@@ -193,6 +193,9 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// 用户的 闪光灯 当前是否开启 (注意：当前业务场景下，决定了此值仅在 [localUser] 为YES，即该对象代表本地用户时，此值有意义)
 @property (nonatomic, assign, readonly) BOOL currentCameraTorchOpen;
 
+/// 当前 本地视频预览画面 镜像类型 （该值仅为了同步讲师端开播时的镜像状态，非本地用户，此值无意义）
+@property (nonatomic, assign, readonly) PLVBRTCVideoMirrorMode localVideoMirrorMode;
+
 /// 用户的 当前网络状态
 @property (nonatomic, assign, readonly) PLVBLinkMicNetworkQuality currentNetworkQuality;
 
@@ -236,6 +239,9 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 ///
 /// @note 若最终 闪光灯开关状态值 有所改变，则将触发 [cameraTorchOpenChangedBlock]；
 - (void)updateUserCurrentCameraTorchOpen:(BOOL)cameraTorchOpen;
+
+/// 更新用户的 ‘当前镜像状态值’ （该值仅为了同步讲师端开播时的镜像状态，非本地用户，此值无意义）
+- (void)updateUserLocalVideoMirrorMode:(PLVBRTCVideoMirrorMode)localVideoMirrorMode;
 
 /// 更新用户的 ‘当前网络状态值’
 ///

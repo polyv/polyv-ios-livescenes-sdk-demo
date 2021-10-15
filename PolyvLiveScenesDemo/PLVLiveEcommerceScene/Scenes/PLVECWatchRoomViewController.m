@@ -20,6 +20,7 @@
 // UI
 #import "PLVECHomePageView.h"
 #import "PLVECLiveDetailPageView.h"
+#import "PLVECWatchRoomScrollView.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -36,7 +37,7 @@ PLVECHomePageViewDelegate,
 PLVECFloatingWindowProtocol,
 PLVECPlayerViewControllerProtocol,
 PLVRoomDataManagerProtocol,
-UIGestureRecognizerDelegate
+UIScrollViewDelegate
 >
 
 #pragma mark 数据
@@ -48,7 +49,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, strong) PLVInteractView *interactView; // 互动
 
 #pragma mark UI
-@property (nonatomic, strong) UIScrollView * scrollView;
+@property (nonatomic, strong) PLVECWatchRoomScrollView * scrollView;
 @property (nonatomic, strong) PLVECHomePageView *homePageView;
 @property (nonatomic, strong) PLVECLiveDetailPageView * liveDetailPageView;
 @property (nonatomic, strong) UIButton * closeButton;
@@ -80,23 +81,6 @@ UIGestureRecognizerDelegate
     [self setupData];
     
     [PLVECFloatingWindow sharedInstance].delegate = self;
-    
-    // 单击、双击手势控制播放器和UI
-    UITapGestureRecognizer *doubleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
-    doubleGestureRecognizer.numberOfTapsRequired = 2;
-    doubleGestureRecognizer.numberOfTouchesRequired = 1;
-    doubleGestureRecognizer.delegate = self;
-    [doubleGestureRecognizer addTarget:self action:@selector(tapAction:)];
-    [self.view addGestureRecognizer:doubleGestureRecognizer];
-    
-    UITapGestureRecognizer *singleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
-    singleGestureRecognizer.numberOfTapsRequired = 1;
-    singleGestureRecognizer.numberOfTouchesRequired = 1;
-    singleGestureRecognizer.delegate = self;
-    [singleGestureRecognizer addTarget:self action:@selector(tapAction:)];
-    [self.view addGestureRecognizer:singleGestureRecognizer];
-    
-    [singleGestureRecognizer requireGestureRecognizerToFail:doubleGestureRecognizer];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -120,13 +104,13 @@ UIGestureRecognizerDelegate
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
-        self.playerVC.view.frame = self.view.bounds;// 重新布局
-        [self.view insertSubview:self.playerVC.view atIndex:0];
+        self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
+        [self.scrollView insertSubview:self.playerVC.view atIndex:0];
         
         [self.playerVC cancelMute];
     } else {
-        self.playerVC.view.frame = self.view.bounds;// 重新布局
-        [self.view insertSubview:self.playerVC.view atIndex:0];
+        self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
+        [self.scrollView insertSubview:self.playerVC.view atIndex:0];
         
         [self.playerVC cancelMute];
     }
@@ -232,9 +216,10 @@ UIGestureRecognizerDelegate
     if (roomData.videoType == PLVChannelVideoType_Live ||
         roomData.videoType == PLVChannelVideoType_Playback) {
         self.playerVC = [[PLVECPlayerViewController alloc] init];
-        self.playerVC.view.frame = self.view.bounds;
+        self.playerVC.view.frame = self.scrollView.bounds;
         self.playerVC.delegate = self;
-        [self.view insertSubview:self.playerVC.view atIndex:0];
+        self.scrollView.playerDisplayView = self.playerVC.displayView;
+        [self.scrollView insertSubview:self.playerVC.view atIndex:0];
     }
 }
 
@@ -253,9 +238,9 @@ UIGestureRecognizerDelegate
 }
 
 #pragma mark Getter
-- (UIScrollView *)scrollView{
+- (PLVECWatchRoomScrollView *)scrollView{
     if (!_scrollView) {
-        _scrollView = [[UIScrollView alloc] initWithFrame:CGRectZero];
+        _scrollView = [[PLVECWatchRoomScrollView alloc] initWithFrame:CGRectZero];
         _scrollView.pagingEnabled = YES;
         _scrollView.backgroundColor = UIColor.clearColor;
         _scrollView.bounces = NO;
@@ -263,6 +248,7 @@ UIGestureRecognizerDelegate
         _scrollView.alwaysBounceHorizontal = YES;
         _scrollView.showsVerticalScrollIndicator = NO;
         _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.delegate = self;
     }
     return _scrollView;
 }
@@ -315,28 +301,6 @@ UIGestureRecognizerDelegate
     [self exitCurrentController];
 }
 
-- (void)tapAction:(UITapGestureRecognizer *)gestureRecognizer {
-    /** 播放广告中，点击屏幕跳转广告链接 */
-    if (self.playerVC.advPlaying) {
-        if ([PLVFdUtil checkStringUseable:self.playerVC.advLinkUrl]) {
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.playerVC.advLinkUrl]];
-        }
-        return;
-    }
-    
-    if (gestureRecognizer.numberOfTapsRequired == 1) {
-        if (! self.playerVC.playing) {
-            [self.playerVC play];
-        }
-    } else if (gestureRecognizer.numberOfTapsRequired == 2) {
-        if (self.playerVC.playing) {
-            [self.playerVC pause];
-        } else {
-            [self.playerVC play];
-        }
-    }
-}
-
 #pragma mark Notification
 - (void)notificationForOpenBulletin:(NSNotification *)notif {
     [self.interactView openLastBulletin];
@@ -386,14 +350,22 @@ UIGestureRecognizerDelegate
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
-    if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
-        error.code == PLVSocketLoginErrorCodeRelogin ||
-        error.code == PLVSocketLoginErrorCodeKick) &&
-        error.localizedDescription) {
-        __weak typeof(self) weakSelf = self;
-        [PLVFdUtil showAlertWithTitle:nil message:error.localizedDescription viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
-            [weakSelf exitCurrentController];
-        } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
+    __weak typeof(self) weakSelf = self;
+    if (error.code == PLVSocketLoginErrorCodeKick) {
+        plv_dispatch_main_async_safe(^{
+            [PLVECUtils showHUDWithTitle:nil detail:@"您已被管理员踢出聊天室！" view:self.view afterDelay:3.0];
+        })
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
+        });
+    } else if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
+                error.code == PLVSocketLoginErrorCodeRelogin) &&
+               error.localizedDescription) {
+        plv_dispatch_main_async_safe(^{
+            [PLVFdUtil showAlertWithTitle:nil message:error.localizedDescription viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
+                [weakSelf exitCurrentController];
+            } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
+        })
     }
 }
 
@@ -408,6 +380,8 @@ UIGestureRecognizerDelegate
         [self loginEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"LOGOUT"]) { // someone logged in chatroom
         [self logoutEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin closes or opens the chatroom
+        [self closeRoomEvent:jsonDict];
     }
 }
 
@@ -439,6 +413,16 @@ UIGestureRecognizerDelegate
 - (void)logoutEvent:(NSDictionary *)data {
     NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
     [self updateOnlineCount:onlineCount];
+}
+
+/// 讲师关闭、打开聊天室
+- (void)closeRoomEvent:(NSDictionary *)jsonDict {
+    NSDictionary *value = PLV_SafeDictionaryForDictKey(jsonDict, @"value");
+    BOOL closeRoom = PLV_SafeBoolForDictKey(value, @"closed");
+    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
+    plv_dispatch_main_async_safe(^{
+        [PLVECUtils showHUDWithTitle:string detail:@"" view:self.view];
+    })
 }
 
 #pragma mark 更新 RoomData 属性
@@ -547,14 +531,12 @@ UIGestureRecognizerDelegate
     [self.playerVC speedRate:speed];
 }
 
-#pragma mark - UIGestureRecognizerDelegate
--(BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
-    if([touch.view isKindOfClass:UIButton.class] ||
-       [touch.view isKindOfClass:UITableView.class] ||
-       [touch.view isKindOfClass:UIVisualEffectView.class]) {
-        return NO;
-    }
-    return YES;
+#pragma mark UIScrollView Delegate
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    CGRect linkMicWindowFrame = self.playerVC.view.frame;
+    linkMicWindowFrame.origin.x = scrollView.contentOffset.x;
+    self.playerVC.view.frame = linkMicWindowFrame;
 }
 
 @end

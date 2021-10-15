@@ -459,16 +459,22 @@ PLVRoomDataManagerProtocol
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
-    if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
-        error.code == PLVSocketLoginErrorCodeRelogin ||
-        error.code == PLVSocketLoginErrorCodeKick) &&
-        error.localizedDescription) {
-        __weak typeof(self) weakSelf = self;
-        dispatch_async(dispatch_get_main_queue(), ^{
+    __weak typeof(self) weakSelf = self;
+    if (error.code == PLVSocketLoginErrorCodeKick) {
+        plv_dispatch_main_async_safe(^{
+            [PLVLCUtils showHUDWithTitle:nil detail:@"您已被管理员踢出聊天室！" view:self.view afterDelay:3.0];
+        })
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
+        });
+    } else if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
+                error.code == PLVSocketLoginErrorCodeRelogin) &&
+               error.localizedDescription) {
+        plv_dispatch_main_async_safe(^{
             [PLVFdUtil showAlertWithTitle:nil message:error.localizedDescription viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
                 [weakSelf exitCurrentController];
             } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
-        });
+        })
     }
 }
 
@@ -486,6 +492,31 @@ PLVRoomDataManagerProtocol
             })
         }
     }
+}
+
+- (void)socketMananger_didReceiveMessage:(NSString *)subEvent
+                                    json:(NSString *)jsonString
+                              jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    
+    if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin closes or opens the chatroom
+        [self closeRoomEvent:jsonDict];
+    }
+}
+
+#pragma mark socket 数据解析
+
+/// 讲师关闭、打开聊天室
+- (void)closeRoomEvent:(NSDictionary *)jsonDict {
+    NSDictionary *value = PLV_SafeDictionaryForDictKey(jsonDict, @"value");
+    BOOL closeRoom = PLV_SafeBoolForDictKey(value, @"closed");
+    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
+    plv_dispatch_main_async_safe(^{
+        [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
+    })
 }
 
 #pragma mark PLVLCChatroomViewModelProtocol

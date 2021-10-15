@@ -34,6 +34,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param view toast 在视图
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view;
 
+/// 显示自定义 toast
+/// @param message toast 文本
+/// @param view toast 在视图
+/// @param delay toast 显示时间
++ (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay;
+
 /// 显示自定义 alert 弹窗便捷方法1
 /// @param message 弹窗文本
 /// @param cancelActionTitle 取消按钮的文本（若传nil，则默认为‘取消’）

@@ -18,6 +18,7 @@
 #import "PLVLinkMicWaitUser.h"
 
 NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
+static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间隔:300毫秒
 
 @interface PLVLSMemberCell ()<UIGestureRecognizerDelegate>
 
@@ -41,6 +42,8 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
 @property (nonatomic, assign) BOOL aloneRespondLeftDraging;
 @property (nonatomic, assign) CGPoint startPoint; // 开始滑动的位置
 @property (nonatomic, assign) CGPoint lastPoint; // 上一次停留的位置
+@property (nonatomic, assign) BOOL isOnlyAudio; // 当前频道是否为音频模式
+@property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
 
 @property (nonatomic, strong) PLVLinkMicOnlineUserMicOpenChangedBlock micOpenChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraShouldShowChangedBlock cameraShouldShowChangedBlock;
@@ -58,6 +61,8 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
         self.contentView.backgroundColor = [UIColor clearColor];
         self.backgroundColor = [UIColor clearColor];
         self.selectionStyle = UITableViewCellSelectionStyleNone;
+        self.isOnlyAudio = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+        self.linkMicBtnLastTimeInterval = 0.0;
         
         [self.contentView addSubview:self.gestureView];
         [self.contentView addSubview:self.editView];
@@ -68,8 +73,10 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
         [self.gestureView addSubview:self.actorBgView];
         [self.gestureView addSubview:self.nickNameLabel];
         [self.gestureView addSubview:self.microPhoneButton];
-        [self.gestureView addSubview:self.cameraButton];
-        [self.gestureView addSubview:self.cameraSwitchButton];
+        if (!self.isOnlyAudio) {
+            [self.gestureView addSubview:self.cameraButton];
+            [self.gestureView addSubview:self.cameraSwitchButton];
+        }
         [self.gestureView addSubview:self.linkmicButton];
         
         [self.actorBgView addSubview:self.actorLabel];
@@ -108,9 +115,13 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
     self.nickNameLabel.frame = CGRectMake(originX, 15, self.bounds.size.width - 44 * 3 + 8 - originX, 18);
     
     self.linkmicButton.frame = CGRectMake(self.bounds.size.width - 36, 2, 44, 44);
-    self.cameraSwitchButton.frame = CGRectMake(self.bounds.size.width - 36, 2, 44, 44);
-    self.cameraButton.frame = CGRectMake(CGRectGetMinX(self.cameraSwitchButton.frame) - 44, 2, 44, 44);
-    self.microPhoneButton.frame = CGRectMake(CGRectGetMinX(self.cameraButton.frame) - 44, 2, 44, 44);
+    if (self.isOnlyAudio) {
+        self.microPhoneButton.frame = CGRectMake(CGRectGetMinX(self.linkmicButton.frame) - 44, 2, 44, 44);
+    } else {
+        self.cameraSwitchButton.frame = CGRectMake(self.bounds.size.width - 36, 2, 44, 44);
+        self.cameraButton.frame = CGRectMake(CGRectGetMinX(self.cameraSwitchButton.frame) - 44, 2, 44, 44);
+        self.microPhoneButton.frame = CGRectMake(CGRectGetMinX(self.cameraButton.frame) - 44, 2, 44, 44);
+    }
     self.seperatorLine.frame = CGRectMake(0, self.bounds.size.height - 1, self.bounds.size.width, 1);
 }
 
@@ -312,6 +323,15 @@ NSString *PLVLSMemberCellNotification = @"PLVLSMemberCellNotification";
 }
 
 - (void)linkMicButtonAction{
+    // 防止短时间内重复点击，kLinkMicBtnTouchInterval间隔内的点击会直接忽略
+    NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
+    if (curTimeInterval - self.linkMicBtnLastTimeInterval > kLinkMicBtnTouchInterval) {
+        [self notifyListenerlinkMicButtonAction];
+    }
+    self.linkMicBtnLastTimeInterval = curTimeInterval;
+}
+
+- (void)notifyListenerlinkMicButtonAction {
     if (self.user.waitUser) {
         [self.user.waitUser wantAllowUserJoinLinkMic];
         // 刷新按钮状态为等待连麦

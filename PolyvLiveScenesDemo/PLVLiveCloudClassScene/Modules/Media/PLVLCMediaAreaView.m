@@ -43,6 +43,7 @@ PLVLCRetryPlayViewDelegate
 #pragma mark 状态
 @property (nonatomic, assign, readonly) BOOL inLinkMic; // 只读，是否正在连麦
 @property (nonatomic, assign, readonly) BOOL inRTCRoom; // 只读，是否正在RTC房间中
+@property (nonatomic, assign, readonly) BOOL isOnlyAudio; // 只读，当前频道是否只支持音频模式
 @property (nonatomic, assign, readonly) PLVChannelType channelType; // 只读，当前 频道类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType videoType; // 只读，当前 视频类型
 @property (nonatomic, assign, readonly) PLVChannelLiveStreamState liveState; // 只读，当前 直播流状态
@@ -54,7 +55,6 @@ PLVLCRetryPlayViewDelegate
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
 @property (nonatomic, strong) PLVPPTView * pptView;                 // PPT 功能模块
-@property (nonatomic, strong) PLVVideoMarquee * videoMarquee;       // 视频跑马灯
 
 #pragma mark UI
 /// view hierarchy
@@ -66,7 +66,7 @@ PLVLCRetryPlayViewDelegate
 /// │   │    └── (PLVLCMediaPlayerCanvasView) canvasView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
-/// ├── (UIView) marqueeView
+/// ├── (PLVMarqueeView) marqueeView
 /// │
 /// └── (PLVLCMediaFloatView) floatView
 ///      └── (UIView) contentBackgroudView
@@ -79,7 +79,7 @@ PLVLCRetryPlayViewDelegate
 /// │   │    └── (PLVPPTView) pptView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
-/// ├── (UIView) marqueeView
+/// ├── (PLVMarqueeView) marqueeView
 /// │
 /// └── (PLVLCMediaFloatView) floatView
 ///      └── (UIView) contentBackgroudView
@@ -97,7 +97,7 @@ PLVLCRetryPlayViewDelegate
 /// │
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// │
-/// └── (UIView) marqueeView
+/// └── (PLVMarqueeView) marqueeView
 ///
 /// [横屏] 主屏显示 PPT 时:
 /// (UIView) superview
@@ -111,14 +111,14 @@ PLVLCRetryPlayViewDelegate
 /// │
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// │
-/// └── (UIView) marqueeView
+/// └── (PLVMarqueeView) marqueeView
 @property (nonatomic, strong) UIView * contentBackgroudView; // 内容背景视图 (负责承载 不同类型的内容画面（播放器画面、或PPT画面）；直接决定了’内容画面‘ 在 PLVLCMediaAreaView 中的布局、图层)
 @property (nonatomic, strong) PLVLCMediaPlayerCanvasView * canvasView; // 播放器背景视图 (负责承载 播放器画面；可能会被移动添加至外部视图类中；当被移动添加至外部时，仍被 PLVLCMediaAreaView 持有，但subview关系改变；)
 @property (nonatomic, strong) PLVLCMediaPlayerSkinView * skinView;     // 竖屏播放器皮肤视图 (负责承载 播放器的控制按钮)
 @property (nonatomic, strong) PLVLCMediaFloatView * floatView;
 @property (nonatomic, strong) PLVLCMediaMoreView * moreView;
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
-@property (nonatomic, strong) UIView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
+@property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) UIView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
 @property (nonatomic, strong) PLVLCRetryPlayView *retryPlayView; // 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
@@ -400,7 +400,8 @@ PLVLCRetryPlayViewDelegate
 - (NSArray *)getMoreViewDefaultDataArray{
     NSArray * returnArray;
     if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
-        PLVLCMediaMoreModel * modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_ModeOptionTitle optionItemsArray:@[@"播放画面",@"仅听声音"]];
+        NSArray<NSString *> *optionItemsArray = self.isOnlyAudio ? @[@"仅听声音"] : @[@"播放画面",@"仅听声音"];
+        PLVLCMediaMoreModel * modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_ModeOptionTitle optionItemsArray:optionItemsArray];
         returnArray = @[modeModel];
     } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
         PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_SpeedOptionTitle optionItemsArray:@[@"0.5x",@"1.0x",@"1.5x",@"2.0x"] selectedIndex:1];
@@ -452,11 +453,8 @@ PLVLCRetryPlayViewDelegate
 
 #pragma mark Marquee
 - (void)setupMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick  {
-    if (self.videoMarquee) {
-        return;
-    }
     __weak typeof(self) weakSelf = self;
-    [self handleMarquee:channel customNick:customNick completion:^(PLVMarqueeModel *model, NSError *error) {
+    [self handleMarquee:channel customNick:customNick completion:^(PLVMarqueeStyleModel *model, NSError *error) {
         if (model) {
             [weakSelf loadVideoMarqueeView:model];
         } else if (error) {
@@ -473,7 +471,7 @@ PLVLCRetryPlayViewDelegate
     }];
 }
 
-- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeModel * model, NSError *error))completion {
+- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeStyleModel * model, NSError *error))completion {
     switch (channel.marqueeType) {
         case PLVChannelMarqueeType_Nick:
             if (customNick) {
@@ -483,14 +481,14 @@ PLVLCRetryPlayViewDelegate
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
-            PLVMarqueeModel *model = [PLVMarqueeModel marqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue fontColor:channel.marqueeFontColor alpha:alpha autoZoom:channel.marqueeAutoZoomEnabled];
+            PLVMarqueeStyleModel *model = [PLVMarqueeStyleModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
             completion(model, nil);
         } break;
         case PLVChannelMarqueeType_URL: {
             if (channel.marquee) {
                 [PLVLiveVideoAPI loadCustomMarquee:[NSURL URLWithString:channel.marquee] withChannelId:channel.channelId.integerValue userId:channel.accountUserId code:@"" completion:^(BOOL valid, NSDictionary *marqueeDict) {
                     if (valid) {
-                        completion([PLVMarqueeModel marqueeModelWithMarqueeDict:marqueeDict], nil);
+                        completion([PLVMarqueeStyleModel createMarqueeModelWithMarqueeDict:marqueeDict], nil);
                     } else {
                         NSError *error = [NSError errorWithDomain:@"net.plv.cloudClassBaseMediaError" code:-10000 userInfo:@{NSLocalizedDescriptionKey:marqueeDict[@"msg"]}];
                         completion(nil, error);
@@ -506,13 +504,13 @@ PLVLCRetryPlayViewDelegate
     }
 }
 
-- (void)loadVideoMarqueeView:(PLVMarqueeModel *)model {
-    for (CALayer * subLayer in self.marqueeView.layer.sublayers) {
-        [subLayer removeFromSuperlayer];
-    }
-    
-    self.videoMarquee = [PLVVideoMarquee videoMarqueeWithMarqueeModel:model];
-    [self.videoMarquee showVideoMarqueeInView:self.marqueeView];
+- (void)loadVideoMarqueeView:(PLVMarqueeStyleModel *)model {
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        // 设置跑马灯
+        [weakSelf.marqueeView setPLVMarqueeModel:model];
+        [weakSelf.marqueeView start];
+    });
 }
 
 #pragma mark Getter
@@ -536,9 +534,9 @@ PLVLCRetryPlayViewDelegate
     return _canvasView;
 }
 
-- (UIView *)marqueeView{
+- (PLVMarqueeView *)marqueeView{
     if (!_marqueeView) {
-        _marqueeView = [[UIView alloc] init];
+        _marqueeView = [[PLVMarqueeView alloc] init];
         _marqueeView.backgroundColor = [UIColor clearColor];
         _marqueeView.userInteractionEnabled = NO;
     }
@@ -618,6 +616,10 @@ PLVLCRetryPlayViewDelegate
     }
 }
 
+- (BOOL)isOnlyAudio {
+    return [PLVRoomDataManager sharedManager].roomData.channelInfo.isOnlyAudio;
+}
+
 - (PLVChannelType)channelType{
     return [PLVRoomDataManager sharedManager].roomData.channelType;
 }
@@ -692,6 +694,8 @@ PLVLCRetryPlayViewDelegate
 - (BOOL)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView askHandlerForTouchPointOnSkinView:(CGPoint)point{
     if ([PLVLCBasePlayerSkinView checkView:self.canvasView.playCanvasButton canBeHandlerForTouchPoint:point onSkinView:skinView]){
         /// 判断触摸事件是否应由 ‘音频模式按钮’ 处理
+        return YES;
+    }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.warmUpImageView canBeHandlerForTouchPoint:point onSkinView:skinView]){
         return YES;
     }else{
         BOOL externalViewHandle = NO;
@@ -806,6 +810,11 @@ PLVLCRetryPlayViewDelegate
 /// 播放器 ‘正在播放状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playerPlayingStateDidChanged:(BOOL)playing{
     [self.skinView setPlayButtonWithPlaying:playing];
+    if (playing) {
+        [self.marqueeView start];
+    }else {
+        [self.marqueeView pause];
+    }
     if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playerPlayingDidChange:)]) {
         [self.delegate plvLCMediaAreaView:self playerPlayingDidChange:playing];
     }
@@ -849,9 +858,18 @@ PLVLCRetryPlayViewDelegate
                 [self.floatView triggerViewExchangeEvent];
             }
         }
+        
+        /// 开启跑马灯
+        [self.marqueeView start];
+        
         /// 设置播放器logo
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         [self setupPlayerLogoImage:roomData.channelInfo];
+        
+        if (self.isOnlyAudio) {
+            [self.canvasView setSplashImageWithURLString:roomData.menuInfo.splashImg];
+            [self.playerPresenter switchLiveToAudioMode:YES];
+        }
     }else if (newestStreamState == PLVChannelLiveStreamState_Stop ||
               newestStreamState == PLVChannelLiveStreamState_End){
         /// 确保 直播状态变更为‘直播暂停’、‘直播结束’时，播放器画面 位于主屏
@@ -861,6 +879,10 @@ PLVLCRetryPlayViewDelegate
         [self.logoView removeFromSuperview];
         [self.floatView forceShowFloatView:NO];
         [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+        
+        /// 停止跑马灯
+        [self.marqueeView stop];
+        [self.canvasView hideSplashImageView];
     } else if(newestStreamState == PLVChannelLiveStreamState_Unknown){
         /// ’未知‘状态下，保持原样
     }

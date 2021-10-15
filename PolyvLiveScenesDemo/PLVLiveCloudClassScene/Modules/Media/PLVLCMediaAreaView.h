@@ -84,7 +84,7 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 跑马灯视图
 ///
 /// @note 便于外部作图层管理
-@property (nonatomic, strong, readonly) UIView * marqueeView;
+@property (nonatomic, strong, readonly) PLVMarqueeView * marqueeView;
 
 /// 媒体悬浮视图
 ///

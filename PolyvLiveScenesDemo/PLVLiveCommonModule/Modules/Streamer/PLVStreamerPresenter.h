@@ -43,6 +43,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
     
     /// 400: 更新RTCToken失败，网络错误
     PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError = 400,
+    
+    /// 500: RTC内部错误
+    PLVStreamerPresenterErrorCode_RTCManagerError = 500,
+    /// 502: RTC内部错误，启动音频模块失败
+    PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed = 502,
 };
 
 @protocol PLVStreamerPresenterDelegate;

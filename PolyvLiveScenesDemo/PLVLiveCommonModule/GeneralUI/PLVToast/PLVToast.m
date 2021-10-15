@@ -52,7 +52,13 @@ static CGFloat kToastMaxHeight = 80.0;
 #pragma mark - Show & Hide
 
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view {
-    if (!message || ![message isKindOfClass:[NSString class]] || message.length == 0 ||
+    [self showToastWithMessage:message inView:view afterDelay:kToastHideDelay];
+}
+
++ (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay {
+    if (!message ||
+        ![message isKindOfClass:[NSString class]] ||
+        message.length == 0 ||
         !view) {
         return;
     }
@@ -63,7 +69,7 @@ static CGFloat kToastMaxHeight = 80.0;
     
     CGPoint superViewCenter = CGPointMake(view.bounds.size.width / 2.0, view.bounds.size.height / 2.0);
     toast.center = superViewCenter;
-    [toast hideAfterDelay:kToastHideDelay];
+    [toast hideAfterDelay:delay];
 }
 
 - (void)showMessage:(NSString *)message {

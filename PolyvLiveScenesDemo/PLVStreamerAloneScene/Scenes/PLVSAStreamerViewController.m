@@ -431,13 +431,22 @@ PLVSAStreamerHomeViewDelegate
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
-    if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
-        error.code == PLVSocketLoginErrorCodeRelogin ||
-        error.code == PLVSocketLoginErrorCodeKick) &&
+    __weak typeof(self) weakSelf = self;
+    if (error.code == PLVSocketLoginErrorCodeKick) {
+        plv_dispatch_main_async_safe(^{
+            [PLVSAUtils showToastWithMessage:@"频道已被禁止直播" inView:self.view afterDelay:3.0];
+        })
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [weakSelf logout]; // 使用weakSelf，不影响self释放内存
+        });
+    } else if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
+        error.code == PLVSocketLoginErrorCodeRelogin) &&
         error.localizedDescription) {
-        [PLVSAUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:@"确定" cancelActionBlock:^{
-            [self logout];
-        } confirmActionTitle:nil confirmActionBlock:nil];
+        plv_dispatch_main_async_safe(^{
+            [PLVSAUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:@"确定" cancelActionBlock:^{
+                [weakSelf logout];
+            } confirmActionTitle:nil confirmActionBlock:nil];
+        })
     }
 }
 
@@ -570,6 +579,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         message = @"推流请求错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError){
         message = @"更新Token错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerError){
+        message = @"RTC内部错误";
+    }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed){
+        message = @"RTC内部错误，启动音频模块失败，请退出重新登录";
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
         message = @"未知错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){

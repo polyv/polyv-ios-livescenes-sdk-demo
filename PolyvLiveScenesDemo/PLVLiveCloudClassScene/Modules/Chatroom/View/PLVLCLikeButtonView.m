@@ -35,7 +35,7 @@
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {
         self.likeButton.frame = CGRectMake(0, 0, 46, 46);
-        self.likeCountLabel.frame = CGRectMake(0, CGRectGetMaxY(self.likeButton.frame) + 2, 46, 16);
+        self.likeCountLabel.frame = CGRectMake(0, CGRectGetMaxY(self.likeButton.frame) + 10, 46, 16);
         self.likeCountLabel.hidden = NO;
     }else{
         CGFloat viewWidth = CGRectGetWidth(self.bounds);
@@ -62,7 +62,7 @@
         _likeCountLabel.textAlignment = NSTextAlignmentCenter;
         _likeCountLabel.textColor = [UIColor colorWithRed:0xad/255.0 green:0xad/255.0 blue:0xc0/255.0 alpha:1];
         _likeCountLabel.font = [UIFont systemFontOfSize:14];
-        _likeCountLabel.backgroundColor = [PLVColorUtil colorFromHexString:@"#202127"];
+        _likeCountLabel.backgroundColor = [UIColor clearColor];
         _likeCountLabel.layer.cornerRadius = 8;
         _likeCountLabel.layer.masksToBounds = YES;
     }
@@ -94,28 +94,56 @@
 #pragma mark - Private Method
 
 - (void)likeAnimation {
-    NSArray *colors = @[PLV_UIColorFromRGB(@"9D86D2"), PLV_UIColorFromRGB(@"F25268"), PLV_UIColorFromRGB(@"5890FF"), PLV_UIColorFromRGB(@"FCBC71")];
+    //旋转动画
+    CABasicAnimation *rotationAnimation = [CABasicAnimation animationWithKeyPath:@"transform.rotation"];
+    // 旋转多少角度
+    rotationAnimation.toValue = @(-0.2 * M_PI);
     
+    //放大动画
+    CABasicAnimation *scaleAnimation = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+    // 放大倍率
+    scaleAnimation.toValue = @(1.5);
+    
+    //动画组
+    CAAnimationGroup *groupAnimation = [CAAnimationGroup animation];
+    groupAnimation.duration = 0.1;
+    scaleAnimation.repeatCount = 0;
+    groupAnimation.autoreverses = YES;
+    groupAnimation.animations = @[rotationAnimation, scaleAnimation];
+    [self.likeButton.layer addAnimation:groupAnimation forKey:@"rotation-scale-animation"];
+
     CGRect originRect = self.frame;
-    UIImage *image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_like_icon"];
+    NSArray *imageNames = @[@"plvlc_chatroom_like_icon1",@"plvlc_chatroom_like_icon2",@"plvlc_chatroom_like_icon3",
+          @"plvlc_chatroom_like_icon4",@"plvlc_chatroom_like_icon5",@"plvlc_chatroom_like_icon6",
+          @"plvlc_chatroom_like_icon7",@"plvlc_chatroom_like_icon8",@"plvlc_chatroom_like_icon9",@"plvlc_chatroom_like_icon10"];
+    NSString *imageName = imageNames[rand() % imageNames.count];
+    UIImage *image = [PLVLCUtils imageForChatroomResource:imageName];
     UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
-    imageView.frame = CGRectMake(originRect.origin.x + 3, originRect.origin.y, 40, 40);
-    imageView.backgroundColor = colors[rand()%4];
-    [imageView setContentMode:UIViewContentModeCenter];
-    imageView.clipsToBounds = YES;
-    imageView.layer.cornerRadius = 20.0;
-    [self.superview addSubview:imageView];
+    imageView.frame = CGRectMake(originRect.origin.x + 3, originRect.origin.y, 20, 20);
+    [self.superview insertSubview:imageView belowSubview:self];
     
+    //放大动画
+    CABasicAnimation *imageScaleAnimation = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+    //结束时的倍率
+    imageScaleAnimation.toValue = @(1.5);
+    imageScaleAnimation.duration = 0.3;
+    imageScaleAnimation.removedOnCompletion = NO;
+    imageScaleAnimation.fillMode = kCAFillModeForwards;
+    [imageView.layer addAnimation:imageScaleAnimation forKey:@"scale-animation"];
+    
+    //曲线动画
+    CAKeyframeAnimation *curveAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+    curveAnimation.duration = 1.5;
+    // 设置贝塞尔曲线路径
     CGFloat finishX = originRect.origin.x + CGRectGetWidth(originRect) - round(arc4random() % 130);
-    CGFloat speed = 1.0 / round(arc4random() % 900) + 0.6;
-    NSTimeInterval duration = 4.0 * speed;
-    if (duration == INFINITY) {
-        duration = 2.412346;
-    }
+    CGFloat finishY = originRect.origin.y - 200;
+    NSValue *startPoint = [NSValue valueWithCGPoint:CGPointMake(originRect.origin.x + 3, originRect.origin.y)];
+    NSValue *endPoint = [NSValue valueWithCGPoint:CGPointMake(finishX, finishY)];
+    curveAnimation.values = @[startPoint, endPoint];
+    [imageView.layer addAnimation:curveAnimation forKey:@"curve-animation"];
     
-    [UIView animateWithDuration:duration animations:^{
+    [UIView animateWithDuration:0.3 delay:1.2 options:UIViewAnimationOptionCurveLinear animations:^{
         imageView.alpha = 0.0;
-        imageView.frame = CGRectMake(finishX, originRect.origin.y - 156, 40.0, 40.0);
     } completion:^(BOOL finished) {
         [imageView removeFromSuperview];
     }];

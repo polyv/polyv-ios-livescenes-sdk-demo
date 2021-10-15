@@ -40,6 +40,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) NSUInteger watchCount;
 /// 播放状态
 @property (nonatomic, assign) BOOL playing;
+/// 是否是仅音频开播模式 【适用于手机开播场景】
+@property (nonatomic, assign) BOOL isOnlyAudio;
 /// 直播频道信息
 @property (nonatomic, strong) PLVChannelInfoModel *channelInfo;
 /// 菜单信息，只读属性

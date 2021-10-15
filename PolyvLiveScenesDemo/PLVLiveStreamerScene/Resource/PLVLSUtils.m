@@ -53,6 +53,10 @@ static float _safeBottomPad = 0;
     [PLVToast showToastWithMessage:message inView:view];
 }
 
++ (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay {
+    [PLVToast showToastWithMessage:message inView:view afterDelay:delay];
+}
+
 + (void)showAlertWithMessage:(NSString *)message
            cancelActionTitle:(NSString *)cancelActionTitle
            cancelActionBlock:(void(^)(void))cancelActionBlock {

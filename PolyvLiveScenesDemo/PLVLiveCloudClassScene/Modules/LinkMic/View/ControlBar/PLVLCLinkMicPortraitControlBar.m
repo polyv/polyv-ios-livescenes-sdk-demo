@@ -21,6 +21,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarFoldWidth = 55.0;    // Bar �
 static const CGFloat PLVLCLinkMicVerticalControlBarNormalWidth = 128.0; // Bar 正常宽度
 static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Video = 200.0; // Bar 最大宽度 (视频连麦类型)
 static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Bar 最大宽度 (音频连麦类型)
+static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间隔:300毫秒
 
 @interface PLVLCLinkMicPortraitControlBar () <CAAnimationDelegate>
 
@@ -36,6 +37,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 @property (nonatomic, assign) CGRect rangeRect;  // 可活动的区域值
 @property (nonatomic, assign) CGPoint lastPoint; // 上一次停留的位置
 @property (nonatomic, assign, readonly) CGFloat maxWidth; // 最大宽度 (根据类型返回不同值)
+@property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
 
 #pragma mark UI
 @property (nonatomic, strong) UITapGestureRecognizer * tapGR;
@@ -254,6 +256,7 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
     self.canMove = YES;
     self.status = PLVLCLinkMicControlBarStatus_Default;
     self.hiddenSelf = YES;
+    self.linkMicBtnLastTimeInterval = 0.0;
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -623,6 +626,15 @@ static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Ba
 }
 
 - (void)onOffButtonAction:(UIButton *)button{
+    // 防止短时间内重复点击，kLinkMicBtnTouchInterval间隔内的点击会直接忽略
+    NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
+    if (curTimeInterval - self.linkMicBtnLastTimeInterval > kLinkMicBtnTouchInterval) {
+        [self notifyListenerOnOffButtonClickedCurrentStatus];
+    }
+    self.linkMicBtnLastTimeInterval = curTimeInterval;
+}
+
+- (void)notifyListenerOnOffButtonClickedCurrentStatus {
     BOOL joinedAndFold = self.status == PLVLCLinkMicControlBarStatus_Joined && self.foldSelf;
     if (self.status == PLVLCLinkMicControlBarStatus_Open || joinedAndFold) {
         [self unfoldSelfView];

@@ -62,6 +62,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 广告播放状态
 @property (nonatomic, assign) BOOL openAdv;
 
+/// 是否允许点击暖场图片跳转到相应的链接（默认允许）
+@property (nonatomic, assign) BOOL warmUpHrefEnable;
+
 #pragma mark 状态
 /// 当前频道的 ‘直播流状态’
 ///
@@ -82,6 +85,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @note 需调用 [setupPlayerWithDisplayView:] 方法来设置
 @property (nonatomic, weak, readonly) UIView * displayView;
+
+/// 暖场图片（当前频道存在暖场图片时显示）
+@property (nonatomic, strong, readonly) UIImageView *warmUpImageView;
 
 #pragma mark - [ 方法 ]
 #pragma mark 通用

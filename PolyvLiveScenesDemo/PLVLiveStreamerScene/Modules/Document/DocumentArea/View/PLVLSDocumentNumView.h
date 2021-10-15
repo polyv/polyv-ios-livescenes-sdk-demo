@@ -12,9 +12,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVLSDocumentNumView : UIView
 
-/// 记录嘉宾登录时的直播结束状态 YES:隐藏视图；NO:显示视图
-@property (nonatomic, assign) BOOL guestFinishClass;
-
 - (void)setCurrentPage:(NSUInteger)pageId totalPage:(NSUInteger)totalPage;
 
 @end

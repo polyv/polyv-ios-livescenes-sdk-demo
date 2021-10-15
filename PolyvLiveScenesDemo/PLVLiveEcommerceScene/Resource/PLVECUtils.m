@@ -14,6 +14,10 @@
 #pragma mark - [ Public Methods ]
 
 + (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view {
+    [self showHUDWithTitle:title detail:detail view:view afterDelay:2.0];
+}
+
++ (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view afterDelay:(CGFloat)delay {
     NSLog(@"HUD info title:%@,detail:%@",title,detail);
     if (view == nil) {
         return;
@@ -22,7 +26,7 @@
     hud.mode = PLVProgressHUDModeText;
     hud.label.text = title;
     hud.detailsLabel.text = detail;
-    [hud hideAnimated:YES afterDelay:2.0];
+    [hud hideAnimated:YES afterDelay:delay];
 }
 
 + (UIImage *)imageForWatchResource:(NSString *)imageName {

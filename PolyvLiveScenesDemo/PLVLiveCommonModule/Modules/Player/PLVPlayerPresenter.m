@@ -123,6 +123,12 @@ PLVAdvViewDelegate
     return [PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay;
 }
 
+#pragma mark Setter
+- (void)setWarmUpHrefEnable:(BOOL)warmUpHrefEnable {
+    _warmUpHrefEnable = warmUpHrefEnable;
+    self.warmUpImageView.userInteractionEnabled = warmUpHrefEnable;
+}
+
 #pragma mark 通用
 - (instancetype)initWithVideoType:(PLVChannelVideoType)videoType{
     self = [super init];
@@ -340,6 +346,9 @@ PLVAdvViewDelegate
         _warmUpImageView = [[UIImageView alloc] init];
         _warmUpImageView.contentMode = UIViewContentModeScaleAspectFit;
         _warmUpImageView.hidden = YES;
+        _warmUpImageView.userInteractionEnabled = NO;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(warmUpImageViewTapAction:)];
+        [_warmUpImageView addGestureRecognizer:tap];
     }
     return _warmUpImageView;
 }
@@ -363,6 +372,11 @@ PLVAdvViewDelegate
     return _loadSpeedLabel;
 }
 
+#pragma mark - [ Action ]
+- (void)warmUpImageViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
+    NSString *warmUpContentUrlString = [PLVRoomDataManager sharedManager].roomData.channelInfo.warmUpImageHREF;
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:warmUpContentUrlString]];
+}
 
 #pragma mark - [ Event ]
 #pragma mark Timer
@@ -475,7 +489,7 @@ PLVAdvViewDelegate
             }
         }
     } else if (finishReson == IJKMPMovieFinishReasonPlaybackError) {
-        errorMessage = @"视频播放失败，请退出重新登录";
+        errorMessage = @"视频播放失败，请尝试手动刷新，或退出重新登录";
         [self.activityView stopAnimating];
         
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
@@ -602,6 +616,10 @@ PLVAdvViewDelegate
     if (show) {
         self.warmUpImageView.hidden = NO;
         [self.warmUpImageView sd_setImageWithURL:[NSURL URLWithString:warmUpImageURLString] placeholderImage:nil options:SDWebImageRetryFailed];
+        NSString *warmUpImageHREF = [PLVRoomDataManager sharedManager].roomData.channelInfo.warmUpImageHREF;
+        if ([PLVFdUtil checkStringUseable:warmUpImageHREF]) {
+            self.warmUpImageView.userInteractionEnabled = YES;
+        }
     }else{
         self.warmUpImageView.hidden = YES;
     }

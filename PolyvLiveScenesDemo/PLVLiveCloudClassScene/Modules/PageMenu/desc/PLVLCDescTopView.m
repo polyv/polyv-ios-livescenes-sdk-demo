@@ -22,8 +22,6 @@
 @property (nonatomic, strong) UIView *line;
 @property (nonatomic, strong) UIImageView *publisherImageView;
 @property (nonatomic, strong) UILabel *publisherLabel;
-@property (nonatomic, strong) UIImageView *likeImageView;
-@property (nonatomic, strong) UILabel *likeCountLabel;
 
 @end
 
@@ -41,8 +39,6 @@
         [self addSubview:self.line];
         [self addSubview:self.publisherImageView];
         [self addSubview:self.publisherLabel];
-        [self addSubview:self.likeImageView];
-        [self addSubview:self.likeCountLabel];
     }
     return self;
 }
@@ -58,10 +54,6 @@
     
     self.publisherImageView.frame = CGRectMake(16, CGRectGetMaxY(self.line.frame) + 10, 16, 16);
     self.publisherLabel.frame = CGRectMake(36, CGRectGetMaxY(self.line.frame) + 12, self.bounds.size.width - 36 - 56 - 16, 13);
-    self.likeImageView.frame = CGRectMake(self.bounds.size.width - 56 - 16, CGRectGetMaxY(self.line.frame) + 10, 16, 16);
-    
-    CGFloat labelOriginX = CGRectGetMaxX(self.likeImageView.frame) + 4;
-    self.likeCountLabel.frame = CGRectMake(labelOriginX, CGRectGetMaxY(self.line.frame) + 12, self.bounds.size.width - labelOriginX, 12);
     
     if (self.status == PLVLCLiveStatusNone) {
         self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - 16, 15, 64, 24);
@@ -86,14 +78,6 @@
         _publisherImageView.image = [PLVLCUtils imageForMenuResource:@"plvlc_menu_publisher"];
     }
     return _publisherImageView;
-}
-
-- (UIImageView *)likeImageView {
-    if (!_likeImageView) {
-        _likeImageView = [[UIImageView alloc] init];
-        _likeImageView.image = [PLVLCUtils imageForMenuResource:@"plvlc_menu_like"];
-    }
-    return _likeImageView;
 }
 
 - (UILabel *)titleLabel {
@@ -142,15 +126,6 @@
     return _publisherLabel;
 }
 
-- (UILabel *)likeCountLabel {
-    if (!_likeCountLabel) {
-        _likeCountLabel = [[UILabel alloc] init];
-        _likeCountLabel.font = [UIFont systemFontOfSize:12];
-        _likeCountLabel.textColor = kLightGrayColor;
-    }
-    return _likeCountLabel;
-}
-
 - (void)setChannelInfo:(PLVLiveVideoChannelMenuInfo *)channelInfo {
     if (channelInfo == nil) {
         return;
@@ -182,13 +157,7 @@
     if (channelInfo.publisher && [channelInfo.publisher isKindOfClass:[NSString class]] && channelInfo.publisher.length > 0) {
         self.publisherLabel.text = channelInfo.publisher;
     }
-    
-    NSInteger likeCount = [self.channelInfo.likes integerValue];
-    if (likeCount >= 100000) {
-        self.likeCountLabel.text = [NSString stringWithFormat:@"%.1fW", likeCount/10000.0];
-    } else {
-        self.likeCountLabel.text = [NSString stringWithFormat:@"%zd", MAX(likeCount, 0)];
-    }
+
 }
 
 - (void)setStatus:(PLVLCLiveStatus)status {
@@ -201,7 +170,7 @@
         statusLabelColor = [UIColor colorWithRed:0x78/255.0 green:0xa7/255.0 blue:0xed/255.0 alpha:1];;
     } else if (status == PLVLCLiveStatusLiving) {
         self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
-        self.statusLabel.text = @"进行中";
+        self.statusLabel.text = @"直播中";
         statusLabelColor = [UIColor colorWithRed:0xe9/255.0 green:0x60/255.0 blue:0x64/255.0 alpha:1];
     } else if (status == PLVLCLiveStatusWaiting) {
         self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);

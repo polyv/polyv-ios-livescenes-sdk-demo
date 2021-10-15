@@ -40,6 +40,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVECPlayerViewControllerProtocol> delegate;
 
+// 播放器区域 解决事件传递响应链的问题
+@property (nonatomic, strong, readonly) UIView *displayView;
+
 /// 播放器播放状态
 @property (nonatomic, assign, readonly) BOOL playing;
 

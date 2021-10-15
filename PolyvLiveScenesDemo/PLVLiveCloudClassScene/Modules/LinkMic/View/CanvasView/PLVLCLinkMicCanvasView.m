@@ -9,7 +9,10 @@
 #import "PLVLCLinkMicCanvasView.h"
 
 #import "PLVLCUtils.h"
+#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+
+static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.net/default-img/channel/default-splash.png";//讲师默认封面图地址
 
 @interface PLVLCLinkMicCanvasView ()
 
@@ -19,7 +22,10 @@
 ///  ├── (UIImageView) placeholderImageView
 ///  ├── (UIView) external rtc View
 ///  └── (UIImageView) networkQualityImageView
+///  ├── (UIImageView) splashImageView
+///  └── (UIView) external rtc View
 @property (nonatomic, strong) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
+@property (nonatomic, strong) UIImageView * splashImageView; // 音频背景视图（只支持音频模式时显示）
 @property (nonatomic, weak) UIView * rtcView; // rtcView (弱引用；仅用作记录)
 @property (nonatomic, strong) UIImageView * networkQualityImageView; // 信号塔视图 (负责展示 信号状态图标)
 
@@ -43,6 +49,7 @@
 - (void)layoutSubviews{
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
+    self.splashImageView.frame = self.bounds;
     
     CGFloat placeholderImageViewHeight = viewHeight * 0.485;
     self.placeholderImageView.frame = CGRectMake((viewWidth - placeholderImageViewHeight) / 2.0,
@@ -79,6 +86,7 @@
     [self addSubview:self.placeholderImageView];
     [self addSubview:self.networkQualityImageView];
     self.networkQualityImageView.hidden = YES;
+    [self addSubview:self.splashImageView];
 }
 
 - (void)rtcViewShow:(BOOL)rtcViewShow{
@@ -102,6 +110,14 @@
     }
 }
 
+- (void)setSplashImageWithURLString:(NSString *)urlString {
+    if (![PLVFdUtil checkStringUseable:urlString]) {
+        urlString = kPLVLCTeacherSplashImgURLString;
+    }
+    self.splashImageView.hidden = NO;
+    [self.splashImageView sd_setImageWithURL:[NSURL URLWithString:urlString]];
+}
+
 
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
@@ -112,6 +128,7 @@
     [self addSubview:self.placeholderImageView];
     [self addSubview:self.networkQualityImageView];
     self.networkQualityImageView.hidden = YES;
+    [self addSubview:self.splashImageView];
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -137,6 +154,15 @@
         _networkQualityImageView.layer.shadowRadius = 8;
     }
     return _networkQualityImageView;
+}
+
+- (UIImageView *)splashImageView {
+    if (!_splashImageView) {
+        _splashImageView = [[UIImageView alloc] init];
+        _splashImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _splashImageView.hidden = YES;
+    }
+    return _splashImageView;
 }
 
 @end

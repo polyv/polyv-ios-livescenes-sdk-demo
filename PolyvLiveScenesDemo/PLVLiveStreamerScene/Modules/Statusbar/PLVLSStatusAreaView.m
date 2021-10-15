@@ -9,6 +9,7 @@
 #import "PLVLSStatusAreaView.h"
 #import "PLVLSLinkMicMenuPopup.h"
 #import "PLVLSLinkMicApplyTipsView.h"
+#import "PLVRoomDataManager.h"
 
 // 工具类
 #import "PLVLSUtils.h"
@@ -40,7 +41,6 @@ static CGFloat kStatusBarHeight = 44;
 /// 数据
 @property (nonatomic, assign) BOOL inClass;
 @property (nonatomic, assign) BOOL hasNewMemberState;
-
 @end
 
 @implementation PLVLSStatusAreaView
@@ -51,7 +51,7 @@ static CGFloat kStatusBarHeight = 44;
     self = [super init];
     if (self) {
         self.backgroundColor = [UIColor clearColor];
-        
+
         [self addSubview:self.channelInfoLabel];
         [self addSubview:self.channelInfoButton];
         [self addSubview:self.timeLabel];
@@ -345,8 +345,12 @@ static CGFloat kStatusBarHeight = 44;
     if (!_linkMicMenu) {
         CGFloat centerX = self.frame.origin.x + self.linkmicButton.frame.origin.x + self.linkmicButton.frame.size.width / 2.0; // 作为连麦选择弹层中心位置
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
-        CGRect rect = CGRectMake(centerX - 106 / 2.0, originY, 106, 96);
-        
+        CGRect rect = CGRectZero;
+        if ([PLVRoomDataManager sharedManager].roomData.isOnlyAudio) {
+            rect = CGRectMake(centerX - 106 / 2.0, originY, 106, 48);
+        } else {
+            rect = CGRectMake(centerX - 106 / 2.0, originY, 106, 96);
+        }
         CGRect buttonRect = [self convertRect:self.linkmicButton.frame toView:self.superview];
         _linkMicMenu = [[PLVLSLinkMicMenuPopup alloc] initWithMenuFrame:rect buttonFrame:buttonRect];
         __weak typeof(self) weakSelf = self;

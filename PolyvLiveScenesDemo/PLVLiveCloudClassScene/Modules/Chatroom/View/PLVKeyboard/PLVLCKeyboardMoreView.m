@@ -59,7 +59,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         case PLVLCKeyboardMoreButtonTypeOnlyTeacher:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_onlyteacher"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_seeall"] forState:UIControlStateSelected];
-            [self.moreBtn setTitle:@"只看讲师" forState:UIControlStateNormal];
+            [self.moreBtn setTitle:@"只看主持" forState:UIControlStateNormal];
             [self.moreBtn setTitle:@"查看全部" forState:UIControlStateSelected];
             break;
         case PLVLCKeyboardMoreButtonTypeOpenAlbum:

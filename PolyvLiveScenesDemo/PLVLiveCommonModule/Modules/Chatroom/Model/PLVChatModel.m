@@ -58,4 +58,20 @@
     }
 }
 
+- (NSTimeInterval)time {
+    id messageObject = self.message;
+    NSTimeInterval time = 0;
+    if ([messageObject isKindOfClass:[PLVSpeakMessage class]]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)messageObject;
+        time = message.time;
+    } else if ([messageObject isKindOfClass:[PLVQuoteMessage class]]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)messageObject;
+        time = message.time;
+    } else if ([messageObject isKindOfClass:[PLVImageMessage class]]) {
+        PLVImageMessage *message = (PLVImageMessage *)messageObject;
+        time = message.time;
+    } 
+    return time;
+}
+
 @end

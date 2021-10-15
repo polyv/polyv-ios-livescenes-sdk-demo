@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVLCWelcomeView : UIView
 
-- (void)showWelcomeWithNickNmame:(NSString *)nickName;
+- (void)showWelcomeWithNickName:(NSString *)nickName;
 
 @end
 

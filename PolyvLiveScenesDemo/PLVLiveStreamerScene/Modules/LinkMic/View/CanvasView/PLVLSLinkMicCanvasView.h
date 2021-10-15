@@ -32,6 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param rtcViewShow rtcview 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)rtcViewShow:(BOOL)rtcViewShow;
 
+/// 设置讲师连麦视图的封面图
+///
+/// @param urlString 封面图的url
+- (void)setSplashImageWithURLString:(NSString *)urlString;
+
 @end
 
 NS_ASSUME_NONNULL_END

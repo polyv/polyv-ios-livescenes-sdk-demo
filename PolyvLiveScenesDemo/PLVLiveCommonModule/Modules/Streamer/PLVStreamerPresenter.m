@@ -55,6 +55,7 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, copy, readonly) NSString * linkMicUserAvatar;
 @property (nonatomic, copy, readonly) NSString * linkMicUserActor;
 @property (nonatomic, assign, readonly) BOOL channelGuestManualJoinLinkMic;
+@property (nonatomic, assign, readonly) BOOL isOnlyAudio; // 当前频道是否为音频模式
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVRTCStreamerManager * rtcStreamerManager;
@@ -91,7 +92,7 @@ PLVChannelClassManagerDelegate
 #pragma mark 基础调用
 - (void)prepareLocalMicCameraPreviewCompletion:(void (^)(BOOL, BOOL))completion {
     __weak typeof(self) weakSelf = self;
-    [PLVAuthorizationManager requestAuthorizationForAudioAndVideo:^(BOOL granted) { /// 申请麦克风、摄像头权限
+    void(^grantedBlock)(BOOL granted) = ^(BOOL granted){ // 申请麦克风、摄像头权限
         weakSelf.micCameraGranted = granted;
         if (granted) {
             if (weakSelf.previewType == PLVStreamerPresenterPreviewType_UserArray) {
@@ -107,10 +108,12 @@ PLVChannelClassManagerDelegate
         } else {
             if (completion) { plv_dispatch_main_async_safe(^{ completion(NO, NO); }) }
         }
-    }];
+    };
+    PLVAuthorizationType type = self.isOnlyAudio ? PLVAuthorizationTypeMediaAudio : PLVAuthorizationTypeMediaAudioAndVideo;
+    [PLVAuthorizationManager requestAuthorizationWithType:type completion:grantedBlock];
 }
 
-- (void)setupLocalPreviewWithCanvaView:(nullable UIView *)canvasView setupCompletion:(nullable void (^)(BOOL setupResult))setupCompletion{
+- (void)setupLocalPreviewWithCanvaView:(nullable UIView *)canvasView setupCompletion:(nullable void (^)(BOOL setupResult))setupCompletion {
     if (self.previewType == PLVStreamerPresenterPreviewType_UserArray) {
         /// 用户数组 预览类型
         /// 以本地用户的rtcView，作为预览载体，并忽略传参视图
@@ -148,7 +151,7 @@ PLVChannelClassManagerDelegate
 
 - (void)startLocalMicCameraPreviewByDefault{
     if (!self.micCameraGranted) {
-        PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"startLocalMicCameraPreviewByDefault failed, micCameraGranted is 'NO', should call [prepareLocalPreviewCompletion:] before");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"startLocalMicCameraPreviewByDefault failed, micCameraGranted is 'NO', should call [prepareLocalMicCameraPreviewCompletion:] before");
         return;
     }
     
@@ -163,6 +166,7 @@ PLVChannelClassManagerDelegate
     [self.localOnlineUser updateUserCurrentMicOpen:self.micDefaultOpen];
     [self.localOnlineUser updateUserCurrentCameraOpen:self.cameraDefaultOpen];
     [self.localOnlineUser updateUserCurrentCameraFront:self.cameraDefaultFront];
+    [self.localOnlineUser updateUserLocalVideoMirrorMode:self.localVideoMirrorMode];
     [self updateMixUserList];
 }
 
@@ -311,7 +315,8 @@ PLVChannelClassManagerDelegate
 
 - (void)setupLocalVideoPreviewMirrorMode:(PLVBRTCVideoMirrorMode)mirrorMode{
     [self.rtcStreamerManager setupLocalVideoPreviewMirrorMode:mirrorMode];
-    
+    [self.localOnlineUser updateUserLocalVideoMirrorMode:mirrorMode];
+
     if (self.localVideoPreviewSameAsRemoteWatch) {
         [self.rtcStreamerManager setupLocalVideoStreamMirrorMode:self.localVideoMirrorMode];
     }
@@ -655,8 +660,8 @@ PLVChannelClassManagerDelegate
     jsonDict[@"roomId"] = [NSString stringWithFormat:@"%@",self.channelId];
     jsonDict[@"userId"] = [NSString stringWithFormat:@"%@",self.channelId];
     jsonDict[@"streamName"] = [NSString stringWithFormat:@"%@",self.stream];
-    jsonDict[@"pushtime"] = @(self.startPushStreamTimestamp);
-    jsonDict[@"timeStamp"] = @(self.pushStreamValidDuration);
+    jsonDict[@"pushtime"] = @((NSInteger)self.startPushStreamTimestamp);
+    jsonDict[@"timeStamp"] = @((NSInteger)self.pushStreamValidDuration);
 
     __weak typeof(self) weakSelf = self;
     [[PLVSocketManager sharedManager] emitMessage:jsonDict timeout:5.0 callback:^(NSArray * _Nonnull ackArray) {
@@ -1924,6 +1929,10 @@ PLVChannelClassManagerDelegate
     return [PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
 }
 
+- (BOOL)isOnlyAudio{
+    return [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+}
+
 - (PLVChannelClassManager *)channelClassManager{
     if (!_channelClassManager) {
         _channelClassManager = [[PLVChannelClassManager alloc] init];
@@ -2071,6 +2080,12 @@ PLVChannelClassManagerDelegate
     
     if (error.code == PLVRTCStreamerManagerErrorCode_UpdateRTCTokenFailedAuthError) {
         finalErrorCode = PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError;
+    }
+    
+    if (error.code == PLVRTCStreamerManagerErrorCode_RTCManagerError) {
+        finalErrorCode = PLVStreamerPresenterErrorCode_RTCManagerError;
+    } else if(error.code == PLVRTCStreamerManagerErrorCode_RTCManagerErrorStartAudioFailed){
+        finalErrorCode = PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed;
     }
     
     NSError * finalError = [self errorWithCode:finalErrorCode errorDescription:nil];

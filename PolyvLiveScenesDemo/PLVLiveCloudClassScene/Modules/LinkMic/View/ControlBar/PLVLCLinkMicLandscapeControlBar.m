@@ -18,6 +18,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarWidth = 64.0;        // Bar
 static const CGFloat PLVLCLinkMicHorizontalControlBarNormalHeight = 77.0; // Bar 正常高度
 static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Video = 200.0; // Bar 最大高度 (视频连麦类型)
 static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; // Bar 最大高度 (音频连麦类型)
+static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间隔:300毫秒
 
 @interface PLVLCLinkMicLandscapeControlBar ()
 
@@ -26,6 +27,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) CGFloat maxHeight; // 最大高度 (根据类型返回不同值)
+@property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
 
 #pragma mark UI
 @property (nonatomic, strong) UITapGestureRecognizer * tapGR;
@@ -217,6 +219,7 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 - (void)setupData{
     self.canMove = YES;
     self.status = PLVLCLinkMicControlBarStatus_Default;
+    self.linkMicBtnLastTimeInterval = 0.0;
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -438,6 +441,15 @@ static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; //
 }
 
 - (void)onOffButtonAction:(UIButton *)button{
+    // 防止短时间内重复点击，kLinkMicBtnTouchInterval间隔内的点击会直接忽略
+    NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
+    if (curTimeInterval - self.linkMicBtnLastTimeInterval > kLinkMicBtnTouchInterval) {
+        [self notifyListenerOnOffButtonClickedCurrentStatus];
+    }
+    self.linkMicBtnLastTimeInterval = curTimeInterval;
+}
+
+- (void)notifyListenerOnOffButtonClickedCurrentStatus {
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicControlBar:onOffButtonClickedCurrentStatus:)]) {
         [self.delegate plvLCLinkMicControlBar:self onOffButtonClickedCurrentStatus:self.status];
     }

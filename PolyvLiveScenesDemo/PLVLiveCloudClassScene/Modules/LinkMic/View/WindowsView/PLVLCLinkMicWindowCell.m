@@ -11,6 +11,7 @@
 #import "PLVLCUtils.h"
 #import "PLVLinkMicOnlineUser+LC.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import "PLVRoomDataManager.h"
 
 @interface PLVLCLinkMicWindowCell ()
 
@@ -19,6 +20,7 @@
 
 #pragma mark 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser * userModel;
+@property (nonatomic, assign, readonly) BOOL isOnlyAudio;
 
 #pragma mark UI
 /// view hierarchy
@@ -115,6 +117,10 @@
     
     /// 摄像画面
     [userModel.canvasView rtcViewShow:userModel.currentCameraShouldShow];
+    if (self.isOnlyAudio && userModel.isRealMainSpeaker) {
+        [userModel.canvasView setSplashImageWithURLString:[PLVRoomDataManager sharedManager].roomData.menuInfo.splashImg];
+        [userModel.canvasView rtcViewShow:NO];
+    }
     userModel.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
     };
@@ -241,6 +247,10 @@
         _nicknameLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
     }
     return _nicknameLabel;
+}
+
+- (BOOL)isOnlyAudio {
+    return [PLVRoomDataManager sharedManager].roomData.channelInfo.isOnlyAudio;
 }
 
 @end

@@ -61,8 +61,11 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
     /** 404: 加入Rtc频道失败，消息暂时无法发送 */
     PLVLinkMicErrorCode_JoinChannelFailedSocketCannotSend = 404,
     
-    /** 500: 连麦中发生错误，回调 [didOccurErrorInStatus:errorCode:extraCode:] 中将附带额外的错误码 */
+    /* 5xx系列错误码，将在回调 [didOccurErrorInStatus:errorCode:extraCode:] 中将附带额外的错误码 */
+    /** 500: RTC遇到错误 */
     PLVLinkMicErrorCode_JoinedOccurError = 500,
+    /** 502: RTC遇到错误，启动音频模块失败 */
+    PLVLinkMicErrorCode_JoinedOccurErrorStartAudioFailed = 502,
     
     /** 600: 退出连麦失败，当前连麦状态不匹配，仅在 PLVLinkMicStatus_Joining、PLVLinkMicStatus_Joined 状态下允许退出连麦 */
     PLVLinkMicErrorCode_LeaveChannelFailedStatusIllegal = 600,

@@ -18,6 +18,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param view toast 在视图
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view;
 
+/// 显示 toast
+/// @param message toast 文本
+/// @param view toast 在视图
+/// @param delay toast 显示时间
++ (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay;
+
 @end
 
 NS_ASSUME_NONNULL_END
