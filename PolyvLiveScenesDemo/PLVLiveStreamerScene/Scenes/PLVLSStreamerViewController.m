@@ -570,7 +570,7 @@ PLVMemberPresenterDelegate
 
 - (void)kickUsersInMemberSheet:(PLVLSMemberSheet *)memberSheet
                         userId:(NSString *)userId {
-    [self.memberPresenter removeUserWithUserId:userId];
+    [self.memberPresenter kickUserWithUserId:userId];
 }
 
 #pragma mark - PLVSDocumentAreaView Delegate

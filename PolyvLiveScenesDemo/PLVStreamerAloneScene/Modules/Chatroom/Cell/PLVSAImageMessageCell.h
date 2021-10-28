@@ -15,10 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVSAImageMessageCell : PLVSABaseMessageCell
 
 /// 点击 重发按钮 触发
-/// @param msgID 消息id
-/// @param image 图片
-@property (nonatomic, copy) void(^ _Nullable resendImageHandler)(NSString *msgID,UIImage *image);
-
+/// @param model 消息模型
+@property (nonatomic, copy) void(^ _Nullable resendImageHandler)(PLVChatModel *model);
 
 /// 设置消息数据模型，cell宽度
 /// @param model 数据模型

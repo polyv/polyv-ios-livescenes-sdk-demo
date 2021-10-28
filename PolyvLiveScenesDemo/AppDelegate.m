@@ -12,6 +12,7 @@
  SCENE = 1: 多场景通用入口
  SCENE = 2: 多场景-手机开播
  SCENE = 3: 多场景-手机观看
+ SCENE = 4: 多场景-互动学堂
  */
 
 #if SCENE == 1
@@ -24,6 +25,11 @@
 #endif
 
 #if SCENE == 3
+//场景3使用Main.storyboard进入登陆页，所以无需导入登录页ViewController类
+#endif
+
+#if SCENE == 4
+#import "PLVHCTeacherLoginManager.h"
 #endif
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -59,12 +65,17 @@
     [self.window makeKeyAndVisible];
 #endif
     
-#if SCENE == 3
+#if SCENE == 3 //场景3使用Main.storyboard进入登陆页
     // HttpDNS默认开启，如需关闭，解开注释
 //    [PLVLiveVideoConfig sharedInstance].enableHttpDNS = NO;
     // 如需启用IPV6，解开注释，启用IPV6之后，将自动选择IP，取消HttpDNS
 //    [PLVLiveVideoConfig sharedInstance].enableIPV6 = YES;
-    
+#endif
+   
+#if SCENE == 4
+    self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    [PLVHCTeacherLoginManager loadMainViewController];
+    [self.window makeKeyAndVisible];
 #endif
     
     // DEBUG模式下控制台日志打印

@@ -337,6 +337,8 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
         _resendButton.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
         _resendButton.titleLabel.textColor = [UIColor whiteColor];
         _resendButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _resendButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        
         [_resendButton setTitle:@"重新发送" forState:UIControlStateNormal];
         [_resendButton setImage:[PLVSAUtils imageForChatroomResource:@"plvsa_chatroom_cell_image_resend"] forState:UIControlStateNormal];
         _resendButton.hidden = YES;
@@ -351,6 +353,8 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
         _reloadButton.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
         _reloadButton.titleLabel.textColor = [UIColor whiteColor];
         _reloadButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _reloadButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        
         [_reloadButton setTitle:@"重新加载" forState:UIControlStateNormal];
         [_reloadButton setImage:[PLVSAUtils imageForChatroomResource:@"plvsa_chatroom_cell_image_reload"] forState:UIControlStateNormal];
         _reloadButton.hidden = YES;
@@ -541,9 +545,11 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
             __weak typeof(self) weakSelf = self;
             [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
                 weakSelf.model.msgState = (PLVChatMsgState)PLVImageMessageSendStateReady;
-                weakSelf.resendImageHandler(weakSelf.model.imageId, message.image);
+                weakSelf.resendImageHandler(weakSelf.model);
             }];
         }
+    } else {
+        self.resendButton.hidden = YES;
     }
 }
 

@@ -54,19 +54,28 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)chatroomManager_loadHistoryFailure;
 
 /// 如果4秒内有登录聊天室的用户（包括自己），间隔4秒触发一次
+/// 用于显示‘欢迎登录用户横幅’
 /// @param userArray 4秒内登录聊天室的用户数组，如果为nil，表示当前时间段内当前用户有登录事件
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray;
 
 /// 上报管理员发布的消息文本，间隔8秒触发一次
+/// 用于显示‘管理员消息跑马灯’
 /// @param content 管理员消息文本
 - (void)chatroomManager_managerMessage:(NSString * )content;
 
 /// 上报需插入弹幕的文本，间隔1秒触发一次
+/// 用于显示‘播放器弹幕’
 /// @param content 弹幕文本
 - (void)chatroomManager_danmu:(NSString * )content;
 
-/// 获取图片表情数据
-- (void)chatroomManager_loadImageEmotions;
+/// 获取图片表情资源列表成功
+/// 用于表情面板加载图片表情
+/// @param dictArray 图片表情数据
+- (void)chatroomManager_loadImageEmotionSuccess:(NSArray <NSDictionary *> *)dictArray;
+
+/// 获取图片表情资源列表失败
+/// 用于提示用户‘图片表情加载失败’
+- (void)chatroomManager_loadImageEmotionFailure;
 
 @end
 
@@ -89,7 +98,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 私聊消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *privateChatArray;
 /// 图片表情数组
-@property (nonatomic, strong, readonly) NSArray *emotionImageArray;
+@property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 
 #pragma mark API
 

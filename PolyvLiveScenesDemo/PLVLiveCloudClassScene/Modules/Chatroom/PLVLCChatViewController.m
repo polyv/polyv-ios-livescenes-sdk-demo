@@ -247,9 +247,6 @@ UITableViewDataSource
         [self addObserver];
         
         [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-        
-        //加载图片表情数据
-        [[PLVLCChatroomViewModel sharedViewModel] loadImageEmotions];
     }
     return self;
 }
@@ -353,10 +350,6 @@ UITableViewDataSource
     [PLVLCUtils showHUDWithTitle:@"历史记录获取失败" detail:@"" view:self.view];
 }
 
-- (void)chatroomManager_loadImageEmotions {
-    self.keyboardToolView.imageEmotions = [PLVLCChatroomViewModel sharedViewModel].emotionImageArray;
-}
-
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray {
     if ([PLVRoomDataManager sharedManager].roomData.welcomeShowDisable) {
         return;
@@ -395,6 +388,15 @@ UITableViewDataSource
 - (void)chatroomManager_managerMessage:(NSString * )content {
     [self.notifyMarqueeView showNotifyhMessage:content];
     [self arrangeTopMarqueeViewFrame];
+}
+
+
+- (void)chatroomManager_loadImageEmotionSuccess:(NSArray<NSDictionary *> *)dictArray {
+    self.keyboardToolView.imageEmotions = dictArray;
+}
+
+- (void)chatroomManager_loadImageEmotionFailure {
+    [PLVLCUtils showHUDWithTitle:@"图片表情数据获取失败" detail:@"" view:self.view];
 }
 
 #pragma mark - UITableView DataSource

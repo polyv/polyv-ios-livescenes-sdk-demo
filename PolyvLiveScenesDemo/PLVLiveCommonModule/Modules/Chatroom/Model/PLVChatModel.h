@@ -41,11 +41,11 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 @property (nonatomic, assign, getter=prohibitWordTipIsShowed) BOOL prohibitWordTipShowed;
 
 /// 图片Id，用于重发图片消息时，找到此条消息并删除
-/// @note message类型为图片消息(PLVSpeakMessage)时,imageId不为空，否则为 nil
+/// @note message类型为图片消息时，imageId不为空，否则为 nil
 @property (nonatomic, copy) NSString *imageId;
 
 /// 判断当前消息是否为：严禁词、违禁图片 消息
-/// @note YES: 含有严禁词的消息；NO: 不含严禁词的消息
+/// @note YES: 含有严禁词、违禁图片的消息；NO: 不含严禁词、违禁图片的消息
 - (BOOL)isProhibitMsg;
 
 /// 获取 message 属性的 msgId

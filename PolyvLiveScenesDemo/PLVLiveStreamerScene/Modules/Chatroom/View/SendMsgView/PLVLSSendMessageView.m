@@ -89,9 +89,6 @@ UITextViewDelegate
         [self bgView];
         [self toolView];
         [self emojiboard];
-        
-        //只用加载一次 图片表情资源
-        [[PLVLSChatroomViewModel sharedViewModel] loadImageEmotions];
     }
     return self;
 }

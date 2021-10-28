@@ -52,17 +52,30 @@ NSString *PLVDocumentConvertFailureNotification = @"PLVDocumentConvertFailureNot
         return;
     }
     
-    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
     __weak typeof(self) weakSelf = self;
-    [PLVLiveVideoAPI getDocumentConvertStatusWithChannelId:channelId fileId:fileIds completion:^(NSArray<NSDictionary *> * _Nonnull responseArray) {
-        if ([responseArray count] > 0) {
+    void (^SuccessBlock) (NSArray<NSDictionary *> * _Nonnull responseArray) = ^(NSArray<NSDictionary *> * _Nonnull responseArray){
+        if (responseArray &&
+            [responseArray isKindOfClass:[NSArray class]] &&
+            [responseArray count] > 0) {
             [weakSelf processResponseArray:responseArray];
         }
 
         [weakSelf request];
-    } failure:^(NSError * _Nonnull error) {
-        [weakSelf request];
-    }];
+    };
+    
+    if ([PLVRoomDataManager sharedManager].roomData.inHiClassScene) { // 互动学堂 场景
+        NSString *lessonId = [PLVRoomDataManager sharedManager].roomData.lessonInfo.lessonId;
+        [PLVLiveVideoAPI getDocumentConvertStatusWithLessonId:lessonId fileId:fileIds completion:SuccessBlock failure:^(NSError * _Nonnull error) {
+            [weakSelf request];
+        }];
+    } else { // 手机开播(三分屏) 场景
+        NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+        [PLVLiveVideoAPI getDocumentConvertStatusWithChannelId:channelId fileId:fileIds completion:SuccessBlock failure:^(NSError * _Nonnull error) {
+            [weakSelf request];
+        }];
+    }
+    
+    
 }
 
 - (NSString *)getFileIdsString {

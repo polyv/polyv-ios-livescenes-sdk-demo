@@ -48,8 +48,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *partOfPublicChatArray;
 /// 私聊消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *privateChatArray;
-/// 图片表情数组
-@property (nonatomic, strong) NSArray *emotionImageArray;
+
 @end
 
 @implementation PLVLCChatroomViewModel {
@@ -104,8 +103,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.privateChatArray = [NSMutableArray arrayWithCapacity:20];
     
     // 初始化聊天室Presenter并设置delegate
-    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:20 childRoomAllow:NO];
+    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:20];
     self.presenter.delegate = self;
+    [self.presenter login];
     
     // 监听socket消息
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
@@ -159,6 +159,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.onlyTeacher = NO;
 }
 
+#pragma mark - Getter
+
+- (NSArray *)imageEmotionArray {
+    return self.presenter.imageEmotionArray;
+}
+
 #pragma mark - 加载消息
 
 - (void)loadHistory {
@@ -198,10 +204,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return model != nil;
 }
 
-- (BOOL)sendImageEmotionId:(NSString *)imageId imageUrl:(nonnull NSString *)imageUrl   {
-    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId];
+- (BOOL)sendImageEmotionId:(NSString *)imageId imageUrl:(NSString *)imageUrl   {
+    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId imageUrl:imageUrl];
     if (model) {
-        ((PLVImageEmotionMessage *)model.message).imageUrl = imageUrl;
         [self addPublicChatModel:model];
     }
     return model != nil;
@@ -272,19 +277,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
-            
-            //当接收到公聊消息为图片表情时，因为会返回图片id所以在此处从列表中取出图片地址
-            if ([model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
-                PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
-                [self.emotionImageArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                    NSString *emotionImageId = PLV_SafeStringForDictKey(obj, @"id");
-                    if ([message.imageId isEqualToString:emotionImageId]) {
-                        message.imageUrl = PLV_SafeStringForDictKey(obj, @"url");
-                        *stop = YES;
-                    }
-                }];
-            }
-
             [self.publicChatArray addObject:model];
             if (model.user.specialIdentity) {
                 [self.partOfPublicChatArray addObject:model];
@@ -425,6 +417,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)notifyDelegatesForDanmu:(NSString *)content {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_danmu:content];
+    });
+}
+
+- (void)notifyDelegatesLoadImageEmotionSuccess {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_loadImageEmotionSuccess:self.imageEmotionArray];
+    });
+}
+
+- (void)notifyDelegatesLoadImageEmotionFailure {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_loadImageEmotionFailure];
     });
 }
 
@@ -572,13 +576,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self notifyDelegatesLoadHistoryFailure];
 }
 
-- (void)chatroomPresenter_loadImageEmotionsSuccess:(NSArray<NSDictionary *> *)dictArray {
-    self.emotionImageArray = dictArray;
-    dispatch_async(multicastQueue, ^{
-        [self->multicastDelegate chatroomManager_loadImageEmotions];
-    });
-}
-
 - (void)chatroomPresenter_didReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray {
     [self addPublicChatModels:modelArray];
     [self cacheManagerMessages:modelArray];
@@ -595,6 +592,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_didAllMessageDeleted {
     [self removeAllPublicChatModels];
+}
+
+- (void)chatroomPresenter_loadImageEmotionsSuccess {
+    [self notifyDelegatesLoadImageEmotionSuccess];
+}
+
+- (void)chatroomPresenter_loadImageEmotionsFailure {
+    [self notifyDelegatesLoadImageEmotionFailure];
 }
 
 #pragma mark - Utils

@@ -19,6 +19,7 @@ static NSString *kRoomUserTypeTeacher = @"teacher";
 static NSString *kRoomUserTypeAssistant = @"assistant";
 static NSString *kRoomUserTypeManager = @"manager";
 static NSString *kRoomUserTypeDummy = @"dummy";
+static NSString *kRoomUserTypeSCStudent = @"SCStudent";
 
 @interface PLVRoomUser ()
 
@@ -50,7 +51,7 @@ static NSString *kRoomUserTypeDummy = @"dummy";
         if (!viewerAvatar || ![viewerAvatar isKindOfClass:[NSString class]] || viewerAvatar.length == 0) {
             viewerAvatar = PLVLiveConstantsRoomEffectDeviceIconURL;
         }
-        if (viewerType <= PLVRoomUserTypeUnknown || viewerType >= PLVRoomUserTypeManager) {
+        if (viewerType <= PLVRoomUserTypeUnknown || viewerType > PLVRoomUserTypeSCStudent) {
             viewerType = PLVRoomUserTypeStudent;
         }
         
@@ -120,6 +121,8 @@ static NSString *kRoomUserTypeDummy = @"dummy";
         socketUserType = PLVSocketUserTypeAssistant;
     } else if (userType == PLVRoomUserTypeManager) {
         socketUserType = PLVSocketUserTypeManager;
+    } else if (userType == PLVRoomUserTypeSCStudent) {
+        socketUserType = PLVSocketUserTypeSCStudent;
     } else {
         socketUserType = PLVSocketUserTypeViewer;
     }
@@ -147,6 +150,8 @@ static NSString *kRoomUserTypeDummy = @"dummy";
         return PLVRoomUserTypeManager;
     } else if ([userTypeString isEqualToString:kRoomUserTypeDummy]) {
         return PLVRoomUserTypeDummy;
+    } else if ([userTypeString isEqualToString:kRoomUserTypeSCStudent]){
+        return PLVRoomUserTypeSCStudent;
     } else {
         return PLVRoomUserTypeUnknown;
     }
@@ -170,6 +175,8 @@ static NSString *kRoomUserTypeDummy = @"dummy";
             return kRoomUserTypeManager;
         case PLVRoomUserTypeDummy:
             return kRoomUserTypeDummy;
+        case PLVRoomUserTypeSCStudent:
+            return kRoomUserTypeSCStudent;
         default:
             return @"";
     }

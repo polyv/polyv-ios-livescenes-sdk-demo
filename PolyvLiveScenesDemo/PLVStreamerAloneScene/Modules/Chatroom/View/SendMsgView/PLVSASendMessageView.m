@@ -375,10 +375,8 @@ UITextViewDelegate
 }
 
 - (void)setImageEmotionArray:(NSArray *)imageEmotionArray {
-    if (!_imageEmotionArray) {
-        _imageEmotionArray = imageEmotionArray;
-        self.emojiboard.imageEmotions = imageEmotionArray;
-    }
+    _imageEmotionArray = imageEmotionArray;
+    self.emojiboard.imageEmotions = imageEmotionArray;
 }
 
 #pragma mark 网络是否可用

@@ -530,18 +530,17 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 #pragma mark Action
 
 - (void)resendButtonAction {
-    // 只有在发送失败方可触发重发点击事件，避免重复发送
-    if (self.resendReplyHandler &&
-        self.msgState == PLVChatMsgStateFail) {
-        
-        PLVQuoteMessage *message = (PLVQuoteMessage *)self.model.message;
-        if (message) {
-            __weak typeof(self) weakSelf = self;
-            [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
-                weakSelf.model.msgState = PLVChatMsgStateSending;
-                weakSelf.resendReplyHandler(message.content, weakSelf.model.replyMessage);
-            }];
-        }
+    // 只有在发送失败时方可触发重发点击事件，避免重复发送
+    if (self.msgState == PLVChatMsgStateFail) {
+        __weak typeof(self) weakSelf = self;
+        [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+            weakSelf.model.msgState = PLVChatMsgStateSending;
+            if (weakSelf.resendReplyHandler) {
+                weakSelf.resendReplyHandler(weakSelf.model);
+            }
+        }];
+    } else {
+        self.resendButton.hidden = YES;
     }
 }
 

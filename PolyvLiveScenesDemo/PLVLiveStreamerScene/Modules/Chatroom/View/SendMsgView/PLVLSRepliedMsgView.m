@@ -16,6 +16,7 @@
 
 @property (nonatomic, strong) PLVChatModel *chatModel; // 被引用的消息模型
 @property (nonatomic, strong) PLVImageMessage * _Nullable imageMsg; // 被引用的图片消息
+@property (nonatomic, strong) PLVImageEmotionMessage * _Nullable imageEmotionMsg; // 被引用的图片表情消息
 @property (nonatomic, assign) CGFloat viewHeight; // 根据 chatModel 得到的本视图高度
 @property (nonatomic, strong) UIVisualEffectView *effectView; // 高斯模糊效果图
 @property (nonatomic, strong) UIButton *closeButton; // 右上方关闭按钮
@@ -57,32 +58,23 @@
     _chatModel = chatModel;
     
     NSString *repliedMsgContent = nil;
-    PLVImageMessage *imageMsg = nil;
-    
-    id message = chatModel.message;
-    if ([message isKindOfClass:[PLVImageMessage class]]) {
-        imageMsg = (PLVImageMessage *)message;
-    } else if ([message isKindOfClass:[PLVImageEmotionMessage class]]){
-        imageMsg = [[PLVImageMessage alloc] init];
-        imageMsg.imageId = ((PLVImageEmotionMessage *)message).imageId;
-        imageMsg.imageUrl = ((PLVImageEmotionMessage *)message).imageUrl;
-        imageMsg.imageSize = ((PLVImageEmotionMessage *)message).imageSize;
-    } else if ([message isKindOfClass:[PLVSpeakMessage class]] ||
-               [message isKindOfClass:[PLVQuoteMessage class]]) {
-        if ([message isKindOfClass:[PLVSpeakMessage class]]) {
-            PLVSpeakMessage *speakMessage = (PLVSpeakMessage *)message;
-            repliedMsgContent = speakMessage.content;
-        } else if ([message isKindOfClass:[PLVQuoteMessage class]]) {
-            PLVQuoteMessage *speakMessage = (PLVQuoteMessage *)message;
-            repliedMsgContent = speakMessage.content;
-        }
-    }
+      id message = chatModel.message;
+      if ([message isKindOfClass:[PLVSpeakMessage class]] ||
+          [message isKindOfClass:[PLVQuoteMessage class]]) {
+          if ([message isKindOfClass:[PLVSpeakMessage class]]) {
+              PLVSpeakMessage *speakMessage = (PLVSpeakMessage *)message;
+              repliedMsgContent = speakMessage.content;
+          } else if ([message isKindOfClass:[PLVQuoteMessage class]]) {
+              PLVQuoteMessage *speakMessage = (PLVQuoteMessage *)message;
+              repliedMsgContent = speakMessage.content;
+          }
+      }
     
     NSString *nickString = chatModel.user.userName;
-    [self updateUIWithNickName:nickString content:repliedMsgContent imageMsg:imageMsg];
+    [self updateUIWithNickName:nickString content:repliedMsgContent message:message];
 }
 
-- (void)updateUIWithNickName:(NSString *)nickName content:(NSString *)content imageMsg:(PLVImageMessage *)imageMsg {
+- (void)updateUIWithNickName:(NSString *)nickName content:(NSString *)content message:(id)message {
     NSMutableString *mutString = [[NSMutableString alloc] init];
     if (nickName &&
         [nickName isKindOfClass:[NSString class]] &&
@@ -97,10 +89,16 @@
     }
     _label.text = [mutString copy];
     
-    if (imageMsg) { // 设置图片消息的图片
-        _imageMsg = imageMsg; // _imageMsg不为nil时则证明为图片消息
-        
-        NSURL *imageURL = [PLVLSRepliedMsgView imageURLWithMessage:imageMsg];
+    [self updateImageUIWithMessage:message];
+    
+    [self layoutUI];
+}
+
+- (void)updateImageUIWithMessage:(id)message {
+    if ([message isKindOfClass:[PLVImageMessage class]]) {
+        PLVImageMessage *imageMsg = (PLVImageMessage *)message;
+        _imageMsg = imageMsg;
+        NSURL *imageURL = [PLVLSRepliedMsgView imageURLWithMessageImageUrl:imageMsg.imageUrl];
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
         if (imageURL) {
             [self.imageView sd_setImageWithURL:imageURL
@@ -111,9 +109,20 @@
         } else {
             [self.imageView setImage:placeHolderImage];
         }
+        
+    } else if([message isKindOfClass:[PLVImageEmotionMessage class]]) {
+        PLVImageEmotionMessage *imageMsg = (PLVImageEmotionMessage *)message;
+        _imageEmotionMsg = imageMsg;
+        NSURL *imageURL = [PLVLSRepliedMsgView imageURLWithMessageImageUrl:imageMsg.imageUrl];
+        UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
+        if (imageURL) {
+            [self.imageView sd_setImageWithURL:imageURL
+                              placeholderImage:placeHolderImage
+                                       options:SDWebImageRetryFailed];
+        } else {
+            [self.imageView setImage:placeHolderImage];
+        }
     }
-    
-    [self layoutUI];
 }
 
 - (void)layoutUI {
@@ -136,8 +145,9 @@
     self.label.frame = CGRectMake(originX, originY, labelWidth, labelHeight);
     
     CGFloat height = 0;
-    if (self.imageMsg) {
-        CGSize imageSize = [PLVLSRepliedMsgView calculateImageViewSizeWithMessage:self.imageMsg];
+    if (self.imageMsg || self.imageEmotionMsg) {
+        CGSize messageImageSize = self.imageMsg ? self.imageMsg.imageSize : self.imageEmotionMsg.imageSize;
+        CGSize imageSize = [PLVLSRepliedMsgView calculateImageViewSizeWithMessageImageSize:messageImageSize];
         self.imageView.frame = CGRectMake(originX, CGRectGetMaxY(self.label.frame) + 4, imageSize.width, imageSize.height);
         height = CGRectGetMaxY(self.imageView.frame) + 8;
     } else {
@@ -190,8 +200,7 @@
 #pragma mark Utils
 
 /// 获取图片URL
-+ (NSURL *)imageURLWithMessage:(PLVImageMessage *)message {
-    NSString *imageUrl = message.imageUrl;
++ (NSURL *)imageURLWithMessageImageUrl:(NSString * _Nullable)imageUrl {
     if (!imageUrl || ![imageUrl isKindOfClass:[NSString class]] || imageUrl.length == 0) {
         return nil;
     }
@@ -200,8 +209,7 @@
 }
 
 /// 计算被引用消息图片尺寸
-+ (CGSize)calculateImageViewSizeWithMessage:(PLVImageMessage *)message {
-    CGSize imageSize = message.imageSize;
++ (CGSize)calculateImageViewSizeWithMessageImageSize:(CGSize)imageSize {
     CGFloat maxLength = 40.0;
     if (imageSize.width == 0 || imageSize.height == 0) {
         return CGSizeMake(maxLength, maxLength);

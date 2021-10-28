@@ -8,7 +8,7 @@
 
 #import "PLVLiveStreamerLoginViewController.h"
 
-#import "PLVLiveStreamerPrivacyViewController.h"
+#import "PLVLiveScenesPrivacyViewController.h"
 #import "PLVLSStreamerViewController.h"
 #import "PLVSAStreamerViewController.h"
 
@@ -19,8 +19,6 @@
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
-static NSString * const kPrivacyPolicy = @"https://s2.videocc.net/app-simple-pages/privacy-policy/index.html";
-static NSString * const kUserProtocol = @"https://s2.videocc.net/app-simple-pages/user-agreement/index.html";
 static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserProtocol";
 static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 
@@ -431,14 +429,14 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 }
 
 - (void)privacyPolicyClickAction {
-    PLVLiveStreamerPrivacyViewController *vctrl = [[PLVLiveStreamerPrivacyViewController alloc] initWithUrlString:kPrivacyPolicy];
+    PLVLiveScenesPrivacyViewController *vctrl = [PLVLiveScenesPrivacyViewController controllerWithPolicyControllerType:PLVPolicyControllerTypePrivacyPolicy];
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vctrl];
     nav.modalPresentationStyle = UIModalPresentationFullScreen;
     [self presentViewController:nav animated:YES completion:nil];
 }
 
 - (void)userProtocolClickAction {
-    PLVLiveStreamerPrivacyViewController *vctrl = [[PLVLiveStreamerPrivacyViewController alloc] initWithUrlString:kUserProtocol];
+    PLVLiveScenesPrivacyViewController *vctrl = [PLVLiveScenesPrivacyViewController controllerWithPolicyControllerType:PLVPolicyControllerTypeUserAgreement];
     UINavigationController *nav = [[UINavigationController alloc] initWithRootViewController:vctrl];
     nav.modalPresentationStyle = UIModalPresentationFullScreen;
     [self presentViewController:nav animated:YES completion:nil];

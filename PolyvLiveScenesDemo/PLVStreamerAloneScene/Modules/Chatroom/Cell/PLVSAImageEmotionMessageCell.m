@@ -515,7 +515,7 @@ static  NSString *KEYPATH_EMOTIONMSGSTATE = @"imageEmotionSendState";
             __weak typeof(self) weakSelf = self;
             [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
                 weakSelf.model.msgState = PLVChatMsgStateSending;
-                weakSelf.resendImageEmotionHandler(message.imageId, message.imageUrl);
+                weakSelf.resendImageEmotionHandler(weakSelf.model);
             }];
         }
     }

@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /*
  PLVECChatroomViewModel的协议
+ @note 全部回调在主线程执行
  */
 @protocol PLVECChatroomViewModelProtocol <NSObject>
 
@@ -20,7 +21,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 返回本地发送的公聊消息（包含禁言的情况）
 /// 用于刷新列表、滚动列表到底部
-/// @note 在主线程回调
 - (void)chatroomManager_didSendMessage;
 
 /// 返回socket接收到的公聊消息
@@ -41,10 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于停止【下拉加载更多】控件的动画
 - (void)chatroomManager_loadHistoryFailure;
 
-/// 获取图片表情成功时触发
-- (void)chatroomManager_loadImageEmotionSuccess;
-
 /// 当前时间段内如果有用户登录聊天室（包括自己），间隔2秒触发一次
+/// 用于显示‘欢迎登录用户横幅’
 /// @param userArray 登录聊天室的用户数组，如果为nil，表示当前时间段内当前用户有登录事件
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray;
 
@@ -65,9 +63,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 全部消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
-
-/// 图片表情数组
-@property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 
 #pragma mark API
 

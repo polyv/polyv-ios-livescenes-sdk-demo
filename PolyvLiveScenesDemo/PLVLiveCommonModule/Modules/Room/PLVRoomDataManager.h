@@ -44,6 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 直播状态 liveState 更新
 - (void)roomDataManager_didLiveStateChanged:(PLVChannelLiveStreamState)liveState;
 
+/// 互动学堂讲师在别处登录
+- (void)roomDataManager_didHiClassTeacherRelogin:(NSString *)msg;
+
 @end
 
 @interface PLVRoomDataManager : NSObject

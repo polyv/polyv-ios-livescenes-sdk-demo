@@ -205,6 +205,11 @@ PLVLSChatroomViewModelProtocol
     [self clearNewMessageCount];
 }
 
+- (void)chatroomViewModel_didSendProhibitMessgae {
+    [self.chatroomListView didSendMessage];
+    [self clearNewMessageCount];
+}
+
 - (void)chatroomViewModel_didReceiveMessages {
     BOOL isBottom = [self.chatroomListView didReceiveMessages];
     if (isBottom) { // tableview显示在最底部
@@ -227,9 +232,13 @@ PLVLSChatroomViewModelProtocol
     [self.chatroomListView loadHistoryFailure];;
 }
 
-- (void)chatroomViewModel_loadEmotionSuccess {
+- (void)chatroomViewModel_loadImageEmotionSuccess:(NSArray<NSDictionary *> *)dictArray {
     //图片表情资源加载成功
-    self.sendMsgView.imageEmotionArray = [PLVLSChatroomViewModel sharedViewModel].imageEmotionArray;
+    self.sendMsgView.imageEmotionArray = dictArray;
+}
+
+- (void)chatroomViewModel_loadImageEmotionFailure {
+    [PLVLSUtils showToastInHomeVCWithMessage:@"图片表情资源加载失败"];
 }
 
 @end

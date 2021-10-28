@@ -22,6 +22,7 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 
 @protocol PLVDocumentViewDelegate <NSObject>
 
+@required
 #pragma mark 多场景通用回调
 
 ///  webView加载完成回调
@@ -30,6 +31,7 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 ///  webView加载失败回调
 - (void)documentView_webViewLoadFailWithError:(NSError *)error;
 
+@optional
 #pragma mark 观看场景回调
 
 /// 获取刷新PPT的延迟时间

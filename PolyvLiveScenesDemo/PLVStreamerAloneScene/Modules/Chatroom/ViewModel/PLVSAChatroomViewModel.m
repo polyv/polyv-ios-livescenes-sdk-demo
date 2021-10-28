@@ -27,8 +27,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 // 数据数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray; /// 公聊全部消息数组
-/// 图片表情数组
-@property (nonatomic, strong) NSArray *imageEmotionArray;
 
 @end
 
@@ -71,9 +69,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.chatArray = [[NSMutableArray alloc] initWithCapacity:500];
     
     // 初始化聊天室Presenter并设置delegate
-    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10 childRoomAllow:NO];
+    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10];
     self.presenter.delegate = self;
-    self.presenter.specialRole = YES;
+    [self.presenter login];
     
     // 监听socket消息
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
@@ -104,6 +102,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self.presenter loadHistory];
 }
 
+#pragma mark - Getter
+
+- (NSArray *)imageEmotionArray {
+    return self.presenter.imageEmotionArray;
+}
+
 #pragma mark - 加载图片表情资源列表
 
 - (void)loadImageEmotions {
@@ -113,7 +117,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 #pragma mark  发送消息
 
 - (BOOL)sendSpeakMessage:(NSString *)content replyChatModel:(PLVChatModel *)replyChatModel {
-    PLVChatModel *model = [self.presenter chatModelWithMsgStateForSendSpeakMessage:content replyChatModel:replyChatModel];
+    PLVChatModel *model = [self.presenter sendSpeakMessage:content replyChatModel:replyChatModel];
     if (model) {
         if (replyChatModel) {
             model.replyMessage = replyChatModel;
@@ -134,61 +138,63 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (BOOL)sendImageEmotionMessage:(NSString *)imageId
                        imageUrl:(NSString *)imageUrl {
-    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId];
+    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId imageUrl:imageUrl];
     if (model) {
-        ((PLVImageEmotionMessage *)model.message).imageUrl = imageUrl;
-        model.imageId = imageId;
         [self addPublicChatModel:model];
     }
     return model != nil;
 }
 
-- (BOOL)resendSpeakMessage:(NSString *)content replyChatModel:(PLVChatModel *)replyChatModel {
-    PLVChatModel *model = [self.presenter chatModelWithMsgStateForSendSpeakMessage:content replyChatModel:replyChatModel];
-    if (model) {
+- (BOOL)resendSpeakMessage:(PLVChatModel *)model replyChatModel:(PLVChatModel *)replyChatModel {
+    if (!model ||
+        !model.message ||
+        !model.content) {
+        return NO;
+    }
+    
+    PLVChatModel *tempModel = [self.presenter sendSpeakMessage:model.content replyChatModel:replyChatModel];
+    if (tempModel) {
+        tempModel.replyMessage = replyChatModel;
+        
         [self deleteResendChatModelWithModel:model];
-        if (replyChatModel) {
-            model.replyMessage = replyChatModel;
-        }
-        [self addPublicChatModel:model];
+        [self addResendPublicChatModel:tempModel];
     }
-    return model;
+    return tempModel;
 }
 
-- (BOOL)resendImageMessage:(UIImage *)image imageId:(NSString *)imageId {
-    PLVChatModel *model = [self.presenter sendImageMessage:image];
-    if (model) {
-        if (imageId) {
-            model.imageId = imageId;
-            [self deleteResendChatModelWithModel:model];
-        }
-        [self addPublicChatModel:model];
+- (BOOL)resendImageMessage:(PLVChatModel *)model {
+    if (!model ||
+        !model.message ||
+        ![model.message isKindOfClass:[PLVImageMessage class]]) {
+        return NO;
     }
-    return model != nil;
-}
-
-- (BOOL)resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl {
-    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId];
-    if (model) {
-        ((PLVImageEmotionMessage *)model.message).imageUrl = imageUrl;
-        model.imageId = imageId;
+    
+    PLVImageMessage *message = (PLVImageMessage *)[model message];
+    PLVChatModel *tempModel = [self.presenter sendImageMessage:message.image];
+    if (tempModel) {
         [self deleteResendChatModelWithModel:model];
-        [self addPublicChatModel:model];
+        [self addResendPublicChatModel:tempModel];
     }
-    return model != nil;
+    return tempModel != nil;
 }
 
-- (BOOL)sendCloseRoom:(BOOL)closeRoom {
-    return [self.presenter sendCloseRoom:closeRoom];
+- (BOOL)resendImageEmotionMessage:(PLVChatModel *)model {
+    if (!model ||
+        !model.message ||
+        ![model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
+        return NO;
+    }
+    
+    PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)[model message];
+    PLVChatModel *resendModel = [self.presenter sendImageEmotionId:message.imageId imageUrl:message.imageUrl];
+    if (resendModel) {
+        [self deleteResendChatModelWithModel:model];
+        [self addResendPublicChatModel:resendModel];
+    }
+    return resendModel != nil;
 }
 
 #pragma mark - [ Private Method ]
-
-#pragma mark Getter
-- (BOOL)closeRoom {
-    return self.presenter.closeRoom;
-}
-
 #pragma mark Data Mode
 
 /// 本地发送公聊消息时
@@ -203,25 +209,24 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self notifyListenerDidSendMessage];
 }
 
+/// 本地重发公聊消息时
+- (void)addResendPublicChatModel:(PLVChatModel *)model {
+    if (!model ||
+        ![model isKindOfClass:[PLVChatModel class]]) {
+        return;
+    }
+    dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+    [self.chatArray addObject:model];
+    dispatch_semaphore_signal(_chatArrayLock);
+    
+    [self notifyListenerDidResendMessage];
+}
+
 /// 接收到socket的公聊消息时
 - (void)addPublicChatModels:(NSArray <PLVChatModel *> *)modelArray {
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
-            
-            //当接收到公聊消息为图片表情时，因为会返回图片id所以在此处从列表中取出图片地址
-            if ([model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
-                PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
-                [self.imageEmotionArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                    NSString *emotionImageId = PLV_SafeStringForDictKey(obj, @"id");
-                    if (emotionImageId &&
-                        [message.imageId isEqualToString:emotionImageId]) {
-                        message.imageUrl = PLV_SafeStringForDictKey(obj, @"url");
-                        *stop = YES;
-                    }
-                }];
-            }
-            
             [self.chatArray addObject:model];
         }
     }
@@ -303,7 +308,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     dispatch_semaphore_signal(_chatArrayLock);
     
-    [self notifyListenerDidSendMessage];
+    [self notifyListenerDidSendProhibitMessgae];
 }
 
 /// 给违规图片打上标签
@@ -317,13 +322,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     NSArray *tempChatArray = [self.chatArray copy];
     for (PLVChatModel *model in tempChatArray) {
-        // 该消息已标记为包含严禁词消息
+        // 该消息已标记为包含违规图片消息
         if ([model isProhibitMsg]) {
             continue;
         }
         
         NSString *tempMsgId = [model msgId];
-        // 只要含有违禁词，都需要处理，不局限于最近一条
         if (tempMsgId &&
             [tempMsgId isKindOfClass:[NSString class]] &&
             [tempMsgId isEqualToString:msgId]) {
@@ -333,7 +337,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     dispatch_semaphore_signal(_chatArrayLock);
     
-    [self notifyListenerDidSendMessage];
+    [self notifyListenerDidSendProhibitMessgae];
 }
 
 /// 删除已重发的消息(此时还未发到公聊)，避免重复显示
@@ -344,99 +348,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
-    NSArray *tempChatArray = [self.chatArray copy];
-    for (PLVChatModel *tempModel in tempChatArray) {
-        
-        id message = model.message;
-       if ([message isKindOfClass:[PLVSpeakMessage class]] &&
-           [tempModel.message isKindOfClass:[PLVSpeakMessage class]]) {
-            PLVSpeakMessage  *speak = (PLVSpeakMessage *)message;
-            NSString *content = tempModel.content;
-            NSString *speakContetn = speak.content;
-            if (content &&
-                speakContetn &&
-                [content isEqualToString:speakContetn]) {
-                [self.chatArray removeObject:tempModel];
-                break;
-            }
-        } else if ([message isKindOfClass:[PLVQuoteMessage class]] &&
-                   [tempModel.message isKindOfClass:[PLVQuoteMessage class]]){
-            PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)message;
-            PLVQuoteMessage *tempQuoteMessage = (PLVQuoteMessage *)tempModel.message;
-            
-            // 讲师回复的内容
-            NSString *tempContent = tempQuoteMessage.content;
-            NSString *content = quoteMessage.content;
-            
-            // 学生发言图片地址
-            NSString *tempQuoteImageUrl = tempQuoteMessage.quoteImageUrl;
-            NSString *quoteImageUrl = quoteMessage.quoteImageUrl;
-            
-            // 学生发言内容
-            NSString *tempQuoteContent = tempQuoteMessage.quoteContent;
-            NSString *quoteContent = quoteMessage.quoteContent;
-            
-            if (tempContent &&
-                content) {
-                // 被老师回复的类型为图片
-                if (tempQuoteImageUrl &&
-                    quoteImageUrl &&
-                    [tempQuoteImageUrl isEqualToString:quoteImageUrl]) { 
-                    
-                    [self.chatArray removeObject:tempModel];
-                    break;
-                    
-                }
-                
-                // 被老师回复的类型为文字
-                if (tempContent &&
-                    content &&
-                    tempQuoteContent &&
-                    quoteContent &&
-                    [tempContent isEqualToString:content] &&
-                    [tempQuoteContent isEqualToString:quoteContent]) {
-                    
-                    [self.chatArray removeObject:tempModel];
-                    break;
-                    
-                }
-            }
-        } else if ([message isKindOfClass:[PLVImageMessage class]] &&
-                   [tempModel.message isKindOfClass:[PLVImageMessage class]]) {
-    
-            NSString *tempImageId = tempModel.imageId;
-            NSString *imageId = model.imageId;
-            
-            if (tempImageId &&
-                imageId &&
-                [tempImageId isEqualToString:imageId]) {
-                
-                [self.chatArray removeObject:tempModel];
-                break;
-                
-            }
-        } else if ([message isKindOfClass:[PLVImageEmotionMessage class]] &&
-                   [tempModel.message isKindOfClass:[PLVImageEmotionMessage class]]) {
-    
-            NSString *tempImageId = tempModel.imageId;
-            NSString *imageId = model.imageId;
-            //只能保证已经发送的图片表情消息不重复，未发送成功的因为图片id和url完全一致咱不能区分
-            NSString *msgId = ((PLVImageEmotionMessage *)tempModel.message).msgId;
-            if (tempImageId &&
-                imageId &&
-                [tempImageId isEqualToString:imageId] &&
-                !msgId) {
-                
-                [self.chatArray removeObject:tempModel];
-                break;
-                
-            }
+    NSArray *tempCharArray = [self.chatArray copy];
+    for (PLVChatModel *tempModel in tempCharArray) {
+        if (tempModel == model) {
+            [self.chatArray removeObject:model];
+            break;
         }
     }
-    
     dispatch_semaphore_signal(_chatArrayLock);
-    
-    [self notifyListenerDidMessageDeleted];
 }
 
 
@@ -446,6 +365,24 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModelDidSendMessage:)]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate chatroomViewModelDidSendMessage:self];
+        });
+    }
+}
+
+- (void)notifyListenerDidResendMessage {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModelDidResendMessage:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModelDidResendMessage:self];
+        });
+    }
+}
+
+- (void)notifyListenerDidSendProhibitMessgae {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModelDidSendProhibitMessgae:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModelDidSendProhibitMessgae:self];
         });
     }
 }
@@ -467,7 +404,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)notifyListenerLoadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModelDidSendMessage:)]) {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel:loadHistorySuccess:firstTime:)]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate chatroomViewModel:self loadHistorySuccess:noMore firstTime:first];
         });
@@ -478,6 +415,24 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModelLoadHistoryFailure:)]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate chatroomViewModelLoadHistoryFailure:self];
+        });
+    }
+}
+
+- (void)notifyListenerLoadImageEmotionsSuccess {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModel_loadImageEmotionSuccess:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModel_loadImageEmotionSuccess:self.imageEmotionArray];
+        });
+    }
+}
+
+- (void)notifyListenerLoadImageEmotionsFailure {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModel_loadImageEmotionFailure)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModel_loadImageEmotionFailure];
         });
     }
 }
@@ -613,15 +568,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self notifyListenerLoadHistoryFailure];
 }
 
-- (void)chatroomPresenter_loadImageEmotionsSuccess:(NSArray<NSDictionary *> *)dictArray {
-    self.imageEmotionArray = dictArray;
-    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel_loadEmotionSuccess)]) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.delegate chatroomViewModel_loadEmotionSuccess];
-        });
-    }
-}
-
 - (void)chatroomPresenter_didReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray {
     [self addPublicChatModels:modelArray];
 }
@@ -640,6 +586,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_receiveImageWarningWithMsgId:(NSString *)msgId {
     [self markChatModelProhibitImageWithMsgId:msgId];
+}
+
+- (void)chatroomPresenter_loadImageEmotionsSuccess {
+    [self notifyListenerLoadImageEmotionsSuccess];
+}
+
+- (void)chatroomPresenter_loadImageEmotionsFailure {
+    [self notifyListenerLoadImageEmotionsFailure];
 }
 
 @end

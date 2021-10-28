@@ -11,9 +11,9 @@
 #import "PLVLinkMicOnlineUser.h"
 #import "PLVLinkMicWaitUser.h"
 
-@class PLVChatUser, PLVMemberPresenter;
-
 NS_ASSUME_NONNULL_BEGIN
+
+@class PLVChatUser, PLVMemberPresenter;
 
 /// 用户排序枚举 (该枚举与 PLVRoomUserType 相互独立；主要用于用户排序)
 /// * 注意：
@@ -39,6 +39,8 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
     PLVMemberOrderIndex_WaitingLink = 12,
     /// 已上麦
     PLVMemberOrderIndex_ConnectedLink = 14,
+    /// 互动课堂学生
+    PLVMemberOrderIndex_SCStudent   = 15,
     /// 学生
     PLVMemberOrderIndex_Student   = 16,
     /// 云课堂学员
@@ -54,6 +56,10 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 
 - (void)userListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
 
+@optional
+
+- (void)kickedUserListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
+
 - (NSArray *)currentOnlineUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
 
 @end
@@ -62,8 +68,15 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 
 @property (nonatomic, weak) id<PLVMemberPresenterDelegate> delegate;
 
+/// 是否监听维护踢出用户列表，默认为NO
+/// 该属性应在调用 'start' 方法之前完成配置
+@property (nonatomic, assign) BOOL monitorKickUser;
+
 /// 聊天室在线人数
 @property (nonatomic, assign, readonly) NSInteger userCount;
+
+/// 聊天室移出人数
+@property (nonatomic, assign, readonly) NSInteger kickedCount;
 
 /// 自动获取聊天室在线列表，每间隔20秒获取一次并自动更新成员列表
 - (void)start;
@@ -77,8 +90,17 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 /// 聊天室在线人数列表数组
 - (NSArray <PLVChatUser *> *)userList;
 
-/// 讲师端踢出学员后调用
-- (void)removeUserWithUserId:(NSString *)userId;
+/// 聊天室移出成员列表数组
+- (NSArray <PLVChatUser *> *)kickedUserList;
+
+/// 返回指定Id的用户数据
+- (PLVChatUser * _Nullable)userInListWithUserId:(NSString *)userId;
+
+/// 讲师端踢出学员后调用，代替之前的 'removeUserWithUserId:' 方法
+- (void)kickUserWithUserId:(NSString *)userId;
+
+/// 讲师端移入学员后调用
+- (void)unkickUser:(PLVChatUser *)user;
 
 /// 讲师端禁言/取消禁言某个学员后调用
 - (void)banUserWithUserId:(NSString *)userId banned:(BOOL)banned;

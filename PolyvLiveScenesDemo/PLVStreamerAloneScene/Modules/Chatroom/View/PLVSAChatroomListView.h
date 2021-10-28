@@ -18,18 +18,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击到底部 回调
 - (void)chatroomListViewDidScrollTableViewUp:(PLVSAChatroomListView *)listView;
 
-/// 重发消息 回调
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendSpeakMessage:(NSString *)message;
-
-/// 重发 图片消息 回调
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendImageMessage:(NSString *)imageId image:(UIImage *)image;
-
-/// 重发 图片表情消息 回调
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl;
-
-/// 重发 回复消息 回调
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendReplyMessage:(NSString *)message replyModel:(PLVChatModel *)model;
-
 /// 回复消息 回调
 - (void)chatroomListView:(PLVSAChatroomListView *)listView didTapReplyMenuItem:(PLVChatModel *)model;
 
@@ -39,6 +27,9 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVSAChatroomListView : UIView
 
 @property (nonatomic, weak) id<PLVSAChatroomListViewDelegate> delegate;
+
+/// 网络状态，发送消息前判断网络是否异常
+@property (nonatomic, assign) NSInteger netState;
 
 /// 发送消息
 - (void)didSendMessage;

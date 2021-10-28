@@ -12,7 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class PLVLinkMicOnlineUser;
+@class PLVChatUser, PLVLinkMicOnlineUser;
 
 /// 回调定义
 ///
@@ -30,6 +30,12 @@ typedef void (^PLVLinkMicOnlineUserCameraFrontChangedBlock)(PLVLinkMicOnlineUser
 typedef void (^PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’网络状态‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserNetworkQualityChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户画笔授权状态改变Block
+typedef void (^PLVLinkMicOnlineUserBrushAuthChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户被授予奖杯数量改变Block
+typedef void (^PLVLinkMicOnlineUserGrantCupCountChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户举手或者取消举手状态改变Block
+typedef void (^PLVLinkMicOnlineUserHandUpChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’当前是否上麦状态‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 ///
@@ -43,6 +49,10 @@ typedef void (^PLVLinkMicOnlineUserWantOpenCameraBlock)(PLVLinkMicOnlineUser * o
 typedef void (^PLVLinkMicOnlineUserWantSwitchFrontCameraBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantFront);
 /// [事件] 希望挂断该用户的连麦 回调Block
 typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [事件] 希望授权用户画笔 回调Block
+typedef void (^PLVLinkMicOnlineUserWantBrushAuthBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL auth);
+/// [事件] 希望授予用户奖杯 回调Block
+typedef void (^PLVLinkMicOnlineUserWantGrantCupBlock)(PLVLinkMicOnlineUser * onlineUser);
  
 /// RTC在线用户模型
 ///
@@ -99,6 +109,24 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserNetworkQualityChangedBlock networkQualityChangedBlock;
 
+/// [状态] 用户的 ‘画笔授权状态’ 改变Block
+///
+/// @note 仅在 currentBrushAuth状态值 有改变时会触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserBrushAuthChangedBlock brushAuthChangedBlock;
+
+/// [状态] 用户的 ‘授予奖杯数量’ 改变Block
+///
+/// @note 仅在 currentCupCount状态值 有改变时会触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserGrantCupCountChangedBlock grantCupCountChangedBlock;
+
+/// [状态] 用户的 ‘举手状态’ 改变Block
+///
+/// @note 仅在 currentHandUp状态值 有改变时会触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserHandUpChangedBlock handUpChangedBlock;
+
 /// [状态] 用户的 ’当前是否上麦状态‘ 改变Block
 ///
 /// @note 仅在 currentStatusVoice状态值 有改变时会触发；
@@ -133,6 +161,18 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// @note 由 [wantCloseUserLinkMic] 方法直接触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantCloseLinkMicBlock wantCloseLinkMicBlock;
+
+/// [事件] 希望授权该用户画笔的 回调Block
+///
+/// @note 由 [wantAuthUserBrush] 方法直接触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantBrushAuthBlock wantBrushAuthBlock;
+
+/// [事件] 希望授予该用户奖杯的 回调Block
+///
+/// @note 由 [wantGrantUserCup] 方法直接触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantGrantCupBlock wantGrantCupBlock;
 
 /// 是否为 真实主讲 (即‘第一画面’；代表推流端设置的主讲)
 @property (nonatomic, assign) BOOL isRealMainSpeaker;
@@ -205,16 +245,32 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// 用户 当前是否上麦状态 (注意：仅在 [userType] 为Guests时，此值有使用意义；若当前为本地用户，则该值以本地更新为准)
 @property (nonatomic, assign, readonly) BOOL currentStatusVoice;
 
+///用户 是否被授权画笔（YES授权 NO 取消取消授权）
+@property (nonatomic, assign, readonly) BOOL currentBrushAuth;
+
+///用户 当前的奖杯数量
+@property (nonatomic, assign, readonly) NSInteger currentCupCount;
+
+///用户 是否举手（YES举手 NO 取消举手）
+@property (nonatomic, assign, readonly) BOOL currentHandUp;
 
 #pragma mark - [ 方法 ]
 #pragma mark 创建
+
 /// 通过 数据字典 创建模型 (适用于远端用户)
 + (instancetype)modelWithDictionary:(NSDictionary *)dictionary;
+
+/// 通过 PLVChatUser 数据模型 创建模型 (适用于远端用户)
++ (instancetype)localUserModelWithChatUser:(PLVChatUser *)chatUser;
 
 /// 通过 传值 创建模型 (适用于本地用户)
 + (instancetype)localUserModelWithUserId:(NSString *)userId linkMicUserId:(NSString *)linkMicUserId nickname:(NSString *)nickname avatarPic:(NSString *)avatarPic userType:(PLVSocketUserType)userType actor:(NSString *)actor;
 
 #pragma mark 状态更新
+
+/// 通过 数据字典 更新用户所有属性
+- (void)updateWithDictionary:(NSDictionary *)dictionary;
+
 /// 更新用户的 ‘当前麦克风音量’
 ///
 /// @note 若最终 音量值 有所改变，则将触发 [volumeChangedBlock]；范围 0.0~1.0；
@@ -247,6 +303,21 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 ///
 /// @note 若最终 网络状态值 有所改变，则将触发 [networkQualityChangedBlock]；
 - (void)updateUserCurrentNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality;
+
+/// 更新用户的 ‘画笔授权状态’
+///
+/// @note 若学生被授权画笔或者取消授权，则将触发 [brushAuthChangedBlock]；
+- (void)updateUserCurrentBrushAuth:(BOOL)brushAuth;
+
+/// 更新用户的 ‘授予奖杯’ 数量
+///
+/// @note 若学生被授予奖杯，则将触发 [grantCupCountChangedBlock]；
+- (void)updateUserCurrentGrantCupCount:(NSInteger)cupCount;
+
+/// 更新用户的 ‘当前举手状态’
+///
+/// @note 若学生端举手或者取消举手，则将触发 [handUpChangedBlock]；
+- (void)updateUserCurrentHandUp:(BOOL)handUp;
 
 /// 更新用户的 ‘当前是否上麦状态值’
 ///
@@ -284,6 +355,20 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// @note 不直接改变该模型内部的任何值；
 ///       而是作为通知机制，直接触发 [wantCloseLinkMicBlock]，由Block实现方去执行相关逻辑
 - (void)wantCloseUserLinkMic;
+
+/// 希望授权该用户画笔
+///
+/// @note 不直接改变该模型内部的任何值；
+///       而是作为通知机制，直接触发 [wantBrushAuthBlock]，由Block实现方去执行相关逻辑
+/// @param auth 授权用户画笔(YES 授权 NO取消授权)
+- (void)wantAuthUserBrush:(BOOL)auth;
+
+/// 希望授予该用户的奖杯
+///
+/// @note 不直接改变该模型内部的任何值；
+///       而是作为通知机制，直接触发 [wantGrantCupBlock]，由Block实现方去执行相关逻辑
+- (void)wantGrantUserCup;
+
 
 #pragma mark 多接收方回调配置
 /// 使用 blockKey 添加一个 ’用户模型 即将销毁‘ 回调Block
@@ -340,6 +425,28 @@ typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser *
 /// @param strongBlock ’闪光灯开关状态‘ 改变Block (强引用)
 /// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
 - (void)addCameraTorchOpenChangedBlock:(PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey;
+
+/// 使用 blockKey 添加一个 ’授予奖杯数量‘ 改变Block
+///
+/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
+///           否则，建议直接使用属性声明中的 [grantCupCountChangedBlock]，将更加便捷；
+///       (2) 具体回调规则，与 [grantCupCountChangedBlock] 相同无异；
+///       (3) 无需考虑 ‘什么时机去释放、去解除绑定’，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
+///
+/// @param strongBlock ’授予奖杯数量‘ 改变Block (强引用)
+/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
+- (void)addGrantCupCountChangedBlock:(PLVLinkMicOnlineUserGrantCupCountChangedBlock)strongBlock blockKey:(id)weakBlockKey;
+
+/// 使用 blockKey 添加一个 ’画笔授权状态‘ 改变Block
+///
+/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
+///           否则，建议直接使用属性声明中的 [brushAuthChangedBlock]，将更加便捷；
+///       (2) 具体回调规则，与 [brushAuthChangedBlock] 相同无异；
+///       (3) 无需考虑 ‘什么时机去释放、去解除绑定’，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
+///
+/// @param strongBlock ’画笔授权状态‘ 改变Block (强引用)
+/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
+- (void)addBrushAuthStateChangedBlock:(PLVLinkMicOnlineUserBrushAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey;
 
 @end
 

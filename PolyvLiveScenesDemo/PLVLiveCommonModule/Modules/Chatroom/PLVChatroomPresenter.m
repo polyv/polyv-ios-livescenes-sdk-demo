@@ -34,7 +34,13 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 获取历史记录成功的次数
 @property (nonatomic, assign) NSInteger getHistoryTime;
 
-#pragma mark 只读属性
+#pragma mark 内部属性
+///图片表情的数据
+@property (nonatomic, strong) NSArray *imageEmotionArray;
+/// 当前聊天室消息登录用户模型
+@property (nonatomic, strong) PLVChatUser *loginChatUser;
+
+#pragma mark 内部只读属性
 /// socket处于已连接且登陆成功的状态时为YES，默认为NO
 @property (nonatomic, assign, readonly) BOOL online;
 
@@ -53,6 +59,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     return [self initWithLoadingHistoryCount:20 childRoomAllow:NO];
 }
 
+- (instancetype)initWithLoadingHistoryCount:(NSUInteger)count {
+    return [self initWithLoadingHistoryCount:count childRoomAllow:NO];
+}
+
 - (instancetype)initWithLoadingHistoryCount:(NSUInteger)count childRoomAllow:(BOOL)allow {
     self = [super init];
     if (self) {
@@ -69,17 +79,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
                                                              repeats:YES];
         
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        PLVRoomUser *roomUser = roomData.roomUser;
         
         // Socket 登录管理
-        PLVSocketUserType userType = [PLVRoomUser sockerUserTypeWithRoomUserType:roomUser.viewerType];
         [PLVSocketManager sharedManager].allowChildRoom = allow;
-        [[PLVSocketManager sharedManager] loginWithChannelId:roomData.channelId
-                                                    viewerId:roomUser.viewerId
-                                                  viewerName:roomUser.viewerName
-                                                   avatarUrl:roomUser.viewerAvatar
-                                                       actor:roomUser.actor
-                                                    userType:userType];
         
         // 监听socket消息
         socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
@@ -87,6 +89,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         
         // 监听聊天室SDK管理类回调
         PLVChatroomManager *chatroomManager = [PLVChatroomManager sharedManager];
+        chatroomManager.specialRole = [PLVRoomUser isSpecialIdentityWithUserType:roomData.roomUser.viewerType];
         [chatroomManager setupWithDelegate:self channelId:roomData.channelId];
         
         if (roomData.sessionId) {
@@ -97,8 +100,34 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT)];
         
         [self loadHistory];
+        if (!roomData.inHiClassScene) { //互动学堂场景无图片表情功能
+            [self loadImageEmotions];
+        }
     }
     return self;
+}
+
+- (void)setCourseCode:(NSString *)courseCode lessonId:(NSString *)lessonId {
+    [PLVSocketManager sharedManager].vclassDomain = YES;
+    [PLVSocketManager sharedManager].courseCode = courseCode;
+    [PLVSocketManager sharedManager].lessonId = lessonId;
+}
+
+- (void)login {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVRoomUser *roomUser = roomData.roomUser;
+    PLVSocketUserType userType = [PLVRoomUser sockerUserTypeWithRoomUserType:roomUser.viewerType];
+    // Socket 登录管理
+    [[PLVSocketManager sharedManager] loginWithChannelId:roomData.channelId
+                                                viewerId:roomUser.viewerId
+                                              viewerName:roomUser.viewerName
+                                               avatarUrl:roomUser.viewerAvatar
+                                                   actor:roomUser.actor
+                                                userType:userType];
+}
+
+- (void)emitLoginEvent {
+    [[PLVSocketManager sharedManager] emitLoginEvent];
 }
 
 - (void)destroy {
@@ -115,36 +144,28 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 #pragma mark - Getter & Setter
 
-- (void)setSpecialRole:(BOOL)specialRole {
-    [PLVChatroomManager sharedManager].specialRole = specialRole;
-}
-
 - (BOOL)specialRole {
     return [PLVChatroomManager sharedManager].specialRole;
-}
-
-- (BOOL)closeRoom {
-    return [PLVChatroomManager sharedManager].closeRoom;
 }
 
 - (BOOL)online {
     return [PLVChatroomManager sharedManager].online;
 }
 
-#pragma mark - 发送消息
-
-/// 根据roomData生成当前用户模型
 - (PLVChatUser *)loginChatUser {
+    if (!_loginChatUser) {
+        _loginChatUser = [[PLVChatUser alloc] init];
+    }
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    
-    PLVChatUser *user = [[PLVChatUser alloc] init];
-    user.userId = roomUser.viewerId;
-    user.userName = roomUser.viewerName;
-    user.avatarUrl = roomUser.viewerAvatar;
-    user.userType = roomUser.viewerType;
-    user.actor = roomUser.actor;
-    return user;
+    _loginChatUser.userId = roomUser.viewerId;
+    _loginChatUser.userName = roomUser.viewerName;
+    _loginChatUser.avatarUrl = roomUser.viewerAvatar;
+    _loginChatUser.userType = roomUser.viewerType;
+    _loginChatUser.actor = roomUser.actor;
+    return _loginChatUser;
 }
+
+#pragma mark - 发送消息
 
 #pragma mark 提问消息
 
@@ -162,7 +183,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = [self loginChatUser];
+    model.user = self.loginChatUser;
     model.message = content;
     
     BOOL success = [[PLVChatroomManager sharedManager] sendQuesstionMessage:content];
@@ -179,17 +200,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
         return nil;
     }
-    if (!self.online ||
-        (!self.specialRole && self.closeRoom)) {
-        return nil;
-    }
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = [self loginChatUser];
+    model.user = self.loginChatUser;
     
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.content = content;
-    message.time = [PLVFdUtil curTimeInterval];
     model.message = message;
     
     if (replyChatModel && replyChatModel.message &&
@@ -203,84 +219,41 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         message.quoteUserName = replyChatModel.user.userName;
         if ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]]) {
             PLVSpeakMessage *speakMessage = replyChatModel.message;
+            message.quoteMsgId = speakMessage.msgId;
             message.quoteContent = speakMessage.content;
         } else if ([replyChatModel.message isKindOfClass:[PLVImageMessage class]]) {
             PLVImageMessage *imageMessage = replyChatModel.message;
+            message.quoteMsgId = imageMessage.msgId;
             message.quoteImageUrl = imageMessage.imageUrl;
             message.quoteImageSize = imageMessage.imageSize;
         } else if ([replyChatModel.message isKindOfClass:[PLVImageEmotionMessage class]]) {
             PLVImageEmotionMessage *imageMessage = replyChatModel.message;
+            message.quoteMsgId = imageMessage.msgId;
             message.quoteImageUrl = imageMessage.imageUrl;
             message.quoteImageSize = imageMessage.imageSize;
         } else if ([replyChatModel.message isKindOfClass:[PLVQuoteMessage class]]) {
             PLVQuoteMessage *quoteMessage = replyChatModel.message;
+            message.quoteMsgId = quoteMessage.msgId;
             message.quoteContent = quoteMessage.content;
         }
         model.message = message;
     }
     
     if ([PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
-        return model;
-    }
-    
-    BOOL success = [[PLVChatroomManager sharedManager] sendSpeakMessage:model.message replyMsgId:replyChatModel.msgId needIdCallback:YES];
-    return success ? model : nil;
-}
-
-- (PLVChatModel *)chatModelWithMsgStateForSendSpeakMessage:(NSString *)content
-                                            replyChatModel:(PLVChatModel *)replyChatModel {
-    if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
-        return nil;
-    }
-    if (!self.online ||
-        (!self.specialRole && self.closeRoom)) {
-        return nil;
-    }
-    
-    PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = [self loginChatUser];
-    
-    PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
-    message.content = content;
-    message.time = [PLVFdUtil curTimeInterval];
-    model.message = message;
-    
-    if (replyChatModel && replyChatModel.message &&
-        ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]] ||
-         [replyChatModel.message isKindOfClass:[PLVImageMessage class]] ||
-         [replyChatModel.message isKindOfClass:[PLVImageEmotionMessage class]] ||
-         [replyChatModel.message isKindOfClass:[PLVQuoteMessage class]])) {
-        PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
-        message.content = content;
-        message.quoteUserId = replyChatModel.user.userId;
-        message.quoteUserName = replyChatModel.user.userName;
-        if ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]]) {
-            PLVSpeakMessage *speakMessage = replyChatModel.message;
-            message.quoteContent = speakMessage.content;
-        } else if ([replyChatModel.message isKindOfClass:[PLVImageMessage class]]) {
-            PLVImageMessage *imageMessage = replyChatModel.message;
-            message.quoteImageUrl = imageMessage.imageUrl;
-            message.quoteImageSize = imageMessage.imageSize;
-        } else if ([replyChatModel.message isKindOfClass:[PLVImageEmotionMessage class]]) {
-            PLVImageEmotionMessage *imageMessage = replyChatModel.message;
-            message.quoteImageUrl = imageMessage.imageUrl;
-            message.quoteImageSize = imageMessage.imageSize;
-        } else if ([replyChatModel.message isKindOfClass:[PLVQuoteMessage class]]) {
-            PLVQuoteMessage *quoteMessage = replyChatModel.message;
-            message.quoteContent = quoteMessage.content;
-        }
-        model.message = message;
-    }
-    
-    if ([PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
-        model.msgState = PLVChatMsgStateFail;
         return model;
     }
     
     model.msgState = PLVChatMsgStateSending;
-    BOOL success  = [[PLVChatroomManager sharedManager] sendSpeakMessage:model.message replyMsgId:replyChatModel.msgId needIdCallback:YES callback:^(NSString * _Nonnull msgId) {
-        model.msgState = msgId ? PLVChatMsgStateSuccess : PLVChatMsgStateFail;
-    }];
+    BOOL success = NO;
+    if ([model.message isKindOfClass:[PLVSpeakMessage class]]) {
+        success  = [[PLVChatroomManager sharedManager] sendSpeakMessage:model.message callback:^(NSString * _Nonnull msgId) {
+            model.msgState = PLVChatMsgStateSuccess;
+        }];
+    } else if ([model.message isKindOfClass:[PLVQuoteMessage class]]) {
+        success  = [[PLVChatroomManager sharedManager] sendQuoteMessage:model.message callback:^(NSString * _Nonnull msgId) {
+            model.msgState = PLVChatMsgStateSuccess;
+        }];
+    }
     if (!success) {
         model.msgState = PLVChatMsgStateFail;
     }
@@ -293,17 +266,13 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (!image || ![image isKindOfClass:[UIImage class]]) {
         return nil;
     }
-    if (!self.online ||
-        (!self.specialRole && self.closeRoom)) {
-        return nil;
-    }
     
     PLVImageMessage *message = [[PLVImageMessage alloc] init];
     message.image = image;
     message.time = [PLVFdUtil curTimeInterval];
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = [self loginChatUser];
+    model.user = self.loginChatUser;
     model.message = message;
     
     if (![PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
@@ -314,37 +283,23 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 #pragma mark 图片表情消息
 
-- (PLVChatModel * _Nullable)sendImageEmotionId:(NSString *)imageId {
+- (PLVChatModel * _Nullable)sendImageEmotionId:(NSString *)imageId
+                                      imageUrl:(NSString *)imageUrl {
     if (!imageId || ![imageId isKindOfClass:[NSString class]]) {
-        return nil;
-    }
-    if (!self.online ||
-        (!self.specialRole && self.closeRoom)) {
         return nil;
     }
     
     PLVImageEmotionMessage *message = [[PLVImageEmotionMessage alloc] init];
     message.imageId = imageId;
+    message.imageUrl = imageUrl;
     message.sendState = PLVImageEmotionMessageSendStateReady;
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = [self loginChatUser];
+    model.user = self.loginChatUser;
+    model.imageId = imageId;
     model.message = message;
     
     if (![PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
-        __weak typeof(self) weakSelf = self;
-        BOOL success = [[PLVChatroomManager sharedManager] sendImageEmotionMessage:message callback:^(PLVImageEmotionMessage * _Nonnull resMessage) {
-            //在socket返回消息状态时回调
-            if (weakSelf.delegate &&
-                [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_sendImageEmotionMessageStatus:)]) {
-                [weakSelf.delegate chatroomPresenter_sendImageEmotionMessageStatus:resMessage];
-            }
-            if (message.msgId) {
-                message.sendState = PLVImageEmotionMessageSendStateSuccess;
-            }
-        }];
-        if (!success) {
-            message.sendState = PLVImageEmotionMessageSendStateFailed;
-        }
+        [[PLVChatroomManager sharedManager] sendImageEmotionMessage:message];
     }
     return model;
 }
@@ -360,10 +315,6 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         !tip || ![tip isKindOfClass:[NSString class]] || tip.length == 0) {
         return NO;
     }
-    if (!self.online ||
-        (!self.specialRole && self.closeRoom)) {
-        return nil;
-    }
     
     PLVCustomMessage *message = [[PLVCustomMessage alloc] init];
     message.event = event;
@@ -372,17 +323,11 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.emitMode = emitMode;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = [self loginChatUser];
+    model.user = self.loginChatUser;
     model.message = message;
     
     BOOL success = [[PLVChatroomManager sharedManager] sendCustonMessage:message];
     return success;
-}
-
-#pragma mark 全体禁言、解禁
-
-- (BOOL)sendCloseRoom:(BOOL)closeRoom {
-    return [[PLVChatroomManager sharedManager] sendCloseRoom:closeRoom];
 }
 
 #pragma mark 生成教师回复信息
@@ -452,25 +397,6 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     } failure:^(NSError * _Nonnull error) {
         [weakSelf notifyListenerLoadHistoryFailure];
         weakSelf.loadingHistory = NO;
-    }];
-}
-
-#pragma mark - 获取图片表情数据
-///加载图片表情列表 设置为固定size
-- (void)loadImageEmotions {
-    __weak typeof(self) weakSelf = self;
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    NSString *accountId = [PLVLiveVideoConfig sharedInstance].userId;
-    //暂时不处理分页，每页固定为50
-    [PLVLiveVideoAPI requestEmotionImagesWithRoomId:[roomData.channelId longLongValue] accountId:accountId page:1 size:50 success:^(NSDictionary * _Nonnull data) {
-        if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_loadImageEmotionsSuccess:)]) {
-            NSArray *imageEmoticons = data[@"data"][@"list"];
-            [weakSelf.delegate chatroomPresenter_loadImageEmotionsSuccess:imageEmoticons];
-        }
-    } failure:^(NSError * _Nonnull error) {
-        if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_loadImageEmotionsFailure)]) {
-            [weakSelf.delegate chatroomPresenter_loadImageEmotionsFailure];
-        }
     }];
 }
 
@@ -661,13 +587,54 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.imageId = imageId;
     message.imageUrl = imageUrl;
     message.imageSize = CGSizeMake(width, height);
+    message.imageUrl = [self imageURLWithImageEmotionMessage:message];
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;
     model.message = message;
+    
     return model;
 }
 
+#pragma mark 获取图片表情数据
+
+///加载图片表情列表 设置为固定size
+- (void)loadImageEmotions {
+    __weak typeof(self) weakSelf = self;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *accountId = [PLVLiveVideoConfig sharedInstance].userId;
+    //暂时不处理分页，每页固定为50
+    [PLVLiveVideoAPI requestEmotionImagesWithRoomId:[roomData.channelId integerValue] accountId:accountId page:1 size:50 success:^(NSDictionary * _Nonnull data) {
+        NSArray *imageEmoticons = data[@"data"][@"list"];
+        weakSelf.imageEmotionArray = imageEmoticons;
+        [weakSelf notifyListenerLoadImageEmotionsSuccess];
+    } failure:^(NSError * _Nonnull error) {
+        [weakSelf notifyListenerLoadImageEmotionsFailure];
+    }];
+}
+
+#pragma mark 获取图片表情url
+
+- (NSString *)imageURLWithImageEmotionMessage:(PLVImageEmotionMessage *)message {
+    if (message.imageUrl)  {
+        return message.imageUrl;
+    }
+    
+    if (!self.imageEmotionArray ||
+        !message.imageId)  {
+        return nil;
+    }
+    
+    __block NSString *imageUrl = nil;
+    [self.imageEmotionArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        NSString *emotionImageId = PLV_SafeStringForDictKey(obj, @"id");
+        if ([message.imageId isEqualToString:emotionImageId]) {
+            imageUrl = PLV_SafeStringForDictKey(obj, @"url");
+            *stop = YES;
+        }
+    }];
+    return imageUrl;
+}
 
 #pragma mark - Listener
 
@@ -708,6 +675,18 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 - (void)notifyListenerLoadHistoryFailure {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_loadHistoryFailure)]) {
         [self.delegate chatroomPresenter_loadHistoryFailure];
+    }
+}
+
+- (void)notifyListenerLoadImageEmotionsSuccess {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_loadImageEmotionsSuccess)]) {
+        [self.delegate chatroomPresenter_loadImageEmotionsSuccess];
+    }
+}
+
+- (void)notifyListenerLoadImageEmotionsFailure {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_loadImageEmotionsFailure)]) {
+        [self.delegate chatroomPresenter_loadImageEmotionsFailure];
     }
 }
 
@@ -766,11 +745,18 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self removeContentEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"REMOVE_HISTORY"]) { // admin emptied the chatroom
         [self removeHistoryEvent];
-    } else if ([subEvent isEqualToString:@"REWARD"]) {
+    } else if ([subEvent isEqualToString:@"REWARD"]) { // someone reward
         [self rewardMessageEvent:jsonDict];
-    } else if ([subEvent isEqualToString:@"EMOTION"]) {// someone send a image emotion
-        [self imageEmotionMessageEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin close chatroom
+        [self closeRoomEvent:jsonDict];
     }
+}
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event subEvent:(NSString *)subEvent json:(NSString *)jsonString jsonObject:(id)object {
+    NSDictionary *jsonDict = PLV_SafeDictionaryForValue(object);
+    if ([event isEqualToString:@"emotion"]) {// someone send a image emotion
+       [self imageEmotionMessageEvent:jsonDict];
+   }
 }
 
 #pragma mark socket 数据解析
@@ -912,7 +898,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     PLVImageEmotionMessage *message = [[PLVImageEmotionMessage alloc] init];
     message.msgId = PLV_SafeStringForDictKey(data, @"messageId");
     message.imageId = imageId;
-    
+    message.imageUrl = [self imageURLWithImageEmotionMessage:message];
+
     model.message = message;
     [self cachChatModel:model];
 }
@@ -991,6 +978,15 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 清空所有消息事件
 - (void)removeHistoryEvent {
     [self notifyListenerDidAllMessageDeleted];
+}
+
+- (void)closeRoomEvent:(NSDictionary *)data {
+    NSDictionary *value = PLV_SafeDictionaryForDictKey(data, @"value");
+    BOOL closeRoom = PLV_SafeBoolForDictKey(value, @"closed");
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomPresenter_didChangeCloseRoom:)]) {
+        [self.delegate chatroomPresenter_didChangeCloseRoom:closeRoom];
+    }
 }
 
 #pragma mark socket 数据缓冲

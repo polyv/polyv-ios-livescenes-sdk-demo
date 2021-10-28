@@ -18,10 +18,12 @@ extern NSString *PLVRoomDataKeyPathPlaying;
 extern NSString *PLVRoomDataKeyPathChannelInfo;
 extern NSString *PLVRoomDataKeyPathMenuInfo;
 extern NSString *PLVRoomDataKeyPathLiveState;
+extern NSString *PLVRoomDataKeyPathHiClassStatus;
 
 @interface PLVRoomDataManager ()
 
 @property (nonatomic, strong) PLVRoomData *roomData;
+@property (nonatomic, strong) NSTimer *scTimer;
 
 @end
 
@@ -31,16 +33,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     PLVMulticastDelegate<PLVRoomDataManagerProtocol> *multicastDelegate;
 }
 
-#pragma mark - 生命周期
-
-+ (instancetype)sharedManager {
-    static dispatch_once_t onceToken;
-    static PLVRoomDataManager *mananger = nil;
-    dispatch_once(&onceToken, ^{
-        mananger = [[self alloc] init];
-    });
-    return mananger;
-}
+#pragma mark - [ Life Cycle ]
 
 - (instancetype)init {
     self = [super init];
@@ -52,22 +45,92 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     return self;
 }
 
+#pragma mark - [ Public Method ]
+
++ (instancetype)sharedManager {
+    static dispatch_once_t onceToken;
+    static PLVRoomDataManager *mananger = nil;
+    dispatch_once(&onceToken, ^{
+        mananger = [[self alloc] init];
+    });
+    return mananger;
+}
+
 - (void)configRoomData:(PLVRoomData *)roomData {
     self.roomData = roomData;
     [self addRoomDataObserver];
     
-    //[self.roomData requestChannelDetail:nil];
-    [self.roomData reportViewerIncrease];
+    if (!self.roomData.inHiClassScene) { // 非互动学堂场景才需要上报观看热度
+        [self.roomData reportViewerIncrease];
+    }
 }
 
 - (void)removeRoomData {
     PLV_LOG_INFO(PLVConsoleLogModuleTypeRoom, @"%s", __FUNCTION__);
+    [self stopSCTimer];
     [self removeAllDelegates];
     [self removeRoomDataObserver];
     self.roomData = nil;
 }
 
-#pragma mark - KVO
+- (void)addDelegate:(id<PLVRoomDataManagerProtocol>)delegate delegateQueue:(dispatch_queue_t)delegateQueue {
+    dispatch_barrier_async(multicastQueue, ^{
+        [self->multicastDelegate addDelegate:delegate delegateQueue:delegateQueue];
+    });
+}
+
+- (void)removeDelegate:(id<PLVRoomDataManagerProtocol>)delegate {
+    dispatch_barrier_async(multicastQueue, ^{
+        [self->multicastDelegate removeDelegate:delegate];
+    });
+}
+
+- (void)removeAllDelegates {
+    dispatch_barrier_async(multicastQueue, ^{
+        [self->multicastDelegate removeAllDelegates];
+    });
+}
+
+#pragma mark - [ Private ]
+
+/// 创建请求【讲师是否在别处登录】接口定时器
+- (void)startSCTimer {
+    if (!self.roomData.inHiClassScene ||
+        self.roomData.roomUser.viewerType != PLVRoomUserTypeTeacher ||
+        self.roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
+        return;
+    }
+    
+    self.scTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(scTimerEvent:) userInfo:nil repeats:YES];
+    [[NSRunLoop currentRunLoop] addTimer:self.scTimer forMode:NSRunLoopCommonModes];
+    [self.scTimer fire];
+}
+
+- (void)stopSCTimer {
+    [_scTimer invalidate];
+    _scTimer = nil;
+}
+
+#pragma mark - [ Event ]
+
+#pragma mark Timer
+
+/// 非上课时，讲师身份每隔10秒请求验证讲师是否在别处登录
+- (void)scTimerEvent:(NSTimer *)timer {
+    if (!self.roomData.inHiClassScene ||
+        self.roomData.roomUser.viewerType != PLVRoomUserTypeTeacher ||
+        self.roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
+        [self stopSCTimer];
+        return;
+    }
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVClassAPI teacherReloginVerifyWithLessonId:self.roomData.lessonInfo.lessonId
+                                               relogin:^(NSString * _Nonnull errorDesc) {
+        [weakSelf notifyDelegatesDidHiClassTeacherRelogin:errorDesc];
+    } success:nil failure:nil];
+}
+
+#pragma mark KVO
 
 - (void)addRoomDataObserver {
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathSessionId options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
@@ -78,6 +141,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathChannelInfo options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathLiveState options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
+    [self.roomData.lessonInfo addObserver:self forKeyPath:PLVRoomDataKeyPathHiClassStatus options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)removeRoomDataObserver {
@@ -89,10 +153,12 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathChannelInfo];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathLiveState];
+    [self.roomData.lessonInfo removeObserver:self forKeyPath:PLVRoomDataKeyPathHiClassStatus];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    if (![object isKindOfClass:[PLVRoomData class]]) {
+    if (![object isKindOfClass:[PLVRoomData class]] &&
+        ![object isKindOfClass:[PLVLessonInfoModel class]]) {
         return;
     }
     PLV_LOG_DEBUG(PLVConsoleLogModuleTypeRoom, @"observeValueForKeyPath (keyPath:%@)", keyPath);
@@ -112,28 +178,14 @@ extern NSString *PLVRoomDataKeyPathLiveState;
         [self notifyDelegatesDidMenuInfoChanged:self.roomData.menuInfo];
     } else if ([keyPath isEqualToString:PLVRoomDataKeyPathLiveState]) {
         [self notifyDelegatesDidLiveStateChanged:self.roomData.liveState];
+    } else if ([keyPath isEqualToString:PLVRoomDataKeyPathHiClassStatus]) {
+        if (self.roomData.lessonInfo.hiClassStatus != PLVHiClassStatusInClass) {
+            [self startSCTimer];
+        }
     }
 }
 
-#pragma mark - Multicase
-
-- (void)addDelegate:(id<PLVRoomDataManagerProtocol>)delegate delegateQueue:(dispatch_queue_t)delegateQueue {
-    dispatch_barrier_async(multicastQueue, ^{
-        [self->multicastDelegate addDelegate:delegate delegateQueue:delegateQueue];
-    });
-}
-
-- (void)removeDelegate:(id<PLVRoomDataManagerProtocol>)delegate {
-    dispatch_barrier_async(multicastQueue, ^{
-        [self->multicastDelegate removeDelegate:delegate];
-    });
-}
-
-- (void)removeAllDelegates {
-    dispatch_barrier_async(multicastQueue, ^{
-        [self->multicastDelegate removeAllDelegates];
-    });
-}
+#pragma mark Multicase
 
 - (void)notifyDelegatesDidSessionIdChanged:(NSString *)sessionId {
     dispatch_async(multicastQueue, ^{
@@ -180,6 +232,12 @@ extern NSString *PLVRoomDataKeyPathLiveState;
 - (void)notifyDelegatesDidLiveStateChanged:(PLVChannelLiveStreamState)liveState {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate roomDataManager_didLiveStateChanged:liveState];
+    });
+}
+
+- (void)notifyDelegatesDidHiClassTeacherRelogin:(NSString *)msg {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate roomDataManager_didHiClassTeacherRelogin:msg];
     });
 }
 

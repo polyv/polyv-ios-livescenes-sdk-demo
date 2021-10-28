@@ -185,7 +185,7 @@ NSString *PLVDocumentConvertAnimateLossCacheKey = @"PLVDocumentConvertAnimateLos
         NSString *fileId = data[@"fileId"];
         PLVDocumentUploadModel *model = [self modelWithFileId:fileId];
         [self removeModel:model];
-        
+        [[PLVDocumentUploadClient sharedClient] deleteFileWithFileName:model.fileName];
         NSString *type = data[@"type"] ?: @"";
         BOOL isAnimateLoss = [PLVDocumentConvertManager isAnimateLossWithFileId:fileId type:type];
         if (isAnimateLoss) {

@@ -15,10 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVSAImageEmotionMessageCell : PLVSABaseMessageCell
 
 /// 点击 重发按钮 触发
-/// @param imageId 图片id
-/// @param imageUrl 图片URL String
-@property (nonatomic, copy) void(^ _Nullable resendImageEmotionHandler)(NSString *imageId, NSString *imageUrl);
-
+/// @param model 消息模型
+@property (nonatomic, copy) void(^ _Nullable resendImageEmotionHandler)(PLVChatModel *model);
 
 /// 设置消息数据模型，cell宽度
 /// @param model 数据模型

@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVRoomUser.h"
+#import "PLVLessonInfoModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -102,11 +103,22 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 /// 已推流时长（单位秒；不包含退至后台时间）
 @property (nonatomic, assign) NSTimeInterval liveDuration;
 
+#pragma mark 互动学堂独有属性
+/// 课程详情
+@property (nonatomic, strong, readonly) PLVLessonInfoModel *lessonInfo;
+
+
+/// 是否位于互动学堂场景中
+- (BOOL)inHiClassScene;
+
 /// 设置 roomUser
 - (void)setupRoomUser:(PLVRoomUser *)roomUser;
 
 /// 获取频道菜单信息
 - (void)requestChannelDetail:(void(^)(PLVLiveVideoChannelMenuInfo *channelMenuInfo))completion;
+
+/// 设置课程详情
+- (void)setupLessonInfo:(PLVLessonInfoModel *)lessonInfo;
 
 /// 上报观看热度
 - (void)reportViewerIncrease;

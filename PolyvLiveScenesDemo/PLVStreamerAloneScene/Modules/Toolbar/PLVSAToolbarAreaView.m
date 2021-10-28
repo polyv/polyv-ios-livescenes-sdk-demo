@@ -58,8 +58,6 @@
         [self addSubview:self.memberBadgeView];
         [self addSubview:self.moreButton];
         
-        //加载图片表情资源
-        [[PLVSAChatroomViewModel sharedViewModel] loadImageEmotions];
     }
     return self;
 }
@@ -158,6 +156,7 @@
 - (PLVSASendMessageView *)sendMessageView {
     if (!_sendMessageView) {
         _sendMessageView = [[PLVSASendMessageView alloc] init];
+        _sendMessageView.imageEmotionArray =  [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
     }
     return _sendMessageView;
 }
@@ -172,8 +171,10 @@
 #pragma mark Action
 - (void)chatButtonAction {
     [self.sendMessageView show];
-    ///图片表情数据
-    self.sendMessageView.imageEmotionArray = [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
+    if (!self.sendMessageView.imageEmotionArray) {
+        ///图片表情数据
+        self.sendMessageView.imageEmotionArray = [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
+    }
 }
 
 - (void)linkMicButtonAction {

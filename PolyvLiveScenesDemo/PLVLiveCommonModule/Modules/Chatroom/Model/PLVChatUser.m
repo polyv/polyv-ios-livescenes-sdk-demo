@@ -29,6 +29,15 @@
             } else {
                 self.banned = NO;
             }
+            if ([classStatus.allKeys containsObject:@"cup"]) {
+                NSInteger cupCount = PLV_SafeIntegerForDictKey(classStatus, @"cup");
+                self.cupCount = cupCount;
+            }
+            
+            if ([classStatus.allKeys containsObject:@"paint"]) {
+                self.currentBrushAuth = PLV_SafeIntegerForDictKey(classStatus, @"paint") == 1;
+            }
+            
         } else {
             self.banned = PLV_SafeBoolForDictKey(userInfo, @"banned");
         }

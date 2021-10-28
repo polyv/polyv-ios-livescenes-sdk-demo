@@ -36,6 +36,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) UIColor * _Nullable actorTextColor;
 /// 用户头衔背景颜色
 @property (nonatomic, strong) UIColor * _Nullable actorBackgroundColor;
+/// 用户被授予奖杯数量
+@property (nonatomic, assign) NSInteger cupCount;
+/// 用户当前是否举手
+@property (nonatomic, assign) BOOL currentHandUp;
+/// 用户当前是否被授权画笔
+@property (nonatomic, assign) BOOL currentBrushAuth;
 
 #pragma mark 连麦业务相关
 /// 等待连麦 用户模型

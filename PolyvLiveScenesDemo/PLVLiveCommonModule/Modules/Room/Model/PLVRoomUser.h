@@ -24,7 +24,8 @@ typedef NS_ENUM(NSUInteger, PLVRoomUserType) {
     PLVRoomUserTypeAssistant = 6, // 助教
     PLVRoomUserTypeManager   = 7, // 管理员
     
-    PLVRoomUserTypeDummy     = 8  // 虚拟观众
+    PLVRoomUserTypeDummy     = 8,  // 虚拟观众
+    PLVRoomUserTypeSCStudent = 9   // 互动学堂学员
 };
 
 /// 直播间用户

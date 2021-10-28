@@ -377,10 +377,11 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
             __weak typeof(self) weakSelf = self;
             [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
                 weakSelf.model.msgState = PLVChatMsgStateSending;
-                weakSelf.resendHandler([self.model content]);
+                weakSelf.resendHandler(weakSelf.model);
             }];
         }
-        
+    } else {
+        self.resendButton.hidden = YES;
     }
 }
 

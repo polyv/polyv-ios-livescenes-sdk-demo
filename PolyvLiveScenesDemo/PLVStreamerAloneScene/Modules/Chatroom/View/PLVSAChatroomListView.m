@@ -8,6 +8,9 @@
 
 #import "PLVSAChatroomListView.h"
 
+// 工具
+#import "PLVSAUtils.h"
+
 /// UI
 #import "PLVSASpeakMessageCell.h"
 #import "PLVSAImageMessageCell.h"
@@ -176,32 +179,28 @@ UITableViewDataSource
 
 #pragma mark cell callback
 
-- (void)resendSpeakMessage:(NSString *)message {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(chatroomListView:resendSpeakMessage:)]) {
-        [self.delegate chatroomListView:self resendSpeakMessage:message];
+- (void)resendSpeakMessage:(PLVChatModel *)model {
+    if (![self netCan]) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
+        return;
     }
+    [[PLVSAChatroomViewModel sharedViewModel] resendSpeakMessage:model replyChatModel:model.replyMessage];
 }
 
-- (void)resendImageMessage:(NSString *)msgId image:(UIImage *)image{
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(chatroomListView:resendImageMessage:image:)]) {
-        [self.delegate chatroomListView:self resendImageMessage:msgId image:image];
+- (void)resendImageMessage:(PLVChatModel *)model {
+    if (![self netCan]) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
+        return;
     }
+    [[PLVSAChatroomViewModel sharedViewModel] resendImageMessage:model];
 }
 
-- (void)resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl{
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(chatroomListView:resendImageEmotionMessage:imageUrl:)]) {
-        [self.delegate chatroomListView:self resendImageEmotionMessage:imageId imageUrl:imageUrl];
+- (void)resendImageEmotionMessage:(PLVChatModel *)model {
+    if (![self netCan]) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
+        return;
     }
-}
-
-- (void)resendReplyMessage:(NSString *)message replyModel:(PLVChatModel *)model{
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(chatroomListView:resendReplyMessage:replyModel:)]) {
-        [self.delegate chatroomListView:self resendReplyMessage:message replyModel:model];
-    }
+    [[PLVSAChatroomViewModel sharedViewModel] resendImageEmotionMessage:model];
 }
 
 - (void)didTapReplyMenuItem:(PLVChatModel *)model {
@@ -218,6 +217,11 @@ UITableViewDataSource
        [self.delegate respondsToSelector:@selector(chatroomListViewDidScrollTableViewUp:)]) {
         [self.delegate chatroomListViewDidScrollTableViewUp:self];
     }
+}
+
+#pragma mark 网络是否可用
+- (BOOL)netCan{
+    return self.netState > 0 && self.netState < 4;
 }
 
 #pragma mark - Event
@@ -261,8 +265,8 @@ UITableViewDataSource
             [weakSelf.tableView reloadData];
         }];
         
-        [cell setResendHandler:^(NSString * _Nonnull message) {
-            [weakSelf resendSpeakMessage:message];
+        [cell setResendHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf resendSpeakMessage:model];
         }];
         
         return cell;
@@ -283,8 +287,8 @@ UITableViewDataSource
             [weakSelf.tableView reloadData];
         }];
         
-        [cell setResendImageHandler:^(NSString * _Nonnull msgID, UIImage * _Nonnull image) {
-            [weakSelf resendImageMessage:msgID image:image];
+        [cell setResendImageHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf resendImageMessage:model];
         }];
         
         return cell;
@@ -305,8 +309,8 @@ UITableViewDataSource
             [weakSelf.tableView reloadData];
         }];
         
-        [cell setResendImageEmotionHandler:^(NSString * _Nonnull imageId, NSString * _Nonnull imageUrl) {
-            [weakSelf resendImageEmotionMessage:imageId imageUrl:imageUrl];
+        [cell setResendImageEmotionHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf resendImageEmotionMessage:model];
         }];
         
         return cell;
@@ -327,9 +331,10 @@ UITableViewDataSource
             [weakSelf.tableView reloadData];
         }];
         
-        [cell setResendReplyHandler:^(NSString * _Nonnull message, PLVChatModel * _Nonnull model) {
-            [weakSelf resendReplyMessage:message replyModel:model];
+        [cell setResendReplyHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf resendSpeakMessage:model];
         }];
+        
         return cell;
     } else if ([PLVSARewardMessageCell isModelValid:model]) {
         static NSString *rewardMessageCellIdentify = @"PLVSARewardMessageCell";

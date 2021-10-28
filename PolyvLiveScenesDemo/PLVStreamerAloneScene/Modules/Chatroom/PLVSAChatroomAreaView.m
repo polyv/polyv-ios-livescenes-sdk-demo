@@ -110,6 +110,7 @@ PLVSAChatroomListViewDelegate
 - (PLVSASendMessageView *)sendMsgView {
     if (!_sendMsgView) {
         _sendMsgView = [[PLVSASendMessageView alloc] init];
+        _sendMsgView.imageEmotionArray = [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
     }
     return _sendMsgView;
 }
@@ -153,8 +154,43 @@ PLVSAChatroomListViewDelegate
     return _giftView;
 }
 
-#pragma mark 显示欢迎语
+- (BOOL)closeRoom {
+    return [PLVChatroomManager sharedManager].closeRoom;
+}
 
+#pragma mark Setter
+
+- (void)setCloseRoom:(BOOL)closeRoom {
+    _closeRoom = closeRoom;
+    
+    // 与socket最真实状态校验，更新UI，防止误操作
+    if ([PLVChatroomManager sharedManager].closeRoom == closeRoom) {
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(chatroomAreaView:DidChangeCloseRoom:)]) {
+            [self.delegate chatroomAreaView:self DidChangeCloseRoom:[PLVChatroomManager sharedManager].closeRoom];
+        }
+        return;
+    }
+    BOOL sendSuccess = [[PLVChatroomManager sharedManager] sendCloseRoom:closeRoom];
+    if (sendSuccess) {
+        NSString *string = _closeRoom ? @"已开启全体禁言" : @"已解除全体禁言";
+        [PLVSAUtils showToastInHomeVCWithMessage:string];
+    }
+    
+}
+
+- (void)setNetState:(NSInteger)netState {
+    _netState = netState;
+    self.sendMsgView.netState = netState;
+    self.chatroomListView.netState = netState;
+}
+
+#pragma mark 网络是否可用
+- (BOOL)netCan{
+    return self.netState > 0 && self.netState < 4;
+}
+
+#pragma mark 显示欢迎语
 
 - (void)showWelcomeWithMessage:(NSString *)welcomeMessage {
     if (!self.welcomView.hidden) {
@@ -181,41 +217,6 @@ PLVSAChatroomListViewDelegate
     self.welcomView.frame = self.originWelcomViewFrame;
 }
 
-#pragma mark Setter
-
-- (void)setCloseRoom:(BOOL)closeRoom {
-    _closeRoom = closeRoom;
-    
-    // 与socket最真实状态校验，更新UI，防止误操作
-    if ([PLVSAChatroomViewModel sharedViewModel].closeRoom == closeRoom) {
-        if (self.delegate &&
-            [self.delegate respondsToSelector:@selector(chatroomAreaView:DidChangeCloseRoom:)]) {
-            [self.delegate chatroomAreaView:self DidChangeCloseRoom:[PLVSAChatroomViewModel sharedViewModel].closeRoom];
-        }
-        return;
-    }
-    BOOL sendSuccess = [[PLVSAChatroomViewModel sharedViewModel] sendCloseRoom:closeRoom];
-    if (sendSuccess) {
-        NSString *string = _closeRoom ? @"已开启全体禁言" : @"已解除全体禁言";
-        [PLVSAUtils showToastInHomeVCWithMessage:string];
-    }
-    
-}
-
-- (void)setNetState:(NSInteger)netState {
-    _netState = netState;
-    self.sendMsgView.netState = netState;
-}
-
-- (BOOL)closeRoom {
-    return [PLVSAChatroomViewModel sharedViewModel].closeRoom;
-}
-
-#pragma mark 网络是否可用
-- (BOOL)netCan{
-    return self.netState > 0 && self.netState < 4;
-}
-
 #pragma mark - Event
 
 #pragma mark - Delegate
@@ -230,6 +231,16 @@ PLVSAChatroomListViewDelegate
             [self.delegate chatroomAreaView_showSlideRightView];
         }
     }
+}
+
+- (void)chatroomViewModelDidResendMessage:(PLVSAChatroomViewModel *)viewModel {
+    [self.chatroomListView didSendMessage];
+    [self clearNewMessageCount];
+}
+
+- (void)chatroomViewModelDidSendProhibitMessgae:(PLVSAChatroomViewModel *)viewModel {
+    [self.chatroomListView didSendMessage];
+    [self clearNewMessageCount];
 }
 
 - (void)chatroomViewModelDidReceiveMessages:(PLVSAChatroomViewModel *)viewModel {
@@ -299,47 +310,18 @@ PLVSAChatroomListViewDelegate
     [self.giftView showGiftAnimation:nickName cashGiftContent:cashGiftContent];
 }
 
-- (void)chatroomViewModel_loadEmotionSuccess {
-    self.sendMsgView.imageEmotionArray = [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
+- (void)chatroomViewModel_loadImageEmotionSuccess:(NSArray<NSDictionary *> *)dictArray {
+    self.sendMsgView.imageEmotionArray = dictArray;
+}
+
+- (void)chatroomViewModel_loadImageEmotionFailure {
+    [PLVSAUtils showToastInHomeVCWithMessage:@"图片表情资源加载失败"];
 }
 
 #pragma mark PLVSAChatroomListViewDelegate
 
 - (void)chatroomListViewDidScrollTableViewUp:(PLVSAChatroomListView *)listView {
     [self clearNewMessageCount];
-}
-
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendSpeakMessage:(NSString *)message {
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
-    }
-    [[PLVSAChatroomViewModel sharedViewModel] resendSpeakMessage:message replyChatModel:nil];
-}
-
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendImageMessage:(nonnull NSString *)imageId image:(nonnull UIImage *)image {
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
-    }
-    [[PLVSAChatroomViewModel sharedViewModel] resendImageMessage:image imageId:imageId];
-}
-
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendImageEmotionMessage:(NSString *)imageId imageUrl:(NSString *)imageUrl {
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
-    }
-    [[PLVSAChatroomViewModel sharedViewModel] resendImageEmotionMessage:imageId imageUrl:imageUrl];
-}
-
-- (void)chatroomListView:(PLVSAChatroomListView *)listView resendReplyMessage:(NSString *)message replyModel:(PLVChatModel *)model {
-    if (![self netCan]) {
-        model.msgState = PLVChatMsgStateFail;
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
-    }
-    [[PLVSAChatroomViewModel sharedViewModel] resendSpeakMessage:message replyChatModel:model];
 }
 
 - (void)chatroomListView:(PLVSAChatroomListView *)listView didTapReplyMenuItem:(PLVChatModel *)model {

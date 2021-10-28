@@ -358,7 +358,6 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
         collectionView.delegate = self;
         collectionView.dataSource = self;
         collectionView.backgroundColor = [UIColor clearColor];
-            //注册item类型 这里使用系统的类型
         [collectionView registerClass:[PLVLCEmojiCollectionViewCell class] forCellWithReuseIdentifier:@"DefaultEmojiCellId"];
         _collectionView = collectionView;
     }
@@ -431,7 +430,6 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
         collectionView.delegate = self;
         collectionView.dataSource = self;
         collectionView.backgroundColor = [UIColor clearColor];
-            //注册item类型 这里使用系统的类型
         [collectionView registerClass:[PLVLCCustomEmojiCollectionViewCell class] forCellWithReuseIdentifier:@"CustomEmojiCellId"];
         _collectionView = collectionView;
     }

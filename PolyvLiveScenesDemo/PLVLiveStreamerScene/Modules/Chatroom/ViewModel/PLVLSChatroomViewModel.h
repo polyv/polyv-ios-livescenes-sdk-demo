@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /*
  PLVLSChatroomViewModel的协议
- @note 在主线程回调
+ @note 全部回调在主线程执行
  */
 @protocol PLVLSChatroomViewModelProtocol <NSObject>
 
@@ -22,6 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 返回本地发送的公聊消息（包含禁言的情况）
 /// 用于刷新列表、滚动列表到底部
 - (void)chatroomViewModel_didSendMessage;
+
+/// 发送了严禁消息（图片、文字）
+/// 用于刷新列表、滚动列表到底部
+- (void)chatroomViewModel_didSendProhibitMessgae;
 
 /// 返回socket接收到的公聊消息
 /// 用于刷新列表、显示新消息提示
@@ -41,8 +45,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于停止【下拉加载更多】控件的动画
 - (void)chatroomViewModel_loadHistoryFailure;
 
-/// 获取图片表情消息列表
-- (void)chatroomViewModel_loadEmotionSuccess;
+/// 获取图片表情资源列表成功
+/// 用于表情面板加载图片表情
+/// @param dictArray 图片表情数据
+- (void)chatroomViewModel_loadImageEmotionSuccess:(NSArray <NSDictionary *> *)dictArray;
+
+/// 获取图片表情资源列表失败
+/// 用于提示用户‘图片表情加载失败’
+- (void)chatroomViewModel_loadImageEmotionFailure;
 
 @end
 
@@ -62,7 +72,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 全部消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 
-/// 图片表情数组
+/// 图片表情资源数组
 @property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 
 #pragma mark API

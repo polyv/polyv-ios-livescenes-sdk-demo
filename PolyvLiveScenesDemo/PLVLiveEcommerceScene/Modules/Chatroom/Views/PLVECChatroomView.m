@@ -60,7 +60,6 @@ PLVECChatroomViewModelProtocol
     if (self) {
         [[PLVECChatroomViewModel sharedViewModel] setup];
         [PLVECChatroomViewModel sharedViewModel].delegate = self;
-        [[PLVECChatroomViewModel sharedViewModel] loadImageEmotions];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];

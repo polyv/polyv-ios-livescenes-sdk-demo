@@ -7,6 +7,7 @@
 //
 
 #import "PLVLinkMicOnlineUser.h"
+#import "PLVChatUser.h"
 
 @interface PLVLinkMicOnlineUser ()
 
@@ -17,6 +18,8 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraShouldShowChangedBlock> * cameraShouldShowChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraFrontChangedBlock> * cameraFrontChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraTorchOpenChangedBlock> * cameraTorchOpenChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserBrushAuthChangedBlock> * brushAuthStateChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserGrantCupCountChangedBlock> * grantCupCountChanged_MultiReceiverMap;
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * userId;
@@ -36,6 +39,9 @@
 @property (nonatomic, assign) BOOL updateUserCurrentCameraFrontCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentCameraTorchOpenCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentNetworkQualityCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentBrushAuthCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentGrantCupCountCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentHandUpCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentStatusVoiceCallbackBefore;
 @property (nonatomic, assign) CGFloat currentVolume;
 @property (nonatomic, assign) BOOL currentMicOpen;
@@ -45,6 +51,9 @@
 @property (nonatomic, assign) PLVBRTCVideoMirrorMode localVideoMirrorMode;
 @property (nonatomic, assign) PLVBLinkMicNetworkQuality currentNetworkQuality;
 @property (nonatomic, assign) BOOL currentStatusVoice;
+@property (nonatomic, assign) BOOL currentBrushAuth;
+@property (nonatomic, assign) NSInteger currentCupCount;
+@property (nonatomic, assign) BOOL currentHandUp;
 
 @end
 
@@ -108,6 +117,19 @@
     return _cameraTorchOpenChanged_MultiReceiverMap;
 }
 
+- (NSMapTable<id,PLVLinkMicOnlineUserBrushAuthChangedBlock> *)brushAuthStateChanged_MultiReceiverMap {
+    if (!_brushAuthStateChanged_MultiReceiverMap) {
+        _brushAuthStateChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
+    }
+    return _brushAuthStateChanged_MultiReceiverMap;
+}
+
+- (NSMapTable<id,PLVLinkMicOnlineUserGrantCupCountChangedBlock> *)grantCupCountChanged_MultiReceiverMap{
+    if (!_grantCupCountChanged_MultiReceiverMap) {
+        _grantCupCountChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
+    }
+    return _grantCupCountChanged_MultiReceiverMap;
+}
 
 #pragma mark - [ Public Methods ]
 #pragma mark Getter
@@ -125,48 +147,33 @@
 }
 
 #pragma mark 创建
-+ (instancetype)modelWithDictionary:(NSDictionary *)dictionary{
-    if ([PLVFdUtil checkDictionaryUseable:dictionary]) {
-        PLVLinkMicOnlineUser * user = [[PLVLinkMicOnlineUser alloc]init];
-        
-        /// 用户类型
-        NSString * userType = [NSString stringWithFormat:@"%@",dictionary[@"userType"]];
-        if ([@"teacher" isEqualToString:userType]) {
-            user.userType = PLVSocketUserTypeTeacher;
-        } else if ([@"viewer" isEqualToString:userType]) {
-            user.userType = PLVSocketUserTypeViewer;
-        } else if ([@"guest" isEqualToString:userType]){
-            user.userType = PLVSocketUserTypeGuest;
-        } else if ([@"slice" isEqualToString:userType]){
-            user.userType = PLVSocketUserTypeSlice;
-        } else if ([@"student" isEqualToString:userType]){
-            user.userType = PLVSocketUserTypeStudent;
-        }
-        
-        /// 用户信息
-        user.userId = [PLVFdUtil checkStringUseable:dictionary[@"loginId"]] ? dictionary[@"loginId"] : nil;
-        user.linkMicUserId = [PLVFdUtil checkStringUseable:dictionary[@"userId"]] ? dictionary[@"userId"] : nil;
-        user.nickname = [PLVFdUtil checkStringUseable:dictionary[@"nick"]] ? dictionary[@"nick"] : nil;
-        user.avatarPic = [PLVFdUtil checkStringUseable:dictionary[@"pic"]] ? dictionary[@"pic"] : nil;
-        user.actor = [PLVFdUtil checkStringUseable:dictionary[@"actor"]] ? dictionary[@"actor"] : nil;
-        
-        if (user.userType == PLVSocketUserTypeGuest ||
-            user.userType == PLVSocketUserTypeTeacher) {
-            user.userId = [PLVFdUtil checkStringUseable:dictionary[@"userId"]] ? dictionary[@"userId"] : nil;
-        }
-        
-        /// 权限
-        NSDictionary * classStatusDict = dictionary[@"classStatus"];
-        if ([PLVFdUtil checkDictionaryUseable:classStatusDict]) {
-            user.currentStatusVoice = ([NSString stringWithFormat:@"%@",classStatusDict[@"voice"]].intValue == 1);
-        }
-        
-        /// 原始数据
-        user.originalUserDict = dictionary;
-        
-        return user;
+
++ (instancetype)modelWithDictionary:(NSDictionary *)dictionary {
+    if (![PLVFdUtil checkDictionaryUseable:dictionary]) {
+        return nil;
     }
-    return nil;
+    
+    PLVLinkMicOnlineUser *user = [[PLVLinkMicOnlineUser alloc] init];
+    [user updateWithDictionary:dictionary];
+    return user;
+}
+
++ (instancetype)localUserModelWithChatUser:(PLVChatUser *)chatUser {
+    if (!chatUser ||
+        ![chatUser isKindOfClass:[PLVChatUser class]]) {
+        return nil;
+    }
+    
+    PLVLinkMicOnlineUser *user = [[PLVLinkMicOnlineUser alloc] init];
+    user.userType = [PLVRoomUser sockerUserTypeWithRoomUserType:chatUser.userType];
+    user.userId = chatUser.userId;
+    user.linkMicUserId = chatUser.userId;
+    user.nickname = chatUser.userName;
+    user.avatarPic = chatUser.avatarUrl;
+    user.actor = chatUser.actor;
+    user.currentBrushAuth = chatUser.currentBrushAuth;
+    user.currentCupCount = chatUser.cupCount;
+    return user;
 }
 
 + (instancetype)localUserModelWithUserId:(NSString *)userId linkMicUserId:(NSString *)linkMicUserId nickname:(NSString *)nickname avatarPic:(NSString *)avatarPic userType:(PLVSocketUserType)userType actor:(NSString *)actor{
@@ -185,6 +192,55 @@
 }
 
 #pragma mark 状态更新
+
+- (void)updateWithDictionary:(NSDictionary *)dictionary {
+    if (![PLVFdUtil checkDictionaryUseable:dictionary]) {
+        return;
+    }
+    
+    /// 用户类型
+    NSString *userTypeString = [NSString stringWithFormat:@"%@",dictionary[@"userType"]];
+    PLVRoomUserType roomUserType = [PLVRoomUser userTypeWithUserTypeString:userTypeString];
+    PLVSocketUserType userType = [PLVRoomUser sockerUserTypeWithRoomUserType:roomUserType];
+    self.userType = userType;
+    
+    /// 用户信息
+    self.userId = [PLVFdUtil checkStringUseable:dictionary[@"loginId"]] ? dictionary[@"loginId"] : nil;
+    self.linkMicUserId = [PLVFdUtil checkStringUseable:dictionary[@"userId"]] ? dictionary[@"userId"] : nil;
+    self.nickname = [PLVFdUtil checkStringUseable:dictionary[@"nick"]] ? dictionary[@"nick"] : nil;
+    self.avatarPic = [PLVFdUtil checkStringUseable:dictionary[@"pic"]] ? dictionary[@"pic"] : nil;
+    self.actor = [PLVFdUtil checkStringUseable:dictionary[@"actor"]] ? dictionary[@"actor"] : nil;
+    
+    if (self.userType == PLVSocketUserTypeGuest ||
+        self.userType == PLVSocketUserTypeTeacher ||
+        self.userType == PLVSocketUserTypeSCStudent) {
+        self.userId = [PLVFdUtil checkStringUseable:dictionary[@"userId"]] ? dictionary[@"userId"] : nil;
+    }
+    
+    /// 权限
+    NSDictionary * classStatusDict = dictionary[@"classStatus"];
+    if ([PLVFdUtil checkDictionaryUseable:classStatusDict]) {
+        BOOL currentBrushAuth = ([NSString stringWithFormat:@"%@",classStatusDict[@"paint"]].intValue == 1);
+        BOOL currentStatusVoice = ([NSString stringWithFormat:@"%@",classStatusDict[@"voice"]].intValue == 1);
+        NSInteger currentCupCount = PLV_SafeIntegerForDictKey(classStatusDict, @"cup");
+        BOOL currentHandUp = ([NSString stringWithFormat:@"%@",classStatusDict[@"raiseHand"]].intValue == 1);
+        
+        BOOL localUser = self.localUser; // 缓存真实状态
+        if (self.userType == PLVSocketUserTypeGuest) {
+            self.localUser = YES; // 仅为了远端(嘉宾自动上麦)赋值成功
+        }
+        [self updateUserCurrentStatusVoice:currentStatusVoice];
+        self.localUser = localUser; // 还原真实状态
+        
+        [self updateUserCurrentBrushAuth:currentBrushAuth];
+        [self updateUserCurrentGrantCupCount:currentCupCount];
+        [self updateUserCurrentHandUp:currentHandUp];
+    }
+    
+    /// 原始数据
+    self.originalUserDict = dictionary;
+}
+
 - (void)updateUserCurrentVolume:(CGFloat)volume{
     if (volume < 0.0) {
         volume = 0.0;
@@ -358,6 +414,78 @@
     }
 }
 
+- (void)updateUserCurrentBrushAuth:(BOOL)brushAuth {
+    BOOL needCallBack = (_currentBrushAuth != brushAuth);
+    if (!_updateUserCurrentBrushAuthCallbackBefore) {
+        needCallBack = YES;
+    }
+    
+    _currentBrushAuth = brushAuth;
+    if (needCallBack && self.brushAuthChangedBlock) {
+        _updateUserCurrentBrushAuthCallbackBefore = YES;
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.brushAuthChangedBlock(weakSelf); }
+        })
+    }
+    
+    if (needCallBack && _brushAuthStateChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentBrushAuthCallbackBefore = YES;
+        NSEnumerator * enumerator = [_brushAuthStateChanged_MultiReceiverMap objectEnumerator];
+        PLVLinkMicOnlineUserBrushAuthChangedBlock block;
+        __weak typeof(self) weakSelf = self;
+        while ((block = [enumerator nextObject])) {
+            plv_dispatch_main_async_safe(^{
+                if (weakSelf) { block(weakSelf); }
+            })
+        }
+    }
+}
+
+- (void)updateUserCurrentGrantCupCount:(NSInteger)cupCount {
+    BOOL needCallBack = (_currentCupCount != cupCount);
+    if (!_updateUserCurrentGrantCupCountCallbackBefore) {
+        needCallBack = YES;
+    }
+    
+    _currentCupCount = cupCount;
+    if (needCallBack && self.grantCupCountChangedBlock) {
+        _updateUserCurrentGrantCupCountCallbackBefore = YES;
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.grantCupCountChangedBlock(weakSelf); }
+        })
+    }
+    
+    if (needCallBack && _grantCupCountChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentBrushAuthCallbackBefore = YES;
+        NSEnumerator * enumerator = [_grantCupCountChanged_MultiReceiverMap objectEnumerator];
+        PLVLinkMicOnlineUserGrantCupCountChangedBlock block;
+        __weak typeof(self) weakSelf = self;
+        while ((block = [enumerator nextObject])) {
+            plv_dispatch_main_async_safe(^{
+                if (weakSelf) { block(weakSelf); }
+            })
+        }
+    }
+}
+
+- (void)updateUserCurrentHandUp:(BOOL)handUp {
+    BOOL needCallBack = (_currentHandUp != handUp);
+    if (!_updateUserCurrentHandUpCallbackBefore) {
+        needCallBack = YES;
+    }
+    
+    _currentHandUp = handUp;
+    if (needCallBack && self.handUpChangedBlock) {
+        _updateUserCurrentHandUpCallbackBefore = YES;
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.handUpChangedBlock(weakSelf); }
+        })
+    }
+}
+
 - (void)updateUserCurrentStatusVoice:(BOOL)currentStatusVoice{
     if (!self.localUser) { return; }
     
@@ -412,6 +540,25 @@
         })
     }
 }
+
+- (void)wantAuthUserBrush:(BOOL)auth {
+    if (self.wantBrushAuthBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantBrushAuthBlock(weakSelf, auth); }
+        })
+    }
+}
+
+- (void)wantGrantUserCup {
+    if (self.wantGrantCupBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantGrantCupBlock(weakSelf ); }
+        })
+    }
+}
+
 
 #pragma mark 多接收方回调配置
 - (void)addWillDeallocBlock:(PLVLinkMicOnlineUserWillDeallocBlock)strongBlock blockKey:(id)weakBlockKey{
@@ -492,6 +639,38 @@
         return;
     }
     [self.cameraTorchOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
+}
+
+- (void)addGrantCupCountChangedBlock:(PLVLinkMicOnlineUserGrantCupCountChangedBlock)strongBlock blockKey:(id)weakBlockKey {
+    if (!strongBlock) {
+        NSLog(@"PLVLinkMicOnlineUser - addGrantCupCountChangedBlock failed，strongBlock illegal");
+        return;
+    }
+    if (!weakBlockKey) {
+        NSLog(@"PLVLinkMicOnlineUser - addGrantCupCountChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        return;
+    }
+    if (self.grantCupCountChanged_MultiReceiverMap.count > 20) {
+        NSLog(@"PLVLinkMicOnlineUser - addGrantCupCountChangedBlock failed，block registration limit has been reached");
+        return;
+    }
+    [self.grantCupCountChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
+}
+
+- (void)addBrushAuthStateChangedBlock:(PLVLinkMicOnlineUserBrushAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey {
+    if (!strongBlock) {
+        NSLog(@"PLVLinkMicOnlineUser - addBrushAuthStateChangedBlock failed，strongBlock illegal");
+        return;
+    }
+    if (!weakBlockKey) {
+        NSLog(@"PLVLinkMicOnlineUser - addBrushAuthStateChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        return;
+    }
+    if (self.brushAuthStateChanged_MultiReceiverMap.count > 20) {
+        NSLog(@"PLVLinkMicOnlineUser - addBrushAuthStateChangedBlock failed，block registration limit has been reached");
+        return;
+    }
+    [self.brushAuthStateChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
 }
 
 @end

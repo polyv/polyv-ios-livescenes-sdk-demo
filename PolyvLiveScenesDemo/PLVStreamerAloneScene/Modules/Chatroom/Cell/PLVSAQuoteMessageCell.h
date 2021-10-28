@@ -15,8 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVSAQuoteMessageCell : PLVSABaseMessageCell
 
 /// 点击 重发按钮 触发
-@property (nonatomic, copy) void(^ _Nullable resendReplyHandler)(NSString *message, PLVChatModel *model);
-
+@property (nonatomic, copy) void(^ _Nullable resendReplyHandler)(PLVChatModel *model);
 
 /// 设置消息数据模型，cell宽度
 /// @param model 数据模型

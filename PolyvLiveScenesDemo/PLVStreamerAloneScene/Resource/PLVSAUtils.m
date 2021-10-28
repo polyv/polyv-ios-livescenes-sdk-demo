@@ -8,7 +8,6 @@
 
 #import "PLVSAUtils.h"
 #import "PLVToast.h"
-#import "PLVAlertViewController.h"
 #import "PLVSAStreamAlertController.h"
 
 @interface PLVSAUtils ()
@@ -74,7 +73,6 @@
     
     [[PLVSAUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
 }
-
 
 + (UIImage *)imageForLiveroomResource:(NSString *)imageName {
     return [self imageFromBundle:@"PLVSALiveroom" imageName:imageName];

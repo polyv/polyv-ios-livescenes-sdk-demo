@@ -67,8 +67,36 @@ NS_ASSUME_NONNULL_BEGIN
                               completion:(void (^)(void))completion
                                  failure:(void (^)(NSString *errorMessage))failure;
 
-/// 离开直播间时调用
+/// 离开直播间时调用，包括离开互动学堂教室
 + (void)logout;
+
+#pragma mark - HiClass
+
+/// 讲师端进入互动学堂教室
+/// @param viewerId 用户ID
+/// @param viewerName 用户昵称
+/// @param lessonId 课节ID
+/// @param completion 登录成功
+/// @param failure 登录失败
++ (void)teacherEnterHiClassWithViewerId:(NSString *)viewerId
+                                viewerName:(NSString *)viewerName
+                                  lessonId:(NSString *)lessonId
+                                completion:(void (^)(void))completion
+                                   failure:(void (^)(NSString *errorMessage))failure;
+
+/// 观看端进入互动学堂教室
+/// @param viewerId 用户ID
+/// @param viewerName 用户昵称 
+/// @param courseCode 课程号
+/// @param lessonId 课节ID
+/// @param completion 登录成功
+/// @param failure 登录失败
++ (void)watcherEnterHiClassWithViewerId:(NSString *)viewerId
+                                viewerName:(NSString *)viewerName
+                                courseCode:(NSString * _Nullable)courseCode
+                                  lessonId:(NSString *)lessonId
+                                completion:(void (^)(void))completion
+                                   failure:(void (^)(NSString *errorMessage))failure;
 
 @end
 

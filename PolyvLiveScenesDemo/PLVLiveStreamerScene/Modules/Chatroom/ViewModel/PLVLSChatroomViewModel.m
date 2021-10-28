@@ -17,8 +17,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) PLVChatroomPresenter *presenter; /// 聊天室Presenter
 
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray; /// 公聊全部消息数组
-/// 图片表情数组
-@property (nonatomic, strong) NSArray *imageEmotionArray;
 
 @end
 
@@ -57,11 +55,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.chatArray = [[NSMutableArray alloc] initWithCapacity:500];
     
     // 初始化聊天室Presenter并设置delegate
-    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10 childRoomAllow:NO];
+    self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10];
     self.presenter.delegate = self;
-    self.presenter.specialRole = YES;
-    //加载图片表情资源
-    [self.presenter loadImageEmotions];
+    [self.presenter login];
 
     // 监听socket消息
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
@@ -74,6 +70,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     
     self.delegate = nil;
     [self removeAllPublicChatModels];
+}
+
+#pragma mark - Getter
+
+- (NSArray *)imageEmotionArray {
+    return self.presenter.imageEmotionArray;
 }
 
 #pragma mark - 加载消息
@@ -108,9 +110,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (BOOL)sendImageEmotionMessage:(NSString *)imageId
                        imageUrl:(NSString *)imageUrl {
-    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId];
+    PLVChatModel *model = [self.presenter sendImageEmotionId:imageId imageUrl:imageUrl];
     if (model) {
-        ((PLVImageEmotionMessage *)model.message).imageUrl = imageUrl;
         [self addPublicChatModel:model];
     }
     return model != nil;
@@ -135,20 +136,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
-            
-            //当接收到公聊消息为图片表情时，因为会返回图片id所以在此处从列表中取出图片地址
-            if ([model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
-                PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
-                [self.imageEmotionArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-                    NSString *emotionImageId = PLV_SafeStringForDictKey(obj, @"id");
-                    if (emotionImageId &&
-                        [message.imageId isEqualToString:emotionImageId]) {
-                        message.imageUrl = PLV_SafeStringForDictKey(obj, @"url");
-                        *stop = YES;
-                    }
-                }];
-            }
-            
             [self.chatArray addObject:model];
         }
     }
@@ -214,13 +201,13 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         if (modelMsgId && modelMsgId.length > 0) {
             continue;
         }
-        // 该消息已标记为包含严禁词消息
+        // 该消息已标记为严禁词、违禁图片消息
         if ([model isProhibitMsg]) {
             continue;
         }
         
         NSString *content = [model content];
-        //只要含有违禁词，都需要处理，不局限于最近一条
+        //只要含有严禁词，都需要处理，不局限于最近一条
         if (content &&
             [content isKindOfClass:[NSString class]] &&
             [content containsString:word]) {
@@ -229,9 +216,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     dispatch_semaphore_signal(_chatArrayLock);
     
-    [self notifyListenerDidSendMessage];
+    [self notifyListenerDidSendProhibitMessgae];
 }
 
+
+/// 处理违禁图片
 - (void)markChatModelProhibitImageWithMsgId:(NSString *)msgId {
     if (!msgId ||
         ![msgId isKindOfClass:[NSString class]] ||
@@ -242,13 +231,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     NSArray *tempChatArray = [self.chatArray copy];
     for (PLVChatModel *model in tempChatArray) {
-        // 该消息已标记为包含严禁词消息
+        // 该消息已标记为严禁词、违禁图片消息
         if ([model isProhibitMsg]) {
             continue;
         }
         
         NSString *tempMsgId = [model msgId];
-        // 只要含有违禁词，都需要处理，不局限于最近一条
         if (tempMsgId &&
             [tempMsgId isKindOfClass:[NSString class]] &&
             [tempMsgId isEqualToString:msgId]) {
@@ -258,7 +246,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     dispatch_semaphore_signal(_chatArrayLock);
     
-    [self notifyListenerDidSendMessage];
+    [self notifyListenerDidSendProhibitMessgae];
 }
 
 #pragma mark - Listener
@@ -267,6 +255,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel_didSendMessage)]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate chatroomViewModel_didSendMessage];
+        });
+    }
+}
+
+- (void)notifyListenerDidSendProhibitMessgae {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModel_didSendProhibitMessgae)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModel_didSendProhibitMessgae];
         });
     }
 }
@@ -303,9 +300,22 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
-#pragma mark - PLVSocketManager Protocol
+- (void)notifyListenerLoadImageEmotionsSuccess {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModel_loadImageEmotionSuccess:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModel_loadImageEmotionSuccess:self.imageEmotionArray];
+        });
+    }
+}
 
-- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
+- (void)notifyListenerLoadImageEmotionsFailure {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModel_loadImageEmotionFailure)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModel_loadImageEmotionFailure];
+        });
+    }
 }
 
 #pragma mark - PLVChatroomPresenterProtocol
@@ -316,15 +326,6 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_loadHistoryFailure {
     [self notifyListenerLoadHistoryFailure];
-}
-
-- (void)chatroomPresenter_loadImageEmotionsSuccess:(NSArray<NSDictionary *> *)dictArray {
-    self.imageEmotionArray = dictArray;
-    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel_loadEmotionSuccess)]) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.delegate chatroomViewModel_loadEmotionSuccess];
-        });
-    }
 }
 
 - (void)chatroomPresenter_didReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray {
@@ -344,6 +345,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_receiveImageWarningWithMsgId:(NSString *)msgId{
     [self markChatModelProhibitImageWithMsgId:msgId];
+}
+
+- (void)chatroomPresenter_loadImageEmotionsSuccess {
+    [self notifyListenerLoadImageEmotionsSuccess];
+}
+
+- (void)chatroomPresenter_loadImageEmotionsFailure {
+    [self notifyListenerLoadImageEmotionsFailure];
 }
 
 @end

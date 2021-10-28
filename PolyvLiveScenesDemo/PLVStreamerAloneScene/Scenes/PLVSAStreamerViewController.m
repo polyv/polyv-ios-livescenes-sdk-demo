@@ -650,7 +650,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 }
 
 - (void)kickUsersInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUserId:(NSString *)userId {
-    [self.memberPresenter removeUserWithUserId:userId];
+    [self.memberPresenter kickUserWithUserId:userId];
 }
 
 - (void)streamerHomeViewDidTapCloseButton:(PLVSAStreamerHomeView *)homeView {

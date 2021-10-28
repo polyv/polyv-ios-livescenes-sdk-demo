@@ -10,8 +10,7 @@
 #import "PLVChatModel.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVLSUtils.h"
-#import <PLVLiveScenesSDK/PLVImageMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSImageEmotionMessageCell ()
@@ -152,7 +151,7 @@
                                                                                          loginUserId:self.loginUserId];
     self.nickLabel.attributedText = nickLabelString;
     
-    PLVImageMessage *message = (PLVImageMessage *)model.message;
+    PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
     NSURL *imageURL = [PLVLSImageEmotionMessageCell imageURLWithMessage:message];
     UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
     // 如果是违规图片，设置本地图片，并跳过后续操作
@@ -213,7 +212,7 @@
 }
 
 /// 获取图片URL
-+ (NSURL *)imageURLWithMessage:(PLVImageMessage *)message {
++ (NSURL *)imageURLWithMessage:(PLVImageEmotionMessage *)message {
     NSString *imageUrl = message.imageUrl;
     if (!imageUrl || ![imageUrl isKindOfClass:[NSString class]] || imageUrl.length == 0) {
         return nil;
@@ -241,7 +240,7 @@
 }
 
 //图片表情是固定的大小
-+ (CGSize)calculateImageViewSizeWithMessage:(PLVImageMessage *)message {
++ (CGSize)calculateImageViewSizeWithMessage:(PLVImageEmotionMessage *)message {
     CGFloat maxLength = 80.0;
     return CGSizeMake(maxLength, maxLength);
 }

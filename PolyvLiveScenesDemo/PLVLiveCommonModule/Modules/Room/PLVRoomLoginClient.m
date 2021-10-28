@@ -191,6 +191,12 @@
             apiChannelType = PLVChannelTypeAlone;
         }
         
+        if (apiChannelType == PLVChannelTypeAlone && [channelId hasPrefix:@"00"]) {
+            !failure ?: failure(@"当前场景暂不支持嘉宾登录");
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login streamer room failed with【当前场景暂不支持嘉宾登录】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
+            return;
+        }
+        
         if ((apiChannelType & channelType) <= 0) {
             !failure ?: failure(@"频道类型出错");
             PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login streamer room failed with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
@@ -249,7 +255,7 @@
         // 登陆SDK,一定要第一时间调用这个方法，否则会导致API接口参数为空
         [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
         // 注册日志管理器
-        [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:roomData.channelId appId:appId appSecret:appSecret userId:userId];
+        [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:roomData.channelId productType:PLVProductTypeStreamer];
         
         // 将当前的roomData配置到PLVRoomDataManager进行管理
         [[PLVRoomDataManager sharedManager] configRoomData:roomData];
@@ -271,6 +277,135 @@
 + (void)logout {
     [[PLVRoomDataManager sharedManager] removeRoomData];
     [[PLVWLogReporterManager sharedManager] clear];
+}
+
+#pragma mark - HiClass
+
++ (void)teacherEnterHiClassWithViewerId:(NSString *)viewerId
+                                viewerName:(NSString *)viewerName
+                                  lessonId:(NSString *)lessonId
+                                completion:(void (^)(void))completion
+                                   failure:(void (^)(NSString *errorMessage))failure {
+    if (![PLVFdUtil checkStringUseable:viewerId] ||
+        ![PLVFdUtil checkStringUseable:viewerName]) {
+        !failure ?: failure(@"用户ID、用户昵称不可为空");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s tacher enter hiclass room failed with【用户ID、用户昵称不可为空】(viewerId:%@, viewerName:%@)", __FUNCTION__, viewerId, viewerName);
+        return;
+    }
+    if (![PLVFdUtil checkStringUseable:lessonId]) {
+        !failure ?: failure(@"课节ID不可为空");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s tacher enter hiclass room failed with【课节ID不可为空】(lessonId:%@)", __FUNCTION__, lessonId);
+        return;
+    }
+    [PLVLiveVClassAPI teacherLessonDetailWithLessonId:lessonId success:^(NSDictionary * _Nonnull responseDict) {
+        // 解析最大推流分辨率
+        NSInteger rtcMaxResolution = [responseDict[@"rtcMaxResolution"] integerValue];
+        PLVResolutionType videoResolution = PLVResolutionType180P;
+        if (rtcMaxResolution >= 720) {
+            videoResolution = PLVResolutionType720P;
+        } else if (rtcMaxResolution == 360) {
+            videoResolution = PLVResolutionType360P;
+        }
+        
+        // 解析频道号、频道名称、连麦人数、是否开启自动连麦
+        NSString *channelId = PLV_SafeStringForDictKey(responseDict, @"channelId");
+        NSString *channelName = PLV_SafeStringForDictKey(responseDict, @"name");
+        
+        // 初始化直播间数据
+        PLVRoomData *roomData = [[PLVRoomData alloc] init];
+        roomData.sessionId = lessonId;
+        roomData.maxResolution = videoResolution;
+        roomData.videoType = PLVChannelVideoType_Streamer;
+        roomData.channelId = channelId;
+        roomData.channelName = channelName;
+        
+        //设置课程详情数据
+        PLVLessonInfoModel *infoModel = [[PLVLessonInfoModel alloc] initWithDictionary:responseDict];
+        [roomData setupLessonInfo:infoModel];
+        
+        // 初始化直播间用户数据
+        PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithViewerId:viewerId viewerName:viewerName viewerAvatar:@"https://s1.videocc.net/default-img/avatar/teacher.png" viewerType:PLVRoomUserTypeTeacher];
+        [roomData setupRoomUser:roomUser];
+        
+        // 将当前的roomData配置到PLVRoomDataManager进行管理
+        [[PLVRoomDataManager sharedManager] configRoomData:roomData];
+        
+        // 注册日志管理器
+        [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:roomData.channelId productType:PLVProductTypeHiClass];
+        
+        NSString *pptAnimationString = PLV_SafeStringForDictKey(responseDict, @"pptAnimationEnabled");
+        BOOL pptAnimationEnable = pptAnimationString.boolValue;
+        [[PLVDocumentUploadClient sharedClient] setupWithChannelId:channelId lessionId:lessonId pptAnimationEnable:pptAnimationEnable];
+        
+        !completion ?: completion();
+        
+    } failure:^(NSError * _Nonnull error) {
+        NSString *errorDes = error.userInfo[NSLocalizedDescriptionKey];
+        !failure ?: failure(errorDes);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s tacher enter hiclass room failed with 【%@】", __FUNCTION__, errorDes);
+    }];
+}
+
++ (void)watcherEnterHiClassWithViewerId:(NSString *)viewerId
+                                viewerName:(NSString *)viewerName
+                                courseCode:(NSString * _Nullable)courseCode
+                                  lessonId:(NSString *)lessonId
+                                completion:(void (^)(void))completion
+                                   failure:(void (^)(NSString *errorMessage))failure {
+    if (![PLVFdUtil checkStringUseable:viewerId] ||
+        ![PLVFdUtil checkStringUseable:viewerName]) {
+        !failure ?: failure(@"用户ID、用户昵称不可为空");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s watcher enter hiclass room failed with【用户ID、用户昵称不可为空】(viewerId:%@, viewerName:%@)", __FUNCTION__, viewerId, viewerName);
+        return;
+    }
+    if (![PLVFdUtil checkStringUseable:lessonId]) {
+        !failure ?: failure(@"课节ID不可为空");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s watcher enter hiclass room failed with【课节ID不可为空】(lessonId:%@)", __FUNCTION__, lessonId);
+        return;
+    }
+    [PLVLiveVClassAPI watcherLessonDetailWithCourseCode:courseCode lessonId:lessonId success:^(NSDictionary * _Nonnull responseDict) {
+        // 解析最大推流分辨率
+        NSInteger rtcMaxResolution = [responseDict[@"rtcMaxResolution"] integerValue];
+        PLVResolutionType videoResolution = PLVResolutionType180P;
+        if (rtcMaxResolution >= 720) {
+            videoResolution = PLVResolutionType720P;
+        } else if (rtcMaxResolution == 360) {
+            videoResolution = PLVResolutionType360P;
+        }
+        
+        // 解析频道号、频道名称、连麦人数、是否开启自动连麦
+        NSString *channelId = PLV_SafeStringForDictKey(responseDict, @"channelId");
+        NSString *channelName = PLV_SafeStringForDictKey(responseDict, @"name");
+        
+        // 初始化直播间数据
+        PLVRoomData *roomData = [[PLVRoomData alloc] init];
+        roomData.sessionId = lessonId;
+        roomData.maxResolution = videoResolution;
+        roomData.videoType = PLVChannelVideoType_Streamer;
+        roomData.channelId = channelId;
+        roomData.channelName = channelName;
+        
+        //设置课程详情数据
+        PLVLessonInfoModel *infoModel = [[PLVLessonInfoModel alloc] initWithDictionary:responseDict];
+        infoModel.courseCode = courseCode;
+        [roomData setupLessonInfo:infoModel];
+        
+        // 初始化直播间用户数据
+        PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithViewerId:viewerId viewerName:viewerName viewerAvatar:@"https://liveimages.videocc.net/defaultImg/avatar/viewer.png" viewerType:PLVRoomUserTypeSCStudent];
+        [roomData setupRoomUser:roomUser];
+        
+        // 将当前的roomData配置到PLVRoomDataManager进行管理
+        [[PLVRoomDataManager sharedManager] configRoomData:roomData];
+        
+        // 注册日志管理器
+        [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:roomData.channelId productType:PLVProductTypeHiClass];
+        
+        !completion ?: completion();
+    } failure:^(NSError * _Nonnull error) {
+        NSString *errorDes = error.userInfo[NSLocalizedDescriptionKey];
+        !failure ?: failure(errorDes);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s watcher enter hiclass room failed with 【%@】", __FUNCTION__, errorDes);
+    }];
 }
 
 @end
