@@ -63,30 +63,40 @@
     
     BOOL specialType = [self isSpecialIdentityWithUserType:self.user.userType];
     
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat width = self.contentView.frame.size.width;
-    CGFloat buttonWidth = 42;
+    CGFloat buttonWidth = 44;
     CGFloat buttonHeight = 58;
     CGFloat buttonCount = specialType ? 2 : 3;
     CGFloat buttonPadding = (width - buttonWidth * buttonCount) / (buttonCount + 1);
-    CGFloat buttonMargin = self.bounds.size.height > 667 ? 32 : 18;
+    CGFloat buttonTop = self.bounds.size.height > 667 ? 32 : 18;
+    CGFloat lineViewTop = 12;
+    CGFloat lineViewMargin = 23.5;
+    
+    if (isPad) {
+        buttonPadding = 0.28 * (width - buttonWidth * buttonCount) / (buttonCount - 1);
+        lineViewTop = 24;
+        lineViewMargin = 56;
+    }
    
     self.headerImageView.frame = CGRectMake((width - 66) / 2, 17, 66, 66);
     
     CGFloat actorLabelWidth = [self.actorLabel sizeThatFits:CGSizeMake(width, 18)].width + 10;
     self.actorLabel.frame = CGRectMake((width - actorLabelWidth) / 2, CGRectGetMaxY(self.headerImageView.frame) - 18, actorLabelWidth, 18);
     
-    self.nicknameLabel.frame = CGRectMake(23.5, CGRectGetMaxY(self.actorLabel.frame) + 9, width - 23.5 *2, 20);
+    self.nicknameLabel.frame = CGRectMake(lineViewMargin, CGRectGetMaxY(self.actorLabel.frame) + 9, width - lineViewMargin *2, 20);
     
-    self.lineView.frame = CGRectMake(23.5, CGRectGetMaxY(self.nicknameLabel.frame) + 12, width - 23.5 *2, 1);
+    self.lineView.frame = CGRectMake(lineViewMargin, CGRectGetMaxY(self.nicknameLabel.frame) + lineViewTop, width - lineViewMargin *2, 1);
     
     if (specialType) {
-        self.cameraButton.frame = CGRectMake(buttonPadding, CGRectGetMaxY(self.lineView.frame) + buttonMargin, buttonWidth, buttonHeight);
-        
+        CGFloat cameraButtonLeft = isPad ? (width - buttonPadding) / 2 - buttonWidth : buttonPadding;
+        self.cameraButton.frame = CGRectMake(cameraButtonLeft, CGRectGetMaxY(self.lineView.frame) + buttonTop, buttonWidth, buttonHeight);
+
         self.micphoneButton.frame = CGRectMake(CGRectGetMaxX(self.cameraButton.frame) + buttonPadding, self.cameraButton.frame.origin.y, buttonWidth, buttonHeight);
         
         
     } else {
-        self.micphoneButton.frame = CGRectMake((width - buttonWidth) / 2, CGRectGetMaxY(self.lineView.frame) + buttonMargin, buttonWidth, buttonHeight);
+        self.micphoneButton.frame = CGRectMake((width - buttonWidth) / 2, CGRectGetMaxY(self.lineView.frame) + buttonTop, buttonWidth, buttonHeight);
         
         self.cameraButton.frame = CGRectMake(CGRectGetMinX(self.micphoneButton.frame) - buttonPadding - buttonWidth, self.micphoneButton.frame.origin.y, buttonWidth, buttonHeight);
         
@@ -237,12 +247,13 @@
 - (void)setButtonInsetsWithArray:(NSArray *)buttonArray {
     for (int i = 0; i < buttonArray.count ; i++) {
         UIButton *but = buttonArray[i];
-        CGFloat padding = 5;
+        CGFloat padding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 8 : 5;
         [but setTitleEdgeInsets:
-         UIEdgeInsetsMake(but.frame.size.height/2 + padding,
-                          (but.frame.size.width-but.titleLabel.intrinsicContentSize.width)/2-but.imageView.frame.size.width,
-                          0,
-                          (but.frame.size.width-but.titleLabel.intrinsicContentSize.width)/2)];
+               UIEdgeInsetsMake(but.frame.size.height/2 + padding,
+                                -but.imageView.frame.size.width,
+                                0,
+                                0)];
+
         [but setImageEdgeInsets:
          UIEdgeInsetsMake(
                           0,

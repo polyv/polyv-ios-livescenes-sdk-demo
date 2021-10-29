@@ -91,8 +91,9 @@ PLVLCLinkMicWindowsViewDelegate
         if (self.superview && !_landscapeSpeakingView.superview) { [self.superview addSubview:self.landscapeSpeakingView]; }
     }
     
-    if (fullScreenDifferent) {
-        /// 布局 连麦控制栏
+    // 横竖屏发生了变化 or iPad分屏尺寸变动，刷新连麦布局
+    BOOL isPad = ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad);
+    if (fullScreenDifferent || isPad) {
         [self.portraitControlBar refreshControlBarFrame];
         [self.landscapeControlBar refreshControlBarFrame];
     }

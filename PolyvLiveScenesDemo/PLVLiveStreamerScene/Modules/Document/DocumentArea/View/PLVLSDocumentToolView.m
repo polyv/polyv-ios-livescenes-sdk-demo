@@ -47,8 +47,10 @@
     relativeY = (!self.btnAddPage.hidden && self.btnAddPage.alpha == 1) ? (UIViewGetTop(self.btnAddPage) - maginTop) : relativeY;
     self.btnFullScreen.frame = CGRectMake(0, relativeY - btnWidth, btnWidth, btnWidth);
     
-    relativeY = self.btnFullScreen.hidden ? relativeY : (UIViewGetTop(self.btnFullScreen) - maginTop);
-    self.btnNext.frame = CGRectMake(0, relativeY - btnWidth, btnWidth, btnWidth);
+    relativeY = (self.btnFullScreen.hidden ? relativeY : (UIViewGetTop(self.btnFullScreen) - maginTop));
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat btnNextTop = isPad ? (UIViewGetHeight(self) / 2 - btnWidth) : (relativeY - btnWidth);
+    self.btnNext.frame = CGRectMake(0, btnNextTop, btnWidth, btnWidth);
     self.btnPrevious.frame = CGRectMake(0, UIViewGetTop(self.btnNext) - btnWidth - maginTop, btnWidth, btnWidth);
 }
 

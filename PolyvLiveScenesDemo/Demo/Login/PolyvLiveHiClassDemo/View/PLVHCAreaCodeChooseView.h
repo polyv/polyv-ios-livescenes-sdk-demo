@@ -1,9 +1,9 @@
 //
 //  PLVHCAreaCodeChooseView.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/9/14.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 // 国家（地区）区号选择器
 
 #import <UIKit/UIKit.h>

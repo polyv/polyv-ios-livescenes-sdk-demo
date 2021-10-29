@@ -1,9 +1,9 @@
 //
 //  PLVHCChooseCompanyViewController.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by jiaweihuang on 2021/6/30.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //  公司选择页
 
 #import <UIKit/UIKit.h>

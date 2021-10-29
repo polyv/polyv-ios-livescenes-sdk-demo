@@ -52,16 +52,18 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat padding = isPad ? 8 : 16;
     
     CGFloat contentViewWidth = self.contentView.bounds.size.width;
     CGFloat contentViewHeight = self.contentView.bounds.size.height;
     
     self.contentBackgroudView.frame = self.contentView.bounds;
-    self.micButton.frame = CGRectMake(contentViewWidth - 24 - 8, contentViewHeight - 24 - 8, 24, 24);
+    self.micButton.frame = CGRectMake(contentViewWidth - 24 - padding, contentViewHeight - 24 - padding, 24, 24);
     
-    CGFloat maxWidth = CGRectGetMinX(self.micButton.frame) - 8;
+    CGFloat maxWidth = CGRectGetMinX(self.micButton.frame) - 8 - 40 - 10;
     CGSize nickLabelSize = [self.nickNameLabel.text boundingRectWithSize:CGSizeMake(maxWidth, 20) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName: self.nickNameLabel.font} context:nil].size;
-    self.nickNameBgView.frame = CGRectMake(8, contentViewHeight - 36 - 8, 40 + nickLabelSize.width + 10, 36);
+    self.nickNameBgView.frame = CGRectMake(padding, contentViewHeight - 36 - padding, 40 + nickLabelSize.width + 10, 36);
     self.nickNameLabel.frame = CGRectMake(40, 8, nickLabelSize.width, 20);
     self.avatarImageView.frame = CGRectMake(4, 3, 30, 30);
 }
@@ -71,13 +73,18 @@
 - (void)setUserModel:(PLVLinkMicOnlineUser *)aOnlineUser hideCanvasViewWhenCameraClose:(BOOL)hide {
     // 设置数据模型
     self.onlineUser = aOnlineUser;
-    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
     // 设置头像及昵称文本
     NSString *imageName = [self imageNameWithUserType:self.onlineUser.userType];
     UIImage *placeholder = [PLVSAUtils imageForLinkMicResource:imageName];
     [self.avatarImageView sd_setImageWithURL:[NSURL URLWithString:self.onlineUser.avatarPic]
                             placeholderImage:placeholder];
-    self.nickNameLabel.text = [PLVFdUtil cutSting:self.onlineUser.nickname WithCharacterLength:6];
+    if (isPad) {
+        self.nickNameLabel.text = self.onlineUser.nickname;
+    } else {
+        self.nickNameLabel.text = [PLVFdUtil cutSting:self.onlineUser.nickname WithCharacterLength:6];
+    }
     
     // 自己的连麦窗口不显示以下控件
     self.nickNameBgView.hidden = self.micButton.hidden = self.onlineUser.localUser;

@@ -48,6 +48,20 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 @implementation PLVLiveWatchLoginController
 
+/// 开发时调试方法，该方法的代码修改不要提交
+- (void)developerTest {
+    // 写死开发时的测试账号，优先级高于缓存于本地的账号信息。
+    // 不需要时请注释掉，否则会覆盖本地缓存的账号信息
+//    self.appIDTF.text = @"";
+//    self.userIDTF.text = @"";
+//    self.appSecretTF.text = @"";
+//    self.channelIdTF.text = @"";
+//    self.vIdTF.text = @"";
+    
+    // Bugly上报
+    [PLVBugReporter openWithType:PLVBuglyBundleTypeWatch];
+}
+
 #pragma mark - Life Cycle
 
 - (void)viewDidLoad {
@@ -56,6 +70,8 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     [self initUI];
     
     [self recoverParamsFromFile];
+    
+    [self developerTest];
     
     [self addNotification];
     

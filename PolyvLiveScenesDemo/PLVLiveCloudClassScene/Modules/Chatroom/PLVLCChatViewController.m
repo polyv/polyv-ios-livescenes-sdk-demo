@@ -86,6 +86,19 @@ UITableViewDataSource
         
         CGFloat keyboardToolOriginY = CGRectGetHeight(self.view.bounds) - height;
         [self.keyboardToolView changeFrameForNewOriginY:keyboardToolOriginY];
+
+        // iPad分屏尺寸变动，刷新布局
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            // 聊天区布局调整
+            [self.tableView reloadData];
+
+            // 键盘宽度调整 内部控件布局调整
+            CGRect rect = self.keyboardToolView.frame;
+            rect.size.width = CGRectGetWidth(self.view.bounds);
+            self.keyboardToolView.frame = rect;
+            [self.keyboardToolView updateTextViewAndButton];
+        }
+        
         [self refreshLikeButtonViewFrame];
     }
 }
@@ -111,7 +124,8 @@ UITableViewDataSource
 - (void)refreshLikeButtonViewFrame{
     CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
     CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
-    self.likeButtonView.frame = CGRectMake(self.view.bounds.size.width - PLVLCLikeButtonViewWidth - 16, inputRect.origin.y - 17 - PLVLCLikeButtonViewHeight, PLVLCLikeButtonViewWidth, PLVLCLikeButtonViewHeight);
+    CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
+    self.likeButtonView.frame = CGRectMake(self.view.bounds.size.width - PLVLCLikeButtonViewWidth - rightPadding, inputRect.origin.y - 17 - PLVLCLikeButtonViewHeight, PLVLCLikeButtonViewWidth, PLVLCLikeButtonViewHeight);
 }
 
 #pragma mark - Getter & Setter

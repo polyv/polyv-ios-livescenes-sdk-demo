@@ -124,6 +124,10 @@ UIGestureRecognizerDelegate
     if (self.viewLoading && self.viewLoading.isAnimating) {
         self.viewLoading.center = CGPointMake(bgSize.width / 2.0, bgSize.height / 2.0);
     }
+    if (_docSheet) {
+        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * 0.75;
+        [_docSheet refreshWithSheetHeight:sheetHeight];
+    }
 }
 
 #pragma mark - Getter

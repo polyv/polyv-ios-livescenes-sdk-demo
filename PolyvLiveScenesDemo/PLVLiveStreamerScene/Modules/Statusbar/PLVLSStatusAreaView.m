@@ -159,6 +159,15 @@ static CGFloat kStatusBarHeight = 44;
         self.whiteboardButton.hidden = NO;
         self.whiteboardButton.frame = CGRectMake(originX, 0, 44, 44);
     }
+    ///连麦弹出层
+    if(_linkMicMenu) {
+        CGFloat centerX = self.frame.origin.x + self.linkmicButton.frame.origin.x + self.linkmicButton.frame.size.width / 2.0; // 作为连麦选择弹层中心位置
+        CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
+        CGRect rect = CGRectMake(centerX - 106 / 2.0, originY, 106, 96);
+        
+        CGRect buttonRect = [self convertRect:self.linkmicButton.frame toView:self.superview];
+        [_linkMicMenu refreshWithMenuFrame:rect buttonFrame:buttonRect];
+    }
 }
 
 #pragma mark - Getter
@@ -381,6 +390,10 @@ static CGFloat kStatusBarHeight = 44;
     if (!_linkMicApplyView) {
         CGFloat centerX = self.memberButton.center.x;// 作为连麦选择弹层中心位置
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
+        // iPad需要减去头部状态栏的安全距离
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            originY -= PLVLSUtils.safeTopPad;
+        }
         CGRect rect = CGRectMake(centerX - 136 / 2.0, originY, 136,  52);
         
         _linkMicApplyView = [[PLVLSLinkMicApplyTipsView alloc] initWithFrame:rect];

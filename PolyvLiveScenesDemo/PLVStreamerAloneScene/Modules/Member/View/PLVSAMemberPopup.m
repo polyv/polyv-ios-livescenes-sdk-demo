@@ -86,6 +86,7 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
 - (void)configData {
     BOOL linkMicing = self.chatUser.onlineUser ? YES : NO;
     BOOL specialType = [PLVRoomUser isSpecialIdentityWithUserType:self.chatUser.userType];
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     
     // 配置需要显示的按钮类型
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:4];
@@ -105,6 +106,9 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
                [self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonMicrophone)]) {
         width = 126;
     }
+    if (isPad) {
+        width += 30;
+    }
     CGFloat height = [self.buttonTypeArray count] * 44 + 10 * 2 + 9; // 44为每个按钮的高度，10为按钮与气泡的内部间隔
 
     // 配置popup的frame和气泡形状的贝塞尔曲线
@@ -121,14 +125,15 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
         originY = self.centerY + 25;
         self.bezierPath = [[self class] belowBezierPathWithSize:CGSizeMake(width, height)];
     }
-    self.frame = CGRectMake(screenWidth - 9 - width, originY, width, height);
+    CGFloat leftMargin = isPad ? 32 : 9;
+    self.frame = CGRectMake(screenWidth - leftMargin - width, originY, width, height);
     CAShapeLayer *shapeLayer = [CAShapeLayer layer];
     shapeLayer.path = self.bezierPath.CGPath;
     self.layer.mask = shapeLayer;
 }
 
 - (void)updateUI {
-    CGFloat originX = 10.0;
+    CGFloat originX = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 25.0 : 10.0;
     CGFloat originY = 10.0 + (self.above ? 0 : 9);
     for (NSNumber *typeNumber in self.buttonTypeArray) {
         PLVSAMemberPopupButton buttonType = [typeNumber integerValue];

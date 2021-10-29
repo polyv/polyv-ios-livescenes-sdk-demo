@@ -53,8 +53,15 @@ UICollectionViewDelegate
     if (self.showLinkMicUserCount <= 1) {
         self.collectionView.frame = self.bounds;
     } else {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
         CGFloat top = [PLVSAUtils sharedUtils].areaInsets.top;
-        self.collectionView.frame = CGRectMake(0, top + 78, self.bounds.size.width, 280);
+        CGFloat collectionViewTop = top + 78;
+        CGFloat collectionViewHeight = 280;
+        if (isPad) {
+            collectionViewTop = top + 92;
+            collectionViewHeight = 0.74 * self.bounds.size.width;
+        }
+        self.collectionView.frame = CGRectMake(0, collectionViewTop, self.bounds.size.width, collectionViewHeight);
     }
     
     self.collectionView.contentOffset = CGPointZero;
@@ -202,7 +209,9 @@ UICollectionViewDelegate
     if (self.showLinkMicUserCount <= 1) {
         return self.bounds.size;
     } else {
-        return CGSizeMake(self.bounds.size.width / 2.0, 280);
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat height = isPad ? 0.74 * self.bounds.size.width : 280;
+        return CGSizeMake(self.bounds.size.width / 2.0, height);
     }
 }
 

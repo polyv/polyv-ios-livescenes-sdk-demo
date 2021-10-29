@@ -73,13 +73,22 @@ PLVSDocumentListProtocol
     
     CGSize selfSize = self.bounds.size;
     CGFloat margin = 28;
-    
+    CGFloat itemNum = 4.0;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        margin = 0;
+        if ([UIScreen mainScreen].bounds.size.height < [UIScreen mainScreen].bounds.size.width ) {
+            itemNum = 6.0;
+        }
+    }
+
     self.lbTitle.frame = CGRectMake(margin, 0, 68, 22);
     self.lbCount.frame = CGRectMake(CGRectGetMaxX(self.lbTitle.frame) + 8, 0, 100, 22);
-    self.refreshButton.frame = CGRectMake(selfSize.width - 64 - 68, 0, 68, 20);
     self.viewLine.frame = CGRectMake(margin, 30, selfSize.width - 2 * margin, 1);
+    self.refreshButton.frame = CGRectMake(CGRectGetMaxX(self.viewLine.frame) - 68, 0, 68, 20);
     self.collectionView.frame = CGRectMake(0, 39, selfSize.width, selfSize.height - 39);
     
+    UICollectionViewFlowLayout *collectionViewLayout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
+    collectionViewLayout.minimumInteritemSpacing = (selfSize.width - margin * 2 - 144 * itemNum) / (itemNum - 1);
 }
 
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
@@ -134,7 +143,8 @@ PLVSDocumentListProtocol
         _collectionView.indicatorStyle = UIScrollViewIndicatorStyleWhite;
         _collectionView.dataSource = self;
         _collectionView.delegate = self;
-        _collectionView.contentInset = UIEdgeInsetsMake(8, 28, PLVLSUtils.safeBottomPad, 28);
+        CGFloat margin = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0 : 28;
+        _collectionView.contentInset = UIEdgeInsetsMake(8, margin, PLVLSUtils.safeBottomPad, margin);
         [_collectionView registerClass:PLVLSDocumentListUploadCell.class forCellWithReuseIdentifier:DocListAddCellIdentifier];
         
         __weak typeof(self) weakSelf = self;
@@ -156,8 +166,9 @@ PLVSDocumentListProtocol
         _refreshButton = [UIButton buttonWithType:UIButtonTypeCustom];
         UIImage *normalImage = [PLVLSUtils imageForDocumentResource:@"plvls_doc_btn_refresh"];
         [_refreshButton setImage:normalImage forState:UIControlStateNormal];
-        [_refreshButton setTitle:@"刷新" forState:UIControlStateNormal];
+        [_refreshButton setTitle:@" 刷新" forState:UIControlStateNormal];
         _refreshButton.titleLabel.font = [UIFont systemFontOfSize:14];
+        _refreshButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
         [_refreshButton setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateNormal];
         [_refreshButton addTarget:self action:@selector(refreshAction:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -169,10 +180,14 @@ PLVSDocumentListProtocol
         CGSize defaultImgSize = CGSizeMake(144, 80);
         CGFloat collectionViewWidth = self.collectionView.bounds.size.width;
         
+        CGFloat itemNum = 4.0;
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            if ([UIScreen mainScreen].bounds.size.height < [UIScreen mainScreen].bounds.size.width ) {
+                itemNum = 6.0;
+            }
+        }
         UICollectionViewFlowLayout *cvfLayout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
-        
-        CGFloat itemWidth = (collectionViewWidth - self.collectionView.contentInset.left - self.collectionView.contentInset.right - cvfLayout.minimumInteritemSpacing * 3) / 4;
-        
+        CGFloat itemWidth = (collectionViewWidth - self.collectionView.contentInset.left - self.collectionView.contentInset.right - cvfLayout.minimumInteritemSpacing * (itemNum - 1)) / itemNum;
         _cellSize = CGSizeMake(itemWidth, itemWidth * defaultImgSize.height / defaultImgSize.width + 28);
     }
     

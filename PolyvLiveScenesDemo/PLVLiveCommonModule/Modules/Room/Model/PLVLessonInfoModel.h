@@ -3,7 +3,7 @@
 //  PLVLiveScenesSDK
 //
 //  Created by Sakya on 2021/8/10.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>

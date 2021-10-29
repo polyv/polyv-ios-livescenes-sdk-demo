@@ -50,16 +50,34 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    self.titleLable.frame = CGRectMake(32, 32, 90, 18);
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat titleLableLeft = 32;
+    CGFloat buttonWidth = 88;
+    CGFloat buttonHeight = 36;
+    CGFloat buttonY = 83;
+    CGFloat contentViewWidth = self.contentView.bounds.size.width;
+    CGFloat padding = (contentViewWidth - self.optionsButtonArray.count * buttonWidth) / (self.optionsButtonArray.count + 1);
+    // iPad时的中间和两边边距
+    CGFloat middlePadding = 0;
+    CGFloat margin = 0;
     
+    if (isPad) {
+        titleLableLeft = 56;
+        buttonWidth = 120;
+        middlePadding = contentViewWidth * 0.052;
+        margin = (contentViewWidth - middlePadding * (self.optionsButtonArray.count - 1) - buttonWidth * self.optionsButtonArray.count) / 2;
+    }
     
-    CGFloat width = 88;
-    CGFloat height = 36;
-    CGFloat y = 83;
-    CGFloat padding = (self.contentView.bounds.size.width - self.optionsButtonArray.count * width) / (self.optionsButtonArray.count + 1);
+    self.titleLable.frame = CGRectMake(titleLableLeft, 32, 90, 18);
+    
     for (int i = 0; i < self.optionsButtonArray.count; i ++) {
         UIButton *button = self.optionsButtonArray[i];
-        button.frame = CGRectMake((i * width) + (i + 1) * padding , y, width, height);
+        CGFloat buttonX = (i * buttonWidth) + (i + 1) * padding;
+        if (isPad) {
+            buttonX = (i * buttonWidth) + margin + (i * middlePadding);
+        }
+        button.frame = CGRectMake(buttonX , buttonY, buttonWidth, buttonHeight);
+        
         if (button.selected) {
             self.gradientLayer.frame = button.bounds;
         }

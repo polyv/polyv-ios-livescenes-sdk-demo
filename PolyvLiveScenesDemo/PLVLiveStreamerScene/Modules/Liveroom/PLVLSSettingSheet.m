@@ -56,12 +56,21 @@ UITableViewDelegate
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat sheetTitleLabelTop = 14;
+    CGFloat titleSplitLineTop = 44;
+    CGFloat logoutButtonHeight = 48;
+
+    if (isPad) {
+        sheetTitleLabelTop += PLVLSUtils.safeTopPad;
+        titleSplitLineTop += PLVLSUtils.safeTopPad;
+        logoutButtonHeight = 60;
+    }
     
     CGFloat originX = 16;
-    self.sheetTitleLabel.frame = CGRectMake(originX, 14, self.sheetWidth - originX * 2, 22);
-    self.titleSplitLine.frame = CGRectMake(originX, 44, self.sheetWidth - originX * 2, 1);
+    self.sheetTitleLabel.frame = CGRectMake(originX, sheetTitleLabelTop, self.sheetWidth - originX * 2, 22);
+    self.titleSplitLine.frame = CGRectMake(originX, titleSplitLineTop, self.sheetWidth - originX * 2, 1);
     
-    CGFloat logoutButtonHeight = 48;
     self.buttonSplitLine.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight - 1, self.sheetWidth - originX * 2, 1);
     self.logoutButtonLabel.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
     self.logoutButton.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
@@ -75,7 +84,9 @@ UITableViewDelegate
 #pragma mark - Override
 - (void)showInView:(UIView *)parentView{
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-    self.sheetWidth = screenWidth * 0.52;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat scale = isPad ? 0.43 : 0.52;
+    self.sheetWidth = screenWidth * scale;
     [super showInView:parentView]; /// TODO: 改造初始化该类的过程
 }
 

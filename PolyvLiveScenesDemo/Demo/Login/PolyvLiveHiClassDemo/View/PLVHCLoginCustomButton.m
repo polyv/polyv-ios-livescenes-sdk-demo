@@ -1,6 +1,6 @@
 //
 //  PLVHCLoginCustomButton.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by jiaweihuang on 2021/9/17.
 //  Copyright © 2021 PLV. All rights reserved.

@@ -19,6 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 子视图距离设备底部的边距，主页赋值，全局使用
 @property (class, nonatomic, assign) float safeBottomPad;
 
+/// 子视图距离设备顶部的边距，主页赋值，全局使用
+@property (class, nonatomic, assign) float safeTopPad;
+
 /// 主页控制器
 @property (nonatomic, weak) UIViewController *homeVC;
 

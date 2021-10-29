@@ -41,9 +41,6 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 /// 网络状态，设置该值同时更新界面网络状态
 @property (nonatomic, assign) PLVSAStatusBarNetworkQuality netState;
 
-/// 当前网速，同时更新界面网速
-@property (nonatomic, copy) NSString *netSpeed;
-
 /// 开播老师昵称，同时更新界面老师昵称文本
 @property (nonatomic, copy) NSString *teacherName;
 
@@ -59,7 +56,6 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 /// 开始上课/结束上课
 /// @param start YES - 开始上课 NO - 结束上课
 - (void)startClass:(BOOL)start;
-
 
 @end
 

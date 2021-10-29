@@ -119,6 +119,8 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)plvLCBasePlayerSkinViewFullScreenOpenButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
+- (void)plvLCBasePlayerSkinViewRotateScreen:(PLVLCBasePlayerSkinView *)skinView;
+
 /// 询问是否有其他视图处理此次触摸事件
 ///
 /// @param skinView 媒体播放器皮肤视图

@@ -1,9 +1,9 @@
 //
 //  PLVHCAreaCodeChooseTableViewCell.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/9/15.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

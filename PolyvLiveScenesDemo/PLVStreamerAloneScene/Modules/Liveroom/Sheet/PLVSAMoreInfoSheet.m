@@ -55,8 +55,10 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat titleX = isPad ? 56 : 16;
     CGFloat titleY =  self.bounds.size.height > 667 ? 32 : 18;
-    self.titleLabel.frame = CGRectMake(16, titleY, 50, 18);
+    self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
     
     [self setButtonFrameWithArray:@[self.cameraButton,
                                     self.micphoneButton,
@@ -228,8 +230,11 @@
         _closeRoomButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _closeRoomButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         _closeRoomButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
-        [_closeRoomButton setTitle:@"开启全\n体禁言" forState:UIControlStateNormal];
-        [_closeRoomButton setTitle:@"取消全\n体禁言" forState:UIControlStateSelected];
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        NSString *normalTitle = isPad ? @"开启全体禁言" : @"开启全\n体禁言";
+        NSString *selectedTitle = isPad ? @"取消全体禁言" : @"取消全\n体禁言";
+        [_closeRoomButton setTitle:normalTitle forState:UIControlStateNormal];
+        [_closeRoomButton setTitle:selectedTitle forState:UIControlStateSelected];
         [_closeRoomButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_allmicphoneClose"] forState:UIControlStateNormal];
         [_closeRoomButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_allmicphoneClose"] forState:UIControlStateSelected];
         [_closeRoomButton addTarget:self action:@selector(closeRoomButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -253,14 +258,27 @@
 }
 
 - (void)setButtonFrameWithArray:(NSArray *)buttonArray {
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     
     CGFloat titleLabelMaxY =  ([UIScreen mainScreen].bounds.size.height > 667 ? 32 : 18) + 18;
     CGFloat buttonX = 21.5;
     CGFloat buttonY =  self.bounds.size.height > 667 ? CGRectGetMaxY(self.titleLabel.frame) + 12 : titleLabelMaxY + 10;
+    CGFloat buttonImageHeight = 28;
     CGFloat buttonWidth = [self getMaxButtonWidthWithArray:buttonArray];
-    CGFloat buttonHeight = 28 + 12 +14;
+    CGFloat buttonHeight = buttonImageHeight + 12 +14;
     CGFloat padding = (self.bounds.size.width - buttonX * 2 - buttonWidth * 5) / 4;
     CGFloat margin = self.bounds.size.height > 667 ? 18 : 16;
+    
+    if (isPad) {
+        buttonWidth = 88;
+        buttonX = (self.bounds.size.width - buttonWidth * 7) / 2;
+        buttonY = CGRectGetMaxY(self.titleLabel.frame) + 24;
+        padding = 0;
+        if (buttonX < 0) {
+            buttonWidth = self.bounds.size.width / 7;
+            buttonX = 0;
+        }
+    }
     
     for (int i = 0; i < buttonArray.count ; i++) {
         UIButton *button = buttonArray[i];
@@ -269,10 +287,10 @@
         NSAttributedString *attr = [[NSAttributedString alloc] initWithString:button.titleLabel.text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12]}];
         CGSize titleSize = [attr boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
         buttonWidth = MAX(titleSize.width, buttonWidth);
-        buttonHeight = MAX(titleSize.height + buttonWidth + 12, buttonHeight);
+        buttonHeight = MAX(titleSize.height + buttonImageHeight + 12, buttonHeight);
         
         // 换行
-        if (i == 5) {
+        if (!isPad && i == 5) {
             buttonX = 21.5;
             buttonY += buttonHeight + margin;
         }
@@ -288,16 +306,21 @@
     for (int i = 0; i < buttonArray.count ; i++) {
         UIButton *but = buttonArray[i];
         CGFloat padding = 12;
+        CGFloat imageBottom = but.titleLabel.intrinsicContentSize.height;
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            imageBottom += padding;
+        }
+        
         [but setTitleEdgeInsets:
                UIEdgeInsetsMake(but.frame.size.height/2 + padding,
-                               (but.frame.size.width-but.titleLabel.intrinsicContentSize.width)/2-but.imageView.frame.size.width,
+                                -but.imageView.frame.size.width,
                                 0,
-                               (but.frame.size.width-but.titleLabel.intrinsicContentSize.width)/2)];
+                                0)];
         [but setImageEdgeInsets:
                    UIEdgeInsetsMake(
                                0,
                                (but.frame.size.width-but.imageView.frame.size.width)/2,
-                                but.titleLabel.intrinsicContentSize.height,
+                                imageBottom,
                                (but.frame.size.width-but.imageView.frame.size.width)/2)];
     }
 }
@@ -335,6 +358,14 @@
         default:
             break;
     }
+    
+    // iPad时，文案去掉换行
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (isPad) {
+        NSString *padTitle = [title substringToIndex:2];
+        title = padTitle;
+    }
+
     [self.cameraBitRateButton setTitle:title forState:UIControlStateNormal];
     [self.cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:imageName] forState:UIControlStateNormal];
 }

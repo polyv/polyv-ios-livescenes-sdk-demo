@@ -47,8 +47,9 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
-    self.bgView.frame = CGRectMake(8, 0, self.bgWidth, self.frame.size.height);
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat padding = isPad ? 24 : 8;
+    self.bgView.frame = CGRectMake(padding, 0, self.bgWidth, self.frame.size.height);
     
     CGFloat viewHeight = self.bgView.frame.size.height;
     CGFloat viewWidth = self.bgView.frame.size.width;

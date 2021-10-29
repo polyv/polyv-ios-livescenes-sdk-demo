@@ -46,7 +46,13 @@ static CGFloat kBottomSheetAnimationDuration = 0.5;
     [super layoutSubviews];
     
     self.sliderView.frame = CGRectMake((self.bounds.size.width - 40) / 2.0, 8, 40, 4);
-    self.sliderGesturView.frame = CGRectMake((self.bounds.size.width - 80) / 2.0, 0, 80, 24);
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (isPad) {
+        // iPad时，扩大滑块拖动区域
+        self.sliderGesturView.frame = CGRectMake(100, 0, self.bounds.size.width - 200, 50);
+    } else {
+        self.sliderGesturView.frame = CGRectMake((self.bounds.size.width - 80) / 2.0, 0, 80, 24);
+    }
 }
 
 #pragma mark - Getter
@@ -124,7 +130,10 @@ static CGFloat kBottomSheetAnimationDuration = 0.5;
     [gesture setTranslation:CGPointMake(0, 0) inView:self.contentView];
     
     if (gesture.state == UIGestureRecognizerStateEnded) {
-        if (self.contentView.frame.origin.y > self.bounds.size.height - self.sheetHight * 0.5) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat dismissHeight = isPad ? self.bounds.size.height - self.sheetHight + 100 : self.bounds.size.height - self.sheetHight * 0.5;
+
+        if (self.contentView.frame.origin.y > dismissHeight) {
             [self dismissWithoutAnimation];
         } else {
             [self recoverWithoutAnimation];
@@ -179,6 +188,14 @@ static CGFloat kBottomSheetAnimationDuration = 0.5;
     self.frame = self.superview.bounds;
     self.gestureView.frame = self.bounds;
     self.contentView.frame = CGRectMake(0, self.bounds.size.height, self.bounds.size.width, self.sheetHight);
+    self.effectView.frame = self.contentView.bounds;
+}
+
+- (void)refreshWithSheetHeight:(CGFloat)sheetHeight {
+    self.sheetHight = MAX(0, sheetHeight);
+    self.frame = self.superview.bounds;
+    self.gestureView.frame = self.bounds;
+    self.contentView.frame = CGRectMake(0, self.bounds.size.height - self.sheetHight, self.bounds.size.width, self.sheetHight);
     self.effectView.frame = self.contentView.bounds;
 }
 

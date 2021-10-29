@@ -189,23 +189,30 @@ PLVLCKeyboardMoreViewDelegate
     
     self.emojiButton.selected = (toolState == PLVLCKeyboardToolStateEmojiboard);
     
-    if (toolState != PLVLCKeyboardToolStateEmojiboard && toolState != PLVLCKeyboardToolStateKeyboard) {
-        if (self.textView.isFirstResponder) {
-            self.textView.inputView = nil;
-            [self.textView reloadInputViews];
-            [self.textView becomeFirstResponder];
-            [self.textView resignFirstResponder];
-        }
-    } else if (toolState == PLVLCKeyboardToolStateKeyboard && originState == PLVLCKeyboardToolStateEmojiboard) {
-        self.textView.inputView = nil;
-        [self.textView reloadInputViews];
-        [self.textView becomeFirstResponder];
-    } else if (toolState == PLVLCKeyboardToolStateEmojiboard) {
+    if (originState == PLVLCKeyboardToolStateEmojiboard) { // 从emoji键盘切换到其他模式时
+       self.textView.inputView = nil;
+       [self.textView reloadInputViews];
+       [self.textView becomeFirstResponder];
+       if (toolState != PLVLCKeyboardToolStateKeyboard) {
+           [self.textView resignFirstResponder];
+       }
+    }
+    
+    if (toolState == PLVLCKeyboardToolStateEmojiboard) { // 从其他模式切换到emoji键盘时
         // 在 iOS 9.3.1 上使用局部变量代替 tempInputView 在打开表情键盘退出时会出现内存问题
         self.tempInputView = [[UIView alloc] initWithFrame:CGRectZero];
         self.textView.inputView = self.tempInputView;
         [self.textView reloadInputViews];
         [self.textView becomeFirstResponder];
+        [self.textView resignFirstResponder];
+    }
+    
+    if (toolState != PLVLCKeyboardToolStateEmojiboard &&
+        toolState != PLVLCKeyboardToolStateKeyboard) {
+        self.textView.inputView = nil;
+        [self.textView reloadInputViews];
+        [self.textView becomeFirstResponder];
+        [self.textView resignFirstResponder];
     }
     
     _toolState = toolState;
@@ -281,6 +288,16 @@ PLVLCKeyboardMoreViewDelegate
     [self updateUI];
 }
 
+- (void)updateTextViewAndButton {
+    CGRect rect = self.frame;
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 左右边距
+    CGFloat textViewWidth = rect.size.width - xPadding - (self.mode == PLVLCKeyboardToolModeSimple ? 40 + xPadding : 80 + xPadding);
+    [self.textView setupWithFrame:CGRectMake(xPadding, 8, textViewWidth, 40)];
+
+    self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
+    self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
+}
+
 - (void)changeFrameForNewOriginY:(CGFloat)originY {
     if (self.originY == originY) {
         return;
@@ -305,11 +322,8 @@ PLVLCKeyboardMoreViewDelegate
 }
 
 #pragma mark - Private Method
-
 - (void)updateUI {
-    CGRect rect = self.frame;
-    CGFloat textViewWidth = rect.size.width - 16 - (self.mode == PLVLCKeyboardToolModeSimple ? 48 : 96);
-    [self.textView setupWithFrame:CGRectMake(16, 8, textViewWidth, 40)];
+    [self updateTextViewAndButton];
     self.lastTextViewHeight = ceilf([self.textView sizeThatFits:self.textView.frame.size].height);
     
     self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
@@ -319,11 +333,8 @@ PLVLCKeyboardMoreViewDelegate
     if (self.mode == PLVLCKeyboardToolModeDefault) {
         emojiboardHeight += 40;
     }
+    
     CGFloat moreboardHeight = 115.0 + self.bottomHeight;
-    if ([@"iPad" isEqualToString:[UIDevice currentDevice].model]) {
-        emojiboardHeight += 55.0;
-        moreboardHeight += 55.0;
-    }
     self.emojiboardHeight = emojiboardHeight;
     self.moreboardHeight = moreboardHeight;
     // 提前设置 frame 值，是为了先初始化
@@ -334,7 +345,7 @@ PLVLCKeyboardMoreViewDelegate
 - (void)animateAddToWindow {
     __weak typeof(self) weakSelf = self;
     [weakSelf addViewInWindow];
-    [UIView animateWithDuration:0.3 animations:^{
+    [UIView animateWithDuration:0 animations:^{ // 动画效果有点问题，暂时移除动画
         CGFloat boardHeight = 0;
         if (weakSelf.toolState == PLVLCKeyboardToolStateEmojiboard) {
             boardHeight = weakSelf.emojiboardHeight;
@@ -464,9 +475,7 @@ PLVLCKeyboardMoreViewDelegate
     if (![self shouldInteract]) {
         return NO;
     }
-    if (!self.emojiButton.selected && self.toolState != PLVLCKeyboardToolStateEmojiboard) {
-        self.toolState = PLVLCKeyboardToolStateKeyboard;
-    }
+    self.toolState = PLVLCKeyboardToolStateKeyboard;
     [self.textView startEdit];
     [self checkSendBtnEnable:self.textView.attributedText.length > 0];
     return YES;
@@ -561,6 +570,9 @@ PLVLCKeyboardMoreViewDelegate
 - (void)selectEmoji:(PLVEmoticon *)emojiModel {
     if ([self.textView.text length] >= PLVLCKeyboardMaxTextLength) { // 字数超限
         return;
+    }
+    if (self.textView.isInPlaceholder) {
+        [self.textView startEdit];
     }
     NSRange cursorRange = self.textView.selectedRange;
     NSAttributedString *emojiAttrStr = [self.textView convertTextWithEmoji:emojiModel.text];

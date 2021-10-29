@@ -51,7 +51,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
     self.splashImageView.frame = self.bounds;
     
-    CGFloat placeholderImageViewHeight = viewHeight * 0.485;
+    CGFloat placeholderImageViewHeight = MIN(viewHeight , viewWidth)  * 0.485;
     self.placeholderImageView.frame = CGRectMake((viewWidth - placeholderImageViewHeight) / 2.0,
                                                  (viewHeight - placeholderImageViewHeight) / 2.0,
                                                  placeholderImageViewHeight,
@@ -139,7 +139,8 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 - (UIImageView *)placeholderImageView{
     if (!_placeholderImageView) {
         _placeholderImageView = [[UIImageView alloc]init];
-        _placeholderImageView.image = [self getImageWithName:@"plvlc_linkmic_window_placeholder"];
+        NSString *imageName = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? @"plvlc_linkmic_window_placeholder_ipad" : @"plvlc_linkmic_window_placeholder"; // 占位图适配iPad、iPhone
+        _placeholderImageView.image = [self getImageWithName:imageName];
     }
     return _placeholderImageView;
 }

@@ -1,9 +1,9 @@
 //
 //  PLVHCLaunchScreenViewController.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by Sakya on 2021/9/13.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import "PLVHCLaunchScreenViewController.h"

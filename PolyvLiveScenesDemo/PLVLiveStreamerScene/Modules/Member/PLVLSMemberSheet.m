@@ -51,7 +51,9 @@ UITableViewDataSource
 
 - (instancetype)initWithUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount {
     CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
-    self = [super initWithSheetWidth:screenWidth * 0.52];
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat scale = isPad ? 0.43 : 0.52;
+    self = [super initWithSheetWidth:screenWidth * scale];
     if (self) {
         self.userList = userList;
         self.userCount = userCount;
@@ -63,19 +65,33 @@ UITableViewDataSource
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat titleLabelTop = 14;
+    CGFloat countLabelTop = 17;
+    CGFloat buttonTop = 11;
+    CGFloat titleLineTop = 44;
+    CGFloat buttonMargin = 4;
+
+    if (isPad) {
+        titleLabelTop += PLVLSUtils.safeTopPad;
+        countLabelTop += PLVLSUtils.safeTopPad;
+        buttonTop += PLVLSUtils.safeTopPad;
+        titleLineTop += PLVLSUtils.safeTopPad;
+        buttonMargin = 12;
+    }
     
-    self.titleLabel.frame = CGRectMake(16, 14, 70, 22);
+    self.titleLabel.frame = CGRectMake(16, titleLabelTop, 70, 22);
     
     CGFloat buttonWidth = 88.0;
     if (self.bounds.size.width <= 667) {  // iphone小屏适配
         buttonWidth = 66.0 - (self.bounds.size.width/667);
     }
-    CGFloat buttonOriginX = self.sheetWidth - PLVLSUtils.safeSidePad - buttonWidth * 2 - 4;
+    CGFloat buttonOriginX = self.sheetWidth - PLVLSUtils.safeSidePad - buttonWidth * 2 - buttonMargin;
     
-    self.countLabel.frame = CGRectMake(84, 17, buttonOriginX - 84 - 4, 17);
-    self.leaveMicButton.frame = CGRectMake(buttonOriginX, 11, buttonWidth, 28);
-    self.muteButton.frame = CGRectMake(buttonOriginX + buttonWidth + 4, 11, buttonWidth, 28);
-    self.titleLine.frame = CGRectMake(16, 44, self.sheetWidth - 16 - PLVLSUtils.safeSidePad, 1);
+    self.countLabel.frame = CGRectMake(84, countLabelTop, buttonOriginX - 84 - 4, 17);
+    self.leaveMicButton.frame = CGRectMake(buttonOriginX, buttonTop, buttonWidth, 28);
+    self.muteButton.frame = CGRectMake(buttonOriginX + buttonWidth + buttonMargin, buttonTop, buttonWidth, 28);
+    self.titleLine.frame = CGRectMake(16, titleLineTop, self.sheetWidth - 16 - PLVLSUtils.safeSidePad, 1);
     
     CGFloat tableViewOriginY = CGRectGetMaxY(self.titleLine.frame);
     self.tableView.frame = CGRectMake(16, tableViewOriginY, CGRectGetWidth(self.titleLine.frame), self.bounds.size.height - tableViewOriginY);
@@ -89,6 +105,7 @@ UITableViewDataSource
     
     [self updateUI];
 }
+
 
 #pragma mark - [Private Method ]
 

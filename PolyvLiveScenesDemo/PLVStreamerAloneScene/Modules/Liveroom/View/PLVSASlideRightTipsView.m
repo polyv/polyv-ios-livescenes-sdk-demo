@@ -41,8 +41,18 @@
 #pragma mark - layout
 - (void)layoutSubviews {
     CGFloat originY = [PLVSAUtils sharedUtils].areaInsets.top;
-    self.tipsImageView.frame = CGRectMake(0, originY + 220, 123, 85);
-    self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - 72 / 2, UIViewGetBottom(self.tipsImageView) + 24, 72, 20);
+    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGSize tipsImageViewSize = CGSizeMake(123, 85);
+    CGFloat tipsImageViewTop = originY + 220;
+    CGFloat tipsLableTop =  UIViewGetBottom(self.tipsImageView) + 24;
+    if (isPad) {
+        tipsLableTop = CGRectGetHeight(self.bounds) / 2;
+        tipsImageViewTop = tipsLableTop - 50 - tipsImageViewSize.height;
+    }
+    
+    self.tipsImageView.frame = CGRectMake(0, tipsImageViewTop, tipsImageViewSize.width, tipsImageViewSize.height);
+    self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - 72 / 2, tipsLableTop, 72, 20);
     self.closeButton.frame = CGRectMake(CGRectGetMidX(self.bounds) - 100 / 2, UIViewGetBottom(self.tipsLable) + 25, 100, 36);
     self.gradientLayer.frame = self.closeButton.bounds;
     
@@ -51,8 +61,9 @@
 
 #pragma mark - [ Private Method ]
 - (void)setupAnimation {
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGRect rect = self.tipsImageView.frame;
-    CGFloat safeArea = 50.0;
+    CGFloat safeArea = isPad ? 140.0 : 50.0;
     CGFloat xPadding = self.tipsImageView.frame.size.width / 2;
     CGFloat yPadding = self.tipsImageView.frame.size.height / 2;
     /// 处理关键帧动画origin偏移度

@@ -115,6 +115,25 @@
     
     self.audioLinkMicBtn.frame = self.videoLinkMicBtn.hidden ? self.firstButtonRect : self.secondButtonRect;
 }
+- (void)refreshWithMenuFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame {
+
+        self.frame = [UIScreen mainScreen].bounds;
+        
+        self.menuSize = frame.size;
+        self.menuView.frame = frame;
+        
+        self.linkMicButtonMask.frame = buttonFrame;
+        
+        self.firstButtonRect = CGRectMake(0, 8, frame.size.width, 44);
+        self.videoLinkMicBtn.frame = self.firstButtonRect;
+        
+        self.secondButtonRect = CGRectMake(0, 44 + 8, frame.size.width, 44);
+        self.audioLinkMicBtn.frame = self.secondButtonRect;
+
+        
+        self.line.frame = CGRectMake(12, 8 + 44, frame.size.width - 24, 1);
+    
+}
 
 #pragma mark - [ Private Method ]
 

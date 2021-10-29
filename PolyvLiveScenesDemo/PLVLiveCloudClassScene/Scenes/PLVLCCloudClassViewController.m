@@ -42,6 +42,7 @@ PLVRoomDataManagerProtocol
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentLandscape;    // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
 @property (nonatomic, assign) BOOL fullScreenDifferent; // 在更新UI布局之前，横竖屏是否发现了变化 (YES:已变化 NO:没有变化)
+@property (nonatomic, assign) BOOL hideLinkMicAreaViewInSmallScreen;// 连麦列表是否在iPad小分屏时隐藏
 
 #pragma mark 模块
 @property (nonatomic, strong) NSTimer * countdownTimer;
@@ -207,6 +208,29 @@ PLVRoomDataManagerProtocol
     }
     showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? showLinkMicAreaView : NO;
     
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        
+    if (isPad) {
+        // iPad小分屏1:2时，隐藏连麦列表；非小分屏时，显示连麦列表
+        Boolean isSmallScreen = CGRectGetWidth(self.view.bounds) <= PLVScreenWidth / 3;
+        if (isSmallScreen) {
+            // 小屏 皆隐藏
+            if (showLinkMicAreaView) {
+                showLinkMicAreaView = NO;
+                self.hideLinkMicAreaViewInSmallScreen = YES;
+            }
+        } else {
+            // 非小屏 但曾在小屏被强制隐藏，需显示
+            if (self.hideLinkMicAreaViewInSmallScreen){
+                showLinkMicAreaView = YES;
+                self.hideLinkMicAreaViewInSmallScreen = NO;
+            }
+        }
+        
+        [self.mediaAreaView.skinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
+        [self.liveRoomSkinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
+    }
+    
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {
         // 竖屏
@@ -222,7 +246,11 @@ PLVRoomDataManagerProtocol
         CGRect mediaAreaViewFrame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetWidth(self.view.bounds) * PPTPlayerViewScale + P_SafeAreaTopEdgeInsets());
         self.mediaAreaView.frame = mediaAreaViewFrame;
         
-        CGFloat linkMicAreaViewHeight = showLinkMicAreaView ? 70 : 0;
+        CGFloat linkMicAreaViewHeight = 0;
+        if (showLinkMicAreaView) {
+            linkMicAreaViewHeight = isPad ? 101 : 70;
+        }
+
         CGRect linkMicAreaViewFrame = CGRectMake(0, CGRectGetMaxY(self.mediaAreaView.frame), CGRectGetWidth(self.view.bounds), linkMicAreaViewHeight);
         self.linkMicAreaView.frame = linkMicAreaViewFrame;
         
@@ -239,13 +267,15 @@ PLVRoomDataManagerProtocol
         self.linkMicAreaView.hidden = !self.linkMicAreaView.inRTCRoom;
         self.menuAreaView.hidden = YES;
         
-        CGFloat leftPadding = P_SafeAreaLeftEdgeInsets() + 16;
+        CGFloat commonPadding = isPad ? 30 : 16;
+        
+        CGFloat leftPadding = P_SafeAreaLeftEdgeInsets() + commonPadding;
         CGFloat rightPadding = P_SafeAreaRightEdgeInsets();
         if ([PLVFdUtil isiPhoneXSeries]) {
             rightPadding += 10;
         }
         
-        self.chatLandscapeView.frame = CGRectMake(leftPadding, self.view.bounds.size.height / 2.0, 240,  self.view.bounds.size.height / 2.0 - 16);
+        self.chatLandscapeView.frame = CGRectMake(leftPadding, self.view.bounds.size.height / 2.0, 240,  self.view.bounds.size.height / 2.0 - commonPadding);
         
         if (self.fullScreenDifferent) {
             [self.liveRoomSkinView synchOtherSkinViewState:self.mediaAreaView.skinView];
@@ -253,13 +283,19 @@ PLVRoomDataManagerProtocol
         }
         [self.view insertSubview:self.chatLandscapeView belowSubview:self.liveRoomSkinView];
        
-        CGFloat linkMicAreaViewWidth = 150.0 + rightPadding;
+        CGFloat linkMicAreaViewWidth = isPad ? 180.0 + rightPadding : 150.0 + rightPadding;
         linkMicAreaViewWidth = showLinkMicAreaView ? linkMicAreaViewWidth : 0;
         CGRect linkMicAreaViewFrame = CGRectMake(CGRectGetWidth(self.view.bounds) - linkMicAreaViewWidth,
                                                  0,
                                                  linkMicAreaViewWidth,
                                                  CGRectGetHeight(self.view.bounds));
         self.linkMicAreaView.frame = linkMicAreaViewFrame;
+        
+        if (isPad) {
+            // iPad横屏的分屏变换时，刷新连麦工具栏布局
+            [self.linkMicAreaView setNeedsLayout];
+            [self.linkMicAreaView layoutIfNeeded];
+        }
         
         CGRect mediaAreaViewFrame = CGRectMake(0,
                                                0,
@@ -412,7 +448,14 @@ PLVRoomDataManagerProtocol
 
 - (void)interfaceOrientationDidChange:(NSNotification *)notification {
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    self.fullScreenDifferent = (self.currentLandscape != fullScreen);
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    //iPad 屏幕旋转此方法会执行两次需要判断
+    if (isPad) {
+        //iPad 因为执行两次的时候第二次和第一次结果一样导致fullScreenDifferent为NO页面不刷新 暂时iPad特殊处理 -- 可能是因为iPad四个方向，iPhone只支持3个方向
+        self.fullScreenDifferent = YES;
+    } else {
+        self.fullScreenDifferent = (self.currentLandscape != fullScreen);
+    }
     self.currentLandscape = fullScreen;
     
     // 全屏播放器皮肤 liveRoomSkinView 的弹幕按钮 danmuButton 为显示状态，且为非选中状态，且当前为横屏时，才显示弹幕

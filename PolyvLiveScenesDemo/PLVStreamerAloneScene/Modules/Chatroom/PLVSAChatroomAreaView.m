@@ -85,7 +85,9 @@ PLVSAChatroomListViewDelegate
     
     CGFloat areaViewWidth = self.bounds.size.width;
     CGFloat areaViewHeight = self.bounds.size.height;
-    self.chatroomListView.frame = CGRectMake(8, 0, areaViewWidth - 8, areaViewHeight);
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat chatroomListViewLeft = isPad ? 24 : 8;
+    self.chatroomListView.frame = CGRectMake(chatroomListViewLeft, 0, areaViewWidth - chatroomListViewLeft, areaViewHeight);
     self.receiveNewMessageView.frame = CGRectMake(0, self.chatroomListView.frame.size.height - 28, 86, 24);
     
     self.welcomView.frame = CGRectMake(0, CGRectGetMinY(self.chatroomListView.frame)-22-15, 258, 22);

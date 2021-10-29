@@ -181,7 +181,7 @@ PLVLCRetryPlayViewDelegate
 
     self.skinView.frame = self.bounds;
     
-    CGFloat floatViewWidth = 150;
+    CGFloat floatViewWidth = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 224 : 150;
     CGFloat floatViewHeight = floatViewWidth * PPTPlayerViewScale;
     
     /// 将 floatView 添加在父视图上
@@ -193,6 +193,13 @@ PLVLCRetryPlayViewDelegate
     
     if (self.superview && !self.marqueeView.superview) { [self.superview addSubview:self.marqueeView]; }
     self.marqueeView.frame = self.contentBackgroudView.frame;
+    
+    // iPad分屏尺寸变动，刷新更多弹框布局
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        [self.moreView setNeedsLayout];
+        [self.moreView layoutIfNeeded];
+    }
+
     self.retryPlayView.frame = self.frame;
 }
 
@@ -648,7 +655,9 @@ PLVLCRetryPlayViewDelegate
 #pragma mark - [ Delegate ]
 #pragma mark PLVLCBasePlayerSkinViewDelegate
 - (void)plvLCBasePlayerSkinViewBackButtonClicked:(PLVLCBasePlayerSkinView *)skinView currentFullScreen:(BOOL)currentFullScreen{
-    if (currentFullScreen) {
+    Boolean isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (currentFullScreen && !isPad) {
+        // 非iPad的全屏下，返回竖屏
         [PLVFdUtil changeDeviceOrientationToPortrait];
     }else{
         __weak typeof(self) weakSelf = self;
@@ -658,6 +667,10 @@ PLVLCRetryPlayViewDelegate
             }
         }];
     }
+}
+
+- (void)plvLCBasePlayerSkinViewRotateScreen:(PLVLCBasePlayerSkinView *)skinView{
+    [self.moreView updateMoreViewOnSuperview:skinView.superview];
 }
 
 - (void)plvLCBasePlayerSkinViewMoreButtonClicked:(PLVLCBasePlayerSkinView *)skinView{

@@ -73,6 +73,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 加载视图，调用该方代替 'addSubview:'
 - (void)addAtView:(UIView *)parentView frame:(CGRect)rect;
 
+/// 刷新文本和按钮布局，iPad分屏尺寸变动时调用
+- (void)updateTextViewAndButton;
+
 /// 完成布局后，修改正常状态下的位置 Y 值时调用
 - (void)changeFrameForNewOriginY:(CGFloat)originY;
 

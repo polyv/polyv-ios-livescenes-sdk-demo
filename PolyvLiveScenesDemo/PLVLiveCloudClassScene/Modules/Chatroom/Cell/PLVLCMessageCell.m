@@ -33,8 +33,7 @@
     if (self.cellWidth == 0) {
         return;
     }
-    
-    CGFloat xPadding = 16.0; // 头像左间距，昵称右间距
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 头像左间距，昵称右间距
     CGFloat originX = xPadding;
     CGFloat originY = 8.0;
     

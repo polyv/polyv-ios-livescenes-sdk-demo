@@ -7,6 +7,7 @@
 //
 
 #import "PLVSAToolbarAreaView.h"
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 // util
 #import "PLVSAUtils.h"
@@ -65,12 +66,24 @@
 #pragma mark - [ Override ]
 - (void)layoutSubviews {
     [super layoutSubviews];
+    CGFloat marginLeft = 8;
+    CGFloat chatButtonWidth = 150;
+    CGFloat chatButtonTop = 8;
+
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (isPad) {
+        marginLeft = 24;
+        chatButtonWidth = 220;
+        chatButtonTop = 16;
+    }
     
-    self.chatButton.frame = CGRectMake(8, 8, 150, 32);
+    self.chatButton.frame = CGRectMake(marginLeft, chatButtonTop, chatButtonWidth, 32);
     
-    self.chatButton.imageEdgeInsets = UIEdgeInsetsMake(0, -10, 0, 0);
+    self.chatButton.imageEdgeInsets = UIEdgeInsetsMake(0, 8.5, 0, 0);
     
-    self.moreButton.frame = CGRectMake(self.bounds.size.width - 36 - 8, 8, 36, 36);
+    self.chatButton.titleEdgeInsets = UIEdgeInsetsMake(0, 15, 0, 0);
+
+    self.moreButton.frame = CGRectMake(self.bounds.size.width - 36 - marginLeft, 8, 36, 36);
     
     self.memberButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 12 - 36, 8, 36, 36);
     
@@ -107,7 +120,8 @@
         _chatButton.layer.cornerRadius = 16;
         _chatButton.layer.masksToBounds = YES;
         _chatButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        _chatButton.titleLabel.textColor = [UIColor whiteColor];
+        [_chatButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6] forState:UIControlStateNormal];
+        [_chatButton setContentHorizontalAlignment:UIControlContentHorizontalAlignmentLeft];
         [_chatButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_chat"] forState:UIControlStateNormal];
         [_chatButton setTitle:@"来聊点什么吧~" forState:UIControlStateNormal];
         [_chatButton addTarget:self action:@selector(chatButtonAction) forControlEvents:UIControlEventTouchUpInside];

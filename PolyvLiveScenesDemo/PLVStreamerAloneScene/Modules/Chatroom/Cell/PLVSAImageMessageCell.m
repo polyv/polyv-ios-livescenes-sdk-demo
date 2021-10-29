@@ -88,9 +88,11 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     if (self.cellWidth == 0) {
         return;
     }
-    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat bubbleViewMargin = isPad ? 2.0 : 8.0;
+
     CGFloat originX = 8.0;
-    CGFloat originY = 8.0;
+    CGFloat originY = bubbleViewMargin;
     CGFloat bubbleXPadding = 8.0; // 气泡与nickLabel的左右内间距
     CGFloat maxViewWidth = self.cellWidth - bubbleXPadding * 2;
     
@@ -138,7 +140,8 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     
     [self setButtonInsets:self.resendButton];
     [self setButtonInsets:self.reloadButton];
-    self.bubbleView.frame = CGRectMake(0, 8, bubbleWidth, originY);
+    
+    self.bubbleView.frame = CGRectMake(0, bubbleViewMargin, bubbleWidth, originY);
 }
 
 
@@ -229,8 +232,10 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     if (![PLVSAImageMessageCell isModelValid:model] || cellWidth == 0) {
         return 0;
     }
-    
-    CGFloat originY = 8.0;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat bubbleViewMargin = isPad ? 4.0 : 8.0;
+
+    CGFloat originY = bubbleViewMargin;
     CGFloat bubbleXPadding = 8.0; // 气泡与nickLabel的左右内间距
     CGFloat maxViewWidth = cellWidth - bubbleXPadding * 2;
     
@@ -261,7 +266,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
         originY += imageViewSize.height + 4;
     }
     
-    return 8 + originY;
+    return bubbleViewMargin + originY;
 }
 
 /// 判断model是否为有效类型

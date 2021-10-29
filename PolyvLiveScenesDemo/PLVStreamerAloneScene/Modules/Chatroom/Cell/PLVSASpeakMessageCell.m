@@ -76,13 +76,16 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     if (self.cellWidth == 0) {
         return;
     }
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat xPadding = 8.0; // 气泡与textView的左右内间距
     CGFloat yPadding = -4.0; // 气泡与textView的上下内间距
     CGFloat resendWidth = 8 + 16;
     CGFloat maxTextViewWidth = self.cellWidth - xPadding * 2 - resendWidth;
-    
+    CGFloat bubbleViewTop = isPad ? 2 : 8;
+    CGFloat textViewTop = isPad ? -2 : 4;
+
     CGSize textViewSize = [self.textView sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
-    self.textView.frame = CGRectMake(xPadding, 4, textViewSize.width, textViewSize.height);
+    self.textView.frame = CGRectMake(xPadding, textViewTop, textViewSize.width, textViewSize.height);
     
     CGSize bubbleSize = CGSizeMake(textViewSize.width + xPadding * 2, textViewSize.height + yPadding * 2);
     
@@ -96,11 +99,12 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         self.prohibitWordTipView.frame = CGRectZero;
     }
     
+    
     if (bubbleSize.height <= 25) {
-        self.bubbleView.frame = CGRectMake(0, 8, ceilf(bubbleSize.width), 25);
+        self.bubbleView.frame = CGRectMake(0, bubbleViewTop, ceilf(bubbleSize.width), 25);
         self.bubbleView.layer.cornerRadius = 12.5;
     } else {
-        self.bubbleView.frame = CGRectMake(0, 8, ceilf(bubbleSize.width), bubbleSize.height);
+        self.bubbleView.frame = CGRectMake(0, bubbleViewTop, ceilf(bubbleSize.width), bubbleSize.height);
         self.bubbleView.layer.cornerRadius = 8.0;
     }
     // 重发按钮
@@ -200,7 +204,9 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     bubbleHeight = ceilf(bubbleHeight);
     
     bubbleHeight = MAX(25, bubbleHeight);
-    return bubbleHeight + 8;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat top = isPad ? 2 : 8;
+    return bubbleHeight + top;
 }
 
 + (BOOL)isModelValid:(PLVChatModel *)model {

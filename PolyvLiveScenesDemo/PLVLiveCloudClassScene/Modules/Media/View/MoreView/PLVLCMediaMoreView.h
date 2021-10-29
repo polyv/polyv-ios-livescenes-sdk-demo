@@ -37,7 +37,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 更新数据 (若无此数据，则会添加)
 - (void)updateTableViewWithDataArrayByMatchModel:(NSArray <PLVLCMediaMoreModel *> *)updateDataArray;
 
+///显示窗口
 - (void)showMoreViewOnSuperview:(UIView *)superview;
+
+///当屏幕旋转时更新superview 和 frame（适合横竖屏切换的场景）
+- (void)updateMoreViewOnSuperview:(UIView *)superview;
 
 - (void)switchShowStatusWithAnimation;
 

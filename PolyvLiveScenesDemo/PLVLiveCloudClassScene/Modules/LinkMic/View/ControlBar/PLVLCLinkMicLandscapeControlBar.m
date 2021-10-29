@@ -268,7 +268,8 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 #pragma mark Getter
 - (CGFloat)selfWidth{
     // 业务变更时，可直接修改此文件顶部的固定值
-    return PLVLCLinkMicHorizontalControlBarWidth;
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 8 : 0;// 适配iPad
+    return PLVLCLinkMicHorizontalControlBarWidth + xPadding;
 }
 
 - (CGFloat)selfHeight{

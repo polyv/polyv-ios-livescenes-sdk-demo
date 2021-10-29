@@ -110,7 +110,27 @@ PLVSALinkMicTipViewDelegate
     CGFloat top = [PLVSAUtils sharedUtils].areaInsets.top;
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
     
-    self.closeButton.frame = CGRectMake(selfSize.width - 44 - right - 2, top + 2, 44, 44);
+    CGFloat marginTop = 2;
+    CGFloat marginLeft = 2;
+    CGFloat toolbarAreaViewHeight = 60;
+    CGFloat chatroomWidthScale = 0.65;
+    CGFloat chatroomHeightScale = 0.28;
+    CGFloat cameraAndMicphoneStateViewTop = 5;
+    CGFloat linkMicWindowHeight = 280;
+    CGFloat linkMicWindowY = 78;
+    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (isPad) {
+        marginTop = 12;
+        marginLeft = 18;
+        toolbarAreaViewHeight = 72;
+        chatroomWidthScale = 0.41;
+        chatroomHeightScale = 0.24;
+        cameraAndMicphoneStateViewTop = 20;
+        linkMicWindowHeight = 0.74 * self.bounds.size.width;
+        linkMicWindowY = 92;
+    }
+    self.closeButton.frame = CGRectMake(selfSize.width - 44 - right - marginLeft, top + marginTop, 44, 44);
     
     BOOL first = CGRectEqualToRect(self.scrollView.frame, CGRectZero);
     self.scrollView.frame = self.bounds;
@@ -132,13 +152,11 @@ PLVSALinkMicTipViewDelegate
     }
     
     self.statusbarAreaView.frame = CGRectMake(0, top, selfSize.width, 72);
-    self.cameraAndMicphoneStateView.frame = CGRectMake(0, CGRectGetMaxY(self.statusbarAreaView.frame) + 5, selfSize.width, 36);
-    self.toolbarAreaView.frame = CGRectMake(0, selfSize.height - bottom - 60, selfSize.width, 60);
-    self.chatroomAreaView.frame = CGRectMake(0, CGRectGetMinY(self.toolbarAreaView.frame) - selfSize.height * 0.28, selfSize.width * 0.65, selfSize.height * 0.28);
+    self.cameraAndMicphoneStateView.frame = CGRectMake(0, CGRectGetMaxY(self.statusbarAreaView.frame) + cameraAndMicphoneStateViewTop, selfSize.width, 36);
+    self.toolbarAreaView.frame = CGRectMake(0, selfSize.height - bottom - toolbarAreaViewHeight, selfSize.width, toolbarAreaViewHeight);
+    self.chatroomAreaView.frame = CGRectMake(0, CGRectGetMinY(self.toolbarAreaView.frame) - selfSize.height * chatroomHeightScale, selfSize.width * chatroomWidthScale, selfSize.height * chatroomHeightScale);
     self.slideRightTipsView.frame = self.bounds;
     
-    CGFloat linkMicWindowHeight = 280;
-    CGFloat linkMicWindowY = 78;
     self.linkMicGuiedView.frame = CGRectMake(selfSize.width - 173 - 15, top + linkMicWindowY + linkMicWindowHeight + 8, 173, 50);
 }
 
@@ -210,14 +228,16 @@ PLVSALinkMicTipViewDelegate
 }
 
 - (void)ShowNewWaitUserAdded {
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat padding = isPad ? 24 : 8;
     CGRect frame = self.linkMicTipView.frame;
     CGSize selfSize = self.bounds.size;
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
     if (self.scrollView.contentOffset.x == 0) {
-        frame.origin.x = selfSize.width - frame.size.width - 8;
+        frame.origin.x = selfSize.width - frame.size.width - padding;
         frame.origin.y = selfSize.height - bottom  - 20 - frame.size.height ;
     } else {
-        frame.origin.x = selfSize.width *2 - frame.size.width - 8;
+        frame.origin.x = selfSize.width *2 - frame.size.width - padding;
         frame.origin.y = CGRectGetMinY(self.toolbarAreaView.frame) - frame.size.height - 16;
     }
     
@@ -370,7 +390,8 @@ PLVSALinkMicTipViewDelegate
 
 - (PLVSAChannelInfoSheet *)channelInfoSheet {
     if (!_channelInfoSheet) {
-        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * 0.285;
+        CGFloat scale = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0.301 : 0.285;
+        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * scale;
         _channelInfoSheet = [[PLVSAChannelInfoSheet alloc] initWithSheetHeight:sheetHeight];
     }
     return _channelInfoSheet;
@@ -378,7 +399,8 @@ PLVSALinkMicTipViewDelegate
 
 - (PLVSAMoreInfoSheet *)moreInfoSheet {
     if (!_moreInfoSheet) {
-        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * 0.34;
+        CGFloat scale = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0.246 : 0.34;
+        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * scale;
         _moreInfoSheet = [[PLVSAMoreInfoSheet alloc] initWithSheetHeight:sheetHeight];
         _moreInfoSheet.delegate = self;
     }
@@ -387,7 +409,8 @@ PLVSALinkMicTipViewDelegate
 
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
-        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * 0.285;
+        CGFloat scale = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0.233 : 0.285;
+        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * scale;
         _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight];
         _bitRateSheet.delegate = self;
         PLVResolutionType type = [self.delegate streamerHomeViewCurrentQuality:self];

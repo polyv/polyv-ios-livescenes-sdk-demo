@@ -32,9 +32,6 @@
 @property (nonatomic, strong) UIImageView *rewardImageView; // 打赏图片
 @end
 
-// cell高度
-static int cellHeight = 32 + 8;
-
 @implementation PLVSARewardMessageCell
 
 #pragma mark - [ Life Cycle ]
@@ -59,9 +56,11 @@ static int cellHeight = 32 + 8;
     if (self.cellWidth == 0) {
         return;
     }
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    
     CGFloat xPadding = 8.0;
-    CGFloat yPadding = 4.0;
-    CGFloat bubbleHeight = cellHeight - yPadding * 2;
+    CGFloat yPadding = isPad ? 2.0 : 4.0;
+    CGFloat bubbleHeight = 32;
     CGFloat rewardWidth = 20;
     CGFloat rewardHeight = bubbleHeight;
     CGFloat rewardPadding = 4;
@@ -77,7 +76,7 @@ static int cellHeight = 32 + 8;
     self.contentLabel.frame = CGRectMake(xPadding, (bubbleHeight - textViewSize.height ) / 2, textViewSize.width, textViewSize.height);
     
     
-    CGSize bubbleSize = CGSizeMake(textViewSize.width + xPadding + 32, cellHeight - yPadding *2);
+    CGSize bubbleSize = CGSizeMake(textViewSize.width + xPadding + 32, bubbleHeight);
     
     self.bubbleView.frame = CGRectMake(0, yPadding, ceilf(bubbleSize.width), ceilf(bubbleSize.height));
     self.bubbleView.layer.cornerRadius = 12.5;
@@ -120,7 +119,10 @@ static int cellHeight = 32 + 8;
     if (![PLVSARewardMessageCell isModelValid:model] || cellWidth == 0) {
         return 0;
     }
-    return cellHeight;
+    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat yPadding = isPad ? 2.0 : 4.0;
+    return 32 + yPadding * 2;
 }
 
 + (BOOL)isModelValid:(PLVChatModel *)model {

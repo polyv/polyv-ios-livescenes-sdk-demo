@@ -58,9 +58,11 @@
     [super layoutSubviews];
     
     CGFloat cellHeight = self.bounds.size.height;
-    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat margin = isPad ? 56 : 32;
+
     // 配置头像、禁言标志位置
-    self.avatarImageView.frame = CGRectMake(32, (cellHeight - 44)/2.0, 44, 44);
+    self.avatarImageView.frame = CGRectMake(margin, (cellHeight - 44)/2.0, 44, 44);
     self.bannedImageView.frame = CGRectMake(CGRectGetMaxX(self.avatarImageView.frame) + 4 - 20, CGRectGetMaxY(self.avatarImageView.frame) - 20, 20, 20);
     
     // 配置头衔（如果有的话）位置
@@ -77,7 +79,7 @@
     }
     
     // 配置更多按钮、连麦按钮位置
-    CGFloat buttonOriginX = self.bounds.size.width - 32 - 32;
+    CGFloat buttonOriginX = self.bounds.size.width - margin - 32;
     self.moreButton.frame = CGRectMake(buttonOriginX, (cellHeight - 32)/2.0, 32, 32);
     if (!self.moreButton.hidden) {
         buttonOriginX -= (32 + 20);

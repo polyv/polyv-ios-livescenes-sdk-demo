@@ -45,13 +45,23 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
     CGFloat top = [PLVSAUtils sharedUtils].areaInsets.top;
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
-    self.finishButton.frame = CGRectMake((self.bounds.size.width - 180) / 2.0, self.bounds.size.height - bottom - 85 - 50, 180, 50);
+    CGFloat finishButtonWidth = 180;
+    CGFloat finishButtonBottom = 85;
+    CGFloat liveEndImageViewTop = 40;
+    if (isPad) {
+        finishButtonWidth = self.bounds.size.width * 0.468;
+        finishButtonBottom = self.bounds.size.height * 0.117;
+        liveEndImageViewTop = self.bounds.size.height * 0.224;
+    }
+    
+    self.finishButton.frame = CGRectMake((self.bounds.size.width - finishButtonWidth) / 2.0, self.bounds.size.height - bottom - finishButtonBottom - 50, finishButtonWidth, 50);
     self.gradientLayer.frame = self.finishButton.bounds;
     
-    self.liveEndImageView.frame = CGRectMake((CGRectGetWidth(self.bounds) - 100) / 2, top + 40, 100, 84);
+    self.liveEndImageView.frame = CGRectMake((CGRectGetWidth(self.bounds) - 100) / 2, top + liveEndImageViewTop, 100, 84);
     self.liveEndLable.frame = CGRectMake((CGRectGetWidth(self.bounds) - 120) / 2, UIViewGetBottom(self.liveEndImageView) + 6, 120, 33);
     self.dividingLineView.frame = CGRectMake((CGRectGetWidth(self.bounds) - 2) / 2, UIViewGetBottom(self.liveEndLable) + 40, 2, 52);
     self.liveDetailTimeLable.frame = CGRectMake(UIViewGetLeft(self.dividingLineView) - 30 - 100, UIViewGetBottom(self.liveEndLable) + 42, 100, 22);

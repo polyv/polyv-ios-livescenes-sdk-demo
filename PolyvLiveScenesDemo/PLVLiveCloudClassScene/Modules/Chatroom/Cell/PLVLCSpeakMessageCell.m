@@ -42,7 +42,7 @@
     CGFloat originX = self.nickLabel.frame.origin.x;
     CGFloat originY =  self.nickLabel.frame.origin.y + 20;
     
-    CGFloat xPadding = 16.0; // 头像左间距，气泡右间距
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 头像左间距，气泡右间距
     CGFloat bubbleXPadding = 12;//textView与bubble的内部左右间距均为12
     
     CGFloat maxTextViewWidth = self.cellWidth - originX - xPadding - bubbleXPadding * 2;
@@ -125,7 +125,7 @@
     
     CGFloat originX = 64.0; // 64 为气泡初始x值
     CGFloat originY = 28.0; // 64 为气泡初始y值
-    CGFloat xPadding = 16.0; // 头像左间距，气泡右间距
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 头像左间距，气泡右间距
     CGFloat bubbleXPadding = 12;//textView与bubble的内部左右间距均为12
     CGFloat maxTextViewWidth = cellWidth - originX - xPadding - bubbleXPadding * 2;
     

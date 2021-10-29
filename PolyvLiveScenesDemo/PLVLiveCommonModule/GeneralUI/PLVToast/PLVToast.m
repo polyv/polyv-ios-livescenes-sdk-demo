@@ -13,6 +13,7 @@ static CGFloat kToastHideDelay = 2.0;
 
 static CGFloat kToastMaxWidth = 196.0;
 static CGFloat kToastMaxHeight = 80.0;
+static CGFloat kToastPadMaxWidth = 300.0;
 
 @interface PLVToast ()
 
@@ -73,7 +74,9 @@ static CGFloat kToastMaxHeight = 80.0;
 }
 
 - (void)showMessage:(NSString *)message {
-    CGSize messageSize = [message boundingRectWithSize:CGSizeMake(kToastMaxWidth, kToastMaxHeight)
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat maxWidth = isPad ? kToastPadMaxWidth : kToastMaxWidth;
+    CGSize messageSize = [message boundingRectWithSize:CGSizeMake(maxWidth, kToastMaxHeight)
                                                options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
                                             attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:kToastLabelFontSize]}
                                                context:nil].size;

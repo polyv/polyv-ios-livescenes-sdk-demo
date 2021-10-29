@@ -88,8 +88,11 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     if (self.cellWidth == 0) {
         return;
     }
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat bubbleViewMargin = isPad ? 2.0 : 8.0;
+
     CGFloat originX = 8.0;
-    CGFloat originY = 8.0;
+    CGFloat originY = bubbleViewMargin;
     CGFloat bubbleXPadding = 8.0; // 气泡与textView的左右内间距
     CGFloat resendWidth = 8 + 16;
     
@@ -98,7 +101,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     NSAttributedString *quoteContentLabelString = self.quoteContentLabel.attributedText;
     CGSize quoteContentLabelSize = [quoteContentLabelString boundingRectWithSize:CGSizeMake(maxContentWidth, 44) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
-    originY += originY;
+    originY += 8.0;
     
     self.quoteContentLabel.frame = CGRectMake(originX, originY, quoteContentLabelSize.width, quoteContentLabelSize.height);
     originY += quoteContentLabelSize.height + 4;
@@ -116,7 +119,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     self.textView.frame = CGRectMake(originX, originY, textViewSize.width, textViewSize.height);
     originY += textViewSize.height - 4;
     
-    self.bubbleView.frame = CGRectMake(0, 8, 0, originY); // 最后再设置气泡宽度
+    self.bubbleView.frame = CGRectMake(0, bubbleViewMargin, 0, originY); // 最后再设置气泡宽度
     // 严禁词
     if ([self.model isProhibitMsg] &&
         !self.model.prohibitWordTipIsShowed) {
@@ -253,7 +256,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         contentLabelSize.height += tipSize.height + 20;
     }
     
-    return 8 + quoteContentHeight + 8 + (quoteImageURL ? 4 + quoteImageHeight : 0) + 4 + 1 + 4 + contentLabelSize.height + 4 + 8; // 气泡底部外间距为8
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (isPad) {
+        CGFloat bubbleViewMargin = 2.0;
+        return bubbleViewMargin + 8 + quoteContentHeight + 4 + (quoteImageURL ? 4 + quoteImageHeight : 0) + 4 + 1 + 4 + contentLabelSize.height + 4 + bubbleViewMargin; // 气泡底部外间距为2
+    } else {
+        return 8 + quoteContentHeight + 8 + (quoteImageURL ? 4 + quoteImageHeight : 0) + 4 + 1 + 4 + contentLabelSize.height + 4 + 8; // 气泡底部外间距为8
+    }
 }
 
 /// 判断model是否为有效类型

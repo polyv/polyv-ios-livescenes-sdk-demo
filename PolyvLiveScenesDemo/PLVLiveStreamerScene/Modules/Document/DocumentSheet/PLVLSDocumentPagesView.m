@@ -60,6 +60,13 @@ UICollectionViewDelegate
     
     CGSize selfSize = self.bounds.size;
     CGFloat margin = 28;
+    CGFloat itemNum = 4.0;
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        margin = 0;
+        if ([UIScreen mainScreen].bounds.size.height < [UIScreen mainScreen].bounds.size.width ) {
+            itemNum = 6.0;
+        }
+    }
     
     self.btnBack.frame = CGRectMake(margin, 0, 20, 22);
     self.lbTitle.frame = CGRectMake(margin + 20, 0, selfSize.width - 2 * margin - 20, 22);
@@ -67,6 +74,8 @@ UICollectionViewDelegate
     self.viewLine.frame = CGRectMake(margin, 30, selfSize.width - 2 * margin, 1);
     self.collectionView.frame = CGRectMake(0, 31, selfSize.width, selfSize.height - 31);
 
+    UICollectionViewFlowLayout *collectionViewLayout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
+    collectionViewLayout.minimumInteritemSpacing = (selfSize.width - margin * 2 - 144 * itemNum) / (itemNum - 1);
 }
 
 #pragma mark - [ Public Methods ]
@@ -171,8 +180,13 @@ UICollectionViewDelegate
         
         
         UICollectionViewFlowLayout *cvfLayout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
-        
-        CGFloat itemWidth = (collectionViewWidth - self.collectionView.contentInset.left - self.collectionView.contentInset.right - cvfLayout.minimumInteritemSpacing * 3) / 4;
+        CGFloat itemNum = 4.0;
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            if ([UIScreen mainScreen].bounds.size.height < [UIScreen mainScreen].bounds.size.width ) {
+                itemNum = 6.0;
+            }
+        }
+        CGFloat itemWidth = (collectionViewWidth - self.collectionView.contentInset.left - self.collectionView.contentInset.right - cvfLayout.minimumInteritemSpacing * (itemNum - 1)) / itemNum;
         
         _cellSize = CGSizeMake(itemWidth, itemWidth * defaultSize.height / defaultSize.width);
     }
@@ -233,7 +247,8 @@ UICollectionViewDelegate
         _collectionView.indicatorStyle = UIScrollViewIndicatorStyleWhite;
         _collectionView.dataSource = self;
         _collectionView.delegate = self;
-        _collectionView.contentInset = UIEdgeInsetsMake(16, 28, PLVLSUtils.safeBottomPad, 28);
+        CGFloat margin = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0 : 28;
+        _collectionView.contentInset = UIEdgeInsetsMake(16, margin, PLVLSUtils.safeBottomPad, margin);
         [_collectionView registerClass:PLVLSDocumentPagesCell.class forCellWithReuseIdentifier:DocPagesCellIdentifier];
     }
     

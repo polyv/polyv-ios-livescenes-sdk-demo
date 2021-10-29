@@ -1,9 +1,9 @@
 //
 //  PLVHCDemoUtil.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by jiaweihuang on 2021/7/1.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>

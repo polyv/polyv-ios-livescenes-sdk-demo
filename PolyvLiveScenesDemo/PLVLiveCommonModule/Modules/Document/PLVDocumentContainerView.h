@@ -1,9 +1,9 @@
 //
 //  PLVDocumentContainerView.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/7/13.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 // 容器版webviewSDk WKWebView视图
 // 用于展示容器(ppt、word各类文档统称)视图
 

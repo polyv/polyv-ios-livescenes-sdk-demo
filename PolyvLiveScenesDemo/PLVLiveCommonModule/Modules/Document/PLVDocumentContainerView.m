@@ -1,9 +1,9 @@
 //
 //  PLVDocumentContainerView.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/7/13.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import "PLVDocumentContainerView.h"

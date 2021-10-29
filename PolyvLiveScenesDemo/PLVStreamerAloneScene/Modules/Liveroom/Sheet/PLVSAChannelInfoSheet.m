@@ -55,8 +55,9 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
-    CGFloat margin = 30;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
+    CGFloat margin = isPad ? 56 : 30;
     CGFloat xPadding = self.bounds.size.height > 667 ? 34 : 17;
     CGFloat width = self.bounds.size.width - margin * 2;
     
@@ -77,7 +78,8 @@
     size = [self.channelIdLabel sizeThatFits:CGSizeMake(width, 20)];
     self.channelIdLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.beginTimeLabel.frame) + 16, size.width, size.height);
     
-    self.cloneChannelIdButton.frame = CGRectMake(CGRectGetMaxX(self.channelIdLabel.frame) + 12, self.channelIdLabel.frame.origin.y - 2, 50, 24);
+    CGFloat buttonWidth = isPad ? 80 : 50;
+    self.cloneChannelIdButton.frame = CGRectMake(CGRectGetMaxX(self.channelIdLabel.frame) + 12, self.channelIdLabel.frame.origin.y - 2, buttonWidth, 24);
     self.cloneChannelIdButton.center = CGPointMake(self.cloneChannelIdButton.center.x, self.channelIdLabel.center.y);
 }
 #pragma mark - [ Public Method ]

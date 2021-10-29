@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVLSBottomSheet : UIView
 
 @property (nonatomic, strong, readonly) UIView *contentView; // 底部内容区域
+@property (nonatomic, strong, readonly) UIView *sliderGesturView; // 顶部滑块拖动区域
 @property (nonatomic, assign, readonly) CGFloat sheetHight; // 弹层显示时的高度
 
 /// 初始化方法
@@ -27,6 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 收起弹层
 - (void)dismiss;
+
+
+/// 更新弹层布局
+/// @param sheetHeight 弹层弹出高度
+- (void)refreshWithSheetHeight:(CGFloat)sheetHeight;
 
 @end
 

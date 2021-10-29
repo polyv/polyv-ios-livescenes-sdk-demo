@@ -41,7 +41,7 @@
         [self controlsSwitchShowStatusWithAnimation:YES];
 
         // 基础数据
-        CGFloat leftPadding = 2.0;
+        CGFloat leftPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
         CGFloat bottomPadding = 12.0;
         CGFloat commonHeight = 20.0;
         
@@ -63,7 +63,7 @@
         
         [self refreshPlayTimesLabelFrame];
         
-        CGFloat rightPadding = 2.0;
+        CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
         self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
         
         // 底部UI
@@ -75,8 +75,8 @@
         [self refreshRefreshButtonFrame];
         
         self.fullScreenButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
-        
-        self.floatViewShowButton.frame = CGRectMake(CGRectGetMinX(self.fullScreenButton.frame) - backButtonSize.width, CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
+                
+        [self refreshFloatViewShowButtonFrame];
         
         CGFloat timeLabelWidth = [self getLabelTextWidth:self.currentTimeLabel];
         self.currentTimeLabel.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame) + 10, CGRectGetMinY(self.playButton.frame), timeLabelWidth, commonHeight);
@@ -159,6 +159,18 @@
         originX += CGRectGetWidth(self.playButton.frame) + 5;
     }
     self.refreshButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
+}
+
+- (void)refreshFloatViewShowButtonFrame {
+    CGSize backButtonSize = CGSizeMake(40.0, 40.0);
+    CGFloat commonHeight = 20.0;
+    CGFloat originX = CGRectGetMinX(self.moreButton.frame);
+    
+    if (!self.fullScreenButton.hidden && self.fullScreenButton.superview) {
+        originX = CGRectGetMinX(self.fullScreenButton.frame) - backButtonSize.width - 5;
+    }
+
+    self.floatViewShowButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
 }
 
 @end

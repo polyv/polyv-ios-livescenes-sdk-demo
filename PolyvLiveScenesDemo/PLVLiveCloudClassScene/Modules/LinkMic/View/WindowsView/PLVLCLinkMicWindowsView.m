@@ -83,7 +83,9 @@ UICollectionViewDelegate
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {
         // 横屏
-        self.collectionView.frame = CGRectMake(8, 0, 150, selfHeight);
+
+        selfWidth = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 180.0 : 150.0;
+        self.collectionView.frame = CGRectMake(8, 0, selfWidth, selfHeight);
         self.collectionView.alwaysBounceHorizontal = NO;
         self.collectionView.alwaysBounceVertical = YES;
         
@@ -563,10 +565,18 @@ UICollectionViewDelegate
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {
         // 横屏
-        itemSize = CGSizeMake(150.0, 85.0);
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            itemSize = CGSizeMake(180.0, 101.0);
+        } else {
+            itemSize = CGSizeMake(150.0, 85.0);
+        }
     }else{
         // 竖屏
-        itemSize = CGSizeMake(125, CGRectGetHeight(self.bounds));
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            itemSize = CGSizeMake(180, CGRectGetHeight(self.bounds));
+        }else{
+            itemSize = CGSizeMake(125, CGRectGetHeight(self.bounds));
+        }
     }
     return itemSize;
 }

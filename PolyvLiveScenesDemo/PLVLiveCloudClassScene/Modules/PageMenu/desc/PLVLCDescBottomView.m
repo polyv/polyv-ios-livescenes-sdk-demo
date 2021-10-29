@@ -68,7 +68,7 @@ WKNavigationDelegate
 
 - (void)refreshWebView {;
     int verticalPadding = 12;
-    int horizontalPadding = 16;
+    int horizontalPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20 : 16;
     int fontSize = 16;
     NSString *fontColor = @"#ADADC0";
     

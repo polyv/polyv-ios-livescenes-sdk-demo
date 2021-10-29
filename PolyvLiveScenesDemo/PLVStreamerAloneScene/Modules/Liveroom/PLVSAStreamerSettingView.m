@@ -129,6 +129,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
 }
 
 - (void)updateUI {
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
     /// 输入框和标题文本高度适应
     CGFloat textViewHeight = [self.channelNameTextView sizeThatFits:CGSizeMake(CGRectGetWidth(self.bounds) - 59, MAXFLOAT)].height;
     CGFloat lableHeight = [self.channelNameLable sizeThatFits:CGSizeMake(CGRectGetWidth(self.configView.bounds) - 56, MAXFLOAT)].height;
@@ -138,21 +140,41 @@ static NSString *const EnterTips = @"点击输入直播标题";
     
     CGFloat originX = [PLVSAUtils sharedUtils].areaInsets.left;
     CGFloat originY = [PLVSAUtils sharedUtils].areaInsets.top;
-    CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom + 45;
-    self.backButtton.frame = CGRectMake(originX + 24, originY + 9, 36, 36);
-    self.startButton.frame = CGRectMake((self.bounds.size.width - 328) / 2.0, self.bounds.size.height - bottom - 50, 328, 50);
+    CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
+    
+    CGFloat backButttonTop = originY + 9;
+    CGFloat startButtonBottom = bottom + 45;
+    CGFloat startButtonWidth = 328;
+    CGFloat configViewWidth = CGRectGetWidth(self.startButton.frame);
+    CGFloat channelNameLableLeft = 28;
+    CGFloat lineViewLeft = 24;
+    if (isPad) {
+        backButttonTop = originY + 20;
+        startButtonBottom = bottom + 100;
+        startButtonWidth = CGRectGetWidth(self.frame) * 0.47;
+        configViewWidth = CGRectGetWidth(self.frame) * 0.66;
+        channelNameLableLeft = 41;
+        lineViewLeft = 32;
+    }
+    
+    self.backButtton.frame = CGRectMake(originX + 24, backButttonTop, 36, 36);
+    self.startButton.frame = CGRectMake((CGRectGetWidth(self.bounds) - startButtonWidth) / 2.0, self.bounds.size.height - startButtonBottom - 50, startButtonWidth, 50);
+   
     self.gradientLayer.frame = self.startButton.bounds;
     self.maskView.frame = self.bounds;
     self.channelNameTextView.frame = CGRectMake(29.5, originY + CGRectGetHeight(self.bounds) / 4, CGRectGetWidth(self.bounds) - 59, self.channelNameTextViewHeight);
     self.limitLable.frame = CGRectMake(UIViewGetRight(self.channelNameTextView) - 80 - 10, UIViewGetBottom(self.channelNameTextView) + 17 + 20, 80, 17);
     
-    self.configView.frame = CGRectMake(UIViewGetLeft(self.startButton), UIViewGetTop(self.startButton) - 24 - self.configViewHeight, CGRectGetWidth(self.startButton.frame), self.configViewHeight);
-    self.channelNameLable.frame = CGRectMake(28, 28, CGRectGetWidth(self.configView.bounds) - 56, self.channelNameLableHeight);
-    self.lineView.frame = CGRectMake(24, UIViewGetBottom(self.channelNameLable) + 13, CGRectGetWidth(self.configView.bounds) - 48, 1);
+    self.configView.frame = CGRectMake((CGRectGetWidth(self.bounds) - configViewWidth) / 2.0, UIViewGetTop(self.startButton) - 24 - self.configViewHeight, configViewWidth, self.configViewHeight);
+    
+    self.channelNameLable.frame = CGRectMake(channelNameLableLeft, 28, CGRectGetWidth(self.configView.bounds) - channelNameLableLeft * 2, self.channelNameLableHeight);
+    self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.channelNameLable) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
     CGSize buttonSize = CGSizeMake(32, 58);
-    self.cameraReverseButton.frame = CGRectMake(55, CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33, buttonSize.width, buttonSize.height);
-    self.mirrorButton.frame = CGRectMake(UIViewGetRight(self.cameraReverseButton) + 64, UIViewGetTop(self.cameraReverseButton), buttonSize.width, buttonSize.height);
-    self.bitRateButton.frame = CGRectMake(CGRectGetMaxX(self.configView.bounds) - 55 - buttonSize.width, UIViewGetTop(self.cameraReverseButton), buttonSize.width, buttonSize.height);
+    CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
+    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - buttonSize.width * 3 - 20) / 4 + 10;
+    self.mirrorButton.frame = CGRectMake((configViewWidth - buttonSize.width) / 2, buttonTop, buttonSize.width, buttonSize.height);
+    self.cameraReverseButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.bitRateButton.frame = CGRectMake(CGRectGetMaxX(self.configView.bounds) - buttonPadding - buttonSize.width, buttonTop, buttonSize.width, buttonSize.height);
 }
 
 /// 初始化默认清晰度
@@ -361,7 +383,9 @@ static NSString *const EnterTips = @"点击输入直播标题";
 
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
-        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * 0.285;
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat scale = isPad ? 0.233 : 0.285;
+        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * scale;
         _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight];
         [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:self.resolutionType];
         _bitRateSheet.delegate = self;
@@ -489,7 +513,15 @@ static NSString *const EnterTips = @"点击输入直播标题";
 - (void)keyboardWillHide:(NSNotification *)notification {
     self.maskView.hidden = YES;
     self.configView.hidden = NO;
-    self.configView.frame = CGRectMake(UIViewGetLeft(self.startButton), UIViewGetTop(self.startButton) - 24 - self.configViewHeight, CGRectGetWidth(self.startButton.frame), self.configViewHeight);
+    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (isPad) {
+        CGFloat configViewWidth = CGRectGetWidth(self.frame) * 0.66;
+        self.configView.frame = CGRectMake((CGRectGetWidth(self.bounds) - configViewWidth) / 2.0, UIViewGetTop(self.startButton) - 24 - self.configViewHeight, configViewWidth, self.configViewHeight);
+    } else {
+        self.configView.frame = CGRectMake(UIViewGetLeft(self.startButton), UIViewGetTop(self.startButton) - 24 - self.configViewHeight, CGRectGetWidth(self.startButton.frame), self.configViewHeight);
+    }
+
     self.channelNameLable.frame = CGRectMake(28, 28, CGRectGetWidth(self.configView.bounds) - 56, self.channelNameLableHeight);
 }
 

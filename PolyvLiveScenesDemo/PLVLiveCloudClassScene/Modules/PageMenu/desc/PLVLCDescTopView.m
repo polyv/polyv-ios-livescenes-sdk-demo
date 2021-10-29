@@ -44,21 +44,23 @@
 }
 
 - (void)layoutSubviews {
-    self.avatarImageView.frame = CGRectMake(16, 15, 40, 40);
     
-    CGFloat topLabelOriginX = 66.0;
+    CGFloat commonOrigin = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20 : 16;
+    CGFloat topLabelOriginX = 50 + commonOrigin;
+    
+    self.avatarImageView.frame = CGRectMake(commonOrigin, 15, 40, 40);
     self.titleLabel.frame = CGRectMake(topLabelOriginX, 16, self.bounds.size.width - topLabelOriginX * 2 - 14, 17);
     self.startTimeLable.frame = CGRectMake(topLabelOriginX, 41, self.bounds.size.width - topLabelOriginX * 2 - 14, 13);
     
     self.line.frame = CGRectMake(0, 72, self.bounds.size.width, 1);
     
-    self.publisherImageView.frame = CGRectMake(16, CGRectGetMaxY(self.line.frame) + 10, 16, 16);
-    self.publisherLabel.frame = CGRectMake(36, CGRectGetMaxY(self.line.frame) + 12, self.bounds.size.width - 36 - 56 - 16, 13);
+    self.publisherImageView.frame = CGRectMake(commonOrigin, CGRectGetMaxY(self.line.frame) + 10, 16, 16);
+    self.publisherLabel.frame = CGRectMake(commonOrigin + 20, CGRectGetMaxY(self.line.frame) + 12, self.bounds.size.width - 36 - 56 - 16, 13);
     
     if (self.status == PLVLCLiveStatusNone) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - 16, 15, 64, 24);
+        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - commonOrigin, 15, 64, 24);
     } else {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
+        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - commonOrigin, 15, 50, 24);
     }
 }
 
@@ -139,7 +141,7 @@
     
     if (channelInfo.name && [channelInfo.name isKindOfClass:[NSString class]] && channelInfo.name.length > 0) {
         NSString *name = channelInfo.name;
-        if (name.length > 12) {
+        if (name.length > 12 && [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
             name = [NSString stringWithFormat:@"%@...", [channelInfo.name substringToIndex:12]];
         }
         

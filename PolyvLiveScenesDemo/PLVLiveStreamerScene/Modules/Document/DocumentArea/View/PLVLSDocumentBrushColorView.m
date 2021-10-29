@@ -30,7 +30,7 @@
     
     if (! self.enabled) {
         CGContextSetStrokeColorWithColor(context, PLV_UIColorFromRGB(@"#F0F1F5").CGColor);
-        CGContextSetLineWidth(context, 3.0);
+        CGContextSetLineWidth(context, 2.0);
         CGContextAddArc(context, rect.size.width / 2, rect.size.height / 2, rect.size.width / 2 - 1, 0, 2 * M_PI, 0);
         CGContextDrawPath(context, kCGPathStroke);
         

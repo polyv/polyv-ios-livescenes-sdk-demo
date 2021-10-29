@@ -75,12 +75,7 @@ UITextViewDelegate
     if (self) {
         self.bottomHeight = MAX(10, P_SafeAreaBottomEdgeInsets());
         self.toolViewHeight = 44 + self.bottomHeight;
-        
-        CGFloat emojiboardHeight = 209.0 + self.bottomHeight;
-        if ([@"iPad" isEqualToString:[UIDevice currentDevice].model]) {
-            emojiboardHeight += 55.0;
-        }
-        self.emojiboardHeight = emojiboardHeight;
+        self.emojiboardHeight = 209.0 + self.bottomHeight;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         
@@ -283,6 +278,7 @@ UITextViewDelegate
 }
 
 - (void)dismiss {
+    [self resignTextView];
     self.toolView.textView.inputView = nil;
     self.toolView.tapGesture.enabled = NO;
     [self.toolView.textView reloadInputViews];
@@ -336,12 +332,17 @@ UITextViewDelegate
     }];
 }
 
+- (void)resignTextView {
+    self.toolView.textView.inputView = nil;
+    [self.toolView.textView reloadInputViews];
+    [self.toolView.textView becomeFirstResponder];
+    [self.toolView.textView resignFirstResponder];
+}
+
 - (void)changeKeyboard:(BOOL)showEmoji {
     if (showEmoji) {// 在 iOS 9.3.1 上使用局部变量代替 tempInputView 在打开表情键盘退出时会出现内存问题
-        self.tempInputView = [[UIView alloc] initWithFrame:CGRectZero];
-        self.toolView.textView.inputView = self.tempInputView;
-        [self.toolView.textView reloadInputViews];
-        [self.toolView.textView becomeFirstResponder];
+        [self resignTextView];
+        [self.toolView.textView startEdit];
     } else {
         self.toolView.textView.inputView = nil;
         [self.toolView.textView reloadInputViews];
@@ -448,6 +449,7 @@ UITextViewDelegate
 #pragma mark - UITextView Delegate
 
 - (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
+    self.toolView.emojiButton.selected = NO;
     [self.toolView.textView startEdit];
     [self checkSendBtnEnable:self.toolView.textView.attributedText.length > 0];
     return YES;

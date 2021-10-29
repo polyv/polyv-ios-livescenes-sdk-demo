@@ -107,29 +107,56 @@ PLVMemberPresenterDelegate
     [self getEdgeInset];
     
     CGSize screenSize = [UIScreen mainScreen].bounds.size;
-    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+
     // 状态栏高度固定44，宽度需减去两倍左右安全区域
-    self.statusAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, 0, screenSize.width - PLVLSUtils.safeSidePad * 2, 44);
+    CGFloat statusAreaViewTop = isPad ? PLVLSUtils.safeTopPad : 0;
+    self.statusAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, statusAreaViewTop, screenSize.width - PLVLSUtils.safeSidePad * 2, 44);
     
     // 文档区域宽高默认16:9，剩余的空间给推流区域，推流区域的宽度必须大于138，如果小于138，减少文档区域的宽度
     // 文档区域与推流区域间距为8
-    CGFloat ducomentViewHeight = screenSize.height - 44 - PLVLSUtils.safeBottomPad;
+    CGFloat ducomentViewHeight = screenSize.height - CGRectGetMaxY(self.statusAreaView.frame) - PLVLSUtils.safeBottomPad;
     CGFloat documentAreaViewWidth = ducomentViewHeight * 16.0 / 9.0;
     CGFloat linkMicAreaViewLeftPadding = 8;
     CGFloat linkMicAreaViewWidth = screenSize.width - PLVLSUtils.safeSidePad * 2 - documentAreaViewWidth - linkMicAreaViewLeftPadding;
-    if (linkMicAreaViewWidth < 138) {
-        linkMicAreaViewWidth = 138;
-        documentAreaViewWidth = screenSize.width - PLVLSUtils.safeSidePad * 2 - 138 - 8;
+    CGFloat linkMicAreaViewMinWidth = isPad ? 160 : 138;
+    if (linkMicAreaViewWidth < linkMicAreaViewMinWidth) {
+        linkMicAreaViewWidth = linkMicAreaViewMinWidth;
+        documentAreaViewWidth = screenSize.width - PLVLSUtils.safeSidePad * 2 - linkMicAreaViewWidth - linkMicAreaViewLeftPadding;
     }
-    self.documentAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, 44, documentAreaViewWidth, ducomentViewHeight);
+    self.documentAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, CGRectGetMaxY(self.statusAreaView.frame), documentAreaViewWidth, ducomentViewHeight);
     
     self.linkMicAreaView.frame = CGRectMake(CGRectGetMaxX(self.documentAreaView.frame) + linkMicAreaViewLeftPadding, CGRectGetMaxY(self.statusAreaView.frame), linkMicAreaViewWidth, ducomentViewHeight);
         
-    // 聊天室宽高固定(308, 210)，左边与底部贴紧文档区域
-    self.chatroomAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, screenSize.height - PLVLSUtils.safeBottomPad - 210, 308, 210);
+    // 设置聊天室宽高
+    CGFloat chatroomAreaViewWidth = [UIScreen mainScreen].bounds.size.width * 0.34;
+    CGFloat chatroomAreaViewHeigh = [UIScreen mainScreen].bounds.size.height * (isPad ? 0.28 : 0.42) + 44;
+    
+    self.chatroomAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, screenSize.height - PLVLSUtils.safeBottomPad - chatroomAreaViewHeigh, chatroomAreaViewWidth, chatroomAreaViewHeigh);
     
     if (self.isFullscreen) {
         self.documentAreaView.frame = self.view.bounds;
+    }
+    
+    if (_channelInfoSheet) {
+        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * 0.75;
+        [_channelInfoSheet refreshWithSheetHeight:sheetHeight];
+    }
+    
+    if (_memberSheet) {
+        CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat scale = isPad ? 0.43 : 0.52;
+        [_memberSheet refreshWithSheetWidth:screenWidth * scale];
+    }
+    
+    if (_settingSheet) {
+        CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
+        [_settingSheet refreshWithSheetWidth:sheetWidth];
+    }
+    
+    if (_coutBackView) {
+        _coutBackView.frame = self.view.bounds;
     }
 }
 
@@ -171,19 +198,22 @@ PLVMemberPresenterDelegate
 }
 
 - (void)getEdgeInset {
-    if (PLVLSUtils.safeBottomPad > 0 && PLVLSUtils.safeSidePad > 0) {
+    if (PLVLSUtils.safeBottomPad > 0 && PLVLSUtils.safeSidePad > 0 && PLVLSUtils.safeTopPad > 0) {
         return;
     }
     
     // 在 -viewWillLayoutSubviews 方法里设置 UI 是为了正确获取安全区域
     CGFloat safeSidePad = 0;
     CGFloat safeBottomPad = 0;
+    CGFloat safeTopPad = 0;
     if (@available(iOS 11, *)) {
         safeSidePad = MAX(self.view.safeAreaInsets.left, self.view.safeAreaInsets.right);
-        safeBottomPad = MAX(self.view.safeAreaInsets.top, self.view.safeAreaInsets.bottom);
+        safeBottomPad = self.view.safeAreaInsets.bottom;
+        safeTopPad = self.view.safeAreaInsets.top;
     }
     PLVLSUtils.safeSidePad = safeSidePad < 16 ? 16 : safeSidePad;
     PLVLSUtils.safeBottomPad = safeBottomPad < 10 ? 10 : safeBottomPad;
+    PLVLSUtils.safeTopPad = safeTopPad < 10 ? 10 : safeTopPad;
 }
 
 #pragma mark - Override

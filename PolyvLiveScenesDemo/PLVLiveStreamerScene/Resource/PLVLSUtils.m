@@ -12,6 +12,7 @@
 
 static float _safeSidePad = 0;
 static float _safeBottomPad = 0;
+static float _safeTopPad = 0;
 
 @implementation PLVLSUtils
 
@@ -34,12 +35,20 @@ static float _safeBottomPad = 0;
     return _safeBottomPad;
 }
 
++ (float)safeTopPad {
+    return _safeTopPad;
+}
+
 + (void)setSafeSidePad:(float)safeSidePad {
     _safeSidePad = safeSidePad;
 }
 
 + (void)setSafeBottomPad:(float)safeBottomPad {
     _safeBottomPad = safeBottomPad;
+}
+
++ (void)setSafeTopPad:(float)safeTopPad {
+    _safeTopPad = safeTopPad;
 }
 
 #pragma mark - Public Method

@@ -39,6 +39,17 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 
 @implementation PLVLiveStreamerLoginViewController
 
+/// 开发时调试方法，该方法的代码修改不要提交
+- (void)developerTest {
+    // 写死开发时的测试账号，优先级高于缓存于本地的账号信息
+    // 不需要时请注释掉，否则会覆盖本地缓存的账号信息
+//    self.tfChannelId.text = @"";
+//    self.tfPassword.text = @"";
+    
+    // Bugly上报
+    [PLVBugReporter openWithType:PLVBuglyBundleTypeStreamer];
+}
+
 #pragma mark - [ Life Period ]
 
 - (void)viewDidLoad {
@@ -47,6 +58,8 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     [self setupUI];
     
     [self writeUserInfo];
+    
+    [self developerTest];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -102,10 +115,25 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     self.backgroundImageView.frame = self.view.bounds;
     
     CGFloat marginTop = UIViewGetHeight(self.view) > 568 ? 90 : 45;
+    CGFloat uiFrameOriginX = 40;
+    CGFloat uiFrameWidth = UIViewGetWidth(self.view) - 80;
+    CGFloat btnLoginMarginTop = 29;
+
+    // iPad适配
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL isSmallScreen = UIViewGetWidth(self.view) <= PLVScreenWidth * 1 / 2;
+    if (isPad) {
+        marginTop = 116;
+        btnLoginMarginTop = 70;
+        if (!isSmallScreen) {
+            uiFrameOriginX = UIViewGetWidth(self.view) / 4;
+            uiFrameWidth = UIViewGetWidth(self.view) / 2;
+        }
+    }
     
     self.lbTitle.frame = CGRectMake(0, marginTop + P_SafeAreaTopEdgeInsets(), UIViewGetWidth(self.view), 42);
     
-    CGRect uiFrame = CGRectMake(40, UIViewGetBottom(self.lbTitle) + marginTop, UIViewGetWidth(self.view) - 80, 44);
+    CGRect uiFrame = CGRectMake(uiFrameOriginX, UIViewGetBottom(self.lbTitle) + marginTop, uiFrameWidth, 44);
     self.tfChannelId.frame = uiFrame;
     
     uiFrame.origin.y = UIViewGetBottom(self.tfChannelId) + 16;
@@ -114,12 +142,12 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     uiFrame.origin.y = UIViewGetBottom(self.tfPassword) + 16;
     self.tfNickName.frame = uiFrame;
     
-    uiFrame.origin.y = UIViewGetBottom(self.tfNickName) + 29;
+    uiFrame.origin.y = UIViewGetBottom(self.tfNickName) + btnLoginMarginTop;
     self.btnLogin.frame = uiFrame;
     
     // 记住密码
     NSAttributedString *rememberPasswordAttributedTitle = [self.rememberPasswordButton attributedTitleForState:UIControlStateNormal];
-    self.rememberPasswordButton.frame = CGRectMake(63, UIViewGetBottom(self.btnLogin) + 24, rememberPasswordAttributedTitle.size.width + 22, 22);
+    self.rememberPasswordButton.frame = CGRectMake(uiFrameOriginX + 23, UIViewGetBottom(self.btnLogin) + 24, rememberPasswordAttributedTitle.size.width + 22, 22);
     
     // 协议
     NSAttributedString *agreeAttributedTitle = [self.btnAgree attributedTitleForState:UIControlStateNormal];
@@ -215,7 +243,8 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 
 - (UIImageView *)backgroundImageView {
     if (!_backgroundImageView) {
-        _backgroundImageView = [[UIImageView alloc]initWithImage:[[self class] imageWithImageName:@"plvls_login_bg"]];
+        NSString *imageName = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? @"plvls_login_bg_ipad" : @"plvls_login_bg";
+        _backgroundImageView = [[UIImageView alloc]initWithImage:[[self class] imageWithImageName:imageName]];
     }
     return _backgroundImageView;
 }

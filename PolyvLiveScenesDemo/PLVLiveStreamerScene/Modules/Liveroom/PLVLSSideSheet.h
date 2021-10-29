@@ -27,6 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 收起弹层
 - (void)dismiss;
 
+/// 更新弹层布局
+/// @param sheetWidth 弹层宽度
+- (void)refreshWithSheetWidth:(CGFloat)sheetWidth;
+
 @end
 
 NS_ASSUME_NONNULL_END

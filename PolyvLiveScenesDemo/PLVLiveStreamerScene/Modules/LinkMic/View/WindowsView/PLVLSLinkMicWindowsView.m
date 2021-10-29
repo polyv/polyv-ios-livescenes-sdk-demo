@@ -237,7 +237,7 @@ UICollectionViewDelegate
         itemSize = CGSizeMake(CGRectGetWidth(self.bounds), CGRectGetWidth(self.bounds)/scale);
     }else{
         // 竖屏
-        itemSize = CGSizeMake(125, CGRectGetHeight(self.bounds));
+        itemSize = CGSizeMake(160.0,90.0);
     }
     return itemSize;
 }

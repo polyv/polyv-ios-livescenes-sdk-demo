@@ -59,14 +59,21 @@ UIPageViewControllerDelegate
     [self.view addSubview:self.seperator];
 }
 
+- (void)viewWillLayoutSubviews {
+    // iPad分屏尺寸变动，刷新菜单栏和分割线布局
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        self.titleCollectionView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), kBarHeight);
+        self.seperator.frame = CGRectMake(0, kBarHeight, CGRectGetWidth(self.view.bounds), kSeperatorHeight);
+    }
+}
+
 #pragma mark - Getter & Setter
 
 - (UICollectionView *)titleCollectionView {
     if (!_titleCollectionView) {
         UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
         layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
-        _titleCollectionView = [[UICollectionView alloc] initWithFrame:CGRectMake(0, 0, PLVScreenWidth, kBarHeight) collectionViewLayout:layout];
-        
+        _titleCollectionView = [[UICollectionView alloc] initWithFrame:CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), kBarHeight) collectionViewLayout:layout];
         _titleCollectionView.backgroundColor = [UIColor colorWithRed:0x3e/255.0 green:0x3e/255.0 blue:0x4e/255.0 alpha:1.0];
         _titleCollectionView.allowsSelection = YES;
         _titleCollectionView.showsVerticalScrollIndicator = NO;
@@ -84,7 +91,7 @@ UIPageViewControllerDelegate
                                                                   navigationOrientation:UIPageViewControllerNavigationOrientationHorizontal
                                                                             options:nil];
         CGFloat originY = kBarHeight + kSeperatorHeight;
-        _pageController.view.frame = CGRectMake(0, originY, PLVScreenWidth, CGRectGetHeight(self.view.bounds) - originY);
+        _pageController.view.frame = CGRectMake(0, originY, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - originY);
         _pageController.dataSource = self;
         _pageController.delegate =self;
         _pageController.view.clipsToBounds = NO;
@@ -98,7 +105,7 @@ UIPageViewControllerDelegate
 
 - (UIView *)seperator {
     if (!_seperator) {
-        _seperator = [[UIView alloc] initWithFrame:CGRectMake(0, kBarHeight, PLVScreenWidth, kSeperatorHeight)];
+        _seperator = [[UIView alloc] initWithFrame:CGRectMake(0, kBarHeight, CGRectGetWidth(self.view.bounds), kSeperatorHeight)];
         _seperator.backgroundColor = [UIColor blackColor];
     }
     return _seperator;
@@ -155,7 +162,17 @@ UIPageViewControllerDelegate
 }
 
 -(CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    return CGSizeMake(PLVScreenWidth / 3.0, collectionView.frame.size.height);
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        
+        // 根据文字及字号16，计算尺寸
+        NSString *title = [self.titles objectAtIndex:indexPath.item];
+        NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+        CGSize titleSize = [title boundingRectWithSize:CGSizeMake(CGRectGetWidth(self.view.bounds), MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName:[UIFont boldSystemFontOfSize:16] ,NSParagraphStyleAttributeName:paragraphStyle} context:nil].size;
+        
+        return CGSizeMake(titleSize.width + 20, collectionView.frame.size.height);
+    }else{
+        return CGSizeMake(CGRectGetWidth(self.view.bounds) / 3.0, collectionView.frame.size.height);
+    }
 }
 
 -(UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {

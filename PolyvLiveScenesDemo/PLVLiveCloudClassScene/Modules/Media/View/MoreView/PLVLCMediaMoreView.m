@@ -43,8 +43,8 @@
 - (void)layoutSubviews{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     
-    CGFloat viewWidth = CGRectGetWidth(self.bounds);
-    CGFloat viewHeight = CGRectGetHeight(self.bounds);
+    CGFloat viewWidth = CGRectGetWidth(self.superview.bounds);
+    CGFloat viewHeight = CGRectGetHeight(self.superview.bounds);
     
     CGFloat topSafeAreaPadding;
     if (@available(iOS 11.0, *)) {
@@ -58,8 +58,16 @@
     
     if (!fullScreen) {
         // 竖屏布局
-        self.shdowBackgroundView.frame = self.bounds;
-        self.tableView.frame = self.bounds;
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad && viewWidth == PLVScreenWidth) {
+            // iPad且非分屏时，布局为屏幕一半
+            CGFloat topPadding = viewHeight / 2 - 56.0 * self.dataArray.count / 2;
+            self.shdowBackgroundView.frame = CGRectMake(viewWidth / 2, 0, viewWidth / 2, viewHeight);
+            self.tableView.frame = CGRectMake(viewWidth / 2, topPadding, viewWidth / 2, viewHeight);
+        }else{
+            self.shdowBackgroundView.frame = self.superview.bounds;
+            self.tableView.frame = self.superview.bounds;
+        }
+
     }else{
         // 横屏布局
         CGFloat rightPaddingScale = 280.0 / 896.0;
@@ -116,6 +124,18 @@
     self.frame = superview.bounds;
     
     [self.superview bringSubviewToFront:self]; /// 保证在父视图中，层级最前
+    [self switchShowStatusWithAnimation];
+}
+
+//当屏幕旋转的时候需要重新设置superview 和 frame
+- (void)updateMoreViewOnSuperview:(UIView *)superview {
+    if (!_moreViewShow) return;
+    [self removeFromSuperview];
+    [superview addSubview:self];
+    
+    self.frame = superview.bounds;
+    [self.superview bringSubviewToFront:self]; /// 保证在父视图中，层级最前
+    _moreViewShow = NO;
     [self switchShowStatusWithAnimation];
 }
 

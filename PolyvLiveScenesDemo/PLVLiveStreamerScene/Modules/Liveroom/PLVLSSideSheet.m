@@ -100,5 +100,12 @@ static CGFloat kSideSheetAnimationDuration = 0.5;
     self.contentView.frame = CGRectMake(self.bounds.size.width, 0, self.sheetWidth, self.bounds.size.height);
     self.effectView.frame = self.contentView.bounds;
 }
+- (void)refreshWithSheetWidth:(CGFloat)sheetWidth {
+    self.frame = self.superview.bounds;
+    self.sheetWidth = MAX(0, sheetWidth);
+    self.gestureView.frame = self.bounds;
+    self.contentView.frame = CGRectMake(self.bounds.size.width - self.sheetWidth, 0, self.sheetWidth, self.bounds.size.height);
+    self.effectView.frame = self.contentView.bounds;
+}
 
 @end

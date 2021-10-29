@@ -116,7 +116,8 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         float totalPadding = [UIScreen mainScreen].bounds.size.width - kCellButtonWidth * 4;
         float paddingScale = totalPadding / 159.0;
         float padding = 15.9 * paddingScale;
-        self.flowLayout.sectionInset = UIEdgeInsetsMake(15.9, padding, 15.9, padding);
+        float commonPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 23.0 : padding ;
+        self.flowLayout.sectionInset = UIEdgeInsetsMake(15.9, commonPadding, 15.9, commonPadding);
         
         CGRect rect = CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 24 + kCellButtonHeight + 24);
         self.collectionView = [[UICollectionView alloc] initWithFrame:rect collectionViewLayout:self.flowLayout];

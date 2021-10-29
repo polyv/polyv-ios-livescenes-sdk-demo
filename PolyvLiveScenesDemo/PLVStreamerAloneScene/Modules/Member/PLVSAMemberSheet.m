@@ -53,10 +53,11 @@ PLVSAMemberCellDelegate
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
+    CGFloat titleLabelLeft = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 56 : 32;
+
     self.headerView.frame = CGRectMake(0, 0, self.contentView.bounds.size.width, 67);
     self.tableView.frame = CGRectMake(0, 67, self.contentView.bounds.size.width, self.contentView.bounds.size.height - 67);
-    self.titleLabel.frame = CGRectMake(32, 32, self.headerView.frame.size.width - 32 * 2, 20);
+    self.titleLabel.frame = CGRectMake(titleLabelLeft, 32, self.headerView.frame.size.width - titleLabelLeft * 2, 20);
 }
 
 #pragma mark - [ Public Method ]

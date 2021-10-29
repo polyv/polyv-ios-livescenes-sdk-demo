@@ -1,9 +1,9 @@
 //
 //  PLVHCTeacherLoginManager.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by Sakya on 2021/9/6.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 // 讲师登录模块管理 token缓存处理，控制器导航
 

@@ -1,9 +1,9 @@
 //
 //  PLVCloseRoomModel.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/7/7.
-//  Copyright © 2021 polyv. All rights reserved.
+//  Copyright © 2021 PLV. All rights reserved.
 //
 
 #import "PLVCloseRoomModel.h"

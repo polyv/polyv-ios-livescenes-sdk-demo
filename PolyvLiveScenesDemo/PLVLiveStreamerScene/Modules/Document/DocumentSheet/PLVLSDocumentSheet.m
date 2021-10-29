@@ -54,6 +54,7 @@ UIDocumentPickerDelegate
     if (self = [super initWithSheetHeight:sheetHeight showSlider:YES]) {
         [self.contentView addSubview:self.scrollView];
         [self.scrollView addSubview:self.docListView];
+        [self.contentView bringSubviewToFront:self.sliderGesturView];
         
         [PLVDocumentUploadClient sharedClient].errorDelegate = self;
     }
@@ -65,6 +66,9 @@ UIDocumentPickerDelegate
     
     self.scrollView.frame = CGRectMake(PLVLSUtils.safeSidePad, 21, UIViewGetWidth(self.contentView) - 2 * PLVLSUtils.safeSidePad, UIViewGetHeight(self.contentView) - 21 - PLVLSUtils.safeBottomPad);
     self.docListView.frame = self.scrollView.bounds;
+    CGRect pagesFrame = self.docListView.frame;
+    pagesFrame.origin.x += [UIScreen mainScreen].bounds.size.width;
+    self.docPagesView.frame = pagesFrame;
     
     if (!self.firstClick) {
         self.firstClick = YES;
