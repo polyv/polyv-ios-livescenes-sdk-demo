@@ -128,8 +128,7 @@
         self.videoLinkMicBtn.frame = self.firstButtonRect;
         
         self.secondButtonRect = CGRectMake(0, 44 + 8, frame.size.width, 44);
-        self.audioLinkMicBtn.frame = self.secondButtonRect;
-
+        self.audioLinkMicBtn.frame = self.videoLinkMicBtn.hidden ? self.firstButtonRect : self.secondButtonRect;
         
         self.line.frame = CGRectMake(12, 8 + 44, frame.size.width - 24, 1);
     
