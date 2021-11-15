@@ -42,11 +42,15 @@
 - (void)layoutSubviews {
     
     CGFloat margin = 8;
-    self.imageButton.frame = CGRectMake(self.bounds.size.width -  margin - 28, margin, 28, 28);
-    self.emojiButton.frame = CGRectMake(CGRectGetMinX(self.imageButton.frame) - 28 - margin, margin, 28, 28);
+    CGFloat safeLeft = [PLVSAUtils sharedUtils].areaInsets.left;
+    CGFloat safeRight = [PLVSAUtils sharedUtils].areaInsets.right;
+    CGFloat rightViewWith = 28 * 2 + margin *3 + safeRight;
+    CGFloat textViewBgWidth = self.bounds.size.width - safeLeft - margin - rightViewWith;
     
-    CGFloat textViewBgWidth = self.emojiButton.frame.origin.x - margin *2 ;
-    self.textViewBgView.frame = CGRectMake(margin, 6, textViewBgWidth, 32);
+    self.textViewBgView.frame = CGRectMake(safeLeft + margin, 6, textViewBgWidth, 32);
+    
+    self.imageButton.frame = CGRectMake(self.bounds.size.width - safeRight - margin - 28, margin, 28, 28);
+    self.emojiButton.frame = CGRectMake(CGRectGetMinX(self.imageButton.frame) - margin - 28, margin, 28, 28);
     self.textView.frame = CGRectMake(margin, 0, textViewBgWidth - 2 * 12, 32);
 }
 
@@ -58,7 +62,7 @@
     if (!_emojiButton) {
         _emojiButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _emojiButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
-        UIImage *image = [PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_emoji"];
+        UIImage *image = [PLVSAUtils imageForChatroomResource:@"plvsa_chatroom_btn_emoji"];
         [_emojiButton setImage:image forState:UIControlStateNormal];
         [_emojiButton addTarget:self action:@selector(emojiButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }

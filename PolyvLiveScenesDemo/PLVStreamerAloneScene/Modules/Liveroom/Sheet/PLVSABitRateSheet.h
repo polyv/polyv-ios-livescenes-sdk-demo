@@ -25,8 +25,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVSABitRateSheetDelegate> delegate;
 
-- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight;
-
 /**
   传入清晰度选中对应按钮
  

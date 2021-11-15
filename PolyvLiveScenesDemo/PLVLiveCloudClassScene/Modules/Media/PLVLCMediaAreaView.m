@@ -669,7 +669,8 @@ PLVLCRetryPlayViewDelegate
     }
 }
 
-- (void)plvLCBasePlayerSkinViewRotateScreen:(PLVLCBasePlayerSkinView *)skinView{
+- (void)plvLCBasePlayerSkinViewSynchOtherView:(PLVLCBasePlayerSkinView *)skinView{
+    //更新MoreView视图的Superview，执行此代理时意味着skinView对象为当前显示的皮肤
     [self.moreView updateMoreViewOnSuperview:skinView.superview];
 }
 

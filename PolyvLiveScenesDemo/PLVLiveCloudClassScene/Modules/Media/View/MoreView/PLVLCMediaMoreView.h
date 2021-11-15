@@ -40,7 +40,8 @@ NS_ASSUME_NONNULL_BEGIN
 ///显示窗口
 - (void)showMoreViewOnSuperview:(UIView *)superview;
 
-///当屏幕旋转时更新superview 和 frame（适合横竖屏切换的场景）
+/// 更新moreView父视图及布局
+/// @note 在横竖屏旋转切换的场景下，适合调用该方法；仅在moreView已显示的情况下，该方法调用有效
 - (void)updateMoreViewOnSuperview:(UIView *)superview;
 
 - (void)switchShowStatusWithAnimation;

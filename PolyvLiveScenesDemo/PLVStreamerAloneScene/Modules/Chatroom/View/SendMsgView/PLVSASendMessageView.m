@@ -47,10 +47,6 @@
     [PLVImageManager manager].columnNumber = columnNumber;
 }
 
-- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    return UIInterfaceOrientationMaskPortrait;
-}
-
 @end
 
 /// 设置允许自定义键盘的隐藏延迟时间
@@ -113,7 +109,6 @@ UITextViewDelegate
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
 }
 #pragma mark - [ Public Method ]
 - (void)showWithChatModel:(PLVChatModel *)model {
@@ -157,10 +152,12 @@ UITextViewDelegate
     self.customKeyboardHide = NO;
     self.toolView.textView.inputView = nil;
     self.toolView.tapGesture.enabled = NO;
+    self.toolView.emojiButton.selected = NO;
     [self.toolView.textView reloadInputViews];
     [self.toolView.textView becomeFirstResponder];
     [self.toolView.textView resignFirstResponder];
-
+    self.imagePicker = nil;
+    
     [self removeFromWindow];
 }
 
@@ -291,7 +288,8 @@ UITextViewDelegate
 
 - (PLVImagePickerController *)imagePicker {
     if (!_imagePicker) {
-        _imagePicker = [[PLVImagePickerController alloc] initWithMaxImagesCount:1 columnNumber:4 delegate:nil];
+        NSInteger columnNumber = [PLVSAUtils sharedUtils].isLandscape ? 8 : 4;
+        _imagePicker = [[PLVImagePickerController alloc] initWithMaxImagesCount:1 columnNumber:columnNumber delegate:nil];
         _imagePicker.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
         _imagePicker.showSelectBtn = YES;
         _imagePicker.allowTakeVideo = NO;

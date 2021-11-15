@@ -42,8 +42,8 @@
 
 #pragma mark - [ Life Cycle ]
 
-- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight {
-    self = [super initWithSheetHeight:sheetHeight];
+- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth {
+    self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
         [self.contentView addSubview:self.headerImageView];
         [self.contentView addSubview:self.actorLabel];
@@ -62,8 +62,9 @@
     [super layoutSubviews];
     
     BOOL specialType = [self isSpecialIdentityWithUserType:self.user.userType];
-    
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+    
     CGFloat width = self.contentView.frame.size.width;
     CGFloat buttonWidth = 44;
     CGFloat buttonHeight = 58;
@@ -72,14 +73,14 @@
     CGFloat buttonTop = self.bounds.size.height > 667 ? 32 : 18;
     CGFloat lineViewTop = 12;
     CGFloat lineViewMargin = 23.5;
-    
+
     if (isPad) {
         buttonPadding = 0.28 * (width - buttonWidth * buttonCount) / (buttonCount - 1);
         lineViewTop = 24;
         lineViewMargin = 56;
     }
    
-    self.headerImageView.frame = CGRectMake((width - 66) / 2, 17, 66, 66);
+    self.headerImageView.frame = CGRectMake((width - 66) / 2, isLandscape ? 32 :  17, 66, 66);
     
     CGFloat actorLabelWidth = [self.actorLabel sizeThatFits:CGSizeMake(width, 18)].width + 10;
     self.actorLabel.frame = CGRectMake((width - actorLabelWidth) / 2, CGRectGetMaxY(self.headerImageView.frame) - 18, actorLabelWidth, 18);

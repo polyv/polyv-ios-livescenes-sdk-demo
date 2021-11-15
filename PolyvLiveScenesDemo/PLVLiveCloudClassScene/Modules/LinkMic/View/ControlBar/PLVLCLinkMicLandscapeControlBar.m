@@ -152,6 +152,8 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         [self onOffButtonColorChange:PLVColor_OnOffButton_Red];
         
         [self textLabelContentChange:@"请求中..."];
+        
+        [self mediaControlButtonsShow:NO];
     }else if (status == PLVLCLinkMicControlBarStatus_Joined){ // 已连麦，显示相关的控制按钮
         [self onOffButtonRotate:YES];
         [self onOffButtonColorChange:PLVColor_OnOffButton_Red];
@@ -407,9 +409,12 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         weakSelf.textLabel.alpha = 0;
     } completion:^(BOOL finished) {
         weakSelf.textLabel.text = text;
-        [UIView animateWithDuration:(totalTime / 2.0) animations:^{
-            weakSelf.textLabel.alpha = 1;
-        }];
+        if (weakSelf.status != PLVLCLinkMicControlBarStatus_Joined) {
+            [UIView animateWithDuration:(totalTime / 2.0) animations:^{
+                weakSelf.textLabel.alpha = 1;
+            }completion:^(BOOL finished) {
+            }];
+        }
     }];
 }
 

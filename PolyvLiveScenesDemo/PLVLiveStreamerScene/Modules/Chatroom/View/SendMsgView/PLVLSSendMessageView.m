@@ -39,10 +39,6 @@
     [PLVImageManager manager].columnNumber = columnNumber;
 }
 
-- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    return UIInterfaceOrientationMaskLandscapeLeft | UIInterfaceOrientationMaskLandscapeRight;
-}
-
 @end
 
 @interface PLVLSSendMessageView ()<

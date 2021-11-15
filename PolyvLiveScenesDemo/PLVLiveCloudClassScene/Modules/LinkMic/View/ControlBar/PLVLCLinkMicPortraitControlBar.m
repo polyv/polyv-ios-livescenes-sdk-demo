@@ -548,9 +548,12 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         weakSelf.textLabel.alpha = 0;
     } completion:^(BOOL finished) {
         weakSelf.textLabel.text = text;
-        [UIView animateWithDuration:(totalTime / 2.0) animations:^{
-            weakSelf.textLabel.alpha = 1;
-        }];
+        if (weakSelf.status != PLVLCLinkMicControlBarStatus_Joined) {
+            [UIView animateWithDuration:(totalTime / 2.0) animations:^{
+                weakSelf.textLabel.alpha = 1;
+            }completion:^(BOOL finished) {
+            }];
+        }
     }];
 }
 

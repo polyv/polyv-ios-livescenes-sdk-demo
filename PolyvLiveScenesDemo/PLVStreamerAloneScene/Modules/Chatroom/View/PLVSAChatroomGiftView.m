@@ -122,7 +122,6 @@
     self.frame = self.originViewFrame;
 }
 
-
 #pragma mark Getter
 
 - (UIImageView *)backgroundImgView {

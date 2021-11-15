@@ -14,6 +14,8 @@
 
 @property (nonatomic, assign) UIEdgeInsets areaInsets;
 
+@property (nonatomic, assign) UIDeviceOrientation deviceOrientation; // 设备方向，缺省值为UIDeviceOrientationPortrait(竖屏）
+
 @end
 
 @implementation PLVSAUtils
@@ -25,12 +27,37 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         instance = [[PLVSAUtils alloc] init];
+        instance.deviceOrientation = UIDeviceOrientationPortrait;
     });
     return instance;
 }
 
 - (void)setupAreaInsets:(UIEdgeInsets)areaInsets {
     self.areaInsets = areaInsets;
+}
+
+- (void)setupDeviceOrientation:(UIDeviceOrientation)deviceOrientation {
+    self.deviceOrientation = deviceOrientation;
+}
+
+- (UIInterfaceOrientationMask)interfaceOrientationMask { // 屏幕的旋转，枚举值里面的 right/left 是以Home键方向为准的！和设备旋转是相反的！
+    if (self.deviceOrientation == UIDeviceOrientationLandscapeLeft) {
+        return  UIInterfaceOrientationMaskLandscapeRight;
+    } else if(self.deviceOrientation == UIDeviceOrientationLandscapeRight) {
+        return UIInterfaceOrientationMaskLandscapeLeft;
+    } else {
+        return UIInterfaceOrientationMaskPortrait;
+    }
+}
+
+- (UIInterfaceOrientation)interfaceOrientation { // 屏幕的旋转，枚举值里面的 right/left 是以Home键方向为准的！和设备旋转是相反的！
+    if (self.deviceOrientation == UIDeviceOrientationLandscapeLeft) {
+        return  UIInterfaceOrientationLandscapeRight;
+    } else if(self.deviceOrientation == UIDeviceOrientationLandscapeRight) {
+        return UIInterfaceOrientationLandscapeLeft;
+    } else {
+        return UIInterfaceOrientationPortrait;
+    }
 }
 
 + (void)showToastInHomeVCWithMessage:(NSString *)message {

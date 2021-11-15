@@ -48,6 +48,7 @@ PLVSALinkMicWindowsViewDelegate
     if (self.windowsView.superview == self) { // 开播后windowsView会被移到homeView上
         self.windowsView.frame = self.bounds;
     }
+    [self setBgImageViewImage]; // 设置背景图片，适配横竖屏
 }
 
 #pragma mark - [ Public Method ]
@@ -72,7 +73,6 @@ PLVSALinkMicWindowsViewDelegate
 - (UIImageView *)bgImageView {
     if (!_bgImageView) {
         _bgImageView = [[UIImageView alloc] init];
-        _bgImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_bg"];
     }
     return _bgImageView;
 }
@@ -83,6 +83,14 @@ PLVSALinkMicWindowsViewDelegate
         _windowsView.delegate = self;
     }
     return _windowsView;
+}
+
+- (void)setBgImageViewImage {
+    if ([PLVSAUtils sharedUtils].isLandscape) {
+        self.bgImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_bg_landscape"];
+    } else {
+        self.bgImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_bg"];
+    }
 }
 
 #pragma mark - [ Delegate ]
@@ -127,8 +135,14 @@ PLVSALinkMicWindowsViewDelegate
 
 - (void)linkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView didSelectOnlineUser:(PLVLinkMicOnlineUser *)onlineUser {
     // 显示连麦成员信息弹层
-    CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * 0.32;
-    PLVSALinkMicUserInfoSheet *linkMicUserSheet = [[PLVSALinkMicUserInfoSheet alloc] initWithSheetHeight:sheetHeight];
+    CGFloat heightScale = 0.32;
+    CGFloat widthScale = 0.37;
+    CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+    
+    CGFloat sheetHeight = maxWH * heightScale;
+    CGFloat sheetLandscapeWidth = maxWH * widthScale;
+    
+    PLVSALinkMicUserInfoSheet *linkMicUserSheet = [[PLVSALinkMicUserInfoSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     [linkMicUserSheet updateLinkMicUserInfoWithUser:onlineUser];
     [linkMicUserSheet showInView:[PLVSAUtils sharedUtils].homeVC.view];
     

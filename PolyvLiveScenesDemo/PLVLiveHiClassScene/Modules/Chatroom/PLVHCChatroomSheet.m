@@ -48,10 +48,6 @@
     [PLVImageManager manager].columnNumber = columnNumber;
 }
 
-- (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    return UIInterfaceOrientationMaskPortrait;
-}
-
 @end
 
 @interface PLVHCChatroomSheet()<

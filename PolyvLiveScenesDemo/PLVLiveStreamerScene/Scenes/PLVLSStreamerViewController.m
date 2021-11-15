@@ -129,7 +129,7 @@ PLVMemberPresenterDelegate
     self.linkMicAreaView.frame = CGRectMake(CGRectGetMaxX(self.documentAreaView.frame) + linkMicAreaViewLeftPadding, CGRectGetMaxY(self.statusAreaView.frame), linkMicAreaViewWidth, ducomentViewHeight);
         
     // 设置聊天室宽高
-    CGFloat chatroomAreaViewWidth = [UIScreen mainScreen].bounds.size.width * 0.34;
+    CGFloat chatroomAreaViewWidth = [UIScreen mainScreen].bounds.size.width * ([UIScreen mainScreen].bounds.size.width <= 667 ? 0.5 : 0.34); // 适配小屏输入框无法响应点击事件，chatroomAreaView内部适配聊天宽度
     CGFloat chatroomAreaViewHeigh = [UIScreen mainScreen].bounds.size.height * (isPad ? 0.28 : 0.42) + 44;
     
     self.chatroomAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, screenSize.height - PLVLSUtils.safeBottomPad - chatroomAreaViewHeigh, chatroomAreaViewWidth, chatroomAreaViewHeigh);

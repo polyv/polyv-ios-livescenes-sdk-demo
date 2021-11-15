@@ -166,8 +166,8 @@ static CGFloat kSAEmojiToolHeight = 40; //切换表情工具栏高度
     if (!_deleteButton) {
         _deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _deleteButton.layer.cornerRadius = 4.0;
-        _deleteButton.backgroundColor = PLV_UIColorFromRGB(@"#3E3E4E");;
-        [_deleteButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_emoji"] forState:UIControlStateNormal];
+        _deleteButton.backgroundColor = PLV_UIColorFromRGB(@"#3E3E4E");
+        [_deleteButton setImage:[PLVSAUtils imageForChatroomResource:@"plvsa_chatrrom_btn_emojiDelete"] forState:UIControlStateNormal];
         [_deleteButton addTarget:self action:@selector(deleteButtonTouchBegin)forControlEvents:UIControlEventTouchDown];
         [_deleteButton addTarget:self action:@selector(deleteButtonTouchEnd)forControlEvents:UIControlEventTouchUpInside];
         [_deleteButton addTarget:self action:@selector(deleteButtonTouchEnd)forControlEvents:UIControlEventTouchUpOutside];

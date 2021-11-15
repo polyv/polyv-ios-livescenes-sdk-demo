@@ -25,8 +25,23 @@ NS_ASSUME_NONNULL_BEGIN
 /// 主页控制器
 @property (nonatomic, weak) UIViewController *homeVC;
 
+/// 当前屏幕方向，根据setupDeviceOrientation:方法配置的值返回对应屏幕方向
+@property (nonatomic, assign, readonly) UIInterfaceOrientation interfaceOrientation;
+
+/// 当前屏幕方向，根据setupDeviceOrientation:方法配置的值返回对应屏幕方向
+@property (nonatomic, assign, readonly) UIInterfaceOrientationMask interfaceOrientationMask;
+
 /// 单例
 + (instancetype)sharedUtils;
+
+/// 设置屏幕安全距离
+/// @param areaInsets 安全距离
+- (void)setupAreaInsets:(UIEdgeInsets)areaInsets;
+
+/// 设置当前iPhone、iPad设备的屏幕的旋转方向，开播后不允许修改
+/// @note 用于在开播设置页中配置当前屏幕旋转方向，保证直播间旋转方向为用户开播前设置的方向。
+/// @param deviceOrientation 设备方向
+- (void)setupDeviceOrientation:(UIDeviceOrientation)deviceOrientation;
 
 /// 在主页显示自定义 toast
 /// @param message toast 文本
@@ -81,9 +96,6 @@ NS_ASSUME_NONNULL_BEGIN
          cancelActionBlock:(void(^ _Nullable)(void))cancelActionBlock
         confirmActionTitle:(NSString * _Nullable)confirmActionTitle
         confirmActionBlock:(void(^ _Nullable)(void))confirmActionBlock;
-
-
-- (void)setupAreaInsets:(UIEdgeInsets)areaInsets;
 
 + (UIImage *)imageForLiveroomResource:(NSString *)imageName;
 

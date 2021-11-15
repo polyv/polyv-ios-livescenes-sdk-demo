@@ -118,25 +118,22 @@
     }
 }
 
-- (void)showMoreViewOnSuperview:(UIView *)superview{
+- (void)showMoreViewOnSuperview:(UIView *)superview {
     [self removeFromSuperview];
     [superview addSubview:self];
     self.frame = superview.bounds;
     
     [self.superview bringSubviewToFront:self]; /// 保证在父视图中，层级最前
-    [self switchShowStatusWithAnimation];
+    if (!_moreViewShow) {
+        [self switchShowStatusWithAnimation];
+    }
 }
 
 //当屏幕旋转的时候需要重新设置superview 和 frame
 - (void)updateMoreViewOnSuperview:(UIView *)superview {
-    if (!_moreViewShow) return;
-    [self removeFromSuperview];
-    [superview addSubview:self];
-    
-    self.frame = superview.bounds;
-    [self.superview bringSubviewToFront:self]; /// 保证在父视图中，层级最前
-    _moreViewShow = NO;
-    [self switchShowStatusWithAnimation];
+    if (_moreViewShow) {
+        [self showMoreViewOnSuperview:superview];
+    }
 }
 
 - (void)switchShowStatusWithAnimation{

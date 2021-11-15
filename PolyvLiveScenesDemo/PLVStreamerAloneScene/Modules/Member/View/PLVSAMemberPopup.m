@@ -19,6 +19,12 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
     PLVSAMemberPopupButtonBanned
 };
 
+typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
+    PLVSAMemberPopupDirectionTop = 0,
+    PLVSAMemberPopupDirectionBottom,
+    PLVSAMemberPopupDirectionLeft
+};
+
 @interface PLVSAMemberPopup ()
 
 /// UI
@@ -28,7 +34,7 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
 @property (nonatomic, strong) PLVChatUser *chatUser;
 @property (nonatomic, assign) CGFloat centerY;
 @property (nonatomic, strong) NSArray *buttonTypeArray;
-@property (nonatomic, assign) BOOL above;
+@property (nonatomic, assign) PLVSAMemberPopupDirection popupDirection; //popup弹出的方向
 
 @end
 
@@ -109,23 +115,39 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
     if (isPad) {
         width += 30;
     }
-    CGFloat height = [self.buttonTypeArray count] * 44 + 10 * 2 + 9; // 44为每个按钮的高度，10为按钮与气泡的内部间隔
+    CGFloat height = [self.buttonTypeArray count] * 44 + 10 * 2; // 44为每个按钮的高度，10为按钮与气泡的内部间隔
 
     // 配置popup的frame和气泡形状的贝塞尔曲线
     CGFloat screenWidth = PLVScreenWidth;
     CGFloat screenHeight = PLVScreenHeight;
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
-    // 屏幕centerY以下位置不足以显示气泡，则气泡在centerY顶部，above为YES
-    self.above = (height > (screenHeight - self.centerY - bottom - 9 - 25)); // 25是centerY到气泡的Y轴距离，9是防止气泡底部贴着设备屏幕下沿
+    CGFloat top = [PLVSAUtils sharedUtils].areaInsets.top;
+    // 屏幕centerY以下位置不足以显示气泡，则气泡在centerY顶部，顶部不足以显示则在左侧显示
+    // 25是centerY到气泡的Y轴距离，9是防止气泡底部贴着设备屏幕下沿
+    if ((height < (screenHeight - self.centerY - bottom - 9 - 25))) {
+        height += 9;
+        self.popupDirection = PLVSAMemberPopupDirectionBottom;
+    } else if ((height < (self.centerY - top - 9 - 25))) {
+        height += 9;
+        self.popupDirection = PLVSAMemberPopupDirectionTop;
+    } else {
+        width += 9;
+        self.popupDirection = PLVSAMemberPopupDirectionLeft;
+    }
+    
     CGFloat originY = 0;
-    if (self.above) {
+    CGFloat leftMargin = isPad ? 32 : 9;
+    if (self.popupDirection == PLVSAMemberPopupDirectionTop) {
         originY = self.centerY - 25 - height;
         self.bezierPath = [[self class] aboveBezierPathWithSize:CGSizeMake(width, height)];
-    } else {
+    } else if (self.popupDirection == PLVSAMemberPopupDirectionBottom) {
         originY = self.centerY + 25;
         self.bezierPath = [[self class] belowBezierPathWithSize:CGSizeMake(width, height)];
+    } else {
+        originY = self.centerY - height/2;
+        leftMargin = 32 + 36;
+        self.bezierPath = [[self class] leftBezierPathWithSize:CGSizeMake(width, height)];
     }
-    CGFloat leftMargin = isPad ? 32 : 9;
     self.frame = CGRectMake(screenWidth - leftMargin - width, originY, width, height);
     CAShapeLayer *shapeLayer = [CAShapeLayer layer];
     shapeLayer.path = self.bezierPath.CGPath;
@@ -134,7 +156,7 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
 
 - (void)updateUI {
     CGFloat originX = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 25.0 : 10.0;
-    CGFloat originY = 10.0 + (self.above ? 0 : 9);
+    CGFloat originY = 10.0 + (self.popupDirection == PLVSAMemberPopupDirectionBottom ? 9 : 0);
     for (NSNumber *typeNumber in self.buttonTypeArray) {
         PLVSAMemberPopupButton buttonType = [typeNumber integerValue];
         
@@ -300,6 +322,36 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
     [bezierPath addQuadCurveToPoint:CGPointMake(0, size.height-conner) controlPoint:CGPointMake(0, size.height)];
     [bezierPath addLineToPoint:CGPointMake(0, conner + trangleHeight)];
     [bezierPath addQuadCurveToPoint:CGPointMake(conner, trangleHeight) controlPoint:CGPointMake(0, trangleHeight)];
+    
+    // 气泡绘制完毕，关闭贝塞尔曲线
+    [bezierPath closePath];
+    return bezierPath;
+}
+
++ (UIBezierPath *)leftBezierPathWithSize:(CGSize)size {
+    CGFloat conner = 8.0; // 圆角大小
+    CGFloat trangleHeight = 9.0; // 箭头高度
+    CGFloat trangleWidthForHalf = 5.0; // 箭头宽度的一半
+
+    UIBezierPath *bezierPath = [UIBezierPath bezierPath];
+    
+    // 从左上角开始，顺时针绘制气泡
+    [bezierPath moveToPoint:CGPointMake(conner, 0)];
+    [bezierPath addLineToPoint:CGPointMake(size.width-trangleHeight-conner, 0)];
+    [bezierPath addQuadCurveToPoint:CGPointMake(size.width-trangleHeight, conner) controlPoint:CGPointMake(size.width-trangleHeight, 0)];
+    [bezierPath addLineToPoint:CGPointMake(size.width-trangleHeight, size.height/2 - trangleWidthForHalf)];
+    
+    // 从上向下绘制箭头
+    [bezierPath addLineToPoint:CGPointMake(size.width, size.height/2)];
+    [bezierPath addLineToPoint:CGPointMake(size.width - trangleHeight, size.height/2 + trangleWidthForHalf)];
+    
+    // 继续顺时针绘制气泡
+    [bezierPath addLineToPoint:CGPointMake(size.width-trangleHeight, size.height- conner - trangleHeight)];
+    [bezierPath addQuadCurveToPoint:CGPointMake(size.width - conner-trangleHeight, size.height - trangleHeight) controlPoint:CGPointMake(size.width-trangleHeight, size.height - trangleHeight)];
+    [bezierPath addLineToPoint:CGPointMake(conner, size.height - trangleHeight)];
+    [bezierPath addQuadCurveToPoint:CGPointMake(0, size.height - conner - trangleHeight) controlPoint:CGPointMake(0, size.height - trangleHeight)];
+    [bezierPath addLineToPoint:CGPointMake(0, conner)];
+    [bezierPath addQuadCurveToPoint:CGPointMake(conner, 0) controlPoint:CGPointMake(0, 0)];
     
     // 气泡绘制完毕，关闭贝塞尔曲线
     [bezierPath closePath];

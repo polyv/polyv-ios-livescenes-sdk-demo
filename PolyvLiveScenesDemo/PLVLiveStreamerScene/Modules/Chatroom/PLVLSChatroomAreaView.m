@@ -62,10 +62,11 @@ PLVLSChatroomViewModelProtocol
 
 - (void)layoutSubviews {
     [super layoutSubviews];
+    
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat normalPadding = isPad ? 12 : 8;
 
-    CGFloat areaViewWidth = self.bounds.size.width;
+    CGFloat areaViewWidth = [UIScreen mainScreen].bounds.size.width * 0.34; // 支持小屏后，聊天室区域保持宽度34%不变
     CGFloat areaViewHeight = self.bounds.size.height;
     self.chatroomListView.frame = CGRectMake(normalPadding, 0, areaViewWidth - normalPadding, areaViewHeight - 36 - 8 * 2);
     self.hideListViewButton.frame = CGRectMake(normalPadding, areaViewHeight - normalPadding - 36, 36, 36);

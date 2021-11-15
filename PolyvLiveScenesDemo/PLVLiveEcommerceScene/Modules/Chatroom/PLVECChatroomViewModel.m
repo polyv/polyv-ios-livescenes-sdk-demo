@@ -110,10 +110,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (BOOL)sendSpeakMessage:(NSString *)content {
     PLVChatModel *model = [self.presenter sendSpeakMessage:content];
-    if (model) {
+    BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
+    if (sendSuccess) {
         [self addPublicChatModel:model];
     }
-    return model != nil;
+    return sendSuccess;
 }
 
 - (BOOL)sendGiftMessageWithData:(NSDictionary *)data tip:(NSString *)tip {

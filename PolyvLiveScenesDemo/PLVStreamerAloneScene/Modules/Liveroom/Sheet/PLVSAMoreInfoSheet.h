@@ -63,11 +63,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前 全体禁言 当前是否开启
 @property (nonatomic, assign) BOOL closeRoom;
 
-
-/// 初始化方法
-/// @param sheetHeight 弹层弹出高度
-- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight;
-
 /// 改变闪光灯按钮选中状态
 - (void)changeFlashButtonSelectedState:(BOOL)selectedState;
 

@@ -15,6 +15,7 @@
 
 static CGFloat kMaxHeightScale = 0.72;
 static CGFloat kMinHeightScale = 0.42;
+static CGFloat kMidWidthtScale = 0.49;
 
 static NSInteger kMaxLinkMicCount = 2; // 目前支持的最大连麦数（包括自己的RTC流）
 
@@ -41,7 +42,8 @@ PLVSAMemberCellDelegate
 #pragma mark - [ Life Cycle ]
 
 - (instancetype)initWithUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount {
-    self = [super initWithSheetHeight:kMinHeightScale * PLVScreenHeight];
+    CGFloat screenHeight = MAX(PLVScreenHeight, PLVScreenWidth);
+    self = [super initWithSheetHeight:kMinHeightScale * screenHeight sheetLandscapeWidth:kMidWidthtScale * screenHeight];
     if (self) {
         self.userList = userList;
         self.userCount = userCount;
@@ -96,11 +98,15 @@ PLVSAMemberCellDelegate
 }
 
 - (void)updateSheetHight {
-    CGFloat cellHeight = [PLVSAMemberCell cellHeight];
-    CGFloat screenHeight = PLVScreenHeight;
-    CGFloat mSheetHeight = cellHeight * [self.userList count] + self.headerView.bounds.size.height + [PLVSAUtils sharedUtils].areaInsets.bottom;
-    mSheetHeight = MAX(kMinHeightScale * screenHeight, MIN(kMaxHeightScale * screenHeight, mSheetHeight));
-    self.sheetHight = mSheetHeight;
+    if ([PLVSAUtils sharedUtils].landscape) {
+        self.sheetHight = PLVScreenHeight;
+    } else {
+        CGFloat cellHeight = [PLVSAMemberCell cellHeight];
+        CGFloat screenHeight = PLVScreenHeight;
+        CGFloat mSheetHeight = cellHeight * [self.userList count] + self.headerView.bounds.size.height + [PLVSAUtils sharedUtils].areaInsets.bottom;
+        mSheetHeight = MAX(kMinHeightScale * screenHeight, MIN(kMaxHeightScale * screenHeight, mSheetHeight));
+        self.sheetHight = mSheetHeight;
+    }
 }
 
 #pragma mark Getter & Setter

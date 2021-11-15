@@ -41,18 +41,23 @@
 #pragma mark - layout
 - (void)layoutSubviews {
     CGFloat originY = [PLVSAUtils sharedUtils].areaInsets.top;
-    
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    CGSize tipsImageViewSize = CGSizeMake(123, 85);
-    CGFloat tipsImageViewTop = originY + 220;
-    CGFloat tipsLableTop =  UIViewGetBottom(self.tipsImageView) + 24;
+    
     if (isPad) {
+        CGSize tipsImageViewSize = CGSizeMake(123, 85);
+        CGFloat tipsImageViewTop = originY + 220;
+        CGFloat tipsLableTop =  UIViewGetBottom(self.tipsImageView) + 24;
         tipsLableTop = CGRectGetHeight(self.bounds) / 2;
         tipsImageViewTop = tipsLableTop - 50 - tipsImageViewSize.height;
+        self.tipsImageView.frame = CGRectMake(0, tipsImageViewTop, tipsImageViewSize.width, tipsImageViewSize.height);
+        self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - 72 / 2, tipsLableTop, 72, 20);
+    } else {
+        CGFloat originX = [PLVSAUtils sharedUtils].areaInsets.left;
+        originY += [PLVSAUtils sharedUtils].isLandscape ? 131 : 220;
+        self.tipsImageView.frame = CGRectMake(originX, originY, 123, 85);
+        self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - 72 / 2, UIViewGetBottom(self.tipsImageView) + 24, 72, 20);
     }
     
-    self.tipsImageView.frame = CGRectMake(0, tipsImageViewTop, tipsImageViewSize.width, tipsImageViewSize.height);
-    self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - 72 / 2, tipsLableTop, 72, 20);
     self.closeButton.frame = CGRectMake(CGRectGetMidX(self.bounds) - 100 / 2, UIViewGetBottom(self.tipsLable) + 25, 100, 36);
     self.gradientLayer.frame = self.closeButton.bounds;
     

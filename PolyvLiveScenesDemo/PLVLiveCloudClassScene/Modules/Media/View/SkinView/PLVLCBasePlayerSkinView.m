@@ -194,8 +194,8 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         [self switchSkinViewLiveStatusTo:otherSkinView.skinViewLiveStatus];
         self.playButton.selected = otherSkinView.playButton.selected;
         self.floatViewShowButton.selected = otherSkinView.floatViewShowButton.selected;
-        if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewRotateScreen:)]) {
-            [self.baseDelegate plvLCBasePlayerSkinViewRotateScreen:self];
+        if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewSynchOtherView:)]) {
+            [self.baseDelegate plvLCBasePlayerSkinViewSynchOtherView:self];
         }
     }else{
         NSLog(@"PLVLCBasePlayerSkinView[%@] - synchOtherSkinViewState failed, other skin view:%@",NSStringFromClass(self.class),otherSkinView);

@@ -42,7 +42,7 @@ static CGFloat kLineHeight = 1.0;
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
+
     self.finishButton.frame = CGRectMake(0, 0, self.contentView.bounds.size.width, kButtonHeight);
     self.line.frame = CGRectMake(0, kButtonHeight, self.contentView.bounds.size.width, kLineHeight);
     self.cancelButton.frame = CGRectMake(0, kButtonHeight + kLineHeight, self.contentView.bounds.size.width, self.sheetHight - kLineHeight - kButtonHeight);

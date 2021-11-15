@@ -66,11 +66,15 @@
 #pragma mark - [ Override ]
 - (void)layoutSubviews {
     [super layoutSubviews];
-    CGFloat marginLeft = 8;
+    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL landscape = [PLVSAUtils sharedUtils].landscape;
+    
+    CGFloat marginLeft = landscape ? 36 : 8;
     CGFloat chatButtonWidth = 150;
     CGFloat chatButtonTop = 8;
 
-    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    
     if (isPad) {
         marginLeft = 24;
         chatButtonWidth = 220;

@@ -119,7 +119,12 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)plvLCBasePlayerSkinViewFullScreenOpenButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
-- (void)plvLCBasePlayerSkinViewRotateScreen:(PLVLCBasePlayerSkinView *)skinView;
+/// ‘当前皮肤视图’ 已同步 ‘其他皮肤视图’按钮状态的回调
+///
+/// @note 当调用 [synchOtherSkinViewState:] 方法成功时，将触发此回调方法；
+///
+/// @param skinView 当前 媒体播放器皮肤视图 对象本身 (注意：该参数非 [synchOtherSkinViewState:] 中的otherSkinView)
+- (void)plvLCBasePlayerSkinViewSynchOtherView:(PLVLCBasePlayerSkinView *)skinView;
 
 /// 询问是否有其他视图处理此次触摸事件
 ///

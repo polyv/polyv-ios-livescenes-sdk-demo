@@ -32,9 +32,8 @@
 
 
 #pragma mark - [ Life Cycle ]
-
-- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight {
-    self = [super initWithSheetHeight:sheetHeight];
+- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth {
+    self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
         [self initUI];
     }
@@ -56,10 +55,11 @@
     CGFloat buttonHeight = 36;
     CGFloat buttonY = 83;
     CGFloat contentViewWidth = self.contentView.bounds.size.width;
-    CGFloat padding = (contentViewWidth - self.optionsButtonArray.count * buttonWidth) / (self.optionsButtonArray.count + 1);
+    CGFloat paddingX = (contentViewWidth - self.optionsButtonArray.count * buttonWidth) / (self.optionsButtonArray.count + 1);
     // iPad时的中间和两边边距
     CGFloat middlePadding = 0;
     CGFloat margin = 0;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
     if (isPad) {
         titleLableLeft = 56;
@@ -67,14 +67,19 @@
         middlePadding = contentViewWidth * 0.052;
         margin = (contentViewWidth - middlePadding * (self.optionsButtonArray.count - 1) - buttonWidth * self.optionsButtonArray.count) / 2;
     }
-    
     self.titleLable.frame = CGRectMake(titleLableLeft, 32, 90, 18);
     
     for (int i = 0; i < self.optionsButtonArray.count; i ++) {
         UIButton *button = self.optionsButtonArray[i];
-        CGFloat buttonX = (i * buttonWidth) + (i + 1) * padding;
+        CGFloat buttonX = (i * buttonWidth) + (i + 1) * paddingX;
+        CGFloat paddingY = 24;
         if (isPad) {
             buttonX = (i * buttonWidth) + margin + (i * middlePadding);
+            paddingY = 88;
+        }
+        if (isLandscape) {
+            buttonX = titleLableLeft;
+            buttonY = CGRectGetMaxY(self.titleLable.frame) + 31 + (i * buttonHeight) + (i + 1) * paddingY;
         }
         button.frame = CGRectMake(buttonX , buttonY, buttonWidth, buttonHeight);
         

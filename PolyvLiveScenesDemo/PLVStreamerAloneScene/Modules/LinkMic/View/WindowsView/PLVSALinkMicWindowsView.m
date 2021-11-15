@@ -54,18 +54,33 @@ UICollectionViewDelegate
         self.collectionView.frame = self.bounds;
     } else {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
         CGFloat top = [PLVSAUtils sharedUtils].areaInsets.top;
+        CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
         CGFloat collectionViewTop = top + 78;
         CGFloat collectionViewHeight = 280;
+        CGFloat collectionViewBottom = 52 + bottom;
+        
         if (isPad) {
-            collectionViewTop = top + 92;
-            collectionViewHeight = 0.74 * self.bounds.size.width;
+            if (isLandscape) {
+                collectionViewTop = self.bounds.size.height / 4.0;
+                collectionViewHeight = self.bounds.size.height / 2.0;
+            } else {
+                collectionViewTop = top + 92;
+                collectionViewHeight = 0.74 * self.bounds.size.width;
+            }
+        } else {
+            if (isLandscape) {
+                collectionViewTop = top + 56;
+                collectionViewHeight = self.bounds.size.height- collectionViewTop - collectionViewBottom;
+            }
         }
         self.collectionView.frame = CGRectMake(0, collectionViewTop, self.bounds.size.width, collectionViewHeight);
     }
     
     self.collectionView.contentOffset = CGPointZero;
     [self.collectionView setCollectionViewLayout:self.collectionViewLayout animated:YES];
+    [self.collectionView.collectionViewLayout invalidateLayout];
 }
 
 #pragma mark - [ Public Method ]
@@ -210,7 +225,14 @@ UICollectionViewDelegate
         return self.bounds.size;
     } else {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat height = isPad ? 0.74 * self.bounds.size.width : 280;
+        BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+        CGFloat height = 280;
+        if (isLandscape) {
+            height = CGRectGetHeight(self.collectionView.frame);
+        }
+        if (isPad && !isLandscape) {
+            height = 0.74 * self.bounds.size.width;
+        }
         return CGSizeMake(self.bounds.size.width / 2.0, height);
     }
 }

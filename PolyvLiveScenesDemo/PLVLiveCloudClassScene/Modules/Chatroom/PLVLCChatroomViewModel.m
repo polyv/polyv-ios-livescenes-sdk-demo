@@ -189,27 +189,30 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (BOOL)sendSpeakMessage:(NSString *)content {
     PLVChatModel *model = [self.presenter sendSpeakMessage:content];
-    if (model) {
+    BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
+    if (sendSuccess) {
         [self addPublicChatModel:model];
         [self cacheDanmu:@[model]];
     }
-    return model != nil;
+    return sendSuccess;
 }
 
 - (BOOL)sendImageMessage:(UIImage *)image {
     PLVChatModel *model = [self.presenter sendImageMessage:image];
-    if (model) {
+    BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
+    if (sendSuccess) {
         [self addPublicChatModel:model];
     }
-    return model != nil;
+    return sendSuccess;
 }
 
 - (BOOL)sendImageEmotionId:(NSString *)imageId imageUrl:(NSString *)imageUrl   {
     PLVChatModel *model = [self.presenter sendImageEmotionId:imageId imageUrl:imageUrl];
-    if (model) {
+    BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
+    if (sendSuccess) {
         [self addPublicChatModel:model];
     }
-    return model != nil;
+    return sendSuccess;
 }
 
 - (void)sendLike {

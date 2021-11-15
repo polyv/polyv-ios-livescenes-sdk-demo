@@ -34,8 +34,8 @@
 
 #pragma mark - [ Life Cycle ]
 
-- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight {
-    self = [super initWithSheetHeight:sheetHeight];
+- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth{
+    self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
         [self.contentView addSubview:self.titleLabel];
         [self.contentView addSubview:self.cameraButton];
@@ -45,7 +45,6 @@
         [self.contentView addSubview:self.flashButton];
         [self.contentView addSubview:self.cameraBitRateButton];
         [self.contentView addSubview:self.closeRoomButton];
-        
     }
     return self;
 }
@@ -56,8 +55,10 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    CGFloat titleX = isPad ? 56 : 16;
-    CGFloat titleY =  self.bounds.size.height > 667 ? 32 : 18;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+    
+    CGFloat titleX = isPad ? 56 : (isLandscape ? 32 : 16);
+    CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
     
     [self setButtonFrameWithArray:@[self.cameraButton,
@@ -259,19 +260,25 @@
 
 - (void)setButtonFrameWithArray:(NSArray *)buttonArray {
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
-    CGFloat titleLabelMaxY =  ([UIScreen mainScreen].bounds.size.height > 667 ? 32 : 18) + 18;
-    CGFloat buttonX = 21.5;
-    CGFloat buttonY =  self.bounds.size.height > 667 ? CGRectGetMaxY(self.titleLabel.frame) + 12 : titleLabelMaxY + 10;
+    CGFloat titleLabelMaxY =  ((self.bounds.size.height > 667 || isLandscape) ? 32 : 18) + 18;
+    CGFloat buttonX = isLandscape ? 38 : 21.5;
+    CGFloat buttonY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : titleLabelMaxY + 10;
     CGFloat buttonImageHeight = 28;
     CGFloat buttonWidth = [self getMaxButtonWidthWithArray:buttonArray];
     CGFloat buttonHeight = buttonImageHeight + 12 +14;
-    CGFloat padding = (self.bounds.size.width - buttonX * 2 - buttonWidth * 5) / 4;
-    CGFloat margin = self.bounds.size.height > 667 ? 18 : 16;
+    CGFloat padding = 0;
+    if (isLandscape) {
+        padding = (self.sheetLandscapeWidth - buttonX * 2 - buttonWidth * 3) / 2;
+    } else {
+        padding = (self.bounds.size.width - buttonX * 2 - buttonWidth * 5) / 4;
+    }
+    CGFloat margin = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
     
     if (isPad) {
         buttonWidth = 88;
-        buttonX = (self.bounds.size.width - buttonWidth * 7) / 2;
+        buttonX = isLandscape ? (self.contentView.bounds.size.width -buttonWidth) / 2:(self.bounds.size.width - buttonWidth * 7) / 2;
         buttonY = CGRectGetMaxY(self.titleLabel.frame) + 24;
         padding = 0;
         if (buttonX < 0) {
@@ -290,15 +297,26 @@
         buttonHeight = MAX(titleSize.height + buttonImageHeight + 12, buttonHeight);
         
         // 换行
-        if (!isPad && i == 5) {
-            buttonX = 21.5;
-            buttonY += buttonHeight + margin;
+        if (isLandscape) {
+            if (isPad) {
+                buttonY += buttonHeight + margin;
+            }else if (i == 3 || i == 6) {
+                buttonX = 43;
+                buttonY += buttonHeight + margin;
+            }
+        } else {
+            if (!isPad && i == 5) {
+                buttonX = 21.5;
+                buttonY += buttonHeight + margin;
+            }
         }
         
         // frame
         button.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
         // buttonX
-        buttonX += buttonWidth + padding;
+        if (!(isPad && isLandscape)) {
+            buttonX += buttonWidth + padding;
+        }
     }
 }
 

@@ -59,17 +59,19 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
-    CGFloat marginTop = 8;
-    CGFloat marginX = 8;
-    CGFloat padding = 8;
-    
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL landscape = [PLVSAUtils sharedUtils].landscape;
+    
+    CGFloat marginTop = landscape ? 16 : 8;
+    CGFloat marginX = landscape ? 36 : 8;
+    CGFloat padding = 8;
+    CGFloat signalControlX = 0.0;
+    CGFloat signalControlY = 0.0;
+
     if (isPad) {
         marginTop = 16;
         marginX = 24;
     }
-    
     self.channelInfoButton.frame = CGRectMake(marginX, marginTop, 106, 36);
     
     CGFloat width = self.memberButton.frame.size.width;
@@ -79,8 +81,15 @@
 
     width = self.teacherNameButton.frame.size.width;
     self.teacherNameButton.frame = CGRectMake(marginX, CGRectGetMaxY(self.channelInfoButton.frame) + padding, width, 20);
-    
-    self.signalButton.frame = CGRectMake(self.bounds.size.width - 84 - marginX, CGRectGetMaxY(self.channelInfoButton.frame) + padding, 84, 20);
+        
+    if (landscape) {
+        signalControlX = self.bounds.size.width - 32 - marginX - 14 - 84;
+        signalControlY = 22;
+    } else {
+        signalControlX = self.bounds.size.width - 84 - marginX;
+        signalControlY = CGRectGetMaxY(self.channelInfoButton.frame) + padding;
+    }
+    self.signalButton.frame = CGRectMake(signalControlX, signalControlY, 84, 20);
 }
 
 #pragma mark - [ Public Method ]

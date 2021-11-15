@@ -64,11 +64,11 @@ PLVSAChatroomListViewDelegate
     if (self) {
         self.backgroundColor = [UIColor clearColor];
         
-        [self addSubview:self.welcomView];
-        
         [self addSubview:self.chatroomListView];
        
         [self.chatroomListView addSubview:self.receiveNewMessageView];
+        
+        [self addSubview:self.welcomView];
         
         [PLVSAChatroomViewModel sharedViewModel].delegate = self;
         
@@ -86,11 +86,15 @@ PLVSAChatroomListViewDelegate
     CGFloat areaViewWidth = self.bounds.size.width;
     CGFloat areaViewHeight = self.bounds.size.height;
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    CGFloat chatroomListViewLeft = isPad ? 24 : 8;
+    BOOL landscape = [PLVSAUtils sharedUtils].landscape;
+    
+    CGFloat chatroomListViewLeft = isPad ? 24 : (landscape ? 36 : 8);
     self.chatroomListView.frame = CGRectMake(chatroomListViewLeft, 0, areaViewWidth - chatroomListViewLeft, areaViewHeight);
     self.receiveNewMessageView.frame = CGRectMake(0, self.chatroomListView.frame.size.height - 28, 86, 24);
     
-    self.welcomView.frame = CGRectMake(0, CGRectGetMinY(self.chatroomListView.frame)-22-15, 258, 22);
+    self.welcomView.frame = CGRectMake(0, MAX(CGRectGetMinY(self.chatroomListView.frame)-22-15 , 0), 258, 22);
+    
+    _giftView.frame = CGRectMake(0, CGRectGetMinY(self.welcomView.frame)- 40 - 15, 270, 40);
 }
 
 #pragma mark - [ Public Method ]
@@ -149,8 +153,7 @@ PLVSAChatroomListViewDelegate
 
 - (PLVSAChatroomGiftView *)giftView {
     if (!_giftView) {
-        CGRect rect = CGRectMake(0, CGRectGetHeight(self.bounds)-335-P_SafeAreaBottomEdgeInsets(), 270, 40);
-        _giftView = [[PLVSAChatroomGiftView alloc] initWithFrame:rect];
+        _giftView = [[PLVSAChatroomGiftView alloc] init];
         [self addSubview:_giftView];
     }
     return _giftView;

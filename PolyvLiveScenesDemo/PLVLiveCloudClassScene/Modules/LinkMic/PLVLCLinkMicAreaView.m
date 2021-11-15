@@ -377,7 +377,8 @@ PLVLCLinkMicWindowsViewDelegate
 
 /// 连麦管理器的处理状态 发生改变
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter operationInProgress:(BOOL)inProgress{
-    [self.currentControlBar controlBarUserInteractionEnabled:!inProgress];
+    [self.landscapeControlBar controlBarUserInteractionEnabled:!inProgress];
+    [self.portraitControlBar controlBarUserInteractionEnabled:!inProgress];
 }
 
 /// 连麦在线用户数组 发生变化

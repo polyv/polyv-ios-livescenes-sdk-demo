@@ -137,15 +137,23 @@ PLVSAStreamerHomeViewDelegate
 #pragma mark - [ Override ]
 
 - (BOOL)shouldAutorotate {
-    return YES;
+    return !self.streamerPresenter.classStarted && _settingView.canAutorotate; // 只允许 未开播时在'设置页'使用'横竖屏按钮'设置屏幕旋转
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    return UIInterfaceOrientationMaskPortrait;
+    if (self.streamerPresenter.classStarted) { // 开播后 返回开播前设置好的屏幕方向
+        return [PLVSAUtils sharedUtils].interfaceOrientationMask;
+    } else { // 未开播 允许所有方向
+        return UIInterfaceOrientationMaskAll;
+    }
 }
 
 - (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
-    return UIInterfaceOrientationPortrait;
+    if (self.streamerPresenter.classStarted) { // 开播后 返回开播前设置好的屏幕方向
+        return [PLVSAUtils sharedUtils].interfaceOrientation;
+    } else { // 未开播 默认竖屏
+        return UIInterfaceOrientationPortrait;
+    }
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle{
@@ -156,7 +164,8 @@ PLVSAStreamerHomeViewDelegate
 
 /// 登出操作
 - (void)logout {
-    [self chatroomLogout];
+    [self socketLogout];
+    [PLVRoomLoginClient logout];
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerViewControllerLogout:)]) {
         [self.delegate streamerViewControllerLogout:self];
@@ -228,6 +237,7 @@ PLVSAStreamerHomeViewDelegate
 - (PLVSAStreamerFinishView *)finishView {
     if (!_finishView) {
         _finishView = [[PLVSAStreamerFinishView alloc] init];
+        _finishView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         __weak typeof(self) weakSelf = self;
         _finishView.finishButtonHandler = ^{
             [weakSelf logout];
@@ -267,11 +277,6 @@ PLVSAStreamerHomeViewDelegate
 }
 
 - (void)getEdgeInset {
-    if ([PLVSAUtils sharedUtils].hadSetAreaInsets) {
-        return;
-    }
-    
-    [PLVSAUtils sharedUtils].hadSetAreaInsets = YES;
     [PLVSAUtils sharedUtils].landscape = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (@available(iOS 11, *)) {
         [[PLVSAUtils sharedUtils] setupAreaInsets:self.view.safeAreaInsets];
@@ -357,6 +362,7 @@ PLVSAStreamerHomeViewDelegate
         if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) {
             NSString * tips = autoTry ? @"网络信号弱，持续检测中，请稍候再试" : @"网络检测中，请稍候";
             [PLVSAUtils showToastInHomeVCWithMessage:tips];
+            [self.settingView enableOrientationButton:autoTry];
             if (!autoTry) {
                 __weak typeof(self) weakSelf = self;
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -385,8 +391,9 @@ PLVSAStreamerHomeViewDelegate
         self.finishView.duration = self.streamerPresenter.pushStreamValidDuration;
         self.finishView.startTime = self.streamerPresenter.startPushStreamTimestamp;
         [self.streamerPresenter finishClass];
-        // 直播间关闭
-        [self chatroomLogout];
+        // 退出聊天室，资源释放、状态位清零
+        [PLVRoomLoginClient logout];
+        [[PLVSAChatroomViewModel sharedViewModel] clear];
         // 成员列表数据停止自动更新
         [self.memberPresenter stop];
         // 更新界面UI
@@ -394,14 +401,10 @@ PLVSAStreamerHomeViewDelegate
     })
 }
 
-#pragma mark chatroomLogout（退出登录页时调用）
+#pragma mark 断开socket（退出到登录页时调用）
 
-- (void)chatroomLogout {
-    // 直播间关闭
-    [PLVRoomLoginClient logout];
-    [[PLVSAChatroomViewModel sharedViewModel] clear];
+- (void)socketLogout { // 单独抽离的原因:调用后所有正在发送的socket消息会被中断，如'finishClass'、'OPEN_MICROPHONE'消息，导致直播间无法结束。
     [[PLVSocketManager sharedManager] logout];
-    
 }
 
 #pragma mark - [ Delegate ]
@@ -625,6 +628,8 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerSettingViewStartButtonClickWithResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
+    PLVBLinkMicStreamScale streamScale =[PLVSAUtils sharedUtils].isLandscape? PLVBLinkMicStreamScale16_9:PLVBLinkMicStreamScale9_16;
+    [self.streamerPresenter setupStreamScale:streamScale];
     [self.streamerPresenter setupStreamQuality:streamQuality];
     [self tryStartClass:NO];
 }

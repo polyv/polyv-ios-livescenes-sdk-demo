@@ -17,6 +17,8 @@
 
 @property (nonatomic, weak) id<PLVSAStreamerSettingViewDelegate> delegate;
 
+@property (nonatomic, assign, readonly) BOOL canAutorotate;
+
 /**
   是否禁用摄像头和镜像按钮
  
@@ -26,6 +28,9 @@
 
 /// 是否禁用镜像按钮
 - (void)enableMirrorButton:(BOOL)enable;
+
+/// 是否禁用横竖屏按钮
+- (void)enableOrientationButton:(BOOL)enable;
 
 @end
 

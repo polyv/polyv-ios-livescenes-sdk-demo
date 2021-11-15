@@ -64,6 +64,7 @@ UIPageViewControllerDelegate
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
         self.titleCollectionView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), kBarHeight);
         self.seperator.frame = CGRectMake(0, kBarHeight, CGRectGetWidth(self.view.bounds), kSeperatorHeight);
+        self.pageController.view.frame = CGRectMake(0, kBarHeight + kSeperatorHeight, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - kBarHeight - kSeperatorHeight);
     }
 }
 

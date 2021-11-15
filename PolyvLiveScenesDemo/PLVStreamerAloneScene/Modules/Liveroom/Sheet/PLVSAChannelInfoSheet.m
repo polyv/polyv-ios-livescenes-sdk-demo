@@ -26,8 +26,10 @@
 @property (nonatomic, strong) UILabel *sheetTitleLabel; // 弹层顶部标题
 @property (nonatomic, strong) UILabel *liveTitleLabel; // 直播名称标题
 @property (nonatomic, strong) UILabel *liveTitleContentLabel; // 直播名称内容
-@property (nonatomic, strong) UILabel *beginTimeLabel; // 开始时间
-@property (nonatomic, strong) UILabel *channelIdLabel; // 频道号
+@property (nonatomic, strong) UILabel *beginTimeTitleLabel; // 开始时间标题
+@property (nonatomic, strong) UILabel *beginTimeContentLabel; // 开始时间内容
+@property (nonatomic, strong) UILabel *channelIdTitleLabel; // 频道号标题
+@property (nonatomic, strong) UILabel *channelIdContentLabel; // 频道号内容
 @property (nonatomic, strong) UIButton *cloneChannelIdButton; // 复制频道号按钮
 
 @end
@@ -37,51 +39,72 @@
 
 #pragma mark - [ Life Cycle ]
 
-- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight {
-    self = [super initWithSheetHeight:sheetHeight];
+
+- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth {
+    self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
         [self.contentView addSubview:self.sheetTitleLabel];
         [self.contentView addSubview:self.liveTitleLabel];
         [self.contentView addSubview:self.liveTitleContentLabel];
-        [self.contentView addSubview:self.beginTimeLabel];
-        [self.contentView addSubview:self.channelIdLabel];
+        [self.contentView addSubview:self.beginTimeTitleLabel];
+        [self.contentView addSubview:self.beginTimeContentLabel];
+        [self.contentView addSubview:self.channelIdTitleLabel];
+        [self.contentView addSubview:self.channelIdContentLabel];
         [self.contentView addSubview:self.cloneChannelIdButton];
     }
     return self;
 }
 
-
-#pragma mark - [ Override ]
-
 - (void)layoutSubviews {
     [super layoutSubviews];
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-
-    CGFloat margin = isPad ? 56 : 30;
-    CGFloat xPadding = self.bounds.size.height > 667 ? 34 : 17;
-    CGFloat width = self.bounds.size.width - margin * 2;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
-    CGSize titleContentSize = [self.liveTitleContentLabel sizeThatFits:CGSizeMake(width - 50, CGFLOAT_MAX)];
-    if (titleContentSize.height <= 17) {
-        xPadding = 34;
-    }
+    CGFloat margin = isPad ? 56 : 30;
+    CGFloat xPadding = (self.bounds.size.height > 667 || isLandscape) ? 34 : 17;
+    CGFloat width = isLandscape ? self.sheetLandscapeWidth : self.bounds.size.width;
+    width -= margin * 2;
+    
+
     self.sheetTitleLabel.frame = CGRectMake(margin, xPadding, width, 20);
     
     CGSize size = [self.liveTitleLabel sizeThatFits:CGSizeMake(width, 20)];
     self.liveTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.sheetTitleLabel.frame) + 22, size.width, size.height);
     
-    
-    self.liveTitleContentLabel.frame = CGRectMake(CGRectGetMaxX(self.liveTitleLabel.frame), self.liveTitleLabel.frame.origin.y, titleContentSize.width, titleContentSize.height);
+    CGFloat contentLabelX = isLandscape ? self.liveTitleLabel.frame.origin.x : CGRectGetMaxX(self.liveTitleLabel.frame);
+    CGFloat contentLabelY = isLandscape ? CGRectGetMaxY(self.liveTitleLabel.frame) + 6 : self.liveTitleLabel.frame.origin.y;
+    CGFloat maxWidth = isLandscape ? width : width - self.liveTitleLabel.frame.size.width;
+    CGSize titleContentSize = [self.liveTitleContentLabel sizeThatFits:CGSizeMake(maxWidth, CGFLOAT_MAX)];
+    self.liveTitleContentLabel.frame = CGRectMake(contentLabelX, contentLabelY, titleContentSize.width, titleContentSize.height);
   
-    self.beginTimeLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.liveTitleContentLabel.frame) + 12, width, 20);
+    self.beginTimeTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.liveTitleContentLabel.frame) + 12, size.width, size.height);
+    contentLabelX = isLandscape ? self.beginTimeTitleLabel.frame.origin.x : CGRectGetMaxX(self.beginTimeTitleLabel.frame);
+    contentLabelY = isLandscape ? CGRectGetMaxY(self.beginTimeTitleLabel.frame) + 6 : self.beginTimeTitleLabel.frame.origin.y;
+    maxWidth = isLandscape ? width : width - self.beginTimeTitleLabel.frame.size.width;
+    self.beginTimeContentLabel.frame = CGRectMake(contentLabelX, contentLabelY, maxWidth, size.height);
     
-    size = [self.channelIdLabel sizeThatFits:CGSizeMake(width, 20)];
-    self.channelIdLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.beginTimeLabel.frame) + 16, size.width, size.height);
     
     CGFloat buttonWidth = isPad ? 80 : 50;
-    self.cloneChannelIdButton.frame = CGRectMake(CGRectGetMaxX(self.channelIdLabel.frame) + 12, self.channelIdLabel.frame.origin.y - 2, buttonWidth, 24);
-    self.cloneChannelIdButton.center = CGPointMake(self.cloneChannelIdButton.center.x, self.channelIdLabel.center.y);
+    size = [self.channelIdTitleLabel sizeThatFits:CGSizeMake(width, 20)];
+    self.channelIdTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.beginTimeContentLabel.frame) + 16, size.width, size.height);
+    contentLabelX = isLandscape ? self.channelIdTitleLabel.frame.origin.x : CGRectGetMaxX(self.channelIdTitleLabel.frame);
+    contentLabelY = isLandscape ? CGRectGetMaxY(self.channelIdTitleLabel.frame) + 6 : self.channelIdTitleLabel.frame.origin.y;
+    maxWidth = isLandscape ? width : width - self.channelIdTitleLabel.frame.size.width - buttonWidth;
+    size = [self.channelIdContentLabel sizeThatFits:CGSizeMake(maxWidth, 20)];
+    self.channelIdContentLabel.frame = CGRectMake(contentLabelX, contentLabelY, size.width, size.height);
+    
+    
+    self.cloneChannelIdButton.frame = CGRectMake(CGRectGetMaxX(self.channelIdContentLabel.frame) + 12, self.channelIdTitleLabel.frame.origin.y - 2, buttonWidth, 24);
+    self.cloneChannelIdButton.center = CGPointMake(self.cloneChannelIdButton.center.x, self.channelIdContentLabel.center.y);
 }
+
+#pragma mark - [ Override ]
+
+- (void)deviceOrientationDidChange {
+    [super deviceOrientationDidChange];
+    [self setNeedsLayout];
+}
+
 #pragma mark - [ Public Method ]
 
 - (void)updateChannelInfoWithData:(PLVRoomData *)roomData {
@@ -91,21 +114,22 @@
     }
     
     NSString *titleString = roomData.channelName;
-    if (!titleString || ![titleString isKindOfClass:[NSString class]]) {
+    if (![PLVFdUtil checkStringUseable:titleString]) {
         titleString = @"";
     }
         
     NSString *dateString = roomData.menuInfo.startTime;
-    
-    if (!dateString || ![dateString isKindOfClass:[NSString class]] || dateString.length == 0) {
+    if (![PLVFdUtil checkStringUseable:dateString]) {
         dateString = @"无";
     }
     
-    self.liveTitleLabel.text = @"直播名称：";
+    NSString *channelIdString = roomData.channelId;
+    if (![PLVFdUtil checkStringUseable:channelIdString]) {
+        channelIdString = @"无";
+    }
     self.liveTitleContentLabel.text = titleString;
-    
-    self.beginTimeLabel.attributedText = [self createAttributedStringWithTitle:@"开始时间：" content:dateString];
-    self.channelIdLabel.attributedText = [self createAttributedStringWithTitle:@"频道号：" content:roomData.channelId];
+    self.beginTimeContentLabel.text = dateString;
+    self.channelIdContentLabel.text = channelIdString;
 }
 
 #pragma mark - [ Private Method ]
@@ -135,6 +159,7 @@
         _liveTitleLabel = [[UILabel alloc] init];
         _liveTitleLabel.font = [UIFont systemFontOfSize:14];
         _liveTitleLabel.textColor = PLV_UIColorFromRGB(@"#AFAFAF");
+        _liveTitleLabel.text = @"直播名称：";
     }
     return _liveTitleLabel;
 }
@@ -149,22 +174,44 @@
     return _liveTitleContentLabel;
 }
 
-- (UILabel *)beginTimeLabel {
-    if (!_beginTimeLabel) {
-        _beginTimeLabel = [[UILabel alloc] init];
-        _beginTimeLabel.font = [UIFont systemFontOfSize:14];
-        _beginTimeLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+- (UILabel *)beginTimeTitleLabel {
+    if (!_beginTimeTitleLabel) {
+        _beginTimeTitleLabel = [[UILabel alloc] init];
+        _beginTimeTitleLabel.font = [UIFont systemFontOfSize:14];
+        _beginTimeTitleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+        _beginTimeTitleLabel.text = @"开始时间：";
     }
-    return _beginTimeLabel;
+    return _beginTimeTitleLabel;
 }
 
-- (UILabel *)channelIdLabel {
-    if (!_channelIdLabel) {
-        _channelIdLabel = [[UILabel alloc] init];
-        _channelIdLabel.font = [UIFont systemFontOfSize:14];
-        _channelIdLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+- (UILabel *)beginTimeContentLabel {
+    if (!_beginTimeContentLabel) {
+        _beginTimeContentLabel = [[UILabel alloc] init];
+        _beginTimeContentLabel.font = [UIFont systemFontOfSize:14];
+        _beginTimeContentLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+        _beginTimeContentLabel.numberOfLines = 0;
     }
-    return _channelIdLabel;
+    return _beginTimeContentLabel;
+}
+
+- (UILabel *)channelIdTitleLabel {
+    if (!_channelIdTitleLabel) {
+        _channelIdTitleLabel = [[UILabel alloc] init];
+        _channelIdTitleLabel.font = [UIFont systemFontOfSize:14];
+        _channelIdTitleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+        _channelIdTitleLabel.text = @"频道号：";
+    }
+    return _channelIdTitleLabel;
+}
+
+- (UILabel *)channelIdContentLabel {
+    if (!_channelIdContentLabel) {
+        _channelIdContentLabel = [[UILabel alloc] init];
+        _channelIdContentLabel.font = [UIFont systemFontOfSize:14];
+        _channelIdContentLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+        _channelIdContentLabel.numberOfLines = 0;
+    }
+    return _channelIdContentLabel;
 }
 
 - (UIButton *)cloneChannelIdButton {

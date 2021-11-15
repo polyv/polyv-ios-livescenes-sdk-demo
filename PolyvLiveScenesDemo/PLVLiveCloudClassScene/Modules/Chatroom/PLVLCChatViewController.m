@@ -99,7 +99,9 @@ UITableViewDataSource
             [self.keyboardToolView updateTextViewAndButton];
         }
         
-        [self refreshLikeButtonViewFrame];
+        if (![self currentIsFullScreen]) {
+            [self refreshLikeButtonViewFrame];
+        }
     }
 }
 
@@ -234,8 +236,7 @@ UITableViewDataSource
 }
 
 - (void)interfaceOrientationDidChange:(NSNotification *)notification {
-    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    if (!fullScreen) {
+    if (![self currentIsFullScreen]) {
         [self scrollsToBottom:NO];
     }
 }
@@ -309,6 +310,10 @@ UITableViewDataSource
 
 - (void)presentAlertController:(NSString *)message {
     [PLVAlbumTool presentAlertController:message inViewController:self];
+}
+
+- (BOOL)currentIsFullScreen {
+    return [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
 }
 
 #pragma mark - PLVRoomDataManagerProtocol

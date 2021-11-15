@@ -226,9 +226,6 @@ PLVRoomDataManagerProtocol
                 self.hideLinkMicAreaViewInSmallScreen = NO;
             }
         }
-        
-        [self.mediaAreaView.skinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
-        [self.liveRoomSkinView setFloatViewButtonWithShowStatus:showLinkMicAreaView];
     }
     
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
@@ -448,12 +445,7 @@ PLVRoomDataManagerProtocol
 
 - (void)interfaceOrientationDidChange:(NSNotification *)notification {
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    //iPad 屏幕旋转此方法会执行两次需要判断
-    if (isPad) {
-        //iPad 因为执行两次的时候第二次和第一次结果一样导致fullScreenDifferent为NO页面不刷新 暂时iPad特殊处理 -- 可能是因为iPad四个方向，iPhone只支持3个方向
-        self.fullScreenDifferent = YES;
-    } else {
+    if (!self.fullScreenDifferent) {
         self.fullScreenDifferent = (self.currentLandscape != fullScreen);
     }
     self.currentLandscape = fullScreen;

@@ -42,6 +42,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
 @property (nonatomic, strong) UIButton *mirrorButton;
 /// 清晰度
 @property (nonatomic, strong) UIButton *bitRateButton;
+/// 横竖屏切换
+@property (nonatomic, strong) UIButton *orientationButton;
 /// 直播名称
 @property (nonatomic, strong) UILabel *channelNameLable;
 /// 输入框蒙层（负责承载频道名称输入框和频道名称剩余可输入的字符数）
@@ -52,14 +54,16 @@ static NSString *const EnterTips = @"点击输入直播标题";
 @property (nonatomic, strong) UITextView *channelNameTextView;
 /// 清晰度选择面板
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
-
+/// 文本滚动视图（为了兼容手机端横屏标题太长时，显示不美观的问题）
+@property (nonatomic, strong) UIScrollView *scrollView;
 
 #pragma mark 数据
 @property (nonatomic, assign) CGFloat configViewHeight;
 @property (nonatomic, assign) CGFloat channelNameLableHeight;
-@property (nonatomic, assign) CGFloat channelNameTextViewHeight;
 /// 初始化时的默认清晰度
 @property (nonatomic, assign) PLVResolutionType resolutionType;
+/// 当前控制器是否可以进行屏幕旋转
+@property (nonatomic, assign) BOOL canAutorotate;
 
 @end
 
@@ -75,6 +79,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
         [self initChannelName];
         /// 根据需要选择默认清晰度（默认最高清晰度）
         [self initBitRate:[PLVRoomDataManager sharedManager].roomData.maxResolution];
+        // 初始化设备方向为 竖屏
+        [[PLVSAUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
         UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(endEditingAction:)];
         [self addGestureRecognizer:tapGes];
     }
@@ -121,31 +127,28 @@ static NSString *const EnterTips = @"点击输入直播标题";
     self.channelNameLableHeight = 26;
     
     [self addSubview:self.configView];
-    [self.configView addSubview:self.channelNameLable];
+    [self.configView addSubview:self.scrollView];
+    [self.scrollView addSubview:self.channelNameLable];
+    
     [self.configView addSubview:self.lineView];
     [self.configView addSubview:self.cameraReverseButton];
     [self.configView addSubview:self.mirrorButton];
     [self.configView addSubview:self.bitRateButton];
+    [self.configView addSubview:self.orientationButton];
 }
 
 - (void)updateUI {
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-
-    /// 输入框和标题文本高度适应
-    CGFloat textViewHeight = [self.channelNameTextView sizeThatFits:CGSizeMake(CGRectGetWidth(self.bounds) - 59, MAXFLOAT)].height;
-    CGFloat lableHeight = [self.channelNameLable sizeThatFits:CGSizeMake(CGRectGetWidth(self.configView.bounds) - 56, MAXFLOAT)].height;
-    self.configViewHeight += lableHeight - self.channelNameLableHeight;
-    self.channelNameLableHeight = lableHeight;
-    self.channelNameTextViewHeight = textViewHeight;
-    
     CGFloat originX = [PLVSAUtils sharedUtils].areaInsets.left;
     CGFloat originY = [PLVSAUtils sharedUtils].areaInsets.top;
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+
     
     CGFloat backButttonTop = originY + 9;
-    CGFloat startButtonBottom = bottom + 45;
+    CGFloat startButtonBottom = bottom + (isLandscape ? 16 : 45);
     CGFloat startButtonWidth = 328;
-    CGFloat configViewWidth = CGRectGetWidth(self.startButton.frame);
+    CGFloat configViewWidth = startButtonWidth;
     CGFloat channelNameLableLeft = 28;
     CGFloat lineViewLeft = 24;
     if (isPad) {
@@ -157,24 +160,44 @@ static NSString *const EnterTips = @"点击输入直播标题";
         lineViewLeft = 32;
     }
     
+    /// 标题文本高度适应
+    CGFloat lableHeight = [self.channelNameLable sizeThatFits:CGSizeMake(configViewWidth - channelNameLableLeft * 2, MAXFLOAT)].height;
+    self.configViewHeight += lableHeight - self.channelNameLableHeight;
+    self.channelNameLableHeight = lableHeight;
+    
     self.backButtton.frame = CGRectMake(originX + 24, backButttonTop, 36, 36);
-    self.startButton.frame = CGRectMake((CGRectGetWidth(self.bounds) - startButtonWidth) / 2.0, self.bounds.size.height - startButtonBottom - 50, startButtonWidth, 50);
-   
-    self.gradientLayer.frame = self.startButton.bounds;
     self.maskView.frame = self.bounds;
-    self.channelNameTextView.frame = CGRectMake(29.5, originY + CGRectGetHeight(self.bounds) / 4, CGRectGetWidth(self.bounds) - 59, self.channelNameTextViewHeight);
-    self.limitLable.frame = CGRectMake(UIViewGetRight(self.channelNameTextView) - 80 - 10, UIViewGetBottom(self.channelNameTextView) + 17 + 20, 80, 17);
+    /// 初始化时默认收起输入框
+    [self takeBackTextView];
+        
+    /// 开始直播按钮
+    self.startButton.frame = CGRectMake((CGRectGetWidth(self.bounds) - startButtonWidth) / 2.0, self.bounds.size.height - startButtonBottom - 50, startButtonWidth, 50);
+    self.gradientLayer.frame = self.startButton.bounds;
     
-    self.configView.frame = CGRectMake((CGRectGetWidth(self.bounds) - configViewWidth) / 2.0, UIViewGetTop(self.startButton) - 24 - self.configViewHeight, configViewWidth, self.configViewHeight);
+    /// 设置控件
+    CGFloat configViewHeight = isLandscape && !isPad ? 195 : self.configViewHeight;
+    self.configView.frame = CGRectMake((CGRectGetWidth(self.bounds) - configViewWidth) / 2.0, self.bounds.size.height - startButtonBottom - 50 - 24 - configViewHeight, configViewWidth, configViewHeight);
     
-    self.channelNameLable.frame = CGRectMake(channelNameLableLeft, 28, CGRectGetWidth(self.configView.bounds) - channelNameLableLeft * 2, self.channelNameLableHeight);
-    self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.channelNameLable) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
+    /// 频道名称 (手机端横屏状态时，最多显示两行文本)
+    CGFloat textHeight = self.channelNameLableHeight > 48 ? 51 : self.channelNameLableHeight;
+    CGFloat scrollViewHeight = isLandscape && !isPad ? textHeight : self.channelNameLableHeight;
+    self.scrollView.frame = CGRectMake(channelNameLableLeft, 28, configViewWidth - channelNameLableLeft * 2, scrollViewHeight);
+    self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.scrollView.frame), self.channelNameLableHeight);
+    self.channelNameLable.frame = CGRectMake(0, 0, CGRectGetWidth(self.scrollView.bounds), self.channelNameLableHeight);
+    
+    /// 分割线
+    self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.scrollView) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
+
+    /// 底部按钮
     CGSize buttonSize = CGSizeMake(32, 58);
     CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
-    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - buttonSize.width * 3 - 20) / 4 + 10;
-    self.mirrorButton.frame = CGRectMake((configViewWidth - buttonSize.width) / 2, buttonTop, buttonSize.width, buttonSize.height);
+    CGFloat orientationButtonOffsetWidth = 15.0;
+    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * 4 + orientationButtonOffsetWidth)) / 5;
     self.cameraReverseButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.bitRateButton.frame = CGRectMake(CGRectGetMaxX(self.configView.bounds) - buttonPadding - buttonSize.width, buttonTop, buttonSize.width, buttonSize.height);
+    self.mirrorButton.frame = CGRectMake(UIViewGetRight(self.cameraReverseButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.bitRateButton.frame = CGRectMake(UIViewGetRight(self.mirrorButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width + orientationButtonOffsetWidth, buttonSize.height);
+
 }
 
 /// 初始化默认清晰度
@@ -189,6 +212,25 @@ static NSString *const EnterTips = @"点击输入直播标题";
     NSString *channelName = [PLVRoomDataManager sharedManager].roomData.channelName;
     self.channelNameLable.text = channelName;
     self.channelNameTextView.text = channelName;
+}
+
+/// 收起输入框
+- (void)takeBackTextView {
+    CGFloat textViewX = [PLVSAUtils sharedUtils].landscape ? 136 : 29.5;
+    CGFloat textViewWidth = CGRectGetWidth(self.bounds) - textViewX * 2;
+    self.channelNameTextView.frame = CGRectMake(textViewX, CGRectGetHeight(self.bounds), textViewWidth, 50);
+    self.limitLable.frame = CGRectMake(UIViewGetRight(self.channelNameTextView) - 80 - 10, UIViewGetBottom(self.channelNameTextView) + 17 + 20, 80, 17);
+}
+
+/// 弹出输入框
+- (void)popupTextView:(CGFloat)keyboardY {
+    /// 根据键盘高度设置输入框的坐标
+    CGFloat paddingY = 12;
+    CGFloat textViewX = [PLVSAUtils sharedUtils].landscape ? 136 : 29.5;
+    CGFloat textViewWidth = CGRectGetWidth(self.bounds) - textViewX * 2;
+    CGFloat textViewHeight = [self.channelNameTextView sizeThatFits:CGSizeMake(textViewWidth, MAXFLOAT)].height;
+    self.channelNameTextView.frame = CGRectMake(textViewX, keyboardY - textViewHeight - 17 - paddingY, textViewWidth, textViewHeight);
+    self.limitLable.frame = CGRectMake(UIViewGetRight(self.channelNameTextView) - 80 - 10, keyboardY - 4 - 17, 80, 17);
 }
 
 - (UIButton *)buttonWithTitle:(NSString *)title NormalImageString:(NSString *)normalImageString selectedImageString:(NSString *)selectedImageString {
@@ -245,6 +287,11 @@ static NSString *const EnterTips = @"点击输入直播标题";
         default:
             break;
     }
+}
+
+- (void)showConfigView:(BOOL)show {
+    self.configView.hidden = !show;
+    self.maskView.hidden = show;
 }
 
 #pragma mark Getter & Setter
@@ -331,6 +378,15 @@ static NSString *const EnterTips = @"点击输入直播标题";
     return _bitRateButton;
 }
 
+- (UIButton *)orientationButton {
+    if (!_orientationButton) {
+        _orientationButton = [self buttonWithTitle:@"横竖屏" NormalImageString:@"plvsa_liveroom_btn_orientation" selectedImageString:@"plvsa_liveroom_btn_orientation"];
+        [_orientationButton addTarget:self action:@selector(orientationAction:) forControlEvents:UIControlEventTouchUpInside];
+        _orientationButton.imageEdgeInsets = UIEdgeInsetsMake(0,10,25,10);
+    }
+    return _orientationButton;
+}
+
 - (UILabel *)channelNameLable {
     if (!_channelNameLable) {
         _channelNameLable = [[UILabel alloc]init];
@@ -381,12 +437,23 @@ static NSString *const EnterTips = @"点击输入直播标题";
     return _lineView;
 }
 
+- (UIScrollView *)scrollView {
+    if (!_scrollView) {
+        _scrollView = [[UIScrollView alloc] init];
+        _scrollView.showsVerticalScrollIndicator = NO;
+    }
+    return _scrollView;
+}
+
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat scale = isPad ? 0.233 : 0.285;
-        CGFloat sheetHeight = [UIScreen mainScreen].bounds.size.height * scale;
-        _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight];
+        CGFloat heightScale = isPad ? 0.233 : 0.285;
+        CGFloat widthScale = 0.23;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
         [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:self.resolutionType];
         _bitRateSheet.delegate = self;
     }
@@ -430,6 +497,16 @@ static NSString *const EnterTips = @"点击输入直播标题";
     [self.bitRateSheet showInView:self];
 }
 
+- (void)orientationAction:(UIButton *)sender {
+    sender.selected = !sender.selected;
+    self.canAutorotate = YES;
+    UIDeviceOrientation orientation = sender.selected ? UIDeviceOrientationLandscapeLeft : UIDeviceOrientationPortrait;
+    [PLVFdUtil changeDeviceOrientation:orientation];
+    self.canAutorotate = NO;
+    // 缓存设备方向
+    [[PLVSAUtils sharedUtils] setupDeviceOrientation:orientation];
+}
+
 
 - (void)startEditingAction:(UITapGestureRecognizer *)tap {
     double newLength = [self calculateTextLengthWithString:self.channelNameTextView.text];
@@ -471,11 +548,10 @@ static NSString *const EnterTips = @"点击输入直播标题";
     CGFloat lableHeight = [self.channelNameLable sizeThatFits:CGSizeMake(self.channelNameLable.frame.size.width, MAXFLOAT)].height;
     self.configViewHeight += lableHeight - self.channelNameLableHeight;
     self.channelNameLableHeight = lableHeight;
-    self.channelNameTextViewHeight = textViewHeight;
 
     CGRect rect = self.channelNameTextView.frame;
-    self.channelNameTextView.frame = CGRectMake(rect.origin.x, rect.origin.y, rect.size.width, self.channelNameTextViewHeight);
-    self.limitLable.frame = CGRectMake(UIViewGetRight(self.channelNameTextView) - 80 - 10, UIViewGetBottom(self.channelNameTextView) + 17 + 20, 80, 17);
+    CGFloat offsetHeight = textViewHeight - rect.size.height;
+    self.channelNameTextView.frame = CGRectMake(rect.origin.x, rect.origin.y - offsetHeight, rect.size.width, textViewHeight);
 }
 
 - (void)textViewDidEndEditing:(UITextView *)textView {
@@ -506,13 +582,13 @@ static NSString *const EnterTips = @"点击输入直播标题";
 #pragma mark - [ Event ]
 #pragma mark Notification
 - (void)keyboardWillShow:(NSNotification *)notification {
-    self.maskView.hidden = NO;
-    self.configView.hidden = YES;
+    [self showConfigView:NO];
+    CGFloat keyboardY = [notification.userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue].origin.y;
+    [self popupTextView:keyboardY];
 }
 
 - (void)keyboardWillHide:(NSNotification *)notification {
-    self.maskView.hidden = YES;
-    self.configView.hidden = NO;
+    [self showConfigView:YES];
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     if (isPad) {
@@ -521,8 +597,9 @@ static NSString *const EnterTips = @"点击输入直播标题";
     } else {
         self.configView.frame = CGRectMake(UIViewGetLeft(self.startButton), UIViewGetTop(self.startButton) - 24 - self.configViewHeight, CGRectGetWidth(self.startButton.frame), self.configViewHeight);
     }
-
-    self.channelNameLable.frame = CGRectMake(28, 28, CGRectGetWidth(self.configView.bounds) - 56, self.channelNameLableHeight);
+    
+    self.channelNameLable.frame = CGRectMake(0, 0, CGRectGetWidth(self.scrollView.bounds), self.channelNameLableHeight);
+    [self takeBackTextView];
 }
 
 #pragma mark - [ Public Method ]
@@ -533,6 +610,10 @@ static NSString *const EnterTips = @"点击输入直播标题";
 
 - (void)enableMirrorButton:(BOOL)enable{
     self.mirrorButton.enabled = enable;
+}
+
+- (void)enableOrientationButton:(BOOL)enable{
+    self.orientationButton.enabled = enable;
 }
 
 @end
