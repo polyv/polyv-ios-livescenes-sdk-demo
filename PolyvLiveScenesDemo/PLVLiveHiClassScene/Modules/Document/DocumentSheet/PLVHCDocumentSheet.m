@@ -178,8 +178,8 @@ UIDocumentPickerDelegate
 
 - (void)documentListView:(PLVHCDocumentListView *)documentListView didSelectItemModel:(PLVDocumentModel *)model {
     if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(documentSheet:didSelectModel:)]) {
-        [self.delegate documentSheet:self didSelectModel:model];
+        [self.delegate respondsToSelector:@selector(documentSheet:didSelectAutoId:)]) {
+        [self.delegate documentSheet:self didSelectAutoId:model.autoId];
     }
 }
 

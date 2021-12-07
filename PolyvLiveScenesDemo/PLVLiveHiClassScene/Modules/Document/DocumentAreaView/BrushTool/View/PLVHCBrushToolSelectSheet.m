@@ -28,8 +28,8 @@
 @property (nonatomic, strong) UIButton *clearButton; // 清除画面
 
 #pragma mark 数据
-/// 当前身份是否为讲师 (讲师比学生多了一个移动工具，在layoutSubviews中控制显示、隐藏)
-@property (nonatomic, assign, getter=isTeacher) BOOL teacher;
+/// 是否显示移动工具 (讲师或组长比学生多了一个移动工具，在layoutSubviews中控制显示、隐藏)
+@property (nonatomic, assign) BOOL showMoveTool;
 
 @end
 
@@ -53,18 +53,17 @@
     CGFloat toolItemY = 4;
     CGFloat toolItemX = toolItemY;
     CGFloat margin = 8;
-    CGFloat subViewsCount = self.subviews.count;
+    CGFloat subViewsCount = self.showMoveTool ? 7 : 6;;
     CGFloat subViwesWidth = (toolWidth * subViewsCount + (margin * (subViewsCount - 1)));
-    CGFloat buttonCount = self.isTeacher ? 7 : 6;
     
     // 小屏适配
     if (selfSize.width < subViwesWidth) {
         margin = 4;
-        toolWidth = (selfSize.width - margin * (buttonCount - 1) ) / buttonCount;
+        toolWidth = (selfSize.width - margin * (subViewsCount - 1) ) / subViewsCount;
         toolItemY = (selfSize.height - toolWidth) / 2;
     }
     
-    if (self.isTeacher) { // 讲师才有移动工具
+    if (self.showMoveTool) { // 讲师、组长才有移动工具
         self.moveButton.frame = CGRectMake(toolItemX, toolItemY, toolWidth, toolWidth);
         self.choiceButton.frame = CGRectMake(CGRectGetMaxX(self.moveButton.frame) + margin, toolItemY, toolWidth, toolWidth);
     } else {
@@ -118,11 +117,19 @@
     [self buttonAction:button localTouch:NO];
 }
 
+- (void)updateLayout {
+    plv_dispatch_main_async_safe(^{
+        [self setNeedsLayout];
+        [self layoutIfNeeded];
+    })
+}
+
 #pragma mark - [ Private Method ]
 #pragma mark Getter
 
-- (BOOL)isTeacher {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+- (BOOL)showMoveTool {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ||
+    [PLVHiClassManager sharedManager].currentUserIsGroupLeader; // 讲师、组长才有移动工具
 }
 
 #pragma mark setupUI
@@ -211,7 +218,7 @@
         return;
     }
     
-    if (!self.isTeacher &&
+    if (!self.showMoveTool &&
         type == PLVHCBrushToolTypeMove) {
         return;
     }

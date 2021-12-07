@@ -63,6 +63,7 @@ typedef NS_ENUM(NSUInteger, PLVLCLinkMicControlBarType) {
 #pragma mark 状态
 @property (nonatomic, assign) BOOL switchCameraButtonFront; // ’切换前后置摄像头按钮‘ 的当前前后置状态值 (NO:当前后置 YES:当前前置)
 @property (nonatomic, assign) BOOL mediaControlButtonsShow; // 媒体控制按钮当前是否显示
+@property (nonatomic, assign) BOOL cameraButtonEnable; // 摄像头按钮当前是否可点击(NO:当前分屏模式下视频连麦不可点击 YES：当前可点击)
 @property (nonatomic, assign) PLVLCLinkMicControlBarStatus status; // 当前连麦控制栏的状态
 
 #pragma mark 数据

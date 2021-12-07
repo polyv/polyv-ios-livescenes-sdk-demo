@@ -8,12 +8,12 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVPhotoCollectionViewCell.h"
-#import "PLVPhotoPreViewController.h"
+#import "PLVAlbumPhotoPreViewController.h"
 #import "PLVAlbumsViewController.h"
 
 @protocol PLVPickerControllerDelegate;
 
-@interface PLVPickerController : UIViewController <UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UINavigationControllerDelegate, PHPhotoLibraryChangeObserver, PLVPhotoCollectionViewCellDelegate, PLVPhotoPreViewControllerDelegate, PLVAlbumsViewControllerDelegate>
+@interface PLVPickerController : UIViewController <UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UINavigationControllerDelegate, PHPhotoLibraryChangeObserver, PLVPhotoCollectionViewCellDelegate, PLVAlbumPhotoPreViewControllerDelegate, PLVAlbumsViewControllerDelegate>
 
 @property (nonatomic, assign) id<PLVPickerControllerDelegate> delegate;
 @property (nonatomic, assign) CGFloat collectionFooterHeight;

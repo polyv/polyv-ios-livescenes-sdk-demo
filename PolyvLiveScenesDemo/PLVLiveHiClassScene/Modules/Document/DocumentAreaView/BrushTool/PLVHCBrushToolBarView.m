@@ -67,9 +67,8 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    UIEdgeInsets areaInsets = [PLVHCUtils sharedUtils].areaInsets;
-    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
     
+    CGFloat superViewHeight = self.superview.bounds.size.height;
     CGFloat buttonWidth = 36;
     CGFloat middleWidth = 0;
     CGFloat padding = 14;
@@ -82,8 +81,8 @@
     width = buttonWidth * 2 + middleWidth + padding;
     
     CGSize selfSize = CGSizeMake(width, 36);
-    CGFloat brushToolX = self.screenSafeWidth - selfSize.width + areaInsets.left;
-    CGFloat brushToolY = screenHeight - selfSize.height - areaInsets.bottom - 20;
+    CGFloat brushToolX = self.screenSafeWidth - selfSize.width - 36 - 14;
+    CGFloat brushToolY = superViewHeight - selfSize.height - 20;
     self.frame = CGRectMake(brushToolX, brushToolY, selfSize.width, selfSize.height);
     
     self.revokeButton.frame = CGRectMake(0, 0, buttonWidth, buttonWidth);
@@ -135,8 +134,17 @@
     BOOL deleteStatus = PLV_SafeBoolForDictKey(dict, @"deleteStatus");
     self.revokeButton.enabled = undoStatus;
     self.showDeleteButton = deleteStatus;
-    
-    [self setNeedsLayout];
+    plv_dispatch_main_async_safe(^{
+        [self setNeedsLayout];
+    })
+}
+
+- (void)setScreenSafeWidth:(CGFloat)screenSafeWidth {
+    _screenSafeWidth = screenSafeWidth;
+    plv_dispatch_main_async_safe(^{
+        [self setNeedsLayout];
+        [self layoutIfNeeded];
+    })
 }
 
 #pragma mark - [ Private Methods ]
@@ -206,7 +214,9 @@
     
     self.showColorButton = showColorButton;
     self.showDeleteButton = showDeleteButton;
-    [self setNeedsLayout];
+    plv_dispatch_main_async_safe(^{
+        [self setNeedsLayout];
+    })
 }
 
 #pragma mark - [ Event ]

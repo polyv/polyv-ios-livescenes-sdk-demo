@@ -60,7 +60,8 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 /// 用于切换文档时更新文档缩略图
 /// @param autoId 文档autoId
 /// @param imageUrls 文档页面缩略图
-- (void)documentView_changeWithAutoId:(NSUInteger)autoId imageUrls:(NSArray *)imageUrls;
+/// @param fileName 文档名称（存在fileName时，表示续播）
+- (void)documentView_changeWithAutoId:(NSUInteger)autoId imageUrls:(NSArray *)imageUrls fileName:(NSString *)fileName;
 
 /// 文档、白板页码变化的回调
 /// @param autoId 文档autoId
@@ -71,6 +72,12 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
                                 pageNumber:(NSUInteger)pageNumber
                                  totalPage:(NSUInteger)totalPage
                                    pptStep:(NSUInteger)step;
+
+/// app在直播过程中如果异常退出，可继续上次的直播，但需要获取上次直播文档
+/// @param autoId 文档autoId
+/// @param pageNumber 文档当前页码
+- (void)documentView_continueClassWithAutoId:(NSUInteger)autoId
+                                  pageNumber:(NSUInteger)pageNumber;
 
 @end
 
@@ -121,7 +128,12 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 
 /// 【观看回放时】加载回放PPT
 /// @param vid 回放视频的vid
-- (void)pptStart:(NSString *)vid;
+- (void)pptStart:(NSString *)vid DEPRECATED_MSG_ATTRIBUTE("已废弃，请使用pptStartWithVideoId:roomId:");
+
+/// 【观看回放时】加载回放PPT
+/// @param videoId 回放视频的videoId(请求'直播回放视频的信息'接口返回的视频Id，与后台回放列表看到的vid不是同一个数据；可在PLVPlayerPresenter类访问videoId属性得到)
+/// @param channelId 频道Id
+- (void)pptStartWithVideoId:(NSString *)videoId channelId:(NSString *)channelId;
 
 #pragma mark - 推流专用方法(scene == PLVDocumentViewSceneStreamer 时方生效）
 

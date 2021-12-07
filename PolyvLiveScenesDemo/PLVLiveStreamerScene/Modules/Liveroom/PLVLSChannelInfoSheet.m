@@ -16,6 +16,7 @@
 #import <WebKit/WebKit.h>
 
 static CGFloat kTopViewHeight = 100.0; // 频道信息摘要视图高度
+static CGFloat kTopViewWidth = 350.0; // 频道信息摘要视图宽度
 
 @interface PLVLSChannelInfoSheet ()<
 WKNavigationDelegate
@@ -31,7 +32,6 @@ WKNavigationDelegate
 /// 数据
 @property (nonatomic, copy) NSString *content; // 直播简介文本
 @property (nonatomic, copy) NSMutableArray *imageArray;
-@property (nonatomic, assign) CGFloat kTopViewWidth;// 频道信息摘要视图宽度
 
 @end
 
@@ -63,12 +63,12 @@ WKNavigationDelegate
     
     CGFloat sheetTitleLabelLeftPadding = sidePad + 28;
     CGFloat topViewLeftPadding = 20;
-    self.kTopViewWidth = 350.0;
+    CGFloat topViewWidth = kTopViewWidth;
     if (isPad) {
         sheetTitleLabelLeftPadding = sidePad;
         topViewLeftPadding = 0;
         // 宽度适中，太窄显示不全文字，太宽会有横向滚动
-        self.kTopViewWidth = (CGRectGetWidth(self.frame) - CGRectGetMinX(self.webView.frame) * 2 - 100);
+        topViewWidth = (CGRectGetWidth(self.frame) - CGRectGetMinX(self.webView.frame) * 2 - 100);
     }
     
     self.sheetTitleLabel.frame = CGRectMake(sheetTitleLabelLeftPadding, 12, self.bounds.size.width - sheetTitleLabelLeftPadding * 2, 40);
@@ -76,7 +76,7 @@ WKNavigationDelegate
     
     CGFloat webViewOriginY = CGRectGetMaxY(self.splitLine.frame);
     self.webView.frame = CGRectMake(sidePad, webViewOriginY, self.bounds.size.width - sidePad * 2, self.sheetHight - webViewOriginY);
-    self.topView.frame = CGRectMake(topViewLeftPadding, 0, self.kTopViewWidth, kTopViewHeight);
+    self.topView.frame = CGRectMake(topViewLeftPadding, 0, topViewWidth, kTopViewHeight);
 }
 
 #pragma mark - Getter
@@ -180,7 +180,7 @@ WKNavigationDelegate
         self.content = [content stringByReplacingOccurrencesOfString:@"<img src=\"//" withString:@"<img src=\"https://"];
     }
     
-    NSString *htmlContent = [NSString stringWithFormat:@"<html>\n<body style=\" position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d; color:%@;\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script><div style=\"height:%fpx; width:%fpx;\"> </div>%@</body></html>", leftPadding, rightPadding, verticalPadding, verticalPadding, fontSize, fontColor,kTopViewHeight,self.kTopViewWidth,self.content]; // 图片自适应设备宽，设置字体大小、边距;在webview顶部插入空白view
+    NSString *htmlContent = [NSString stringWithFormat:@"<html>\n<body style=\" position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d; color:%@;\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script><div style=\"height:%fpx; width:%fpx;\"> </div>%@</body></html>", leftPadding, rightPadding, verticalPadding, verticalPadding, fontSize, fontColor,kTopViewHeight,kTopViewWidth,self.content]; // 图片自适应设备宽，设置字体大小、边距;在webview顶部插入空白view
     
     [self.webView loadHTMLString:htmlContent baseURL:[NSURL URLWithString:@""]];
 }
@@ -216,21 +216,6 @@ WKNavigationDelegate
 #pragma mark - WKNavigationDelegate
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation; {
-    // 在webview顶部插入空白view
-    NSString *appendDiv = [NSString stringWithFormat:@"\
-                        var appendDiv = document.getElementById(\"AppAppendDIV\");\
-                        if (appendDiv) {\
-                            appendDiv.style.height = %@+\"px\";\
-                        } else {\
-                            var appendDiv = document.createElement(\"div\");\
-                            appendDiv.setAttribute(\"id\",\"AppAppendDIV\");\
-                            appendDiv.style.width=%@+\"px\";\
-                            appendDiv.style.height=%@+\"px\";\
-                            document.body.prepend(appendDiv);\
-                        }\
-                        ", @(kTopViewHeight), @(self.kTopViewWidth), @(kTopViewHeight)];
-    [self.webView evaluateJavaScript:appendDiv completionHandler:nil];
-    
     // 滚到顶部
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 *NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         //延迟设置offset，不然不准确

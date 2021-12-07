@@ -95,7 +95,6 @@
     [self windowCellCornerShow:fullScreen];
 }
 
-
 #pragma mark - [ Public Methods ]
 - (void)setModel:(PLVLinkMicOnlineUser *)userModel{
     // 设置

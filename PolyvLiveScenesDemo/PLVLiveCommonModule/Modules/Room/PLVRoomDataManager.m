@@ -18,12 +18,10 @@ extern NSString *PLVRoomDataKeyPathPlaying;
 extern NSString *PLVRoomDataKeyPathChannelInfo;
 extern NSString *PLVRoomDataKeyPathMenuInfo;
 extern NSString *PLVRoomDataKeyPathLiveState;
-extern NSString *PLVRoomDataKeyPathHiClassStatus;
 
 @interface PLVRoomDataManager ()
 
 @property (nonatomic, strong) PLVRoomData *roomData;
-@property (nonatomic, strong) NSTimer *scTimer;
 
 @end
 
@@ -67,7 +65,6 @@ extern NSString *PLVRoomDataKeyPathHiClassStatus;
 
 - (void)removeRoomData {
     PLV_LOG_INFO(PLVConsoleLogModuleTypeRoom, @"%s", __FUNCTION__);
-    [self stopSCTimer];
     [self removeAllDelegates];
     [self removeRoomDataObserver];
     self.roomData = nil;
@@ -91,44 +88,7 @@ extern NSString *PLVRoomDataKeyPathHiClassStatus;
     });
 }
 
-#pragma mark - [ Private ]
-
-/// 创建请求【讲师是否在别处登录】接口定时器
-- (void)startSCTimer {
-    if (!self.roomData.inHiClassScene ||
-        self.roomData.roomUser.viewerType != PLVRoomUserTypeTeacher ||
-        self.roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
-        return;
-    }
-    
-    self.scTimer = [NSTimer scheduledTimerWithTimeInterval:10.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(scTimerEvent:) userInfo:nil repeats:YES];
-    [[NSRunLoop currentRunLoop] addTimer:self.scTimer forMode:NSRunLoopCommonModes];
-    [self.scTimer fire];
-}
-
-- (void)stopSCTimer {
-    [_scTimer invalidate];
-    _scTimer = nil;
-}
-
 #pragma mark - [ Event ]
-
-#pragma mark Timer
-
-/// 非上课时，讲师身份每隔10秒请求验证讲师是否在别处登录
-- (void)scTimerEvent:(NSTimer *)timer {
-    if (!self.roomData.inHiClassScene ||
-        self.roomData.roomUser.viewerType != PLVRoomUserTypeTeacher ||
-        self.roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
-        [self stopSCTimer];
-        return;
-    }
-    __weak typeof(self) weakSelf = self;
-    [PLVLiveVClassAPI teacherReloginVerifyWithLessonId:self.roomData.lessonInfo.lessonId
-                                               relogin:^(NSString * _Nonnull errorDesc) {
-        [weakSelf notifyDelegatesDidHiClassTeacherRelogin:errorDesc];
-    } success:nil failure:nil];
-}
 
 #pragma mark KVO
 
@@ -141,7 +101,6 @@ extern NSString *PLVRoomDataKeyPathHiClassStatus;
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathChannelInfo options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathLiveState options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
-    [self.roomData.lessonInfo addObserver:self forKeyPath:PLVRoomDataKeyPathHiClassStatus options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)removeRoomDataObserver {
@@ -153,12 +112,10 @@ extern NSString *PLVRoomDataKeyPathHiClassStatus;
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathChannelInfo];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathLiveState];
-    [self.roomData.lessonInfo removeObserver:self forKeyPath:PLVRoomDataKeyPathHiClassStatus];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    if (![object isKindOfClass:[PLVRoomData class]] &&
-        ![object isKindOfClass:[PLVLessonInfoModel class]]) {
+    if (![object isKindOfClass:[PLVRoomData class]]) {
         return;
     }
     PLV_LOG_DEBUG(PLVConsoleLogModuleTypeRoom, @"observeValueForKeyPath (keyPath:%@)", keyPath);
@@ -178,10 +135,6 @@ extern NSString *PLVRoomDataKeyPathHiClassStatus;
         [self notifyDelegatesDidMenuInfoChanged:self.roomData.menuInfo];
     } else if ([keyPath isEqualToString:PLVRoomDataKeyPathLiveState]) {
         [self notifyDelegatesDidLiveStateChanged:self.roomData.liveState];
-    } else if ([keyPath isEqualToString:PLVRoomDataKeyPathHiClassStatus]) {
-        if (self.roomData.lessonInfo.hiClassStatus != PLVHiClassStatusInClass) {
-            [self startSCTimer];
-        }
     }
 }
 
@@ -232,12 +185,6 @@ extern NSString *PLVRoomDataKeyPathHiClassStatus;
 - (void)notifyDelegatesDidLiveStateChanged:(PLVChannelLiveStreamState)liveState {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate roomDataManager_didLiveStateChanged:liveState];
-    });
-}
-
-- (void)notifyDelegatesDidHiClassTeacherRelogin:(NSString *)msg {
-    dispatch_async(multicastQueue, ^{
-        [self->multicastDelegate roomDataManager_didHiClassTeacherRelogin:msg];
     });
 }
 

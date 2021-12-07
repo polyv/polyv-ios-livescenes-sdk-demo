@@ -3,7 +3,7 @@
 //  PLVCloudClassStreamerModul
 //
 //  Created by MissYasiky on 2019/10/17.
-//  Copyright © 2019 easefun. All rights reserved.
+//  Copyright © 2019 PLV. All rights reserved.
 //
 
 #import "PLVLSDocumentDeleteView.h"

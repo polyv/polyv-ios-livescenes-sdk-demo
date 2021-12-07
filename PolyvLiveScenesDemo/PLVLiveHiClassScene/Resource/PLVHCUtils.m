@@ -13,6 +13,8 @@
 @interface PLVHCUtils ()
 
 @property (nonatomic, assign) UIEdgeInsets areaInsets;
+/// 当前屏幕方向，缺省值为UIInterfaceOrientationLandscapeRight
+@property (nonatomic, assign) UIInterfaceOrientation interfaceOrientation;
 
 @end
 
@@ -25,12 +27,20 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         instance = [[PLVHCUtils alloc] init];
+        instance.interfaceOrientation = UIInterfaceOrientationLandscapeRight;
     });
     return instance;
 }
 
 - (void)setupAreaInsets:(UIEdgeInsets)areaInsets {
     self.areaInsets = areaInsets;
+}
+
+- (void)setupInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation {
+    if (interfaceOrientation == UIInterfaceOrientationLandscapeRight ||
+        interfaceOrientation == UIInterfaceOrientationLandscapeLeft) { // 主视图只支持左右旋转，避免其他方向污染
+        self.interfaceOrientation = interfaceOrientation;
+    }
 }
 
 #pragma mark Toast

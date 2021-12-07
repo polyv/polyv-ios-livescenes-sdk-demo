@@ -3,7 +3,7 @@
 //  PLVLiveStreamerDemo
 //
 //  Created by ftao on 2019/11/13.
-//  Copyright © 2019 easefun. All rights reserved.
+//  Copyright © 2019 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

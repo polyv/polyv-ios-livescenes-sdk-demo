@@ -76,6 +76,10 @@
     [self.pptWebview pptStart:vid];
 }
 
+- (void)pptStartWithVideoId:(NSString *)videoId channelId:(NSString *)channelId {
+    [self.pptWebview pptStartWithVideoId:videoId channelId:channelId];
+}
+
 - (void)pptPlay:(long)currentTime {
     [self.pptWebview pptPlay:currentTime];
 }

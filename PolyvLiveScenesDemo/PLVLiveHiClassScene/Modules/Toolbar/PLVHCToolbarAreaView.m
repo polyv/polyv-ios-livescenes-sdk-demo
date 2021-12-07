@@ -10,6 +10,10 @@
 
 //工具类
 #import "PLVHCUtils.h"
+
+// UI
+#import "PLVHCGroupLeaderGuidePagesView.h"
+
 // 模块
 #import "PLVRoomDataManager.h"
 
@@ -37,6 +41,9 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
 @property (nonatomic, strong) UILabel *countdownLabel;
 //学生举手持续时间
 @property (nonatomic, strong) dispatch_source_t raiseHandTimer;
+/// 组长
+// 呼叫老师 视图
+@property (nonatomic, strong) UIImageView *callingTeacherImageView;
 
 ///教师端
 //上下课按钮
@@ -66,6 +73,8 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
 @property (nonatomic, assign) PLVRoomUserType viewerType;
 //讲师统计举手数量每次举手动画结束后清零
 @property (nonatomic, assign) NSInteger raiseHandCount;
+///工具栏状态缓存，用于移除组长后恢复视图
+@property (nonatomic, assign) PLVHCToolbarViewStatus toolbarStatusCache;
 
 @end
 
@@ -85,6 +94,18 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
 - (void)layoutSubviews {
     [super layoutSubviews];
     [self updateLayoutByStatus:_toolbarStatus];
+}
+
+#pragma mark - [ Override ]
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *view = [super hitTest:point withEvent:event];
+    if (view == self.backgroundView ||
+        [view isKindOfClass:[UIImageView class]] ||
+        [view isKindOfClass:[UIButton class]]) {
+        return view;
+    }
+    return nil;
 }
 
 #pragma mark - Getter && Setter
@@ -138,6 +159,7 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     }
     return _raiseHandButton;
 }
+
 
 - (UIButton *)classButton {
     if (!_classButton) {
@@ -237,6 +259,31 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     return _backgroundView;
 }
 
+- (UIImageView *)callingTeacherImageView {
+    if (!_callingTeacherImageView) {
+        _callingTeacherImageView = [[UIImageView alloc] init];
+        _callingTeacherImageView.bounds = CGRectMake(0, 0, KPLVHCToolButtonSize, KPLVHCToolButtonSize);
+        _callingTeacherImageView.image = [PLVHCUtils imageForToolbarResource:@"plvhc_toolbar_callingteacher_normal"];
+        // 呼叫老师 动画数据
+        NSMutableArray *imageArray = [NSMutableArray arrayWithCapacity:3];
+        for (NSInteger index = 0; index < 3; index ++) {
+            NSString *imageName = [NSString stringWithFormat:@"plvhc_toolbar_callingteacher_0%ld", (long)index];
+            UIImage *image = [PLVHCUtils imageForToolbarResource:imageName];
+            if (image) {
+                [imageArray addObject:image];
+            }
+        }
+        _callingTeacherImageView.animationImages = imageArray;
+        _callingTeacherImageView.animationDuration = 0.9; // 0.3s/帧」
+        _callingTeacherImageView.animationRepeatCount = 0;
+        _callingTeacherImageView.hidden = YES;
+        _callingTeacherImageView.userInteractionEnabled = YES;
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(callingTeacherTapAction)];
+        [_callingTeacherImageView addGestureRecognizer:tapGesture];
+    }
+    return _callingTeacherImageView;
+}
+
 - (void)setToolbarStatus:(PLVHCToolbarViewStatus)toolbarStatus {
     _toolbarStatus = toolbarStatus;
     if (_toolbarStatus == PLVHCToolbarViewStatusTeacherPreparing) {
@@ -245,6 +292,11 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
         [self.classButton setImage:[PLVHCUtils imageForToolbarResource:@"plvhc_toolbar_finishclass_normal"] forState:UIControlStateNormal];
     }
     [self updateLayoutByStatus:toolbarStatus];
+    // 缓存非分组状态，用于从分组恢复到大房间
+    if (toolbarStatus != PLVHCToolbarViewStatusIsGroupLeader &&
+        toolbarStatus != PLVHCToolbarViewStatusStudentInGroup) {
+        self.toolbarStatusCache = toolbarStatus;
+    }
 }
 
 #pragma mark - [ Public Methods ]
@@ -270,6 +322,7 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
 
 - (void)clear {
     [self destroyTimer];
+    [self stopCallingTeacherAnimating];
 }
 
 - (void)toolbarAreaViewRaiseHand:(BOOL)raiseHand
@@ -307,6 +360,36 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     }
 }
 
+- (void)startGroup {
+    [self clear];
+    [self stopRaiseHandCountdown];
+    [self clearAllButtonSelected];
+    
+    if ([PLVHiClassManager sharedManager].currentUserIsGroupLeader) {
+        self.toolbarStatus = PLVHCToolbarViewStatusIsGroupLeader;
+        [PLVHCGroupLeaderGuidePagesView showGuidePagesViewinView:[PLVHCUtils sharedUtils].homeVC.view endBlock:nil];
+    } else {
+        self.toolbarStatus = PLVHCToolbarViewStatusStudentInGroup;
+    }
+}
+
+- (void)finishGroup {
+    [self clear];
+    [self stopRaiseHandCountdown];
+    [self clearAllButtonSelected];
+    
+    self.toolbarStatus = self.toolbarStatusCache;
+}
+
+- (void)setCallingTeacherButtonEnable:(BOOL)enable {
+    if (enable) {
+        [self startCallingTeacherAnimating];
+    } else {
+        [self stopCallingTeacherAnimating];
+    }
+    
+}
+
 #pragma mark - [ Private Methods ]
 
 - (void)setupUI {
@@ -316,6 +399,7 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     [self addSubview:self.classButton];
     [self addSubview:self.documentButton];
     [self addSubview:self.memberButton];
+    [self addSubview:self.callingTeacherImageView];
     [self.raiseHandButton addSubview:self.countdownLabel];
     [self addSubview:self.raiseHandRemindImageView];
     [self.raiseHandRemindImageView addSubview:self.raiseHandRemindLabel];
@@ -326,15 +410,15 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     self.viewerType = roomData.roomUser.viewerType;
     if (self.viewerType == PLVRoomUserTypeSCStudent) {
-        if (roomData.lessonInfo.hiClassStatus == PLVHiClassStatusNotInClass) {
+        if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusNotInClass) {
             self.toolbarStatus = PLVHCToolbarViewStatusStudentPreparing;
-        } else if (roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
+        } else if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass) {
             self.toolbarStatus = PLVHCToolbarViewStatusStudentInClass;
         } else {
             self.toolbarStatus = PLVHCToolbarViewStatusStudentPreparing;
         }
     } else {
-        if (roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
+        if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass) {
             self.toolbarStatus = PLVHCToolbarViewStatusTeacherInClass;
         } else {
             self.toolbarStatus = PLVHCToolbarViewStatusTeacherPreparing;
@@ -352,8 +436,10 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     self.classButton.hidden = YES;
     self.documentButton.hidden = YES;
     self.memberButton.hidden = YES;
+    self.callingTeacherImageView.hidden = YES;
     switch (status) {
-        case PLVHCToolbarViewStatusStudentPreparing: {
+        case PLVHCToolbarViewStatusStudentPreparing:
+        case PLVHCToolbarViewStatusStudentInGroup: {
             self.chatButton.hidden = NO;
             self.settingButton.hidden = NO;
             self.chatButton.center = CGPointMake(CGRectGetWidth(self.bounds) - KPLVHCToolButtonSize/2, CGRectGetHeight(self.bounds)/2 - 5 - KPLVHCToolButtonSize/2);
@@ -387,6 +473,20 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
             self.raiseHandRemindImageView.center = CGPointMake(self.settingButton.center.x - KPLVHCToolButtonSize - 14, self.memberButton.center.y);
         }
             break;
+        case PLVHCToolbarViewStatusIsGroupLeader: {
+            self.chatButton.hidden = NO;
+            self.settingButton.hidden = NO;
+            self.documentButton.hidden = NO;
+            self.memberButton.hidden = NO;
+            self.callingTeacherImageView.hidden = NO;
+            self.memberButton.center = CGPointMake(CGRectGetWidth(self.bounds) - KPLVHCToolButtonSize/2, CGRectGetHeight(self.bounds)/2);
+            //向上偏移
+            self.documentButton.center = CGPointMake(self.memberButton.center.x, self.memberButton.center.y - KPLVHCToolButtonSize - itemSpacing);
+            self.callingTeacherImageView.center = CGPointMake(self.memberButton.center.x, self.documentButton.center.y - KPLVHCToolButtonSize - itemSpacing);
+            //向下偏移
+            self.chatButton.center = CGPointMake(self.memberButton.center.x, self.memberButton.center.y + KPLVHCToolButtonSize + itemSpacing);
+            self.settingButton.center = CGPointMake(self.memberButton.center.x, self.chatButton.center.y + KPLVHCToolButtonSize + itemSpacing);
+        }
         default:
             break;
     }
@@ -477,8 +577,28 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
 - (void)stopRaiseHandCountdown {
     [self.raiseHandRemindImageView stopAnimating];
     self.raiseHandRemindImageView.hidden = YES;
+    
     self.raiseHandCount = 0;
+    
+    self.raiseHandButton.userInteractionEnabled = YES;
+    self.raiseHandButton.selected = NO;
+    
+    self.countdownLabel.text = @"";
+    self.countdownLabel.hidden = YES;
+    
     [self destroyTimer];
+}
+
+- (void)startCallingTeacherAnimating {
+    if (!self.callingTeacherImageView.isAnimating) {
+        [self.callingTeacherImageView startAnimating];
+    }
+}
+
+- (void)stopCallingTeacherAnimating {
+    if (self.callingTeacherImageView.isAnimating) {
+        [self.callingTeacherImageView stopAnimating];
+    }
 }
 
 ///销毁倒计时定时器
@@ -503,6 +623,20 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     }
 }
 
+- (void)notifyDelegateCallingTeacher {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(toolbarAreaView_CallingTeacher:)]) {
+        [self.delegate toolbarAreaView_CallingTeacher:self];
+    }
+}
+
+- (void)notifyDelegateCancelCallingTeacher {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(toolbarAreaView_CancelCallingTeacher:)]) {
+        [self.delegate toolbarAreaView_CancelCallingTeacher:self];
+    }
+}
+
 #pragma mark - [ Event ]
 
 #pragma mark Gesture
@@ -516,6 +650,16 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     [self memberAction:self.memberButton];
 }
 
+- (void)callingTeacherTapAction {
+    if (!self.callingTeacherImageView.isAnimating) {
+        [self startCallingTeacherAnimating];
+        [self notifyDelegateCallingTeacher];
+    } else {
+        [self stopCallingTeacherAnimating];
+        [self notifyDelegateCancelCallingTeacher];
+    }
+}
+
 #pragma mark Action
 
 - (void)settingAction:(UIButton *)sender {
@@ -527,6 +671,7 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
         [self.delegate toolbarAreaView:self settingButtonSelected:sender.isSelected];
     }
 }
+
 - (void)chatAction:(UIButton *)sender {
     BOOL isSelected = sender.isSelected;
     [self clearSelectedBySelectedButton:sender];

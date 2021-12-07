@@ -795,7 +795,7 @@
     NSIndexPath *indexPath = [self.collectionView indexPathForCell:cell];
     NSInteger index = [self indexOfIndexPath:indexPath];
     if (index >= 0 && index < self.photoCount) {
-        PLVPhotoPreViewController *preVC = [[PLVPhotoPreViewController alloc] init];
+        PLVAlbumPhotoPreViewController *preVC = [[PLVAlbumPhotoPreViewController alloc] init];
         preVC.delegate = self;
         preVC.title = [NSString stringWithFormat:NSLocalizedString(@"preview", nil), (int)index + 1, (int)self.photoCount];
         preVC.photos = self.photos;
@@ -823,8 +823,8 @@
     });
 }
 
-//============PLVPhotoPreViewControllerDelegate============
-- (void)PLVPhotoPreViewController:(PLVPhotoPreViewController*)preVC select:(NSUInteger)index {
+//============PLVAlbumPhotoPreViewControllerDelegate============
+- (void)PLVAlbumPhotoPreViewController:(PLVAlbumPhotoPreViewController*)preVC select:(NSUInteger)index {
     NSIndexPath *indexPath = [self indexPathForRow:index];
     [self didSelectItemAtIndexPath:indexPath];
 }

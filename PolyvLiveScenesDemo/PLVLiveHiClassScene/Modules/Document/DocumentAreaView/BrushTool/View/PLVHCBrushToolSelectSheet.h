@@ -53,6 +53,8 @@ typedef NS_ENUM(NSInteger, PLVHCBrushToolType) {
 /// @param applianceType 画笔工具类型
 - (void)updateBrushToolApplianceType:(PLVContainerApplianceType)applianceType;
 
+- (void)updateLayout;
+
 @end
 
 NS_ASSUME_NONNULL_END

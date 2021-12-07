@@ -165,6 +165,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///加载图片表情
 - (void)loadImageEmotions;
 
+/// 切换聊天室房间时调用，用于清空原有的聊天消息，并重新加载历史聊天消息
+- (void)changeRoom;
+
 @end
 
 NS_ASSUME_NONNULL_END

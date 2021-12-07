@@ -13,6 +13,7 @@
 
 //模块
 #import "PLVLinkMicOnlineUser.h"
+#import "PLVRoomDataManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
@@ -61,6 +62,7 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
 #pragma mark 数据
 @property (nonatomic, strong) PLVLinkMicOnlineUser *currentUser;//当前展示的user
 @property (nonatomic, assign) BOOL localPreviewUser;//当前预览用户，只有未在上课，才会有设备预览用户
+@property (nonatomic, assign) BOOL isSelf; // 当前用户是否为自己
 
 @end
 
@@ -244,6 +246,10 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
     return _gradientLayer;
 }
 
+- (BOOL)isSelf {
+    return [self.currentUser.userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId] || self.localPreviewUser;
+}
+
 - (void)setOnlineUser:(PLVLinkMicOnlineUser *)currentUser {
     if (![currentUser isKindOfClass:[PLVLinkMicOnlineUser class]]) {
         return;
@@ -259,6 +265,8 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
     if (PLV_SafeStringForValue(currentUser.nickname)) {
         if (currentUser.userType == PLVSocketUserTypeTeacher) {
             labelText = [NSString stringWithFormat:@"讲师-%@",currentUser.nickname];
+        } else if ([[PLVHiClassManager sharedManager].groupLeaderId isEqualToString:currentUser.userId]) {
+            labelText = [NSString stringWithFormat:@"组长-%@",currentUser.nickname];
         } else {
             labelText = currentUser.nickname;
         }
@@ -346,18 +354,25 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
     self.cameraSwitchView.hidden = YES;
     [showItemViews addObject:self.micView];
     [showItemViews addObject:self.cameraView];
-    if (self.currentUser.userType == PLVSocketUserTypeTeacher ||
-        self.localPreviewUser) {//讲师
-        if (!self.cameraView.button.isSelected) {
-            self.cameraSwitchView.hidden = NO;
-            [showItemViews addObject:self.cameraSwitchView];
+    
+    if (self.isSelf) { //自己的布局
+        if (self.currentUser.userType == PLVSocketUserTypeTeacher ||
+            [PLVHiClassManager sharedManager].currentUserIsGroupLeader ||
+            self.localPreviewUser) { // 讲师、组长、预览画面
+            if (!self.cameraView.button.isSelected) {
+                self.cameraSwitchView.hidden = NO;
+                [showItemViews addObject:self.cameraSwitchView];
+            }
         }
-    } else { //学生
+    } else { // 其他人的布局
         self.brushView.hidden = NO;
-        self.trophyView.hidden = NO;
         [showItemViews addObject:self.brushView];
-        [showItemViews addObject:self.trophyView];
+        if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) { // 老师才有授予奖杯功能
+            self.trophyView.hidden = NO;
+            [showItemViews addObject:self.trophyView];
+        }
     }
+    
     NSInteger showItemCount = showItemViews.count;
     CGFloat itemViewSpacing = (6 - showItemCount) * 8; //itemView 间隙的规律
     CGFloat viewSpacing = (CGRectGetWidth(self.mainView.bounds) - itemViewSpacing * (showItemCount - 1)  - showItemCount * 44)/2;//item 左右边距
@@ -436,7 +451,8 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
         }
     }
     if (self.currentUser.userType == PLVSocketUserTypeTeacher ||
-        self.localPreviewUser) {
+        self.localPreviewUser ||
+        [PLVHiClassManager sharedManager].currentUserIsGroupLeader) {
         [self updateSettingContentView];
     }
 }
@@ -446,8 +462,9 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
     [self dismiss];
 
     if (!self.localPreviewUser) {
-        if (self.currentUser.userType == PLVSocketUserTypeTeacher &&
-            self.currentUser.localUser) {
+        if ((self.currentUser.userType == PLVSocketUserTypeTeacher &&
+            self.currentUser.localUser) ||
+            [PLVHiClassManager sharedManager].currentUserIsGroupLeader) {
             [self.currentUser wantSwitchUserFrontCamera:!sender.selected];
         }
     } else {

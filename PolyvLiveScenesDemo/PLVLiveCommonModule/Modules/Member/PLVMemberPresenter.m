@@ -288,15 +288,28 @@ PLVSocketManagerProtocol // socket协议
 
 - (void)loadOnlineUserListAutoly:(BOOL)autoly {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    NSInteger roomId = [roomData.channelId integerValue];
-    
     PLVRoomUser *roomUser = roomData.roomUser;
+    NSString *roomId = roomData.channelId;
     BOOL isSpecial = [PLVRoomUser isSpecialIdentityWithUserType:roomUser.viewerType];
-    // 非观看侧（开播、小班课）场景下，streamer 均为 YES；观看侧场景下，只有特殊身份 streamer 为 YES，否则后端会有性能问题
-    BOOL streamer = (roomData.rtmpUrl || roomData.lessonInfo.lessonId) || isSpecial;
+    // 非观看侧（开播、互动学堂）场景下，streamer 均为 YES；观看侧场景下，只有特殊身份 streamer 为 YES，否则后端会有性能问题
+    BOOL streamer = (roomData.rtmpUrl || roomData.inHiClassScene) || isSpecial;
     
     __weak typeof(self) weakSelf = self;
-    [PLVLiveVideoAPI requestChatRoomListUsersWithRoomId:roomId page:0 length:kMemberCountPerLoading sessionId:roomData.lessonInfo.lessonId streamer:streamer success:^(NSDictionary *data) {
+    NSString *sessionId = nil;
+    if (roomData.inHiClassScene) {
+        PLVHiClassManager *manager = [PLVHiClassManager sharedManager];
+        sessionId = manager.lessonId;
+        BOOL inGroup = manager.groupState == PLVHiClassGroupStateInGroup;
+        if (inGroup) {
+            roomId = manager.groupId;
+        }
+    }
+    [PLVLiveVideoAPI requestChatRoomListUsersWithRoomId:roomId
+                                                   page:0
+                                                 length:kMemberCountPerLoading
+                                              sessionId:sessionId
+                                               streamer:streamer
+                                                success:^(NSDictionary *data) {
         NSInteger count = [data[@"count"] integerValue];
         weakSelf.userCount = count;
         
@@ -357,15 +370,19 @@ PLVSocketManagerProtocol // socket协议
     
     // 添加用户
     for (PLVChatUser * userInNewest in userArray) {
-        BOOL inNewestList = NO;
-        for (PLVChatUser * exsitUser in currentUserArray) {
-            if ([exsitUser.userId isEqualToString:userInNewest.userId]) {
-                inNewestList = YES;
+        PLVChatUser *enumChatUser = nil;
+        for (PLVChatUser * existUser in currentUserArray) {
+            if ([existUser.userId isEqualToString:userInNewest.userId]) {
+                enumChatUser = existUser;
                 break;
             }
         }
         
-        if (!inNewestList) {
+        if (enumChatUser) { // 若已存在，则更新权限字段即可
+            enumChatUser.banned = userInNewest.banned;
+            enumChatUser.cupCount = userInNewest.cupCount;
+            enumChatUser.currentBrushAuth = userInNewest.currentBrushAuth;
+        } else { // 否则，新增用户
             [self.userArray addObject:userInNewest];
         }
     }

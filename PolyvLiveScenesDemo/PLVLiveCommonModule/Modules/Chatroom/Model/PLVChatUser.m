@@ -37,7 +37,6 @@
             if ([classStatus.allKeys containsObject:@"paint"]) {
                 self.currentBrushAuth = PLV_SafeIntegerForDictKey(classStatus, @"paint") == 1;
             }
-            
         } else {
             self.banned = PLV_SafeBoolForDictKey(userInfo, @"banned");
         }

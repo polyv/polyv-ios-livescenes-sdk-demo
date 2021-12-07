@@ -26,7 +26,6 @@ NSString *PLVRoomDataKeyPathHiClassStatus   = @"hiClassStatus";
 @property (nonatomic, strong) PLVLiveVideoChannelMenuInfo *menuInfo;
 @property (nonatomic, strong) PLVRoomUser *roomUser;
 @property (nonatomic, strong) PLVViewLogCustomParam *customParam;
-@property (nonatomic, strong) PLVLessonInfoModel *lessonInfo;
 
 @end
 
@@ -49,11 +48,6 @@ NSString *PLVRoomDataKeyPathHiClassStatus   = @"hiClassStatus";
     param.vodParam2 = roomUser.viewerName;
     param.vodViewerAvatar = roomUser.viewerAvatar;
     self.customParam = param;
-}
-
-- (void)setupLessonInfo:(PLVLessonInfoModel *)lessonInfo {
-    if (!lessonInfo) return;
-    self.lessonInfo = lessonInfo;
 }
 
 #pragma mark HTTP Request
@@ -182,8 +176,11 @@ NSString *PLVRoomDataKeyPathHiClassStatus   = @"hiClassStatus";
     }
 }
 
-- (BOOL)inHiClassScene {
-    return self.lessonInfo ? YES : NO;
+- (BOOL)liveStatusIsLiving {
+    if (self.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        return _liveStatusIsLiving;
+    }
+    return NO;
 }
 
 @end

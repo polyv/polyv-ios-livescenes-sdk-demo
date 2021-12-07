@@ -194,6 +194,12 @@ PLVLinkMicManagerDelegate
     }
 }
 
+- (void)leaveLinkMicOnlyEmit{
+    if (self.linkMicStatus == PLVLinkMicStatus_Waiting || self.linkMicStatus == PLVLinkMicStatus_Joining || self.linkMicStatus == PLVLinkMicStatus_Joined) {
+        [self emitSocketMessge_JoinLeave];
+    }
+}
+
 - (void)changeMainSpeakerInLocalWithLinkMicUserIndex:(NSInteger)nowMainSpeakerLinkMicUserIndex{
     if (nowMainSpeakerLinkMicUserIndex < self.onlineUserMuArray.count) {
         PLVLinkMicOnlineUser * nowMainSpeakerLinkMicUser = self.onlineUserMuArray[nowMainSpeakerLinkMicUserIndex];
@@ -699,7 +705,7 @@ PLVLinkMicManagerDelegate
                 dispatch_block_cancel(weakSelf.requestOnlineListBlock);
             }
             dispatch_block_t requestBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
-                [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:weakSelf.channelId.integerValue sessionId:weakSelf.sessionId completion:^(NSDictionary *dict) {
+                [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:weakSelf.channelId sessionId:weakSelf.sessionId completion:^(NSDictionary *dict) {
                     if (weakSelf.arraySafeQueue) {
                         dispatch_async(weakSelf.arraySafeQueue, ^{
                             BOOL includeTargetLinkMicUser = [weakSelf refreshLinkMicOnlineUserListWithDataDictionary:dict targetLinkMicUserId:linkMicUserId];
@@ -1352,7 +1358,7 @@ PLVLinkMicManagerDelegate
         if (self.linkMicStatus == PLVLinkMicStatus_Joined ||
             self.rtcRoomJoinStatus == PLVLinkMicPresenterRoomJoinStatus_Joined) {
             // 请求，刷新‘连麦在线用户列表’
-            [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId.integerValue sessionId:self.sessionId completion:^(NSDictionary *dict) {
+            [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId sessionId:self.sessionId completion:^(NSDictionary *dict) {
                 if (weakSelf.arraySafeQueue) {
                     dispatch_async(weakSelf.arraySafeQueue, ^{
                         [weakSelf refreshLinkMicOnlineUserListWithDataDictionary:dict targetLinkMicUserId:nil];

@@ -338,6 +338,8 @@ PLVSAStreamerHomeViewDelegate
             [weakSelf.streamerPresenter setupLocalPreviewWithCanvaView:nil setupCompletion:^(BOOL setupResult) {
                 if (setupResult) {
                     [weakSelf.streamerPresenter startLocalMicCameraPreviewByDefault];
+                    
+                    [weakSelf tryResumeClass];
                 }
             }];
         }
@@ -355,6 +357,19 @@ PLVSAStreamerHomeViewDelegate
         }
         [weakSelf.settingView cameraAuthorizationGranted:granted];
     }];
+}
+
+- (void)tryResumeClass {
+    if ([PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
+        __weak typeof(self) weakSelf = self;
+        [PLVSAUtils showAlertWithMessage:@"检测到之前异常退出，是否恢复直播" cancelActionTitle:@"结束直播" cancelActionBlock:^{
+            /// 重置值、结束服务器中该频道上课状态
+            [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving = NO;
+            [weakSelf.streamerPresenter finishClass];
+        } confirmActionTitle:@"恢复直播" confirmActionBlock:^{
+            [weakSelf tryStartClass:NO];
+        }];
+    }
 }
 
 - (void)tryStartClass:(BOOL)autoTry {
@@ -446,9 +461,9 @@ PLVSAStreamerHomeViewDelegate
         error.code == PLVSocketLoginErrorCodeRelogin) &&
         error.localizedDescription) {
         plv_dispatch_main_async_safe(^{
-            [PLVSAUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:@"确定" cancelActionBlock:^{
+            [PLVSAUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
                 [weakSelf logout];
-            } confirmActionTitle:nil confirmActionBlock:nil];
+            }];
         })
     }
 }
@@ -579,13 +594,15 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed) {
         message = @"上课错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedNetError){
-        message = @"推流请求错误";
+        message = @"推流请求错误，请退出重新登录";
     }else if (error.code == PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError){
         message = @"更新Token错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerError){
         message = @"RTC内部错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed){
         message = @"RTC内部错误，启动音频模块失败，请退出重新登录";
+    }else if (error.code == PLVStreamerPresenterErrorCode_EndClassFailedNetFailed){
+        message = @"下课错误，请直接退出上课页";
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
         message = @"未知错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){
@@ -593,7 +610,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
     message = [message stringByAppendingFormat:@" code:%@",fullErrorCodeString];
     
-    [PLVSAUtils showToastWithMessage:message inView:self.view];
+    [PLVSAUtils showToastWithMessage:message inView:self.view afterDelay:3];
 }
 
 #pragma mark PLVSALinkMicAreaViewDelegate

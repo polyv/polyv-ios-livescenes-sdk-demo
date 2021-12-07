@@ -36,6 +36,7 @@ PLVSocketManagerProtocol
 @property (nonatomic, strong) NSDictionary *userInfo;               // 登录用户信息
 @property (nonatomic, assign) BOOL userInfoHadSeted;                // 已设置登录用户信息
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
+@property (nonatomic, assign, readonly) BOOL liveStatusIsLiving; // 当前直播是否正在进行
 
 /// scene 为 PLVDocumentViewSceneCloudClass 或 PLVDocumentViewSceneEcommerce 的数据
 @property (nonatomic, assign) BOOL mainSpeakerPPTOnMain;            // 观看场景中 主讲的PPT当前是否在主屏
@@ -81,6 +82,7 @@ PLVSocketManagerProtocol
             [self.jsBridge registerSocketEventFunction];
             [self.jsBridge registerPPTStatusChangeFunction];
             [self.jsBridge registerPPTInputFunction];
+            [self.jsBridge registerPPTThumbnailFunction];
         } else if (self.scene == PLVDocumentViewSceneCloudClass ||
                    self.scene == PLVDocumentViewSceneEcommerce) {
             // 观看场景的 userInfo 需登录完 sockt 后获取
@@ -140,12 +142,16 @@ PLVSocketManagerProtocol
         _webView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
         _webView.contentMode = UIViewContentModeRedraw;
         _webView.opaque = NO;
+        _webView.scrollView.bounces = NO; // 关闭webview弹性，避免影响画笔操作
         if(@available(iOS 11.0, *)) {
             _webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
         }
-        /// 推流场景且嘉宾角色下，默认关闭webview该属性
+        
+        /// 推流场景且讲师角色下，开启userInteractionEnabled；其他场景均设为NO，不允许交互。
         if (self.scene == PLVDocumentViewSceneStreamer &&
-            self.viewerType == PLVRoomUserTypeGuest) {
+            self.viewerType == PLVRoomUserTypeTeacher) {
+            _webView.userInteractionEnabled = YES;
+        } else {
             _webView.userInteractionEnabled = NO;
         }
     }
@@ -163,6 +169,10 @@ PLVSocketManagerProtocol
 
 - (PLVRoomUserType)viewerType{
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+}
+
+- (BOOL)liveStatusIsLiving {
+    return [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving;
 }
 
 #pragma mark - Public Method
@@ -208,6 +218,14 @@ PLVSocketManagerProtocol
         return;
     }
     [self.jsBridge pptStartWithVid:vid];
+}
+
+- (void)pptStartWithVideoId:(NSString *)videoId channelId:(NSString *)channelId {
+    if (self.scene != PLVDocumentViewSceneCloudClass &&
+        self.scene != PLVDocumentViewSceneEcommerce) {
+        return;
+    }
+    [self.jsBridge pptStartWithVideoId:videoId channelId:channelId];
 }
 
 #pragma mark 推流专用方法
@@ -339,7 +357,17 @@ PLVSocketManagerProtocol
     
     if (self.scene != PLVDocumentViewSceneCloudClass &&
         self.scene != PLVDocumentViewSceneEcommerce &&
-        self.viewerType == PLVRoomUserTypeTeacher) { // 推流场景且讲师角色，不需要用到以下消息监听
+        self.viewerType == PLVRoomUserTypeTeacher) { // 推流场景且讲师角色未断流，只需要监听"onSliceID"消息
+        if (self.liveStatusIsLiving) {
+            if ([subEvent isEqualToString:@"onSliceID"]) {
+                NSDictionary * dataDict = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+                NSInteger autoId = PLV_SafeIntegerForDictKey(dataDict, @"autoId");
+                NSInteger pageId = PLV_SafeIntegerForDictKey(dataDict, @"pageId");
+                if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_continueClassWithAutoId:pageNumber:)]) {
+                    [self.delegate documentView_continueClassWithAutoId:autoId pageNumber:pageId];
+                }
+            }
+        }
         return;
     }
     
@@ -544,14 +572,20 @@ PLVSocketManagerProtocol
     }
 }
 
-- (void)jsbridge_documentChangeWithAutoId:(NSUInteger)autoId imageUrls:(NSArray *)imageUrls {
+- (void)jsbridge_documentChangeWithAutoId:(NSUInteger)autoId imageUrls:(NSArray *)imageUrls fileName:(NSString *)fileName {
     if (self.isChangePPT) { // 当autoId改变时，currPageNum此处起作用
         [self.jsBridge changePPTWithAutoId:self.autoId pageNumber:self.currPageNum];
         self.isChangePPT = NO;
     }
     
-    if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_changeWithAutoId:imageUrls:)]) {
-        [self.delegate documentView_changeWithAutoId:autoId imageUrls:imageUrls];
+    fileName = self.liveStatusIsLiving ? fileName : nil;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_changeWithAutoId:imageUrls:fileName:)]) {
+        [self.delegate documentView_changeWithAutoId:autoId imageUrls:imageUrls fileName:fileName];
+    }
+    
+    /// 使用一次后注销，防止重复调用PPTThumbnail
+    if ([PLVFdUtil checkStringUseable:fileName]) {
+        [self.jsBridge removePPTThumbnailFunction];
     }
 }
 

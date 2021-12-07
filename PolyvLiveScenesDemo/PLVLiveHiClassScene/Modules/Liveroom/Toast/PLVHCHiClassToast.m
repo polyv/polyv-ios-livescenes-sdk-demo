@@ -290,6 +290,8 @@ static double KPLVToastDefaultDismissDelay = 1.5;
         case PLVHCToastTypeIcon_AwardTrophy:
             imageName = @"plvhc_liveroom_toast_awardtrophy_icon";
             break;
+        case PLVHCToastTypeIcon_StartGroup:
+            imageName = @"plvhc_liveroom_toast_onstage_icon";
         default:
             break;
     }

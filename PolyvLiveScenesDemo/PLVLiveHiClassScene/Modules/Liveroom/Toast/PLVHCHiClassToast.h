@@ -35,6 +35,7 @@ typedef NS_ENUM(NSInteger, PLVHCToastType) {
     PLVHCToastTypeIcon_StudentMoveOut, //已将学生移出教室
     PLVHCToastTypeIcon_AwardTrophy, //奖励一个奖杯
     PLVHCToastTypeIcon_NetworkError, //网络异常
+    PLVHCToastTypeIcon_StartGroup, // 开始分组
 
 };
 

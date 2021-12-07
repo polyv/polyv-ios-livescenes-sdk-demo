@@ -38,16 +38,19 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
     /// 100: 上课失败，发送请求修改频道状态失败
     PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed = 100,
     
-    /// 300: 推流失败，网络错误
+    /// 300: 推流失败，网络请求错误
     PLVStreamerPresenterErrorCode_StartClassFailedNetError = 300,
     
-    /// 400: 更新RTCToken失败，网络错误
+    /// 400: 更新RTCToken失败，网络请求错误
     PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError = 400,
     
     /// 500: RTC内部错误
     PLVStreamerPresenterErrorCode_RTCManagerError = 500,
     /// 502: RTC内部错误，启动音频模块失败
     PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed = 502,
+    
+    /// 600: 下课失败，网络请求错误
+    PLVStreamerPresenterErrorCode_EndClassFailedNetFailed = 100,
 };
 
 @protocol PLVStreamerPresenterDelegate;

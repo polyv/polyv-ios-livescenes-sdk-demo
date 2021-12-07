@@ -42,6 +42,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL currentHandUp;
 /// 用户当前是否被授权画笔
 @property (nonatomic, assign) BOOL currentBrushAuth;
+/// 当前用户是否是组长
 
 #pragma mark 连麦业务相关
 /// 等待连麦 用户模型

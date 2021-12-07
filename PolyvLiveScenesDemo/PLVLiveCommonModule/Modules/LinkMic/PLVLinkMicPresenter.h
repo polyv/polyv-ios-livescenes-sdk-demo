@@ -184,6 +184,13 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// @note 仅在 PLVLinkMicStatus_Joining、PLVLinkMicStatus_Joined 状态下可调用成功
 - (void)leaveLinkMic;
 
+/// 退出连麦(仅发送'退出连麦消息')
+///
+/// @note 区别于 [leaveLinkMic] 方法，该方法仅发送退出连麦的socket消息，不关心是否真正退出RTC房间
+///       在PLVLinkMicStatus_Waiting、PLVLinkMicStatus_Joining、PLVLinkMicStatus_Joined 状态下可调用成功
+///       适用场景：当前确认 PLVLinkMicPresenter 将很快销毁，希望发送 ‘退出连麦’ 的请求消息，来更新本地用户在服务器中的状态
+- (void)leaveLinkMicOnlyEmit;
+
 /// 本地请求变更’第一画面‘
 - (void)changeMainSpeakerInLocalWithLinkMicUserIndex:(NSInteger)nowMainSpeakerLinkMicUserIndex;
 

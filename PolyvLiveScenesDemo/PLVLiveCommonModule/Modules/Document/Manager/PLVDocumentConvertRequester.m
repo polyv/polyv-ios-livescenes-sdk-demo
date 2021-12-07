@@ -64,8 +64,10 @@ NSString *PLVDocumentConvertFailureNotification = @"PLVDocumentConvertFailureNot
     };
     
     if ([PLVRoomDataManager sharedManager].roomData.inHiClassScene) { // 互动学堂 场景
-        NSString *lessonId = [PLVRoomDataManager sharedManager].roomData.lessonInfo.lessonId;
-        [PLVLiveVideoAPI getDocumentConvertStatusWithLessonId:lessonId fileId:fileIds completion:SuccessBlock failure:^(NSError * _Nonnull error) {
+        NSString *lessonId = [PLVHiClassManager sharedManager].lessonId;
+        NSString *courseCode = [PLVHiClassManager sharedManager].courseCode;
+        BOOL isTeacher = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+        [PLVLiveVideoAPI getDocumentConvertStatusWithLessonId:lessonId fileId:fileIds courseCode:courseCode teacher:isTeacher completion:SuccessBlock  failure:^(NSError * _Nonnull error) {
             [weakSelf request];
         }];
     } else { // 手机开播(三分屏) 场景

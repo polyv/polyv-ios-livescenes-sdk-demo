@@ -156,6 +156,10 @@ UICollectionViewDelegate
         if (firstSiteOnlineUser) {
             [self checkUserModelAndSetupLinkMicCanvasView:firstSiteOnlineUser];
             [self setupUserModelWillDeallocBlock:firstSiteOnlineUser];
+            /// 在纯视频场景下主屏需要额外设置 ’摄像头是否应该显示值‘ 的回调
+            firstSiteOnlineUser.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+                [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
+            };
             
             if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:showFirstSiteCanvasViewOnExternal:)]) {
                 [self.delegate plvLCLinkMicWindowsView:self showFirstSiteCanvasViewOnExternal:firstSiteOnlineUser.canvasView];

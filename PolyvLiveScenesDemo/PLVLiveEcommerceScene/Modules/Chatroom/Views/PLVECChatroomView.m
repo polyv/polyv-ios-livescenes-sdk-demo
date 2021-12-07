@@ -389,14 +389,23 @@ PLVECChatroomViewModelProtocol
     if (!cell) {
         cell = [[PLVECChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
     }
-    PLVChatModel *model = [[PLVECChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
-    [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+    
+    if ([PLVECChatroomViewModel sharedViewModel].chatArray.count > 0) {
+        PLVChatModel *model = [[PLVECChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+    }
+    
     return cell;
 }
 
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    if ([PLVECChatroomViewModel sharedViewModel].chatArray.count == 0) {
+        return 0.0f;
+    }
+        
     PLVChatModel *model = [[PLVECChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     CGFloat cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     return cellHeight;

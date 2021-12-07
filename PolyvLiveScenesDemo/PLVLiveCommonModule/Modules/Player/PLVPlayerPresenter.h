@@ -65,6 +65,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否允许点击暖场图片跳转到相应的链接（默认允许）
 @property (nonatomic, assign) BOOL warmUpHrefEnable;
 
+/// 回放视频ID(请求'直播回放视频的信息'接口返回的视频Id，与后台回放列表看到的vid不是同一个数据)
+@property (nonatomic, copy, readonly) NSString *videoId;
+
 #pragma mark 状态
 /// 当前频道的 ‘直播流状态’
 ///

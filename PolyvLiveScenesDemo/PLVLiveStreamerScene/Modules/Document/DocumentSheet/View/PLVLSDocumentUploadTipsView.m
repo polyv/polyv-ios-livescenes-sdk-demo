@@ -3,7 +3,7 @@
 //  PLVCloudClassStreamerModul
 //
 //  Created by MissYasiky on 2020/3/24.
-//  Copyright © 2020 easefun. All rights reserved.
+//  Copyright © 2020 PLV. All rights reserved.
 //  上传须知
 
 #import "PLVLSDocumentUploadTipsView.h"

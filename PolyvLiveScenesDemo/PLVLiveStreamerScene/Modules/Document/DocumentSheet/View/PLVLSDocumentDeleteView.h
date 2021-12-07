@@ -4,7 +4,7 @@
 //  文档列表页 PLVSDocumentListViewController 长按 cell 时出现的红色气泡+删除按钮自定义 UIView
 //
 //  Created by MissYasiky on 2019/10/17.
-//  Copyright © 2019 easefun. All rights reserved.
+//  Copyright © 2019 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

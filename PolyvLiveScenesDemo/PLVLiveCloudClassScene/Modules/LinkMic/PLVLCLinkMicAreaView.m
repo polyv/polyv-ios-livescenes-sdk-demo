@@ -126,6 +126,10 @@ PLVLCLinkMicWindowsViewDelegate
     }
 }
 
+- (void)leaveLinkMicOnlyEmit {
+    [self.presenter leaveLinkMicOnlyEmit];
+}
+
 #pragma mark Getter
 - (BOOL)inRTCRoom{
     return self.presenter.inRTCRoom;

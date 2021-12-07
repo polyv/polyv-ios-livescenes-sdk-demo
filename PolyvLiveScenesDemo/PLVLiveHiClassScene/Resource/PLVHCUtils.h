@@ -24,11 +24,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// 主页控制器
 @property (nonatomic, weak) UIViewController *homeVC;
 
+/// 当前屏幕方向，根据setupInterfaceOrientation:方法配置，缺省值为UIInterfaceOrientationLandscapeRight
+@property (nonatomic, assign, readonly) UIInterfaceOrientation interfaceOrientation;
+
 /// 单例
 + (instancetype)sharedUtils;
 
 /// 设置页面布局安全区域
 - (void)setupAreaInsets:(UIEdgeInsets)areaInsets;
+
+/// 设置当前iPhone、iPad设备的屏幕的旋转方向
+/// @note 只支持UIInterfaceOrientationLandscapeRight、UIInterfaceOrientationLandscapeLeft，在启动图片选择器后，保证当前方向为用户设置的方向。(开播后允许用户左右转屏)
+/// @param interfaceOrientation 屏幕方向(即Home键方向)
+- (void)setupInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation;
 
 /// 在KeyWindow显示文本 toast
 /// @param message toast 文本

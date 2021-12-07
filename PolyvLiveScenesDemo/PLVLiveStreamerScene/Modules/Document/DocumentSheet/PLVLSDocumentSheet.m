@@ -121,6 +121,17 @@ UIDocumentPickerDelegate
     [self dismiss];
 }
 
+- (void)setDocumentImageUrls:(NSArray <NSString *> *)imageUrls autoId:(NSInteger)autoId pagesTitle:(NSString *)pagesTitle {
+    if (self.selectAutoId != autoId) {
+        return;
+    }
+    
+    _imageUrls = imageUrls;
+    _pagesTitle = pagesTitle;
+    
+    [self dismiss];
+}
+
 - (void)selectDocumentWithAutoId:(NSInteger)autoId pageIndex:(NSInteger)pageIndex {
     if (self.selectAutoId != autoId) {
         return;
@@ -130,6 +141,13 @@ UIDocumentPickerDelegate
     
     if (self.docPagesView) {
         [self.docPagesView setSelectPageIndex:pageIndex];
+    }
+}
+
+- (void)setDocumentWithAutoId:(NSInteger)autoId pageId:(NSInteger)pageIndex {
+    if (self.selectAutoId == 0) {
+        self.selectPageId = pageIndex;
+        [self.docListView setDocumentWithAutoId:autoId];
     }
 }
 

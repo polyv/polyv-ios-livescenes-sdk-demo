@@ -3,7 +3,7 @@
 //  PLVLiveScenesDemo
 //
 //  Created by MissYasiky on 2020/4/9.
-//  Copyright © 2020 easefun. All rights reserved.
+//  Copyright © 2020 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

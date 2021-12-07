@@ -129,6 +129,10 @@ PLVAdvViewDelegate
     self.warmUpImageView.userInteractionEnabled = warmUpHrefEnable;
 }
 
+- (NSString *)videoId {
+    return self.livePlaybackPlayer.videoId;
+}
+
 #pragma mark 通用
 - (instancetype)initWithVideoType:(PLVChannelVideoType)videoType{
     self = [super init];

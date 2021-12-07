@@ -166,6 +166,7 @@
     CGSize backButtonSize = CGSizeMake(40.0, 20.0);
     CGFloat topPadding = isPad ? 30.0 : 16.0;
     CGSize titleLabelFitSize = [self.titleLabel sizeThatFits:CGSizeMake(200, 22)];
+    CGFloat titleLabelWidth = CGRectGetMinX(self.moreButton.frame) - CGRectGetMaxX(self.backButton.frame);
 
     if (isPad) {
         // iPad小分屏适配（横屏1:2），标题宽度调整，观看次数隐藏
@@ -173,14 +174,18 @@
         if (isSmallScreen) {
             self.playTimesLabel.hidden = YES;
             
-            CGFloat titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame);
+            if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
+                titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame);
+            }
             titleLabelWidth = MIN(titleLabelWidth, titleLabelFitSize.width);
             self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
         } else {
             self.playTimesLabel.hidden = NO;
 
             CGFloat playTimesLabelMaxWidth = 100;
-            CGFloat titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame) - playTimesLabelMaxWidth - 16;
+            if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
+                titleLabelWidth = CGRectGetMinX(self.bulletinButton.frame) - CGRectGetMaxX(self.backButton.frame) - playTimesLabelMaxWidth - 16;
+            }
             titleLabelWidth = MIN(titleLabelWidth, titleLabelFitSize.width);
             self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
         }

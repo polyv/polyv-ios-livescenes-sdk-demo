@@ -362,10 +362,11 @@ UIScrollViewDelegate
                 error.code == PLVSocketLoginErrorCodeRelogin) &&
                error.localizedDescription) {
         plv_dispatch_main_async_safe(^{
-            [PLVFdUtil showAlertWithTitle:nil message:error.localizedDescription viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
-                [weakSelf exitCurrentController];
-            } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
+            [PLVECUtils showHUDWithTitle:nil detail:error.localizedDescription view:self.view afterDelay:3.0];
         })
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,(int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [weakSelf exitCurrentController];
+        });
     }
 }
 

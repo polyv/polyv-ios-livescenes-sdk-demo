@@ -56,6 +56,7 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, copy, readonly) NSString * linkMicUserActor;
 @property (nonatomic, assign, readonly) BOOL channelGuestManualJoinLinkMic;
 @property (nonatomic, assign, readonly) BOOL isOnlyAudio; // 当前频道是否为音频模式
+@property (nonatomic, assign, readonly) BOOL liveStatusIsLiving;
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVRTCStreamerManager * rtcStreamerManager;
@@ -265,7 +266,7 @@ PLVChannelClassManagerDelegate
 - (int)startPushStream{
     if (self.micCameraGranted) {
         if (!self.pushStreamStarted) {
-            [self.rtcStreamerManager startPushStreamWithStream:self.stream rtmpUrl:self.rtmpUrl];
+            [self.rtcStreamerManager startPushStreamWithStream:self.stream rtmpUrl:self.rtmpUrl continueLastLive:self.liveStatusIsLiving];
             return 0;
         }else{
             PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"startPushStream failed, stream had started push");
@@ -701,9 +702,13 @@ PLVChannelClassManagerDelegate
 #pragma mark Net Request
 /// 更新频道直播状态至结束
 - (void)requestForLiveStatusEnd{
+    __weak typeof(self) weakSelf = self;
     [PLVLiveVideoAPI requestChannelLivestatusEndWithChannelId:self.channelId stream:self.stream success:^(NSString * _Nonnull responseCont) {
     } failure:^(NSError * _Nonnull error) {
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"requestForLiveStatusEnd failed, error %@",error);
+        NSError * finalError = [weakSelf errorWithCode:PLVStreamerPresenterErrorCode_EndClassFailedNetFailed errorDescription:nil];
+        finalError = PLVErrorWithUnderlyingError(finalError, error);
+        [weakSelf callbackForDidOccurError:finalError];
     }];
 }
 
@@ -1234,7 +1239,7 @@ PLVChannelClassManagerDelegate
                 dispatch_block_cancel(weakSelf.requestOnlineListBlock);
             }
             dispatch_block_t requestBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
-                [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:weakSelf.channelId.integerValue sessionId:weakSelf.sessionId completion:^(NSDictionary *dict) {
+                [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:weakSelf.channelId sessionId:weakSelf.sessionId completion:^(NSDictionary *dict) {
                     if (weakSelf.arraySafeQueue) {
                         dispatch_async(weakSelf.arraySafeQueue, ^{
                             BOOL includeTargetLinkMicUser = [weakSelf refreshLinkMicOnlineUserListWithDataDictionary:dict targetLinkMicUserId:linkMicUserId];
@@ -1933,6 +1938,10 @@ PLVChannelClassManagerDelegate
     return [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
 }
 
+- (BOOL)liveStatusIsLiving {
+    return [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving;
+}
+
 - (PLVChannelClassManager *)channelClassManager{
     if (!_channelClassManager) {
         _channelClassManager = [[PLVChannelClassManager alloc] init];
@@ -1952,7 +1961,7 @@ PLVChannelClassManagerDelegate
     if ([PLVSocketManager sharedManager].login) {
         __weak typeof(self) weakSelf = self;
         // 请求，刷新‘连麦在线用户列表’
-        [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId.integerValue sessionId:self.sessionId completion:^(NSDictionary *dict) {
+        [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId sessionId:self.sessionId completion:^(NSDictionary *dict) {
             if (weakSelf.arraySafeQueue) {
                 dispatch_async(weakSelf.arraySafeQueue, ^{
                     [weakSelf refreshLinkMicOnlineUserListWithDataDictionary:dict targetLinkMicUserId:nil];

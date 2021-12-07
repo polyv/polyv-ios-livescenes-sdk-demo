@@ -39,17 +39,6 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 
 @implementation PLVLiveStreamerLoginViewController
 
-/// 开发时调试方法，该方法的代码修改不要提交
-- (void)developerTest {
-    // 写死开发时的测试账号，优先级高于缓存于本地的账号信息
-    // 不需要时请注释掉，否则会覆盖本地缓存的账号信息
-//    self.tfChannelId.text = @"";
-//    self.tfPassword.text = @"";
-    
-    // Bugly上报
-    [PLVBugReporter openWithType:PLVBuglyBundleTypeStreamer];
-}
-
 #pragma mark - [ Life Period ]
 
 - (void)viewDidLoad {
@@ -58,8 +47,6 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     [self setupUI];
     
     [self writeUserInfo];
-    
-    [self developerTest];
 }
 
 - (void)viewWillLayoutSubviews {

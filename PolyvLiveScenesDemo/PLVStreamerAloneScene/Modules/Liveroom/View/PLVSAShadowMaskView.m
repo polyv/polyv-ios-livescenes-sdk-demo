@@ -38,7 +38,7 @@
     CGFloat top = [PLVSAUtils sharedUtils].areaInsets.top;
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
     CGFloat bottomViewHeight = isPad ? 118 : 76;
-    self.topView.frame = CGRectMake(0, 0, self.bounds.size.width, top + 72.0);
+    self.topView.frame = CGRectMake(0, 0, self.bounds.size.width, top + 96.0);
     self.bottomView.frame = CGRectMake(0, self.bounds.size.height - bottomViewHeight - bottom, self.bounds.size.width, bottomViewHeight + bottom);
     
     self.topGradientLayer.frame = self.topView.bounds;

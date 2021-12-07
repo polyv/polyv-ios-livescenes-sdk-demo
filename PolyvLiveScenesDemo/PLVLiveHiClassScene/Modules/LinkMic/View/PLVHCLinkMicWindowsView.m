@@ -66,7 +66,7 @@ PLVHCLinkMicSettingPopViewDelegate>
     if (self) {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         self.userType = roomData.roomUser.viewerType;
-        self.linkNumber = roomData.lessonInfo.linkNumber;
+        self.linkNumber = roomData.linkNumber;
         self.indexMapDict = [NSMutableDictionary dictionary];
         // 初始化信号量
         _mapDictLock = dispatch_semaphore_create(1);
@@ -132,7 +132,7 @@ PLVHCLinkMicSettingPopViewDelegate>
 }
 
 - (BOOL)shouldShowLocalPreview {
-    if ([PLVRoomDataManager sharedManager].roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
+    if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass) {
         return NO;
     }
     
@@ -288,7 +288,8 @@ PLVHCLinkMicSettingPopViewDelegate>
     if (self.linkNumber < 7) {
         return PLVHCLinkMicWindowCell_Six_Id;
     }
-    if (userModel.userType == PLVSocketUserTypeTeacher) {
+    if (userModel.userType == PLVSocketUserTypeTeacher ||
+        (userModel.groupLeader && ![PLVHiClassManager sharedManager].teacherInGroup)) {
         return PLVHCLinkMicWindowCell_Sixteen_Teacher_Id;
     }
     return PLVHCLinkMicWindowCell_Sixteen_Id;
@@ -303,13 +304,24 @@ PLVHCLinkMicSettingPopViewDelegate>
     }
 }
 
+- (NSInteger)maxLinkMicNumber {
+    NSInteger maxLinkMicNumber;
+    if ([PLVHiClassManager sharedManager].groupState == PLVHiClassGroupStateInGroup) { // 分组
+        maxLinkMicNumber = self.linkNumber + ([PLVHiClassManager sharedManager].teacherInGroup ? 1 : 0);
+    } else { // 大房间
+        maxLinkMicNumber = self.linkNumber + 1;
+    }
+    return maxLinkMicNumber;
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark UICollectionViewDataSource
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    return self.dataArray.count;
+    return MIN([self maxLinkMicNumber], self.dataArray.count); // 确保连麦列表展示的人数，不得超过房间设置的连麦人数(讲师不占用人数)
 }
+
 - (UICollectionViewCell *)collectionView:(UICollectionView *)collectionView cellForItemAtIndexPath:(NSIndexPath *)indexPath {
     PLVLinkMicOnlineUser *linkMicUserModel = [self readUserModelFromDataArray:indexPath.row];
     NSString *cellIdentifier = [self getIdentifierWithUserModel:linkMicUserModel];
@@ -328,10 +340,15 @@ PLVHCLinkMicSettingPopViewDelegate>
 #pragma mark UICollectionViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    if (self.userType == PLVRoomUserTypeSCStudent) {
+    if (self.userType != PLVRoomUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) {
         return;
     }
     PLVLinkMicOnlineUser *linkMicUserModel = [self readUserModelFromDataArray:indexPath.row];
+    if (linkMicUserModel.userType == PLVRoomUserTypeTeacher &&
+        [PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 组长无法操作讲师连麦
+        return;
+    }
     [self.settingPopView showSettingViewWithUser:linkMicUserModel];
 }
 
@@ -339,7 +356,8 @@ PLVHCLinkMicSettingPopViewDelegate>
 
 - (BOOL)linkMicFlowLayout:(PLVHCLinkMicCollectionViewFlowLayout *)flowLayout teacherItemAtIndexPath:(NSIndexPath *)indexPath {
     PLVLinkMicOnlineUser *linkMicUserModel = [self readUserModelFromDataArray:indexPath.row];
-    if (linkMicUserModel.userType == PLVSocketUserTypeTeacher) {
+    if (linkMicUserModel.userType == PLVSocketUserTypeTeacher ||
+        (linkMicUserModel.groupLeader && ![PLVHiClassManager sharedManager].teacherInGroup)) {
         return YES;
     }
     return NO;

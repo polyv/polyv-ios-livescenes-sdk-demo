@@ -45,16 +45,20 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)documentContainerView:(PLVDocumentContainerView *)documentContainerView didChangeStrokeHexColor:(NSString *)strokeHexColor;
 
 /// 刷新最小化的容器(ppt、word各类文档统称)数据 时调用
-/// @note 回调在主线程执行，讲师专属
+/// @note 回调在主线程执行，讲师、组长专属
 - (void)documentContainerView:(PLVDocumentContainerView *)documentContainerView  didRefreshMinimizeContainerDataWithJsonObject:(id)jsonObject;
 
 /// 刷新打开的PPT容器数量 时调用
-/// @note 回调在主线程执行，讲师专属
+/// @note 回调在主线程执行，讲师、组长专属
 - (void)documentContainerView:(PLVDocumentContainerView *)documentContainerView  didRefreshPptContainerTotalWithJsonObject:(id)jsonObject;
 
 /// 更新画板缩放百分比 时调用
-/// @note 回调在主线程执行，讲师专属
+/// @note 回调在主线程执行，讲师、组长专属
 - (void)documentContainerView:(PLVDocumentContainerView *)documentContainerView didChangeZoomPercent:(CGFloat)percent;
+
+/// 刷新组长权限 时调用
+/// @note 回调在主线程执行
+- (void)documentContainerView:(PLVDocumentContainerView *)documentContainerView didRefreshGroupLeader:(BOOL)isLeader userId:(NSString *)userId;
 
 @end
 
@@ -120,20 +124,30 @@ NS_ASSUME_NONNULL_BEGIN
 /// 关闭自己的画笔权限
 - (void)removePaintBrushAuth;
 
-#pragma mark 讲师专用方法 native -> js
+/// 设为组长或移除组长
+/// @note 根据socket消息得知是否需要设置为，触发后如果是组长，内部会自动授予画笔权限，无需另外发送 givePaintBrushAuth 到 webview 中
+/// @param isLeader 是否设为组长，YES:设为组长，NO：移除组长，默认为 false
+- (void)setOrRemoveGroupLeader:(BOOL)isLeader;
+
+/// 切换房间，用于开始或结束分组讨论时切换房间
+/// @param ackData leaveDiscuss、joinDiscuss 这两个Socket事件的Ack回调数据
+/// @param callback js回调
+- (void)switchRoomWithAckData:(NSDictionary *)ackData datacallback:(_Nullable PLVContainerResponseCallback)callback;
+
+#pragma mark 讲师、组长专用方法 native -> js
 
 /// 授予画笔权限
-/// @note 只有讲师方可操作
+/// @note 只有讲师、组长方可操作
 /// @param userId 用户Id
 - (void)setPaintBrushAuthWithUserId:(NSString *)userId;
 
 /// 移除画笔权限
-/// @note 只有讲师方可操作
+/// @note 只有讲师、组长方可操作
 /// @param userId 用户Id
 - (void)removePaintBrushAuthWithUserId:(NSString *)userId;
 
 /// 重置画板缩放
-/// @note 只有讲师方可操作
+/// @note 只有讲师、组长方可操作
 - (void)resetZoom;
 
 @end

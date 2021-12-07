@@ -17,7 +17,9 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewStatus) {
     PLVHCToolbarViewStatusStudentPreparing, //学生端老师准备中
     PLVHCToolbarViewStatusStudentInClass, //学生端上课中
     PLVHCToolbarViewStatusTeacherPreparing, //讲师端准备中
-    PLVHCToolbarViewStatusTeacherInClass //讲师端上课中
+    PLVHCToolbarViewStatusTeacherInClass, //讲师端上课中
+    PLVHCToolbarViewStatusIsGroupLeader, // 学生端组长
+    PLVHCToolbarViewStatusStudentInGroup // 学生端处于分组中
 };
 
 @protocol PLVHCToolbarAreaViewDelegate;
@@ -54,6 +56,16 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewStatus) {
 
 ///【讲师端】【学生端】收到新消息提醒
 - (void)toolbarAreaViewReceiveNewMessage;
+
+/// 开始分组
+- (void)startGroup;
+
+/// 结束分组
+- (void)finishGroup;
+
+/// 【学生端】
+/// 设置呼叫老师按钮enable 状态
+- (void)setCallingTeacherButtonEnable:(BOOL)enable;
 
 @end
 
@@ -94,6 +106,16 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewStatus) {
 /// @param userId 当前用户id
 - (void)toolbarAreaView_handUpButtonSelected:(PLVHCToolbarAreaView *)toolbarAreaView
                                       userId:(NSString *)userId;
+
+/// 【学生端】
+/// 【组长呼叫老师】
+/// @param toolbarAreaView 工具栏区域视图
+- (void)toolbarAreaView_CallingTeacher:(PLVHCToolbarAreaView *)toolbarAreaView;
+
+/// 【学生端】
+/// 【组长取消呼叫老师】
+/// @param toolbarAreaView 工具栏区域视图
+- (void)toolbarAreaView_CancelCallingTeacher:(PLVHCToolbarAreaView *)toolbarAreaView;
 
 @end
 

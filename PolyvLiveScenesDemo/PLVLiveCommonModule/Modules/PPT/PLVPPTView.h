@@ -13,7 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol PLVPPTViewDelegate;
 
 /// PPT视图
-@interface PLVPPTView : UIView
+DEPRECATED_MSG_ATTRIBUTE("已废弃，请使用PLVDocumentView")
+@interface PLVPPTView : UIView 
 
 /// delegate
 @property (nonatomic, weak) id <PLVPPTViewDelegate> delegate;
@@ -30,6 +31,11 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param vid 回放视频的vid
 - (void)pptStart:(NSString *)vid;
+
+/// 【观看回放时】加载回放PPT
+/// @param videoId 回放视频的videoId(请求'直播回放视频的信息'接口返回的视频Id，与后台回放列表看到的vid不是同一个数据)
+/// @param channelId 频道Id
+- (void)pptStartWithVideoId:(NSString *)videoId channelId:(NSString *)channelId;
 
 /// PPT 恢复播放
 ///

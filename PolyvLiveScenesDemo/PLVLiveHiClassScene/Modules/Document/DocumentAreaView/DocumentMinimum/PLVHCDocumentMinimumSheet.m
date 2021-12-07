@@ -71,13 +71,12 @@ PLVHCDocumentMinimumListViewDelegate // 文档最小化列表视图回调
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    UIEdgeInsets edgeInsets = [PLVHCUtils sharedUtils].areaInsets;
-    CGSize screenSize = [UIScreen mainScreen].bounds.size;
+    CGSize superViewSize = self.superview.bounds.size;
     
     CGFloat marginX = 8;
     CGFloat marginY = 3;
     CGFloat marginBootom = 20;
-    CGFloat marginLeft = MAX(edgeInsets.left, 36);
+    CGFloat marginLeft = 36;
     
     CGFloat barWidth = 36;
     CGSize guiedViewSize = CGSizeMake(185, 42);
@@ -90,12 +89,12 @@ PLVHCDocumentMinimumListViewDelegate // 文档最小化列表视图回调
     
     switch (self.sheetStatus) {
         case PLVHCDocumentMinimumSheetStatusOnlyBar: {
-            selfRect = CGRectMake(marginLeft, screenSize.height - edgeInsets.bottom - marginBootom - barWidth, barWidth, barWidth);
+            selfRect = CGRectMake(marginLeft, superViewSize.height - marginBootom - barWidth, barWidth, barWidth);
             barRect = CGRectMake(0, 0, barWidth, barWidth);
         } break;
             
         case PLVHCDocumentMinimumSheetStatusShowGuiedView: {
-            selfRect = CGRectMake(marginLeft, screenSize.height - edgeInsets.bottom - marginBootom - barWidth, barWidth + guiedViewSize.width,  MAX(guiedViewSize.height, barWidth));
+            selfRect = CGRectMake(marginLeft, superViewSize.height - marginBootom - barWidth, barWidth + guiedViewSize.width,  MAX(guiedViewSize.height, barWidth));
             barRect = CGRectMake(0, 0, barWidth, barWidth);
             guiedViewRect = CGRectMake(barWidth + marginX, -marginY, guiedViewSize.width, guiedViewSize.height);
         } break;
@@ -103,8 +102,8 @@ PLVHCDocumentMinimumListViewDelegate // 文档最小化列表视图回调
         case PLVHCDocumentMinimumSheetStatusShowListView: {
             CGFloat tableViewHeight = MIN(self.minimumNum, 5) * [PLVHCDocumentMinimumCell cellHeight] + 14;
             selfRect = self.superview.bounds;
-            barRect = CGRectMake(marginLeft, screenSize.height - edgeInsets.bottom - marginBootom - barWidth, barWidth, barWidth);
-            listViewRect =  CGRectMake(CGRectGetMaxX(barRect) + marginX, selfRect.size.height - edgeInsets.bottom - marginBootom - tableViewHeight, listViewWidth, tableViewHeight);
+            barRect = CGRectMake(marginLeft, superViewSize.height - marginBootom - barWidth, barWidth, barWidth);
+            listViewRect =  CGRectMake(CGRectGetMaxX(barRect) + marginX, selfRect.size.height - marginBootom - tableViewHeight, listViewWidth, tableViewHeight);
         } break;
     }
     

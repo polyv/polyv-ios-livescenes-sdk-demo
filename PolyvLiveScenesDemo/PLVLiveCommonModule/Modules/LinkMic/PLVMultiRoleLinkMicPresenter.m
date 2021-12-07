@@ -43,16 +43,17 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, strong) UIView *rtcScreenStreamView; // RTC屏幕流渲染画布
 
 #pragma mark 数据
-@property (nonatomic, strong) PLVLinkMicOnlineUser *localUser;
+@property (nonatomic, strong) PLVLinkMicOnlineUser *teacherLinkMicUser; // 讲师连麦用户，当前用户即为讲师时，该属性与localUser等同
+@property (nonatomic, strong) PLVLinkMicOnlineUser *groupLeaderLinkMicUser; // 分组时，当前用户所在分组的组长连麦用户，当前用户即为组长时，该属性与localUser等同
+@property (nonatomic, strong) PLVLinkMicOnlineUser *localUser; // 当前连麦用户
 @property (nonatomic, strong) NSMutableArray <PLVLinkMicOnlineUser *> *linkMicUserArray; // 当前连麦用户数组
 @property (nonatomic, assign) BOOL startClassInHalfMin; // YES：上课不超过30秒，此时收到所有学员的login消息均要发送joinResponse消息
-@property (nonatomic, strong) NSMutableArray <NSString *> *emitedJoinReesponseUserIdArray; // startClassInHalfMin为YES时，记录已发送joinRsponse消息的用户ID
+@property (nonatomic, strong) NSMutableArray <NSString *> *emitedJoinResponseUserIdArray; // startClassInHalfMin为YES时，记录已发送joinRsponse消息的用户ID
 @property (nonatomic, strong) NSMutableDictionary <NSString *, NSDictionary *> *prerecordUserMediaStatusDict; // 用于提前记录用户媒体状态的字典
 @property (nonatomic, strong) NSMutableArray <NSString *> *unsubscribeScreenStreamArray; // 用于记录尚未订阅的加入房间的远端屏幕流<连麦ID>
 
 #pragma mark 外部数据封装
-@property (nonatomic, copy, readonly) NSString *courseCode;
-@property (nonatomic, copy, readonly) NSString *lessonId;
+@property (nonatomic, copy, readonly) NSString *roomId;
 @property (nonatomic, copy, readonly) NSString *channelId;
 @property (nonatomic, copy, readonly) NSString *sessionId;
 @property (nonatomic, copy, readonly) NSString *userId;
@@ -146,7 +147,7 @@ PLVLinkMicManagerDelegate
     // 获取连麦Token
     __weak typeof(self) weakSelf = self;
     [self updateLinkMicTokenWithSuccessHandler:^{ // 加入 RTC 频道
-        int res = [weakSelf.linkMicManager joinRtcChannelWithChannelId:weakSelf.channelId userLinkMicId:weakSelf.linkMicUserId];
+        int res = [weakSelf.linkMicManager joinRtcChannelWithChannelId:weakSelf.roomId userLinkMicId:weakSelf.linkMicUserId];
         
         if (res == 0) {
             if (weakSelf.userType == PLVSocketUserTypeTeacher) {
@@ -174,11 +175,41 @@ PLVLinkMicManagerDelegate
     self.delayResponse = NO;
     self.linkingMic = NO;
     self.localUser = nil;
+    self.teacherLinkMicUser = nil;
+    self.groupLeaderLinkMicUser = nil;
     self.linkMicManager = nil;
     self.startClassInHalfMin = NO;
-    [self.emitedJoinReesponseUserIdArray removeAllObjects];
+    [self.emitedJoinResponseUserIdArray removeAllObjects];
     [self.prerecordUserMediaStatusDict removeAllObjects];
     [self.unsubscribeScreenStreamArray removeAllObjects];
+}
+
+- (void)changeChannel {
+    // 取消订阅所有在线用户的 RTC 流
+    [self unsubscribeStreamAllLinkMicUser];
+    // 清空在线用户数组
+    [self removeAllLinkMicUser];
+    // 退出 RTC 频道
+    [self.linkMicManager leaveRtcChannel];
+    
+    // 状态位恢复
+    self.delayResponse = NO;
+    self.linkingMic = NO;
+    self.localUser = nil;
+    self.groupLeaderLinkMicUser = nil;
+    self.startClassInHalfMin = NO;
+    [self.emitedJoinResponseUserIdArray removeAllObjects];
+    [self.prerecordUserMediaStatusDict removeAllObjects];
+    [self.unsubscribeScreenStreamArray removeAllObjects];
+    
+    // 获取连麦Token
+    __weak typeof(self) weakSelf = self;
+    [self updateLinkMicTokenWithSuccessHandler:^{ // 加入 RTC 频道
+        int res = [weakSelf.linkMicManager joinRtcChannelWithChannelId:weakSelf.roomId userLinkMicId:weakSelf.linkMicUserId];
+        if (res != 0) { // 加入 RTC 频道失败
+            [weakSelf notifyJoinRTCChannelFailure];
+        }
+    }];
 }
 
 #pragma mark 本地用户管理（通用）
@@ -281,38 +312,25 @@ PLVLinkMicManagerDelegate
     return linkMicUser;
 }
 
-- (void)updateUserBrushAuthWithUserId:(NSString *)userId auth:(BOOL)auth {
-    if (![PLVFdUtil checkStringUseable:userId]) {
+- (void)updateGroudLeader {
+    NSString *groupLeaderId = [PLVHiClassManager sharedManager].groupLeaderId;
+    if (![PLVFdUtil checkStringUseable:groupLeaderId]) {
         return;
     }
-    [self.currentLinkMicUserArray enumerateObjectsUsingBlock:^(PLVLinkMicOnlineUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([obj.linkMicUserId isEqualToString:userId]) {
-            [obj updateUserCurrentBrushAuth:auth];
-            *stop = YES;
-        }
-    }];
-}
-
-- (NSString *)nicknameAndUpdateUserGrantCupCountWithUserId:(NSString *)userId {
-    if (![PLVFdUtil checkStringUseable:userId]) {
-        return nil;
+    
+    self.groupLeaderLinkMicUser.groupLeader = NO;
+    PLVLinkMicOnlineUser *updateGroupLeader = [self linkMicUserWithLinkMicId:groupLeaderId];
+    if (updateGroupLeader) { // 对新的组长数据对象重新排序，将其插入到数组前面（具体的业务逻辑已在[-addLinkMicUser:]里面处理了
+        [self removeLinkMicUserWithLinkMicId:groupLeaderId];
+        [self addLinkMicUser:updateGroupLeader];
     }
-    __block NSString *nickname = nil;
-    [self.currentLinkMicUserArray enumerateObjectsUsingBlock:^(PLVLinkMicOnlineUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([obj.linkMicUserId isEqualToString:userId]) {
-            nickname = obj.nickname;
-            NSInteger cupCount = obj.currentCupCount + 1;
-            [obj updateUserCurrentGrantCupCount:cupCount];
-            *stop = YES;
-        }
-    }];
-    return nickname;
 }
 
 #pragma mark 连麦用户操作管理（以下API仅讲师身份时有效）
 
 - (void)allowUserLinkMic:(PLVChatUser *)chatUser {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return;
     }
     
@@ -322,7 +340,8 @@ PLVLinkMicManagerDelegate
     }
     
     if (!chatUser.userId ||
-        [chatUser.userId isEqualToString:self.userId]) { // user 为讲师自己时无需发送 joinResponse 消息
+        [chatUser.userId isEqualToString:self.userId] ||
+        chatUser.userType == PLVRoomUserTypeTeacher) { // user 为自己或讲师时无需发送 joinResponse 消息
         return;
     }
     
@@ -336,7 +355,8 @@ PLVLinkMicManagerDelegate
 }
 
 - (void)closeUserLinkMic:(PLVLinkMicOnlineUser *)linkMicUser {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return;
     }
     
@@ -346,7 +366,8 @@ PLVLinkMicManagerDelegate
     }
     
     if (!linkMicUser.linkMicUserId ||
-        [linkMicUser.linkMicUserId isEqualToString:self.linkMicUserId]) { // user 为讲师自己时无需发送’挂断‘消息
+        [linkMicUser.linkMicUserId isEqualToString:self.linkMicUserId] ||
+        linkMicUser.userType == PLVSocketUserTypeTeacher) { // user 为自己或讲师时无需发送’挂断‘消息
         return;
     }
     
@@ -357,21 +378,23 @@ PLVLinkMicManagerDelegate
 }
 
 - (BOOL)closeAllLinkMicUser {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return NO;
     }
     
     BOOL success = [[PLVSocketManager sharedManager] emitPermissionMessageForCloseAllLinkMicWithTimeout:5.0 callback:nil];
     if (success) {
-        [self removeAllLinkMicUserExceptTeacher];
-        [self unsubscribeStreamAllLinkMicUserExceptTeacher];
+        [self removeAllLinkMicUserExceptTeacherAndGroupLeader];
+        [self unsubscribeStreamAllLinkMicUserExceptTeacherAndGroupLeader];
     }
     return success;
 }
 
 /// 开启或关闭‘某位远端用户’的麦克风
 - (void)muteMicrophoneWithLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser mute:(BOOL)mute {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return;
     }
     
@@ -385,7 +408,8 @@ PLVLinkMicManagerDelegate
 
 /// 开启或关闭’某位远端用户的‘摄像头
 - (void)muteCameraWithLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser mute:(BOOL)mute {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return;
     }
     
@@ -399,7 +423,8 @@ PLVLinkMicManagerDelegate
 
 /// 关闭/开启‘全部连麦用户’的麦克风
 - (void)muteAllLinkMicUserMicrophone:(BOOL)mute {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return;
     }
     
@@ -412,14 +437,12 @@ PLVLinkMicManagerDelegate
 
 #pragma mark Getter
 
-- (NSString *)courseCode {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    return roomData.lessonInfo.courseCode;
-}
-
-- (NSString *)lessonId {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    return roomData.lessonInfo.lessonId;
+- (NSString *)roomId {
+    if ([PLVHiClassManager sharedManager].groupState == PLVHiClassGroupStateInGroup) {
+        return [PLVHiClassManager sharedManager].groupId;
+    } else {
+        return self.channelId;
+    }
 }
 
 - (NSString *)channelId {
@@ -459,16 +482,13 @@ PLVLinkMicManagerDelegate
 #pragma mark RTC房间管理（通用）
 
 - (void)updateLinkMicTokenWithSuccessHandler:(void (^)(void))successHandler {
-    if (!self.linkMicManager) {
-        self.linkMicManager = [PLVLinkMicManager linkMicManagerWithRTCType:@"urtc"];
-    }
-    
+    self.linkMicManager = [PLVLinkMicManager linkMicManagerWithRTCType:@"urtc"];
     self.linkMicManager.delegate = self;
     self.linkMicManager.micDefaultOpen = self.micDefaultOpen;
     self.linkMicManager.cameraDefaultOpen = self.cameraDefaultOpen;
     self.linkMicManager.cameraDefaultFront = self.cameraDefaultFront;
     
-    PLVLinkMicGetTokenModel *getTokenModel = [self createeGetLinkMicTokenModel];
+    PLVLinkMicGetTokenModel *getTokenModel = [self createGetLinkMicTokenModel];
     
     __weak typeof(self) weakSelf = self;
     [self.linkMicManager updateVClassRTCTokenWith:getTokenModel completion:^(BOOL updateResult) {
@@ -482,15 +502,19 @@ PLVLinkMicManagerDelegate
     }];
 }
 
-- (PLVLinkMicGetTokenModel *)createeGetLinkMicTokenModel {
+- (PLVLinkMicGetTokenModel *)createGetLinkMicTokenModel {
     PLVLinkMicGetTokenModel *getTokenModel = [[PLVLinkMicGetTokenModel alloc] init];
     getTokenModel.channelType = PLVChannelTypePPT;
-    getTokenModel.courseCode = self.courseCode;
-    getTokenModel.lessonId = self.lessonId;
+    getTokenModel.courseCode = [PLVHiClassManager sharedManager].courseCode;
+    getTokenModel.lessonId = [PLVHiClassManager sharedManager].lessonId;
     getTokenModel.channelId = self.channelId;
     getTokenModel.sessionId = self.sessionId;
     getTokenModel.viewerId = getTokenModel.userId = self.userId;
     getTokenModel.nickname = self.linkMicUserNickname;
+    
+    if ([PLVHiClassManager sharedManager].groupState == PLVHiClassGroupStateInGroup) {
+        getTokenModel.groupId = [PLVHiClassManager sharedManager].groupId;
+    }
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     getTokenModel.userType = [PLVRoomUser userTypeStringWithUserType:roomUser.viewerType];
@@ -507,12 +531,18 @@ PLVLinkMicManagerDelegate
     }
     
     PLVBRTCSubscribeStreamMediaType mediaType = PLVBRTCSubscribeStreamMediaType_Audio | PLVBRTCSubscribeStreamMediaType_Video;
-    BOOL isTeacher = linkMicUser.userType == PLVBSocketUserTypeTeacher;
-    if (isTeacher) { // 讲师身份使用单一的流订阅方式
+    BOOL isAddUserTeacher = linkMicUser.userType == PLVBSocketUserTypeTeacher;
+    PLVHiClassManager *manager = [PLVHiClassManager sharedManager];
+    BOOL isAddUserGroupLeader = (manager.groupState == PLVHiClassGroupStateInGroup && [linkMicUser.userId isEqualToString:manager.groupLeaderId]);
+    BOOL isTeacherInGroup = manager.teacherInGroup;
+    if (isAddUserTeacher || (isAddUserGroupLeader && !isTeacherInGroup)) { // 讲师身份\讲师不在时的组长身份，使用单一的流订阅方式
         if (streamSourceType == -1) { // 检查连麦列表数据发现的未订阅流用户，未知流类型
             BOOL prerecord = [self readUnsubscribeScreenStreamRecordWithLinkMicId:linkMicUser.linkMicUserId];
             streamSourceType = prerecord ? PLVBRTCSubscribeStreamSourceType_Screen : PLVBRTCSubscribeStreamSourceType_Camera;
             [self removeRecordUnsubscribeScreenStreamWihtLinkMicId:linkMicUser.linkMicUserId];
+            if (!prerecord && isAddUserTeacher) { // 未收到讲师的流加入教室，标注streamLeaveRoom为YES用于UI显示讲师流不在教室时的占位图
+                linkMicUser.streamLeaveRoom = YES;
+            }
         }
         
         if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Screen) { // 屏幕流应订阅在 rtcScreenStreamView 视图上
@@ -560,9 +590,10 @@ PLVLinkMicManagerDelegate
     })
 }
 
-- (void)unsubscribeStreamAllLinkMicUserExceptTeacher {
+- (void)unsubscribeStreamAllLinkMicUserExceptTeacherAndGroupLeader {
     for (PLVLinkMicOnlineUser *linkMicUser in self.currentLinkMicUserArray) {
-        if (linkMicUser.userType != PLVSocketUserTypeTeacher) {
+        if (linkMicUser.userType != PLVSocketUserTypeTeacher &&
+            ![linkMicUser.linkMicUserId isEqualToString:[PLVHiClassManager sharedManager].groupLeaderId]) {
             [self unsubscribeStreamWithRTCUserId:linkMicUser.linkMicUserId];
         }
     }
@@ -667,11 +698,14 @@ PLVLinkMicManagerDelegate
     if (!self.localUser) {
         [self createLocalUser];
     }
+    if ([PLVHiClassManager sharedManager].currentUserIsGroupLeader) {
+        self.localUser.groupLeader = YES;
+    }
     
     self.linkingMic = YES;
     BOOL add = [self addLinkMicUser:self.localUser];
     [self subscribeStreamWithLinkMicUser:self.localUser streamSourceType:PLVBRTCSubscribeStreamSourceType_Camera];
-    if (add && self.userType == PLVSocketUserTypeSCStudent) { // 触发当前用户（学员）被上台回调
+    if (add && self.userType == PLVSocketUserTypeSCStudent && ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 触发当前用户（学员）被上台回调
         [self notifyLocalUserLinkMicStatusChanged];
     }
 }
@@ -685,7 +719,7 @@ PLVLinkMicManagerDelegate
     [self.linkMicManager closeLinkMicWithRemoteUserId:self.linkMicUserId completed:nil];
     BOOL exist = [self removeLinkMicUserWithLinkMicId:self.linkMicUserId];
     [self unsubscribeStreamWithRTCUserId:self.linkMicUserId];
-    if (exist) { // 触发当前用户（学员）被下台回调
+    if (exist && ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 触发当前用户（学员）被下台回调
         [self notifyLocalUserLinkMicStatusChanged];
     }
 }
@@ -701,6 +735,10 @@ PLVLinkMicManagerDelegate
     
     // 待插入数据已存在数组 linkMicUserArray 中
     if ([self linkMicUserWithLinkMicId:linkMicUser.linkMicUserId]) {
+        if (linkMicUser.streamLeaveRoom) { // 讲师流重新进入教室时，标注streamLeaveRoom为NO用于UI移除讲师流不在教室时的占位图
+            linkMicUser.streamLeaveRoom = NO;
+            [self notifyLinkMicUserArrayChanged];
+        }
         return NO;
     }
     
@@ -710,7 +748,8 @@ PLVLinkMicManagerDelegate
             [self createLocalUser];
         }
     } else { // 新加入用户为其他远端用户时，增加事件监听
-        if (self.userType == PLVSocketUserTypeTeacher) { // 讲师特有事件
+        if (self.userType == PLVSocketUserTypeTeacher ||
+            [PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 讲师特有事件
             __weak typeof(self) weakSelf = self;
             linkMicUser.wantCloseLinkMicBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) { // 将用户下台
                 [weakSelf closeUserLinkMic:onlineUser];
@@ -737,12 +776,27 @@ PLVLinkMicManagerDelegate
         [self updateUserMediaStatusWithLinkMicUser:linkMicUser];
     }
     
+    if (linkMicUser.userType == PLVSocketUserTypeTeacher) {
+        self.teacherLinkMicUser = linkMicUser;
+    } else if ([linkMicUser.linkMicUserId isEqualToString:[PLVHiClassManager sharedManager].groupLeaderId]) {
+        linkMicUser.groupLeader = YES;
+        self.groupLeaderLinkMicUser = linkMicUser;
+    }
+    
     __weak typeof(self) weakSelf = self;
     dispatch_barrier_async(linkMicUserArrayQueue, ^{
         PLVLinkMicOnlineUser *addUser = local ? weakSelf.localUser : linkMicUser;
-        if (linkMicUser.userType == PLVSocketUserTypeTeacher) { // 将用户加入连麦数组
+        if (addUser.userType == PLVSocketUserTypeTeacher) { // 将用户加入连麦数组
             [weakSelf.linkMicManager setTeacherUserId:linkMicUser.linkMicUserId];
             [weakSelf.linkMicUserArray insertObject:addUser atIndex:0];
+        } else if (addUser.groupLeader) {
+            if ([weakSelf.linkMicUserArray count] > 0) {
+                PLVLinkMicOnlineUser *firstUser = weakSelf.linkMicUserArray.firstObject;
+                NSInteger insertIndex = (firstUser.userType == PLVSocketUserTypeTeacher) ? 1 : 0;
+                [weakSelf.linkMicUserArray insertObject:addUser atIndex:insertIndex];
+            } else {
+                [weakSelf.linkMicUserArray addObject:addUser];
+            }
         } else {
             [weakSelf.linkMicUserArray addObject:addUser];
         }
@@ -758,15 +812,20 @@ PLVLinkMicManagerDelegate
         return NO;
     }
     
-    if (self.userType == PLVSocketUserTypeTeacher &&
-        [linkMicId isEqualToString:self.linkMicUserId]) { // 当前用户为讲师时，待删除用户不可为当前用户
-        return NO;
-    }
-    
     // 待删除数据不存在数组 linkMicUserArray 中
     PLVLinkMicOnlineUser *linkMicUser = [self linkMicUserWithLinkMicId:linkMicId];
     if (!linkMicUser) {
         return NO;
+    }
+    
+    PLVHiClassManager *manager = [PLVHiClassManager sharedManager];
+    if (manager.groupState != PLVHiClassGroupStateInGroup ||
+        (manager.groupState == PLVHiClassGroupStateInGroup && manager.teacherInGroup)) {
+        if (linkMicUser.userType == PLVSocketUserTypeTeacher) { // 非分组时，或分组且讲师在当前分组中时，待删除用户不可为讲师
+            linkMicUser.streamLeaveRoom = YES; // 讲师仅在流离开教室时，会有remove操作，此时标注streamLeaveRoom为YES用于UI显示讲师流不在教室时的占位图
+            [self notifyLinkMicUserArrayChanged];
+            return NO;
+        }
     }
     
     dispatch_barrier_async(linkMicUserArrayQueue, ^{
@@ -777,10 +836,19 @@ PLVLinkMicManagerDelegate
     return YES;
 }
 
-- (void)removeAllLinkMicUserExceptTeacher {
+- (void)removeAllLinkMicUserExceptTeacherAndGroupLeader {
     dispatch_barrier_async(linkMicUserArrayQueue, ^{
-        [self.linkMicUserArray removeAllObjects];
-        [self.linkMicUserArray insertObject:self.localUser atIndex:0];
+        if (self.userType == PLVSocketUserTypeTeacher) { // 当前用户为讲师
+            [self.linkMicUserArray removeAllObjects];
+            [self.linkMicUserArray addObject:self.localUser];
+        } else if ([PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 当前用户为组长
+            PLVLinkMicOnlineUser *firstLinkMicUser = self.linkMicUserArray.firstObject;
+            [self.linkMicUserArray removeAllObjects];
+            if (firstLinkMicUser.userType == PLVSocketUserTypeTeacher) {
+                [self.linkMicUserArray addObject:firstLinkMicUser];
+            }
+            [self.linkMicUserArray addObject:self.localUser];
+        }
     });
     
     [self notifyLinkMicUserArrayChanged];
@@ -817,9 +885,16 @@ PLVLinkMicManagerDelegate
                     break;
                 }
             }
-            if (!existInJoinList &&
-                linkMicUser.userType != PLVBSocketUserTypeTeacher) {
-                [needRemoveLinkMicIdArray addObject:linkMicUser.linkMicUserId];
+
+            if (!existInJoinList) {
+                if (linkMicUser.userType == PLVBSocketUserTypeTeacher) {
+                    PLVHiClassManager *manager = [PLVHiClassManager sharedManager];
+                    if (manager.groupState != PLVHiClassGroupStateNotInGroup && !manager.teacherInGroup) {
+                        [needRemoveLinkMicIdArray addObject:linkMicUser.linkMicUserId];
+                    }
+                } else {
+                    [needRemoveLinkMicIdArray addObject:linkMicUser.linkMicUserId];
+                }
             }
         }
     });
@@ -853,6 +928,40 @@ PLVLinkMicManagerDelegate
             [existLinkMicUser updateWithDictionary:userDict];
         }
     }
+    
+    // 确保讲师在第一位，其次是组长；讲师不在数组中时，组长第一位。
+    dispatch_barrier_async(linkMicUserArrayQueue, ^{
+        NSInteger teacherIndex = -1;
+        NSInteger groupLeaderIndex = -1;
+        NSInteger index = 0;
+        for (PLVLinkMicOnlineUser *linkMicUser in self.linkMicUserArray) {
+            if (linkMicUser.userType == PLVSocketUserTypeTeacher) {
+                self.teacherLinkMicUser = linkMicUser;
+                teacherIndex = index;
+            } else if (linkMicUser.groupLeader) {
+                self.groupLeaderLinkMicUser = linkMicUser;
+                groupLeaderIndex = index;
+            }
+            if (teacherIndex != -1 && groupLeaderIndex != -1) {
+                break;
+            }
+            index++;
+        }
+        if (teacherIndex > 0) { // 讲师位置不对
+            [self.linkMicUserArray removeObject:self.teacherLinkMicUser];
+            [self.linkMicUserArray insertObject:self.teacherLinkMicUser atIndex:0];
+            teacherIndex = 0;
+        }
+        if ((teacherIndex == 0 && groupLeaderIndex != -1 && [self.linkMicUserArray count] >= 2) ||
+            (teacherIndex == -1 && groupLeaderIndex != -1 && [self.linkMicUserArray count] >= 1)) {
+            NSInteger groupLeaderShouldIndex = teacherIndex == 0 ? 1 : 0; // 组长正确索引
+            PLVLinkMicOnlineUser *shouldGroupLeaderUser = self.linkMicUserArray[groupLeaderShouldIndex];
+            if (!shouldGroupLeaderUser.groupLeader) { // 正确索引取得的用户数据不是组长，证明组长位置不对
+                [self.linkMicUserArray removeObject:self.groupLeaderLinkMicUser];
+                [self.linkMicUserArray insertObject:self.groupLeaderLinkMicUser atIndex:groupLeaderShouldIndex];
+            }
+        }
+    });
     
     [self notifyLinkMicUserArrayChanged];
 }
@@ -914,7 +1023,8 @@ PLVLinkMicManagerDelegate
 - (void)emitJoinResponseEventWithUserDict:(NSDictionary *)userDict
                                needAnswer:(BOOL)needAnswer
                                   success:(void (^ _Nullable)(PLVLinkMicOnlineUser *linkMicUser))successBlock {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return;
     }
     
@@ -930,7 +1040,8 @@ PLVLinkMicManagerDelegate
 
 /// 调用 SDK 接口对某个用户断开连麦
 - (void)emitCloseLinkMicEventWithLinkMicId:(NSString *)linkMicId success:(void (^ _Nullable)(void))successBlock {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅在当前用户为讲师时该方法才有效
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅在当前用户为讲师或组长时该方法才有效
         return;
     }
     
@@ -957,7 +1068,7 @@ PLVLinkMicManagerDelegate
         return;
     }
     
-    if ([PLVRoomDataManager sharedManager].roomData.lessonInfo.hiClassStatus != PLVHiClassStatusInClass) { // 非上课时无需发送 joinResponse 消息
+    if ([PLVHiClassManager sharedManager].status != PLVHiClassStatusInClass) { // 非上课时无需发送 joinResponse 消息
         return;
     }
     
@@ -981,20 +1092,15 @@ PLVLinkMicManagerDelegate
 
 // 讲师身份开始上课后的自动上台逻辑
 - (void)autoLinkMic {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (!roomData.lessonInfo.autoLinkMic) { // 该课程没有开启自动连麦
+    if (![PLVRoomDataManager sharedManager].roomData.autoLinkMic) { // 该课程没有开启自动连麦
         return;
     }
     
-    NSInteger classTime = roomData.lessonInfo.classTime;
-    NSInteger classDuration = ([PLVFdUtil curTimeInterval] - classTime) / 1000.0;
-    NSInteger autoLinkMicTime = 0;
-    if (classTime == 0) { // 刚刚开始上课
-        autoLinkMicTime = kAllJoinResponseInterval;
-    } else if (classDuration >= 0 && classDuration < kAllJoinResponseInterval) { // 之前已经开始上课,但上课未超过30秒
-        autoLinkMicTime = kAllJoinResponseInterval - classDuration;
+    if ([PLVHiClassManager sharedManager].status != PLVHiClassStatusInClass) { // 未上课时不自动连麦
+        return;
     }
-    if (autoLinkMicTime <= 0) { // 已上课时长超过30秒不自动连麦
+    
+    if ([PLVHiClassManager sharedManager].duration > kAllJoinResponseInterval) { // 已上课时长超过30秒不自动连麦
         return;
     }
     
@@ -1002,12 +1108,13 @@ PLVLinkMicManagerDelegate
     
     // 标记startClassInHalfMin为YES
     self.startClassInHalfMin = YES;
-    self.emitedJoinReesponseUserIdArray = [[NSMutableArray alloc] init];
+    self.emitedJoinResponseUserIdArray = [[NSMutableArray alloc] init];
+    NSInteger autoLinkMicTime = kAllJoinResponseInterval - [PLVHiClassManager sharedManager].duration;
     dispatch_time_t startClassDelayTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(autoLinkMicTime * NSEC_PER_SEC));
     dispatch_after(startClassDelayTime, dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT), ^{
         // 上课超过30秒，标记startClassInHalfMin为NO
         weakSelf.startClassInHalfMin = NO;
-        [weakSelf.emitedJoinReesponseUserIdArray removeAllObjects];
+        [weakSelf.emitedJoinResponseUserIdArray removeAllObjects];
     });
     
     // 1秒后对成员列表数据逐一发送 joinResponse 消息
@@ -1026,7 +1133,7 @@ PLVLinkMicManagerDelegate
     }
     
     BOOL exist = NO;
-    for (NSString *enumUserId in self.emitedJoinReesponseUserIdArray) {
+    for (NSString *enumUserId in self.emitedJoinResponseUserIdArray) {
         if ([enumUserId isEqualToString:userId]) {
             exist = YES;
             break;
@@ -1035,7 +1142,7 @@ PLVLinkMicManagerDelegate
     if (exist) {
         return YES;
     } else {
-        [self.emitedJoinReesponseUserIdArray addObject:userId];
+        [self.emitedJoinResponseUserIdArray addObject:userId];
         return NO;
     }
 }
@@ -1060,11 +1167,12 @@ PLVLinkMicManagerDelegate
 #pragma mark Socket消息接收处理
 
 - (void)handleLoginEventWithDict:(NSDictionary *)dict {
-    if ([PLVRoomDataManager sharedManager].roomData.lessonInfo.hiClassStatus != PLVHiClassStatusInClass) { // 非上课时无需发送 joinResponse 消息
+    if ([PLVHiClassManager sharedManager].status != PLVHiClassStatusInClass) { // 非上课时无需发送 joinResponse 消息
         return;
     }
     
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅当前用户为讲师时才需响应 LOGIN 消息
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅当前用户为讲师或组长时才需响应 LOGIN 消息
         return;
     }
     
@@ -1135,11 +1243,20 @@ PLVLinkMicManagerDelegate
         [self openLocalUserCamera:open];
     } else if ([type isEqualToString:@"audio"]) {
         [self openLocalUserMic:open];
+    } else if ([type isEqualToString:@"voice"]) {
+        if (open && [PLVHiClassManager sharedManager].groupState != PLVHiClassGroupStateNotInGroup) {
+            if (self.inRTCRoom) {
+                [self localUserJoinLinkMic];
+            } else {
+                self.delayResponse = YES;
+            }
+        }
     }
 }
 
 - (void)handleJoinAnswerEventWithDict:(NSDictionary *)dict {
-    if (self.userType != PLVSocketUserTypeTeacher) { // 仅当前用户为讲师时才需响应 joinAnswer 消息
+    if (self.userType != PLVSocketUserTypeTeacher &&
+        ![PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 仅当前用户为讲师或组长时才需响应 joinAnswer 消息
         return;
     }
     
@@ -1550,7 +1667,7 @@ PLVLinkMicManagerDelegate
     }
     
     __weak typeof(self) weakSelf = self;
-    [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId.integerValue
+    [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.roomId
                                               sessionId:self.sessionId
                                              completion:^(NSDictionary * _Nonnull responseDict) {
         NSArray *joinArray = PLV_SafeArraryForDictKey(responseDict, @"joinList");
@@ -1677,10 +1794,13 @@ PLVLinkMicManagerDelegate
         PLVChatUser *chatUser = [self notifyToGetOnlineUserWithUserId:userRTCId];
         if (chatUser) {
             linkMicUser = [PLVLinkMicOnlineUser localUserModelWithChatUser:chatUser];
-            [self addLinkMicUser:linkMicUser];
+        } else if ([userRTCId isEqualToString:self.teacherLinkMicUser.linkMicUserId]) {
+            linkMicUser = self.teacherLinkMicUser;
         }
     }
     if (linkMicUser) {
+        linkMicUser.streamLeaveRoom = NO; // 若讲师的流加入教室，标注streamLeaveRoom为NO用于隐藏讲师流不在教室时的占位图
+        [self addLinkMicUser:linkMicUser];
         [self subscribeStreamWithLinkMicUser:linkMicUser streamSourceType:streamSourceType];
     } else {
         if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Screen) {
@@ -1693,12 +1813,19 @@ PLVLinkMicManagerDelegate
     if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Screen) {
         [self removeRecordUnsubscribeScreenStreamWihtLinkMicId:userRTCId];
         PLVLinkMicOnlineUser *linkMicUser = [self linkMicUserWithLinkMicId:userRTCId];
-        if (linkMicUser &&
-            linkMicUser.userType == PLVBSocketUserTypeTeacher) {
+        if (!linkMicUser) {
+            return;
+        }
+        if (linkMicUser.userType == PLVBSocketUserTypeTeacher ||
+            ([PLVHiClassManager sharedManager].groupState == PLVHiClassGroupStateInGroup && linkMicUser.groupLeader)) {
             plv_dispatch_main_async_safe(^{
                 [self.linkMicManager unsubscribeStreamWithRTCUserId:userRTCId subscribeMode:PLVBRTCSubscribeStreamSubscribeMode_Screen];
                 [self notifyDidTeacherScreenStreamRemoved];
             })
+        }
+    } else {
+        if ([userRTCId isEqualToString:self.teacherLinkMicUser.linkMicUserId]) {
+            [self removeLinkMicUserWithLinkMicId:userRTCId];
         }
     }
 }

@@ -133,8 +133,10 @@
 }
 
 - (void)setCloseRoomButtonState:(BOOL)selected {
-    self.closeRoomButton.selected = selected;
-    self.closeRoom = selected;
+    plv_dispatch_main_async_safe(^{
+        self.closeRoomButton.selected = selected;
+        self.closeRoom = selected;
+    })
 }
 
 - (void)setEmojiButtonState:(BOOL)selected {

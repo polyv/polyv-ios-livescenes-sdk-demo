@@ -51,7 +51,7 @@ PLVMemberPresenterDelegate // common层成员Presenter协议
     self.presenter.monitorKickUser = YES;
     self.presenter.delegate = self;
     
-    if ([PLVRoomDataManager sharedManager].roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) { // 开始上课之后才开始获取成员列表
+    if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass) { // 开始上课之后才开始获取成员列表
         [self start];
     }
 }
@@ -75,6 +75,10 @@ PLVMemberPresenterDelegate // common层成员Presenter协议
     [self.presenter stop];
 }
 
+- (void)loadOnlineUserList {
+    [self.presenter loadOnlineUserList];
+}
+
 - (PLVChatUser * _Nullable)userInListWithUserId:(NSString *)userId {
     return [self.presenter userInListWithUserId:userId];
 }
@@ -89,6 +93,88 @@ PLVMemberPresenterDelegate // common层成员Presenter协议
 
 - (void)banUserWithUserId:(NSString *)userId banned:(BOOL)banned {
     [self.presenter banUserWithUserId:userId banned:banned];
+}
+
+- (void)handUpWithUserId:(NSString *)userId handUp:(BOOL)handUp {
+    if (![PLVFdUtil checkStringUseable:userId]) {
+        return;
+    }
+    
+    __block BOOL match = NO;
+    [self.onlineUserArray enumerateObjectsUsingBlock:^(PLVChatUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([obj.userId isEqualToString:userId]) {
+            if (obj.onlineUser) {
+                [obj.onlineUser updateUserCurrentHandUp:handUp];
+            }
+            obj.currentHandUp = handUp;
+            match = YES;
+            *stop = YES;
+        }
+    }];
+    if (match) {
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(onlineUserListChangedInMemberViewModel:)]) {
+            __weak typeof(self) weakSelf = self;
+            plv_dispatch_main_async_safe(^{
+                [weakSelf.delegate onlineUserListChangedInMemberViewModel:weakSelf];
+            })
+        }
+    }
+}
+
+- (NSString *)grantCupWithUserId:(NSString *)userId {
+    if (![PLVFdUtil checkStringUseable:userId]) {
+        return nil;
+    }
+    
+    __block NSString *nick = nil;
+    [self.onlineUserArray enumerateObjectsUsingBlock:^(PLVChatUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([obj.userId isEqualToString:userId]) {
+            obj.cupCount++;
+            if (obj.onlineUser) {
+                [obj.onlineUser updateUserCurrentGrantCupCount:obj.cupCount];
+            }
+            nick = obj.userName;
+            *stop = YES;
+        }
+    }];
+    if (nick) {
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(onlineUserListChangedInMemberViewModel:)]) {
+            __weak typeof(self) weakSelf = self;
+            plv_dispatch_main_async_safe(^{
+                [weakSelf.delegate onlineUserListChangedInMemberViewModel:weakSelf];
+            })
+        }
+    }
+    return nick;
+}
+
+- (void)brushPermissionWithUserId:(NSString *)userId auth:(BOOL)auth {
+    if (![PLVFdUtil checkStringUseable:userId]) {
+        return;
+    }
+    
+    __block BOOL match = NO;
+    [self.onlineUserArray enumerateObjectsUsingBlock:^(PLVChatUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if ([obj.userId isEqualToString:userId]) {
+            if (obj.onlineUser) {
+                [obj.onlineUser updateUserCurrentBrushAuth:auth];
+            }
+            obj.currentBrushAuth = auth;
+            match = YES;
+            *stop = YES;
+        }
+    }];
+    if (match) {
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(onlineUserListChangedInMemberViewModel:)]) {
+            __weak typeof(self) weakSelf = self;
+            plv_dispatch_main_async_safe(^{
+                [weakSelf.delegate onlineUserListChangedInMemberViewModel:weakSelf];
+            })
+        }
+    }
 }
 
 - (void)refreshUserListWithLinkMicOnlineUserArray:(NSArray <PLVLinkMicOnlineUser *>*)linkMicUserArray {
@@ -134,9 +220,9 @@ PLVMemberPresenterDelegate // common层成员Presenter协议
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(onlineUserListChangedInMemberViewModel:)]) {
         __weak typeof(self) weakSelf = self;
-        dispatch_async(dispatch_get_main_queue(), ^{
+        plv_dispatch_main_async_safe(^{
             [weakSelf.delegate onlineUserListChangedInMemberViewModel:weakSelf];
-        });
+        })
     }
 }
 
@@ -145,9 +231,9 @@ PLVMemberPresenterDelegate // common层成员Presenter协议
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(kickedUserListChangedInMemberViewModel:)]) {
         __weak typeof(self) weakSelf = self;
-        dispatch_async(dispatch_get_main_queue(), ^{
+        plv_dispatch_main_async_safe(^{
             [weakSelf.delegate kickedUserListChangedInMemberViewModel:weakSelf];
-        });
+        })
     }
 }
 

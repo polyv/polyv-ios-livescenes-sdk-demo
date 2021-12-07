@@ -52,6 +52,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 刷新文档列表
 - (void)refreshListView;
 
+/// 恢复上一场未结束直播的文档autoId
+- (void)setDocumentWithAutoId:(NSInteger)autoId;
+
 @end
 
 NS_ASSUME_NONNULL_END

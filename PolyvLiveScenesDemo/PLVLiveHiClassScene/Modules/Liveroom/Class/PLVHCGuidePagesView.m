@@ -55,7 +55,7 @@ typedef void (^PLVGuidePagesViewEndBlock)(void);
         UIEdgeInsets edgeInsets = [PLVHCUtils sharedUtils].areaInsets;
         CGFloat edgeInsetsRight = edgeInsets.right > 35 ? edgeInsets.right :35;
         edgeInsetsRight -= 8;
-        NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.lessonInfo.linkNumber;
+        NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.linkNumber;
         CGFloat linkMicHeight = linkNumber > 6 ? 85 : 60;
         self.classImageView.center = CGPointMake(CGRectGetWidth(self.bounds) - edgeInsetsRight - CGRectGetWidth(self.classImageView.bounds)/2, linkMicHeight + 8 + CGRectGetHeight(self.classImageView.bounds)/2);
         self.guideClassImageView.center = CGPointMake(self.classImageView.frame.origin.x - CGRectGetWidth(self.guideClassImageView.bounds)/2 - 10, self.classImageView.center.y);
@@ -113,9 +113,9 @@ typedef void (^PLVGuidePagesViewEndBlock)(void);
     }
     PLVHCGuidePagesView *guidePagesView = [[PLVHCGuidePagesView alloc] init];
     guidePagesView.backgroundColor = [UIColor colorWithRed:0/255.0 green:0/255.0 blue:0/255.0 alpha:0.75/1.0];
-    //设置出事frame
+    //设置frame
     UIEdgeInsets edgeInsets = [PLVHCUtils sharedUtils].areaInsets;
-    NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.lessonInfo.linkNumber;
+    NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.linkNumber;
     CGFloat linkMicHeight = linkNumber > 6 ? 85 : 60;
     CGFloat edgeInsetsTop = edgeInsets.top + 24 + linkMicHeight;
     guidePagesView.frame = CGRectMake(0, edgeInsetsTop, CGRectGetWidth(view.bounds), CGRectGetHeight(view.bounds) - edgeInsetsTop);
@@ -146,7 +146,7 @@ typedef void (^PLVGuidePagesViewEndBlock)(void);
     if (_guidePagesType == PLVHCGuidePagesType_Device) {
         _guidePagesType = PLVHCGuidePagesType_BeginClass;
         UIEdgeInsets edgeInsets = [PLVHCUtils sharedUtils].areaInsets;
-        NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.lessonInfo.linkNumber;
+        NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.linkNumber;
         CGFloat linkMicHeight = linkNumber > 6 ? 85 : 60;
         self.frame = CGRectMake(0, edgeInsets.top + 24, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds) + linkMicHeight);
         [self.guideDeviceImageView removeFromSuperview];

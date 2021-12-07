@@ -1,12 +1,12 @@
 //
-//  PLVPhotoPreViewController.m
+//  PLVAlbumPhotoPreViewController.m
 //  zPic
 //
 //  Created by zykhbl on 2017/7/19.
 //  Copyright © 2017年 zykhbl. All rights reserved.
 //
 
-#import "PLVPhotoPreViewController.h"
+#import "PLVAlbumPhotoPreViewController.h"
 #import "PLVImageInfo.h"
 #import "PLVWebImageDecoder.h"
 #import "PLVAlbumTool.h"
@@ -15,7 +15,7 @@
 #define NumberOfItemsInSection                  1
 #define PLVPreCollectionViewCellIdentifier        @"PLVPreCollectionViewCell"
 
-@implementation PLVPhotoPreViewController
+@implementation PLVAlbumPhotoPreViewController
 
 @synthesize delegate;
 @synthesize selectedLabel;
@@ -77,9 +77,9 @@
         [self changeSelectStatus:YES index:self.selectedItems.count - 1];
     }
     
-    if (self.delegate && [self.delegate respondsToSelector:@selector(PLVPhotoPreViewController:select:)]) {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(PLVAlbumPhotoPreViewController:select:)]) {
         NSUInteger index = indexPath.row + indexPath.section * NumberOfItemsInSection;
-        [self.delegate PLVPhotoPreViewController:self select:index];
+        [self.delegate PLVAlbumPhotoPreViewController:self select:index];
     }
 }
 

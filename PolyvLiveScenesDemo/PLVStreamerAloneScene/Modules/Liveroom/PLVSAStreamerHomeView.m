@@ -12,6 +12,7 @@
 #import "PLVSAUtils.h"
 
 // UI
+#import "PLVSAShadowMaskView.h"
 #import "PLVSAToolbarAreaView.h"
 #import "PLVSAChatroomAreaView.h"
 #import "PLVSAChannelInfoSheet.h"
@@ -48,6 +49,7 @@ PLVSALinkMicTipViewDelegate
 ///  └── (PLVSAStreamerHomeView) self (lowest)
 ///    ├── (UIScrollView) scrollView
 ///    │     ├── (PLVSALinkMicWindowsView) linkMicWindowsView
+///    │     │    ├── (PLVSAShadowMaskView) shadowMaskView
 ///    │     ├── (UIView) homePageView
 ///    │     │    ├── (PLVSAStatusbarAreaView) statusbarAreaView
 ///    │     │    ├── (PLVSAToolbarAreaView) toolbarAreaView
@@ -63,6 +65,7 @@ PLVSALinkMicTipViewDelegate
 @property (nonatomic, strong) UIButton *closeButton; // 关闭直播间按钮
 @property (nonatomic, strong) UIScrollView *scrollView; // 底部滑动视图
 @property (nonatomic, strong) UIView *homePageView; // 背景蒙版视图
+@property (nonatomic, strong) PLVSAShadowMaskView *shadowMaskView; // 渐变遮罩视图
 @property (nonatomic, strong) PLVSASlideRightTipsView *slideRightTipsView; // 右滑清屏新手引导视图
 @property (nonatomic, strong) PLVSAStatusbarAreaView *statusbarAreaView; //顶部状态栏视图
 @property (nonatomic, strong) PLVSAToolbarAreaView *toolbarAreaView; // 底部工具类视图
@@ -145,6 +148,7 @@ PLVSALinkMicTipViewDelegate
     BOOL first = CGRectEqualToRect(self.scrollView.frame, CGRectZero);
     self.scrollView.frame = self.bounds;
     self.scrollView.contentSize = CGSizeMake(selfSize.width * 2, selfSize.height);
+    self.shadowMaskView.frame = self.bounds;
     
     // 实际显示时，会在ShowNewWaitUserAdded方法内，根据当前在第几屏更新x、y
     CGFloat linkMicTipRightPadding = isLandscape ? 32 : 8;
@@ -287,6 +291,7 @@ PLVSALinkMicTipViewDelegate
     [self.linkMicWindowsView removeFromSuperview];
     [self.scrollView insertSubview:self.linkMicWindowsView atIndex:0];
     
+    [self.linkMicWindowsView addSubview:self.shadowMaskView];
     [self.scrollView addSubview:self.homePageView];
     [self.scrollView addSubview:self.linkMicTipView];
     
@@ -336,6 +341,13 @@ PLVSALinkMicTipViewDelegate
 }
 
 #pragma mark Getter & Setter
+
+- (PLVSAShadowMaskView *)shadowMaskView {
+    if (!_shadowMaskView) {
+        _shadowMaskView = [[PLVSAShadowMaskView alloc] init];
+    }
+    return _shadowMaskView;
+}
 
 - (UIButton *)closeButton {
     if (!_closeButton) {

@@ -221,6 +221,10 @@ PLVSDocumentListProtocol
     return cell;
 }
 
+- (void)setDocumentWithAutoId:(NSInteger)autoId {
+    self.selectAutoId = autoId;
+}
+
 #pragma mark - [ Action ]
 
 - (void)uploadDocAction:(UIButton *)button {

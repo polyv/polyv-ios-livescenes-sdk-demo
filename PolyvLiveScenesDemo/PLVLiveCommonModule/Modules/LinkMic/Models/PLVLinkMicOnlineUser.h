@@ -254,6 +254,12 @@ typedef void (^PLVLinkMicOnlineUserWantGrantCupBlock)(PLVLinkMicOnlineUser * onl
 ///用户 是否举手（YES举手 NO 取消举手）
 @property (nonatomic, assign, readonly) BOOL currentHandUp;
 
+/// 当前用户是否是组长
+@property (nonatomic, assign) BOOL groupLeader;
+
+/// 当前用户的流是否已离开房间，默认为NO，为YES时可用于显示占位图（目前该字段只在互动学堂场景讲师身份时有效）
+@property (nonatomic, assign) BOOL streamLeaveRoom;
+
 #pragma mark - [ 方法 ]
 #pragma mark 创建
 
@@ -425,28 +431,6 @@ typedef void (^PLVLinkMicOnlineUserWantGrantCupBlock)(PLVLinkMicOnlineUser * onl
 /// @param strongBlock ’闪光灯开关状态‘ 改变Block (强引用)
 /// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
 - (void)addCameraTorchOpenChangedBlock:(PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey;
-
-/// 使用 blockKey 添加一个 ’授予奖杯数量‘ 改变Block
-///
-/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
-///           否则，建议直接使用属性声明中的 [grantCupCountChangedBlock]，将更加便捷；
-///       (2) 具体回调规则，与 [grantCupCountChangedBlock] 相同无异；
-///       (3) 无需考虑 ‘什么时机去释放、去解除绑定’，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
-///
-/// @param strongBlock ’授予奖杯数量‘ 改变Block (强引用)
-/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
-- (void)addGrantCupCountChangedBlock:(PLVLinkMicOnlineUserGrantCupCountChangedBlock)strongBlock blockKey:(id)weakBlockKey;
-
-/// 使用 blockKey 添加一个 ’画笔授权状态‘ 改变Block
-///
-/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
-///           否则，建议直接使用属性声明中的 [brushAuthChangedBlock]，将更加便捷；
-///       (2) 具体回调规则，与 [brushAuthChangedBlock] 相同无异；
-///       (3) 无需考虑 ‘什么时机去释放、去解除绑定’，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
-///
-/// @param strongBlock ’画笔授权状态‘ 改变Block (强引用)
-/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
-- (void)addBrushAuthStateChangedBlock:(PLVLinkMicOnlineUserBrushAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey;
 
 @end
 

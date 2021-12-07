@@ -394,8 +394,8 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
 }
 
 - (void)setupTeacherNickname {
-    NSString *courseCode = [PLVRoomDataManager sharedManager].roomData.lessonInfo.courseCode;
-    NSString *lessonId = [PLVRoomDataManager sharedManager].roomData.lessonInfo.lessonId;
+    NSString *courseCode = [PLVHiClassManager sharedManager].courseCode;
+    NSString *lessonId = [PLVHiClassManager sharedManager].lessonId;
     __weak typeof(self) weakSelf = self;
     void(^successBlock)(NSArray * _Nonnull responseArray) = ^(NSArray * _Nonnull responseArray) {
         if (![PLVFdUtil checkArrayUseable:responseArray]) {

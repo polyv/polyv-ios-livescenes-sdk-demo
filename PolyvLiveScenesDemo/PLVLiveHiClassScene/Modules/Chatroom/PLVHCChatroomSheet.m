@@ -530,7 +530,7 @@ PLVHCSendMessageViewDelegate
         NSString *string = selected ? @"已开启全体禁言" : @"已解除全体禁言";
         [PLVHCUtils showToastInWindowWithMessage:string];
     } 
-    [self.toolView setCloseRoomButtonState:[PLVChatroomManager sharedManager].closeRoom];
+    [self.toolView setCloseRoomButtonState:selected];
 }
 
 #pragma mark PLVHCSendMessageViewDelegate

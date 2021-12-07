@@ -59,7 +59,6 @@
     for (UIView * subview in self.subviews) {
         [subview removeFromSuperview];
     }
-    [self.gradientLayer removeFromSuperlayer];
 }
 
 - (void)rtcViewShow:(BOOL)rtcViewShow {

@@ -1,5 +1,5 @@
 //
-//  PLVPhotoPreViewController.h
+//  PLVAlbumPhotoPreViewController.h
 //  zPic
 //
 //  Created by zykhbl on 2017/7/19.
@@ -9,11 +9,11 @@
 #import "PLVPhotoPreBaseViewController.h"
 #import "PLVPreCollectionViewCell.h"
 
-@protocol PLVPhotoPreViewControllerDelegate;
+@protocol PLVAlbumPhotoPreViewControllerDelegate;
 
-@interface PLVPhotoPreViewController : PLVPhotoPreBaseViewController <UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIScrollViewDelegate, PLVPreCollectionViewCellDelegate>
+@interface PLVAlbumPhotoPreViewController : PLVPhotoPreBaseViewController <UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIScrollViewDelegate, PLVPreCollectionViewCellDelegate>
 
-@property (nonatomic, assign) id<PLVPhotoPreViewControllerDelegate> delegate;
+@property (nonatomic, assign) id<PLVAlbumPhotoPreViewControllerDelegate> delegate;
 @property (nonatomic, strong) UILabel *selectedLabel;
 @property (nonatomic, strong) NSMutableArray *photos;
 @property (nonatomic, strong) NSMutableArray *selectedItems;
@@ -29,8 +29,8 @@
 
 @end
 
-@protocol PLVPhotoPreViewControllerDelegate <NSObject>
+@protocol PLVAlbumPhotoPreViewControllerDelegate <NSObject>
 
-- (void)PLVPhotoPreViewController:(PLVPhotoPreViewController*)preVC select:(NSUInteger)index;
+- (void)PLVAlbumPhotoPreViewController:(PLVAlbumPhotoPreViewController*)preVC select:(NSUInteger)index;
 
 @end

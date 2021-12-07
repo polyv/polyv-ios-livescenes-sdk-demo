@@ -68,6 +68,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 可能会触发回调【multiRoleLinkMicPresenterLeaveRTCChannelResult:】
 - (void)leaveRTCChannel;
 
+/// 切换RTC频道
+- (void)changeChannel;
+
 #pragma mark 本地用户管理（通用）
 
 /// 开启或关闭【本地用户】的麦克风
@@ -116,15 +119,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// @return 成功时返回符合要求的‘连麦在线用户’模型；失败返回 nil
 - (PLVLinkMicOnlineUser *)linkMicUserWithLinkMicId:(NSString *)linkMicId;
 
-/// 收到授权画笔的事件时，更新用户的 ‘画笔授权状态’
-/// @param userId 授权用户
-/// @param auth 是否授权（YES授权 NO取消授权）
-- (void)updateUserBrushAuthWithUserId:(NSString *)userId auth:(BOOL)auth;
-
-/// 收到授予奖杯事件时，更新用户的 ‘授予奖杯数量’、同时返回用户的昵称
-/// @param userId 授予奖杯的用户
-/// @return 根据userId 返回用户的昵称
-- (NSString *)nicknameAndUpdateUserGrantCupCountWithUserId:(NSString *)userId;
+/// 切换组长时，更新连麦用户的groupLeader字段，并对用户列表重新排序，组长排在讲师之后，组员之前
+- (void)updateGroudLeader;
 
 #pragma mark 连麦用户操作管理（以下API仅讲师身份时有效）
 

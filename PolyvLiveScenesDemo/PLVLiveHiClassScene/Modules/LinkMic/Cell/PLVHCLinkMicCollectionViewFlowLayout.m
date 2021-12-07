@@ -14,11 +14,10 @@
 
 @interface PLVHCLinkMicCollectionViewFlowLayout ()
 
-@property (nonatomic, assign) CGSize cellSize;
+@property (nonatomic, assign, readonly) CGSize minCellSize; //不同连麦人数最小的cellsize
 @property (nonatomic, assign) CGRect lastFrame; //记录布局的最后一个frame
-@property (nonatomic, assign) NSInteger linkNumber;
+@property (nonatomic, assign, readonly) NSInteger linkNumber;
 @property (nonatomic, strong) NSMutableArray *attributeAttay;//布局的LayoutAttributes
-@property (nonatomic, assign) BOOL containTeacher;//连麦布局中是否包含老师(默认不包含)仅在1v16布局中用到
 
 @end
 
@@ -32,10 +31,7 @@
         self.scrollDirection = UICollectionViewScrollDirectionHorizontal;
         self.minimumLineSpacing = 0;
         self.minimumInteritemSpacing = 0;
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        self.linkNumber = roomData.lessonInfo.linkNumber;
         self.attributeAttay = [NSMutableArray array];
-        self.cellSize = self.linkNumber > 6 ? CGSizeMake(74, 42.5) : CGSizeMake(106, 60);
     }
     return self;
 }
@@ -62,7 +58,6 @@
 - (void)updateLayoutAttributes {
     [self.attributeAttay removeAllObjects];
     self.lastFrame = CGRectZero;
-    self.containTeacher = NO;
     NSInteger itemCount = [self.collectionView numberOfItemsInSection:0];
 
     for (NSInteger index = 0; index < itemCount; index ++) {
@@ -70,26 +65,21 @@
         UICollectionViewLayoutAttributes *attris = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
         CGFloat originX = 0.0;
         CGFloat originY = 0.0;
-        if (self.linkNumber < 7) { //1V6布局
-            originX = CGRectGetMaxX(self.lastFrame);
-            attris.frame = CGRectMake(originX, originY, self.cellSize.width, self.cellSize.height);
-        } else { //1V16布局
-            //通过用户列表的总数计算出老师的位置下标
+        if (self.linkNumber > 6) { //1v16布局
             BOOL isTeacher = [self.delegate linkMicFlowLayout:self teacherItemAtIndexPath:indexPath];
             if (isTeacher) {
-                self.containTeacher = isTeacher;
                 //设置讲师item的frame
-                attris.frame = CGRectMake(CGRectGetMaxX(self.lastFrame), 0, self.cellSize.width * 2, self.cellSize.height * 2);
+                attris.frame = CGRectMake(CGRectGetMaxX(self.lastFrame), 0, self.minCellSize.width * 2, self.minCellSize.height * 2);
             } else {
                 //设置学生item的frame
                 BOOL singleShow = (NSInteger)(ceil(itemCount/2)) % 2 == 1 && itemCount > 5;
                 if (singleShow && index == 1) {
-                    // 判断首行需要单个显示，第二行就需要从下一行排列
+                    // 判断首列需要单个显示，第二个元素就需要从下一列排布
                     originY = 0;
                     originX = CGRectGetMaxX(self.lastFrame);
                 } else {
-                    if (CGRectGetMaxY(self.lastFrame) > self.cellSize.height) {
-                        //最大Y坐标大于单个高度则上一行已经占满了
+                    if (CGRectGetMaxY(self.lastFrame) > self.minCellSize.height) {
+                        //最大Y坐标大于单列高度
                         originY = 0;
                         originX = CGRectGetMaxX(self.lastFrame);
                     } else {
@@ -97,8 +87,11 @@
                         originX = CGRectGetMinX(self.lastFrame);
                     }
                 }
-                attris.frame = CGRectMake(originX, originY, self.cellSize.width, self.cellSize.height);
+                attris.frame = CGRectMake(originX, originY, self.minCellSize.width, self.minCellSize.height);
             }
+        } else { //1v6布局
+            originX = CGRectGetMaxX(self.lastFrame);
+            attris.frame = CGRectMake(originX, originY, self.minCellSize.width, self.minCellSize.height);
         }
         self.lastFrame = attris.frame;
         [self.attributeAttay addObject:attris];
@@ -122,20 +115,18 @@
 }
 
 - (CGSize)getCollectionViewContentSize {
-    if (self.linkNumber > 6) {
-        if (self.containTeacher) {
-            //1v16包含老师的布局需要始终保持老师在中间
-            NSInteger itemCount = [self.collectionView numberOfItemsInSection:0];
-            NSInteger scaleNum = itemCount > 1 ? (((itemCount - 2)/4 + 1) * 2) :0;
-            //讲师的连麦宽度和学生的连麦宽度
-            CGFloat contentWidth = self.cellSize.width * scaleNum + self.cellSize.width * 2;
-            return CGSizeMake(contentWidth, self.cellSize.height * 2);
-        } else {
-            return CGSizeMake(CGRectGetMaxX(self.lastFrame), self.cellSize.height * 2);
-        }
-    } else {
-        return CGSizeMake(CGRectGetMaxX(self.lastFrame), self.cellSize.height);
-    }
+    CGFloat collectionViewHeight = self.linkNumber > 6 ? self.minCellSize.height * 2 : self.minCellSize.height;
+    return CGSizeMake(CGRectGetMaxX(self.lastFrame), collectionViewHeight);
+}
+
+#pragma mark Getter
+
+- (NSInteger)linkNumber {
+    return [PLVRoomDataManager sharedManager].roomData.linkNumber;
+}
+
+- (CGSize)minCellSize {
+    return self.linkNumber > 6 ? CGSizeMake(74, 42.5) : CGSizeMake(106, 60);
 }
     
 @end

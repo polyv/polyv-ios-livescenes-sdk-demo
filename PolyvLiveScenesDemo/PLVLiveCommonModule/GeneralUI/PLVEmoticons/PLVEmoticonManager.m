@@ -3,7 +3,7 @@
 //  PLVCloudClassStreamerModul
 //
 //  Created by ftao on 2019/10/30.
-//  Copyright © 2019 easefun. All rights reserved.
+//  Copyright © 2019 PLV. All rights reserved.
 //
 
 #import "PLVEmoticonManager.h"

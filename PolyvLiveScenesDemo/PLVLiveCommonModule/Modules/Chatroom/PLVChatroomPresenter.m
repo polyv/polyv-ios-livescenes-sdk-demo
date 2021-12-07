@@ -353,6 +353,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 #pragma mark - 获取历史聊天消息
 
+- (void)changeRoom {
+    self.getHistoryTime = 0;
+    self.loadingHistory = NO;
+    [self loadHistory];
+}
+
 - (void)loadHistory {
     if (self.loadingHistory) {
         return;
@@ -361,10 +367,16 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     __weak typeof(self) weakSelf = self;
     NSString *roomId = [PLVSocketManager sharedManager].roomId;
-    if ((!roomId || roomId.length == 0) && [PLVSocketManager sharedManager].allowChildRoom) {
-        self.delayRequestHistory = YES;
-        self.loadingHistory = NO;
-        return;
+    if ([PLVRoomDataManager sharedManager].roomData.inHiClassScene) {
+        if ([PLVHiClassManager sharedManager].groupState != PLVHiClassGroupStateNotInGroup) {
+            roomId = [PLVHiClassManager sharedManager].groupId;
+        }
+    } else {
+        if ((!roomId || roomId.length == 0) && [PLVSocketManager sharedManager].allowChildRoom) {
+            self.delayRequestHistory = YES;
+            self.loadingHistory = NO;
+            return;
+        }
     }
     
     if (!roomId || roomId.length == 0) {
@@ -372,7 +384,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
     NSInteger startIndex = self.getHistoryTime * self.eachLoadingHistoryCount;
     NSInteger endIndex = (self.getHistoryTime + 1) * self.eachLoadingHistoryCount - 1;
-    [PLVLiveVideoAPI requestChatRoomHistoryWithRoomId:[roomId longLongValue] startIndex:startIndex endIndex:endIndex completion:^(NSArray * _Nonnull historyList) {
+    [PLVLiveVideoAPI requestChatRoomHistoryWithRoomId:roomId startIndex:startIndex endIndex:endIndex completion:^(NSArray * _Nonnull historyList) {
         
         BOOL success = (historyList && [historyList isKindOfClass:[NSArray class]]);
         if (success) {

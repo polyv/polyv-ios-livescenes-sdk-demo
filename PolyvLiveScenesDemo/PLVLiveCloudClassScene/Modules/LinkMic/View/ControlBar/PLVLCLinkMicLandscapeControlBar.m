@@ -51,6 +51,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 @synthesize status = _status;
 @synthesize switchCameraButtonFront = _switchCameraButtonFront;
 @synthesize mediaControlButtonsShow = _mediaControlButtonsShow;
+@synthesize cameraButtonEnable = _cameraButtonEnable;
 
 @synthesize selfWidth = _selfWidth;
 @synthesize selfHeight = _selfHeight;
@@ -181,10 +182,12 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     CGFloat y = (CGRectGetMaxY(rangeRect) - self.selfHeight) / 2.0;
     self.frame = CGRectMake(x, y, self.selfWidth, self.selfHeight);
     [self setNeedsLayout];
+    [self shouldShowCameraEnableAlert];
 }
 
 - (void)synchControlBarState:(id<PLVLCLinkMicControlBarProtocol>)controlBar{
     if (controlBar && controlBar != self) {
+        self.cameraButtonEnable = controlBar.cameraButtonEnable;
         [self controlBarStatusSwitchTo:controlBar.status];
         self.barType = controlBar.barType;
         self.cameraButton.selected = controlBar.cameraButton.selected;
@@ -204,6 +207,10 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 }
 
 - (void)changeCameraButtonOpenUIWithoutEvent:(BOOL)toCameraOpen{
+    if (!self.cameraButtonEnable && toCameraOpen) {
+        [self cameraButtonAction:self.cameraButton];
+        return;
+    }
     self.cameraButton.selected = !toCameraOpen;
     BOOL currentOpen = !self.cameraButton.selected;
     self.switchCameraButton.selected = !currentOpen;
@@ -257,6 +264,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     _switchCameraButton.selected = !PLVLCLinkMicControlBarCameraDefaultOpen;
     _switchCameraButtonFront = PLVLCLinkMicControlBarSwitchCameraDefaultFront;
     _micButton.selected = !PLVLCLinkMicControlBarMicDefaultOpen;
+    _cameraButtonEnable = YES;
 }
 
 - (void)refreshBackgroudViewFrame{
@@ -426,6 +434,28 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     }];
 }
 
+/// 判断是否显示分屏模式下不能使用摄像头的提醒
+- (void)shouldShowCameraEnableAlert {
+    BOOL isPad = ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad);
+    if (isPad) {
+        BOOL isSplitView = UIViewGetWidth(self.superview) < [UIScreen mainScreen].bounds.size.width;
+        if (isSplitView && self.cameraButtonEnable && self.status == PLVLCLinkMicControlBarStatus_Joined && self.barType == PLVLCLinkMicControlBarType_Video) {
+            if (!self.cameraButton.selected) {
+                [self cameraButtonAction:self.cameraButton];
+                [PLVLCUtils showHUDWithTitle:nil detail:@"分屏模式下无法使用摄像头，已自动关闭摄像头" view:self.superview afterDelay:3.0];
+            } else {
+                [PLVLCUtils showHUDWithTitle:nil detail:@"分屏模式下无法使用摄像头，已自动禁用摄像头" view:self.superview afterDelay:3.0];
+            }
+            self.cameraButtonEnable = NO;
+            self.cameraButton.userInteractionEnabled = NO;
+        } else if (!isSplitView || self.status != PLVLCLinkMicControlBarStatus_Joined) {
+            self.cameraButtonEnable = YES;
+            self.cameraButton.userInteractionEnabled = YES;
+            self.cameraButton.alpha = (self.status == PLVLCLinkMicControlBarStatus_Joined && self.barType == PLVLCLinkMicControlBarType_Video) ? 1.0 : 0.0;
+        }
+    }
+}
+
 /// 控制系列按钮 显示或隐藏动画
 - (void)mediaControlButtonsShow:(BOOL)show{
     _mediaControlButtonsShow = show;
@@ -433,7 +463,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     CGFloat alpha = show ? 1.0 : 0.0;
     __weak typeof(self) weakSelf = self;
     [UIView animateWithDuration:PLVLCLinkMicControlBar_CommonTime animations:^{
-        weakSelf.cameraButton.alpha = alpha;
+        weakSelf.cameraButton.alpha = weakSelf.cameraButtonEnable ? alpha : 0.5;
         weakSelf.switchCameraButton.alpha = show ? (weakSelf.switchCameraButton.selected ? 0.5 : 1.0) : 0.0;
         weakSelf.micButton.alpha = alpha;
     }];
@@ -463,7 +493,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 
 - (void)cameraButtonAction:(UIButton *)button{
     button.enabled = NO;
-    BOOL wannaOpen = self.cameraButton.selected;
+    BOOL wannaOpen = self.cameraButton.selected && self.cameraButtonEnable;
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicControlBar:cameraButtonClicked:openResult:)]) {
         __weak typeof(self) weakSelf = self;
         [self.delegate plvLCLinkMicControlBar:self cameraButtonClicked:wannaOpen openResult:^(BOOL openResult) {

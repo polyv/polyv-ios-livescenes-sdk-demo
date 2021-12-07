@@ -47,6 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取当前文档信息
 - (NSDictionary *)getCurrentDocumentInfoDict;
 
+/// 恢复上一场未结束直播的文档数据
+- (void)synchronizeDocumentData;
+
 @end
 
 NS_ASSUME_NONNULL_END

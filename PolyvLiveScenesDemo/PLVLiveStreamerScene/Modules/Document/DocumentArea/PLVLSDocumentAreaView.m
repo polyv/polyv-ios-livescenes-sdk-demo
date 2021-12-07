@@ -48,6 +48,8 @@ UIGestureRecognizerDelegate
 /// 数据
 @property (nonatomic, assign) NSInteger currWhiteboardNum;          // 白板当前页码
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
+@property (nonatomic, assign) NSInteger lastAutoId;                 // 直播中断前的文档autoId
+@property (nonatomic, assign) NSInteger lastPageId;                 // 直播中断前的文档pageId
 
 
 @end
@@ -291,6 +293,10 @@ UIGestureRecognizerDelegate
     return jsonDict;
 }
 
+- (void)synchronizeDocumentData {
+    [self.docSheet setDocumentWithAutoId:self.lastAutoId pageId:self.lastPageId];
+}
+
 #pragma mark - [ Private Methods ]
 
 // 开启webview loading
@@ -327,8 +333,15 @@ UIGestureRecognizerDelegate
     [self.inputView presentWithText:inputText textColor:textColor inViewController:[PLVLSUtils sharedUtils].homeVC];
 }
 
-- (void)documentView_changeWithAutoId:(NSUInteger)autoId imageUrls:(NSArray *)imageUrls {
-    [self.docSheet setDocumentImageUrls:imageUrls autoId:autoId];
+
+- (void)documentView_changeWithAutoId:(NSUInteger)autoId imageUrls:(NSArray *)imageUrls fileName:(NSString *)fileName {
+    if ([PLVFdUtil checkStringUseable:fileName]) {
+        /// 续播时需要直接显示文档详情
+        [self.docSheet showInView:self.superview];
+        [self.docSheet setDocumentImageUrls:imageUrls autoId:autoId pagesTitle:fileName];
+    } else {
+        [self.docSheet setDocumentImageUrls:imageUrls autoId:autoId];
+    }
 }
 
 - (void)documentView_pageStatusChangeWithAutoId:(NSUInteger)autoId
@@ -342,6 +355,11 @@ UIGestureRecognizerDelegate
     [self.pageNum setCurrentPage:pageNumber + 1 totalPage:totalPage];
     [self.toolView setPageNum:pageNumber + 1 totalNum:totalPage];
     [self.docSheet selectDocumentWithAutoId:autoId pageIndex:pageNumber];
+}
+
+- (void)documentView_continueClassWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber {
+    self.lastAutoId = autoId;
+    self.lastPageId = pageNumber;
 }
 
 #pragma mark - PLVSControlToolsView Delegate

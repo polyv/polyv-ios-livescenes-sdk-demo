@@ -256,7 +256,7 @@ static NSString *const kSCCameraIsFrontConfigKey = @"kSCCameraIsFrontConfigKey";
     PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
     if (self.type == PLVHCSettingConfigViewLogoutClass &&
         viewerType == PLVRoomUserTypeSCStudent &&
-        [PLVRoomDataManager sharedManager].roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
+        [PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(alreadyLinkMicLocalStudentInSettingConfigView)]) {
             BOOL linkMic = [self.delegate alreadyLinkMicLocalStudentInSettingConfigView];
             return linkMic ? NO : YES;

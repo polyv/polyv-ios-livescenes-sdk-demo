@@ -44,10 +44,9 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
 @property (nonatomic, assign) PLVHCOnlineMemberCellControlStatus controlStatus;
 @property (nonatomic, strong) NSTimer *loadTimer;
 @property (nonatomic, assign) NSInteger maxLoadDuration; //上下台时最大加载时长
-@property (nonatomic, strong) PLVLinkMicOnlineUserGrantCupCountChangedBlock grantCupCountChangedBlock;
-@property (nonatomic, strong) PLVLinkMicOnlineUserBrushAuthChangedBlock brushAuthChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserMicOpenChangedBlock micOpenChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraShouldShowChangedBlock cameraShouldShowChangedBlock;
+@property (nonatomic, assign, getter=isTeacher) BOOL teacher; // 是否为讲师
 
 @end
 
@@ -76,14 +75,16 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
     CGFloat headerLeftViewWidth = selfWidth * 0.36;
     CGFloat headerRightViewWidth = selfWidth - headerLeftViewWidth;
     self.nicknameLabel.frame = CGRectMake(24, 17, headerLeftViewWidth - 24 - 30, 14);
-    CGFloat headerLabelWidth = (headerRightViewWidth - 22.0) / 7.0;
+    CGFloat headerLabelWidth = (headerRightViewWidth - 22.0) / (self.isTeacher ? 7.0 : 4.0);
     CGFloat frameOriginX = self.bounds.size.width - 22 - headerLabelWidth + (headerLabelWidth - 40)/2.0;
-    self.kickButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
-    frameOriginX -= headerLabelWidth;
-    self.banButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
-    frameOriginX -= headerLabelWidth;
-    self.rewardLabel.frame = CGRectMake(frameOriginX, 2, 40, 44);
-    frameOriginX -= headerLabelWidth;
+    if (self.isTeacher) {
+        self.kickButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
+        frameOriginX -= headerLabelWidth;
+        self.banButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
+        frameOriginX -= headerLabelWidth;
+        self.rewardLabel.frame = CGRectMake(frameOriginX, 2, 40, 44);
+        frameOriginX -= headerLabelWidth;
+    }
     self.cameraButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
     frameOriginX -= headerLabelWidth;
     self.micButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
@@ -91,8 +92,10 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
     self.authBrushButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
     frameOriginX -= headerLabelWidth;
     self.linkMicButton.frame = CGRectMake(frameOriginX, 2, 40, 44);
-    frameOriginX -= headerLabelWidth;
-    self.handUpImageView.frame = CGRectMake(frameOriginX, 2, 40, 44);
+    if (self.isTeacher) {
+        frameOriginX -= headerLabelWidth;
+        self.handUpImageView.frame = CGRectMake(frameOriginX, 2, 40, 44);
+    }
 }
 
 #pragma mark - [ Public Method ]
@@ -112,6 +115,7 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
     }
     self.banButton.selected = user.banned;
     self.handUpImageView.hidden = !user.currentHandUp;
+    self.authBrushButton.selected = user.currentBrushAuth;
     self.rewardLabel.text = [NSString stringWithFormat:@"%ld", (long)user.cupCount];
     if (self.controlStatus == PLVHCOnlineMemberCellControlStatusWait) {
         [self refreshControlButtonsStateWait];
@@ -126,7 +130,6 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
         [weakSelf refreshMediaControlsState];
     };
     if (user.onlineUser) {
-        self.authBrushButton.selected = user.onlineUser.currentBrushAuth;
         [self addUserInfoChangedBlock:user.onlineUser];
     }
 }
@@ -146,14 +149,16 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
 - (void)setupUI {
     [self.contentView addSubview:self.bgView];
     [self.contentView addSubview:self.nicknameLabel];
-    [self.contentView addSubview:self.handUpImageView];
     [self.contentView addSubview:self.linkMicButton];
     [self.contentView addSubview:self.authBrushButton];
     [self.contentView addSubview:self.micButton];
     [self.contentView addSubview:self.cameraButton];
-    [self.contentView addSubview:self.rewardLabel];
-    [self.contentView addSubview:self.banButton];
-    [self.contentView addSubview:self.kickButton];
+    if (self.isTeacher) {
+        [self.contentView addSubview:self.handUpImageView];
+        [self.contentView addSubview:self.rewardLabel];
+        [self.contentView addSubview:self.banButton];
+        [self.contentView addSubview:self.kickButton];
+    }
 }
 
 - (void)refreshControlButtonsState {
@@ -255,10 +260,6 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
 }
 
 - (void)addUserInfoChangedBlock:(PLVLinkMicOnlineUser *)user {
-    //授予奖杯
-    [user addGrantCupCountChangedBlock:self.grantCupCountChangedBlock blockKey:self];
-    //授予画笔
-    [user addBrushAuthStateChangedBlock:self.brushAuthChangedBlock blockKey:self];
     //麦克风
     [user addMicOpenChangedBlock:self.micOpenChangedBlock blockKey:self];
     //摄像头
@@ -408,31 +409,6 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
     return _kickButton;
 }
 
-- (PLVLinkMicOnlineUserGrantCupCountChangedBlock)grantCupCountChangedBlock {
-    if (!_grantCupCountChangedBlock) {
-        __weak typeof(self) weakSelf = self;
-        _grantCupCountChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-            if ([weakSelf.chatUser.userId isEqualToString:onlineUser.userId]) {
-                weakSelf.chatUser.cupCount = onlineUser.currentCupCount;
-                weakSelf.rewardLabel.text = [NSString stringWithFormat:@"%ld", (long)onlineUser.currentCupCount];
-            }
-        };
-    }
-    return _grantCupCountChangedBlock;
-}
-
-- (PLVLinkMicOnlineUserBrushAuthChangedBlock)brushAuthChangedBlock {
-    if (!_brushAuthChangedBlock) {
-        __weak typeof(self) weakSelf = self;
-        _brushAuthChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-            if ([weakSelf.chatUser.userId isEqualToString:onlineUser.userId]) {
-                weakSelf.authBrushButton.selected = onlineUser.currentBrushAuth;
-            }
-        };
-    }
-    return _brushAuthChangedBlock;
-}
-
 - (PLVLinkMicOnlineUserMicOpenChangedBlock)micOpenChangedBlock {
     if (!_micOpenChangedBlock) {
         __weak typeof(self) weakSelf = self;
@@ -467,6 +443,10 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
     }
 }
 
+- (BOOL)isTeacher {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
 #pragma mark - [ Event ]
 
 #pragma mark Action
@@ -496,43 +476,34 @@ typedef NS_ENUM(NSInteger, PLVHCOnlineMemberCellControlStatus) {
 - (void)authBrushButtonAction {
     if (!self.chatUser.onlineUser) {
         [PLVHCUtils showToastInWindowWithMessage:@"该学生还未上台"];
+        NSLog(@"PLVHCOnlineMemberCell - authBrushButtonAction may be failed , onlineUser nil, userId %@",self.chatUser.userId);
         return;
     }
     
     self.authBrushButton.selected = !self.authBrushButton.isSelected;
-    if (self.chatUser.onlineUser) {
-        [self.chatUser.onlineUser wantAuthUserBrush:self.authBrushButton.selected];
-    } else {
-        NSLog(@"PLVHCOnlineMemberCell - authBrushButtonAction may be failed , onlineUser nil, userId %@",self.chatUser.userId);
-    }
+    [self.chatUser.onlineUser wantAuthUserBrush:self.authBrushButton.selected];
 }
 
 - (void)micButtonAction {
     if (!self.chatUser.onlineUser) {
         [PLVHCUtils showToastInWindowWithMessage:@"该学生还未上台"];
+        NSLog(@"PLVHCOnlineMemberCell - micButtonAction may be failed , onlineUser nil, userId %@",self.chatUser.userId);
         return;
     }
     
     self.micButton.selected = !self.micButton.isSelected;
-    if (self.chatUser.onlineUser) {
-        [self.chatUser.onlineUser wantOpenUserMic:!self.micButton.selected];
-    } else {
-        NSLog(@"PLVHCOnlineMemberCell - micButtonAction may be failed , onlineUser nil, userId %@",self.chatUser.userId);
-    }
+    [self.chatUser.onlineUser wantOpenUserMic:!self.micButton.selected];
 }
 
 - (void)cameraButtonAction {
     if (!self.chatUser.onlineUser) {
         [PLVHCUtils showToastInWindowWithMessage:@"该学生还未上台"];
+        NSLog(@"PLVHCOnlineMemberCell - cameraButtonAction may be failed, onlineUser nil, userId %@",self.chatUser.userId);
         return;
     }
     
     self.cameraButton.selected = !self.cameraButton.isSelected;
-    if (self.chatUser.onlineUser) {
-        [self.chatUser.onlineUser wantOpenUserCamera:!self.cameraButton.selected];
-    }else{
-        NSLog(@"PLVHCOnlineMemberCell - cameraButtonAction may be failed, onlineUser nil, userId %@",self.chatUser.userId);
-    }
+    [self.chatUser.onlineUser wantOpenUserCamera:!self.cameraButton.selected];
 }
 
 - (void)banButtonAction {

@@ -30,20 +30,25 @@ typedef void (^PLVHCClassAlertBlock)(void);
                    cancelActionBlock:(PLVHCClassAlertBlock _Nullable)cancelActionBlock
                   confirmActionBlock:(PLVHCClassAlertBlock _Nullable)confirmActionBlock;
 
-/// 课程结束后提示，【讲师端】查看课节 【学生端】分为有下节课权限和无下节课权限
-/// @param isTeacher 讲师端还是学生端
+/// 【讲师端】课程结束后提示弹窗：查看课节
+/// @param duration 本节课持续时间
+/// @param callback 点击进入下节课的回调
++ (void)showTeacherLessonFinishNoticeInView:(UIView * _Nullable)view
+                                   duration:(NSInteger)duration
+                            confirmCallback:(PLVHCClassAlertBlock _Nullable)callback;
+
+/// 【学生端】课程结束后提示弹窗：分为有下节课权限和无下节课权限
 /// @param duration 本节课持续时间
 /// @param nextClass 是否有下节课权限 当为NO的时候 title，time为空(学生端特有)
 /// @param title 下节课课节名(学生端特有)
 /// @param time 下节课的时间(学生端特有)
 /// @param callback 点击进入下节课的回调
-+ (void)showLessonFinishNoticeInView:(UIView * _Nullable)view
-                           isTeacher:(BOOL)isTeacher
-                            duration:(NSInteger)duration
-                       haveNextClass:(BOOL)nextClass
-                          classTitle:(NSString * _Nullable)title
-                           classTime:(NSString * _Nullable)time
-                     confirmCallback:(PLVHCClassAlertBlock _Nullable)callback;
++ (void)showStudeentLessonFinishNoticeInView:(UIView * _Nullable)view
+                                    duration:(NSInteger)duration
+                               haveNextClass:(BOOL)nextClass
+                                  classTitle:(NSString * _Nullable)title
+                                   classTime:(NSString * _Nullable)time
+                             confirmCallback:(PLVHCClassAlertBlock _Nullable)callback;
 
 /// 清除视图
 + (void)clear;
@@ -67,6 +72,7 @@ typedef void (^PLVHCClassAlertBlock)(void);
 /// 学生端距离上课的倒计时
 /// @param callback 倒计时结束回调
 + (void)showStudentClassCountdownInView:(UIView *)view
+                               duration:(NSInteger)duration
                             endCallback:(PLVHCClassAlertBlock _Nullable)callback;
 
 
@@ -84,6 +90,20 @@ typedef void (^PLVHCClassAlertBlock)(void);
 /// @param callback 需要开始连麦回调
 + (void)showStudentLinkMicAlertInView:(UIView *)view
                       linkMicCallback:(PLVHCClassAlertBlock)callback;
+
+/// 学生端 显示分组提示倒计时
+/// @param titleString 标题
+/// @param confirmActionTitle 确定按钮标题，可立即结束倒计时
+/// @param callback 倒计时结束时的回调
++ (void)showStudentGroupCountdownInView:(UIView *)view
+                            titleString:(NSString *)titleString
+                        confirmActionTitle:(NSString * _Nullable)confirmActionTitle
+                               endCallback:(PLVHCClassAlertBlock _Nullable)callback;
+
+/// 学生端 开始分组 3s 倒计时
+/// @param callback 倒计时结束回调
++ (void)showStudentStartGroupCountdownInView:(UIView *)view
+                                 endCallback:(PLVHCClassAlertBlock _Nullable)callback;
 
 @end
 

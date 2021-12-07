@@ -49,6 +49,8 @@ PLVMemberPresenterDelegate
 #pragma mark 功能
 @property (nonatomic, strong) PLVStreamerPresenter *streamerPresenter;
 @property (nonatomic, strong) PLVMemberPresenter *memberPresenter;
+@property (nonatomic, copy) void (^tryStartClassBlock) (void); // 用于无法立刻’尝试开始上课‘，后续需自动’尝试开始‘上课的场景；执行优先级低于 [tryResumeClassBlock]
+@property (nonatomic, copy) void (^tryResumeClassBlock) (void); // 用于在合适的时机，进行’恢复直播‘处理；执行优先级高于 [tryStartClassBlock]
 
 #pragma mark UI
 @property (nonatomic, assign, getter=isFullscreen) BOOL fullscreen; // 是否处于文档区域全屏状态，默认为NO
@@ -350,6 +352,9 @@ PLVMemberPresenterDelegate
             [weakSelf.streamerPresenter setupLocalPreviewWithCanvaView:nil setupCompletion:^(BOOL setupResult) {
                 if (setupResult) {
                     [weakSelf.streamerPresenter startLocalMicCameraPreviewByDefault];
+                    
+                    /// 确认是否需要‘恢复直播’
+                    [weakSelf tryResumeClass];
                 }
             }];
         }
@@ -361,30 +366,84 @@ PLVMemberPresenterDelegate
     }];
 }
 
-- (BOOL)tryStartClass {
-    if (self.streamerPresenter.micCameraGranted) {
+- (void)tryResumeClass {
+    /// 判断是否需要‘恢复直播’
+    if ([PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            /// 弹出提示
+            [PLVLSUtils showAlertWithMessage:@"检测到之前异常退出，是否恢复直播" cancelActionTitle:@"结束直播" cancelActionBlock:^{
+                /// 重置值、结束服务器中该频道上课状态
+                [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving = NO;
+                [weakSelf.streamerPresenter finishClass];
+            } confirmActionTitle:@"恢复直播" confirmActionBlock:^{
+                /// 加入RTC房间、配置加入成功后的自动处理逻辑
+                [weakSelf.streamerPresenter joinRTCChannel];
+                weakSelf.tryResumeClassBlock = ^{
+                    [weakSelf tryStartClassRetryCount:0 callCompletion:nil];
+                    [weakSelf.documentAreaView synchronizeDocumentData];
+                };
+            }];
+        })
+    }
+}
+
+/// 尝试开始上课
+///
+/// @note 若上课条件不符，将可能上课失败；并根据已重试次数，进行自动重试；
+///
+/// @param retryCount 已重试次数 (传值 0 表示首次调用)
+/// @param callCompletion 调用结束回调 (负责告知最终是否 ‘尝试上课’ 成功)
+- (void)tryStartClassRetryCount:(NSInteger)retryCount callCompletion:(nullable void (^)(BOOL tryStartClassSuccess))callCompletion{
+    BOOL needRetry = NO;
+    __weak typeof(self) weakSelf = self;
+    if (self.streamerPresenter.micCameraGranted &&
+        self.streamerPresenter.inRTCRoom) {
         if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) {
-            //麦克风和摄像头当前全部关闭时
+            // 麦克风和摄像头当前全部关闭时
             if (!self.streamerPresenter.currentMicOpen &&
                 !self.streamerPresenter.currentCameraOpen) {
                 /// 开始上课倒数
                 [self.coutBackView startCountDownOnView:self.view];
-                return YES;
-            } else {
-                [PLVLSUtils showAlertWithMessage:@"网络检测中，请稍后再试" cancelActionTitle:@"知道了" cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
-                return NO;
+                if (callCompletion) { callCompletion(YES); }
+            }else{
+                needRetry = YES;
             }
         } else if(self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
-            [PLVLSUtils showAlertWithMessage:@"网络已断开，请检查网络" cancelActionTitle:@"知道了" cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
-            return NO;
+            needRetry = YES;
         }else{
             /// 开始上课倒数
             [self.coutBackView startCountDownOnView:self.view];
-            return YES;
+            if (callCompletion) { callCompletion(YES); }
         }
     }else{
-        [self preapareStartClass];
-        return NO;
+        if (!self.streamerPresenter.micCameraGranted) {
+            /// 重新‘准备上课’
+            [self preapareStartClass];
+        } else if(!self.streamerPresenter.inRTCRoom) {
+            /// 重新‘加入RTC房间‘
+            [self.streamerPresenter joinRTCChannel];
+            self.tryStartClassBlock = ^{
+                [weakSelf tryStartClassRetryCount:0 callCompletion:nil];
+            };
+        }
+        if (callCompletion) { callCompletion(NO); }
+    }
+        
+    if (needRetry) {
+        /// 需要重试
+        if (retryCount >= 0 && retryCount < 3) {
+            retryCount++;
+            NSInteger waitTime = (1.5 * retryCount);
+            [PLVLSUtils showToastWithMessage:@"处理中..." inView:self.view afterDelay:waitTime];
+            
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(waitTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [weakSelf tryStartClassRetryCount:retryCount callCompletion:callCompletion];
+            });
+        }else{
+            [PLVLSUtils showAlertWithMessage:@"网络当前不佳，请稍后再试" cancelActionTitle:@"知道了" cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
+            if (callCompletion) { callCompletion(NO); }
+        }
     }
 }
 
@@ -452,10 +511,13 @@ PLVMemberPresenterDelegate
 }
 
 - (BOOL)statusAreaView_didTapStartPushOrStopPushButton:(BOOL)start {
+    __weak typeof(self) weakSelf = self;
     if (start) {
-        return [self tryStartClass];
+        [self tryStartClassRetryCount:0 callCompletion:^(BOOL tryStartClassSuccess) {
+            [weakSelf.statusAreaView startPushButtonEnable:!tryStartClassSuccess];
+        }];
+        return YES; /// 先行禁用，由 [tryStartClassRetryCount:callCompletion:] 方法Block，进行最终的状态更新
     } else {
-        __weak typeof(self) weakSelf = self;
         [PLVLSUtils showAlertWithMessage:@"点击下课将结束直播，确认下课吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"下课" confirmActionBlock:^{
             [weakSelf finishClass];
         }];
@@ -617,8 +679,11 @@ PLVMemberPresenterDelegate
 #pragma mark - PLVSocketManager Protocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
-    // 登陆成功
-    [self.streamerPresenter joinRTCChannel];
+    if (![PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
+        /// 正常场景下（即非异常退出而临时断流的场景）则正常加入RTC房间
+        /// 原因：异常退出场景下，加入RTC房间的操作，应延后至用户确认“是否恢复直播”后
+        [self.streamerPresenter joinRTCChannel];
+    }
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
@@ -685,7 +750,18 @@ PLVMemberPresenterDelegate
 /// ‘房间加入状态’ 发生改变
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRtcRoomJoinStatus:(PLVStreamerPresenterRoomJoinStatus)currentRtcRoomJoinStatus inRTCRoomChanged:(BOOL)inRTCRoomChanged inRTCRoom:(BOOL)inRTCRoom{
     if (inRTCRoomChanged) {
-        if (self.viewerType == PLVRoomUserTypeGuest) {
+        if (self.viewerType == PLVRoomUserTypeTeacher) {
+            /// Block执行
+            if (self.tryResumeClassBlock) {
+                self.tryResumeClassBlock();
+            } else if(self.tryStartClassBlock) {
+                self.tryStartClassBlock();
+            }
+            
+            /// 无论是否调用，均进行清空处理
+            self.tryResumeClassBlock = nil;
+            self.tryStartClassBlock = nil;
+        } else if (self.viewerType == PLVRoomUserTypeGuest) {
             if (inRTCRoom) {
                 [self startClass:nil];
             }else{
@@ -801,21 +877,23 @@ PLVMemberPresenterDelegate
     if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed) {
         message = @"上课错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedNetError){
-        message = @"推流请求错误";
+        message = @"推流请求错误，请退出重新登录";
     }else if (error.code == PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError){
         message = @"更新Token错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerError){
         message = @"RTC内部错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed){
         message = @"RTC内部错误，启动音频模块失败，请退出重新登录";
+    }else if (error.code == PLVStreamerPresenterErrorCode_EndClassFailedNetFailed){
+        message = @"下课错误，请直接退出上课页";
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
         message = @"未知错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){
         message = @"错误";
     }
     message = [message stringByAppendingFormat:@" code:%@",fullErrorCodeString];
-        
-    [PLVLSUtils showToastWithMessage:message inView:self.view];
+    
+    [PLVLSUtils showToastWithMessage:message inView:self.view afterDelay:3];
 }
 
 #pragma mark - PLVLSLinkMicAreaViewDelegate

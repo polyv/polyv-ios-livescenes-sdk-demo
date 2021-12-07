@@ -18,8 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 ///  选择文档时回调
 /// @param documentSheet 文档窗对象
-/// @param model 选择的文档模型
-- (void)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectModel:(PLVDocumentModel *)model;
+/// @param autoId 选择的文档Id
+- (void)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectAutoId:(NSUInteger)autoId;
 
 @end
 

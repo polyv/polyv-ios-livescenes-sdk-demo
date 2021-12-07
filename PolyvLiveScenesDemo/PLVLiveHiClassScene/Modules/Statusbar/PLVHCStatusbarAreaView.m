@@ -11,12 +11,6 @@
 ///工具类
 #import "PLVHCUtils.h"
 
-/// 模块
-#import "PLVRoomDataManager.h"
-
-/// 拖堂最多到4小时
-static NSInteger KPLVMaxDelayDuration = 4 * 60 * 60;
-
 @interface PLVHCStatusbarAreaView ()
 
 #pragma mark UI
@@ -31,10 +25,8 @@ static NSInteger KPLVMaxDelayDuration = 4 * 60 * 60;
 @property (nonatomic, strong) UIView *lineView;
 
 #pragma mark 数据
-@property (nonatomic, assign) NSTimeInterval lessonFinishTimestamp;//课程结束时的时间戳，用于判断是否拖堂
-@property (nonatomic, assign) NSTimeInterval duration;// 已上课时长
-@property (nonatomic, assign) PLVHiClassLessonStatus classStatus;//上课状态
-@property (nonatomic, strong) NSTimer *durationTimer;//上课时长计时器
+
+@property (nonatomic, assign) PLVHiClassStatusbarState state; //上课状态
 
 @end
 
@@ -46,10 +38,10 @@ static NSInteger KPLVMaxDelayDuration = 4 * 60 * 60;
     self = [super init];
     if (self) {
         [self setupUI];
-        [self setupModule];
     }
     return self;
 }
+
 - (void)layoutSubviews {
     [super layoutSubviews];
     
@@ -60,124 +52,67 @@ static NSInteger KPLVMaxDelayDuration = 4 * 60 * 60;
     self.contentView.frame = CGRectMake(edgeInsetsLeft, edgeInsetsTop, CGRectGetWidth(self.bounds) - edgeInsetsLeft - edgeInsetsRight, CGRectGetHeight(self.bounds) - edgeInsetsTop);
 }
 
-#pragma mark - Getter && Setter
-
-- (UILabel *)lessonIdLabel {
-    if (!_lessonIdLabel) {
-        _lessonIdLabel = [[UILabel alloc] init];
-        _lessonIdLabel.textColor = [UIColor whiteColor];
-        _lessonIdLabel.font = [UIFont systemFontOfSize:12];
-        _lessonIdLabel.textAlignment = NSTextAlignmentLeft;
-        _lessonIdLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        _lessonIdLabel.text = @"课节号";
-    }
-    return _lessonIdLabel;
-}
-- (UILabel *)classStatusLabel {
-    if (!_classStatusLabel) {
-        _classStatusLabel = [[UILabel alloc] init];
-        _classStatusLabel.textColor = [UIColor whiteColor];
-        _classStatusLabel.font = [UIFont systemFontOfSize:12];
-        _classStatusLabel.textAlignment = NSTextAlignmentCenter;
-        _classStatusLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    }
-    return _classStatusLabel;
-}
-- (UILabel *)durationLabel {
-    if (!_durationLabel) {
-        _durationLabel = [[UILabel alloc] init];
-        _durationLabel.textColor = [UIColor whiteColor];
-        _durationLabel.font = [UIFont boldSystemFontOfSize:12];
-        _durationLabel.textAlignment = NSTextAlignmentCenter;
-        _durationLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    }
-    return _durationLabel;
-}
-- (UILabel *)classTitleLabel {
-    if (!_classTitleLabel) {
-        _classTitleLabel = [[UILabel alloc] init];
-        _classTitleLabel.textColor = [UIColor whiteColor];
-        _classTitleLabel.font = [UIFont systemFontOfSize:13];
-        _classTitleLabel.textAlignment = NSTextAlignmentCenter;
-        _classTitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
-    }
-    return _classTitleLabel;
-}
-- (UILabel *)delayTimeLabel {
-    if (!_delayTimeLabel) {
-        _delayTimeLabel = [[UILabel alloc] init];
-        _delayTimeLabel.textColor = [PLVColorUtil colorFromHexString:@"#ADADC0"];
-        _delayTimeLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
-        _delayTimeLabel.textAlignment = NSTextAlignmentLeft;
-        _delayTimeLabel.translatesAutoresizingMaskIntoConstraints = NO;
-        _delayTimeLabel.text = @"0ms";
-    }
-    return _delayTimeLabel;
-}
-- (UIImageView *)signalImageView {
-    if (!_signalImageView) {
-        _signalImageView = [[UIImageView alloc] init];
-        _signalImageView.translatesAutoresizingMaskIntoConstraints = NO;
-        _signalImageView.image = [PLVHCUtils imageForStatusbarResource:@"plvhc_statusbar_signal_icon_unknown"];
-    }
-    return _signalImageView;
-}
-- (UIView *)contentView {
-    if (!_contentView) {
-        _contentView = [[UIView alloc] init];
-    }
-    return _contentView;
-}
-- (UIView *)lineView {
-    if (!_lineView) {
-        _lineView = [[UIView alloc] init];
-        _lineView.translatesAutoresizingMaskIntoConstraints = NO;
-        _lineView.backgroundColor = [UIColor colorWithRed:173/255.0 green:173/255.0 blue:192/255.0 alpha:0.6];
-        _lineView.layer.cornerRadius = 1;
-    }
-    return _lineView;
-}
-
-//获取当前时间戳
-- (NSTimeInterval)currentTimestamp {
-    NSTimeInterval timestamp = [[NSDate date] timeIntervalSince1970] * 1000;
-    return timestamp;
-}
-
-- (void)setDuration:(NSTimeInterval)duration {
-    _duration = duration;
-    [self updateClassDuration:duration];
-}
-
-- (void)setDurationTimer:(NSTimer *)durationTimer {
-    if(_durationTimer) {
-        [_durationTimer invalidate];
-        _durationTimer = nil;
-    }
-    if(durationTimer) {
-        _durationTimer = durationTimer;
-    }
-}
-
 #pragma mark - [ Public Methods ]
 
-- (void)delayStartClass {
-    [self setupClassStatus:PLVHiClassLessonStatusDelayInClass];
+- (void)setClassTitle:(NSString *)title {
+    if (title &&
+        [title isKindOfClass:[NSString class]] &&
+        title.length > 0) {
+        self.classTitleLabel.text = title;
+    } else {
+        self.classTitleLabel.text = @"";
+    }
 }
 
-- (void)startClass {
-    [self setupClassStatus:PLVHiClassLessonStatusInClass];
-    __weak typeof(self) weakSelf = self;
-    [self getClassDurationSuccess:^(NSInteger duration) {
-        weakSelf.duration = duration;
-        [weakSelf startClassTimer];
-    }];
+- (void)setLessonId:(NSString *)lessonId {
+    if (lessonId &&
+        [lessonId isKindOfClass:[NSString class]] &&
+        lessonId.length > 0) {
+        self.lessonIdLabel.text = [NSString stringWithFormat:@"课节号 %@", lessonId];
+    } else {
+        self.lessonIdLabel.text = @"课节号";
+    }
 }
 
-- (void)finishClass {
-    [self setupClassStatus:PLVHiClassLessonStatusFinishClass];
-    self.duration = 0;
-    self.durationTimer = nil;
+- (void)updateState:(PLVHiClassStatusbarState)state {
+    self.state = state;
+    switch (state) {
+        case PLVHiClassStatusbarStateNotInClass: {
+            self.durationLabel.hidden = YES;
+            self.classStatusLabel.textColor = [UIColor whiteColor];
+            self.classStatusLabel.text = @"未上课";
+            break;
+        }
+        case PLVHiClassStatusbarStateDelayStartClass: {
+            self.durationLabel.hidden = YES;
+            self.classStatusLabel.textColor = [UIColor colorWithRed:255/255.0 green:38/255.0 blue:57/255.0 alpha:1/1.0];
+            self.classStatusLabel.text = @"已延迟";
+            break;
+        }
+        case PLVHiClassStatusbarStateInClass: {
+            self.durationLabel.hidden = NO;
+            self.classStatusLabel.textColor = [UIColor whiteColor];
+            self.classStatusLabel.text = @"上课中";
+            break;
+        }
+        case PLVHiClassStatusbarStateDelayFinishClass: {
+            self.durationLabel.hidden = NO;
+            self.classStatusLabel.textColor = [UIColor colorWithRed:255/255.0 green:38/255.0 blue:57/255.0 alpha:1/1.0];
+            self.classStatusLabel.text = @"拖堂";
+            break;
+        }
+        case PLVHiClassStatusbarStateFinishClass: {
+            self.durationLabel.hidden = YES;
+            self.classStatusLabel.textColor = [UIColor whiteColor];
+            self.classStatusLabel.text = @"已下课";
+            break;
+        }
+    }
+}
+
+- (void)updateDuration:(NSInteger)duration {
+    NSString *durationStr = [NSString stringWithFormat:@"%02ld:%02ld:%02ld",lround(floor(duration / 60 / 60)), lround(floor(duration / 60)) % 60, lround(floor(duration)) % 60];
+    self.durationLabel.text = durationStr;
 }
 
 - (void)setNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality {
@@ -223,97 +158,90 @@ static NSInteger KPLVMaxDelayDuration = 4 * 60 * 60;
     [self addViewConstraints];
 }
 
-- (void)setupModule {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    NSString *channelName = roomData.channelName;
-    channelName = channelName.length > 12 ? [[channelName substringToIndex:12] stringByAppendingString:@"..."] : channelName;
-    self.classTitleLabel.text = [NSString stringWithFormat:@"%@", channelName];
-    self.lessonIdLabel.text = [NSString stringWithFormat:@"课节号 %@", roomData.lessonInfo.lessonId];
-    self.lessonFinishTimestamp = roomData.lessonInfo.lessonEndTime;
-    [self setupClassStatus:roomData.lessonInfo.lessonStatus];
+#pragma mark Getter && Setter
+
+- (UILabel *)lessonIdLabel {
+    if (!_lessonIdLabel) {
+        _lessonIdLabel = [[UILabel alloc] init];
+        _lessonIdLabel.textColor = [UIColor whiteColor];
+        _lessonIdLabel.font = [UIFont systemFontOfSize:12];
+        _lessonIdLabel.textAlignment = NSTextAlignmentLeft;
+        _lessonIdLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        _lessonIdLabel.text = @"课节号";
+    }
+    return _lessonIdLabel;
 }
 
-- (void)updateClassDuration:(NSTimeInterval)duration {
-    //拖堂最长时间为4个小时 还剩10分钟的时候需要提醒，到四小时强制结束
-    if (KPLVMaxDelayDuration - duration  == 10 * 60) {
-        [PLVHCUtils showToastInWindowWithMessage:@"拖堂时间过长，10分钟后将强制下课"];
+- (UILabel *)classStatusLabel {
+    if (!_classStatusLabel) {
+        _classStatusLabel = [[UILabel alloc] init];
+        _classStatusLabel.textColor = [UIColor whiteColor];
+        _classStatusLabel.font = [UIFont systemFontOfSize:12];
+        _classStatusLabel.textAlignment = NSTextAlignmentCenter;
+        _classStatusLabel.translatesAutoresizingMaskIntoConstraints = NO;
     }
-    if (duration >= KPLVMaxDelayDuration) {
-        self.durationTimer = nil;
-        [self notifyForcedFinishClass];
-        return;
-    }
-
-    //拖堂 当前时间大于实际设置的下课时间
-    if (self.classStatus != PLVHiClassLessonStatusDelayFinishClass &&
-        self.currentTimestamp > self.lessonFinishTimestamp) {
-        [self setupClassStatus:PLVHiClassLessonStatusDelayFinishClass];
-    }
-    
-    NSString *durationStr = [NSString stringWithFormat:@"%02ld:%02ld:%02ld",lround(floor(duration / 60 / 60)), lround(floor(duration / 60)) % 60, lround(floor(duration)) % 60];
-    self.durationLabel.text = durationStr;
+    return _classStatusLabel;
 }
 
-- (void)setupClassStatus:(PLVHiClassLessonStatus)classStatus {
-    _classStatus = classStatus;
-    self.durationLabel.hidden = YES;
-    switch (classStatus) {
-        case PLVHiClassLessonStatusNotInClass:
-            self.classStatusLabel.textColor = [UIColor whiteColor];
-            self.classStatusLabel.text = @"未上课";
-            break;
-        case PLVHiClassLessonStatusDelayInClass:
-            self.classStatusLabel.textColor = [UIColor colorWithRed:255/255.0 green:38/255.0 blue:57/255.0 alpha:1/1.0];
-            self.classStatusLabel.text = @"已延迟";
-            break;
-        case PLVHiClassLessonStatusInClass:
-            self.durationLabel.hidden = NO;
-            self.classStatusLabel.textColor = [UIColor whiteColor];
-            self.classStatusLabel.text = @"上课中";
-            break;
-        case PLVHiClassLessonStatusDelayFinishClass:
-            self.durationLabel.hidden = NO;
-            self.classStatusLabel.textColor = [UIColor colorWithRed:255/255.0 green:38/255.0 blue:57/255.0 alpha:1/1.0];
-            self.classStatusLabel.text = @"拖堂";
-            break;
-        case PLVHiClassLessonStatusFinishClass:
-            self.classStatusLabel.textColor = [UIColor whiteColor];
-            self.classStatusLabel.text = @"已下课";
-            break;
-        default:
-            break;
+- (UILabel *)durationLabel {
+    if (!_durationLabel) {
+        _durationLabel = [[UILabel alloc] init];
+        _durationLabel.textColor = [UIColor whiteColor];
+        _durationLabel.font = [UIFont boldSystemFontOfSize:12];
+        _durationLabel.textAlignment = NSTextAlignmentCenter;
+        _durationLabel.translatesAutoresizingMaskIntoConstraints = NO;
     }
+    return _durationLabel;
 }
 
-- (void)startClassTimer {
-    self.durationTimer = [NSTimer timerWithTimeInterval:1.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(classDurationTimer) userInfo:nil repeats:YES];
-    [[NSRunLoop mainRunLoop] addTimer:self.durationTimer forMode:NSRunLoopCommonModes];
+- (UILabel *)classTitleLabel {
+    if (!_classTitleLabel) {
+        _classTitleLabel = [[UILabel alloc] init];
+        _classTitleLabel.textColor = [UIColor whiteColor];
+        _classTitleLabel.font = [UIFont systemFontOfSize:13];
+        _classTitleLabel.textAlignment = NSTextAlignmentCenter;
+        _classTitleLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        _classTitleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+    }
+    return _classTitleLabel;
 }
 
-- (void)getClassDurationSuccess:(void(^)(NSInteger duration))successHandler {
-    void(^successBlock)(NSDictionary *dict) = ^(NSDictionary *dict) {
-        NSInteger inClassTime = PLV_SafeIntegerForDictKey(dict, @"inClassTime");
-        successHandler ? successHandler(inClassTime) : nil;
-    };
-    void(^failureBlock)(NSError * error) = ^(NSError * error) {
-        NSString *errorDes = error.userInfo[NSLocalizedDescriptionKey];
-        [PLVHCUtils showToastInWindowWithMessage:errorDes];
-    };
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    BOOL isTeacher = roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
-    if (isTeacher) {
-        [PLVLiveVClassAPI teacherLessonDetailWithLessonId:roomData.lessonInfo.lessonId success:successBlock failure:failureBlock];
-    } else {
-        [PLVLiveVClassAPI watcherLessonDetailWithCourseCode:roomData.lessonInfo.courseCode lessonId:roomData.lessonInfo.lessonId success:successBlock failure:failureBlock];
+- (UILabel *)delayTimeLabel {
+    if (!_delayTimeLabel) {
+        _delayTimeLabel = [[UILabel alloc] init];
+        _delayTimeLabel.textColor = [PLVColorUtil colorFromHexString:@"#ADADC0"];
+        _delayTimeLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _delayTimeLabel.textAlignment = NSTextAlignmentLeft;
+        _delayTimeLabel.translatesAutoresizingMaskIntoConstraints = NO;
+        _delayTimeLabel.text = @"0ms";
     }
+    return _delayTimeLabel;
 }
 
-#pragma mark Notify Delegate
-
-- (void)notifyForcedFinishClass {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(statusbarAreaViewDidForcedFinishClass:)]) {
-        [self.delegate statusbarAreaViewDidForcedFinishClass:self];
+- (UIImageView *)signalImageView {
+    if (!_signalImageView) {
+        _signalImageView = [[UIImageView alloc] init];
+        _signalImageView.translatesAutoresizingMaskIntoConstraints = NO;
+        _signalImageView.image = [PLVHCUtils imageForStatusbarResource:@"plvhc_statusbar_signal_icon_unknown"];
     }
+    return _signalImageView;
+}
+
+- (UIView *)contentView {
+    if (!_contentView) {
+        _contentView = [[UIView alloc] init];
+    }
+    return _contentView;
+}
+
+- (UIView *)lineView {
+    if (!_lineView) {
+        _lineView = [[UIView alloc] init];
+        _lineView.translatesAutoresizingMaskIntoConstraints = NO;
+        _lineView.backgroundColor = [UIColor colorWithRed:173/255.0 green:173/255.0 blue:192/255.0 alpha:0.6];
+        _lineView.layer.cornerRadius = 1;
+    }
+    return _lineView;
 }
 
 #pragma mark Add Constraints
@@ -368,13 +296,6 @@ static NSInteger KPLVMaxDelayDuration = 4 * 60 * 60;
                                        signalLayoutCenterY,
                                        signalLayoutWidth,
                                        signalLayoutHeigt]];
-}
-
-#pragma mark - [ Event ]
-#pragma mark Timer
-
-- (void)classDurationTimer {
-    self.duration ++;
 }
 
 @end

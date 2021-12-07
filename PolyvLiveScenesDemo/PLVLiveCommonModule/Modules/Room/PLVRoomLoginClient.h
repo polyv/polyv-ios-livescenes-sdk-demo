@@ -53,7 +53,7 @@ NS_ASSUME_NONNULL_BEGIN
                               completion:(void (^)(PLVViewLogCustomParam *customParam))completion
                                  failure:(void (^)(NSString *errorMessage))failure;
 
-/// 登录三分屏开播直播间
+/// 登录开播直播间
 /// @param channelType 频道类型，目前只支持 PLVChannelTypeAlone 或者 PLVChannelTypePPT
 /// @param channelId 频道号
 /// @param password 频道密码

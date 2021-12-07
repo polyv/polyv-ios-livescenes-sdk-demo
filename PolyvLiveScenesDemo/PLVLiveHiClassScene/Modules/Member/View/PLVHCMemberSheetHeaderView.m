@@ -7,7 +7,14 @@
 //
 
 #import "PLVHCMemberSheetHeaderView.h"
+
+// 工具
 #import "PLVHCUtils.h"
+
+// 模块
+#import "PLVRoomDataManager.h"
+
+// 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVHCMemberSheetHeaderView ()
@@ -27,6 +34,7 @@
 
 #pragma mark 数据
 @property (nonatomic, strong) NSArray *labelTextArray; // 第二行文本内容数组
+@property (nonatomic, assign, getter=isTeacher) BOOL teacher; // 是否为讲师
 
 @end
 
@@ -38,7 +46,12 @@
     self = [super init];
     if (self) {
         self.backgroundColor = [PLVColorUtil colorFromHexString:@"#2D3452"];
-        self.labelTextArray = @[@"上下台", @"画笔", @"麦克风", @"摄像头", @"奖励", @"禁言", @"移出"];
+        if (self.isTeacher) {
+            self.labelTextArray = @[@"上下台", @"画笔", @"麦克风", @"摄像头", @"奖励", @"禁言", @"移出"];
+        } else {
+            self.labelTextArray = @[@"上下台", @"画笔", @"麦克风", @"摄像头"];
+        }
+        
         
         // 第一行控件
         [self addSubview:self.titleLabel];
@@ -51,7 +64,9 @@
         [self addSubview:self.leftView];
         [self.leftView addSubview:self.tableTitleLabel];
         [self.leftView addSubview:self.changeListButton];
-        [self.leftView addSubview:self.handUpLabel];
+        if (self.isTeacher) {
+            [self.leftView addSubview:self.handUpLabel];
+        }
         
         [self addSubview:self.rightView];
         NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:[self.labelTextArray count]];
@@ -82,7 +97,10 @@
     
     // 左侧子视图
     self.tableTitleLabel.frame = CGRectMake(12, 0, self.leftView.frame.size.width - 12, self.leftView.frame.size.height);
-    self.handUpLabel.frame = CGRectMake(12, 0, self.leftView.frame.size.width - 12 - 8, self.leftView.frame.size.height);
+    if (self.isTeacher) {
+        self.handUpLabel.frame = CGRectMake(12, 0, self.leftView.frame.size.width - 12 - 8, self.leftView.frame.size.height);
+    }
+    
     CGFloat tableTitleWidth = [self.tableTitleLabel.text boundingRectWithSize:self.tableTitleLabel.frame.size
                                                                       options:0
                                                                    attributes:@{ NSFontAttributeName : [UIFont systemFontOfSize:12] }
@@ -91,7 +109,7 @@
     
     // 右侧子视图
     CGFloat labelX = 0;
-    CGFloat labelWidth = (rightViewWidth - 22.0) / 7.0;
+    CGFloat labelWidth = (rightViewWidth - 22.0) / self.labelTextArray.count;
     for (UILabel *label in self.labelArray) {
         label.frame = CGRectMake(labelX, 0, labelWidth, self.rightView.frame.size.height);
         labelX += labelWidth;
@@ -212,6 +230,10 @@
         _handUpLabel.font = [UIFont systemFontOfSize:12];
     }
     return _handUpLabel;
+}
+
+- (BOOL)isTeacher {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
 }
 
 @end

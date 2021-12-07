@@ -240,35 +240,42 @@ PLVDocumentConvertManagerDelegate
 }
 
 - (void)updateNormalArrayWithCompletion:(void (^)(NSArray<NSDictionary *> *responseArray, NSError *error))completion {
+    NSString *lessonId = [PLVHiClassManager sharedManager].lessonId;
+    NSString *courseCode = [PLVHiClassManager sharedManager].courseCode;
+    BOOL isTeacher = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
     __weak typeof(self) weakSelf = self;
-    [PLVLiveVideoAPI requestDocumentListWithLessonId:[PLVRoomDataManager sharedManager].roomData.lessonInfo.lessonId completion:^(NSArray<NSDictionary *> * _Nonnull responseArray) {
-        // 清除本地数据
-        [weakSelf updateNormalArray];
-        for (NSDictionary *dict in responseArray) {
-            if (![PLVFdUtil checkDictionaryUseable:dict]) {
-                return;
-            }
-            NSString *status = PLV_SafeStringForDictKey(dict, @"status");
-            if (![PLVFdUtil checkStringUseable:status]) {
-                return;
-            }
-            if ([status isEqualToString:@"normal"]) {
-                PLVDocumentModel *documentModel = [PLVDocumentModel plv_modelWithJSON:dict];
-                [weakSelf.normalArray addObject:documentModel];
-                
-                // 处理离线转码成功未删除的沙盒文档
-                [[PLVDocumentUploadClient sharedClient] deleteFileWithFileName:documentModel.fileName];
-                
-            }
-        }
-        if (completion) {
-            completion(responseArray, nil);
-        }
+    [PLVLiveVideoAPI requestDocumentListWithLessonId:lessonId courseCode:courseCode teacher:isTeacher completion:^(NSArray<NSDictionary *> * _Nonnull responseArray) {
+        [weakSelf dealRequestDocumentListSuccessWithResponseArray:responseArray completion:completion];
     } failure:^(NSError * _Nonnull error) {
         if (completion) {
             completion(nil, error);
         }
     }];
+}
+
+- (void)dealRequestDocumentListSuccessWithResponseArray:(NSArray<NSDictionary *> * _Nonnull) responseArray completion:(void (^)(NSArray<NSDictionary *> *responseArray, NSError *error))completion {
+    // 清除本地数据
+    [self updateNormalArray];
+    for (NSDictionary *dict in responseArray) {
+        if (![PLVFdUtil checkDictionaryUseable:dict]) {
+            return;
+        }
+        NSString *status = PLV_SafeStringForDictKey(dict, @"status");
+        if (![PLVFdUtil checkStringUseable:status]) {
+            return;
+        }
+        if ([status isEqualToString:@"normal"]) {
+            PLVDocumentModel *documentModel = [PLVDocumentModel plv_modelWithJSON:dict];
+            [self.normalArray addObject:documentModel];
+            
+            // 处理离线转码成功未删除的沙盒文档
+            [[PLVDocumentUploadClient sharedClient] deleteFileWithFileName:documentModel.fileName];
+            
+        }
+    }
+    if (completion) {
+        completion(responseArray, nil);
+    }
 }
 
 - (void)deleteModelSuccess:(BOOL)success error:(NSError *)error {

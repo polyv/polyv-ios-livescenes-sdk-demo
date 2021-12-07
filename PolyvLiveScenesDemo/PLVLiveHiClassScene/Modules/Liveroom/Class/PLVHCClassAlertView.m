@@ -10,12 +10,10 @@
 
 //UI
 #import "PLVHCGuidePagesView.h"
+#import "PLVHCStudentGroupCountdownView.h"
 
 //工具类
 #import "PLVHCUtils.h"
-
-//模块
-#import "PLVRoomDataManager.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -61,21 +59,22 @@
     [[self sharedView] finishClassConfirmInView:view cancelActionBlock:cancelActionBlock confirmActionBlock:confirmActionBlock];
 }
 
-+ (void)showLessonFinishNoticeInView:(UIView * _Nullable)view
-                           isTeacher:(BOOL)isTeacher
-                            duration:(NSInteger)duration
-                       haveNextClass:(BOOL)nextClass
-                          classTitle:(NSString * _Nullable)title
-                           classTime:(NSString * _Nullable)time
-                     confirmCallback:(PLVHCClassAlertBlock _Nullable)callback {
++ (void)showTeacherLessonFinishNoticeInView:(UIView * _Nullable)view
+                                   duration:(NSInteger)duration
+                            confirmCallback:(PLVHCClassAlertBlock _Nullable)callback {
+    [[self sharedView] showViewLessonAlertInView:view type:PLVRoomUserTypeTeacher duration:duration confirmActionBlock:callback];
+}
+
++ (void)showStudeentLessonFinishNoticeInView:(UIView * _Nullable)view
+                                    duration:(NSInteger)duration
+                               haveNextClass:(BOOL)nextClass
+                                  classTitle:(NSString * _Nullable)title
+                                   classTime:(NSString * _Nullable)time
+                             confirmCallback:(PLVHCClassAlertBlock _Nullable)callback {
     if (nextClass) {//有下一节课权限
         [[self sharedView] showStudentEndClassNoticeInView:view duration:duration classTitle:title classTime:time confirmCallback:callback];
     } else { //没有下一节课权限
-        if (isTeacher) {
-            [[self sharedView] showViewLessonAlertInView:view type:PLVRoomUserTypeTeacher duration:duration confirmActionBlock:callback];
-        } else {
-            [[self sharedView] showViewLessonAlertInView:view type:PLVRoomUserTypeSCStudent duration:duration confirmActionBlock:callback];
-        }
+        [[self sharedView] showViewLessonAlertInView:view type:PLVRoomUserTypeSCStudent duration:duration confirmActionBlock:callback];
     }
 }
 
@@ -85,8 +84,9 @@
 }
 
 + (void)showStudentClassCountdownInView:(UIView *)view
+                               duration:(NSInteger)duration
                             endCallback:(PLVHCClassAlertBlock _Nullable)callback {
-    [[self sharedView] showStudentClassCountdownInView:view endCallback:callback];
+    [[self sharedView] showStudentClassCountdownInView:view duration:duration endCallback:callback];
 }
 
 + (void)showGoClassNowCountdownInView:(UIView * _Nullable)view
@@ -104,6 +104,14 @@
     [[self sharedView] showStudentLinkMicAlertInView:view linkMicCallback:callback];
 }
 
++ (void)showStudentGroupCountdownInView:(UIView *)view titleString:(NSString *)titleString confirmActionTitle:(NSString *)confirmActionTitle endCallback:(PLVHCClassAlertBlock)callback {
+    [[self sharedView] showStudentGroupCountdownInView:view titleString:titleString confirmActionTitle:confirmActionTitle endCallback:callback];
+}
+
++ (void)showStudentStartGroupCountdownInView:(UIView *)view endCallback:(PLVHCClassAlertBlock)callback {
+    [[self sharedView] showStudentStartGroupCountdownInView:view endCallback:callback];
+}
+
 + (void)clear {
     [[self sharedView] clearAnimated:NO];
 }
@@ -114,11 +122,6 @@
 - (void)exitClassroomAlertInView:(UIView *)view
                cancelActionBlock:(PLVHCClassAlertBlock _Nullable)cancelActionBlock
               confirmActionBlock:(PLVHCClassAlertBlock _Nullable)confirmActionBlock {
-     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.lessonInfo.hiClassStatus != PLVHiClassStatusInClass) {
-        confirmActionBlock ? confirmActionBlock() : nil;
-        return;
-    }
     NSString *content = @"课程还未结束，确定离开教室吗？";
     [self showClassAlertInView:view content:content cancelActionBlock:cancelActionBlock confirmActionBlock:confirmActionBlock];
 }
@@ -189,33 +192,25 @@
 }
 
 - (void)showStudentClassCountdownInView:(UIView *)view
+                               duration:(NSInteger)duration
                             endCallback:(PLVHCClassAlertBlock _Nullable)callback {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    PLVLessonInfoModel *lessonInfo = roomData.lessonInfo;
-    if (lessonInfo.hiClassStatus > PLVHiClassStatusNotInClass) { //上课中或者已下课不需要回调和弹窗
-        return;
-    }
-    
-    NSTimeInterval nowTimeInterval = [[NSDate date] timeIntervalSince1970] * 1000;
-    if (nowTimeInterval > lessonInfo.lessonStartTime &&
-        lessonInfo.hiClassStatus == PLVHiClassStatusNotInClass) { //超时未上课 需要回调
+    if (duration <= 0) {
         callback ? callback() : nil;
         return;
     }
     
-    NSTimeInterval duration = (lessonInfo.lessonStartTime - nowTimeInterval)/1000; //当前倒数计时剩余秒数
-     PLVHCStudentClassCountdownView *countdownView = [[PLVHCStudentClassCountdownView alloc] init];
-     UIView *baseView = view ? view : self.frontView;
-     __weak typeof(self) weakSelf = self;
-     [countdownView studentStartClassCountdownDuration:duration endCallback:^{
-         [weakSelf dismissView];
-         callback ? callback() : nil;
-     }];
-     [self showAlertViewInView:baseView subview:countdownView];
-     self.bounds = CGRectMake(0, 0, 106 + 164, 118);
-     self.center = baseView.center;
-     countdownView.frame = self.bounds;
- }
+    PLVHCStudentClassCountdownView *countdownView = [[PLVHCStudentClassCountdownView alloc] init];
+    UIView *baseView = view ? view : self.frontView;
+    __weak typeof(self) weakSelf = self;
+    [countdownView studentStartClassCountdownDuration:duration endCallback:^{
+        [weakSelf dismissView];
+        callback ? callback() : nil;
+    }];
+    [self showAlertViewInView:baseView subview:countdownView];
+    self.bounds = CGRectMake(0, 0, 106 + 164, 118);
+    self.center = baseView.center;
+    countdownView.frame = self.bounds;
+}
 
 - (void)showGoClassNowCountdownInView:(UIView *)view
                       goClassCallback:(PLVHCClassAlertBlock _Nullable)goClassCallback
@@ -275,6 +270,32 @@
     linkMicView.center = CGPointMake(baseView.center.x, baseView.center.y + 30);
 }
 
+- (void)showStudentGroupCountdownInView:(UIView *)view titleString:(NSString *)titleString confirmActionTitle:(NSString *)confirmActionTitle endCallback:(PLVHCClassAlertBlock)callback {
+    PLVHCStudentGroupCountdownView *groupCountDownView = [[PLVHCStudentGroupCountdownView alloc] initWithFrame:CGRectMake(0, 0, 282, 140)];
+    __weak typeof(self) weakSelf = self;
+    [groupCountDownView countdownViewWithTitleString:titleString confirmActionTitle:confirmActionTitle endCallback:^{
+        [weakSelf dismissView];
+        callback ? callback() : nil;
+    }];
+    UIView *baseView = view ? view : self.frontView;
+    [self showAlertViewInView:baseView subview:groupCountDownView];
+    self.frame = baseView.bounds;
+    groupCountDownView.center = self.center;
+}
+
+- (void)showStudentStartGroupCountdownInView:(UIView *)view endCallback:(PLVHCClassAlertBlock)callback {
+    PLVHCStudentGroupCountdownView *groupCountDownView = [[PLVHCStudentGroupCountdownView alloc] initWithFrame:CGRectMake(0, 0, 164, 136)];
+    __weak typeof(self) weakSelf = self;
+    [groupCountDownView countdownViewEndCallback:^{
+        [weakSelf dismissView];
+        callback ? callback() : nil;
+    }];
+    UIView *baseView = view ? view : self.frontView;
+    [self showAlertViewInView:baseView subview:groupCountDownView];
+    self.frame = baseView.bounds;
+    groupCountDownView.center = self.center;
+}
+
 #pragma mark - show
 
 ///subview 属性需要在此方法后设置避免clearAnimated将其清除
@@ -303,6 +324,9 @@
     [self.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         if ([obj isKindOfClass:[PLVHCStudentClassCountdownView class]]) {
             [(PLVHCStudentClassCountdownView *)obj clear];
+        }
+        if ([obj isKindOfClass:[PLVHCStudentGroupCountdownView class]]) {
+            [(PLVHCStudentGroupCountdownView *)obj clear];
         }
     }];
     if (animate) {
@@ -422,7 +446,7 @@
 @end
 
 @interface PLVHCStudentClassCountdownView ()
-
+///UI
 //倒计时时间显示
 @property (nonatomic, strong) UILabel *countdownLabel;
 //倒计时文字
@@ -431,14 +455,24 @@
 @property (nonatomic, strong) UIView *backgroundView;
 @property (nonatomic, strong) UIImageView *imageView;
 @property (nonatomic, strong) CAGradientLayer *gradientLayer;
+///数据
 //倒计时器
 @property (nonatomic, strong) dispatch_source_t countdownTimer;
-
+//倒计时时长(秒)
+@property (nonatomic, assign) NSTimeInterval duration;
+//倒计时结束回调
+@property (nonatomic, copy) PLVHCClassAlertBlock countdownEndCallback;
+//倒计时结束时对应系统时间戳(秒)用于矫正退出后台重新激活后的计时操作
+@property (nonatomic, assign) NSTimeInterval countdownEndTimestamp;
 @end
 
 @implementation PLVHCStudentClassCountdownView
 
 #pragma mark - [ Life Cycle ]
+
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
 
 - (instancetype)init {
     self = [super init];
@@ -448,9 +482,12 @@
         [self.backgroundView.layer addSublayer:self.gradientLayer];
         [self.backgroundView addSubview:self.titleLabel];
         [self.backgroundView addSubview:self.countdownLabel];
+        /// 设置 监听 事件
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     }
     return self;
 }
+
 - (void)layoutSubviews {
     [super layoutSubviews];
     
@@ -506,29 +543,38 @@
     return _gradientLayer;
 }
 
-#pragma mark - [ Public Methods ]
+#pragma mark - [ Private Methods ]
 
-/// 开始倒计时，并且结束时回调
-/// @param callback 倒计时结束时的回调
-- (void)studentStartClassCountdownDuration:(NSTimeInterval)duration
-                               endCallback:(PLVHCClassAlertBlock)callback {
-    __block NSTimeInterval countdown = duration;
+- (void)startClassCountdownTimer {
     dispatch_queue_t quene = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
     self.countdownTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, quene);
     dispatch_source_set_timer(self.countdownTimer, DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC, 0);
+    __weak typeof(self) weakSelf = self;
     dispatch_source_set_event_handler(self.countdownTimer, ^{
         dispatch_async(dispatch_get_main_queue(), ^{
-            if (countdown <= 0) {
-                [self clear];
-                callback ? callback() : nil;
+            if (weakSelf.duration <= 0) {
+                [weakSelf clear];
+                weakSelf.countdownEndCallback ? weakSelf.countdownEndCallback() : nil;
             } else {
-                NSString *timeText = [NSString stringWithFormat:@"%02ld:%02ld:%02ld",lround(floor(countdown / 60 / 60)), lround(floor(countdown / 60)) % 60, lround(floor(countdown)) % 60];
-                self.countdownLabel.text = timeText;
-                countdown--;
+                NSString *timeText = [NSString stringWithFormat:@"%02ld:%02ld:%02ld",lround(floor(weakSelf.duration / 60 / 60)), lround(floor(weakSelf.duration / 60)) % 60, lround(floor(weakSelf.duration)) % 60];
+                weakSelf.countdownLabel.text = timeText;
+                weakSelf.duration --;
             }
         });
     });
     dispatch_resume(self.countdownTimer);
+}
+
+#pragma mark - [ Public Methods ]
+
+/// 开始倒计时，并且结束时回调
+- (void)studentStartClassCountdownDuration:(NSTimeInterval)duration
+                               endCallback:(PLVHCClassAlertBlock)callback {
+    self.duration = duration;
+    self.countdownEndCallback = callback;
+    NSTimeInterval nowInterval = [[NSDate date] timeIntervalSince1970];
+    self.countdownEndTimestamp = nowInterval + duration;
+    [self startClassCountdownTimer];
 }
 
 - (void)clear {
@@ -536,6 +582,14 @@
         dispatch_source_cancel(self.countdownTimer);
         self.countdownTimer = nil;
     }
+}
+
+#pragma mark - [ Event ]
+#pragma mark Notification
+/// 回到前台
+- (void)didBecomeActive:(NSNotification *)notification {
+    NSTimeInterval nowInterval = [[NSDate date] timeIntervalSince1970];
+    self.duration = self.countdownEndTimestamp - nowInterval;
 }
 
 @end

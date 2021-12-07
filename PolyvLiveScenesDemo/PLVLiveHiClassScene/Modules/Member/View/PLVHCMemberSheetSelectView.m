@@ -7,6 +7,10 @@
 //
 
 #import "PLVHCMemberSheetSelectView.h"
+// 模块
+#import "PLVRoomDataManager.h"
+
+// 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSInteger kButtonTagConst = 100;
@@ -18,6 +22,9 @@ static NSInteger kButtonTagConst = 100;
 @property (nonatomic, strong) UILabel *kickedMemberLabel; // 移出学生Label
 @property (nonatomic, strong) UIButton *onlineMemberButton; // 在线学生按钮
 @property (nonatomic, strong) UIButton *kickedMemberButton; // 移出学生按钮
+
+/// 数据
+@property (nonatomic, assign, getter=isTeacher) BOOL teacher; // 是否为讲师
 
 @end
 
@@ -59,14 +66,20 @@ static NSInteger kButtonTagConst = 100;
     [self addSubview:self.onlineMemberButton];
     [self.onlineMemberButton addSubview:self.onlineMemberLabel];
     
-    [self addSubview:self.kickedMemberButton];
-    [self.kickedMemberButton addSubview:self.kickedMemberLabel];
+    if (self.isTeacher) { // 讲师才有 移出学生 列表
+        self.frame = CGRectMake(8, 64 + 7.5, 144, 96);
+        
+        [self addSubview:self.kickedMemberButton];
+        [self.kickedMemberButton addSubview:self.kickedMemberLabel];
+        
+        self.kickedMemberButton.frame = CGRectMake(8, 48, 128, 40);
+        self.kickedMemberLabel.frame = CGRectMake(8, 13, 112, 14);
+    } else { 
+        self.frame = CGRectMake(8, 64 + 7.5, 144, 56);
+    }
     
-    self.frame = CGRectMake(8, 64 + 7.5, 144, 96);
     self.onlineMemberButton.frame = CGRectMake(8, 8, 128, 40);
     self.onlineMemberLabel.frame = CGRectMake(8, 13, 112, 14);
-    self.kickedMemberButton.frame = CGRectMake(8, 48, 128, 40);
-    self.kickedMemberLabel.frame = CGRectMake(8, 13, 112, 14);
 }
 
 #pragma mark - Getter & Setter
@@ -95,7 +108,6 @@ static NSInteger kButtonTagConst = 100;
         _onlineMemberButton.layer.cornerRadius = 8;
         _onlineMemberButton.layer.masksToBounds = YES;
         UIImage *selectedImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#00B16C"]];
-//        [_onlineMemberButton setBackgroundImage:selectedImage forState:UIControlStateHighlighted];
         [_onlineMemberButton setBackgroundImage:selectedImage forState:UIControlStateSelected];
         [_onlineMemberButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
         _onlineMemberButton.tag = kButtonTagConst;
@@ -110,12 +122,15 @@ static NSInteger kButtonTagConst = 100;
         _kickedMemberButton.layer.cornerRadius = 8;
         _kickedMemberButton.layer.masksToBounds = YES;
         UIImage *selectedImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#00B16C"]];
-//        [_kickedMemberButton setBackgroundImage:selectedImage forState:UIControlStateHighlighted];
         [_kickedMemberButton setBackgroundImage:selectedImage forState:UIControlStateSelected];
         [_kickedMemberButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
         _kickedMemberButton.tag = kButtonTagConst + 1;
     }
     return _kickedMemberButton;
+}
+
+- (BOOL)isTeacher {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
 }
 
 #pragma mark - [ Event ]

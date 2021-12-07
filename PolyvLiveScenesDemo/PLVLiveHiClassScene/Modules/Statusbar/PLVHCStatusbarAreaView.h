@@ -13,34 +13,34 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol PLVHCStatusbarAreaViewDelegate;
+/// 互动学堂状态栏状态枚举
+typedef NS_ENUM(NSInteger, PLVHiClassStatusbarState){
+    PLVHiClassStatusbarStateNotInClass = 0, // 未上课
+    PLVHiClassStatusbarStateDelayStartClass = 1, // 已延迟
+    PLVHiClassStatusbarStateInClass = 2, // 上课中
+    PLVHiClassStatusbarStateDelayFinishClass = 3, // 拖堂
+    PLVHiClassStatusbarStateFinishClass = 4, // 已下课
+};
 
 @interface PLVHCStatusbarAreaView : UIView
 
-@property (nonatomic, weak) id<PLVHCStatusbarAreaViewDelegate> delegate;
+/// 设置状态栏标题文本
+- (void)setClassTitle:(NSString *)title;
 
-/// 延迟上课
-- (void)delayStartClass;
+/// 设置状态栏课节号
+- (void)setLessonId:(NSString *)lessonId;
 
-/// 开始上课
-- (void)startClass;
+/// 设置状态栏当前状态
+- (void)updateState:(PLVHiClassStatusbarState)state;
 
-///结束课程需要调用清除上课计时器
-- (void)finishClass;
+/// 更新上课时长
+- (void)updateDuration:(NSInteger)duration;
 
 /// 设置状态栏网络信号
 - (void)setNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality;
 
 /// 设置网络延迟
 - (void)setNetworkDelayTime:(NSInteger)delayTime;
-
-@end
-
-///状态栏代理
-@protocol PLVHCStatusbarAreaViewDelegate <NSObject>
-
-/// 强制下课处理，拖堂到最大时长后
-- (void)statusbarAreaViewDidForcedFinishClass:(PLVHCStatusbarAreaView *)areaView;
 
 @end
 

@@ -9,6 +9,7 @@
 #import "PLVHCLinkMicWindowCell.h"
 #import "PLVHCUtils.h"
 #import "PLVLinkMicOnlineUser+HC.h"
+#import "PLVRoomDataManager.h"
 
 /// 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -38,11 +39,12 @@
 @property (nonatomic, strong) UIImageView *micImageView; //麦克风
 @property (nonatomic, strong) UIImageView *brushImageView; //画笔
 @property (nonatomic, strong) UIImageView *handUpImageView; //举手
+@property (nonatomic, strong) UIView *placeholderView; //讲师断开直播的占位图
+@property (nonatomic, strong) UIImageView *placeholderImageView;
+@property (nonatomic, strong) UILabel *placeholderNameLabel;
 
 #pragma mark 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser *userModel;
-@property (nonatomic, strong) PLVLinkMicOnlineUserGrantCupCountChangedBlock grantCupCountChangedBlock;
-@property (nonatomic, strong) PLVLinkMicOnlineUserBrushAuthChangedBlock brushAuthChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserMicOpenChangedBlock micOpenChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraShouldShowChangedBlock cameraShouldShowChangedBlock;
 
@@ -71,6 +73,9 @@
     [CATransaction commit];
     self.brushImageView.center = CGPointMake(4 + CGRectGetWidth(self.brushImageView.frame)/2, 4 + CGRectGetHeight(self.brushImageView.frame)/2);
     self.maxNicknameLabel.center = self.contentBackgroudView.center;
+    self.placeholderView.frame = self.contentView.bounds;
+    self.placeholderImageView.center = CGPointMake(CGRectGetWidth(self.contentView.bounds)/2, CGRectGetHeight(self.contentView.bounds)/2 - 8);
+    self.placeholderNameLabel.frame = CGRectMake(0, CGRectGetMaxY(self.placeholderImageView.frame) + 8, CGRectGetWidth(self.contentView.bounds), 10);
     [self updateWindowCellLayout];
 }
 
@@ -147,28 +152,32 @@
     return _handUpImageView;
 }
 
-- (PLVLinkMicOnlineUserGrantCupCountChangedBlock)grantCupCountChangedBlock {
-    if (!_grantCupCountChangedBlock) {
-        __weak typeof(self) weakSelf = self;
-        _grantCupCountChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-            if ([onlineUser.userId isEqualToString:weakSelf.userModel.userId]) {
-                [weakSelf updateCupViewCount:onlineUser.currentCupCount];
-            }
-        };
+- (UIView *)placeholderView {
+    if (!_placeholderView) {
+        _placeholderView = [[UIView alloc]init];
+        _placeholderView.backgroundColor = [PLVColorUtil colorFromHexString:@"#3C3C4C"];
+        _placeholderView.hidden= YES;
     }
-    return _grantCupCountChangedBlock;
+    return _placeholderView;
 }
 
-- (PLVLinkMicOnlineUserBrushAuthChangedBlock)brushAuthChangedBlock {
-    if (!_brushAuthChangedBlock) {
-        __weak typeof(self) weakSelf = self;
-        _brushAuthChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-            if ([onlineUser.userId isEqualToString:weakSelf.userModel.userId]) {
-                [weakSelf updateAuthBrushViewShow:onlineUser.currentBrushAuth];
-            }
-        };
+- (UIImageView *)placeholderImageView {
+    if (!_placeholderImageView) {
+        _placeholderImageView = [[UIImageView alloc] init];
+        _placeholderImageView.bounds = CGRectMake(0, 0, 32, 32);
+        _placeholderImageView.image = [PLVHCUtils imageForLinkMicResource:@"plvhc_linkmic_teacher_placeholer_icon"];
     }
-    return _brushAuthChangedBlock;
+    return _placeholderImageView;
+}
+
+- (UILabel *)placeholderNameLabel {
+    if (!_placeholderNameLabel) {
+        _placeholderNameLabel = [[UILabel alloc] init];
+        _placeholderNameLabel.textColor = [PLVColorUtil colorFromHexString:@"#FFFFFF"];
+        _placeholderNameLabel.font = [UIFont systemFontOfSize:8];
+        _placeholderNameLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _placeholderNameLabel;
 }
 
 - (PLVLinkMicOnlineUserMicOpenChangedBlock)micOpenChangedBlock {
@@ -188,7 +197,7 @@
         __weak typeof(self) weakSelf = self;
        _cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
            if ([onlineUser.userId isEqualToString:weakSelf.userModel.userId]) {
-               [weakSelf updateRTCViewWithUser:onlineUser addView:NO];
+               [weakSelf updateRTCViewWithUser:onlineUser];
            }
        };
     }
@@ -199,8 +208,24 @@
 
 - (void)updateOnlineUser:(PLVLinkMicOnlineUser *)userModel {
     self.userModel = userModel;
- 
-    NSString *actor = userModel.userType == PLVSocketUserTypeTeacher ? @"老师-" : @"";
+    
+    // 讲师占位图
+    BOOL isTeacher = userModel.userType == PLVSocketUserTypeTeacher;
+    self.placeholderNameLabel.text = isTeacher ? [NSString stringWithFormat:@"老师-%@的位置",userModel.nickname] : @"";
+    
+    userModel.canvasView.frame = self.contentBackgroudView.bounds;
+    userModel.canvasView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    if (userModel.streamLeaveRoom && isTeacher) { // 讲师断开直播显示占位图
+        self.placeholderView.hidden = NO;
+        self.micImageView.hidden = YES;
+        [userModel.canvasView removeFromSuperview];
+    } else {
+        self.placeholderView.hidden = YES;
+        self.micImageView.hidden = NO;
+        [self.contentBackgroudView addSubview:userModel.canvasView];
+    }
+        
+    NSString *actor = userModel.userType == PLVSocketUserTypeTeacher ? @"老师-" : ([[PLVHiClassManager sharedManager].groupLeaderId isEqualToString:userModel.userId] ? @"组长-" : @"");
     /// 昵称文本
     NSString *nickname = [PLVFdUtil checkStringUseable:userModel.nickname] ? [NSString stringWithFormat:@"%@%@",actor,userModel.nickname] : [NSString stringWithFormat:@"unknown%@",userModel.userId];
     self.minNicknameLabel.text = nickname;
@@ -209,7 +234,7 @@
     /// 麦克风图标
     [self setMicImageWithMicOpen:userModel.currentMicOpen];
     /// 摄像画面
-    [self updateRTCViewWithUser:userModel addView:YES];
+    [self updateRTCViewWithUser:userModel];
     ///授予奖杯
     [self updateCupViewCount:userModel.currentCupCount];
     ///授予画笔
@@ -231,6 +256,9 @@
     [self.contentView addSubview:self.minNicknameLabel];
     [self.contentView addSubview:self.maxNicknameLabel];
     [self.contentView addSubview:self.handUpImageView];
+    [self.contentView addSubview:self.placeholderView];
+    [self.placeholderView addSubview:self.placeholderImageView];
+    [self.placeholderView addSubview:self.placeholderNameLabel];
 }
 
 - (void)setMicImageWithMicOpen:(BOOL)micOpen {
@@ -238,19 +266,19 @@
     self.micImageView.image = [PLVHCUtils imageForLinkMicResource:micImageName];
 }
 
-- (void)updateRTCViewWithUser:(PLVLinkMicOnlineUser * _Nonnull)onlineUser addView:(BOOL)addView {
+- (void)updateRTCViewWithUser:(PLVLinkMicOnlineUser * _Nonnull)onlineUser {
     [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
-    if (addView) {
-        onlineUser.canvasView.frame = self.contentBackgroudView.bounds;
-        onlineUser.canvasView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [self.contentBackgroudView addSubview:onlineUser.canvasView];
-    }
     if (onlineUser.currentCameraShouldShow) { //显示rtc
         self.minNicknameLabel.hidden = NO;
         self.maxNicknameLabel.hidden = YES;
     } else {
         self.minNicknameLabel.hidden = YES;
         self.maxNicknameLabel.hidden = NO;
+    }
+    
+    if (!self.placeholderView.hidden) { // 显示讲师占位图时，昵称文本均隐藏
+        self.minNicknameLabel.hidden = YES;
+        self.maxNicknameLabel.hidden = YES;
     }
 }
 
@@ -283,14 +311,21 @@
     [user addMicOpenChangedBlock:self.micOpenChangedBlock blockKey:self];
     //摄像画面
     [user addCameraShouldShowChangedBlock:self.cameraShouldShowChangedBlock blockKey:self];
-    //授予奖杯
-    [user addGrantCupCountChangedBlock:self.grantCupCountChangedBlock blockKey:self];
-    //授予画笔
-    [user addBrushAuthStateChangedBlock:self.brushAuthChangedBlock blockKey:self];
-    //举手
     __weak typeof(self) weakSelf = self;
+    user.grantCupCountChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        if ([onlineUser.userId isEqualToString:weakSelf.userModel.userId]) {
+            [weakSelf updateCupViewCount:onlineUser.currentCupCount];
+        }
+    };
     user.handUpChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-        [weakSelf updateHandUpViewState:onlineUser.currentHandUp];
+        if ([onlineUser.userId isEqualToString:weakSelf.userModel.userId]) {
+            [weakSelf updateHandUpViewState:onlineUser.currentHandUp];
+        }
+    };
+    user.brushAuthChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        if ([onlineUser.userId isEqualToString:weakSelf.userModel.userId]) {
+            [weakSelf updateAuthBrushViewShow:onlineUser.currentBrushAuth];
+        }
     };
 }
 
@@ -436,6 +471,8 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
+        self.brushImageView.frame = CGRectMake(0, 0, 14, 14);
+        self.cupView.frame = CGRectMake(0, 0, 25, 14);
         self.maxNicknameLabel.frame = CGRectMake(0, 0, 94, 40);
         self.maxNicknameLabel.font = [UIFont systemFontOfSize:14];
         self.minNicknameLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:8];

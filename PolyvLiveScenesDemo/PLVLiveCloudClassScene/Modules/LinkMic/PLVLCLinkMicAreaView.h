@@ -67,6 +67,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// 开始/结束观看无延迟直播
 - (void)startWatchNoDelay:(BOOL)startWatch;
 
+/// 退出连麦(仅发送'退出连麦消息')
+///
+/// @note 此方法用于将当前 等待连麦 、正在加入连麦 或 连麦中的用户退出连麦
+///       仅发送退出连麦的soket消息，不关心是否真正退出RTC房间
+///       适用场景：当前确认 PLVLCLinkMicAreaView 或 内部的PLVLinkMicPresenter 将很快销毁，仅希望发送 ‘退出连麦’ 的请求消息，来更新本地用户在服务器中的状态
+- (void)leaveLinkMicOnlyEmit;
+
 @end
 
 /// 连麦区域视图Delegate

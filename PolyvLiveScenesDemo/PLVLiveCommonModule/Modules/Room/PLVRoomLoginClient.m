@@ -227,7 +227,8 @@
         roomData.channelGuestManualJoinLinkMic = [PLV_SafeStringForDictKey(data, @"colinMicType") isEqualToString:@"manual"];
         roomData.interactNumLimit = PLV_SafeIntegerForDictKey(data, @"InteractNumLimit");
         roomData.isOnlyAudio = PLV_SafeBoolForDictKey(data, @"isOnlyAudio");
-
+        roomData.liveStatusIsLiving = PLV_SafeBoolForDictKey(data, @"liveStatus");
+        
         // 初始化直播间用户数据
         NSString *teacherNickname = PLV_SafeStringForDictKey(data, @"teacherNickname");
         if (nickName && [nickName isKindOfClass:[NSString class]] && nickName.length > 0) {
@@ -310,6 +311,8 @@
         // 解析频道号、频道名称、连麦人数、是否开启自动连麦
         NSString *channelId = PLV_SafeStringForDictKey(responseDict, @"channelId");
         NSString *channelName = PLV_SafeStringForDictKey(responseDict, @"name");
+        BOOL autoLinkMic = PLV_SafeBoolForDictKey(responseDict, @"autoConnectMicroEnabled");
+        NSInteger linkNumber = PLV_SafeIntegerForDictKey(responseDict, @"linkNumber");
         
         // 初始化直播间数据
         PLVRoomData *roomData = [[PLVRoomData alloc] init];
@@ -318,10 +321,9 @@
         roomData.videoType = PLVChannelVideoType_Streamer;
         roomData.channelId = channelId;
         roomData.channelName = channelName;
-        
-        //设置课程详情数据
-        PLVLessonInfoModel *infoModel = [[PLVLessonInfoModel alloc] initWithDictionary:responseDict];
-        [roomData setupLessonInfo:infoModel];
+        roomData.inHiClassScene = YES;
+        roomData.autoLinkMic = autoLinkMic;
+        roomData.linkNumber = linkNumber;
         
         // 初始化直播间用户数据
         PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithViewerId:viewerId viewerName:viewerName viewerAvatar:@"https://s1.videocc.net/default-img/avatar/teacher.png" viewerType:PLVRoomUserTypeTeacher];
@@ -332,6 +334,9 @@
         
         // 注册日志管理器
         [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:roomData.channelId productType:PLVProductTypeHiClass];
+        
+        // 注册课程管理器
+        [[PLVHiClassManager sharedManager] setupWithLessonDetail:responseDict courseCode:nil];
         
         NSString *pptAnimationString = PLV_SafeStringForDictKey(responseDict, @"pptAnimationEnabled");
         BOOL pptAnimationEnable = pptAnimationString.boolValue;
@@ -376,6 +381,7 @@
         // 解析频道号、频道名称、连麦人数、是否开启自动连麦
         NSString *channelId = PLV_SafeStringForDictKey(responseDict, @"channelId");
         NSString *channelName = PLV_SafeStringForDictKey(responseDict, @"name");
+        NSInteger linkNumber = PLV_SafeIntegerForDictKey(responseDict, @"linkNumber");
         
         // 初始化直播间数据
         PLVRoomData *roomData = [[PLVRoomData alloc] init];
@@ -384,11 +390,8 @@
         roomData.videoType = PLVChannelVideoType_Streamer;
         roomData.channelId = channelId;
         roomData.channelName = channelName;
-        
-        //设置课程详情数据
-        PLVLessonInfoModel *infoModel = [[PLVLessonInfoModel alloc] initWithDictionary:responseDict];
-        infoModel.courseCode = courseCode;
-        [roomData setupLessonInfo:infoModel];
+        roomData.inHiClassScene = YES;
+        roomData.linkNumber = linkNumber;
         
         // 初始化直播间用户数据
         PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithViewerId:viewerId viewerName:viewerName viewerAvatar:@"https://liveimages.videocc.net/defaultImg/avatar/viewer.png" viewerType:PLVRoomUserTypeSCStudent];
@@ -399,6 +402,13 @@
         
         // 注册日志管理器
         [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:roomData.channelId productType:PLVProductTypeHiClass];
+        
+        // 注册课程管理器
+        [[PLVHiClassManager sharedManager] setupWithLessonDetail:responseDict courseCode:courseCode];
+        
+        NSString *pptAnimationString = PLV_SafeStringForDictKey(responseDict, @"pptAnimationEnabled");
+        BOOL pptAnimationEnable = pptAnimationString.boolValue;
+        [[PLVDocumentUploadClient sharedClient] setupWithChannelId:channelId lessionId:lessonId courseCode:courseCode pptAnimationEnable:pptAnimationEnable teacher:NO];
         
         !completion ?: completion();
     } failure:^(NSError * _Nonnull error) {

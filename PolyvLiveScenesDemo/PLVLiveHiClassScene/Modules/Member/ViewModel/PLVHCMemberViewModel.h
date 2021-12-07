@@ -62,6 +62,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 停止定时获取成员列表数据
 - (void)stop;
 
+/// 获取聊天室在线人数列表
+- (void)loadOnlineUserList;
+
 /// 返回指定Id的用户数据
 /// @note 可返回所有身份的用户数据
 - (PLVChatUser * _Nullable)userInListWithUserId:(NSString *)userId;
@@ -74,6 +77,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 讲师端禁言/取消禁言某个学员后调用
 - (void)banUserWithUserId:(NSString *)userId banned:(BOOL)banned;
+
+/// 讲师端收到某个学员举手动作后调用
+/// 用于更新用户 ‘当前是否举手’ 属性 currentHandUp，并触发回调 [-onlineUserListChangedInMemberViewModel:]
+- (void)handUpWithUserId:(NSString *)userId handUp:(BOOL)handUp;
+
+/// 收到授予奖杯事件时，更新用户的 ‘授予奖杯数量’、同时返回用户的昵称
+/// @param userId 授予奖杯的用户
+/// @return 根据 userId 返回用户的昵称
+- (NSString *)grantCupWithUserId:(NSString *)userId;
+
+/// 收到授权画笔的事件时，更新用户的 ‘画笔授权状态’
+/// @param userId 画笔授权事件相关用户
+/// @param auth 是否授权（YES授权 NO取消授权）
+- (void)brushPermissionWithUserId:(NSString *)userId auth:(BOOL)auth;
 
 /// 更新成员列表中已连麦用户数据
 - (void)refreshUserListWithLinkMicOnlineUserArray:(NSArray <PLVLinkMicOnlineUser *>*)linkMicUserArray;

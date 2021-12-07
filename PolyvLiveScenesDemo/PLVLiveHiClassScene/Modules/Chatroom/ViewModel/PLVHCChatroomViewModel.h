@@ -117,6 +117,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
 - (BOOL)resendImageMessage:(PLVChatModel *)model;
 
+/// 切换聊天室房间时调用，用于清空原有的聊天消息，并重新加载历史聊天消息
+- (void)changeRoom;
+
 @end
 
 NS_ASSUME_NONNULL_END

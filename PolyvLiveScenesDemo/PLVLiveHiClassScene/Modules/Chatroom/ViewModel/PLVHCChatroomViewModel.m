@@ -63,17 +63,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     // 初始化消息数组，预设初始容量
     self.chatArray = [[NSMutableArray alloc] initWithCapacity:500];
     
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    
     // 初始化聊天室Presenter并设置delegate
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10];
-    [self.presenter setCourseCode:roomData.lessonInfo.courseCode lessonId:roomData.lessonInfo.lessonId];
+    [self.presenter setCourseCode:[PLVHiClassManager sharedManager].courseCode lessonId:[PLVHiClassManager sharedManager].lessonId];
     self.presenter.delegate = self;
     [self.presenter login];
     
     // 监听socket消息
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
-    
 }
 
 - (void)clear {
@@ -86,6 +83,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 #pragma mark 加载历史消息
+
+- (void)changeRoom {
+    [self removeAllPublicChatModels];
+    [self.presenter changeRoom];
+}
 
 - (void)loadHistory {
     [self.presenter loadHistory];
@@ -211,6 +213,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 /// 接收到socket删除所有公聊消息的通知时、调用销毁接口时
+/// 也用于切换聊天室房间清空原有聊天消息时
 - (void)removeAllPublicChatModels {
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     [self.chatArray removeAllObjects];

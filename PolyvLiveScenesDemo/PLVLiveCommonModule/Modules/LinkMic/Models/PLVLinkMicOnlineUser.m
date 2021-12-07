@@ -18,8 +18,6 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraShouldShowChangedBlock> * cameraShouldShowChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraFrontChangedBlock> * cameraFrontChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraTorchOpenChangedBlock> * cameraTorchOpenChanged_MultiReceiverMap;
-@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserBrushAuthChangedBlock> * brushAuthStateChanged_MultiReceiverMap;
-@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserGrantCupCountChangedBlock> * grantCupCountChanged_MultiReceiverMap;
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * userId;
@@ -117,20 +115,6 @@
     return _cameraTorchOpenChanged_MultiReceiverMap;
 }
 
-- (NSMapTable<id,PLVLinkMicOnlineUserBrushAuthChangedBlock> *)brushAuthStateChanged_MultiReceiverMap {
-    if (!_brushAuthStateChanged_MultiReceiverMap) {
-        _brushAuthStateChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
-    }
-    return _brushAuthStateChanged_MultiReceiverMap;
-}
-
-- (NSMapTable<id,PLVLinkMicOnlineUserGrantCupCountChangedBlock> *)grantCupCountChanged_MultiReceiverMap{
-    if (!_grantCupCountChanged_MultiReceiverMap) {
-        _grantCupCountChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
-    }
-    return _grantCupCountChanged_MultiReceiverMap;
-}
-
 #pragma mark - [ Public Methods ]
 #pragma mark Getter
 - (UIView *)rtcView{
@@ -224,6 +208,7 @@
         BOOL currentStatusVoice = ([NSString stringWithFormat:@"%@",classStatusDict[@"voice"]].intValue == 1);
         NSInteger currentCupCount = PLV_SafeIntegerForDictKey(classStatusDict, @"cup");
         BOOL currentHandUp = ([NSString stringWithFormat:@"%@",classStatusDict[@"raiseHand"]].intValue == 1);
+        self.groupLeader = ([NSString stringWithFormat:@"%@",classStatusDict[@"groupLeader"]].intValue == 1);
         
         BOOL localUser = self.localUser; // 缓存真实状态
         if (self.userType == PLVSocketUserTypeGuest) {
@@ -428,18 +413,6 @@
             if (weakSelf) { weakSelf.brushAuthChangedBlock(weakSelf); }
         })
     }
-    
-    if (needCallBack && _brushAuthStateChanged_MultiReceiverMap.count > 0) {
-        _updateUserCurrentBrushAuthCallbackBefore = YES;
-        NSEnumerator * enumerator = [_brushAuthStateChanged_MultiReceiverMap objectEnumerator];
-        PLVLinkMicOnlineUserBrushAuthChangedBlock block;
-        __weak typeof(self) weakSelf = self;
-        while ((block = [enumerator nextObject])) {
-            plv_dispatch_main_async_safe(^{
-                if (weakSelf) { block(weakSelf); }
-            })
-        }
-    }
 }
 
 - (void)updateUserCurrentGrantCupCount:(NSInteger)cupCount {
@@ -455,18 +428,6 @@
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.grantCupCountChangedBlock(weakSelf); }
         })
-    }
-    
-    if (needCallBack && _grantCupCountChanged_MultiReceiverMap.count > 0) {
-        _updateUserCurrentBrushAuthCallbackBefore = YES;
-        NSEnumerator * enumerator = [_grantCupCountChanged_MultiReceiverMap objectEnumerator];
-        PLVLinkMicOnlineUserGrantCupCountChangedBlock block;
-        __weak typeof(self) weakSelf = self;
-        while ((block = [enumerator nextObject])) {
-            plv_dispatch_main_async_safe(^{
-                if (weakSelf) { block(weakSelf); }
-            })
-        }
     }
 }
 
@@ -639,38 +600,6 @@
         return;
     }
     [self.cameraTorchOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
-}
-
-- (void)addGrantCupCountChangedBlock:(PLVLinkMicOnlineUserGrantCupCountChangedBlock)strongBlock blockKey:(id)weakBlockKey {
-    if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addGrantCupCountChangedBlock failed，strongBlock illegal");
-        return;
-    }
-    if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addGrantCupCountChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
-        return;
-    }
-    if (self.grantCupCountChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addGrantCupCountChangedBlock failed，block registration limit has been reached");
-        return;
-    }
-    [self.grantCupCountChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
-}
-
-- (void)addBrushAuthStateChangedBlock:(PLVLinkMicOnlineUserBrushAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey {
-    if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addBrushAuthStateChangedBlock failed，strongBlock illegal");
-        return;
-    }
-    if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addBrushAuthStateChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
-        return;
-    }
-    if (self.brushAuthStateChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addBrushAuthStateChangedBlock failed，block registration limit has been reached");
-        return;
-    }
-    [self.brushAuthStateChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
 }
 
 @end

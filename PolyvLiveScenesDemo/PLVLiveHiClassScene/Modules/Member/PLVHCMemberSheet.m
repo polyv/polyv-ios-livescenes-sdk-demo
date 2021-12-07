@@ -85,22 +85,8 @@ PLVHCKickedMemberCellDelegate
     [self removeFromSuperview];
 }
 
-- (void)handUpWithUserId:(NSString *)userId count:(NSInteger)count handUp:(BOOL)handUp {
+- (void)setHandupLabelCount:(NSInteger)count {
     [self.headerView setHandupLabelCount:count];
-    if (![PLVFdUtil checkStringUseable:userId]) {
-        return;
-    }
-    
-    [self.userList enumerateObjectsUsingBlock:^(PLVChatUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([obj.userId isEqualToString:userId]) {
-            if (obj.onlineUser) {
-                [obj.onlineUser updateUserCurrentHandUp:handUp];
-            }
-            obj.currentHandUp = handUp;
-            *stop = YES;
-        }
-    }];
-    [self.tableView reloadData];
 }
 
 - (void)linkMicUserJoinAnswer:(BOOL)success linkMicId:(NSString *)linkMicId {
@@ -353,7 +339,7 @@ PLVHCKickedMemberCellDelegate
     [self.userList enumerateObjectsUsingBlock:^(PLVChatUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         if (obj.onlineUser) {  linkMinCount ++; }
     }];
-    NSInteger maxLinkNumber = [PLVRoomDataManager sharedManager].roomData.lessonInfo.linkNumber;
+    NSInteger maxLinkNumber = [PLVRoomDataManager sharedManager].roomData.linkNumber;
     return linkMinCount < maxLinkNumber ? YES : NO;//限制最大连麦数
 }
 

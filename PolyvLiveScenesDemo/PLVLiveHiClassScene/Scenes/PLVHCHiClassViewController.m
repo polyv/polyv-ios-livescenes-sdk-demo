@@ -21,23 +21,17 @@
 #import "PLVHCMemberSheet.h"
 #import "PLVHCChatroomSheet.h"
 #import "PLVHCSettingSheet.h"
-#import "PLVHCDocumentMinimumSheet.h"
-#import "PLVHCBrushToolBarView.h"
-#import "PLVHCBrushToolSelectSheet.h"
-#import "PLVHCBrushColorSelectSheet.h"
 #import "PLVHCGrantCupView.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
+#import "PLVRoomDataManager.h"
+#import "PLVDocumentConvertManager.h"
+#import "PLVMultiRoleLinkMicPresenter.h"
 #import "PLVHCChatroomViewModel.h"
 #import "PLVHCMemberViewModel.h"
-#import "PLVHCDocumentMinimumModel.h"
-#import "PLVDocumentModel.h"
-#import "PLVRoomDataManager.h"
 #import "PLVHCPermissionEvent.h"
 #import "PLVHCLiveroomViewModel.h"
-#import "PLVMultiRoleLinkMicPresenter.h"
-#import "PLVDocumentConvertManager.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -50,23 +44,16 @@ static NSString *const kStudentCourseOrLessonLoginVCName = @"PLVHCStudentCourseO
 static NSString *const kPLVHCTeacherLoginClassName = @"PLVHCTeacherLoginManager"; //讲师登录管理类名称
 
 @interface PLVHCHiClassViewController ()<
-PLVRoomDataManagerProtocol,
 PLVMultiRoleLinkMicPresenterDelegate,
-PLVSocketManagerProtocol, // socket回调
 PLVHCHiClassSettingViewDelegate, // 设备设置视图回调
 PLVHCToolbarAreaViewDelegate, // 状态栏区域视图回调
 PLVHCSettingSheetDelegate, // 设备弹层视图回调
 PLVHCDocumentSheetDelegate, // 文档管理弹层视图回调
-PLVHCDocumentMinimumSheetDelegate, // 文档最小化弹层视图回调
 PLVHCDocumentAreaViewDelegate, // PPT/白板区域视图回调
-PLVHCBrushToolbarViewDelegate, // 画笔工具视图回调
-PLVHCBrushToolSelectSheetDelegate, // 工具选择器视图回调
-PLVHCBrushColorSelectSheetDelegate, // 颜色选择器视图回调
 PLVHCPermissionEventDelegate, // TEACHER_SET_PERMISSION 事件管理器回调
 PLVHCLiveroomViewModelDelegate, //教室上下课流程类的回调
 PLVHCMemberSheetDelegate, //成员管理操作的回调
 PLVHCLinkMicAreaViewDelegate, //连麦区域回调
-PLVHCStatusbarAreaViewDelegate, //状态栏区域事件回调
 PLVHCChatroomSheetDelegate // 聊天室视图回调
 >
 
@@ -86,20 +73,11 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 @property (nonatomic, strong) PLVHCChatroomSheet *chatroomSheet; // 聊天室弹层
 @property (nonatomic, strong) PLVHCMemberSheet *memberSheet; // 成员列表弹层
 @property (nonatomic, strong) PLVHCDocumentSheet *documentSheet; // 文档管理弹层
-@property (nonatomic, strong) PLVHCDocumentMinimumSheet *documentMinimumSheet; // 文档最小化弹层
-@property (nonatomic, strong) PLVHCBrushToolBarView *brushToolBarView; // 画笔工具视图
-@property (nonatomic, strong) PLVHCBrushToolSelectSheet *brushToolSelectSheet; // 画笔工具选择弹层
-@property (nonatomic, strong) PLVHCBrushColorSelectSheet *brushColorSelectSheet; // 画笔颜色选择弹层
 @property (nonatomic, strong) PLVHCGrantCupView *grantCupView; // 授予学生奖杯视图
-@property (nonatomic, strong) UIButton *resetZoomButton; // 重置画板缩放比例
 
 #pragma mark 状态
 @property (nonatomic, assign, getter=isFullscreen) BOOL fullscreen; // 是否处于文档区域全屏状态，默认为NO
-@property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
-
-@property (nonatomic, assign, getter=isShowToast) BOOL showToast; // 设置面板是否允许弹出toast
 @property (nonatomic, assign, getter=isHideDevicePreview) BOOL hideDevicePreview; // 是否隐藏设备预览页
-@property (nonatomic, assign) PLVRoomUserType viewerType; //用户类型/角色
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVMultiRoleLinkMicPresenter *linkMicPresenter;
@@ -118,8 +96,8 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     self = [super init];
     if (self) {
         self.hideDevicePreview = hidden;
-        self.viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
         [PLVHCUtils sharedUtils].homeVC = self;
+        [[PLVHCUtils sharedUtils] setupInterfaceOrientation:UIInterfaceOrientationLandscapeRight];
     }
     return self;
 }
@@ -129,6 +107,8 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     self.view.backgroundColor = [UIColor colorWithRed:0x13/255.0 green:0x14/255.0 blue:0x15/255.0 alpha:1];
     
     [self setupUI];
+    // 注册屏幕旋转通知
+    [self deviceOrientationDidChangeNotification];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -147,7 +127,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     self.statusbarAreaView.frame = CGRectMake(0, 0, screenSize.width, 24 + edgeInsets.top);
     
     // 1v6人以下连麦，连麦区域高度固定60；1v7以上连麦，连麦区域高度固定85
-    NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.lessonInfo.linkNumber;
+    NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.linkNumber;
     CGFloat linkMicAreaViewHeight = linkNumber > 6 ? 85 : 60;
     self.linkMicAreaView.frame = CGRectMake(0, CGRectGetMaxY(self.statusbarAreaView.frame), screenSize.width, linkMicAreaViewHeight);
   
@@ -167,15 +147,16 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     
     // 成员弹层，顶部距离连麦区域8.5，底部距离（7.5 + 底部安全区域高度）
     CGFloat memberSheetOriginY = documentY + 8.5;
-    CGFloat memberSheetWidth = 656.0 / 812.0 * screenSize.width;
+    CGFloat memberSheetWidthScale = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? (656.0 / 812.0) : (408.0 / 812.0);
+    CGFloat memberSheetWidth = memberSheetWidthScale * screenSize.width;
     _memberSheet.frame = CGRectMake(screenSize.width - sheetEdgeInsetsRight - memberSheetWidth, memberSheetOriginY, memberSheetWidth, screenSize.height - memberSheetOriginY - 7.5 - edgeInsets.bottom);
     
     // PPT/白板区域视图
-    // PPT/白板区域高度：屏幕高度-顶部距离-底部安全距离-8
-    CGFloat documentViewHeight = screenSize.height - documentY - edgeInsets.bottom - 8;
-    // PPT/白板区域宽度：固定为高度的2.2倍，并且不超过最多可用宽度sheetMaxWidth-8
-    CGFloat documentAreaViewWidth = MIN(documentViewHeight * 2.2, sheetMaxWidth - 8);
-    self.documentAreaView.frame = CGRectMake(screenSize.width - sheetEdgeInsetsRight - documentAreaViewWidth, documentY, documentAreaViewWidth, documentViewHeight);
+    // PPT/白板区域高度：屏幕高度-顶部距离-底部安全距离
+    CGFloat documentViewHeight = screenSize.height - documentY - edgeInsets.bottom;
+    // PPT/白板区域宽度：屏幕宽度-左边安全距离-右边安全距离
+    CGFloat documentAreaViewWidth = screenSize.width - edgeInsets.left - edgeInsetsRight;
+    self.documentAreaView.frame = CGRectMake(edgeInsets.left, documentY, documentAreaViewWidth, documentViewHeight);
     
     // 文档管理弹层，宽度固定为屏幕80%，高度:PPT/白板区域高度 - 顶部间距8 - 底部间距8
     CGSize documentSheetSize = CGSizeMake(screenSize.width * 0.8,  documentViewHeight - 8 * 2);
@@ -194,28 +175,10 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     CGFloat chatroomY = documentY + 10;
     _chatroomSheet.frame = CGRectMake(chatroomX, chatroomY, chatroomSize.width, chatroomSize.height);
     
-    // 画笔工具视图，内部自适应，(宽度：动态按钮宽度+ 右边间距，高度固定36)
-    _brushToolBarView.screenSafeWidth = sheetMaxWidth;
-    
-    // 画笔工具选择弹层，总共7(讲师)、6(学生)种工具，每个工具固定大小为36*44,间距8*数量 + 左右间距4
-    CGFloat brushToolCount = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? 7 : 6;
-    CGSize brushToolSelectViewSize = CGSizeMake( 4 * 2 + 36 * brushToolCount + 8 * (brushToolCount - 1), 44);
-    CGFloat brushToolSelectViewX = sheetMaxWidth - brushToolSelectViewSize.width + edgeInsets.left;
-    CGFloat brushToolSelectViewY = CGRectGetMinY(_brushToolBarView.frame) - brushToolSelectViewSize.height - 14; // 与画笔工具视图间距14，显示在其上面
-    _brushToolSelectSheet.frame = CGRectMake(brushToolSelectViewX, brushToolSelectViewY, brushToolSelectViewSize.width, brushToolSelectViewSize.height);
-    
-    // 画笔颜色选择弹层，总共6种颜色，左间距4 + 每个颜色固定大小为36*44 + 间距8*5 + 右间距4
-    CGSize brushColorSelectViewSize = CGSizeMake(4 + 36 * 6 + 8 * 5 + 4, 44);
-    CGFloat brushColorSelectViewX = sheetMaxWidth - brushColorSelectViewSize.width + edgeInsets.left;
-    CGFloat brushColorSelectViewY = CGRectGetMinY(_brushToolBarView.frame) - brushColorSelectViewSize.height - 14; // 与画笔工具视图间距14，显示在其上面
-    _brushColorSelectSheet.frame = CGRectMake(brushColorSelectViewX, brushColorSelectViewY, brushColorSelectViewSize.width, brushColorSelectViewSize.height);
-    
-    // 重置画板缩放比例
-    // 根据是否全屏算出位置Y
-    CGFloat resetZoomY = self.isFullscreen ? CGRectGetMaxY(self.statusbarAreaView.frame) : CGRectGetMaxY(self.linkMicAreaView.frame);
-    resetZoomY += 12; // 顶部间隔12
-    _resetZoomButton.frame = CGRectMake(MAX(edgeInsets.left, 36), resetZoomY, 116, 36);
-    
+}
+
+- (void)dealloc {
+    [self removeNotification];
 }
 
 #pragma mark - [ Override ]
@@ -229,14 +192,12 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 }
 
 - (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
-    return UIInterfaceOrientationLandscapeLeft;
+    return [PLVHCUtils sharedUtils].interfaceOrientation; // 选图返回后-[PLVHCNavigationController preferredInterfaceOrientationForPresentation]会调用此方法
 }
 
 #pragma mark - [ Private Method ]
 
 - (void)setupModule {
-    [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-    
     // 启动聊天室管理器
     [[PLVHCChatroomViewModel sharedViewModel] setup];
     // 初始化成员模块，开始获取成员列表数据并开启自动更新
@@ -246,9 +207,6 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     self.linkMicPresenter = [[PLVMultiRoleLinkMicPresenter alloc] init];
     self.linkMicPresenter.delegate = self;
     
-    // 监听socket消息
-    [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-    
     // 启动TEACHER_SET_PERMISSION 事件管理器
     [PLVHCPermissionEvent sharedInstance].delegate = self;
     [[PLVHCPermissionEvent sharedInstance] setup];
@@ -256,6 +214,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     //教室上下课流程类的代理
     [[PLVHCLiveroomViewModel sharedViewModel] setup];
     [PLVHCLiveroomViewModel sharedViewModel].delegate = self;
+    [[PLVHCLiveroomViewModel sharedViewModel] enterClassroom];
 }
 
 /// 登出操作
@@ -270,7 +229,6 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [[PLVDocumentConvertManager sharedManager] clear]; // 清空文档转码轮询队列
     //退出教室
     [[PLVHCLiveroomViewModel sharedViewModel] clear];
-    [self logoutPopViewController];
 }
 
 - (void)startClass {
@@ -278,7 +236,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [[PLVHCMemberViewModel sharedViewModel] start];
     
     // 设置上课状态
-    [self.statusbarAreaView startClass];
+    [self.statusbarAreaView updateState:PLVHiClassStatusbarStateInClass];
     [self.toolbarAreaView startClass];
     [self.chatroomSheet startClass];
     [self.linkMicPresenter joinRTCChannel];
@@ -289,10 +247,10 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [[PLVHCMemberViewModel sharedViewModel] stop];
     
     //设置下课状态
-    [self.linkMicPresenter leaveRTCChannel];
-    [self.statusbarAreaView finishClass];
+    [self.statusbarAreaView updateState:PLVHiClassStatusbarStateFinishClass];
     [self.toolbarAreaView finishClass];
     [self.chatroomSheet finishClass];
+    [self.linkMicPresenter leaveRTCChannel];
     
     // 清除学生自己的画笔权限
     [self removeSelfPaintBrushAuth];
@@ -301,27 +259,29 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 - (void)enterClassroom {
     [self setupModule];
     [self removeSettingView];
-    [[PLVHCLiveroomViewModel sharedViewModel] enterClassroom];
+    [self.documentAreaView enterClassroom];
 }
 
-- (void)logoutPopViewController {
-    if (self.viewerType == PLVRoomUserTypeTeacher) {
-        Class PLVHCTeacherLoginManager = NSClassFromString(kPLVHCTeacherLoginClassName);
-        if (PLVHCTeacherLoginManager) {
-            SEL selector = NSSelectorFromString(@"teacherExitClassroomFromViewController:");
-            IMP imp = [PLVHCTeacherLoginManager methodForSelector:selector];
-            void (*func)(id, SEL, UIViewController *) = (void *)imp;
-            func(PLVHCTeacherLoginManager, selector, self);
-        } else {
-            BOOL success = [self logoutPopToViewController:kPLVHCChooseLessonVCName];
-            if (!success) {
-                [self setupRootViewController];
-            }
-        }
+- (void)exitClassroom {
+    Class PLVHCTeacherLoginManager = NSClassFromString(kPLVHCTeacherLoginClassName);
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher
+        && PLVHCTeacherLoginManager) {
+        SEL selector = NSSelectorFromString(@"teacherExitClassroomFromViewController:");
+        IMP imp = [PLVHCTeacherLoginManager methodForSelector:selector];
+        void (*func)(id, SEL, UIViewController *) = (void *)imp;
+        func(PLVHCTeacherLoginManager, selector, self);
     } else {
-        BOOL haveNextClass = [PLVHCLiveroomViewModel sharedViewModel].haveNextClass;
-        NSString *viewControllerName = haveNextClass ? kPLVHCChooseLessonVCName : kStudentCourseOrLessonLoginVCName;
-        [self logoutPopToViewController:viewControllerName];
+        BOOL success = [self logoutPopToViewController:kPLVHCChooseLessonVCName];
+        if (!success) {
+            [self setupRootViewController];
+        }
+    }
+}
+
+- (void)exitClassroomToStudentLoginVC {
+    BOOL success = [self logoutPopToViewController:kStudentCourseOrLessonLoginVCName];
+    if (!success) {
+        [self setupRootViewController];
     }
 }
 
@@ -375,6 +335,14 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     }
 }
 
+/// 清除学生自己的画笔权限
+- (void)removeSelfPaintBrushAuth {
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType  == PLVRoomUserTypeTeacher) {
+        return;
+    }
+    [self.documentAreaView removeSelfPaintBrushAuth];
+}
+
 #pragma mark Initialize
 
 - (void)setupUI {
@@ -382,7 +350,6 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [self.view insertSubview:self.documentAreaView aboveSubview:self.linkMicAreaView];
     [self.view insertSubview:self.toolbarAreaView aboveSubview:self.documentAreaView];
     [self.view insertSubview:self.statusbarAreaView aboveSubview:self.toolbarAreaView];
-    [self.view insertSubview:self.resetZoomButton aboveSubview:self.statusbarAreaView];
     [self.view addSubview:self.settingView]; // 初次进入主页，设置子视图一定要在最前方
 
     //判断是否需要隐藏设备预览页
@@ -418,7 +385,10 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 - (PLVHCStatusbarAreaView *)statusbarAreaView {
     if (!_statusbarAreaView) {
         _statusbarAreaView = [[PLVHCStatusbarAreaView alloc] init];
-        _statusbarAreaView.delegate = self;
+        
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        [_statusbarAreaView setClassTitle:roomData.channelName];
+        [_statusbarAreaView setLessonId:[PLVHiClassManager sharedManager].lessonId];
     }
     return _statusbarAreaView;
 }
@@ -479,39 +449,6 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     return _documentSheet;
 }
 
-- (PLVHCBrushToolBarView *)brushToolBarView {
-    if (!_brushToolBarView) {
-        _brushToolBarView = [[PLVHCBrushToolBarView alloc] init];
-        _brushToolBarView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        _brushToolBarView.delegate = self;
-    }
-    return _brushToolBarView;
-}
-
-- (PLVHCBrushToolSelectSheet *)brushToolSelectSheet {
-    if (!_brushToolSelectSheet) {
-        _brushToolSelectSheet = [[PLVHCBrushToolSelectSheet alloc] init];
-        _brushToolSelectSheet.delegate = self;
-    }
-    return _brushToolSelectSheet;
-}
-
-- (PLVHCBrushColorSelectSheet *)brushColorSelectSheet {
-    if (!_brushColorSelectSheet) {
-        _brushColorSelectSheet = [[PLVHCBrushColorSelectSheet alloc] init];
-        _brushColorSelectSheet.delegate = self;
-    }
-    return _brushColorSelectSheet;
-}
-
-- (PLVHCDocumentMinimumSheet *)documentMinimumSheet {
-    if (!_documentMinimumSheet) {
-        _documentMinimumSheet = [[PLVHCDocumentMinimumSheet alloc] init];
-        _documentMinimumSheet.delegate = self;
-    }
-    return _documentMinimumSheet;
-}
-
 - (PLVHCGrantCupView *)grantCupView {
     if (!_grantCupView) {
         _grantCupView = [[PLVHCGrantCupView alloc] init];
@@ -519,34 +456,15 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     return _grantCupView;
 }
 
-- (UIButton *)resetZoomButton {
-    if(!_resetZoomButton) {
-        _resetZoomButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        _resetZoomButton.hidden = YES;
-        _resetZoomButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#242940" alpha:0.9];
-        _resetZoomButton.layer.cornerRadius = 18;
-        _resetZoomButton.layer.masksToBounds = YES;
-        [_resetZoomButton setImage:[PLVHCUtils imageForDocumentResource:@"plvhc_doc_btn_resetzoom"] forState:UIControlStateNormal];
-        [_resetZoomButton setTitle:@"默认尺寸" forState:UIControlStateNormal];
-        [_resetZoomButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        _resetZoomButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_resetZoomButton addTarget:self action:@selector(resetZoomButtonAction) forControlEvents:UIControlEventTouchUpInside];
-        
-        
-    }
-    return _resetZoomButton;
-}
 
 #pragma mark Show/Hide Subview
 
 - (void)removeSettingView {
+    [self.settingSheet synchronizeConfig:self.settingView.configDict];
     [self.settingView removeFromSuperview];
     [self.settingView clear];
     [self.linkMicAreaView linkMicAreaViewStartRunning];
-    [self.settingSheet synchronizeConfig:self.settingView.configDict];
-    self.showToast = YES;
     self.settingView = nil;
-    [self showBrushToolbarView:YES];
 }
 
 - (void)showDocumentSheet:(BOOL)show {
@@ -588,55 +506,25 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
         }
     }
 }
+#pragma mark Notification
 
-- (void)showBrushToolbarView:(BOOL)show {
-    if (show &&
-        self.brushToolBarView.haveBrushPermission) {
-        [self.brushToolBarView showInView:self.view];
-    } else {
-        if (_brushToolBarView) {
-            [self.brushToolBarView dismiss];
-        }
-        if (_brushToolSelectSheet) {
-            [self.brushToolSelectSheet dismiss];
-        }
-        if (_brushColorSelectSheet) {
-            [self.brushColorSelectSheet dismiss];
-        }
-    }
+- (void)deviceOrientationDidChangeNotification {
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(deviceOrientationDidChangeNotification:) name:UIDeviceOrientationDidChangeNotification object:nil];
 }
 
-- (void)showDocumentMinimumSheet:(BOOL)show {
-    if (show) {
-        [self.documentMinimumSheet showInView:self.view];
-    } else {
-        if (_documentMinimumSheet) {
-            [self.documentMinimumSheet dismiss];
-        }
-    }
-}
-
-- (void)showResetZoomButton:(BOOL)show {
-    self.resetZoomButton.hidden = !show;
+- (void)removeNotification {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 #pragma mark - [ Event ]
-#pragma mark Action
+#pragma mark UIDeviceOrientationDidChangeNotification
 
-- (void)resetZoomButtonAction {
-    [self.documentAreaView resetZoom];
+- (void)deviceOrientationDidChangeNotification:(NSNotification *)notify {
+    UIInterfaceOrientation orientaion = [UIApplication sharedApplication].statusBarOrientation;
+    [[PLVHCUtils sharedUtils] setupInterfaceOrientation:orientaion];
 }
 
 #pragma mark - [ Delegate ]
-
-#pragma mark PLVRoomDataManagerProtocol
-
-- (void)roomDataManager_didHiClassTeacherRelogin:(NSString *)msg {
-    __weak typeof(self) weakSelf = self;
-    [PLVFdUtil showAlertWithTitle:nil message:msg viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
-        [weakSelf logout];
-    } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
-}
 
 #pragma mark PLVMultiRoleLinkMicPresenterDelegate
 
@@ -683,7 +571,10 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 }
 
 - (void)multiRoleLinkMicPresenterNeedAnswerForJoinResponseEvent:(PLVMultiRoleLinkMicPresenter *)presenter {
-    [[PLVHCLiveroomViewModel sharedViewModel] remindStudentInvitedJoinLinkMic];
+    __weak typeof(self) weakSelf = self;
+    [[PLVHCLiveroomViewModel sharedViewModel] remindStudentInvitedJoinLinkMicWithConfirmHandler:^{
+        [weakSelf.linkMicPresenter answerForJoinResponse];
+    }];
 }
 
 - (void)multiRoleLinkMicPresenter:(PLVMultiRoleLinkMicPresenter *)presenter
@@ -745,36 +636,6 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [screenStreamView removeFromSuperview];
 }
 
-#pragma mark PLVSocketManager Protocol
-
-- (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
-    [PLVHCUtils showToastInWindowWithMessage:@"聊天室登录成功"];
-}
-
-- (void)socketMananger_didLoginFailure:(NSError *)error {
-    if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
-        error.code == PLVSocketLoginErrorCodeRelogin ||
-        error.code == PLVSocketLoginErrorCodeKick) &&
-        error.localizedDescription) {
-        __weak typeof(self) weakSelf = self;
-        [PLVFdUtil showAlertWithTitle:nil message:error.localizedDescription viewController:self cancelActionTitle:@"确定" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:^(UIAlertAction * _Nonnull action) {
-            [weakSelf logout];
-        } confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:nil];
-    }
-}
-
-- (void)socketMananger_didConnectStatusChange:(PLVSocketConnectStatus)connectStatus {
-    if (connectStatus == PLVSocketConnectStatusReconnect) {
-        self.socketReconnecting = YES;
-        [PLVHCUtils showToastInWindowWithMessage:@"聊天室重连中"];
-    } else if(connectStatus == PLVSocketConnectStatusConnected) {
-        if (self.socketReconnecting) {
-            self.socketReconnecting = NO;
-            [PLVHCUtils showToastInWindowWithMessage:@"聊天室重连成功"];
-        }
-    }
-}
-
 #pragma mark PLVHCHiClassSettingViewDelegate
 
 - (void)didTapEnterClassButtonInSettingView:(PLVHCHiClassSettingView *)settingView {
@@ -807,7 +668,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
             }
         }];
     } else { //结束课程
-        [[PLVHCLiveroomViewModel sharedViewModel] finishClassIsForced:NO];
+        [[PLVHCLiveroomViewModel sharedViewModel] finishClass];
     }
 }
 
@@ -832,30 +693,50 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [[PLVHCPermissionEvent sharedInstance] sendRaiseHandMessageWithUserId:userId];
 }
 
+- (void)toolbarAreaView_CallingTeacher:(PLVHCToolbarAreaView *)toolbarAreaView {
+    BOOL succes = [[PLVHiClassManager sharedManager] requestHelp];
+    if (succes) {
+        [PLVHCHiClassToast showToastWithMessage:@"请求已发送"];
+    } else { // 组长请求帮助 请求失败 恢复按钮状态为 未选中
+        [self.toolbarAreaView setCallingTeacherButtonEnable:NO];
+    }
+}
+
+- (void)toolbarAreaView_CancelCallingTeacher:(PLVHCToolbarAreaView *)toolbarAreaView{
+    BOOL succes = [[PLVHiClassManager sharedManager] cancelRequestHelp];
+    if (succes) {
+        [PLVHCHiClassToast showToastWithMessage:@"请求已取消"];
+    } else { // 组长取消请求帮助 请求失败 恢复按钮状态为 选中
+        [self.toolbarAreaView setCallingTeacherButtonEnable:YES];
+    }
+}
+
 #pragma mark PLVHCSettingSheetDelegate
 
 - (void)didChangeMicrophoneSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet enable:(BOOL)enable {
     [self.linkMicPresenter openLocalUserMic:enable];
-    if (self.isShowToast) {
+    [self.linkMicAreaView linkMicAreaViewEnableLocalMic:enable];
+    BOOL inSettingView = _settingView && _settingView.superview == self.view;
+    if (!inSettingView) {
         if (enable) {
             [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenMic message:@"已开启麦克风"];
         } else {
             [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_CloseMic message:@"已关闭麦克风"];
         }
     }
-    [self.linkMicAreaView linkMicAreaViewEnableLocalMic:enable];
 }
 
 - (void)didChangeCameraSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet enable:(BOOL)enable {
     [self.linkMicPresenter openLocalUserCamera:enable];
-    if (self.isShowToast) {
+    [self.linkMicAreaView linkMicAreaViewEnableLocalCamera:enable];
+    BOOL inSettingView = _settingView && _settingView.superview == self.view;
+    if (!inSettingView) {
         if (enable) {
             [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenCamera message:@"已开启摄像头"];
         } else {
             [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_CloseCamera message:@"已关闭摄像头"];
         }
     }
-    [self.linkMicAreaView linkMicAreaViewEnableLocalCamera:enable];
 }
 
 - (void)didChangeCameraDirectionSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet front:(BOOL)isFront {
@@ -877,179 +758,123 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 
 #pragma mark PLVHCDocumentSheetDelegate
 
-- (void)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectModel:(nonnull PLVDocumentModel *)model {
-    if (self.documentMinimumSheet.isMaxMinimumNum) {
+- (void)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectAutoId:(NSUInteger)autoId {
+    if (self.documentAreaView.isMaxMinimumNum) {
         [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_DocumentCountOver message:@"只支持同时打开5个文件"];
     } else {
-        [self.documentAreaView openPptWithAutoId:model.autoId];
+        [self.documentAreaView openPptWithAutoId:autoId];
         [self.toolbarAreaView clearAllButtonSelected];
     }
 }
 
-#pragma mark PLVHCDocumentMinimumSheetDelegate
-
-- (void)documentMinimumSheet:(PLVHCDocumentMinimumSheet *)documentMinimumSheet didCloseItemModel:(PLVHCDocumentMinimumModel *)model {
-    [self.documentAreaView operateContainerWithContainerId:model.containerId close:YES];
-}
-
-- (void)documentMinimumSheet:(PLVHCDocumentMinimumSheet *)documentMinimumSheet didSelectItemModel:(PLVHCDocumentMinimumModel *)model {
-    [self.documentAreaView operateContainerWithContainerId:model.containerId close:NO];
-}
 
 #pragma mark PLVHCDocumentAreaViewDelegate
-
-- (void)documentAreaViewDidFinishLoading:(PLVHCDocumentAreaView *)documentAreaView {
-    if (_settingView) { // 防止画笔工具显示在设置页面上
-        return;
-    }
-    [self showBrushToolbarView:YES];
-}
 
 - (void)documentAreaView:(PLVHCDocumentAreaView *)documentAreaView didRefreshBrushPermission:(BOOL)permission userId:(nonnull NSString *)userId {
     if (![PLVFdUtil checkStringUseable:userId]){
         return;
     }
-    
-    if ([[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId isEqualToString:userId]) { // 自己
-        self.brushToolBarView.haveBrushPermission = permission;
-        [self showBrushToolbarView:permission];
-        
-        if ([PLVRoomDataManager sharedManager].roomData.lessonInfo.hiClassStatus == PLVHiClassStatusInClass) {
-            NSString *message = permission ? @"老师已授予你画笔权限" : @"老师已回收你的画笔权限";
-            PLVHCToastType type = permission ? PLVHCToastTypeIcon_AuthBrush : PLVHCToastTypeIcon_CancelAuthBrush;
-            [PLVHCUtils showToastWithType:type message:message];
-        }
-    } else { // 其他人
-        
-    }
-    
-    [self.linkMicPresenter updateUserBrushAuthWithUserId:userId auth:permission];
-}
-
-/// 清除学生自己的画笔权限
-- (void)removeSelfPaintBrushAuth {
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType  == PLVRoomUserTypeTeacher) {
-        return;
-    }
-    
-    [self.documentAreaView removeSelfPaintBrushAuth];
-}
-
-- (void)documentAreaView:(PLVHCDocumentAreaView *)documentAreaView didRefreshBrushToolStatusWithJsonDict:(NSDictionary *)jsonDict {
-    [self.brushToolBarView updateBrushToolStatusWithDict:jsonDict];
-}
-
-- (void)documentAreaView:(PLVHCDocumentAreaView *)documentAreaView didRefreshPptContainerTotal:(NSInteger)total {
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
-        [self.documentMinimumSheet refreshPptContainerTotal:total];
-    }
-}
-
-- (void)documentAreaView:(PLVHCDocumentAreaView *)documentAreaView didRefreshMinimizeContainerDataArray:(nonnull NSArray<PLVHCDocumentMinimumModel *> *)dataArray {
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
-        [self showDocumentMinimumSheet:dataArray.count > 0];
-        [self.documentMinimumSheet refreshMinimizeContainerDataArray:dataArray];
-    }
-}
-
-- (void)documentAreaView:(PLVHCDocumentAreaView *)documentAreaView didChangeApplianceType:(PLVContainerApplianceType)applianceType {
-    [self.brushToolSelectSheet updateBrushToolApplianceType:applianceType];
-}
-
-- (void)documentAreaView:(PLVHCDocumentAreaView *)documentAreaView didChangeStrokeHexColor:(NSString *)strokeHexColor {
-    [self.brushToolBarView updateSelectColor:strokeHexColor];
-    [self.brushColorSelectSheet updateSelectColor:strokeHexColor];
-}
-
-- (void)documentAreaView:(PLVHCDocumentAreaView *)documentAreaView didChangeResetZoomButtonShow:(BOOL)show {
-    [self showResetZoomButton:show];
-}
-
-#pragma mark PLVHCBrushToolbarViewDelegate
-
-- (void)brushToolBarViewDidTapDeleteButton:(PLVHCBrushToolBarView *)brushToolBarView {
-    [self.documentAreaView doDelete];
-}
-
-- (void)brushToolBarViewDidTapRevokeButton:(PLVHCBrushToolBarView *)brushToolBarView {
-    [self.documentAreaView doUndo];
-}
-
-- (void)brushToolBarViewDidTapColorButton:(PLVHCBrushToolBarView *)brushToolBarView {
-    if (self.brushColorSelectSheet.superview) {
-        [self.brushColorSelectSheet dismiss];
-    } else {
-        [self.brushToolSelectSheet dismiss];
-        [self.brushColorSelectSheet showInView:self.view];
-    }
-}
-
-- (void)brushToolBarViewDidTapToolButton:(PLVHCBrushToolBarView *)brushToolBarView {
-    if (self.brushToolSelectSheet.superview) {
-        [self.brushToolSelectSheet dismiss];
-    } else {
-        [self.brushColorSelectSheet dismiss];
-        [self.brushToolSelectSheet showInView:self.view];
-    }
-}
-
-#pragma mark  PLVHCBrushToolSelectSheetDelegate
-
-- (void)brushToolSelectSheet:(PLVHCBrushToolSelectSheet *)brushToolSelectSheet didSelectToolType:(PLVHCBrushToolType)toolType selectImage:(UIImage *)selectImage localTouch:(BOOL)localTouch{
-    [self.brushToolBarView updateSelectToolType:toolType selectImage:selectImage];
-    if (localTouch) { // 本地点击才需要发送JS事件
-        [self.documentAreaView updateSelectToolType:toolType];
-    }
-}
-
-#pragma mark  PLVHCBrushColorSelectSheetDelegate
-
-- (void)brushColorSelectSheet:(PLVHCBrushColorSelectSheet *)brushColorSelectSheet didSelectColor:(NSString *)color localTouch:(BOOL)localTouch{
-    [self.brushToolBarView updateSelectColor:color];
-    if (localTouch) { // 本地点击才需要发送JS事件
-        [self.documentAreaView updateSelectColor:color];
-    }
+    [[PLVHCMemberViewModel sharedViewModel] brushPermissionWithUserId:userId auth:permission];
 }
 
 #pragma mark PLVHCPermissionEventDelegate
 
 - (void)permissionEvent:(PLVHCPermissionEvent *)permissionEvent didGrantCupWithUserId:(NSString *)userId {
-    NSString *nickname = [self.linkMicPresenter nicknameAndUpdateUserGrantCupCountWithUserId:userId];
+    NSString *nickname = [[PLVHCMemberViewModel sharedViewModel] grantCupWithUserId:userId];
     [self.grantCupView showInView:self.view nickName:nickname];
 }
 
 - (void)permissionEvent:(PLVHCPermissionEvent *)permissionEvent didChangeRaiseHandStatus:(BOOL)raiseHandStatus userId:(NSString *)userId raiseHandCount:(NSInteger)raiseHandCount{
     [self.toolbarAreaView toolbarAreaViewRaiseHand:raiseHandStatus userId:userId count:raiseHandCount];
-    [self.memberSheet handUpWithUserId:userId count:raiseHandCount handUp:raiseHandStatus];
+    [[PLVHCMemberViewModel sharedViewModel] handUpWithUserId:userId handUp:raiseHandStatus];
+    [_memberSheet setHandupLabelCount:raiseHandCount];
 }
 
 #pragma mark PLVHCLiveroomViewModelDelegate
 
-- (void)liveroomViewModelStartClass:(PLVHCLiveroomViewModel *)viewModel success:(BOOL)success {
+- (void)liveroomViewModelStartClass:(PLVHCLiveroomViewModel *)viewModel {
     [self.toolbarAreaView setClassButtonEnable:YES];
-    if (success) { //开始上课
-        [self startClass];
-        [PLVHCUtils showToastInWindowWithMessage:@"课程开始"];
-    }
+    [self startClass];
+    [PLVHCUtils showToastInWindowWithMessage:@"课程开始"];
 }
 
-- (void)liveroomViewModelFinishClass:(PLVHCLiveroomViewModel *)viewModel success:(BOOL)success {
+- (void)liveroomViewModelFinishClass:(PLVHCLiveroomViewModel *)viewModel {
     [self.toolbarAreaView setClassButtonEnable:YES];
-    if (success) {//下课
-        [self finishClass];
+    [self finishClass];
+}
+
+- (void)liveroomViewModelDurationChanged:(PLVHCLiveroomViewModel *)viewModel duration:(NSInteger)duration {
+    [self.statusbarAreaView updateDuration:duration];
+    
+    PLVHiClassStatus status = [PLVHiClassManager sharedManager].status;
+    NSInteger lessonEndTime = [PLVHiClassManager sharedManager].lessonEndTime;
+    if (status == PLVHiClassStatusInClass) {
+        if ([PLVFdUtil curTimeInterval] > lessonEndTime) {
+            [self.statusbarAreaView updateState:PLVHiClassStatusbarStateDelayFinishClass];
+        }
     }
 }
 
 - (void)liveroomViewModelReadyExitClassroom:(PLVHCLiveroomViewModel *)viewModel {
     [self logout];
+    [self exitClassroom];
+}
+
+- (void)liveroomViewModelReadyExitClassroomToStudentLogin:(PLVHCLiveroomViewModel *)viewModel {
+    [self logout];
+    [self exitClassroomToStudentLoginVC];
 }
 
 - (void)liveroomViewModelDelayInClass:(PLVHCLiveroomViewModel *)viewModel {
-    [self.statusbarAreaView delayStartClass];
+    [self.statusbarAreaView updateState:PLVHiClassStatusbarStateDelayStartClass];
 }
 
-- (void)liveroomViewModelStudentAnswerJoinLinkMic:(PLVHCLiveroomViewModel *)viewModel {
-    [self.linkMicPresenter answerForJoinResponse];
+- (void)liveroomViewModelDidJoinGroupSuccess:(PLVHCLiveroomViewModel *)viewModel ackData:(NSDictionary *)data {
+    [self.documentAreaView switchRoomWithAckData:data datacallback:nil]; // 将'PPT/白板区'切换到分组房间
+    [self.linkMicPresenter changeChannel]; // 切换RTC频道
+    [[PLVHCMemberViewModel sharedViewModel] loadOnlineUserList]; // 重新加载在线成员数据
+    [[PLVHCChatroomViewModel sharedViewModel] changeRoom]; // 切换聊天室房间
+}
+
+/// 进入分组后，获取到分组名称、组长ID、组长名称
+- (void)liveroomViewModelDidGroupLeaderUpdate:(PLVHCLiveroomViewModel *)viewModel
+                                    groupName:(NSString *)groupName
+                                groupLeaderId:(NSString *)groupLeaderId
+                              groupLeaderName:(NSString *)groupLeaderName {
+    if ([PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 当前 组长是自己
+        [self.documentAreaView setOrRemoveGroupLeader:YES]; // 设为组长
+    } else { // 当前 组长是其他人
+        [self.documentAreaView setOrRemoveGroupLeader:NO]; // 清除组长权限
+    }
+    
+    [self.toolbarAreaView startGroup]; // 设置工具栏 开始分组视图
+    
+    NSString *title = [PLVRoomDataManager sharedManager].roomData.channelName;
+    title = [PLVFdUtil checkStringUseable:title] ? title : @"";
+    groupName = [PLVFdUtil checkStringUseable:groupName] ? groupName : @"";
+    title = [NSString stringWithFormat:@"%@-%@", title, groupName];
+    
+    [self.statusbarAreaView setClassTitle:title]; // 更新状态栏标题
+    
+    [self.linkMicPresenter updateGroudLeader];
+}
+
+/// 结束分组
+- (void)liveroomViewModelDidLeaveGroup:(PLVHCLiveroomViewModel *)viewModel ackData:(nonnull NSDictionary *)data {
+    // 更新状态栏标题
+    NSString *title = [PLVRoomDataManager sharedManager].roomData.channelName;
+    [self.statusbarAreaView setClassTitle:title];
+    
+    [self.toolbarAreaView finishGroup]; // 设置工具栏 结束分组视图
+    [self.documentAreaView setOrRemoveGroupLeader:NO]; // 清除组长权限工具
+    [self.documentAreaView switchRoomWithAckData:data datacallback:nil];  // 将'PPT/白板区'切换回大房间（讲师的房间）
+    [self.linkMicPresenter changeChannel]; // 切换RTC频道
+    [[PLVHCMemberViewModel sharedViewModel] loadOnlineUserList]; // 重新加载在线成员数据
+    [[PLVHCChatroomViewModel sharedViewModel] changeRoom]; // 切换聊天室房间
+}
+
+- (void)liveroomViewModelDidCancelRequestHelp:(PLVHCLiveroomViewModel *)viewModel {
+    [self.toolbarAreaView setCallingTeacherButtonEnable:NO];
 }
 
 #pragma mark PLVHCMemberSheetDelegate
@@ -1107,12 +932,6 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 
 - (void)plvHCLinkMicAreaView:(PLVHCLinkMicAreaView *)linkMicAreaView switchLocalCameraFront:(BOOL)switchFront {
     [self.settingSheet cameraDirectionChange:switchFront];
-}
-
-#pragma mark PLVHCStatusbarAreaViewDelegate
-
-- (void)statusbarAreaViewDidForcedFinishClass:(PLVHCStatusbarAreaView *)areaView {
-    [[PLVHCLiveroomViewModel sharedViewModel] finishClassIsForced:YES];
 }
 
 #pragma mark PLVHCChatroomSheetDelegate

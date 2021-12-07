@@ -4,7 +4,7 @@
 //  文档列表页 PLVLSDocumentListView 的 cell
 //
 //  Created by MissYasiky on 2019/10/14.
-//  Copyright © 2019 easefun. All rights reserved.
+//  Copyright © 2019 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>

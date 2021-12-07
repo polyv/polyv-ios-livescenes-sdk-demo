@@ -36,11 +36,24 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param autoId 文档autoId
 - (void)setDocumentImageUrls:(NSArray <NSString *> *)imageUrls autoId:(NSInteger)autoId;
 
+///  设置文档页面缩略图和文档名称
+///
+/// @param imageUrls 文档页面缩略图url列表数据
+/// @param autoId 文档autoId
+/// @param pagesTitle 文档名称
+- (void)setDocumentImageUrls:(NSArray <NSString *> *)imageUrls autoId:(NSInteger)autoId pagesTitle:(NSString *)pagesTitle;
+
 ///  选择文档页面
 ///
 /// @param autoId 文档autoId
 /// @param pageIndex 文档页码
 - (void)selectDocumentWithAutoId:(NSInteger)autoId pageIndex:(NSInteger)pageIndex;
+
+/// 恢复上一场未结束直播的文档autoId、pageIndex
+///
+/// @param autoId 文档autoId
+/// @param pageIndex 文档页码
+- (void)setDocumentWithAutoId:(NSInteger)autoId pageId:(NSInteger)pageIndex;
 
 @end
 

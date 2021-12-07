@@ -26,8 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 收起弹层
 - (void)dismiss;
 
-///【讲师端】收到某个学员举手动作后
-- (void)handUpWithUserId:(NSString *)userId count:(NSInteger)count handUp:(BOOL)handUp;
+/// 设置举手总人数
+/// @param count 举手总人数
+- (void)setHandupLabelCount:(NSInteger)count;
 
 ///【讲师端】收到学生上台结果回调
 /// @param success YES上台成功 NO上台异常

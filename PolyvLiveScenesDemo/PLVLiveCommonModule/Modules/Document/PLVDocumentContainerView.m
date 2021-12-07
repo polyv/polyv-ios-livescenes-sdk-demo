@@ -14,7 +14,6 @@
 // 依赖库
 #import <WebKit/WebKit.h>
 
-static NSString *kPPTUrlString = @"https://player.polyv.net/resp/white-board-sdk/latest/web-view/small-class-mobile.html";
 @interface PLVDocumentContainerView()<
 WKNavigationDelegate,
 PLVContainerWebViewBridgeDelegate,
@@ -44,14 +43,14 @@ PLVSocketManagerProtocol
         [self.jsBridge registerStartEditText];
         [self.jsBridge registerToggleOperationStatus];
         
-        if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) { // 讲师专属
-            [self.jsBridge registerRefreshMinimizeContainerData];
-            [self.jsBridge registerRefreshPptContainerTotal];
-            [self.jsBridge registerZoomPercenChange];
-        } else { // 学生专属
-            [self.jsBridge registerChangeApplianceType];
-            [self.jsBridge registerChangeStrokeHexColor];
-        }
+        // 讲师、组长专属
+        // 由于组长本质上也是PLVRoomUserTypeSCStudent类型，所以不再判断身份类型注册监听，具体业务UI在Demo层处理。
+        [self.jsBridge registerRefreshMinimizeContainerData];
+        [self.jsBridge registerRefreshPptContainerTotal];
+        [self.jsBridge registerZoomPercenChange];
+        // 学生专属
+        [self.jsBridge registerChangeApplianceType];
+        [self.jsBridge registerChangeStrokeHexColor];
         
         // 注册socket监听
         socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
@@ -68,7 +67,7 @@ PLVSocketManagerProtocol
 #pragma mark - [ Public Method ]
 
 - (void)loadRequestWitParamString:(NSString *)paramString {
-    NSString *urlString = kPPTUrlString;
+    NSString *urlString = PLVLiveConstantsContainerPPTForMobileHTML;
     BOOL hasParam = NO;
     if ([PLVFdUtil checkStringUseable:paramString]) {
         hasParam = YES;
@@ -154,6 +153,17 @@ PLVSocketManagerProtocol
     }];
 }
 
+- (void)setOrRemoveGroupLeader:(BOOL)isLeader {
+    __weak typeof(self) weakSelf = self;
+    [self.jsBridge setOrRemoveGroupLeader:isLeader callback:^(id  _Nonnull responseData) {
+        [weakSelf notifyListenerDidRefreshGroupLeader:isLeader userId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
+    }];
+}
+
+- (void)switchRoomWithAckData:(NSDictionary *)ackData datacallback:(PLVContainerResponseCallback)callback {
+    [self.jsBridge switchRoomWithAckData:ackData datacallback:callback];
+}
+
 #pragma mark 画笔权限授权、取消授权
 
 #pragma mark 画笔权限业务流程：讲师发送socket设置画笔权限 -> socket 回调 -> 判断是否为自己 -> 自己调用js方法设置画笔权限
@@ -209,29 +219,57 @@ PLVSocketManagerProtocol
 
 #pragma mark 处理socket回调
 
-- (void)handleSocket_TEACHER_SET_PERMISSION:(NSDictionary *)jsonDict{
-    NSString * type = PLV_SafeStringForDictKey(jsonDict, @"type");;
+- (void)handleSocket_TEACHER_SET_PERMISSION:(NSDictionary *)jsonDict {
+    NSString * type = PLV_SafeStringForDictKey(jsonDict, @"type");
     NSString * userId = PLV_SafeStringForDictKey(jsonDict, @"userId");
     NSString * status = [NSString stringWithFormat:@"%@", PLV_SafeStringForDictKey(jsonDict, @"status")];
-    NSString *viewId  = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
-   
-    if ([PLVFdUtil checkStringUseable:type] &&
-        [type isEqualToString:@"paint"]) { // 画笔权限
+    
+    if (![PLVFdUtil checkStringUseable:type]){
+        return;
+    }
+    
+    if ([type isEqualToString:@"paint"]) { // 画笔权限
+        [self dealPaintPermissonWithUserId:userId status:status];
+    } else if ([type isEqualToString:@"groupLeader"]) { // 设置组长
+        [self dealGroupLeaderWithUserId:userId status:status];
+    }
+}
+
+/// 处理 画笔权限 socket回调
+- (void)dealPaintPermissonWithUserId:(NSString *)userId
+                              status:(NSString *)status {
+    NSString *viewerId  = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    if ([PLVFdUtil checkStringUseable:userId] &&
+        [PLVFdUtil checkStringUseable:viewerId] &&
+        [viewerId isEqualToString:userId]) { // 自己的 画笔权限，需要发送JS事件后回调状态
         
-        if ([PLVFdUtil checkStringUseable:userId] &&
-            [PLVFdUtil checkStringUseable:viewId] &&
-            [viewId isEqualToString:userId]) { // 自己的画笔权限，需要发送JS事件后回调状态
-            
-            if ([status isEqualToString:@"1"]) { // 被授予画笔权限
-                [self givePaintBrushAuth];
-            }else if ([status isEqualToString:@"0"]){ // 被移除画笔权限
-                [self removePaintBrushAuth];
-            }
-            
-        } else { // 其他人的画笔权限，直接回调状态
-            [self notifyListenerDidRefreshBrushPermission:[status isEqualToString:@"1"] ? YES : NO userId:userId];
+        if ([status isEqualToString:@"1"]) { // 被授予画笔权限
+            [self givePaintBrushAuth];
+        }else if ([status isEqualToString:@"0"]){ // 被移除画笔权限
+            [self removePaintBrushAuth];
         }
         
+    } else { // 其他人的 画笔权限，直接回调权限开启/关闭状态以及用户Id
+        [self notifyListenerDidRefreshBrushPermission:[status isEqualToString:@"1"] ? YES : NO userId:userId];
+    }
+}
+
+/// 处理 组长权限 socket回调
+- (void)dealGroupLeaderWithUserId:(NSString *)userId
+                              status:(NSString *)status {
+    NSString *viewerId  = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    if ([PLVFdUtil checkStringUseable:userId] &&
+        [PLVFdUtil checkStringUseable:viewerId] &&
+        [viewerId isEqualToString:userId]) { // 自己的 组长权限，需要发送JS事件后回调状态
+        
+        if ([status isEqualToString:@"1"]) { // 被设为组长
+            [self setOrRemoveGroupLeader:YES];
+        }else if ([status isEqualToString:@"0"]) { // 被移除组长
+            [self setOrRemoveGroupLeader:NO];
+        }
+        
+    } else { // 其他人的 组长权限，直接回调权限开启/关闭状态以及用户Id
+        [self notifyListenerDidRefreshGroupLeader:[status isEqualToString:@"1"] ? YES : NO userId:userId];
     }
 }
 
@@ -323,6 +361,15 @@ PLVSocketManagerProtocol
         [self.delegate respondsToSelector:@selector(documentContainerView:didChangeZoomPercent:)]) {
         plv_dispatch_main_async_safe(^{
             [self.delegate documentContainerView:self didChangeZoomPercent:zoomPercent];
+        })
+    }
+}
+
+- (void)notifyListenerDidRefreshGroupLeader:(BOOL)isLeader userId:(NSString *)userId{
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(documentContainerView:didRefreshGroupLeader:userId:)]) {
+        plv_dispatch_main_async_safe(^{
+            [self.delegate documentContainerView:self didRefreshGroupLeader:isLeader userId:userId];
         })
     }
 }

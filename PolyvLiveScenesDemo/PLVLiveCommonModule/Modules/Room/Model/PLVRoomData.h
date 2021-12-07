@@ -9,7 +9,6 @@
 #import <Foundation/Foundation.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVRoomUser.h"
-#import "PLVLessonInfoModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -25,6 +24,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @interface PLVRoomData : NSObject
 
 #pragma mark 通用属性
+/// 频道类型
+@property (nonatomic, assign) BOOL inHiClassScene;
 /// 频道类型
 @property (nonatomic, assign) PLVChannelType channelType;
 /// 视频类型
@@ -82,6 +83,10 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) PLVChannelLinkMicMediaType channelLinkMicMediaType;
 /// 当前 频道嘉宾是否手动上麦
 @property (nonatomic, assign) BOOL channelGuestManualJoinLinkMic;
+/// 是否自动连麦，目前只有inHiClassScene且身份为teacher时可能为YES
+@property (nonatomic, assign) BOOL autoLinkMic;
+/// 连麦人数，目前只有inHiClassScene为YES时不为0
+@property (nonatomic, assign) NSInteger linkNumber;
 
 #pragma mark 推流独有属性
 /// 频道账号（登录时使用的频道号）
@@ -102,23 +107,14 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) NSTimeInterval startTimestamp;
 /// 已推流时长（单位秒；不包含退至后台时间）
 @property (nonatomic, assign) NSTimeInterval liveDuration;
-
-#pragma mark 互动学堂独有属性
-/// 课程详情
-@property (nonatomic, strong, readonly) PLVLessonInfoModel *lessonInfo;
-
-
-/// 是否位于互动学堂场景中
-- (BOOL)inHiClassScene;
+/// 当前直播是否正在进行 （该值只对讲师身份有效）
+@property (nonatomic, assign) BOOL liveStatusIsLiving;
 
 /// 设置 roomUser
 - (void)setupRoomUser:(PLVRoomUser *)roomUser;
 
 /// 获取频道菜单信息
 - (void)requestChannelDetail:(void(^)(PLVLiveVideoChannelMenuInfo *channelMenuInfo))completion;
-
-/// 设置课程详情
-- (void)setupLessonInfo:(PLVLessonInfoModel *)lessonInfo;
 
 /// 上报观看热度
 - (void)reportViewerIncrease;

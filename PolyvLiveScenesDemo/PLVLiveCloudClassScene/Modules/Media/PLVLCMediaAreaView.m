@@ -14,7 +14,7 @@
 #import "PLVPlayerLogoView.h"
 
 // 模块
-#import "PLVPPTView.h"
+#import "PLVDocumentView.h"
 #import "PLVDanMu.h"
 #import "PLVEmoticonManager.h"
 #import "PLVRoomDataManager.h"
@@ -30,12 +30,13 @@ static NSString *const PLVLCMediaAreaView_Data_ModeOptionTitle = @"模式";
 static NSString *const PLVLCMediaAreaView_Data_QualityOptionTitle = @"视频质量";
 static NSString *const PLVLCMediaAreaView_Data_RouteOptionTitle = @"线路";
 static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
+static NSInteger const PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum = 5;
 
 @interface PLVLCMediaAreaView () <
 PLVLCFloatViewDelegate,
 PLVLCMediaMoreViewDelegate,
 PLVLCMediaPlayerCanvasViewDelegate,
-PLVPPTViewDelegate,
+PLVDocumentViewDelegate,
 PLVPlayerPresenterDelegate,
 PLVLCRetryPlayViewDelegate
 >
@@ -51,10 +52,10 @@ PLVLCRetryPlayViewDelegate
 @property (nonatomic, assign) PLVChannelLinkMicSceneType lastLinkMicSceneType; // 上次 连麦场景类型
 @property (nonatomic, assign) PLVLCMediaAreaViewLiveSceneType currentLiveSceneType;
 @property (nonatomic, assign, readonly) BOOL pptOnMainSite;     // 只读，PPT当前是否处于主屏 (此属性仅适合判断PPT是否在主屏，不适合判断其他视图所处位置)
-
+@property (nonatomic, assign) NSInteger tryPlayPPTViewNum; // 尝试播放PPTView次数
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
-@property (nonatomic, strong) PLVPPTView * pptView;                 // PPT 功能模块
+@property (nonatomic, strong) PLVDocumentView * pptView;                 // PPT 功能模块
 
 #pragma mark UI
 /// view hierarchy
@@ -134,6 +135,7 @@ PLVLCRetryPlayViewDelegate
 
 - (instancetype)init {
     if (self = [super initWithFrame:CGRectZero]) {
+        self.tryPlayPPTViewNum = 0;
         [self setupUI];
         [self setupModule];
     }
@@ -391,8 +393,27 @@ PLVLCRetryPlayViewDelegate
         /// PPT模块
         [self.floatView displayExternalView:self.pptView]; /// 默认状态，是‘PPT画面’位于副屏(悬浮小窗)
         [self.floatView showFloatView:YES userOperat:NO];
-        [self.pptView pptStart:[PLVRoomDataManager sharedManager].roomData.vid];
-        
+        [self playPPTView];
+    }
+}
+
+- (void)playPPTView {
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    NSString *videoId = self.playerPresenter.videoId;
+    if ([PLVFdUtil checkStringUseable:channelId] &&
+        [PLVFdUtil checkStringUseable:videoId]) { // videoId 在app启动后立马取值不一定有值，需要递归处理
+        [self.pptView pptStartWithVideoId:videoId channelId:channelId];
+    } else {
+        if(self.tryPlayPPTViewNum < PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum) { // 限制重试次数
+            __weak typeof(self)weakSelf = self;
+            CGFloat afterTime = (self.tryPlayPPTViewNum * 2 + 1) * 0.5; // 重试时间间隔随次数增长而增长
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((afterTime * NSEC_PER_SEC))), dispatch_get_main_queue(), ^{
+                weakSelf.tryPlayPPTViewNum +=1;
+                [weakSelf playPPTView];
+            });
+        } else {
+            [PLVLCUtils showHUDWithTitle:@"" detail:@"加载PPT出错，请重新登录" view:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
+        }
     }
 }
 
@@ -586,11 +607,14 @@ PLVLCRetryPlayViewDelegate
     return _moreView;
 }
 
-- (PLVPPTView *)pptView{
+- (PLVDocumentView *)pptView{
     if (!_pptView && self.channelType != PLVChannelTypeAlone) {
-        _pptView = [[PLVPPTView alloc] init];
+        _pptView = [[PLVDocumentView alloc] initWithScene:PLVDocumentViewSceneCloudClass];
         _pptView.delegate = self;
-        _pptView.backgroudImageView.image = [self getImageWithName:@"plvlc_media_ppt_placeholder"];
+        _pptView.backgroundColor = [PLVColorUtil colorFromHexString:@"#2B3045"];
+        UIImage *pptBgImage = [self getImageWithName:@"plvlc_media_ppt_placeholder"];
+        [_pptView setBackgroudImage:pptBgImage widthScale:180.0/375.0];
+        [_pptView loadRequestWitParamString:nil];
     }
     return _pptView;
 }
@@ -790,32 +814,34 @@ PLVLCRetryPlayViewDelegate
     [self.playerPresenter switchLiveToAudioMode:NO];
 }
 
-#pragma mark PLVPPTViewDelegate
+#pragma mark PLVDocumentViewDelegate
 /// PPT获取刷新的延迟时间
-- (unsigned int)plvPPTViewGetPPTRefreshDelayTime:(PLVPPTView *)pptView{
+- (unsigned int)documentView_getRefreshDelayTime {
     return self.inRTCRoom ? 0 : 5000;
 }
 
 /// PPT视图 PPT位置需切换
-- (void)plvPPTView:(PLVPPTView *)pptView changePPTPosition:(BOOL)pptToMain{
-    if (self.videoType == PLVChannelVideoType_Live){ // 视频类型为 直播
-        /// 仅在 非观看RTC场景下 执行 (观看RTC场景下，由 PLVLCLinkMicAreaView 自行处理)
-        if (self.inRTCRoom == NO &&
-            self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchNoDelay &&
-            self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_InLinkMic) {
+- (void)documentView_changePPTPositionToMain:(BOOL)pptToMain {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (self.videoType == PLVChannelVideoType_Live){ // 视频类型为 直播
+            /// 仅在 非观看RTC场景下 执行 (观看RTC场景下，由 PLVLCLinkMicAreaView 自行处理)
+            if (self.inRTCRoom == NO &&
+                self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchNoDelay &&
+                self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_InLinkMic) {
+                if (pptToMain != self.pptOnMainSite) {
+                    [self.floatView triggerViewExchangeEvent];
+                }
+            }
+        } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
             if (pptToMain != self.pptOnMainSite) {
                 [self.floatView triggerViewExchangeEvent];
             }
         }
-    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
-        if (pptToMain != self.pptOnMainSite) {
-            [self.floatView triggerViewExchangeEvent];
-        }
-    }
+    });
 }
 
 /// [回放场景] PPT视图 需要获取视频播放器的当前播放时间点
-- (NSTimeInterval)plvPPTViewGetPlayerCurrentTime:(PLVPPTView *)pptView{
+- (NSTimeInterval)documentView_getPlayerCurrentTime {
     return self.playerPresenter.currentPlaybackTime * 1000;
 }
 
