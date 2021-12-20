@@ -73,6 +73,8 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, copy) NSArray <PLVLinkMicOnlineUser *> * onlineUserArray; // 提供外部读取的数据数组，保存最新的用户数据
 @property (nonatomic, assign) NSTimeInterval socketRefreshOpenStatusDate;
 @property (nonatomic, strong) NSMutableDictionary <NSString *, NSDictionary*> * prerecordUserMediaStatusDict; // 用于提前记录用户媒体状态的字典
+@property (nonatomic, assign) PLVBLinkMicNetworkQuality networkQuality;
+@property (nonatomic, assign) NSInteger networkQualityRepeatCount;
 
 #pragma mark 外部数据封装
 @property (nonatomic, copy, readonly) NSString * rtcType;
@@ -128,6 +130,10 @@ PLVLinkMicManagerDelegate
     } else{
         return NO;
     }
+}
+
+- (BOOL)pausedWatchNoDelay{
+    return self.linkMicManager.subscribedRemoteStreamNeedMute;
 }
 
 #pragma mark 业务
@@ -198,6 +204,10 @@ PLVLinkMicManagerDelegate
     if (self.linkMicStatus == PLVLinkMicStatus_Waiting || self.linkMicStatus == PLVLinkMicStatus_Joining || self.linkMicStatus == PLVLinkMicStatus_Joined) {
         [self emitSocketMessge_JoinLeave];
     }
+}
+
+- (void)pauseWatchNoDelay:(BOOL)pause{
+    [self.linkMicManager muteSubscribedRemoteStreamInLocalWithMute:pause];
 }
 
 - (void)changeMainSpeakerInLocalWithLinkMicUserIndex:(NSInteger)nowMainSpeakerLinkMicUserIndex{
@@ -1526,6 +1536,20 @@ PLVLinkMicManagerDelegate
     }
     if ([userRTCId isEqualToString:self.currentLocalLinkMicUser.linkMicUserId]) {
         [self.currentLocalLinkMicUser updateUserCurrentNetworkQuality:finalQuality];
+    }
+
+    if ([userRTCId isEqualToString:self.realMainSpeakerUser.linkMicUserId]) {
+        if (self.networkQuality == rxQuality) {
+            self.networkQualityRepeatCount ++;
+        }
+        self.networkQuality = rxQuality;
+        if (self.networkQualityRepeatCount == 2) {
+            self.networkQualityRepeatCount = 0;
+            self.networkQuality = PLVBLinkMicNetworkQualityUnknown;
+            if (self.delegate && [self.delegate respondsToSelector:@selector(plvLinkMicPresenter:localUserNetworkRxQuality:)]) {
+                [self.delegate plvLinkMicPresenter:self localUserNetworkRxQuality:rxQuality];
+            }
+        }
     }
 }
 

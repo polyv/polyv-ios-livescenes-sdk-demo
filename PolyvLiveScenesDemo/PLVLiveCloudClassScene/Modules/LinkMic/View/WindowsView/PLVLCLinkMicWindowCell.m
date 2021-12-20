@@ -102,7 +102,7 @@
     self.userModel = userModel;
     
     /// 昵称文本
-    NSString * actor = [PLVFdUtil checkStringUseable:userModel.actor] ? userModel.actor : @"";
+    NSString * actor = [PLVFdUtil checkStringUseable:userModel.actor] ? [NSString stringWithFormat:@"%@-",userModel.actor] : @"";
     self.nicknameLabel.text = [PLVFdUtil checkStringUseable:userModel.nickname] ? [NSString stringWithFormat:@"%@%@",actor,userModel.nickname] : [NSString stringWithFormat:@"unknown%@",userModel.linkMicUserId];
 
     /// 麦克风图标

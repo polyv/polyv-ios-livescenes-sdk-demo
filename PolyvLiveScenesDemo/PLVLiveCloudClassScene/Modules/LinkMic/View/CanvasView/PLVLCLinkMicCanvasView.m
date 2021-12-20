@@ -23,11 +23,13 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 ///  ├── (UIView) external rtc View
 ///  └── (UIImageView) networkQualityImageView
 ///  ├── (UIImageView) splashImageView
+///  ├── (UIImageView) muteRemoteStreamImageView
 ///  └── (UIView) external rtc View
 @property (nonatomic, strong) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
 @property (nonatomic, strong) UIImageView * splashImageView; // 音频背景视图（只支持音频模式时显示）
 @property (nonatomic, weak) UIView * rtcView; // rtcView (弱引用；仅用作记录)
 @property (nonatomic, strong) UIImageView * networkQualityImageView; // 信号塔视图 (负责展示 信号状态图标)
+@property (nonatomic, strong) UIImageView * pauseWatchNoDelayImageView; // 无延迟直播暂停后显示的占位图
 
 @end
 
@@ -50,6 +52,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
     self.splashImageView.frame = self.bounds;
+    self.pauseWatchNoDelayImageView.frame = self.bounds;
     
     CGFloat placeholderImageViewHeight = MIN(viewHeight , viewWidth)  * 0.485;
     self.placeholderImageView.frame = CGRectMake((viewWidth - placeholderImageViewHeight) / 2.0,
@@ -87,6 +90,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     [self addSubview:self.networkQualityImageView];
     self.networkQualityImageView.hidden = YES;
     [self addSubview:self.splashImageView];
+    [self addSubview:self.pauseWatchNoDelayImageView];
 }
 
 - (void)rtcViewShow:(BOOL)rtcViewShow{
@@ -95,6 +99,10 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     }else{
         NSLog(@"PLVLCLinkMicCanvasView - rtcViewShow failed, rtcView is nil");
     }
+}
+
+- (void)pauseWatchNoDelayImageViewShow:(BOOL)show {
+    self.pauseWatchNoDelayImageView.hidden = !show;
 }
 
 - (void)updateNetworkQualityImageViewWithStatus:(PLVBLinkMicNetworkQuality)status{
@@ -129,6 +137,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     [self addSubview:self.networkQualityImageView];
     self.networkQualityImageView.hidden = YES;
     [self addSubview:self.splashImageView];
+    [self addSubview:self.pauseWatchNoDelayImageView];
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -164,6 +173,16 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
         _splashImageView.hidden = YES;
     }
     return _splashImageView;
+}
+
+- (UIImageView *)pauseWatchNoDelayImageView {
+    if (!_pauseWatchNoDelayImageView) {
+        _pauseWatchNoDelayImageView = [[UIImageView alloc] init];
+        _pauseWatchNoDelayImageView.hidden = YES;
+        _pauseWatchNoDelayImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _pauseWatchNoDelayImageView.image = [self getImageWithName:@"plvlc_linkmic_window_pauseWatchNoDelay_placeholder"];
+    }
+    return _pauseWatchNoDelayImageView;
 }
 
 @end

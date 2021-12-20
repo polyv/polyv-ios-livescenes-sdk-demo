@@ -203,7 +203,7 @@ PLVChannelClassManagerDelegate
         [self.channelClassManager stopObserveStreamState];
     }
     [self leaveRTCChannelReal];
-    [self resetOnlineUserList];
+    [self resetOnlineUserListInFinishClass:NO];
     [self resetWaitUserList];
 }
 
@@ -234,7 +234,7 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)finishClass{
-    [self resetOnlineUserList];
+    [self resetOnlineUserListInFinishClass:YES];
     [self resetWaitUserList];
     if (self.viewerType == PLVRoomUserTypeTeacher) {
         [self stopPushStream];
@@ -1004,7 +1004,7 @@ PLVChannelClassManagerDelegate
     [self.localOnlineUser updateUserCurrentStatusVoice:NO];
 
     [self leaveRTCChannelReal];
-    [self resetOnlineUserList];
+    [self resetOnlineUserListInFinishClass:NO];
     [self resetWaitUserList];
     
     /// 重新启动本地预览
@@ -1207,7 +1207,7 @@ PLVChannelClassManagerDelegate
 ///
 /// @note PLVStreamerPresenterPreviewType_AloneView 类型下，全部用户被移除
 ///       PLVStreamerPresenterPreviewType_AloneView 以外的类型，全部‘非自己用户’被移除
-- (void)resetOnlineUserList{
+- (void)resetOnlineUserListInFinishClass:(BOOL)finishClass{
     if (self.arraySafeQueue) {
         __weak typeof(self) weakSelf = self;
         dispatch_async(self.arraySafeQueue, ^{
@@ -1226,7 +1226,9 @@ PLVChannelClassManagerDelegate
             [weakSelf.guestAllowLinkMicDict removeAllObjects];
             weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
             [weakSelf callbackForLinkMicUserListRefresh];
-            [weakSelf updateMixUserList];
+            if (!finishClass) {
+                [weakSelf updateMixUserList];
+            }
         });
     }
 }
@@ -2065,6 +2067,18 @@ PLVChannelClassManagerDelegate
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     [self callbackForCurrentReconnectingThisTimeDuration];
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager * _Nonnull)manager didJoinedOfUid:(NSString *)uid{
+    if (self.rtcRoomJoinStatus == PLVStreamerPresenterRoomJoinStatus_Joined) {
+        [self linkMicUserJoined:uid retryCount:0];
+    }
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager * _Nonnull)manager didOfflineOfUid:(NSString *)uid{
+    if (self.rtcRoomJoinStatus == PLVStreamerPresenterRoomJoinStatus_Joined) {
+        [self removeLinkMicOnlineUser:uid];
+    }
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager remoteUser:(NSString *)userRTCId audioMuted:(BOOL)audioMuted{

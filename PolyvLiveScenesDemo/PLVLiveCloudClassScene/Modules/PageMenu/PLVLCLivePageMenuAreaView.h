@@ -18,6 +18,7 @@ typedef NS_ENUM(NSInteger, PLVLCLivePageMenuType) {
     PLVLCLivePageMenuTypeQuiz,          // 咨询提问
     PLVLCLivePageMenuTypeTuwen,         // 图文直播
     PLVLCLivePageMenuTypeText,          // 自定义图文直播
+    PLVLCLivePageMenuTypeQA,            // 问答功能
     PLVLCLivePageMenuTypeIframe,        // 推广外链
 };
 

@@ -126,6 +126,11 @@ PLVLCLinkMicWindowsViewDelegate
     }
 }
 
+- (void)pauseWatchNoDelay:(BOOL)pause {
+    [self.presenter pauseWatchNoDelay:pause];
+    [self.windowsView refreshAllLinkMicCanvasPauseImageView:self.presenter.pausedWatchNoDelay];
+}
+
 - (void)leaveLinkMicOnlyEmit {
     [self.presenter leaveLinkMicOnlyEmit];
 }
@@ -499,6 +504,15 @@ PLVLCLinkMicWindowsViewDelegate
 
 - (BOOL)plvLinkMicPresenterGetChannelInLive:(PLVLinkMicPresenter *)presenter{
     return self.channelInLive;
+}
+
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality {
+    if (self.inLinkMic) {
+        return;
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:localUserNetworkRxQuality:)]) {
+        [self.delegate plvLCLinkMicAreaView:self localUserNetworkRxQuality:rxQuality];
+    }
 }
 
 @end

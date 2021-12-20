@@ -34,6 +34,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)linkMicWindowMainSpeaker:(NSString *)linkMicUserId toMainScreen:(BOOL)mainSpeakerToMainScreen;
 
+/// 刷新全部连麦画布视图
+- (void)refreshAllLinkMicCanvasPauseImageView:(BOOL)noDelayPaused;
+
 @end
 
 @protocol PLVLCLinkMicWindowsViewDelegate <NSObject>

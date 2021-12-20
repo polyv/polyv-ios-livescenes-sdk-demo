@@ -21,7 +21,9 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
     PLVBasePlayerSkinViewTypeAdjusBrightness    = 2 //在屏幕右边，上下滑动调节亮度
 };
 
-@interface PLVLCBasePlayerSkinView ()<PLVProgressSliderDelegate>
+@interface PLVLCBasePlayerSkinView ()<
+PLVProgressSliderDelegate,
+PLVLCDocumentToolViewDelegate>
 
 @property (nonatomic, assign) PLVLCBasePlayerSkinViewType skinViewType;
 @property (nonatomic, assign) CGPoint lastPoint;
@@ -105,9 +107,9 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
 - (void)switchSkinViewLiveStatusTo:(PLVLCBasePlayerSkinViewLiveStatus)skinViewLiveStatus{
     if (_skinViewLiveStatus == skinViewLiveStatus) { return; }
-
+    
     _skinViewLiveStatus = skinViewLiveStatus;
-        
+    
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 直播场景
         if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_None) {
             self.moreButton.hidden = YES;
@@ -120,8 +122,8 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
             self.refreshButton.hidden = NO;
             self.floatViewShowButton.hidden = NO;
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay){
-            self.moreButton.hidden = YES;
-            self.playButton.hidden = YES;
+            self.moreButton.hidden = NO;
+            self.playButton.hidden = NO;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = NO;
             self.floatViewShowButton.selected = NO; /// 无延迟场景，默认显示‘开’
@@ -140,7 +142,8 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
         } else {
             NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",NSStringFromClass(self.class),skinViewLiveStatus);
         }
-
+        // 检查当前PPT是否在主屏并设置数据
+        [self checkMainSpeakerPPTOnMainAndSetData];
     }else{
         NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",NSStringFromClass(self.class),self.skinViewType);
     }
@@ -249,6 +252,9 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
         /// 底部UI
         [controlsSuperview addSubview:self.refreshButton];
+        
+        // 翻页UI
+        [controlsSuperview addSubview:self.documentToolView];
     } else { // 视频类型为 直播回放
         /// 底部UI
         [controlsSuperview addSubview:self.currentTimeLabel];
@@ -273,6 +279,17 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
     return otherViewCanBeHandler;
 }
 
+- (void)setupMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain {
+    [self.documentToolView setupMainSpeakerPPTOnMain:mainSpeakerPPTOnMain];
+}
+
+- (void)checkMainSpeakerPPTOnMainAndSetData{
+    if (self.baseDelegate &&
+        [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewShouldShowDocumentToolView:)]) {
+        [self setupMainSpeakerPPTOnMain:[self.baseDelegate plvLCBasePlayerSkinViewShouldShowDocumentToolView:self]];
+    }
+}
+    
 #pragma mark Animation
 - (void)controlsSwitchShowStatusWithAnimation:(BOOL)showStatus{
     if (self.skinShow == showStatus) {
@@ -488,6 +505,13 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
     return _progressSlider;
 }
 
+- (PLVLCDocumentToolView *)documentToolView {
+    if (!_documentToolView) {
+        _documentToolView = [[PLVLCDocumentToolView alloc] init];
+        _documentToolView.delegate = self;
+    }
+    return _documentToolView;
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setupData{
@@ -621,6 +645,15 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
 - (void)plvProgressSlider:(PLVProgressSlider *)progressSlider sliderDragingProgressChange:(CGFloat)currentSliderProgress{
     
+}
+
+#pragma mark PLVLCDocumentToolViewDelegate
+
+- (void)documentToolView:(PLVLCDocumentToolView *)documentToolView didChangePageWithType:(PLVChangePPTPageType)type {
+    if (self.baseDelegate &&
+        [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinView:didChangePageWithType:)]) {
+        [self.baseDelegate plvLCBasePlayerSkinView:self didChangePageWithType:type];
+    }
 }
 
 @end

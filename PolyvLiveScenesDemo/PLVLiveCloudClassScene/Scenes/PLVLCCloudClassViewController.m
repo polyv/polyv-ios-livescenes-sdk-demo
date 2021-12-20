@@ -371,6 +371,11 @@ PLVRoomDataManagerProtocol
     self.countdownTime--;
 }
 
+- (void)noDelayLiveWannaPlay:(BOOL)play {
+    [self.liveRoomSkinView setPlayButtonWithPlaying:play];
+    [self.mediaAreaView.skinView setPlayButtonWithPlaying:play];
+}
+
 #pragma mark Getter
 - (PLVLCMediaAreaView *)mediaAreaView{
     if (!_mediaAreaView) {
@@ -607,6 +612,7 @@ PLVRoomDataManagerProtocol
         /// 告知 横屏 皮肤视图
         [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay];
     }
+    [self.liveRoomSkinView setPlayButtonWithPlaying:noDelayLiveStart];
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playerPlayingDidChange:(BOOL)playing{
@@ -661,6 +667,30 @@ PLVRoomDataManagerProtocol
     [self.liveRoomSkinView setProgressWithCachedProgress:cachedProgress playedProgress:playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:currentTimeString durationString:durationString];
 }
 
+// 文档、白板页码变化的回调
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pageStatusChangeWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber totalPage:(NSUInteger)totalPage pptStep:(NSUInteger)step maxNextNumber:(NSUInteger)maxNextNumber {
+    [self.liveRoomSkinView.documentToolView setupPageNumber:pageNumber totalPage:totalPage maxNextNumber:maxNextNumber];
+}
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain {
+    [self.liveRoomSkinView setupMainSpeakerPPTOnMain:mainSpeakerPPTOnMain];
+}
+
+/// [无延迟直播] 无延迟观看模式 发生改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayWatchModeSwitched:(BOOL)noDelayWatchMode {
+    [self noDelayLiveWannaPlay:YES];
+    [self.linkMicAreaView startWatchNoDelay:noDelayWatchMode];
+    if (noDelayWatchMode) {
+        [self.linkMicAreaView pauseWatchNoDelay:NO];
+    }
+}
+
+/// [无延迟直播] 无延迟直播 ‘播放或暂停’
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveWannaPlay:(BOOL)wannaPlay {
+    [self noDelayLiveWannaPlay:wannaPlay];
+    [self.linkMicAreaView pauseWatchNoDelay:!wannaPlay];
+}
+
 #pragma mark PLVLCLiveRoomPlayerSkinViewDelegate
 - (void)plvLCLiveRoomPlayerSkinViewBulletinButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView{
     [self.interactView openLastBulletin];
@@ -687,6 +717,9 @@ PLVRoomDataManagerProtocol
 - (UIView *)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView rtcWindowDidClickedCanvasView:(UIView *)canvasView{
     UIView * contentViewOnMediaAreaView = [self.mediaAreaView getContentViewForExchange];
     [self.mediaAreaView displayContentView:canvasView];
+    
+    // 连麦Rtc画面会显示在主屏，需要隐藏PPT翻页
+    [self.liveRoomSkinView setupMainSpeakerPPTOnMain:NO];
     return contentViewOnMediaAreaView;
 }
 
@@ -714,12 +747,13 @@ PLVRoomDataManagerProtocol
         PLVChannelLiveStreamState liveState = [PLVRoomDataManager sharedManager].roomData.liveState;
         if (liveState == PLVChannelLiveStreamState_Live) {
             // 直播中
-            [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
+            skinViewLiveStatus = PLVLCBasePlayerSkinViewLiveStatus_Living_CDN;
         }else{
             // 非直播中
-            [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+            skinViewLiveStatus = PLVLCBasePlayerSkinViewLiveStatus_None;
         }
     }
+    [self.liveRoomSkinView switchSkinViewLiveStatusTo:skinViewLiveStatus];
 }
 
 /// ‘RTC房间在线用户数’ 发生改变
@@ -735,7 +769,7 @@ PLVRoomDataManagerProtocol
     if (inLinkMic) {
         sceneType = PLVLCMediaAreaViewLiveSceneType_InLinkMic;
     }else{
-        sceneType = self.mediaAreaView.channelWatchNoDelay ? PLVLCMediaAreaViewLiveSceneType_WatchNoDelay : PLVLCMediaAreaViewLiveSceneType_WatchCDN;
+        sceneType = self.mediaAreaView.noDelayLiveWatching ? PLVLCMediaAreaViewLiveSceneType_WatchNoDelay : PLVLCMediaAreaViewLiveSceneType_WatchCDN;
     }
     [self.mediaAreaView switchAreaViewLiveSceneTypeTo:sceneType];
     
@@ -752,10 +786,18 @@ PLVRoomDataManagerProtocol
         PLVChannelLiveStreamState liveState = [PLVRoomDataManager sharedManager].roomData.liveState;
         if (liveState == PLVChannelLiveStreamState_Live) {
             // 直播中
-            [self.liveRoomSkinView switchSkinViewLiveStatusTo:self.mediaAreaView.channelWatchNoDelay ? PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay : PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
+            [self.liveRoomSkinView switchSkinViewLiveStatusTo:self.mediaAreaView.noDelayLiveWatching ? PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay : PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
         }else{
             // 非直播中
             [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+        }
+    }
+    
+    /// 恢复所有远端流
+    if (inLinkMic) {
+        [self noDelayLiveWannaPlay:YES];
+        if (self.mediaAreaView.noDelayLiveWatching) {
+            [self.linkMicAreaView pauseWatchNoDelay:NO];
         }
     }
 }
@@ -768,6 +810,15 @@ PLVRoomDataManagerProtocol
 /// 需获知 ‘主讲的PPT 当前是否在主屏’
 - (BOOL)plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:(PLVLCLinkMicAreaView *)linkMicAreaView{
     return self.mediaAreaView.mainSpeakerPPTOnMain;
+}
+
+/// 无延迟直播观看 网络质量检测
+- (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality {
+    if (rxQuality == PLVBLinkMicNetworkQualityFine) {
+        [self.mediaAreaView showNetworkQualityMiddleView];
+    } else if (rxQuality == PLVBLinkMicNetworkQualityBad) {
+        [self.mediaAreaView showNetworkQualityPoorView];
+    }
 }
 
 @end

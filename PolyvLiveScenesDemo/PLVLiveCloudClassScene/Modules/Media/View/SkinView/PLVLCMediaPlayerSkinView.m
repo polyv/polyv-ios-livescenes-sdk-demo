@@ -91,11 +91,16 @@
         CGFloat progressSliderWidth = viewWidth - CGRectGetMaxX(self.durationLabel.frame) - progressSliderLeftRightPadding - (viewWidth - CGRectGetMinX(progressSliderNextButton.frame)) - progressSliderLeftRightPadding;
         self.progressSlider.frame = CGRectMake(CGRectGetMaxX(self.durationLabel.frame) + progressSliderLeftRightPadding, CGRectGetMinY(self.currentTimeLabel.frame), progressSliderWidth, 21);
         
+        // 翻页视图
+        CGFloat documentToolViewWidht = self.documentToolView.viewWidth;
+        CGFloat documentToolHeight = 36;
+        CGFloat documentToolPadding = 3;
+        self.documentToolView.frame = CGRectMake((viewWidth - documentToolViewWidht) / 2, CGRectGetMinY(self.fullScreenButton.frame) - documentToolHeight - documentToolPadding, documentToolViewWidht , documentToolHeight);
+        
     }else{
         self.hidden = YES;
     }
 }
-
 
 #pragma mark - [ Father Public Methods ]
 - (void)showFloatViewShowButtonTipsLabelAnimation:(BOOL)showTips{

@@ -29,6 +29,7 @@ UICollectionViewDelegate
 @property (nonatomic, assign, readonly) BOOL showingExternalView;
 @property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;
 @property (nonatomic, assign) BOOL hadAlignMainSpeakerSite; // 是否已对齐过主讲主副屏位置 (每次“从无用户到开始展示用户”，都需执行一次对齐)
+@property (nonatomic, assign) BOOL externalNoDelayPaused;   // 外部的 ‘无延迟播放’ 是否已暂停
 
 #pragma mark 数据
 @property (nonatomic, readonly) NSArray <PLVLinkMicOnlineUser *> * dataArray; // 只读，当前连麦在线用户数组
@@ -141,6 +142,7 @@ UICollectionViewDelegate
         if (self.showingExternalView) {
             if (![self.showingExternalCellLinkMicUserId isEqualToString:firstSiteOnlineUser.linkMicUserId]) {
                 /// 若 “第一画面” 发生变更
+                [self checkUserModelAndSetupLinkMicCanvasView:firstSiteOnlineUser];
                 [self rollbackExternalView];
                 [self wantExchangeWithExternalViewForLinkMicUser:firstSiteOnlineUser needReload:NO];
             }
@@ -168,8 +170,8 @@ UICollectionViewDelegate
         finalCellNum = (finalCellNum - 1) <= 0 ? 0 : (finalCellNum - 1);
     }
 
+    __weak typeof(self) weakSelf = self;
     if (!CGRectGetHeight(self.bounds) && finalCellNum > 0) {
-        __weak typeof(self) weakSelf = self;
         self.collectionReloadBlock = ^{
             [weakSelf.collectionView reloadData];
             [weakSelf showGuideView];
@@ -178,13 +180,16 @@ UICollectionViewDelegate
                 if (reloadCompleteBlock) { reloadCompleteBlock(); }
             });
         };
-    }else{
+    } else {
         [self.collectionView reloadData];
         [self showGuideView];
         dispatch_async(dispatch_get_main_queue(), ^{
-            [self alignMainSpeakerSite];
+            [weakSelf alignMainSpeakerSite];
             if (reloadCompleteBlock) { reloadCompleteBlock(); }
         });
+        if (finalCellNum == 0) {
+            [self hideGuideView];
+        }
     }
     
     if ([PLVFdUtil checkArrayUseable:currentDataArray]) {
@@ -208,6 +213,13 @@ UICollectionViewDelegate
         NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
         [self rollbackExternalView];
         [self rollbackLinkMicCanvasView:oriIndexPath];
+    }
+}
+
+- (void)refreshAllLinkMicCanvasPauseImageView:(BOOL)noDelayPaused{
+    _externalNoDelayPaused = noDelayPaused;
+    for (PLVLinkMicOnlineUser * onlineUser in self.dataArray) {
+        [onlineUser.canvasView pauseWatchNoDelayImageViewShow:noDelayPaused];
     }
 }
 
@@ -380,6 +392,7 @@ UICollectionViewDelegate
     if (linkMicUserModel.canvasView == nil) {
         PLVLCLinkMicCanvasView * canvasView = [[PLVLCLinkMicCanvasView alloc] init];
         [canvasView addRTCView:linkMicUserModel.rtcView];
+        [canvasView pauseWatchNoDelayImageViewShow:self.externalNoDelayPaused];
         linkMicUserModel.canvasView = canvasView;
         linkMicUserModel.networkQualityChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             if (onlineUser.canvasView) { [onlineUser.canvasView updateNetworkQualityImageViewWithStatus:onlineUser.currentNetworkQuality]; }

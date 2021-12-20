@@ -67,6 +67,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 开始/结束观看无延迟直播
 - (void)startWatchNoDelay:(BOOL)startWatch;
 
+/// 暂停/播放无延迟直播
+- (void)pauseWatchNoDelay:(BOOL)pause;
+
 /// 退出连麦(仅发送'退出连麦消息')
 ///
 /// @note 此方法用于将当前 等待连麦 、正在加入连麦 或 连麦中的用户退出连麦
@@ -132,6 +135,15 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param linkMicAreaView 连麦区域视图
 - (BOOL)plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:(PLVLCLinkMicAreaView *)linkMicAreaView;
+
+
+/// 无延迟直播观看下 本地网络质量检测回调
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param linkMicAreaView 连麦区域视图
+/// @param rxQuality 当前下行网络质量
+- (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality;
 
 @end
 

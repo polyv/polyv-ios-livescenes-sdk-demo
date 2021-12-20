@@ -406,6 +406,11 @@
 }
 
 - (void)cameraReverseButtonAction {
+    __weak typeof(self) weakSelf = self;
+    self.cameraReverseButton.userInteractionEnabled = NO; //控制翻转按钮点击间隔，防止短时间内重复点击
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        weakSelf.cameraReverseButton.userInteractionEnabled = YES;
+     });
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeCameraFront:)]) {
         [self.delegate moreInfoSheet:self didChangeCameraFront:!self.cameraReverseButton.selected];
@@ -414,6 +419,11 @@
 }
 
 - (void)mirrorButtonAction {
+    __weak typeof(self) weakSelf = self;
+    self.mirrorButton.userInteractionEnabled = NO; //控制镜像按钮点击间隔，防止短时间内重复点击
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        weakSelf.mirrorButton.userInteractionEnabled = YES;
+     });
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeMirrorOpen:)]) {
         [self.delegate moreInfoSheet:self didChangeMirrorOpen:!self.mirrorButton.selected];

@@ -69,6 +69,18 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 该频道是否观看 ‘无延迟直播’
 @property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
 
+/// 该频道是否观看 ‘快直播’
+@property (nonatomic, assign, readonly) BOOL channelWatchQuickLive;
+
+/// 当前是否为无延迟观看模式（包括无延迟直播和快直播）
+@property (nonatomic, assign, readonly) BOOL noDelayWatchMode;
+
+/// 播放器当前是否正在播放无延迟直播
+@property (nonatomic, assign, readonly) BOOL noDelayLiveWatching;
+
+/// 播放器当前是否正在播放快直播
+@property (nonatomic, assign, readonly) BOOL quickLiveWatching;
+
 /// 无延迟直播的当前 ‘开始结束状态’
 @property (nonatomic, assign, readonly) BOOL noDelayLiveStart;
 
@@ -123,6 +135,12 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///       连麦场景中的视图交换：指PPT与RTC播放器画面 或 两个RTC播放器画面之间，进行视图交换；由点击 RTC播放器画面 触发（在 AreaView 与 外部视图中完成）
 ///       因此以下该“对外方法”，仅应该在 连麦场景中 被调用。
 - (UIView *)getContentViewForExchange;
+
+/// 显示网络不佳提示视图
+- (void)showNetworkQualityMiddleView;
+
+/// 显示网络糟糕提示视图
+- (void)showNetworkQualityPoorView;
 
 @end
 
@@ -180,8 +198,22 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveStartUpdate:(BOOL)noDelayLiveStart;
 
+/// [无延迟直播] 无延迟观看模式 发生改变
+///
+/// @note 仅 无延迟直播 频道会触发，快直播不会触发该回调；
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayWatchModeSwitched:(BOOL)noDelayWatchMode;
+
+/// [无延迟直播] 无延迟直播 ‘播放或暂停’
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveWannaPlay:(BOOL)wannaPlay;
+
 /// 回放场景
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;
+
+/// 文档、白板页码变化的回调
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pageStatusChangeWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber totalPage:(NSUInteger)totalPage pptStep:(NSUInteger)step maxNextNumber:(NSUInteger)maxNextNumber;
+
+/// mainSpeakerPPTOnMain 发生改变回调
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain;
 
 @end
 

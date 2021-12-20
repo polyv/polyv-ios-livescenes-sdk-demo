@@ -12,6 +12,7 @@
 #import "PLVLCQuizViewController.h"
 #import "PLVLCTuwenViewController.h"
 #import "PLVLCTextViewController.h"
+#import "PLVLCQAViewController.h"
 #import "PLVLCIframeViewController.h"
 #import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
@@ -31,6 +32,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
         return PLVLCLivePageMenuTypeTuwen;
     } else if ([menuString isEqualToString:@"text"]) {
         return PLVLCLivePageMenuTypeText;
+    } else if ([menuString isEqualToString:@"qa"]) {
+        return PLVLCLivePageMenuTypeQA;
     } else if ([menuString isEqualToString:@"iframe"]) {
         return PLVLCLivePageMenuTypeIframe;
     }
@@ -138,6 +141,9 @@ PLVRoomDataManagerProtocol
     } else if (menuType == PLVLCLivePageMenuTypeText) {
         PLVLCTextViewController *vctrl = [[PLVLCTextViewController alloc] init];
         [vctrl loadHtmlWithContent:menu.content];
+        return vctrl;
+    } else if (menuType == PLVLCLivePageMenuTypeQA) {
+        PLVLCQAViewController *vctrl = [[PLVLCQAViewController alloc] initWithRoomData:[PLVRoomDataManager sharedManager].roomData theme:@"black"];
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeIframe) {
         PLVLCIframeViewController *vctrl = [[PLVLCIframeViewController alloc] init];

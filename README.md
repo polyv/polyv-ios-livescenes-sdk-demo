@@ -13,26 +13,26 @@
 ├── Demo
 │   ├── Bugly
 │   └── Login
-├── PolyvLiveCommonModule（通用业务层）
+├── PLVLiveCommonModule（通用业务层）
 │   ├── GeneralUI
 │   ├── Modules
-├── PolyvLiveCloudClassScene（观看端-云课堂场景）
+├── PLVLiveCloudClassScene（观看端-云课堂场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
-├── PolyvLiveEcommerceScene（观看端-直播带货场景）
+├── PLVLiveEcommerceScene（观看端-直播带货场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
-├── PolyvLiveStreamerScene（开播端-手机开播三分屏场景）
+├── PLVLiveStreamerScene（开播端-手机开播三分屏场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
-├── PolyvStreamerAloneScene（开播端-手机开播纯视频场景）
+├── PLVStreamerAloneScene（开播端-手机开播纯视频场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
-├── PolyvLiveHiClassScene（互动学堂场景）
+├── PLVLiveHiClassScene（互动学堂场景）
 │   ├── Scenes
 │   ├── Modules
 │   └── Resource
@@ -65,6 +65,7 @@ Demo [下载链接](https://www.pgyer.com/IzFQ) （密码：polyv）
 
 | Github 仓库 Tag | 依赖 SDK 版本 | API 文档 | Comon 层 | 观看端-云课堂场景 | 观看端-直播带货场景 | 开播端-手机开播（三分屏）场景 | 互动学堂场景 |
 | --------------- | ------------- | -------------------------------------------------------------------------------------------- | -------- | ----------------- | ------------------- | ----------------------------- | ----------------------------- |
+| 1.8.0           | 1.8.0         | [v1.8.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.7.3-20211207/index.html) | ✅        | ✅                |  ✅                     | ✅                            |    
 | 1.7.3           | 1.7.3         | [v1.7.3 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.7.3-20211207/index.html) | ✅        | ✅                |  ✅                     | ✅                            | ✅   
 | 1.7.2           | 1.7.2         | [v1.7.2 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.7.2-20211115/index.html) |        | ✅                |  ✅                     | ✅                            | ✅   
 | 1.7.1.1           | 1.7.0         | [v1.7.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.7.0-20211028/index.html) |        |                |                      | ✅                            |                            |

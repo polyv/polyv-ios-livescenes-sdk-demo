@@ -140,6 +140,9 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// @note 注意，若 ‘本地操作’ 后的 ‘本地主讲用户’ 仍与 ‘真实主讲用户’ 一致。那此值将为 NO 认为是 ‘非本地操作’
 @property (nonatomic, assign, readonly) BOOL localMainSpeakerUserByLocalOperation;
 
+/// 当前 是否已暂停无延迟观看
+@property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay;
+
 #pragma mark 数据
 /// 当前 真实主讲用户 (即 “第一画面”)
 ///
@@ -166,6 +169,13 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 - (void)startWatchNoDelay;
 
 - (void)stopWatchNoDelay;
+
+/// 暂停或取消暂停 无延迟观看
+///
+/// @note 调用后，将改变 [pausedWatchNoDelay] 值；
+///
+/// @param pause 暂停或取消暂停 (YES:暂停；NO:取消暂停)
+- (void)pauseWatchNoDelay:(BOOL)pause;
 
 #pragma mark 连麦
 /// 举手 (申请连麦)
@@ -305,6 +315,13 @@ reportAudioVolumeOfSpeakers:(NSDictionary<NSString *, NSNumber *> * _Nonnull)vol
 ///
 /// @param presenter 连麦管理器
 - (BOOL)plvLinkMicPresenterGetChannelInLive:(PLVLinkMicPresenter *)presenter;
+
+/// 当前下行网络质量
+///
+/// @param presenter 连麦管理器
+/// @param rxQuality 当前下行网络质量
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality;
+
 
 @end
 

@@ -29,6 +29,7 @@
 static NSString *const PLVLCMediaAreaView_Data_ModeOptionTitle = @"模式";
 static NSString *const PLVLCMediaAreaView_Data_QualityOptionTitle = @"视频质量";
 static NSString *const PLVLCMediaAreaView_Data_RouteOptionTitle = @"线路";
+static NSString *const PLVLCMediaAreaView_Data_LiveDelayOptionTitle = @"延迟";
 static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 static NSInteger const PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum = 5;
 
@@ -52,10 +53,13 @@ PLVLCRetryPlayViewDelegate
 @property (nonatomic, assign) PLVChannelLinkMicSceneType lastLinkMicSceneType; // 上次 连麦场景类型
 @property (nonatomic, assign) PLVLCMediaAreaViewLiveSceneType currentLiveSceneType;
 @property (nonatomic, assign, readonly) BOOL pptOnMainSite;     // 只读，PPT当前是否处于主屏 (此属性仅适合判断PPT是否在主屏，不适合判断其他视图所处位置)
-@property (nonatomic, assign) NSInteger tryPlayPPTViewNum; // 尝试播放PPTView次数
+@property (nonatomic, assign) BOOL networkQualityMiddleViewShowed;         // 网络不佳提示视图是否显示过
+@property (nonatomic, assign) BOOL networkQualityPoorViewShowed;   // 网络糟糕提示视图是否显示过
+
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
 @property (nonatomic, strong) PLVDocumentView * pptView;                 // PPT 功能模块
+@property (nonatomic, assign) NSInteger tryPlayPPTViewNum; // 尝试播放PPTView次数
 
 #pragma mark UI
 /// view hierarchy
@@ -123,6 +127,8 @@ PLVLCRetryPlayViewDelegate
 @property (nonatomic, strong) UIView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
 @property (nonatomic, strong) PLVLCRetryPlayView *retryPlayView; // 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
+@property (nonatomic, strong) UILabel *networkQualityMiddleLable; // 网络不佳提示视图
+@property (nonatomic, strong) UIView *networkQualityPoorView; // 网络糟糕提示视图
 
 @end
 
@@ -172,11 +178,15 @@ PLVLCRetryPlayViewDelegate
         CGFloat contentBackgroudViewY = self.limitContentViewInSafeArea ? toppadding : 0;
         CGFloat contentBackgroudViewHeight = self.limitContentViewInSafeArea ? viewSafeHeight : viewHeight;
         self.contentBackgroudView.frame = CGRectMake(0, contentBackgroudViewY, viewWidth, contentBackgroudViewHeight);
+        self.networkQualityMiddleLable.frame = CGRectMake(16, viewHeight - 28 - 36, 219, 28);
+        self.networkQualityPoorView.frame = CGRectMake(viewWidth - 275 - 4, contentBackgroudViewY + 39, 275, 28);
     } else {
         // 横屏
         CGFloat contentBackgroudViewX = self.limitContentViewInSafeArea ? leftpadding : 0;
         CGFloat contentBackgroudViewWidth = self.limitContentViewInSafeArea ? viewSafeWidth : viewWidth;
         self.contentBackgroudView.frame = CGRectMake(contentBackgroudViewX, 0, contentBackgroudViewWidth, viewHeight);
+        self.networkQualityMiddleLable.frame = CGRectMake(contentBackgroudViewX + 16, viewHeight - 28 - 58, 219, 28);
+        self.networkQualityPoorView.frame = CGRectMake(superviewWidth - 275 - 4 - leftpadding, 50, 275, 28);
     }
     
     [self.danmuView resetFrame:self.contentBackgroudView.frame];
@@ -268,10 +278,9 @@ PLVLCRetryPlayViewDelegate
             /// 隐藏 floatView
             /// userOperat:YES 表示代表用户强制执行
             [self.floatView showFloatView:NO userOperat:YES];
-            
-            /// 竖屏皮肤视图
-            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay];
         }
+        /// 竖屏皮肤视图
+        [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay];
     } else if (toType == PLVLCMediaAreaViewLiveSceneType_InLinkMic){ /// 正在 ‘连麦’ 场景
         if (self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchNoDelay) {
             if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc) {
@@ -300,8 +309,15 @@ PLVLCRetryPlayViewDelegate
                 /// 竖屏皮肤视图
                 [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
             }
+        } else {
+            /// 竖屏皮肤视图
+            [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC];
         }
         self.lastLinkMicSceneType = self.linkMicSceneType;
+        /// 隐藏更多设置视图
+        if (self.moreView.moreViewShow) {
+            [self.moreView switchShowStatusWithAnimation];
+        }
     } else {
         NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type%lud not support",(unsigned long)toType);
     }
@@ -311,6 +327,8 @@ PLVLCRetryPlayViewDelegate
 
 - (void)displayContentView:(UIView *)contentView{
     if (contentView && [contentView isKindOfClass:UIView.class]) {
+        // 设置PPT是否在主页
+        [self setupMainSpeakerPPTOnMain:[self isPptView:contentView]];
         [self contentBackgroundViewDisplaySubview:contentView];
     }else{
         NSLog(@"PLVLCMediaAreaView - displayExternalView failed, view is illegal : %@",contentView);
@@ -331,6 +349,42 @@ PLVLCRetryPlayViewDelegate
     return nil;
 }
 
+- (BOOL)isPptView:(UIView *)view {
+    if (view &&
+        [view isKindOfClass:[PLVDocumentView class]]) {
+        return YES;
+    } else {
+        return NO;
+    }
+}
+
+#pragma mark 网络质量
+- (void)showNetworkQualityMiddleView {
+    if (self.networkQualityMiddleViewShowed) {
+        return;
+    }
+    self.networkQualityMiddleViewShowed = YES;
+    self.networkQualityMiddleLable.hidden = NO;
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        weakSelf.networkQualityMiddleLable.hidden = YES;
+    });
+}
+
+- (void)showNetworkQualityPoorView {
+    if (self.networkQualityPoorViewShowed) {
+        return;
+    }
+    self.networkQualityPoorViewShowed = YES;
+    self.networkQualityPoorView.hidden = NO;
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        weakSelf.networkQualityPoorView.hidden = YES;
+    });
+}
+
 #pragma mark Getter
 - (BOOL)channelInLive{
     return self.playerPresenter.channelInLive;
@@ -338,6 +392,22 @@ PLVLCRetryPlayViewDelegate
 
 - (BOOL)channelWatchNoDelay{
     return self.playerPresenter.channelWatchNoDelay;
+}
+
+- (BOOL)channelWatchQuickLive{
+    return self.playerPresenter.channelWatchQuickLive;
+}
+
+- (BOOL)noDelayWatchMode {
+    return self.playerPresenter.noDelayWatchMode;
+}
+
+- (BOOL)quickLiveWatching {
+    return self.playerPresenter.quickLiveWatching;
+}
+
+- (BOOL)noDelayLiveWatching{
+    return self.playerPresenter.noDelayLiveWatching;
 }
 
 - (BOOL)noDelayLiveStart{
@@ -364,6 +434,10 @@ PLVLCRetryPlayViewDelegate
     [self addSubview:self.skinView];
     
     [self addSubview:self.retryPlayView];
+    
+    /// 网络质量提示
+    [self.skinView.superview addSubview:self.networkQualityMiddleLable];
+    [self.skinView.superview addSubview:self.networkQualityPoorView];
 }
 
 - (void)contentBackgroundViewDisplaySubview:(UIView *)subview{
@@ -426,41 +500,81 @@ PLVLCRetryPlayViewDelegate
 }
 
 - (NSArray *)getMoreViewDefaultDataArray{
-    NSArray * returnArray;
-    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
-        NSArray<NSString *> *optionItemsArray = self.isOnlyAudio ? @[@"仅听声音"] : @[@"播放画面",@"仅听声音"];
-        PLVLCMediaMoreModel * modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_ModeOptionTitle optionItemsArray:optionItemsArray];
-        returnArray = @[modeModel];
-    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
+    if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
         PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_SpeedOptionTitle optionItemsArray:@[@"0.5x",@"1.0x",@"1.5x",@"2.0x"] selectedIndex:1];
         speedModel.optionSpecifiedWidth = 50.0;
-        returnArray = @[speedModel];
+        return @[speedModel];
     }
-    return returnArray;
+    return nil;
 }
 
 - (void)updateMoreviewWithData {
+    // 音视频切换选项数据
+    PLVLCMediaMoreModel *modeModel = nil;
     // 视频质量选项数据
-    PLVLCMediaMoreModel * qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_QualityOptionTitle optionItemsArray:self.playerPresenter.codeRateNamesOptions];
-    [qualityModel setSelectedIndexWithOptionItemString:self.playerPresenter.currentCodeRate];
-    
+    PLVLCMediaMoreModel *qualityModel = nil;
     // 线路选项数据
-    NSMutableArray * routeArray = [[NSMutableArray alloc] init];
-    for (int i = 1; i <= self.playerPresenter.lineNum; i++) {
-        NSString * route = [NSString stringWithFormat:@"线路%d",i];
-        [routeArray addObject:route];
+    PLVLCMediaMoreModel *routeModel = nil;
+    // 直播延迟选项数据
+    PLVLCMediaMoreModel *liveDelayModel = nil;
+    
+    // 无延迟直播和快直播频道支持切换延迟模式
+    if (self.channelWatchNoDelay || self.channelWatchQuickLive) {
+        liveDelayModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_LiveDelayOptionTitle optionItemsArray:@[@"无延迟",@"正常延迟"] selectedIndex:!self.noDelayWatchMode];
     }
-    PLVLCMediaMoreModel * routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_RouteOptionTitle optionItemsArray:routeArray selectedIndex:self.playerPresenter.currentLineIndex];
+
+    // 观看无延迟直播和快直播时不支持切换音视频模式、视频质量和线路
+    if (!self.noDelayWatchMode) {
+        NSArray<NSString *> *optionItemsArray = self.isOnlyAudio ? @[@"仅听声音"] : @[@"播放画面",@"仅听声音"];
+        modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_ModeOptionTitle optionItemsArray:optionItemsArray selectedIndex:self.playerPresenter.audioMode];
+        
+        qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_QualityOptionTitle optionItemsArray:self.playerPresenter.codeRateNamesOptions];
+        [qualityModel setSelectedIndexWithOptionItemString:self.playerPresenter.currentCodeRate];
+        
+        NSMutableArray * routeArray = [[NSMutableArray alloc] init];
+        for (int i = 1; i <= self.playerPresenter.lineNum; i++) {
+            NSString * route = [NSString stringWithFormat:@"线路%d",i];
+            [routeArray addObject:route];
+        }
+        routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_RouteOptionTitle optionItemsArray:routeArray selectedIndex:self.playerPresenter.currentLineIndex];
+    }
     
     // 整合数据
     NSMutableArray * modelArray = [[NSMutableArray alloc] init];
+    if (modeModel) { [modelArray addObject:modeModel]; }
     if (qualityModel) { [modelArray addObject:qualityModel]; }
     if (routeModel) { [modelArray addObject:routeModel]; }
+    if (liveDelayModel) { [modelArray addObject:liveDelayModel]; }
 
     // 更新 moreView
-    [self.moreView updateTableViewWithDataArrayByMatchModel:modelArray];
+    [self.moreView refreshTableViewWithDataArray:modelArray];
+    [self.moreView refreshTableView];
 }
-    
+
+/// 延迟模式切换
+- (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {
+    if (self.inLinkMic) {
+        return;
+    }
+    if (self.playerPresenter.audioMode) {
+        [self switchLiveToAudioMode:NO];
+    }
+    [self.playerPresenter switchToNoDelayWatchMode:noDelayWatchMode];
+    self.networkQualityMiddleViewShowed = self.networkQualityPoorViewShowed = NO;
+    if (self.channelWatchNoDelay) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayWatchModeSwitched:)]) {
+            [self.delegate plvLCMediaAreaView:self noDelayWatchModeSwitched:noDelayWatchMode];
+        }
+    }
+}
+
+/// 音视频观看模式切换
+- (void)switchLiveToAudioMode:(BOOL)audioMode {
+    self.logoView.hidden = !audioMode;
+    [self.canvasView switchTypeTo:audioMode ? PLVLCMediaPlayerCanvasViewType_Audio : PLVLCMediaPlayerCanvasViewType_Video];
+    [self.playerPresenter switchLiveToAudioMode:audioMode];
+}
+
 #pragma mark Danmu
 - (void)showDanmu:(BOOL)show {
     self.danmuView.hidden = !show;
@@ -629,6 +743,54 @@ PLVLCRetryPlayViewDelegate
     return _retryPlayView;
 }
 
+- (UILabel *)networkQualityMiddleLable {
+    if (!_networkQualityMiddleLable) {
+        _networkQualityMiddleLable = [[UILabel alloc] init];
+        _networkQualityMiddleLable.text = @"您的网络状态不佳，可尝试切换网络";
+        _networkQualityMiddleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _networkQualityMiddleLable.textColor = [UIColor whiteColor];
+        _networkQualityMiddleLable.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.6);
+        _networkQualityMiddleLable.layer.masksToBounds = YES;
+        _networkQualityMiddleLable.layer.cornerRadius = 12;
+        _networkQualityMiddleLable.hidden = YES;
+        _networkQualityMiddleLable.textAlignment = NSTextAlignmentCenter;
+    }
+    return _networkQualityMiddleLable;
+}
+
+- (UIView *)networkQualityPoorView {
+    if (!_networkQualityPoorView) {
+        _networkQualityPoorView = [[UIView alloc] init];
+        _networkQualityPoorView.hidden = YES;
+        _networkQualityPoorView.backgroundColor =  PLV_UIColorFromRGBA(@"#000000", 0.6);
+        _networkQualityPoorView.layer.masksToBounds = YES;
+        _networkQualityPoorView.layer.cornerRadius = 12;
+        
+        UILabel *tipsLable = [[UILabel alloc] init];
+        tipsLable = [[UILabel alloc] init];
+        tipsLable.text = @"您的网络状态糟糕，可尝试";
+        tipsLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        tipsLable.textColor = [UIColor whiteColor];
+        [_networkQualityPoorView addSubview:tipsLable];
+        tipsLable.frame = CGRectMake(12, 0, 147, 28);
+
+        UIButton *swithDelayLiveButton = [[UIButton alloc] init];
+        [swithDelayLiveButton setTitle:@"切换到正常延迟" forState:UIControlStateNormal];
+        [swithDelayLiveButton setTitleColor:PLV_UIColorFromRGB(@"#6DA7FF") forState:UIControlStateNormal];
+        [swithDelayLiveButton addTarget:self action:@selector(swithDelayLiveClick:) forControlEvents:UIControlEventTouchUpInside];
+        swithDelayLiveButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        [_networkQualityPoorView addSubview:swithDelayLiveButton];
+        swithDelayLiveButton.frame = CGRectMake(161, 0, 86, 28);
+        
+        UIButton *closeButton = [[UIButton alloc] init];
+        [closeButton addTarget:self action:@selector(closeNetworkTipsViewClick:) forControlEvents:UIControlEventTouchUpInside];
+        [closeButton setImage:[self getImageWithName:@"plvlc_media_network_tips_close"] forState:UIControlStateNormal];
+        [_networkQualityPoorView addSubview:closeButton];
+        closeButton.frame = CGRectMake(250, 6, 16, 16);
+    }
+    return _networkQualityPoorView;
+}
+
 - (BOOL)inLinkMic{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMic:)]) {
         return [self.delegate plvLCMediaAreaViewGetInLinkMic:self];
@@ -675,6 +837,13 @@ PLVLCRetryPlayViewDelegate
     }
 }
 
+- (void)setupMainSpeakerPPTOnMain:(BOOL)pptOnMainSite {
+    [self.skinView setupMainSpeakerPPTOnMain:pptOnMainSite];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:didChangeMainSpeakerPPTOnMain:)]) {
+        [self.delegate plvLCMediaAreaView:self didChangeMainSpeakerPPTOnMain:pptOnMainSite];
+    }
+}
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVLCBasePlayerSkinViewDelegate
@@ -703,10 +872,16 @@ PLVLCRetryPlayViewDelegate
 }
 
 - (void)plvLCBasePlayerSkinViewPlayButtonClicked:(PLVLCBasePlayerSkinView *)skinView wannaPlay:(BOOL)wannaPlay{
-    if (wannaPlay) {
-        [self.playerPresenter resumePlay];
-    }else{
-        [self.playerPresenter pausePlay];
+    if (self.noDelayLiveWatching) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
+            [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:wannaPlay];
+        }
+    } else {
+        if (wannaPlay) {
+            [self.playerPresenter resumePlay];
+        }else{
+            [self.playerPresenter pausePlay];
+        }
     }
 }
 
@@ -735,6 +910,8 @@ PLVLCRetryPlayViewDelegate
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.warmUpImageView canBeHandlerForTouchPoint:point onSkinView:skinView]){
         return YES;
+    }else if ([PLVLCBasePlayerSkinView checkView:self.networkQualityPoorView canBeHandlerForTouchPoint:point onSkinView:skinView]){
+        return YES;
     }else{
         BOOL externalViewHandle = NO;
         /// 询问外部视图
@@ -759,6 +936,14 @@ PLVLCRetryPlayViewDelegate
     [self.playerPresenter seekLivePlaybackToTime:currentTime];
 }
 
+- (void)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView didChangePageWithType:(PLVChangePPTPageType)type {
+    [self.pptView changePPTPageWithType:type];
+}
+
+- (BOOL)plvLCBasePlayerSkinViewShouldShowDocumentToolView:(PLVLCBasePlayerSkinView *)skinView {
+    return self.pptOnMainSite; // ppt在主屏时可显示翻页工具
+}
+
 #pragma mark PLVLCFloatViewDelegate
 /// 悬浮视图被点击
 - (UIView *)plvLCFloatViewDidTap:(PLVLCMediaFloatView *)floatView externalView:(nonnull UIView *)externalView{
@@ -767,6 +952,8 @@ PLVLCRetryPlayViewDelegate
         [self.contentBackgroudView addSubview:externalView];
         externalView.frame = self.contentBackgroudView.bounds;
         externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        // 设置PPT是否在主页
+        [self setupMainSpeakerPPTOnMain:[self isPptView:externalView]];
     }
     return willMoveView;
 }
@@ -786,9 +973,7 @@ PLVLCRetryPlayViewDelegate
 - (void)plvLCMediaMoreView:(PLVLCMediaMoreView *)moreView optionItemSelected:(PLVLCMediaMoreModel *)model{
     if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_ModeOptionTitle]) {
         // 用户点选了”模式“中的选项
-        self.logoView.hidden = model.selectedIndex != 0;
-        [self.canvasView switchTypeTo:(model.selectedIndex == 0 ? PLVLCMediaPlayerCanvasViewType_Video : PLVLCMediaPlayerCanvasViewType_Audio)];
-        [self.playerPresenter switchLiveToAudioMode:(model.selectedIndex == 0 ? NO : YES)];
+        [self switchLiveToAudioMode:model.selectedIndex == 1];
     } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_QualityOptionTitle]) {
         // 用户点选了”视频质量“中的选项
         [self.playerPresenter switchLiveToCodeRate:model.currentSelectedItemString];
@@ -799,6 +984,9 @@ PLVLCRetryPlayViewDelegate
         // 用户点选了”倍速“中的选项
         CGFloat speed = [[model.currentSelectedItemString substringToIndex:model.currentSelectedItemString.length - 1] floatValue];
         [self.playerPresenter switchLivePlaybackSpeedRate:speed];
+    } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_LiveDelayOptionTitle]) {
+        // 用户点选了“延迟”中的选项
+        [self switchToNoDelayWatchMode:model.selectedIndex == 0];
     }
 }
 
@@ -815,9 +1003,19 @@ PLVLCRetryPlayViewDelegate
 }
 
 #pragma mark PLVDocumentViewDelegate
+- (void)documentView_pageStatusChangeWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber totalPage:(NSUInteger)totalPage pptStep:(NSUInteger)step maxNextNumber:(NSUInteger)maxNextNumber {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:pageStatusChangeWithAutoId:pageNumber:totalPage:pptStep:maxNextNumber:)]) {
+        [self.delegate plvLCMediaAreaView:self pageStatusChangeWithAutoId:autoId pageNumber:pageNumber totalPage:totalPage pptStep:step maxNextNumber:maxNextNumber];
+    }
+    [self.skinView.documentToolView setupPageNumber:pageNumber totalPage:totalPage maxNextNumber:maxNextNumber];
+    
+}
+
+#pragma mark PLVStreamerPPTView Delegate
 /// PPT获取刷新的延迟时间
 - (unsigned int)documentView_getRefreshDelayTime {
-    return self.inRTCRoom ? 0 : 5000;
+    return self.inRTCRoom ? 0 : self.quickLiveWatching ? 500 : 5000;
 }
 
 /// PPT视图 PPT位置需切换
@@ -831,6 +1029,7 @@ PLVLCRetryPlayViewDelegate
                 if (pptToMain != self.pptOnMainSite) {
                     [self.floatView triggerViewExchangeEvent];
                 }
+                [self setupMainSpeakerPPTOnMain:pptToMain];
             }
         } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
             if (pptToMain != self.pptOnMainSite) {
@@ -889,7 +1088,7 @@ PLVLCRetryPlayViewDelegate
     [self.canvasView refreshCanvasViewWithStreamState:newestStreamState];
     
     if (newestStreamState == PLVChannelLiveStreamState_Live) {
-        if (!self.channelWatchNoDelay && self.inLinkMic == NO) {
+        if (!self.noDelayLiveWatching && self.inLinkMic == NO) {
             [self.floatView showFloatView:YES userOperat:NO];
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
             
@@ -945,10 +1144,20 @@ PLVLCRetryPlayViewDelegate
 
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter noDelayLiveStartUpdate:(BOOL)noDelayLiveStart noDelayLiveStartDidChanged:(BOOL)noDelayLiveStartDidChanged{
+    [self.skinView setPlayButtonWithPlaying:noDelayLiveStart];
     if (noDelayLiveStartDidChanged) {
         if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveStartUpdate:)]) {
             [self.delegate plvLCMediaAreaView:self noDelayLiveStartUpdate:noDelayLiveStart];
         }
+    }
+}
+
+/// [快直播] 快直播 网络质量检测
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter quickLiveNetworkQuality:(PLVLivePlayerQuickLiveNetworkQuality)netWorkQuality {
+    if (netWorkQuality == PLVLivePlayerQuickLiveNetworkQuality_Poor) {
+        [self showNetworkQualityPoorView];
+    } else if (netWorkQuality == PLVLivePlayerQuickLiveNetworkQuality_Middle) {
+        [self showNetworkQualityMiddleView];
     }
 }
 
@@ -994,6 +1203,16 @@ PLVLCRetryPlayViewDelegate
         self.logoView = logo;
         [logo addAtView:self.canvasView];
     }
+}
+
+#pragma mark - Action
+- (void)swithDelayLiveClick:(UIButton *)button {
+    [self switchToNoDelayWatchMode:NO];
+    self.networkQualityPoorView.hidden = YES;
+}
+
+- (void)closeNetworkTipsViewClick:(UIButton *)button {
+    self.networkQualityPoorView.hidden = YES;
 }
 
 @end

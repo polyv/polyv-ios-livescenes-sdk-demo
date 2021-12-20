@@ -31,6 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前屏幕方向，根据setupDeviceOrientation:方法配置的值返回对应屏幕方向
 @property (nonatomic, assign, readonly) UIInterfaceOrientationMask interfaceOrientationMask;
 
+/// 设备方向
+@property (nonatomic, assign, readonly) UIDeviceOrientation deviceOrientation;
+
+
 /// 单例
 + (instancetype)sharedUtils;
 

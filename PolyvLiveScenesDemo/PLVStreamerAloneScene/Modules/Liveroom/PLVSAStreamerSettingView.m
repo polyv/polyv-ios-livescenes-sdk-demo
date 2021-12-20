@@ -481,6 +481,10 @@ static NSString *const EnterTips = @"点击输入直播标题";
 }
 
 - (void)cameraReverseAction:(UIButton *)sender {
+    sender.userInteractionEnabled = NO; //控制翻转按钮点击间隔，防止短时间内重复点击
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+         sender.userInteractionEnabled = YES;
+     });
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewCameraReverseButtonClick)]) {
         [self.delegate streamerSettingViewCameraReverseButtonClick];
     }
@@ -488,6 +492,10 @@ static NSString *const EnterTips = @"点击输入直播标题";
 
 - (void)mirrorAction:(UIButton *)sender {
     sender.selected = !sender.selected;
+    sender.userInteractionEnabled = NO; //控制镜像按钮点击间隔，防止短时间内重复点击
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+         sender.userInteractionEnabled = YES;
+     });
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewMirrorButtonClickWithMirror:)]) {
         [self.delegate streamerSettingViewMirrorButtonClickWithMirror:sender.selected];
     }
@@ -499,12 +507,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
 
 - (void)orientationAction:(UIButton *)sender {
     sender.selected = !sender.selected;
-    self.canAutorotate = YES;
     UIDeviceOrientation orientation = sender.selected ? UIDeviceOrientationLandscapeLeft : UIDeviceOrientationPortrait;
-    [PLVFdUtil changeDeviceOrientation:orientation];
-    self.canAutorotate = NO;
-    // 缓存设备方向
-    [[PLVSAUtils sharedUtils] setupDeviceOrientation:orientation];
+    [self changeDeviceOrientation:orientation];
 }
 
 
@@ -614,6 +618,14 @@ static NSString *const EnterTips = @"点击输入直播标题";
 
 - (void)enableOrientationButton:(BOOL)enable{
     self.orientationButton.enabled = enable;
+}
+
+- (void)changeDeviceOrientation:(UIDeviceOrientation)orientation {
+    self.canAutorotate = YES;
+    [PLVFdUtil changeDeviceOrientation:orientation];
+    self.canAutorotate = NO;
+    // 缓存设备方向
+    [[PLVSAUtils sharedUtils] setupDeviceOrientation:orientation];
 }
 
 @end

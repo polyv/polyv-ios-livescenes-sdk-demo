@@ -93,6 +93,10 @@ PLVSocketManagerProtocol
             [self.jsBridge registerSocketEventFunction];
             [self.jsBridge registerVideoDurationFunction];
             [self.jsBridge registerChangePPTPositionFunction];
+            // 云课堂场景，需要监听registerWatchPPTStatusChangeFunction，用于本地翻页
+            if (self.scene == PLVDocumentViewSceneCloudClass) {
+                [self.jsBridge registerWatchPPTStatusChangeFunction];
+            }
         }
     }
     
@@ -200,6 +204,10 @@ PLVSocketManagerProtocol
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];
     [request setCachePolicy:NSURLRequestReloadIgnoringCacheData];
     [self.webView loadRequest:request];
+}
+
+- (void)changePPTPageWithType:(PLVChangePPTPageType)type {
+    [self.jsBridge changePPTPageWithType:type];
 }
 
 #pragma mark 观看专用方法
@@ -539,7 +547,20 @@ PLVSocketManagerProtocol
     }
 }
 
+- (void)jsbridge_pageStatusChangeWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber totalPage:(NSUInteger)totalPage pptStep:(NSUInteger)step maxNextNumber:(NSUInteger)maxNextNumber {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(documentView_pageStatusChangeWithAutoId:pageNumber:totalPage:pptStep:maxNextNumber:)]) {
+        plv_dispatch_main_async_safe(^{
+            [self.delegate documentView_pageStatusChangeWithAutoId:autoId pageNumber:pageNumber totalPage:totalPage pptStep:step maxNextNumber:maxNextNumber];
+        })
+    }
+}
+
 - (void)jsbridge_sendSocketEventWithJson:(id)jsonObject {
+    // 当前场景不是推流场景（三分屏、纯视频开播）不需要帮JS转发socket消息
+    if (self.scene != PLVDocumentViewSceneStreamer) {
+        return;
+    }
     if (jsonObject) {
         NSDictionary *tempDict = nil;
         if ([jsonObject isKindOfClass:[NSString class]]) {

@@ -119,6 +119,12 @@
         
         // 其他UI
         self.landscapeInputView.frame = self.bounds;
+        
+        // PPT翻页视图
+        CGFloat documentToolViewWidht = self.documentToolView.viewWidth;
+        CGFloat documentToolHeight = 36;
+        CGFloat documentToolPadding = 12;
+        self.documentToolView.frame = CGRectMake((viewWidth - documentToolViewWidht) / 2, CGRectGetMinY(self.guideChatLabel.frame) - documentToolHeight - documentToolPadding, documentToolViewWidht , documentToolHeight);
     }
 }
 

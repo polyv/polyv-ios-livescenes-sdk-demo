@@ -44,6 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param urlString 封面图的url
 - (void)setSplashImageWithURLString:(NSString *)urlString;
 
+/// pauseWatchNoDelayImageView 隐藏/显示
+///
+/// @param show pauseWatchNoDelayImageView 隐藏或显示 (YES:显示 NO:隐藏)
+- (void)pauseWatchNoDelayImageViewShow:(BOOL)show;
+
 @end
 
 NS_ASSUME_NONNULL_END

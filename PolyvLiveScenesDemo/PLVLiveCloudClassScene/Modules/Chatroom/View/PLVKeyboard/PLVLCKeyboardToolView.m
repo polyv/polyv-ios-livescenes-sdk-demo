@@ -273,6 +273,7 @@ PLVLCKeyboardMoreViewDelegate
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidHide:) name:UIKeyboardDidHideNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onDeviceOrientationDidChange) name:UIDeviceOrientationDidChangeNotification object:nil];
     }
     return self;
 }
@@ -467,6 +468,13 @@ PLVLCKeyboardMoreViewDelegate
 
 - (void)keyboardDidHide:(NSNotification *)notification {
 //    [self tapAction:nil]; // 第三方键盘，点击隐藏键盘按钮缩起键盘仍需要使用该方法监听
+}
+
+- (void)onDeviceOrientationDidChange {
+    UIDevice *device = [UIDevice currentDevice] ;
+    if (device.orientation == UIDeviceOrientationLandscapeLeft && self.toolState == PLVLCKeyboardToolStateKeyboard) {
+        self.toolState = PLVLCKeyboardToolStateNormal;
+    }
 }
 
 #pragma mark - UITextView Delegate

@@ -117,11 +117,17 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     PLVRoomUser *roomUser = roomData.roomUser;
     PLVSocketUserType userType = [PLVRoomUser sockerUserTypeWithRoomUserType:roomUser.viewerType];
+    //新增自定义参数字典，如果未传递则传空
+    NSDictionary *extraParam = @{
+        @"liveParam4" : roomData.customParam.liveParam4 ? : @"",
+        @"liveParam5" : roomData.customParam.liveParam5 ? : @""
+    };
     // Socket 登录管理
     [[PLVSocketManager sharedManager] loginWithChannelId:roomData.channelId
                                                 viewerId:roomUser.viewerId
                                               viewerName:roomUser.viewerName
                                                avatarUrl:roomUser.viewerAvatar
+                                              extraParam:extraParam
                                                    actor:roomUser.actor
                                                 userType:userType];
 }

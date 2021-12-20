@@ -10,6 +10,7 @@
 
 #import "PLVLCMediaCountdownTimeView.h"
 #import "PLVProgressSlider.h"
+#import "PLVLCDocumentToolView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -69,6 +70,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @property (nonatomic, strong) UILabel * diagonalsLabel;   // 仅直播回放；斜杆符号文本框
 @property (nonatomic, strong) UILabel * durationLabel;    // 仅直播回放
 @property (nonatomic, strong) PLVProgressSlider * progressSlider; // 仅直播回放
+@property (nonatomic, strong) PLVLCDocumentToolView *documentToolView; // 文档工具视图
 
 - (CGFloat)getLabelTextWidth:(UILabel *)label;
 
@@ -102,6 +104,10 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 /// 工具方法 (与 PLVLCBasePlayerSkinView 类本身没有逻辑关联，仅业务上相关)
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView;
+
+/// 设置PPT是否在主页
+/// @param mainSpeakerPPTOnMain ppt是否在主讲页
+- (void)setupMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain;
 
 @end
 
@@ -138,6 +144,14 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 - (void)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView didChangedSkinShowStatus:(BOOL)skinShow;
 
 - (void)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView sliderDragEnd:(CGFloat)currentSliderProgress;
+
+/// 点击 翻页操作 时调用
+/// @param skinView 媒体播放器皮肤视图
+/// @param type 翻页类型
+- (void)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView didChangePageWithType:(PLVChangePPTPageType)type;
+
+/// 询问是否需要显示 翻页工具视图
+- (BOOL)plvLCBasePlayerSkinViewShouldShowDocumentToolView:(PLVLCBasePlayerSkinView *)skinView;
 
 @end
 

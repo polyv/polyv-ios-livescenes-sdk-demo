@@ -47,6 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前直播的 码率/清晰度 (暂时仅直播支持)
 @property (nonatomic, copy, readonly) NSString * currentCodeRate;
 
+/// 当前播放器是否正在播放音频
+@property (nonatomic, assign, readonly) BOOL audioMode;
+
 /// 当前直播回放的 播放时间点 (单位:秒；仅非直播场景下有值)
 @property (nonatomic, readonly) NSTimeInterval currentPlaybackTime;
 
@@ -79,6 +82,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 该频道是否观看 ‘无延迟直播’
 @property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
+
+/// 该频道是否观看 ‘快直播’
+@property (nonatomic, assign, readonly) BOOL channelWatchQuickLive;
+
+/// 当前是否为无延迟观看模式（包括无延迟直播和快直播）
+@property (nonatomic, assign, readonly) BOOL noDelayWatchMode;
+
+/// 播放器当前是否正在播放无延迟直播
+@property (nonatomic, assign, readonly) BOOL noDelayLiveWatching;
+
+/// 播放器当前是否正在播放快直播
+@property (nonatomic, assign, readonly) BOOL quickLiveWatching;
 
 /// 无延迟直播的当前 ‘开始结束状态’
 @property (nonatomic, assign, readonly) BOOL currentNoDelayLiveStart;
@@ -137,6 +152,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 开启或关闭 音频模式
 - (void)switchLiveToAudioMode:(BOOL)audioMode;
+
+/// 开启或关闭 无延迟直播模式
+- (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode;
 
 #pragma mark 非直播相关
 /// 跳至某个时间点 (单位: 秒)
@@ -208,6 +226,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param noDelayLiveStart 当前最新的 ’无延迟直播开始结束状态’
 /// @param noDelayLiveStartDidChanged ’无延迟直播开始结束状态‘ 相对上一次 是否发生变化
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter noDelayLiveStartUpdate:(BOOL)noDelayLiveStart noDelayLiveStartDidChanged:(BOOL)noDelayLiveStartDidChanged;
+
+/// [快直播] 快直播网络质量检测
+///
+/// @param playerPresenter 播放器管理器
+/// @param netWorkQuality 当前网络质量
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter quickLiveNetworkQuality:(PLVLivePlayerQuickLiveNetworkQuality)netWorkQuality;
 
 #pragma mark 非直播相关
 /// 直播回放播放器 定时返回当前播放进度

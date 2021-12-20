@@ -30,6 +30,8 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
+static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
+
 /// PLVSAStreamerViewController 所处的四种状态，不同状态下，展示不同的页面
 typedef NS_ENUM(NSInteger, PLVSAStreamerViewState) {
     PLVSAStreamerViewStateBeforeSteam = 0, // 开播前的设置页
@@ -50,6 +52,9 @@ PLVSAStreamerHomeViewDelegate
 #pragma mark 模块
 @property (nonatomic, strong) PLVStreamerPresenter *streamerPresenter;
 @property (nonatomic, strong) PLVMemberPresenter *memberPresenter;
+
+@property (nonatomic, copy) void (^tryStartClassBlock) (void); // 用于无法立刻’尝试开始上课‘，后续需自动’尝试开始‘上课的场景；执行优先级低于 [tryResumeClassBlock]
+@property (nonatomic, copy) void (^tryResumeClassBlock) (void); // 用于在合适的时机，进行’恢复直播‘处理；执行优先级高于 [tryStartClassBlock]
 
 #pragma mark UI
 /// view hierarchy
@@ -90,6 +95,7 @@ PLVSAStreamerHomeViewDelegate
 
 #pragma mark 数据
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
+@property (nonatomic, assign, readonly) NSString * channelId; // 当前频道号
 
 @end
 
@@ -117,6 +123,7 @@ PLVSAStreamerHomeViewDelegate
     [self setupUI];
     [self setupModule];
     [self preapareStartClass];
+    [self clearDatedChannelStreamInfo];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -229,6 +236,8 @@ PLVSAStreamerHomeViewDelegate
             }
             // 更新界面UI
             [weakSelf updateViewState:PLVSAStreamerViewStateSteaming];
+            // 保存当前上课数据
+            [weakSelf saveChannelStreamInfo];
         };
     }
     return _countDownView;
@@ -244,6 +253,10 @@ PLVSAStreamerHomeViewDelegate
         };
     }
     return _finishView;
+}
+
+- (NSString *)channelId{
+    return [PLVRoomDataManager sharedManager].roomData.channelId;
 }
 
 #pragma mark Initialize
@@ -367,30 +380,67 @@ PLVSAStreamerHomeViewDelegate
             [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving = NO;
             [weakSelf.streamerPresenter finishClass];
         } confirmActionTitle:@"恢复直播" confirmActionBlock:^{
-            [weakSelf tryStartClass:NO];
+            [weakSelf tryResumeDeviceOrientation];
+            [weakSelf.streamerPresenter joinRTCChannel];
+            weakSelf.tryResumeClassBlock = ^{
+                PLVResolutionType type = [PLVRoomDataManager sharedManager].roomData.maxResolution;
+                [weakSelf streamerSettingViewStartButtonClickWithResolutionType:type];
+            };
         }];
     }
 }
 
-- (void)tryStartClass:(BOOL)autoTry {
-    if (self.streamerPresenter.micCameraGranted) {
+/// 尝试开始上课
+///
+/// @note 若上课条件不符，将可能上课失败；并根据已重试次数，进行自动重试；
+///
+/// @param retryCount 已重试次数 (传值 0 表示首次调用)
+- (void)tryStartClassRetryCount:(NSInteger)retryCount {
+    BOOL needRetry = NO;
+    __weak typeof(self) weakSelf = self;
+    if (self.streamerPresenter.micCameraGranted &&
+        self.streamerPresenter.inRTCRoom) {
         if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) {
-            NSString * tips = autoTry ? @"网络信号弱，持续检测中，请稍候再试" : @"网络检测中，请稍候";
-            [PLVSAUtils showToastInHomeVCWithMessage:tips];
-            [self.settingView enableOrientationButton:autoTry];
-            if (!autoTry) {
-                __weak typeof(self) weakSelf = self;
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(2 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [weakSelf tryStartClass:YES];
-                });
+            // 麦克风和摄像头当前全部关闭时
+            if (!self.streamerPresenter.currentMicOpen &&
+                !self.streamerPresenter.currentCameraOpen) {
+                /// 开始上课倒数
+                [self updateViewState:PLVSAStreamerViewStateBeginSteam];
+            }else{
+                needRetry = YES;
             }
-        }else if(self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown){
-            [PLVSAUtils showToastInHomeVCWithMessage:@"网络已断开，请检查网络"];
-        }else{ // 开始上课倒数
+        } else if(self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
+            needRetry = YES;
+        }else{
+            /// 开始上课倒数
             [self updateViewState:PLVSAStreamerViewStateBeginSteam];
         }
     }else{
-        [self preapareStartClass];
+        if (!self.streamerPresenter.micCameraGranted) {
+            /// 重新‘准备上课’
+            [self preapareStartClass];
+        } else if(!self.streamerPresenter.inRTCRoom) {
+            /// 重新‘加入RTC房间‘
+            [self.streamerPresenter joinRTCChannel];
+            self.tryStartClassBlock = ^{
+                [weakSelf tryStartClassRetryCount:0];
+            };
+        }
+    }
+        
+    if (needRetry) {
+        /// 需要重试
+        if (retryCount >= 0 && retryCount < 3) {
+            retryCount++;
+            NSInteger waitTime = (1.5 * retryCount);
+            [PLVSAUtils showToastWithMessage:@"处理中..." inView:self.view afterDelay:waitTime];
+            
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(waitTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [weakSelf tryStartClassRetryCount:retryCount];
+            });
+        }else{
+            [PLVSAUtils showAlertWithMessage:@"网络当前不佳，请稍后再试" cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:@"知道了" confirmActionBlock:nil];
+        }
     }
 }
 
@@ -422,6 +472,65 @@ PLVSAStreamerHomeViewDelegate
     [[PLVSocketManager sharedManager] logout];
 }
 
+#pragma mark 续播
+/// 存储频道开播信息
+- (void)saveChannelStreamInfo {
+    NSMutableDictionary *dict = [[[NSUserDefaults standardUserDefaults] objectForKey:kPLVSAUserDefaultsUserStreamInfo] mutableCopy];
+    if (![PLVFdUtil checkDictionaryUseable:dict]) {
+        dict = [NSMutableDictionary dictionary];
+    }
+    /// 保存屏幕方向和开播时间
+    if ([PLVFdUtil checkStringUseable:self.channelId]) {
+        UIDeviceOrientation orientation = [PLVSAUtils sharedUtils].deviceOrientation;
+        NSInteger timeInterval = (NSInteger)[[NSDate date] timeIntervalSince1970];
+        dict[self.channelId] = @{@"orientation" : @(orientation),
+                                 @"startTime" : @(timeInterval)};
+        [[NSUserDefaults standardUserDefaults] setObject:dict forKey:kPLVSAUserDefaultsUserStreamInfo];
+    }
+}
+
+/// 读取频道开播信息
+- (NSDictionary *)getCurrentChannelStoringStreamInfo{
+    NSDictionary *dict = [[NSUserDefaults standardUserDefaults] objectForKey:kPLVSAUserDefaultsUserStreamInfo];
+    if ([PLVFdUtil checkDictionaryUseable:dict] &&
+        [PLVFdUtil checkStringUseable:self.channelId]) {
+        NSDictionary *userDict = dict[self.channelId];
+        return userDict;
+    }
+    return nil;
+}
+
+/// 清理过期频道开播信息
+- (void)clearDatedChannelStreamInfo {
+    NSInteger startTime = 0;
+    NSDictionary *userDict = [self getCurrentChannelStoringStreamInfo];
+    startTime = [userDict[@"startTime"] integerValue];
+    
+    NSInteger oneDay = 86400;
+    NSInteger currentTime = (NSInteger)[[NSDate date] timeIntervalSince1970];
+    if ((currentTime - startTime) > oneDay) {
+        NSMutableDictionary *dict = [[[NSUserDefaults standardUserDefaults] objectForKey:kPLVSAUserDefaultsUserStreamInfo] mutableCopy];
+        if ([PLVFdUtil checkDictionaryUseable:dict] &&
+            [PLVFdUtil checkStringUseable:self.channelId]) {
+            [dict removeObjectForKey:self.channelId];
+            [[NSUserDefaults standardUserDefaults] setObject:dict forKey:kPLVSAUserDefaultsUserStreamInfo];
+        }
+    }
+}
+
+/// 恢复屏幕方向
+- (void)tryResumeDeviceOrientation {
+    UIDeviceOrientation orientation = UIDeviceOrientationPortrait;
+    NSDictionary *userDict = [self getCurrentChannelStoringStreamInfo];
+    orientation = [userDict[@"orientation"] longValue];
+    
+    if (orientation != UIDeviceOrientationPortrait) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.settingView changeDeviceOrientation:orientation];
+        });
+    }
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark PLVMemberPresenterDelegate
@@ -445,7 +554,11 @@ PLVSAStreamerHomeViewDelegate
 #pragma mark PLVSocketManager Protocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
-    [self.streamerPresenter joinRTCChannel];
+    if (![PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
+        /// 正常场景下（即非异常退出而临时断流的场景）则正常加入RTC房间
+        /// 原因：异常退出场景下，加入RTC房间的操作，应延后至用户确认“是否恢复直播”后
+        [self.streamerPresenter joinRTCChannel];
+    }
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
@@ -493,6 +606,19 @@ PLVSAStreamerHomeViewDelegate
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRtcRoomJoinStatus:(PLVStreamerPresenterRoomJoinStatus)currentRtcRoomJoinStatus
             inRTCRoomChanged:(BOOL)inRTCRoomChanged
                    inRTCRoom:(BOOL)inRTCRoom {
+    if (inRTCRoomChanged) {
+        if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+            /// Block执行
+            if (self.tryResumeClassBlock) {
+                self.tryResumeClassBlock();
+            } else if(self.tryStartClassBlock) {
+                self.tryStartClassBlock();
+            }
+            /// 无论是否调用，均进行清空处理
+            self.tryResumeClassBlock = nil;
+            self.tryStartClassBlock = nil;
+        }
+    }
 }
 
 /// ‘网络状态’ 发生变化
@@ -648,7 +774,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     PLVBLinkMicStreamScale streamScale =[PLVSAUtils sharedUtils].isLandscape? PLVBLinkMicStreamScale16_9:PLVBLinkMicStreamScale9_16;
     [self.streamerPresenter setupStreamScale:streamScale];
     [self.streamerPresenter setupStreamQuality:streamQuality];
-    [self tryStartClass:NO];
+    [self tryStartClassRetryCount:0];
 }
 
 - (void)streamerSettingViewCameraReverseButtonClick {

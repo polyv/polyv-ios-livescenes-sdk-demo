@@ -33,6 +33,8 @@ PLVAdvViewDelegate
 @property (nonatomic, assign) BOOL needShowLoading;
 @property (nonatomic, assign) BOOL keepShowAdv;
 @property (nonatomic, assign) BOOL currentNoDelayLiveStart;
+@property (nonatomic, assign) PLVLivePlayerQuickLiveNetworkQuality networkQuality;
+@property (nonatomic, assign) NSInteger networkQualityRepeatCount;
 
 #pragma mark UI
 /// view hierarchy
@@ -121,6 +123,26 @@ PLVAdvViewDelegate
 
 - (BOOL)channelWatchNoDelay{
     return [PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay;
+}
+
+- (BOOL)channelWatchQuickLive{
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.quickLiveEnabled;
+}
+
+- (BOOL)noDelayWatchMode {
+    return self.livePlayer.noDelayWatchMode;
+}
+
+- (BOOL)noDelayLiveWatching {
+    return self.livePlayer.noDelayLiveWatching;
+}
+
+- (BOOL)quickLiveWatching {
+    return self.livePlayer.quickLiveWatching;
+}
+
+- (BOOL)audioMode {
+    return self.livePlayer.audioMode;
 }
 
 #pragma mark Setter
@@ -217,6 +239,10 @@ PLVAdvViewDelegate
     [self.livePlayer switchToLineIndex:lineIndex codeRate:self.currentCodeRate];
 }
 
+- (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {
+    [self.livePlayer switchToNoDelayWatchMode:noDelayWatchMode];
+}
+
 #pragma mark 非直播相关
 - (void)seekLivePlaybackToTime:(NSTimeInterval)toTime{
     if (self.advView.playing) { // 片头广告显示中
@@ -250,6 +276,7 @@ PLVAdvViewDelegate
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.channelWatchNoDelay = roomData.menuInfo.watchNoDelay;
+        self.livePlayer.channelWatchQuickLive = roomData.menuInfo.quickLiveEnabled;
         [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
         
         self.livePlayer.videoToolBox = NO;
@@ -545,7 +572,7 @@ PLVAdvViewDelegate
         [self.delegate playerPresenter:self streamStateUpdate:newestStreamState streamStateDidChanged:streamStateDidChanged];
     }
     
-    if (livePlayer.channelWatchNoDelay) {
+    if (livePlayer.noDelayLiveWatching) {
         BOOL noDelayLiveStart = (newestStreamState == PLVChannelLiveStreamState_Live);
         BOOL noDelayLiveStartDidChanged = (noDelayLiveStart != self.currentNoDelayLiveStart);
         self.currentNoDelayLiveStart = noDelayLiveStart;
@@ -626,6 +653,21 @@ PLVAdvViewDelegate
         }
     }else{
         self.warmUpImageView.hidden = YES;
+    }
+}
+
+/// 直播播放器（快直播）网络质量回调
+- (void)plvLivePlayer:(PLVLivePlayer *)livePlayer quickLiveNetworkQuality:(PLVLivePlayerQuickLiveNetworkQuality)netWorkQuality {
+    if (self.networkQuality == netWorkQuality) {
+        self.networkQualityRepeatCount ++;
+    }
+    self.networkQuality = netWorkQuality;
+    if (self.networkQualityRepeatCount == 2) {
+        self.networkQualityRepeatCount = 0;
+        self.networkQuality = PLVLivePlayerQuickLiveNetworkQuality_NoConnection;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:quickLiveNetworkQuality:)]) {
+            [self.delegate playerPresenter:self quickLiveNetworkQuality:netWorkQuality];
+        }
     }
 }
 

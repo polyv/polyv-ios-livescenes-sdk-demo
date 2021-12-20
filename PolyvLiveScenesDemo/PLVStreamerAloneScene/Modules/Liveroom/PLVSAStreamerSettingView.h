@@ -32,6 +32,9 @@
 /// 是否禁用横竖屏按钮
 - (void)enableOrientationButton:(BOOL)enable;
 
+/// 旋转屏幕
+- (void)changeDeviceOrientation:(UIDeviceOrientation)orientation;
+
 @end
 
 @protocol PLVSAStreamerSettingViewDelegate <NSObject>

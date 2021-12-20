@@ -22,7 +22,7 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 
 @protocol PLVDocumentViewDelegate <NSObject>
 
-@required
+@optional
 #pragma mark 多场景通用回调
 
 ///  webView加载完成回调
@@ -31,7 +31,6 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 ///  webView加载失败回调
 - (void)documentView_webViewLoadFailWithError:(NSError *)error;
 
-@optional
 #pragma mark 观看场景回调
 
 /// 获取刷新PPT的延迟时间
@@ -72,6 +71,18 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
                                 pageNumber:(NSUInteger)pageNumber
                                  totalPage:(NSUInteger)totalPage
                                    pptStep:(NSUInteger)step;
+
+/// 文档、白板页码变化的回调
+/// @param autoId 文档autoId
+/// @param pageNumber 文档当前页码
+/// @param totalPage 文档总页码
+/// @param step 文档动画步数（无动画的文档为0）
+/// @param maxNextNumber 最大的下一页页码
+- (void)documentView_pageStatusChangeWithAutoId:(NSUInteger)autoId
+                                pageNumber:(NSUInteger)pageNumber
+                                 totalPage:(NSUInteger)totalPage
+                                   pptStep:(NSUInteger)step
+                                  maxNextNumber:(NSUInteger)maxNextNumber;
 
 /// app在直播过程中如果异常退出，可继续上次的直播，但需要获取上次直播文档
 /// @param autoId 文档autoId
@@ -119,6 +130,11 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 /// 加载 PPT 链接
 /// @param paramString h5链接后面的参数字符串（key=value&key=value&...）
 - (void)loadRequestWitParamString:(NSString * _Nullable)paramString;
+
+/// 白板、PPT内部翻页
+/// @note 区别 'changePPTWithAutoId:pageNumber:'，不可用于白板与PPT之间的切换，或打开另一份PPT文档
+/// @param type 翻页类型
+- (void)changePPTPageWithType:(PLVChangePPTPageType)type;
 
 #pragma mark - 观看专用方法(scene == PLVDocumentViewSceneCloudClass/PLVDocumentViewSceneEcommerce 时方生效）
 
