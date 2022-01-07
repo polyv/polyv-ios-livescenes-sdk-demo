@@ -60,22 +60,20 @@
     CGFloat titleX = isPad ? 56 : (isLandscape ? 32 : 16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
+    NSMutableArray *buttonArray = [NSMutableArray arrayWithArray:@[self.cameraButton,
+                                                                   self.micphoneButton,
+                                                                   self.cameraReverseButton,
+                                                                   self.mirrorButton,
+                                                                   self.flashButton,
+                                                                   self.cameraBitRateButton]];
+    self.closeRoomButton.hidden = YES;
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType != PLVRoomUserTypeGuest) {
+        self.closeRoomButton.hidden = NO;
+        [buttonArray addObject:self.closeRoomButton];
+    }
     
-    [self setButtonFrameWithArray:@[self.cameraButton,
-                                    self.micphoneButton,
-                                    self.cameraReverseButton,
-                                    self.mirrorButton,
-                                    self.flashButton,
-                                    self.cameraBitRateButton,
-                                    self.closeRoomButton]];
-    
-    [self setButtonInsetsWithArray:@[self.cameraButton,
-                                     self.micphoneButton,
-                                     self.cameraReverseButton,
-                                     self.mirrorButton,
-                                     self.flashButton,
-                                     self.cameraBitRateButton,
-                                     self.closeRoomButton]];
+    [self setButtonFrameWithArray:buttonArray];
+    [self setButtonInsetsWithArray:buttonArray];
 }
 
 
@@ -442,6 +440,7 @@
 }
 
 - (void)cameraBitRateButtonAction {
+    [self dismiss];
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapCameraBitRateButton:)]) {
         [self.delegate moreInfoSheetDidTapCameraBitRateButton:self];

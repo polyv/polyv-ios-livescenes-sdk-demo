@@ -13,6 +13,7 @@
 #import "PLVLCSpeakMessageCell.h"
 #import "PLVLCChatroomViewModel.h"
 #import "PLVLCUtils.h"
+#import "PLVLCImageMessageCell.h"
 
 @interface PLVLCQuizViewController ()<
 PLVLCKeyboardToolViewDelegate,
@@ -199,21 +200,55 @@ UITableViewDataSource
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    static NSString *cellIdentify = @"cellIdentify";
-    PLVLCSpeakMessageCell *cell = (PLVLCSpeakMessageCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
-    if (!cell) {
-        cell = [[PLVLCSpeakMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] privateChatArray] count]) {
+        return [UITableViewCell new];
     }
-    PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel].privateChatArray objectAtIndex:indexPath.row];
-    [cell updateWithModel:model loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId cellWidth:self.tableView.frame.size.width];
-    return cell;
+    
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel] privateChatArray][indexPath.row];
+    
+    if ([PLVLCImageMessageCell isModelValid:model]) {
+        static NSString *imageMessageCellIdentify = @"PLVLCQuizImageMessageCell";
+        PLVLCImageMessageCell *cell = (PLVLCImageMessageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCImageMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        return cell;
+    } else if([PLVLCSpeakMessageCell isModelValid:model]) {
+        static NSString *cellIdentify = @"PLVLCQuizSpeakMessageCell";
+        PLVLCSpeakMessageCell *cell = (PLVLCSpeakMessageCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
+        if (!cell) {
+            cell = [[PLVLCSpeakMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        return cell;
+    } else {
+        static NSString *cellIdentify = @"cellIdentify";
+        UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
+        if (!cell) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+        }
+        return cell;
+    }
 }
 
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
+        return 0.0;
+    }
+    
+    CGFloat cellHeight = 0.0;
     PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel].privateChatArray objectAtIndex:indexPath.row];
-    CGFloat cellHeight = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    if ([PLVLCImageMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCSpeakMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else {
+        cellHeight = 0.0;
+    }
     return cellHeight;
 }
 

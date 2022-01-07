@@ -84,8 +84,8 @@
     }
     PLVECMoreViewItem *item = self.items[selectedIndex];
     item.selected = button.selected = !button.isSelected;
-    if ([self.delegate respondsToSelector:@selector(moreView:didSelectItem:index:)]) {
-        [self.delegate moreView:self didSelectItem:item index:selectedIndex];
+    if ([self.delegate respondsToSelector:@selector(moreView:didSelectItem:)]) {
+        [self.delegate moreView:self didSelectItem:item];
     }
 }
 

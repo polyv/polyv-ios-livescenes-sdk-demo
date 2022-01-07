@@ -28,9 +28,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVSAChatroomListViewDelegate> delegate;
 
-/// 网络状态，发送消息前判断网络是否异常
-@property (nonatomic, assign) NSInteger netState;
-
 /// 发送消息
 - (void)didSendMessage;
 

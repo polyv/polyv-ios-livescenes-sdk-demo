@@ -34,6 +34,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param rtcViewShow rtcview 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)rtcViewShow:(BOOL)rtcViewShow;
 
+/// 播放器LOGO 隐藏/显示
+///
+/// @param logoViewShow 播放器LOGO 隐藏或显示 (YES:显示 NO:隐藏)
+- (void)logoViewShow:(BOOL)logoViewShow;
+
 /// 更新 ‘网络状态视图’ 状态
 ///
 /// @param status 网络状态值 (对应不同的网络状态图标)

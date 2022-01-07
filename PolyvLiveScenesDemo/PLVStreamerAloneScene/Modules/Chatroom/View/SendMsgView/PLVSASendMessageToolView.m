@@ -30,6 +30,7 @@
         [self addSubview:self.emojiButton];
         [self addSubview:self.imageButton];
         [self addSubview:self.textViewBgView];
+        [self addSubview:self.sendButton];
         [self.textViewBgView addSubview:self.textView];
         
         [self.textView addGestureRecognizer:self.tapGesture];
@@ -44,14 +45,27 @@
     CGFloat margin = 8;
     CGFloat safeLeft = [PLVSAUtils sharedUtils].areaInsets.left;
     CGFloat safeRight = [PLVSAUtils sharedUtils].areaInsets.right;
-    CGFloat rightViewWith = 28 * 2 + margin *3 + safeRight;
-    CGFloat textViewBgWidth = self.bounds.size.width - safeLeft - margin - rightViewWith;
+    CGFloat otherViewWith = 28 * 2 + margin *3 + safeRight;
+    CGFloat textViewBgViewLeft = safeLeft + margin;
+    CGFloat textViewBgWidth = self.bounds.size.width - textViewBgViewLeft - otherViewWith;
+    CGFloat emojiButtonLeft = textViewBgViewLeft + textViewBgWidth + margin;
     
-    self.textViewBgView.frame = CGRectMake(safeLeft + margin, 6, textViewBgWidth, 32);
+    if ([PLVSAUtils sharedUtils].isLandscape) {
+        otherViewWith = 28 * 2 + margin *3 + 64;
+        textViewBgViewLeft = safeLeft + 131;
+        emojiButtonLeft = safeLeft + 57;
+        textViewBgWidth = self.bounds.size.width - emojiButtonLeft - otherViewWith - safeRight - 60;
+    }
     
-    self.imageButton.frame = CGRectMake(self.bounds.size.width - safeRight - margin - 28, margin, 28, 28);
-    self.emojiButton.frame = CGRectMake(CGRectGetMinX(self.imageButton.frame) - margin - 28, margin, 28, 28);
+    self.emojiButton.frame = CGRectMake(emojiButtonLeft, margin, 28, 28);
+    self.imageButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + margin, margin, 28, 28);
+    
+    self.textViewBgView.frame = CGRectMake(textViewBgViewLeft, 6, textViewBgWidth, 32);
     self.textView.frame = CGRectMake(margin, 0, textViewBgWidth - 2 * 12, 32);
+    
+    self.sendButton.hidden = ![PLVSAUtils sharedUtils].isLandscape;
+    self.sendButton.frame = CGRectMake(CGRectGetMaxX(self.textViewBgView.frame) + margin, 6, 64, 32);
+    self.sendButtonLayer.frame = self.sendButton.bounds;
 }
 
 #pragma mark - [ Private Method ]
@@ -78,6 +92,31 @@
         [_imageButton addTarget:self action:@selector(imageButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _imageButton;
+}
+
+- (UIButton *)sendButton {
+    if (!_sendButton) {
+        _sendButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _sendButton.layer.cornerRadius = 16;
+        _sendButton.layer.masksToBounds = YES;
+        _sendButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        [_sendButton setTitleColor:PLV_UIColorFromRGB(@"#F0F1F5") forState:UIControlStateNormal];
+        [_sendButton setTitle:@"发送" forState:UIControlStateNormal];
+        [_sendButton.layer insertSublayer:self.sendButtonLayer atIndex:0];
+        [_sendButton addTarget:self action:@selector(sendButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _sendButton;
+}
+
+- (CAGradientLayer *)sendButtonLayer {
+    if (!_sendButtonLayer) {
+        _sendButtonLayer = [CAGradientLayer layer];
+        _sendButtonLayer.colors = @[(__bridge id)PLV_UIColorFromRGB(@"#0080FF").CGColor, (__bridge id)PLV_UIColorFromRGB(@"#3399FF").CGColor];
+        _sendButtonLayer.locations = @[@0.5, @1.0];
+        _sendButtonLayer.startPoint = CGPointMake(0, 0);
+        _sendButtonLayer.endPoint = CGPointMake(1.0, 0);
+    }
+    return _sendButtonLayer;
 }
 
 - (UIView *)textViewBgView {
@@ -119,6 +158,12 @@
 - (void)imageButtonAction {
     if (self.didTapImagePickerButton) {
         self.didTapImagePickerButton();
+    }
+}
+
+- (void)sendButtonAction {
+    if (self.didTapSendButton) {
+        self.didTapSendButton();
     }
 }
 

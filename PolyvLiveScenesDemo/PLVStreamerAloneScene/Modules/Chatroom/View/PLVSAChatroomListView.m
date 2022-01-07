@@ -180,27 +180,24 @@ UITableViewDataSource
 #pragma mark cell callback
 
 - (void)resendSpeakMessage:(PLVChatModel *)model {
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
+    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] resendSpeakMessage:model replyChatModel:model.replyMessage];
+    if (!success) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
     }
-    [[PLVSAChatroomViewModel sharedViewModel] resendSpeakMessage:model replyChatModel:model.replyMessage];
 }
 
 - (void)resendImageMessage:(PLVChatModel *)model {
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
+    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] resendImageMessage:model];
+    if (!success) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
     }
-    [[PLVSAChatroomViewModel sharedViewModel] resendImageMessage:model];
 }
 
 - (void)resendImageEmotionMessage:(PLVChatModel *)model {
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
+    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] resendImageEmotionMessage:model];
+    if (!success) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
     }
-    [[PLVSAChatroomViewModel sharedViewModel] resendImageEmotionMessage:model];
 }
 
 - (void)didTapReplyMenuItem:(PLVChatModel *)model {
@@ -217,11 +214,6 @@ UITableViewDataSource
        [self.delegate respondsToSelector:@selector(chatroomListViewDidScrollTableViewUp:)]) {
         [self.delegate chatroomListViewDidScrollTableViewUp:self];
     }
-}
-
-#pragma mark 网络是否可用
-- (BOOL)netCan{
-    return self.netState > 0 && self.netState < 4;
 }
 
 #pragma mark - Event

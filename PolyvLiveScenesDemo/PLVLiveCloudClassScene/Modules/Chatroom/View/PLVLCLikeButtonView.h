@@ -29,6 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVLCLikeButtonViewDelegate> delegate;
 
+/// 设置点赞动画
+/// @param likeCount 当前点赞数量
+- (void)setupLikeAnimationWithCount:(NSInteger)likeCount;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -12,6 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 @class PLVSAToolbarAreaView;
 @protocol PLVSAToolbarAreaViewDelegate <NSObject>
 
+/// 连麦布局切换按钮回调
+- (void)toolbarAreaViewDidLinkMicLayoutSwitchButton:(PLVSAToolbarAreaView *)toolbarAreaView layoutSwitchButtonSelected:(BOOL)selected;
+
 /// 点击连麦按钮回调
 - (void)toolbarAreaViewDidTapLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected;
 
@@ -20,7 +23,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 点击更多按钮回调
 - (void)toolbarAreaViewDidTapMoreButton:(PLVSAToolbarAreaView *)toolbarAreaView;
-
 
 @end
 
@@ -36,9 +38,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param show YES: 显示；NO：隐藏
 - (void)showMemberBadge:(BOOL)show;
 
-/// 网络状态，发送消息前判断网络是否异常
-/// @note 内部将会把 netState 传给 sendMessageView
-@property (nonatomic, assign) NSInteger netState;
+/// 更新状态栏连麦用户数量
+/// @note 更新用户数量时，会更新连麦布局切换按钮显示状态 （大于1时显示）
+/// @param onlineUserCount 连麦的用户数量
+- (void)updateOnlineUserCount:(NSInteger)onlineUserCount;
 
 @end
 

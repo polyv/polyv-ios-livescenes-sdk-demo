@@ -94,6 +94,7 @@ PLVSAStreamerHomeViewDelegate
 @property (nonatomic, strong) PLVSAStreamerFinishView *finishView; // 结束开播的结束页
 
 #pragma mark 数据
+@property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign, readonly) NSString * channelId; // 当前频道号
 
@@ -180,6 +181,15 @@ PLVSAStreamerHomeViewDelegate
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
+- (void)guestLogout {
+    [self.streamerPresenter finishClass];
+    // 退出聊天室，资源释放、状态位清零
+    [[PLVSAChatroomViewModel sharedViewModel] clear];
+    // 成员列表数据停止自动更新
+    [self.memberPresenter stop];
+    [self logout];
+}
+
 /// 启动、挂断视频连麦
 - (void)startLinkMic:(BOOL)start {
     NSString * suceessTitle = start ? @"已开启视频连麦，观众可以申请连麦" : @"已挂断所有连麦";
@@ -259,6 +269,10 @@ PLVSAStreamerHomeViewDelegate
     return [PLVRoomDataManager sharedManager].roomData.channelId;
 }
 
+- (PLVRoomUserType)viewerType{
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+}
+
 #pragma mark Initialize
 
 - (void)setupUI {
@@ -276,6 +290,7 @@ PLVSAStreamerHomeViewDelegate
     // 初始化推流模块
     self.streamerPresenter = [[PLVStreamerPresenter alloc] init];
     self.streamerPresenter.delegate = self;
+    self.streamerPresenter.preRenderContainer = self.linkMicAreaView;
     
     // 设置麦克风、摄像头默认配置
     self.streamerPresenter.micDefaultOpen = YES;
@@ -287,6 +302,8 @@ PLVSAStreamerHomeViewDelegate
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
     [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_Tile];
+    
+    self.viewState = PLVSAStreamerViewStateBeforeSteam;
 }
 
 - (void)getEdgeInset {
@@ -327,6 +344,8 @@ PLVSAStreamerHomeViewDelegate
     } else if (self.viewState == PLVSAStreamerViewStateSteaming) {
         [self setupHomeView];
         [self.view addSubview:self.homeView];
+        // 更新连麦列表
+        [self.linkMicAreaView reloadLinkMicUserWindows];
     } else if (self.viewState == PLVSAStreamerViewStateFinishSteam) {
         [self.linkMicAreaView clear];
         [self.view addSubview:self.finishView];
@@ -452,17 +471,22 @@ PLVSAStreamerHomeViewDelegate
 
 - (void)finishClass {
     plv_dispatch_main_async_safe(^{
-        // 结束上课
-        self.finishView.duration = self.streamerPresenter.pushStreamValidDuration;
-        self.finishView.startTime = self.streamerPresenter.startPushStreamTimestamp;
-        [self.streamerPresenter finishClass];
-        // 退出聊天室，资源释放、状态位清零
-        [PLVRoomLoginClient logout];
-        [[PLVSAChatroomViewModel sharedViewModel] clear];
-        // 成员列表数据停止自动更新
-        [self.memberPresenter stop];
-        // 更新界面UI
-        [self updateViewState:PLVSAStreamerViewStateFinishSteam];
+        if (self.viewerType == PLVRoomUserTypeGuest) {
+            [self.streamerPresenter finishClass];
+            [self.homeView startClass:NO];
+        } else {
+            // 结束上课
+            self.finishView.duration = self.streamerPresenter.pushStreamValidDuration;
+            self.finishView.startTime = self.streamerPresenter.startPushStreamTimestamp;
+            [self.streamerPresenter finishClass];
+            // 退出聊天室，资源释放、状态位清零
+            [PLVRoomLoginClient logout];
+            [[PLVSAChatroomViewModel sharedViewModel] clear];
+            // 成员列表数据停止自动更新
+            [self.memberPresenter stop];
+            // 更新界面UI
+            [self updateViewState:PLVSAStreamerViewStateFinishSteam];
+        }
     })
 }
 
@@ -557,7 +581,10 @@ PLVSAStreamerHomeViewDelegate
     if (![PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
         /// 正常场景下（即非异常退出而临时断流的场景）则正常加入RTC房间
         /// 原因：异常退出场景下，加入RTC房间的操作，应延后至用户确认“是否恢复直播”后
-        [self.streamerPresenter joinRTCChannel];
+        /// 讲师socket登录成功后可直接加入频道 嘉宾在进入房间后才可以加入频道
+        if (self.viewerType == PLVRoomUserTypeTeacher) {
+            [self.streamerPresenter joinRTCChannel];
+        }
     }
 }
 
@@ -607,7 +634,7 @@ PLVSAStreamerHomeViewDelegate
             inRTCRoomChanged:(BOOL)inRTCRoomChanged
                    inRTCRoom:(BOOL)inRTCRoom {
     if (inRTCRoomChanged) {
-        if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        if (self.viewerType == PLVRoomUserTypeTeacher) {
             /// Block执行
             if (self.tryResumeClassBlock) {
                 self.tryResumeClassBlock();
@@ -617,6 +644,12 @@ PLVSAStreamerHomeViewDelegate
             /// 无论是否调用，均进行清空处理
             self.tryResumeClassBlock = nil;
             self.tryStartClassBlock = nil;
+        } else if (self.viewerType == PLVRoomUserTypeGuest) {
+            if (inRTCRoom) {
+                [self startClass];
+            } else {
+                [self finishClass];
+            }
         }
     }
 }
@@ -624,7 +657,18 @@ PLVSAStreamerHomeViewDelegate
 /// ‘网络状态’ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
     networkQualityDidChanged:(PLVBLinkMicNetworkQuality)networkQuality {
-    [self.homeView setNetworkQuality:networkQuality];
+    BOOL updateNetState = YES;
+    if (self.viewerType == PLVRoomUserTypeGuest) {
+        /// 嘉宾角色在非上麦状态下，不更新网络状态UI
+        updateNetState = self.streamerPresenter.localOnlineUser.currentStatusVoice;
+    }
+    if (updateNetState && networkQuality == PLVBLinkMicNetworkQualityUnknown) {
+        /// 硬件全关场景下，不更新网络状态UI
+        updateNetState = !(!self.streamerPresenter.currentCameraOpen && !self.streamerPresenter.currentMicOpen);
+    }
+    if (updateNetState) {
+        [self.homeView setNetworkQuality:networkQuality];
+    }
 }
 
 /// ’等待连麦用户数组‘ 发生改变
@@ -632,7 +676,7 @@ PLVSAStreamerHomeViewDelegate
   linkMicWaitUserListRefresh:(NSArray <PLVLinkMicWaitUser *>*)waitUserArray
             newWaitUserAdded:(BOOL)newWaitUserAdded {
     if (newWaitUserAdded) {
-        [self.homeView ShowNewWaitUserAdded];
+        [self.homeView showNewWaitUserAdded];
     }
     
     if (waitUserArray &&
@@ -650,7 +694,7 @@ PLVSAStreamerHomeViewDelegate
 linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray {
     [self.linkMicAreaView reloadLinkMicUserWindows];
     [self.memberPresenter refreshUserListWithLinkMicOnlineUserArray:onlineUserArray];
-    [self.homeView showOrHiddenLinMicGuied:onlineUserArray.count];
+    [self.homeView updateHomeViewOnlineUserCount:onlineUserArray.count];
 }
 
 /// ‘是否上课已开始’ 发生变化
@@ -676,6 +720,11 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     if (reconnectingThisTimeDuration == 20) {
         [PLVSAUtils showAlertWithMessage:@"网络断开，已停止直播，请更换网络后重试" cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
     }
+}
+
+/// 当前远端 ’已推流时长‘ 定时回调
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRemotePushDuration:(NSTimeInterval)currentRemotePushDuration{
+    [self.homeView setPushStreamDuration:currentRemotePushDuration];
 }
 
 /// sessionId 场次Id发生变化
@@ -749,6 +798,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     return self.streamerPresenter.onlineUserArray;
 }
 
+- (BOOL)localUserPreviewViewInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
+    return self.viewState == PLVSAStreamerViewStateBeforeSteam;
+}
+
 - (NSInteger)onlineUserIndexInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView
                                   filterBlock:(BOOL(^)(PLVLinkMicOnlineUser * enumerateUser))filterBlock {
     return [self.streamerPresenter findOnlineUserModelIndexWithFiltrateBlock:filterBlock];
@@ -760,7 +813,14 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 }
 
 - (void)didSelectLinkMicUserInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
-    [self.homeView showOrHiddenLinMicGuied:0];
+}
+
+- (void)linkMicAreaView:(PLVSALinkMicAreaView *)areaView showGuideViewOnExternal:(UIView *)guideView {
+    [self.homeView addExternalLinkMicGuideView:guideView];
+}
+
+- (BOOL)classStartedInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
+    return self.streamerPresenter.classStarted;
 }
 
 #pragma mark PLVSAStreamerSettingViewDelegate
@@ -774,7 +834,12 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     PLVBLinkMicStreamScale streamScale =[PLVSAUtils sharedUtils].isLandscape? PLVBLinkMicStreamScale16_9:PLVBLinkMicStreamScale9_16;
     [self.streamerPresenter setupStreamScale:streamScale];
     [self.streamerPresenter setupStreamQuality:streamQuality];
-    [self tryStartClassRetryCount:0];
+    if (self.viewerType == PLVRoomUserTypeGuest) {
+        [self.streamerPresenter joinRTCChannel];
+        [self updateViewState:PLVSAStreamerViewStateSteaming];
+    } else {
+        [self tryStartClassRetryCount:0];
+    }
 }
 
 - (void)streamerSettingViewCameraReverseButtonClick {
@@ -805,7 +870,11 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     __weak typeof(self) weakSelf = self;
     PLVSAFinishStreamerSheet *actionSheet = [[PLVSAFinishStreamerSheet alloc] init];
     [actionSheet showInView:self.view finishAction:^{
-        [weakSelf finishClass];
+        if (weakSelf.viewerType == PLVRoomUserTypeGuest) {
+            [weakSelf guestLogout]; //嘉宾会直接退出直播间
+        } else {
+            [weakSelf finishClass];
+        }
     }];
 }
 

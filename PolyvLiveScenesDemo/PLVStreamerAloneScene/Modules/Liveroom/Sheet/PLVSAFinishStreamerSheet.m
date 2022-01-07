@@ -8,6 +8,7 @@
 
 #import "PLVSAFinishStreamerSheet.h"
 #import "PLVSAUtils.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kButtonHeight = 58.0;
@@ -62,7 +63,8 @@ static CGFloat kLineHeight = 1.0;
 - (UIButton *)finishButton {
     if (!_finishButton) {
         _finishButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_finishButton setTitle:@"结束直播" forState:UIControlStateNormal];
+        NSString *closeTitle = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? @"结束直播" : @"退出直播间";
+        [_finishButton setTitle:closeTitle forState:UIControlStateNormal];
         [_finishButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FF5459"] forState:UIControlStateNormal];
         _finishButton.titleLabel.font = [UIFont systemFontOfSize:16];
         [_finishButton addTarget:self action:@selector(finishButtonAction:) forControlEvents:UIControlEventTouchUpInside];

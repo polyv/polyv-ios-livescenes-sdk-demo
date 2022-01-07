@@ -11,6 +11,9 @@
 // 工具
 #import "PLVSAUtils.h"
 
+// 模块
+#import "PLVRoomDataManager.h"
+
 // UI
 #import "PLVSAStatusBarButton.h"
 
@@ -57,6 +60,8 @@
     return self;
 }
 
+#pragma mark - [ Override ]
+
 - (void)layoutSubviews {
     [super layoutSubviews];
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
@@ -92,9 +97,21 @@
     self.signalButton.frame = CGRectMake(signalControlX, signalControlY, 84, 20);
 }
 
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hitView = [super hitTest:point withEvent:event];
+    for (NSInteger i = 0; i < self.subviews.count; i++) {
+        if (hitView == self.subviews[i]) {
+            return hitView; //事件发生在子视图上，则子视图进行处理
+        }
+    }
+    return nil; //将事件传递给下一级视图
+}
+
 #pragma mark - [ Public Method ]
 
 - (void)startClass:(BOOL)start {
+    self.timeButton.hidden = !start;
+    self.signalButton.hidden = !start;
     self.inClass = start;
     self.timeButton.text = @"00:00:00";
 }
@@ -150,9 +167,9 @@
     if (!_timeButton) {
         _timeButton = [[PLVSAStatusBarButton alloc] init];
         _timeButton.layer.cornerRadius = 18;
-        
         _timeButton.titlePaddingX = 6;
         _timeButton.text = @"00:00:00";
+        _timeButton.hidden = YES;
         [_timeButton setImage:[PLVSAUtils imageForStatusbarResource:@"plvsa_statusbar_btn_dot"] indicatorImage:nil];
         if (@available(iOS 8.2, *)) {
             _timeButton.font = [UIFont systemFontOfSize:14 weight:UIFontWeightSemibold];
@@ -167,10 +184,10 @@
     if (!_signalButton) {
         _signalButton = [[PLVSAStatusBarButton alloc] init];
         _signalButton.layer.cornerRadius = 10;
-
         _signalButton.titlePaddingX = 8;
         _signalButton.text = @"检测中";
         _signalButton.font = [UIFont systemFontOfSize:12];
+        _signalButton.hidden = YES;
         [_signalButton setImage:[PLVSAUtils imageForStatusbarResource:@"plvsa_statusbar_signal_icon_unknown"]];
     }
     return _signalButton;
@@ -180,6 +197,7 @@
 
 - (void)setDuration:(NSTimeInterval)duration {
     NSString *durTimeStr = [NSString stringWithFormat:@"%02ld:%02ld:%02ld",lround(floor(duration / 60 / 60)), lround(floor(duration / 60)) % 60, lround(floor(duration)) % 60];
+    durTimeStr = self.inClass ? durTimeStr : @"00:00:00";
     self.timeButton.text = durTimeStr;
 }
 
@@ -189,7 +207,13 @@
         teacherName.length == 0) {
         return;
     }
-    teacherName = [NSString stringWithFormat:@"讲师-%@", teacherName];
+    
+    PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    if (viewerType == PLVRoomUserTypeTeacher) {
+        teacherName = [NSString stringWithFormat:@"讲师-%@", teacherName];
+    } else if (viewerType == PLVRoomUserTypeGuest) {
+        teacherName = [NSString stringWithFormat:@"嘉宾-%@", teacherName];
+    }
     self.teacherNameButton.text = teacherName;
     
     [self updateTeacherNameButtonFrameWithteacherName:teacherName];

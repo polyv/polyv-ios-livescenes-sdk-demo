@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSArray<PLVECMoreViewItem *> *)dataSourceOfMoreView:(PLVECMoreView *)moreView;
 
-- (void)moreView:(PLVECMoreView *)moreView didSelectItem:(PLVECMoreViewItem *)item index:(NSUInteger)index;
+- (void)moreView:(PLVECMoreView *)moreView didSelectItem:(PLVECMoreViewItem *)item;
 
 @end
 

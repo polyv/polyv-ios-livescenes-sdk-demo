@@ -26,6 +26,7 @@
 @end
 
 @implementation PLVSACameraAndMicphoneStateView
+
 #pragma mark - [ Life Cycle ]
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -35,14 +36,14 @@
         
         self.hidden = YES;
         self.backgroundColor = [UIColor clearColor];
-        
+
         [self addSubview:self.bgView];
-        
         [self.bgView addSubview:self.notifyLabel];
         [self.bgView addSubview:self.tipLabel];
     }
     return self;
 }
+
 #pragma mark - [ Override ]
 
 - (void)layoutSubviews {
@@ -58,6 +59,15 @@
     self.tipLabel.frame = CGRectMake(CGRectGetMaxX(self.notifyLabel.frame) + 5, 0, viewWidth - 12 - 50 - 5, viewHeight);
     
 }
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hitView = [super hitTest:point withEvent:event];
+    if (hitView == self) {
+        return nil;
+    }
+    return hitView;
+}
+
 #pragma mark - [ Public Method ]
 
 - (void)updateCameraOpen:(BOOL)cameraOpen micphoneOpen:(BOOL)micphoneOpen {

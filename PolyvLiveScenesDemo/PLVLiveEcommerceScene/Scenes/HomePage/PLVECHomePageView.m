@@ -30,7 +30,10 @@
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
-// 依赖库
+static NSString *const PLVECHomePageView_Data_AudioModeItemTitle = @"音频模式";
+static NSString *const PLVECHomePageView_Data_RouteItemTitle     = @"线路";
+static NSString *const PLVECHomePageView_Data_QualityItemTitle   = @"清晰度";
+static NSString *const PLVECHomePageView_Data_DelayModeItemTitle = @"模式";
 
 /// SwitchView类型
 typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
@@ -40,6 +43,8 @@ typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
     PLVECSwitchViewType_Line = 1,
     /// SwitchView类型为 切换码率
     PLVECSwitchViewType_CodeRate = 2,
+    /// SwitchView类型为 切换延迟模式
+    PLVECSwitchViewType_DelayMode = 3,
     /// SwitchView类型为 切换速率
     PLVECSwitchViewType_Speed = 4
 };
@@ -63,9 +68,14 @@ PLVSocketManagerProtocol
 @property (nonatomic, assign) NSUInteger curCodeRateIndex;             // 当前直播播放码率
 @property (nonatomic, assign) NSUInteger lineCount;                    // 当前直播支持切换线路数
 @property (nonatomic, assign) NSUInteger curlineIndex;                 // 当前直播所选线路
+@property (nonatomic, assign) NSUInteger curDelayModeIndex;            // 当前直播所选延迟模式
 @property (nonatomic, assign) BOOL audioMode;                          // 音频模式，默认NO-视频模式
 @property (nonatomic, assign) BOOL hiddenCodeRateSwitch;               // 是否显示切换码率按钮
 @property (nonatomic, assign) BOOL isPlaying;
+@property (nonatomic, assign) BOOL hiddenDelayModeSwitch;              // 是否显示模式切换按钮
+@property (nonatomic, assign) BOOL noDelayWatchMode;                   // 当前是否为无延迟观看模式
+@property (nonatomic, assign) BOOL networkQualityMiddleViewShowed;     // 网络不佳提示视图是否显示过
+@property (nonatomic, assign) BOOL networkQualityPoorViewShowed;       // 网络糟糕提示视图是否显示过
 /// 回放特有属性
 @property (nonatomic, assign) NSTimeInterval duration;                 // 回放视频时长
 @property (nonatomic, assign) NSUInteger curSpeedIndex;                // 回放视频当前播放速率
@@ -88,6 +98,8 @@ PLVSocketManagerProtocol
 @property (nonatomic, strong) UIButton *moreButton;                    // 更多按钮
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
+@property (nonatomic, strong) UILabel *networkQualityMiddleLable;      // 网络不佳提示视图
+@property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
 
 @end
 
@@ -130,6 +142,9 @@ PLVSocketManagerProtocol
         self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         // 点赞按钮
         self.likeButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
+        // 网络提示
+        self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - 219 - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, 219, 28);
+        self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
     } else if (self.type == PLVECHomePageType_Playback) {
         // 底部控件
         self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
@@ -278,6 +293,89 @@ PLVSocketManagerProtocol
     return _pushView;
 }
 
+- (UILabel *)networkQualityMiddleLable {
+    if (!_networkQualityMiddleLable) {
+        _networkQualityMiddleLable = [[UILabel alloc] init];
+        _networkQualityMiddleLable.text = @"您的网络状态不佳，可尝试切换网络";
+        _networkQualityMiddleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _networkQualityMiddleLable.textColor = PLV_UIColorFromRGB(@"#333333");
+        _networkQualityMiddleLable.backgroundColor = PLV_UIColorFromRGB(@"#FFFFFF");
+        _networkQualityMiddleLable.layer.masksToBounds = YES;
+        _networkQualityMiddleLable.layer.cornerRadius = 12;
+        _networkQualityMiddleLable.hidden = YES;
+        _networkQualityMiddleLable.textAlignment = NSTextAlignmentCenter;
+        [self addSubview:_networkQualityMiddleLable];
+    }
+    return _networkQualityMiddleLable;
+}
+
+- (UIView *)networkQualityPoorView {
+    if (!_networkQualityPoorView) {
+        _networkQualityPoorView = [[UIView alloc] init];
+        _networkQualityPoorView.hidden = YES;
+        _networkQualityPoorView.backgroundColor =  PLV_UIColorFromRGB(@"#FFFFFF");
+        [self addSubview:_networkQualityPoorView];
+        UIBezierPath *bezierPath = [self BezierPathWithSize:CGSizeMake(207, 56)];
+        CAShapeLayer *shapeLayer = [CAShapeLayer layer];
+        shapeLayer.path = bezierPath.CGPath;
+        self.networkQualityPoorView.layer.mask = shapeLayer;
+        
+        UILabel *tipsLable = [[UILabel alloc] init];
+        tipsLable = [[UILabel alloc] init];
+        tipsLable.text = @"您的网络状态糟糕，可尝试在更多>模式";
+        tipsLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        tipsLable.textColor = PLV_UIColorFromRGB(@"#333333");
+        tipsLable.numberOfLines = 0;
+        [_networkQualityPoorView addSubview:tipsLable];
+        tipsLable.frame = CGRectMake(16, 8, 159, 36);
+
+        UIButton *swithDelayLiveButton = [[UIButton alloc] init];
+        [swithDelayLiveButton setTitle:@"切换到正常延迟" forState:UIControlStateNormal];
+        [swithDelayLiveButton setTitleColor:PLV_UIColorFromRGB(@"#6DA7FF") forState:UIControlStateNormal];
+        [swithDelayLiveButton addTarget:self action:@selector(swithDelayLiveClick:) forControlEvents:UIControlEventTouchUpInside];
+        swithDelayLiveButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        [_networkQualityPoorView addSubview:swithDelayLiveButton];
+        swithDelayLiveButton.frame = CGRectMake(77, 28, 86, 14);
+        
+        UIButton *closeButton = [[UIButton alloc] init];
+        [closeButton addTarget:self action:@selector(closeNetworkTipsViewClick:) forControlEvents:UIControlEventTouchUpInside];
+        [closeButton setImage:[PLVECUtils imageForWatchResource:@"plv_network_tips_close"] forState:UIControlStateNormal];
+        [_networkQualityPoorView addSubview:closeButton];
+        closeButton.frame = CGRectMake(183, 8, 16, 16);
+    }
+    return _networkQualityPoorView;
+}
+
+- (UIBezierPath *)BezierPathWithSize:(CGSize)size {
+    CGFloat conner = 8.0; // 圆角角度
+    CGFloat trangleHeight = 4; // 尖角高度
+    CGFloat trangleWidth = 4; // 尖角半径
+    CGFloat leftPadding = size.width - 20;
+    
+    UIBezierPath *bezierPath = [UIBezierPath bezierPath];
+    // 起点
+    [bezierPath moveToPoint:CGPointMake(conner, 0)];
+    [bezierPath addLineToPoint:CGPointMake(size.width - conner, 0)];
+    
+    [bezierPath addQuadCurveToPoint:CGPointMake(size.width, conner) controlPoint:CGPointMake(size.width, 0)];
+    [bezierPath addLineToPoint:CGPointMake(size.width, size.height- conner - trangleHeight)];
+    [bezierPath addQuadCurveToPoint:CGPointMake(size.width-conner, size.height - trangleHeight) controlPoint:CGPointMake(size.width, size.height - trangleHeight)];
+
+    [bezierPath addLineToPoint:CGPointMake(conner, size.height - trangleHeight)];
+    [bezierPath addQuadCurveToPoint:CGPointMake(0, size.height - conner - trangleHeight) controlPoint:CGPointMake(0, size.height - trangleHeight)];
+    [bezierPath addLineToPoint:CGPointMake(0, conner)];
+    [bezierPath addQuadCurveToPoint:CGPointMake(conner, 0) controlPoint:CGPointMake(0, 0)];
+    
+    // 画尖角
+    [bezierPath moveToPoint:CGPointMake(conner, size.height - trangleHeight)];
+    [bezierPath addLineToPoint:CGPointMake(leftPadding - conner, size.height - trangleHeight)];
+    // 顶点
+    [bezierPath addLineToPoint:CGPointMake(leftPadding, size.height)];
+    [bezierPath addLineToPoint:CGPointMake(leftPadding + trangleWidth, size.height - trangleHeight)];
+    [bezierPath closePath];
+    return bezierPath;
+}
+
 #pragma mark - Public
 
 - (void)destroy {
@@ -341,6 +439,12 @@ PLVSocketManagerProtocol
     [self updateCodeRateSwitchViewHiddenState];
 }
 
+- (void)updateNoDelayWatchMode:(BOOL)noDelayWatchMode {
+    self.curDelayModeIndex = noDelayWatchMode ? 0 : 1;
+    self.noDelayWatchMode = noDelayWatchMode;
+    [self updateDelayModeSwitchViewHiddenState];
+}
+
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(CGFloat)duration
@@ -362,6 +466,32 @@ PLVSocketManagerProtocol
     }
 }
 
+- (void)showNetworkQualityMiddleView {
+    if (self.networkQualityMiddleViewShowed) {
+        return;
+    }
+    self.networkQualityMiddleViewShowed = YES;
+    self.networkQualityMiddleLable.hidden = NO;
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        weakSelf.networkQualityMiddleLable.hidden = YES;
+    });
+}
+
+- (void)showNetworkQualityPoorView {
+    if (self.networkQualityPoorViewShowed) {
+        return;
+    }
+    self.networkQualityPoorViewShowed = YES;
+    self.networkQualityPoorView.hidden = NO;
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        weakSelf.networkQualityPoorView.hidden = YES;
+    });
+}
+
 #pragma mark - Private
 
 - (void)updateCodeRateSwitchViewHiddenState {
@@ -372,6 +502,28 @@ PLVSocketManagerProtocol
     self.hiddenCodeRateSwitch = hidden;
     if (_moreView) {
         [self.moreView reloadData];
+    }
+}
+
+- (void)updateDelayModeSwitchViewHiddenState {
+    BOOL hidden = self.audioMode ||
+    (![PLVRoomDataManager sharedManager].roomData.menuInfo.quickLiveEnabled &&
+    ![PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay);
+    if (hidden == self.hiddenDelayModeSwitch) {
+        return;
+    }
+    self.hiddenDelayModeSwitch = hidden;
+    if (_moreView) {
+        [self.moreView reloadData];
+    }
+}
+
+#pragma mark 快直播
+
+- (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {
+    self.networkQualityMiddleViewShowed = self.networkQualityPoorViewShowed = NO;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:switchToNoDelayWatchMode:)]) {
+        [self.delegate homePageView:self switchToNoDelayWatchMode:noDelayWatchMode];
     }
 }
 
@@ -406,6 +558,15 @@ PLVSocketManagerProtocol
     [[PLVFdUtil getCurrentViewController] presentViewController:commodityVC animated:YES completion:nil];
     
     self.commodityVC = commodityVC;
+}
+
+- (void)swithDelayLiveClick:(UIButton *)button {
+    [self switchToNoDelayWatchMode:NO];
+    self.networkQualityPoorView.hidden = YES;
+}
+
+- (void)closeNetworkTipsViewClick:(UIButton *)button {
+    self.networkQualityPoorView.hidden = YES;
 }
 
 #pragma mark - Delegate
@@ -550,53 +711,67 @@ PLVSocketManagerProtocol
 - (NSArray<PLVECMoreViewItem *> *)dataSourceOfMoreView:(PLVECMoreView *)moreView {
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:3];
     
-    PLVECMoreViewItem *item1 = [[PLVECMoreViewItem alloc] init];
-    item1.title = @"音频模式";
-    item1.selectedTitle = @"视频模式";
-    item1.iconImageName = @"plv_audioSwitch_btn";
-    item1.selectedIconImageName = @"plv_videoSwitch_btn";
-    item1.selected = self.audioMode;
-    [muArray addObject:item1];
+    if (!self.noDelayWatchMode) {
+        PLVECMoreViewItem *item1 = [[PLVECMoreViewItem alloc] init];
+        item1.title = PLVECHomePageView_Data_AudioModeItemTitle;
+        item1.selectedTitle = @"视频模式";
+        item1.iconImageName = @"plv_audioSwitch_btn";
+        item1.selectedIconImageName = @"plv_videoSwitch_btn";
+        item1.selected = self.audioMode;
+        [muArray addObject:item1];
+    }
     
-    if (self.lineCount > 1) {
+    if (!self.noDelayWatchMode && self.lineCount > 1) {
         PLVECMoreViewItem *item2 = [[PLVECMoreViewItem alloc] init];
-        item2.title = @"线路";
+        item2.title = PLVECHomePageView_Data_RouteItemTitle;
         item2.iconImageName = @"plv_lineSwitch_btn";
         [muArray addObject:item2];
     }
     
-    if (!self.hiddenCodeRateSwitch) {
+    if (!self.noDelayWatchMode && !self.hiddenCodeRateSwitch) {
         PLVECMoreViewItem *item3 = [[PLVECMoreViewItem alloc] init];
-        item3.title = @"清晰度";
+        item3.title = PLVECHomePageView_Data_QualityItemTitle;
         item3.iconImageName = @"plv_codeRateSwitch_btn";
         [muArray addObject:item3];
     }
+    
+    if (!self.hiddenDelayModeSwitch) {
+        PLVECMoreViewItem *item4 = [[PLVECMoreViewItem alloc] init];
+        item4.title = PLVECHomePageView_Data_DelayModeItemTitle;
+        item4.iconImageName = @"plv_delayModeSwitch_btn";
+        [muArray addObject:item4];
+    }
+    
     return [muArray copy];
 }
 
-- (void)moreView:(PLVECMoreView *)moreView didSelectItem:(PLVECMoreViewItem *)item index:(NSUInteger)index {
-    if (index == 0) {
+- (void)moreView:(PLVECMoreView *)moreView didSelectItem:(PLVECMoreViewItem *)item {
+    NSString *title = item.title;
+    if ([title isEqualToString:PLVECHomePageView_Data_AudioModeItemTitle]) {
         if ([self.delegate respondsToSelector:@selector(homePageView:switchAudioMode:)]) {
             [self.delegate homePageView:self switchAudioMode:item.isSelected];
         }
         self.audioMode = item.isSelected;
         [self updateCodeRateSwitchViewHiddenState];
-    } else if (index == 1 || index == 2) {
+        [self updateDelayModeSwitchViewHiddenState];
+    } else if ([title isEqualToString:PLVECHomePageView_Data_RouteItemTitle] ||
+               [title isEqualToString:PLVECHomePageView_Data_QualityItemTitle] ||
+               [title isEqualToString:PLVECHomePageView_Data_DelayModeItemTitle] ) {
         moreView.hidden = YES;
         PLVECSwitchViewType switchViewType = PLVECSwitchViewType_Unknown;
-        if (index == 1) {
+        if ([title isEqualToString:PLVECHomePageView_Data_RouteItemTitle]) {
             switchViewType = PLVECSwitchViewType_Line;
-        } else if (index == 2) {
+        } else if ([title isEqualToString:PLVECHomePageView_Data_QualityItemTitle]) {
             switchViewType = PLVECSwitchViewType_CodeRate;
+        } else if ([title isEqualToString:PLVECHomePageView_Data_DelayModeItemTitle]) {
+            switchViewType = PLVECSwitchViewType_DelayMode;
         }
         [self updateSwitchView:switchViewType];
     }
 }
 
 - (void)updateSwitchView:(PLVECSwitchViewType)switchViewType {
-    if (switchViewType != PLVECSwitchViewType_Line &&
-        switchViewType != PLVECSwitchViewType_CodeRate &&
-        switchViewType != PLVECSwitchViewType_Speed) {
+    if (switchViewType == PLVECSwitchViewType_Unknown) {
         return;
     }
     self.switchViewType = switchViewType;
@@ -609,6 +784,9 @@ PLVSocketManagerProtocol
     } else if (switchViewType == PLVECSwitchViewType_Speed) {
         self.switchView.titleLable.text = @"播放速度";
         self.switchView.selectedIndex = self.curSpeedIndex;
+    } else if (switchViewType == PLVECSwitchViewType_DelayMode) {
+        self.switchView.titleLable.text = @"模式";
+        self.switchView.selectedIndex = self.curDelayModeIndex;
     }
     [self.switchView reloadData];
 }
@@ -626,6 +804,8 @@ PLVSocketManagerProtocol
         return self.codeRateItems;
     } else if (self.switchViewType == PLVECSwitchViewType_Speed) {
         return @[@"0.5x", @"1.0x", @"1.25x", @"1.5x", @"2.0x"];
+    } else if (self.switchViewType == PLVECSwitchViewType_DelayMode) {
+        return @[@"无延迟", @"正常延迟"];
     } else {
         return @[];
     }
@@ -636,21 +816,24 @@ PLVSocketManagerProtocol
             selectedItem:(NSString *)selectedItem {
     if (self.switchViewType == PLVECSwitchViewType_Line) {
         self.curlineIndex = selectedIndex;
-        if ([self.delegate respondsToSelector:@selector(homePageView:switchPlayLine:)]) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:switchPlayLine:)]) {
             [self.delegate homePageView:self switchPlayLine:self.curlineIndex];
         }
     } else if (self.switchViewType == PLVECSwitchViewType_CodeRate) {
         self.curCodeRateIndex = selectedIndex;
-        if ([self.delegate respondsToSelector:@selector(homePageView:switchCodeRate:)]) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:switchCodeRate:)]) {
             [self.delegate homePageView:self switchCodeRate:selectedItem];
         }
     } else if (self.switchViewType == PLVECSwitchViewType_Speed) {
         self.curSpeedIndex = selectedIndex;
         CGFloat speed = [[selectedItem substringToIndex:selectedItem.length] floatValue];
         speed = MIN(2.0, MAX(0.5, speed));
-        if ([self.delegate respondsToSelector:@selector(homePageView:switchSpeed:)]) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:switchSpeed:)]) {
             [self.delegate homePageView:self switchSpeed:speed];
         }
+    } else if (self.switchViewType == PLVECSwitchViewType_DelayMode) {
+        self.curDelayModeIndex = selectedIndex;
+        [self switchToNoDelayWatchMode:selectedIndex == 0];
     }
 }
 

@@ -98,12 +98,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)showMemberBadge:(BOOL)show;
 
 /// 显示 有新用户等待连麦，弹出“有人正在申请连麦”提示
-- (void)ShowNewWaitUserAdded;
+- (void)showNewWaitUserAdded;
 
-/// 显示、隐藏连麦新手引导
-/// @note 内部处理显示或隐藏
-/// @param onlineUserCount 当前连麦人数，大于1: 显示视图；
-- (void)showOrHiddenLinMicGuied:(NSInteger)onlineUserCount;
+/// 添加外部连麦引导视图
+/// @param guideView 连麦引导视图
+- (void)addExternalLinkMicGuideView:(UIView *)guideView;
+
+/// 更新在线用户数量
+/// @note 用户数量改变时更新内部UI控件的状态
+/// @param onlineUserCount 当前连麦人数
+- (void)updateHomeViewOnlineUserCount:(NSInteger)onlineUserCount;
 
 /// 改变闪光灯按钮选中状态
 /// @param selectedState 选中状态 (YES:选中，闪光灯开启 NO:未选中，闪光灯关闭)

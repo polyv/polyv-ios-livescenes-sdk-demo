@@ -23,7 +23,7 @@
 #import "PLVSAMemberSheet.h"
 #import "PLVSALinkMicTipView.h"
 #import "PLVSACameraAndMicphoneStateView.h"
-#import "PLVSALinkMicGuiedView.h"
+#import "PLVSALinkMicLayoutSwitchGuideView.h"
 #import "PLVSALinkMicWindowsView.h"
 
 // 模块
@@ -55,12 +55,9 @@ PLVSALinkMicTipViewDelegate
 ///    │     │    ├── (PLVSAToolbarAreaView) toolbarAreaView
 ///    │     │    ├── (PLVSAChatroomAreaView) chatroomAreaView
 ///    │     │    ├── (PLVSASlideRightTipsView) slideRightTipsView
-///    │     │    ├── (PLVSACameraAndMicphoneStateView) cameraAndMicphoneStateView
-///    │     │    └── (PLVSALinkMicGuiedView) linkMicGuiedView
+///    │     │    └── (PLVSACameraAndMicphoneStateView) cameraAndMicphoneStateView
 ///    │     └── (PLVSALinkMicTipView) linkMicTipView
 ///    └── (UIButton) closeButton(highest)
-
-
 @property (nonatomic, weak) PLVSALinkMicWindowsView *linkMicWindowsView; // 实际由主页linkMicAreaView持有的连麦窗口视图
 @property (nonatomic, strong) UIButton *closeButton; // 关闭直播间按钮
 @property (nonatomic, strong) UIScrollView *scrollView; // 底部滑动视图
@@ -76,11 +73,12 @@ PLVSALinkMicTipViewDelegate
 @property (nonatomic, strong) PLVSAMemberSheet *memberSheet; // 成员列表弹层
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
 @property (nonatomic, strong) PLVSACameraAndMicphoneStateView *cameraAndMicphoneStateView; // 摄像头与麦克风状态视图
-@property (nonatomic, strong) PLVSALinkMicGuiedView *linkMicGuiedView; // 连麦新手引导
+@property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
 
 /// 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser *localOnlineUser; // 本地用户模型，使用弱引用
-@property (nonatomic, assign) BOOL showLinkMicGuiedView; // 是否显示连麦新手引导
+@property (nonatomic, assign) BOOL hadShowedLayoutSwitchGuide; // 是否显示过布局切换新手引导
+@property (nonatomic, assign) BOOL showingLayoutSwitchGuide; // 是否正在显示布局切换新手引导
 @property (nonatomic, strong) NSArray <PLVChatUser *> *userList;
 @property (nonatomic, assign) NSInteger userCount;
 
@@ -88,18 +86,16 @@ PLVSALinkMicTipViewDelegate
 
 @implementation PLVSAStreamerHomeView
 
-
 #pragma mark - [ Life Cycle ]
 
 - (instancetype)initWithLocalOnlineUser:(PLVLinkMicOnlineUser *)localOnlineUser
                      linkMicWindowsView:(PLVSALinkMicWindowsView *)linkMicWindowsView {
     self = [super init];
     if (self) {
+        self.hadShowedLayoutSwitchGuide = NO;
+        self.showingLayoutSwitchGuide = NO;
         [self setupLocalOnlineUser:localOnlineUser];
-        
         [self setupUIWithLinkMicWindowsView:linkMicWindowsView];
-        
-        self.showLinkMicGuiedView = YES;
     }
     return self;
 }
@@ -123,13 +119,13 @@ PLVSALinkMicTipViewDelegate
     CGFloat linkMicWindowHeight = (isLandscape ? (self.bounds.size.height - top - 52 - 44 - bottom) : 280);
     CGFloat cameraAndMicphoneStateViewTop = 5;
     CGFloat linkMicWindowY = (isLandscape ? 44 : 78);
-    CGFloat guiedViewOffsetY = (isLandscape ? -25 : 8);
-    CGFloat guiedViewOffsetX = (isLandscape ? 100 : 15);
+    CGFloat toolbarViewMarginRight = isLandscape ? 36 : 8;
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     if (isPad) {
         marginTop = 12;
         marginLeft = 18;
+        toolbarViewMarginRight = 24;
         toolbarAreaViewHeight = 72;
         chatroomWidthScale = 0.41;
         chatroomHeightScale = 0.24;
@@ -175,8 +171,7 @@ PLVSALinkMicTipViewDelegate
     CGFloat chatroomHeight = selfSize.height * chatroomHeightScale;
     self.chatroomAreaView.frame = CGRectMake(left, CGRectGetMinY(self.toolbarAreaView.frame) - chatroomHeight, chatroomWidth, chatroomHeight);
     self.slideRightTipsView.frame = self.bounds;
-    
-    self.linkMicGuiedView.frame = CGRectMake(selfSize.width - 173 - guiedViewOffsetX, top + linkMicWindowY + linkMicWindowHeight + guiedViewOffsetY, 173, 50);
+    self.layoutSwitchGuideView.frame = CGRectMake(selfSize.width - toolbarViewMarginRight - 36 * 4 - 12 * 3 - 50 - right, CGRectGetMinY(self.toolbarAreaView.frame) - 62, 107, 62);
 }
 
 #pragma mark - [ Override ]
@@ -216,8 +211,6 @@ PLVSALinkMicTipViewDelegate
 
 - (void)setNetworkQuality:(PLVBLinkMicNetworkQuality)netState {
     self.statusbarAreaView.netState = (PLVSAStatusBarNetworkQuality)netState;
-    self.chatroomAreaView.netState = (NSInteger)netState;
-    self.toolbarAreaView.netState = (NSInteger)netState;
 }
 
 - (void)updateUserList:(NSArray <PLVChatUser *> *)userList
@@ -228,6 +221,7 @@ PLVSALinkMicTipViewDelegate
     self.userList = userList;
     self.userCount = userCount;
     [_memberSheet updateUserList:userList userCount:userCount onlineCount:onlineCount];
+    
 }
 
 - (void)setLocalMicVolume:(CGFloat)micVolume {
@@ -243,10 +237,16 @@ PLVSALinkMicTipViewDelegate
 }
 
 - (void)showMemberBadge:(BOOL)show {
-    [self.toolbarAreaView showMemberBadge:show];
+    if ([self canManagerLinkMic]) {
+        [self.toolbarAreaView showMemberBadge:show];
+    }
 }
 
-- (void)ShowNewWaitUserAdded {
+- (void)showNewWaitUserAdded {
+    if (![self canManagerLinkMic]) {
+        return;
+    }
+    
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat padding = isPad ? 24 : ([PLVSAUtils sharedUtils].isLandscape ? 36 : 8);
     CGRect frame = self.linkMicTipView.frame;
@@ -265,14 +265,14 @@ PLVSALinkMicTipViewDelegate
     [self.linkMicTipView show];
 }
 
-- (void)showOrHiddenLinMicGuied:(NSInteger)onlineUserCount{
-    // 显示新手引导
-    if (self.showLinkMicGuiedView && onlineUserCount >1) {
-        self.showLinkMicGuiedView = NO;
-        [self.linkMicGuiedView showLinMicGuied:YES];
-    } else {
-        [self.linkMicGuiedView showLinMicGuied:NO];
-    }
+- (void)addExternalLinkMicGuideView:(UIView *)guideView {
+    [self.homePageView addSubview:guideView];
+}
+
+- (void)updateHomeViewOnlineUserCount:(NSInteger)onlineUserCount {
+    [self.toolbarAreaView updateOnlineUserCount:onlineUserCount];
+    // 显示布局切换新手引导，当前连麦人数大于1时显示视图
+    [self showLayoutSwitchGuideWithUserCount:onlineUserCount];
 }
 
 - (void)changeFlashButtonSelectedState:(BOOL)selectedState{
@@ -300,7 +300,7 @@ PLVSALinkMicTipViewDelegate
     [self.homePageView addSubview:self.chatroomAreaView];
     [self.homePageView addSubview:self.slideRightTipsView];
     [self.homePageView addSubview:self.cameraAndMicphoneStateView];
-    [self.homePageView addSubview:self.linkMicGuiedView];
+    [self.homePageView addSubview:self.layoutSwitchGuideView];
 }
 
 - (void)setupLocalOnlineUser:(PLVLinkMicOnlineUser *)localOnlineUser {
@@ -337,7 +337,35 @@ PLVSALinkMicTipViewDelegate
         [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentQuality:)]) {
         self.moreInfoSheet.streamQuality = [self.delegate streamerHomeViewCurrentQuality:self];
     }
+}
+
+- (void)showLayoutSwitchGuideWithUserCount:(NSInteger)userCount {
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeGuest || userCount < 2) {
+        self.showingLayoutSwitchGuide = NO;
+        [self.layoutSwitchGuideView showLinkMicLayoutSwitchGuide:NO];
+        return;
+    }
     
+    if (self.hadShowedLayoutSwitchGuide &&
+        !self.showingLayoutSwitchGuide) {
+        return;
+    }
+    
+    self.hadShowedLayoutSwitchGuide = YES;
+    self.showingLayoutSwitchGuide = YES;
+    [self.layoutSwitchGuideView showLinkMicLayoutSwitchGuide:YES];
+}
+
+/// 讲师、助教、管理员可以管理连麦操作
+- (BOOL)canManagerLinkMic {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    if (userType == PLVRoomUserTypeTeacher ||
+        userType == PLVRoomUserTypeAssistant ||
+        userType == PLVRoomUserTypeManager) {
+        return YES;
+    } else {
+        return NO;
+    }
 }
 
 #pragma mark Getter & Setter
@@ -496,13 +524,14 @@ PLVSALinkMicTipViewDelegate
     return _cameraAndMicphoneStateView;
 }
 
-- (PLVSALinkMicGuiedView *)linkMicGuiedView {
-    if (!_linkMicGuiedView) {
-        _linkMicGuiedView = [[PLVSALinkMicGuiedView alloc] init];
-        _linkMicGuiedView.hidden = YES;
+- (PLVSALinkMicLayoutSwitchGuideView *)layoutSwitchGuideView {
+    if (!_layoutSwitchGuideView) {
+        _layoutSwitchGuideView = [[PLVSALinkMicLayoutSwitchGuideView alloc] init];
+        _layoutSwitchGuideView.hidden = YES;
     }
-    return _linkMicGuiedView;
+    return _layoutSwitchGuideView;
 }
+
 #pragma mark - [ Event ]
 
 #pragma mark Action
@@ -532,6 +561,11 @@ PLVSALinkMicTipViewDelegate
 }
 
 #pragma mark PLVSAToolbarAreaViewDelegate
+
+- (void)toolbarAreaViewDidLinkMicLayoutSwitchButton:(PLVSAToolbarAreaView *)toolbarAreaView layoutSwitchButtonSelected:(BOOL)selected {
+    [self.linkMicWindowsView switchLinkMicWindowsLayoutSpeakerMode:selected linkMicWindowMainSpeaker:nil];
+    [self showLayoutSwitchGuideWithUserCount:0];
+}
 
 - (void)toolbarAreaViewDidTapMoreButton:(PLVSAToolbarAreaView *)toolbarAreaView {
     [self setupMoreInfoSheetData];

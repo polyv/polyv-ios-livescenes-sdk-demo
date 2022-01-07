@@ -99,6 +99,8 @@ UITableViewDataSource
             [self.keyboardToolView updateTextViewAndButton];
         }
         
+        self.receiveNewMessageView.frame = CGRectMake(0, self.keyboardToolView.frame.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
+        
         if (![self currentIsFullScreen]) {
             [self refreshLikeButtonViewFrame];
         }
@@ -319,7 +321,7 @@ UITableViewDataSource
 #pragma mark - PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didLikeCountChanged:(NSUInteger)likeCount {
-    self.likeButtonView.likeCount = [PLVRoomDataManager sharedManager].roomData.likeCount;
+    [self.likeButtonView setupLikeAnimationWithCount:[PLVRoomDataManager sharedManager].roomData.likeCount];
 }
 
 #pragma mark - PLVLCChatroomViewModelProtocol

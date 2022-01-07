@@ -181,18 +181,6 @@ PLVSAChatroomListViewDelegate
         NSString *string = _closeRoom ? @"已开启全体禁言" : @"已解除全体禁言";
         [PLVSAUtils showToastInHomeVCWithMessage:string];
     }
-    
-}
-
-- (void)setNetState:(NSInteger)netState {
-    _netState = netState;
-    self.sendMsgView.netState = netState;
-    self.chatroomListView.netState = netState;
-}
-
-#pragma mark 网络是否可用
-- (BOOL)netCan{
-    return self.netState > 0 && self.netState < 4;
 }
 
 #pragma mark 显示欢迎语

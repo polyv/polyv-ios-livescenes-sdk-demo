@@ -727,7 +727,7 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)joinRTCChannelReal{
-    if (!self.rtcStreamerManager.hadJoinedRTC) {
+    if (!self.rtcStreamerManager.hadJoinedRTC && self.rtcRoomJoinStatus != PLVStreamerPresenterRoomJoinStatus_Joining) {
         __weak typeof(self) weakSelf = self;
         [self updateRTCTokenWithCompletion:^(BOOL updateResult) {
             if (updateResult) {
@@ -2070,9 +2070,7 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager * _Nonnull)manager didJoinedOfUid:(NSString *)uid{
-    if (self.rtcRoomJoinStatus == PLVStreamerPresenterRoomJoinStatus_Joined) {
-        [self linkMicUserJoined:uid retryCount:0];
-    }
+    // 上麦已通过socket消息"TEACHER_SET_PERMISSION"和接口轮询处理
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager * _Nonnull)manager didOfflineOfUid:(NSString *)uid{

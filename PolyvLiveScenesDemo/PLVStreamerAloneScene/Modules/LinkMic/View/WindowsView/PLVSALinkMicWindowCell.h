@@ -18,7 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 设置 cell 数据模型
 /// @param onlineUser 数据模型
-/// @param hide 当摄像头关闭时，是否要显示canvasView视图
+/// @param hide 是否需要隐藏昵称，同时当摄像头关闭时，是否要显示canvasView视图
 - (void)setUserModel:(PLVLinkMicOnlineUser *)onlineUser hideCanvasViewWhenCameraClose:(BOOL)hide;
 
 @end

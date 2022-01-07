@@ -501,6 +501,7 @@ PLVRoomDataManagerProtocol
 - (void)socketMananger_didLoginFailure:(NSError *)error {
     __weak typeof(self) weakSelf = self;
     if (error.code == PLVSocketLoginErrorCodeKick) {
+        [self.linkMicAreaView leaveLinkMicOnlyEmit];
         plv_dispatch_main_async_safe(^{
             [PLVLCUtils showHUDWithTitle:nil detail:@"您已被管理员踢出聊天室！" view:self.view afterDelay:3.0];
         })
@@ -510,6 +511,7 @@ PLVRoomDataManagerProtocol
     } else if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
                 error.code == PLVSocketLoginErrorCodeRelogin) &&
                error.localizedDescription) {
+        [self.linkMicAreaView leaveLinkMicOnlyEmit];
         plv_dispatch_main_async_safe(^{
             [PLVLCUtils showHUDWithTitle:nil detail:error.localizedDescription view:self.view afterDelay:3.0];
         })

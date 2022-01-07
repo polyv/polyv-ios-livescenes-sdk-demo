@@ -9,16 +9,17 @@
 #import "PLVSAToolbarAreaView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
-// util
+/// util
 #import "PLVSAUtils.h"
 
-// UI
+/// UI
 #import "PLVSASendMessageView.h"
 
 /// 模块
 #import "PLVSAChatroomViewModel.h"
+#import "PLVRoomDataManager.h"
 
-// 依赖库
+/// 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSAToolbarAreaView()
@@ -36,6 +37,7 @@
 ///
 // UI
 @property (nonatomic, strong) UIButton *chatButton; // 聊天按钮（点击显示sendMessageView）
+@property (nonatomic, strong) UIButton *layoutSwitchButton; // 连麦布局切换(默认平铺，选中为主讲模式)
 @property (nonatomic, strong) UIButton *linkMicButton; // 连麦按钮
 @property (nonatomic, strong) UIButton *memberButton; // 人员列表
 @property (nonatomic, strong) UIView *memberBadgeView; // 等待连麦提示红点
@@ -52,8 +54,9 @@
     self = [super init];
     if (self) {
         self.backgroundColor = [UIColor clearColor];
-        
+
         [self addSubview:self.chatButton];
+        [self addSubview:self.layoutSwitchButton];
         [self addSubview:self.linkMicButton];
         [self addSubview:self.memberButton];
         [self addSubview:self.memberBadgeView];
@@ -73,7 +76,6 @@
     CGFloat marginLeft = landscape ? 36 : 8;
     CGFloat chatButtonWidth = 150;
     CGFloat chatButtonTop = 8;
-
     
     if (isPad) {
         marginLeft = 24;
@@ -93,8 +95,16 @@
     
     self.memberBadgeView.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) - 10, 8, 10, 10);
     
-    self.linkMicButton.frame = CGRectMake(CGRectGetMinX(self.memberButton.frame) - 12 - 36, 8, 36, 36);
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeGuest) {
+        self.linkMicButton.hidden = YES;
+        self.layoutSwitchButton.hidden = YES;
+    } else {
+        self.linkMicButton.frame = CGRectMake(CGRectGetMinX(self.memberButton.frame) - 12 - 36, 8, 36, 36);
+        
+        self.layoutSwitchButton.frame = CGRectMake(CGRectGetMinX(self.linkMicButton.frame) - 12 - 36, 8, 36, 36);
+    }
 }
+
 #pragma mark - [ Public Method ]
 
 - (void)showMemberBadge:(BOOL)show{
@@ -109,9 +119,7 @@
     })
 }
 
-- (void)setNetState:(NSInteger)netState {
-    _netState = netState;
-    self.sendMessageView.netState = netState;
+- (void)updateOnlineUserCount:(NSInteger)onlineUserCount { self.layoutSwitchButton.hidden = (onlineUserCount <= 1);
 }
 
 #pragma mark - [ Private Method ]
@@ -131,6 +139,17 @@
         [_chatButton addTarget:self action:@selector(chatButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _chatButton;
+}
+
+- (UIButton *)layoutSwitchButton {
+    if (!_layoutSwitchButton) {
+        _layoutSwitchButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _layoutSwitchButton.hidden = YES;
+        [_layoutSwitchButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_speaker_switch"] forState:UIControlStateNormal];
+        [_layoutSwitchButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_tiled_switch"] forState:UIControlStateSelected];
+        [_layoutSwitchButton addTarget:self action:@selector(layoutSwitchButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _layoutSwitchButton;
 }
 
 - (UIButton *)linkMicButton {
@@ -192,6 +211,14 @@
     if (!self.sendMessageView.imageEmotionArray) {
         ///图片表情数据
         self.sendMessageView.imageEmotionArray = [PLVSAChatroomViewModel sharedViewModel].imageEmotionArray;
+    }
+}
+
+- (void)layoutSwitchButtonAction {
+    self.layoutSwitchButton.selected = !self.layoutSwitchButton.isSelected;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(toolbarAreaViewDidLinkMicLayoutSwitchButton:layoutSwitchButtonSelected:)]) {
+        [self.delegate toolbarAreaViewDidLinkMicLayoutSwitchButton:self layoutSwitchButtonSelected:self.layoutSwitchButton.isSelected];
     }
 }
 

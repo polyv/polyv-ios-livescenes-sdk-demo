@@ -113,6 +113,14 @@ PLVSALinkMicWindowsViewDelegate
     }
 }
 
+- (BOOL)localUserPreviewViewInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(localUserPreviewViewInLinkMicAreaView:)]) {
+        return [self.delegate localUserPreviewViewInLinkMicAreaView:self];
+    } else {
+        return NO;
+    }
+}
+
 - (NSInteger)onlineUserIndexInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView
                                      filterBlock:(BOOL(^)(PLVLinkMicOnlineUser * enumerateUser))filterBlock {
     if (self.delegate &&
@@ -135,7 +143,7 @@ PLVSALinkMicWindowsViewDelegate
 
 - (void)linkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView didSelectOnlineUser:(PLVLinkMicOnlineUser *)onlineUser {
     // 显示连麦成员信息弹层
-    CGFloat heightScale = 0.32;
+    CGFloat heightScale = 0.33;
     CGFloat widthScale = 0.37;
     CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
     
@@ -150,6 +158,21 @@ PLVSALinkMicWindowsViewDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(didSelectLinkMicUserInLinkMicAreaView:)]) {
         [self.delegate didSelectLinkMicUserInLinkMicAreaView:self];
+    }
+}
+
+- (void)linkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView showGuideViewOnExternal:(UIView *)guideView {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(linkMicAreaView:showGuideViewOnExternal:)]) {
+        [self.delegate linkMicAreaView:self showGuideViewOnExternal:guideView];
+    }
+}
+
+- (BOOL)classStartedInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(classStartedInLinkMicAreaView:)]) {
+        return [self.delegate classStartedInLinkMicAreaView:self];
+    } else {
+        return NO;
     }
 }
 

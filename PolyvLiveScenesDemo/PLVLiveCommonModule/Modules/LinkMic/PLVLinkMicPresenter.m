@@ -1211,7 +1211,11 @@ PLVLinkMicManagerDelegate
 }
 
 - (void)emitSocketMessageEventType:(NSString *)eventType callback:(void (^)(NSArray * _Nonnull))callback failedErrorCode:(PLVLinkMicErrorCode)failedErrorCode{
-    if ([PLVSocketManager sharedManager].login &&
+    // 判断是否为发送joinLeave消息
+    BOOL isJoinLeaveEvent = [eventType isEqualToString:@"joinLeave"];
+    // 当为joinLeave事件时忽略socket是否登录成功，仅判断socket链接状态
+    // 该判断逻辑主要为处理socket登录失败时需要发送joinLeave的特殊场景
+    if (([PLVSocketManager sharedManager].login || isJoinLeaveEvent) &&
         [PLVSocketManager sharedManager].status == PLVSocketConnectStatusConnected) {
         NSMutableDictionary *jsonDict = [NSMutableDictionary dictionary];
         NSString *roomId = [PLVSocketManager sharedManager].roomId; // 此处不可使用频道号，因存在分房间的可能
@@ -1225,7 +1229,7 @@ PLVLinkMicManagerDelegate
                                  @"pic" : [NSString stringWithFormat:@"%@",self.linkMicUserAvatar],
                                  @"userId" : [NSString stringWithFormat:@"%@",self.linkMicUserId],
                                  @"userType" : userTypeString};
-        if ([eventType isEqualToString:@"joinLeave"] && [PLVFdUtil checkStringUseable:self.linkMicSocketToken]) {
+        if (isJoinLeaveEvent && [PLVFdUtil checkStringUseable:self.linkMicSocketToken]) {
             jsonDict[@"token"] = self.linkMicSocketToken;
         }
         

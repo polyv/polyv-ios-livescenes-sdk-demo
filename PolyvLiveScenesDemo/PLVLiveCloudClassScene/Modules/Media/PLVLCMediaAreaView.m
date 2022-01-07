@@ -1122,6 +1122,10 @@ PLVLCRetryPlayViewDelegate
         /// 停止跑马灯
         [self.marqueeView stop];
         [self.canvasView hideSplashImageView];
+        /// 切换到视频模式
+        if (self.playerPresenter.audioMode) {
+            [self switchLiveToAudioMode:NO];
+        }
     } else if(newestStreamState == PLVChannelLiveStreamState_Unknown){
         /// ’未知‘状态下，保持原样
     }

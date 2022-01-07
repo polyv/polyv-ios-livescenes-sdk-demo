@@ -374,11 +374,6 @@ UITextViewDelegate
     self.emojiboard.imageEmotions = imageEmotionArray;
 }
 
-#pragma mark 网络是否可用
-- (BOOL)netCan{
-    return self.netState > 0 && self.netState < 4;
-}
-
 #pragma mark - Event
 
 #pragma mark Action
@@ -410,13 +405,9 @@ UITextViewDelegate
     if (self.toolView.textView.attributedText.length > 0) {
         NSString *text = [self.toolView.textView plvTextForRange:NSMakeRange(0, self.toolView.textView.attributedText.length)];
         
-        if (![self netCan]) {
-            [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        } else {
-            BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:self.replyModel];
-            if (!success) {
-                [PLVSAUtils showToastInHomeVCWithMessage:@"发送消息失败"];
-            }
+        BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:self.replyModel];
+        if (!success) {
+            [PLVSAUtils showToastInHomeVCWithMessage:@"发送消息失败"];
         }
     }
     [self.toolView.textView clearText];
@@ -424,11 +415,6 @@ UITextViewDelegate
 }
 
 - (void)sendImageWithImage:(UIImage *)image {
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
-        return;
-    }
-    
     BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendImageMessage:image];
     if (!success) {
         [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
@@ -488,16 +474,12 @@ UITextViewDelegate
     if (!emoticon.imageId || ![emoticon.imageId isKindOfClass:[NSString class]]) {
         return;
     }
-    if (![self netCan]) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"当前网络不可用，请检查网络设置"];
+    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendImageEmotionMessage:emoticon.imageId imageUrl:emoticon.url];;
+    if (!success) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"发送消息失败"];
     } else {
-        BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendImageEmotionMessage:emoticon.imageId imageUrl:emoticon.url];;
-        if (!success) {
-            [PLVSAUtils showToastInHomeVCWithMessage:@"发送消息失败"];
-        } else {
-            //隐藏面板
-            [self dismiss];
-        }
+        //隐藏面板
+        [self dismiss];
     }
 }
 

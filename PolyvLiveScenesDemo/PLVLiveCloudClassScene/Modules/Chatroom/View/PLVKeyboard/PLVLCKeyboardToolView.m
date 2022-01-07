@@ -72,6 +72,14 @@ PLVLCKeyboardMoreViewDelegate
     return [self initWithMode:PLVLCKeyboardToolModeDefault];
 }
 
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    if (self.toolState == PLVLCKeyboardToolStateMoreboard) {
+        CGFloat boardHeight = self.moreboardHeight;
+        self.moreboard.frame = CGRectMake(0, kScreenHeight-boardHeight, self.bounds.size.width, boardHeight);
+    }
+}
+
 - (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
@@ -348,24 +356,25 @@ PLVLCKeyboardMoreViewDelegate
     [weakSelf addViewInWindow];
     [UIView animateWithDuration:0 animations:^{ // 动画效果有点问题，暂时移除动画
         CGFloat boardHeight = 0;
+        CGFloat boardWidth = weakSelf.bounds.size.width;
         if (weakSelf.toolState == PLVLCKeyboardToolStateEmojiboard) {
             boardHeight = weakSelf.emojiboardHeight;
             weakSelf.emojiboard.frame = CGRectMake(0, kScreenHeight - boardHeight, kScreenWidth, boardHeight);
-            weakSelf.moreboard.frame = CGRectMake(0, kScreenHeight, kScreenWidth, weakSelf.moreboardHeight);
+            weakSelf.moreboard.frame = CGRectMake(0, kScreenHeight, boardWidth, weakSelf.moreboardHeight);
         } else if (weakSelf.toolState == PLVLCKeyboardToolStateMoreboard) {
             boardHeight = weakSelf.moreboardHeight;
-            weakSelf.moreboard.frame = CGRectMake(0, kScreenHeight - boardHeight, kScreenWidth, boardHeight);
             weakSelf.emojiboard.frame = CGRectMake(0, kScreenHeight, kScreenWidth, weakSelf.emojiboardHeight);
+            weakSelf.moreboard.frame = CGRectMake(0, kScreenHeight - boardHeight, boardWidth, boardHeight);
         } else if (weakSelf.toolState == PLVLCKeyboardToolStateKeyboard) {
             boardHeight = weakSelf.keyboardHeight;
             weakSelf.emojiboard.frame = CGRectMake(0, kScreenHeight, kScreenWidth, weakSelf.emojiboardHeight);
-            weakSelf.moreboard.frame = CGRectMake(0, kScreenHeight, kScreenWidth, weakSelf.moreboardHeight);
+            weakSelf.moreboard.frame = CGRectMake(0, kScreenHeight, boardWidth, weakSelf.moreboardHeight);
         }
         CGRect selfRect = weakSelf.frame;
         if (boardHeight == 0) { // 模拟器使用外接键盘时，self.keyboardHeight 为 0
-            boardHeight = self.bottomHeight;
+            boardHeight = weakSelf.bottomHeight;
         }
-        weakSelf.frame = CGRectMake(0, kScreenHeight - selfRect.size.height - boardHeight + weakSelf.bottomHeight, kScreenWidth, selfRect.size.height);
+        weakSelf.frame = CGRectMake(0, kScreenHeight - selfRect.size.height - boardHeight + weakSelf.bottomHeight, boardWidth, selfRect.size.height);
     }];
 }
 

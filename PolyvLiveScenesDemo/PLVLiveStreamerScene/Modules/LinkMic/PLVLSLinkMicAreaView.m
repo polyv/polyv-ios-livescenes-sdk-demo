@@ -34,7 +34,6 @@
 
 - (instancetype)init {
     if (self = [super initWithFrame:CGRectZero]) {
-        [self setup];
         [self setupUI];
     }
     return self;
@@ -50,10 +49,6 @@
 }
 
 #pragma mark - [ Private Methods ]
-- (void)setup{
-
-}
-
 - (void)setupUI{
     // 添加 连麦窗口列表视图
     [self addSubview:self.windowsView];

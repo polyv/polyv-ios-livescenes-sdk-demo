@@ -11,13 +11,14 @@
 #import "PLVSAMemberPopup.h"
 #import "PLVChatUser.h"
 #import "PLVSAUtils.h"
+// 模块
+#import "PLVRoomDataManager.h"
+// 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kMaxHeightScale = 0.72;
 static CGFloat kMinHeightScale = 0.42;
 static CGFloat kMidWidthtScale = 0.49;
-
-static NSInteger kMaxLinkMicCount = 2; // 目前支持的最大连麦数（包括自己的RTC流）
 
 @interface PLVSAMemberSheet ()<
 UITableViewDelegate,
@@ -244,7 +245,8 @@ PLVSAMemberCellDelegate
 }
 
 - (BOOL)allowLinkMicInCell:(PLVSAMemberCell *)cell {
-    BOOL allowLinkmic = self.onlineCount < kMaxLinkMicCount;
+    NSInteger maxLinkMicCount = [PLVRoomDataManager sharedManager].roomData.interactNumLimit;
+    BOOL allowLinkmic = self.onlineCount <= maxLinkMicCount;
     return allowLinkmic;
 }
 

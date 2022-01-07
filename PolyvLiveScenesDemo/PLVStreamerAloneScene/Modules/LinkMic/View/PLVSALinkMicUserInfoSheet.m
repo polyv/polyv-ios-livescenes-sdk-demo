@@ -95,7 +95,6 @@
 
         self.micphoneButton.frame = CGRectMake(CGRectGetMaxX(self.cameraButton.frame) + buttonPadding, self.cameraButton.frame.origin.y, buttonWidth, buttonHeight);
         
-        
     } else {
         self.micphoneButton.frame = CGRectMake((width - buttonWidth) / 2, CGRectGetMaxY(self.lineView.frame) + buttonTop, buttonWidth, buttonHeight);
         
@@ -104,11 +103,11 @@
         self.stopLinkMicButton.frame = CGRectMake(CGRectGetMinX(self.micphoneButton.frame) + buttonPadding + buttonWidth, self.micphoneButton.frame.origin.y, buttonWidth, buttonHeight);
     }
     
-    
     [self setButtonInsetsWithArray:@[self.cameraButton,
                                      self.micphoneButton,
                                      self.stopLinkMicButton]];
 }
+
 #pragma mark - [ Public Method ]
 
 - (void)updateLinkMicUserInfoWithUser:(PLVLinkMicOnlineUser *)user{

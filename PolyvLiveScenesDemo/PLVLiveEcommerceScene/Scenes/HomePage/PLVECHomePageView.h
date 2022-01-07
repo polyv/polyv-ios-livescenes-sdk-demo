@@ -48,6 +48,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 切换播放速率
 - (void)homePageView:(PLVECHomePageView *)homePageView switchSpeed:(CGFloat)speed;
 
+/// 切换延迟模式
+- (void)homePageView:(PLVECHomePageView *)homePageView switchToNoDelayWatchMode:(BOOL)noDelayWatchMode;
+
 @end
 
 @interface PLVECHomePageView : UIView
@@ -72,11 +75,17 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 - (void)updateCodeRateItems:(NSArray <NSString *>*)codeRates defaultCodeRate:(NSString *)codeRate;
 
+- (void)updateNoDelayWatchMode:(BOOL)noDelayWatchMode;
+
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(NSTimeInterval)duration
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime;
+
+- (void)showNetworkQualityMiddleView;
+
+- (void)showNetworkQualityPoorView;
 
 @end
 

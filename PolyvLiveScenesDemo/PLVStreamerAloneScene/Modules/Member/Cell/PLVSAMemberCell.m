@@ -203,7 +203,7 @@
     BOOL isLoginUser = [self isLoginUser:self.user.userId];
     
     BOOL buttonHidden = NO;
-    if (isLoginUser) {
+    if (isLoginUser || ![self canManagerLinkMic]) {
         buttonHidden = YES;
     } else if (specialType) {
         buttonHidden = self.user.onlineUser ? NO : YES;
@@ -216,7 +216,7 @@
     BOOL isLoginUser = [self isLoginUser:self.user.userId];
     
     BOOL buttonHidden = NO;
-    if (isLoginUser) {
+    if (isLoginUser || ![self canManagerLinkMic]) {
         buttonHidden = YES;
     } else if (self.user.onlineUser.userType == PLVSocketUserTypeGuest) {
         buttonHidden = ![PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
@@ -322,6 +322,18 @@
     
     BOOL isLoginUser = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     return isLoginUser;
+}
+
+/// 讲师、助教、管理员可以管理连麦操作
+- (BOOL)canManagerLinkMic {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    if (userType == PLVRoomUserTypeTeacher ||
+        userType == PLVRoomUserTypeAssistant ||
+        userType == PLVRoomUserTypeManager) {
+        return YES;
+    } else {
+        return NO;
+    }
 }
 
 #pragma mark - [ Event ]

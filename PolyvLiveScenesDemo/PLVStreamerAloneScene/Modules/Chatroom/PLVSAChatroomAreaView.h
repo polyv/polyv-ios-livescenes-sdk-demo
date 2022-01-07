@@ -27,9 +27,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note Setter 方法内实现发送禁言操作
 @property (nonatomic, assign) BOOL closeRoom;
 
-/// 网络状态，发送消息前判断网络是否异常
-@property (nonatomic, assign) NSInteger netState;
-
 @end
 
 NS_ASSUME_NONNULL_END

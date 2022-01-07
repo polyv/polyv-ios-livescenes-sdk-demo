@@ -11,6 +11,8 @@
 #import "PLVLCUtils.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import "PLVRoomDataManager.h"
+#import "PLVPlayerLogoView.h"
 
 static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.net/default-img/channel/default-splash.png";//讲师默认封面图地址
 
@@ -21,6 +23,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 /// (PLVLCLinkMicCanvasView) self
 ///  ├── (UIImageView) placeholderImageView
 ///  ├── (UIView) external rtc View
+///  ├── (PLVPlayerLogoView) logoView
 ///  └── (UIImageView) networkQualityImageView
 ///  ├── (UIImageView) splashImageView
 ///  ├── (UIImageView) muteRemoteStreamImageView
@@ -28,6 +31,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 @property (nonatomic, strong) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
 @property (nonatomic, strong) UIImageView * splashImageView; // 音频背景视图（只支持音频模式时显示）
 @property (nonatomic, weak) UIView * rtcView; // rtcView (弱引用；仅用作记录)
+@property (nonatomic, strong) PLVPlayerLogoView * logoView; // 播放器LOGO视图
 @property (nonatomic, strong) UIImageView * networkQualityImageView; // 信号塔视图 (负责展示 信号状态图标)
 @property (nonatomic, strong) UIImageView * pauseWatchNoDelayImageView; // 无延迟直播暂停后显示的占位图
 
@@ -52,6 +56,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
     self.splashImageView.frame = self.bounds;
+    self.logoView.frame = self.bounds;
     self.pauseWatchNoDelayImageView.frame = self.bounds;
     
     CGFloat placeholderImageViewHeight = MIN(viewHeight , viewWidth)  * 0.485;
@@ -87,6 +92,8 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 - (void)removeRTCView{
     for (UIView * subview in self.subviews) { [subview removeFromSuperview]; }
     [self addSubview:self.placeholderImageView];
+    [self addSubview:self.logoView];
+    self.logoView.hidden = YES;
     [self addSubview:self.networkQualityImageView];
     self.networkQualityImageView.hidden = YES;
     [self addSubview:self.splashImageView];
@@ -99,6 +106,19 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     }else{
         NSLog(@"PLVLCLinkMicCanvasView - rtcViewShow failed, rtcView is nil");
     }
+}
+
+- (void)logoViewShow:(BOOL)logoViewShow{
+    plv_dispatch_main_async_safe(^{
+        self.logoView.hidden = !logoViewShow;
+        if (logoViewShow) {
+            if (self.networkQualityImageView.hidden) {
+                [self bringSubviewToFront:self.logoView];
+            } else {
+                [self insertSubview:self.logoView belowSubview:self.networkQualityImageView];
+            }
+        }
+    })
 }
 
 - (void)pauseWatchNoDelayImageViewShow:(BOOL)show {
@@ -134,6 +154,8 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     
     /// 添加视图
     [self addSubview:self.placeholderImageView];
+    [self addSubview:self.logoView];
+    self.logoView.hidden = YES;
     [self addSubview:self.networkQualityImageView];
     self.networkQualityImageView.hidden = YES;
     [self addSubview:self.splashImageView];
@@ -152,6 +174,24 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
         _placeholderImageView.image = [self getImageWithName:imageName];
     }
     return _placeholderImageView;
+}
+
+- (PLVPlayerLogoView *)logoView {
+    if (!_logoView) {
+        _logoView = [[PLVPlayerLogoView alloc] init];
+        PLVChannelInfoModel *channelInfo = [PLVRoomDataManager sharedManager].roomData.channelInfo;
+        if ([PLVFdUtil checkStringUseable:channelInfo.logoImageUrl]) {
+            PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
+            logoParam.logoUrl = channelInfo.logoImageUrl;
+            logoParam.position = channelInfo.logoPosition;
+            logoParam.logoAlpha = channelInfo.logoOpacity;
+            logoParam.logoWidthScale = 0.14;
+            logoParam.logoHeightScale = 0.25;
+            [_logoView insertLogoWithParam:logoParam];
+            [_logoView addAtView:self];
+        }
+    }
+    return _logoView;
 }
 
 - (UIImageView *)networkQualityImageView{

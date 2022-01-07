@@ -191,12 +191,6 @@
             apiChannelType = PLVChannelTypeAlone;
         }
         
-        if (apiChannelType == PLVChannelTypeAlone && [channelId hasPrefix:@"00"]) {
-            !failure ?: failure(@"当前场景暂不支持嘉宾登录");
-            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login streamer room failed with【当前场景暂不支持嘉宾登录】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
-            return;
-        }
-        
         if ((apiChannelType & channelType) <= 0) {
             !failure ?: failure(@"频道类型出错");
             PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login streamer room failed with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);

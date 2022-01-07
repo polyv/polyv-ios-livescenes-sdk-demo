@@ -398,6 +398,7 @@ UICollectionViewDelegate
             if (onlineUser.canvasView) { [onlineUser.canvasView updateNetworkQualityImageViewWithStatus:onlineUser.currentNetworkQuality]; }
         };
     }
+    [linkMicUserModel.canvasView logoViewShow:linkMicUserModel.isRealMainSpeaker]; //真实主讲(即第一画面) 显示播放器LOGO
 }
 
 // 设置 连麦用户Model的 ’即将销毁Block‘ Block

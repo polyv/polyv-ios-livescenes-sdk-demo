@@ -82,11 +82,12 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     CGSize lbSize = self.moreBtn.titleLabel.frame.size;
     [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(ivSize.height + kCellImageLabelMargin / 2.0f,
                                                       -ivSize.width - 2,
-                                                      0.0, 0.0)];
-    [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(-lbSize.height - kCellImageLabelMargin / 2.0f,
-                                                      (kCellButtonWidth - ivSize.width) / 2.0f - 2,
                                                       0.0,
-                                                      lbSize.width)];
+                                                      0.0)];
+    [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(0.0,
+                                                      (kCellButtonWidth - ivSize.width) / 2.0f,
+                                                      lbSize.height + 5.0,
+                                                      0.0)];
 }
 
 @end
@@ -130,6 +131,12 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         [self addSubview:self.collectionView];
     }
     return self;
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    CGRect rect = CGRectMake(0, 0, self.frame.size.width, 24 + kCellButtonHeight + 24);
+    self.collectionView.frame = rect;
 }
 
 #pragma mark - Getterr & Setter

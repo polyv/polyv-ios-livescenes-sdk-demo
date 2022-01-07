@@ -78,7 +78,7 @@
     }
 }
 
-#pragma makr - Acttion
+#pragma mark - Action
 
 - (void)itemButtonAction:(UIButton *)button {
     self.hidden = YES;

@@ -44,6 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param areaView 连麦窗口列表视图
 - (NSArray *)currentOnlineUserListInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView;
 
+/// 连麦窗口列表视图 获取当前是否正在展示设置预览页
+///
+/// @param areaView 连麦窗口列表视图
+- (BOOL)localUserPreviewViewInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView;
+
 @optional
 
 /// 连麦窗口列表视图 需要查询某个条件用户的下标值
@@ -64,6 +69,15 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param areaView 连麦窗口列表视图
 - (void)didSelectLinkMicUserInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView;
+
+/// 连麦窗口列表视图 收到WindowsView对象【showGuideViewOnExternal：】事件的回调
+/// @param areaView 连麦窗口列表视图
+/// @param guideView 连麦引导视图
+- (void)linkMicAreaView:(PLVSALinkMicAreaView *)areaView showGuideViewOnExternal:(UIView *)guideView;
+
+/// 连麦窗口列表视图 需要获取当前是否已经开始上课
+/// @param areaView 连麦窗口列表视图
+- (BOOL)classStartedInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView;
 
 @end
 

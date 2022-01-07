@@ -16,6 +16,7 @@
 #import "PLVBaseNavigationController.h"
 #import "PLVECFloatingWindow.h"
 #import "PLVInteractView.h"
+#import "PLVECLinkMicAreaView.h"
 
 // UI
 #import "PLVECHomePageView.h"
@@ -37,7 +38,8 @@ PLVECHomePageViewDelegate,
 PLVECFloatingWindowProtocol,
 PLVECPlayerViewControllerProtocol,
 PLVRoomDataManagerProtocol,
-UIScrollViewDelegate
+UIScrollViewDelegate,
+PLVECLinkMicAreaViewDelegate
 >
 
 #pragma mark 数据
@@ -47,6 +49,7 @@ UIScrollViewDelegate
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
 @property (nonatomic, strong) PLVECGoodsDetailViewController *goodsDetailVC; // 商品详情页控制器
 @property (nonatomic, strong) PLVInteractView *interactView; // 互动
+@property (nonatomic, strong) PLVECLinkMicAreaView *linkMicAreaView; //连麦
 
 #pragma mark UI
 @property (nonatomic, strong) PLVECWatchRoomScrollView * scrollView;
@@ -294,6 +297,13 @@ UIScrollViewDelegate
     return _closeButton;
 }
 
+- (PLVECLinkMicAreaView *)linkMicAreaView {
+    if (!_linkMicAreaView) {
+        _linkMicAreaView = [[PLVECLinkMicAreaView alloc] init];
+        _linkMicAreaView.delegate = self;
+    }
+    return _linkMicAreaView;
+}
 
 #pragma mark - [ Event ]
 #pragma mark Action
@@ -336,6 +346,7 @@ UIScrollViewDelegate
         [self.homePageView updateLikeCount:roomData.likeCount];
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
+        [self.homePageView updateRoomInfoCount:roomData.menuInfo.pageView.integerValue];
     }
 }
 
@@ -448,13 +459,10 @@ UIScrollViewDelegate
 
 #pragma mark PLVECPlayerViewController Protocol
 
-- (void)playerController:(PLVECPlayerViewController *)playerController
-           codeRateItems:(NSArray <NSString *>*)codeRateItems
-                codeRate:(NSString *)codeRate
-                   lines:(NSUInteger)lines
-                    line:(NSInteger)line {
+- (void)playerController:(PLVECPlayerViewController *)playerController codeRateItems:(NSArray<NSString *> *)codeRateItems codeRate:(NSString *)codeRate lines:(NSUInteger)lines line:(NSInteger)line noDelayWatchMode:(BOOL)noDelayWatchMode {
     [self.homePageView updateCodeRateItems:codeRateItems defaultCodeRate:codeRate];
     [self.homePageView updateLineCount:lines defaultLine:line];
+    [self.homePageView updateNoDelayWatchMode:noDelayWatchMode];
 }
 
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
@@ -463,6 +471,37 @@ UIScrollViewDelegate
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime {
     [self.homePageView updateDowloadProgress:dowloadProgress playedProgress:playedProgress duration:duration currentPlaybackTime:currentPlaybackTime durationTime:durationTime];
+}
+
+- (void)playerController:(PLVECPlayerViewController *)playerController noDelayLiveStartUpdate:(BOOL)noDelayLiveStart {
+    [self.linkMicAreaView startWatchNoDelay:noDelayLiveStart];
+}
+
+- (void)playerController:(PLVECPlayerViewController *)playerController quickLiveNetworkQuality:(PLVECLivePlayerQuickLiveNetworkQuality)netWorkQuality {
+    if (netWorkQuality == PLVECLivePlayerQuickLiveNetworkQuality_Poor) {
+        [self.homePageView showNetworkQualityPoorView];
+    } else if (netWorkQuality == PLVECLivePlayerQuickLiveNetworkQuality_Middle) {
+        [self.homePageView showNetworkQualityMiddleView];
+    }
+}
+
+- (void)customMarqueeDefaultWithError:(NSError *)error {
+    [self exitCurrentController];
+}
+
+#pragma mark PLVECLinkMicAreaViewDelegate
+
+- (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView {
+    [self.playerVC displayContentView:canvasView];
+}
+
+/// 无延迟直播观看 网络质量检测
+- (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality {
+    if (rxQuality == PLVBLinkMicNetworkQualityFine) {
+        [self.homePageView showNetworkQualityMiddleView];
+    } else if (rxQuality == PLVBLinkMicNetworkQualityBad) {
+        [self.homePageView showNetworkQualityPoorView];
+    }
 }
 
 #pragma mark PLVECHomePageView Delegate
@@ -530,6 +569,13 @@ UIScrollViewDelegate
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchSpeed:(CGFloat)speed {
     [self.playerVC speedRate:speed];
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {
+    if ([PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay) {
+        [self.linkMicAreaView startWatchNoDelay:noDelayWatchMode];
+    }
+    [self.playerVC switchToNoDelayWatchMode:noDelayWatchMode];
 }
 
 #pragma mark UIScrollView Delegate

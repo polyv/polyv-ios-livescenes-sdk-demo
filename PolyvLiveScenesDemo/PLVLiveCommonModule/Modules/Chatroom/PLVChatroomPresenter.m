@@ -925,20 +925,70 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 收到私聊回复
 - (void)teacherAnswerEvent:(NSDictionary *)data {
     NSString *studentUserId = PLV_SafeStringForDictKey(data, @"s_userId");
-    if ([self isLoginUser:studentUserId]) {
-        
-        NSDictionary *user = PLV_SafeDictionaryForDictKey(data, @"user");
-        NSString *content = PLV_SafeStringForDictKey(data, @"content");
-        if (content && [content isKindOfClass:[NSString class]] && content.length > 0) {
-            content = [content stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
-            content = [content stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
-        }
-        
-        PLVChatModel *model = [[PLVChatModel alloc] init];
-        PLVChatUser *chatUser = [[PLVChatUser alloc] initWithUserInfo:user];
-        model.user = chatUser;
-        model.message = content;
-        [self notifyListenerDidReceiveAnswerChatModel:model];
+    if (![self isLoginUser:studentUserId]) {
+        return;
+    }
+    
+    NSDictionary *user = PLV_SafeDictionaryForDictKey(data, @"user");
+    NSString *content = PLV_SafeStringForDictKey(data, @"content");
+    if (!user || !content) {
+        return;
+    }
+    
+    NSString *senderId = PLV_SafeStringForDictKey(user, @"userId");
+    if ([self isLoginUser:senderId]) {
+        return;
+    }
+    
+    NSString *msgType = PLV_SafeStringForDictKey(data, @"msgType");
+    id message = nil;
+    if ([msgType isEqualToString:@"image"]) {
+        message = [self messageTeacherAnswerImageContent:content];
+    } else {
+        message = [self messageTeacherAnswerSpeakContent:content];
+    }
+    PLVChatUser *userModel = [[PLVChatUser alloc] initWithUserInfo:user];
+    if (!message || !userModel) {
+        return;
+    }
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = userModel;
+    model.message = message;
+    [self notifyListenerDidReceiveAnswerChatModel:model];
+}
+
+/// 私聊图片消息
+- (id)messageTeacherAnswerImageContent:(NSString *)content {
+    NSData *imageData = [content dataUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *imageDict = [NSJSONSerialization JSONObjectWithData:imageData options:0 error:nil];
+    if (!imageDict) {
+        return nil;
+    }
+    
+    PLVImageMessage *message = [[PLVImageMessage alloc] init];
+    message.imageId = PLV_SafeStringForDictKey(imageDict, @"id");
+    NSString *imageUrl = PLV_SafeStringForDictKey(imageDict, @"url");
+    if ([imageUrl hasPrefix:@"http:"]) {
+        message.imageUrl = [imageUrl stringByReplacingOccurrencesOfString:@"http:" withString:@"https:"];
+    } else {
+        message.imageUrl = imageUrl;
+    }
+    
+    CGFloat width = PLV_SafeFloatForDictKey(imageDict, @"width");
+    CGFloat height = PLV_SafeFloatForDictKey(imageDict, @"height");
+    message.imageSize = CGSizeMake(width, height);
+    return message;
+}
+
+/// 私聊文本消息
+- (id)messageTeacherAnswerSpeakContent:(NSString *)content {
+    if ([content isKindOfClass:[NSString class]] && content.length > 0) {
+        content = [content stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
+        content = [content stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
+        return content;
+    }else {
+        return nil;
     }
 }
 

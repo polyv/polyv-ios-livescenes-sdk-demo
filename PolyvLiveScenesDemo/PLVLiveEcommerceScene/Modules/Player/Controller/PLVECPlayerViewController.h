@@ -8,6 +8,14 @@
 
 #import <UIKit/UIKit.h>
 
+/// 网络质量（快直播独有）
+typedef NS_ENUM(NSInteger, PLVECLivePlayerQuickLiveNetworkQuality) {
+    PLVECLivePlayerQuickLiveNetworkQuality_NoConnection = 0,   // 无网络
+    PLVECLivePlayerQuickLiveNetworkQuality_Good = 1,           // 良好
+    PLVECLivePlayerQuickLiveNetworkQuality_Middle = 2,         // 一般
+    PLVECLivePlayerQuickLiveNetworkQuality_Poor = 3            // 较差
+};
+
 @class PLVECPlayerViewController;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -23,7 +31,12 @@ NS_ASSUME_NONNULL_BEGIN
            codeRateItems:(NSArray <NSString *>*)codeRateItems
                 codeRate:(NSString *)codeRate
                    lines:(NSUInteger)lines
-                    line:(NSInteger)line;
+                    line:(NSInteger)line
+        noDelayWatchMode:(BOOL)noDelayWatchMode;
+
+/// 快直播观看下的网络质量回调
+- (void)playerController:(PLVECPlayerViewController *)playerController
+ quickLiveNetworkQuality:(PLVECLivePlayerQuickLiveNetworkQuality)netWorkQuality;
 
 #pragma mark 回放的回调
 
@@ -33,6 +46,17 @@ NS_ASSUME_NONNULL_BEGIN
                      duration:(NSTimeInterval)duration
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime;
+
+#pragma mark  无延迟播放的回调
+
+/// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
+- (void)playerController:(PLVECPlayerViewController *)playerController
+  noDelayLiveStartUpdate:(BOOL)noDelayLiveStart;
+
+#pragma mark 跑马灯的回调
+
+/// 跑马灯校验失败回调
+- (void)customMarqueeDefaultWithError:(NSError *)error;
 
 @end
 
@@ -78,6 +102,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换音频模式
 - (void)switchAudioMode:(BOOL)audioMode;
 
+/// 切换到无延迟观看模式
+/// noDelayWatchMode : YES  无延迟观看 noDelayWatchMode : NO 普通延迟观看
+- (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode;
+
 #pragma mark 回放的API
 
 /// seek进度
@@ -85,6 +113,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 切换速率
 - (void)speedRate:(NSTimeInterval)speed;
+
+#pragma mark 视图
+
+/// 在[无延迟播放场景] 下 播放器区域中展示的一个内容视图
+- (void)displayContentView:(UIView *)contentView;
 
 @end
 

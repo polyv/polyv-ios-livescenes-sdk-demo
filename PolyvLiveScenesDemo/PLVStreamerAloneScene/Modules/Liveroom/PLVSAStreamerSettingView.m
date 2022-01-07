@@ -144,7 +144,6 @@ static NSString *const EnterTips = @"点击输入直播标题";
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
 
-    
     CGFloat backButttonTop = originY + 9;
     CGFloat startButtonBottom = bottom + (isLandscape ? 16 : 45);
     CGFloat startButtonWidth = 328;
@@ -312,7 +311,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
         _startButton.layer.cornerRadius = 25;
         _startButton.layer.masksToBounds = YES;
         _startButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:16];
-        [_startButton setTitle:@"开始直播" forState:UIControlStateNormal];
+        NSString *buttonTitle = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? @"开始直播" : @"进入直播间";
+        [_startButton setTitle:buttonTitle forState:UIControlStateNormal];
         [_startButton addTarget:self action:@selector(startButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         [_startButton.layer insertSublayer:self.gradientLayer atIndex:0];
     }
@@ -373,7 +373,6 @@ static NSString *const EnterTips = @"点击输入直播标题";
     if (!_bitRateButton) {
         _bitRateButton = [self buttonWithTitle:@"高清" NormalImageString:@"plvsa_liveroom_btn_hd" selectedImageString:@"plvsa_liveroom_btn_hd"];
         [_bitRateButton addTarget:self action:@selector(bitRateAction:) forControlEvents:UIControlEventTouchUpInside];
-
     }
     return _bitRateButton;
 }
@@ -398,8 +397,10 @@ static NSString *const EnterTips = @"点击输入直播标题";
         _channelNameLable.lineBreakMode = NSLineBreakByCharWrapping;
         _channelNameLable.textAlignment = NSTextAlignmentLeft;
         _channelNameLable.userInteractionEnabled = YES;
-        UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(startEditingAction:)];
-        [_channelNameLable addGestureRecognizer:tapGes];
+        if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+            UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(startEditingAction:)];
+            [_channelNameLable addGestureRecognizer:tapGes];
+        }
     }
     return _channelNameLable;
 }

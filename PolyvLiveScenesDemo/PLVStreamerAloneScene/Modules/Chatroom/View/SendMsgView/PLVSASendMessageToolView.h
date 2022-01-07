@@ -20,6 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) UIButton *emojiButton;
 @property (nonatomic, strong) UIButton *imageButton;
 @property (nonatomic, strong) UIButton *sendButton;
+@property (nonatomic, strong) CAGradientLayer *sendButtonLayer;
 //textView 的点击手势 当处于表情面板时点击切换输入法面板
 @property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
 
