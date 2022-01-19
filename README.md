@@ -1,6 +1,9 @@
 # polyv-ios-livescenes-sdk-demo
+
+[版本更新记录](https://help.polyv.net/index.html#/live/ios/CHANGELOG)
+
 ### 1 简介
-本项目从属于广州易方信息科技股份有限公司，是一款基于保利威多场景 SDK，包含了云课堂场景、直播带货场景、手机开播场景等多个场景的 Demo。想要集成本项目提供的 SDK，需要在[保利威视频云平台](https://www.polyv.net)注册账号，并开通相关服务。我们推荐的集成方式，是在使用 Demo 中的开源代码的基础上进行集成。关于如何使用开源代码进行集成，详见 [wiki](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/wiki)。
+本项目从属于广州易方信息科技股份有限公司，是一款基于保利威多场景 SDK，包含了云课堂场景、直播带货场景、手机开播场景等多个场景的 Demo。想要集成本项目提供的 SDK，需要在[保利威视频云平台](https://www.polyv.net)注册账号，并开通相关服务。我们推荐的集成方式，是在使用 Demo 中的开源代码的基础上进行集成。关于如何使用开源代码进行集成，详见 [wiki](https://help.polyv.net/index.html#/live/ios/)。
 
 多场景项目的项目架构图如下：
 
@@ -53,7 +56,7 @@ Demo [下载链接](https://www.pgyer.com/IzFQ) （密码：polyv）
 
 ### 4 Wiki 文档
 
-可在 [Wiki 文档](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/wiki) 中，了解 **项目结构、SDK 能力、源码释义** 等内容
+可在 [Wiki 文档](https://help.polyv.net/index.html#/live/ios/) 中，了解 **项目结构、SDK 能力、源码释义** 等内容
 
 ### 5 Released 版本更新
 
@@ -80,7 +83,7 @@ Demo [下载链接](https://www.pgyer.com/IzFQ) （密码：polyv）
 | 1.4.1           | 1.4.1         |                                                                                              | ✅       | ✅                | ✅                  | ✅                            |                               |
 | 1.3.0           | 1.3.0         |                                                                                              | ✅       | ✅                | ✅                  |                               |                               |
 
-更多版本更新详情，可在 [版本更新列表](https://github.com/polyv/polyv-ios-livescenes-sdk-demo/releases)，了解 **对应版本更新说明**，以及 **下载源码**
+更多版本更新详情，可前往 [版本更新列表](../../releases)，了解 **对应版本更新说明**，以及 **下载源码**
 
 
 
