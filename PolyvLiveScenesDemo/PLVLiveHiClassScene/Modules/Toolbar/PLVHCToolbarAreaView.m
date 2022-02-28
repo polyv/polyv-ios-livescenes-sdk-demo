@@ -11,9 +11,6 @@
 //工具类
 #import "PLVHCUtils.h"
 
-// UI
-#import "PLVHCGroupLeaderGuidePagesView.h"
-
 // 模块
 #import "PLVRoomDataManager.h"
 
@@ -325,11 +322,8 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     [self stopCallingTeacherAnimating];
 }
 
-- (void)toolbarAreaViewRaiseHand:(BOOL)raiseHand
-                          userId:(NSString *)userId
-                           count:(NSInteger)count {
-    if (self.viewerType == PLVRoomUserTypeSCStudent ||
-        [self isLoginUser:userId]) {
+- (void)raiseHand:(BOOL)raiseHand count:(NSInteger)count {
+    if (self.viewerType != PLVRoomUserTypeTeacher) {
         return;
     }
     
@@ -367,7 +361,6 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
     
     if ([PLVHiClassManager sharedManager].currentUserIsGroupLeader) {
         self.toolbarStatus = PLVHCToolbarViewStatusIsGroupLeader;
-        [PLVHCGroupLeaderGuidePagesView showGuidePagesViewinView:[PLVHCUtils sharedUtils].homeVC.view endBlock:nil];
     } else {
         self.toolbarStatus = PLVHCToolbarViewStatusStudentInGroup;
     }
@@ -430,6 +423,9 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
 - (void)updateLayoutByStatus:(PLVHCToolbarViewStatus)status {
     self.messageRemindView.center = CGPointMake(CGRectGetWidth(self.chatButton.bounds) - CGRectGetWidth(self.messageRemindView.bounds)/2, CGRectGetHeight(self.messageRemindView.bounds)/2);
     CGFloat itemSpacing = (CGRectGetHeight(self.bounds) - KPLVHCToolButtonSize * 5 - 20 * 2)/4;
+    if ([PLVHCUtils sharedUtils].isPad) {
+        itemSpacing = 14;
+    }
     self.chatButton.hidden = YES;
     self.settingButton.hidden = YES;
     self.raiseHandButton.hidden = YES;
@@ -470,7 +466,7 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewButtonType) {
             self.chatButton.center = CGPointMake(self.memberButton.center.x, self.memberButton.center.y + KPLVHCToolButtonSize + itemSpacing);
             self.settingButton.center = CGPointMake(self.memberButton.center.x, self.chatButton.center.y + KPLVHCToolButtonSize + itemSpacing);
             //举手提醒按钮
-            self.raiseHandRemindImageView.center = CGPointMake(self.settingButton.center.x - KPLVHCToolButtonSize - 14, self.memberButton.center.y);
+            self.raiseHandRemindImageView.center = CGPointMake(self.memberButton.center.x - KPLVHCToolButtonSize - 14, self.memberButton.center.y);
         }
             break;
         case PLVHCToolbarViewStatusIsGroupLeader: {

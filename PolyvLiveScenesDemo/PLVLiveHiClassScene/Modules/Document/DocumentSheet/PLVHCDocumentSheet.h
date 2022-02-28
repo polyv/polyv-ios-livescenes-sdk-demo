@@ -19,7 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 ///  选择文档时回调
 /// @param documentSheet 文档窗对象
 /// @param autoId 选择的文档Id
-- (void)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectAutoId:(NSUInteger)autoId;
+/// @return YES-打开成功；NO-打开失败
+- (BOOL)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectAutoId:(NSUInteger)autoId;
 
 @end
 

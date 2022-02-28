@@ -40,6 +40,7 @@ UITableViewDataSource
 /// 数据
 @property (nonatomic, strong) NSArray <PLVChatUser *> *userList;
 @property (nonatomic, assign) NSInteger userCount;
+@property (nonatomic, assign) NSInteger onlineCount;
 @property (nonatomic, assign) BOOL tableViewEditing; // 列表是否处于左滑中状态
 @property (nonatomic, assign) BOOL delayReload; // 是否在左滑时遇到列表刷新通知
 @property (nonatomic, assign) BOOL showLeftDragAnimation; // 显示左滑动画
@@ -99,9 +100,10 @@ UITableViewDataSource
 
 #pragma mark - [ Public Method ]
 
-- (void)updateUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount {
+- (void)updateUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount onlineCount:(NSInteger)onlineCount {
     self.userList = userList;
     self.userCount = userCount;
+    self.onlineCount = onlineCount;
     
     [self updateUI];
 }
@@ -279,6 +281,12 @@ UITableViewDataSource
             [self.delegate kickUsersInMemberSheet:self userId:user.userId];
         }
     }
+}
+
+- (BOOL)allowLinkMicInCell:(PLVLSMemberCell *)cell {
+    NSInteger maxLinkMicCount = [PLVRoomDataManager sharedManager].roomData.interactNumLimit;
+    BOOL allowLinkmic = self.onlineCount <= maxLinkMicCount;
+    return allowLinkmic;
 }
 
 #pragma mark UITableViewDataSource

@@ -7,8 +7,15 @@
 //
 
 #import "PLVECRewardController.h"
+
+// 工具
+#import "PLVECUtils.h"
+
+// 模块
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
+
+// 依赖库
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
 @interface PLVECRewardController () <PLVECRewardViewDelegate>
@@ -46,15 +53,17 @@
         return;
     }
     
-    if (self.didSendGift) {
-        self.didSendGift(giftName, giftType);
-    }
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     NSDictionary *data = @{@"giftName" : giftName,
                            @"giftType" : giftType,
                            @"giftCount" : @"1"};
     NSString *tip = [NSString stringWithFormat:@"%@ 赠送了 %@", roomUser.viewerName, giftName];
-    [[PLVECChatroomViewModel sharedViewModel] sendGiftMessageWithData:data tip:tip];
+    BOOL success = [[PLVECChatroomViewModel sharedViewModel] sendGiftMessageWithData:data tip:tip];
+    if (success) {
+        self.didSendGift ? self.didSendGift(giftName, giftType) : nil;
+    } else {
+        [PLVECUtils showHUDWithTitle:@"发送失败" detail:@"" view:self.view.superview];
+    }
 }
 
 @end

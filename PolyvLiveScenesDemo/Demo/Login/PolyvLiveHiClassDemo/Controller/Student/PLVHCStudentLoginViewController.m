@@ -300,6 +300,7 @@ static NSString *const kPLVUserDefaultStudentLoginNickname = @"kPLVUserDefaultSt
 - (UIImageView *)studentBackgroundImageView {
     if (!_studentBackgroundImageView) {
         _studentBackgroundImageView = [[UIImageView alloc] initWithImage:[PLVHCDemoUtils imageForHiClassResource:@"plvhc_student_bg_image"]];
+        _studentBackgroundImageView.contentMode = UIViewContentModeScaleAspectFill;
     }
     return _studentBackgroundImageView;
 }

@@ -18,6 +18,7 @@ extern NSString *PLVRoomDataKeyPathPlaying;
 extern NSString *PLVRoomDataKeyPathChannelInfo;
 extern NSString *PLVRoomDataKeyPathMenuInfo;
 extern NSString *PLVRoomDataKeyPathLiveState;
+extern NSString *PLVRoomDataKeyPathVid;
 
 @interface PLVRoomDataManager ()
 
@@ -101,6 +102,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathChannelInfo options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathLiveState options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
+    [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathVid options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)removeRoomDataObserver {
@@ -112,6 +114,7 @@ extern NSString *PLVRoomDataKeyPathLiveState;
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathChannelInfo];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathLiveState];
+    [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathVid];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
@@ -135,6 +138,8 @@ extern NSString *PLVRoomDataKeyPathLiveState;
         [self notifyDelegatesDidMenuInfoChanged:self.roomData.menuInfo];
     } else if ([keyPath isEqualToString:PLVRoomDataKeyPathLiveState]) {
         [self notifyDelegatesDidLiveStateChanged:self.roomData.liveState];
+    } else if ([keyPath isEqualToString:PLVRoomDataKeyPathVid]) {
+        [self notifyDelegatesDidVidChanged:self.roomData.vid];
     }
 }
 
@@ -185,6 +190,12 @@ extern NSString *PLVRoomDataKeyPathLiveState;
 - (void)notifyDelegatesDidLiveStateChanged:(PLVChannelLiveStreamState)liveState {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate roomDataManager_didLiveStateChanged:liveState];
+    });
+}
+
+- (void)notifyDelegatesDidVidChanged:(NSString *)vid {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate roomDataManager_didVidChanged:vid];
     });
 }
 

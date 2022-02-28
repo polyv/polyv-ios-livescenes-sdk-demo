@@ -260,6 +260,11 @@ PLVAdvViewDelegate
     [self.livePlaybackPlayer switchLivePlaybackSpeedRate:toSpeed];
 }
 
+- (void)changeVid:(NSString *)vid {
+    [self.livePlaybackPlayer changeLivePlaybackVodId:vid];
+    [self resumePlay];
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setup{
     self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(timerEvent:) userInfo:nil repeats:YES];
@@ -331,6 +336,11 @@ PLVAdvViewDelegate
 - (void)showAdv {
     /** 不显示片头广告(此开关应对云课堂暂时不显示片头广告情况，后面云课程支持片头广告，需去掉openAdv) */
     if (! self.openAdv) {
+        return;
+    }
+    
+    /// 无延迟直播不显示片头广告
+    if (self.channelWatchNoDelay) {
         return;
     }
     
@@ -511,6 +521,19 @@ PLVAdvViewDelegate
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
             if ([self.delegate respondsToSelector:@selector(playerPresenter:downloadProgress:playedProgress:playedTimeString:durationTimeString:)]) {
                 [self.delegate playerPresenter:self downloadProgress:0 playedProgress:1 playedTimeString:self.livePlaybackPlayer.playedTimeString durationTimeString:self.livePlaybackPlayer.durationTimeString];
+                
+                ///回放列表播放结束自动播放下一回放
+                PLVPlaybackListModel *playbackList = [PLVRoomDataManager sharedManager].roomData.playbackList;
+                if (playbackList.totalItems > 1 && [playbackList.contents count] > 1) {
+                    for (int i = 0; i < playbackList.totalItems; i++) {
+                        if ([[PLVRoomDataManager sharedManager].roomData.vid isEqualToString:playbackList.contents[i].videoPoolId]) {
+                            [PLVRoomDataManager sharedManager].roomData.vid = (i == (playbackList.totalItems - 1)) ? playbackList.contents.firstObject.videoPoolId: playbackList.contents[i + 1].videoPoolId;
+                            [PLVRoomDataManager sharedManager].roomData.videoId = (i == (playbackList.totalItems - 1)) ? playbackList.contents.firstObject.videoId: playbackList.contents[i + 1].videoId;
+                            break;
+                        }
+                    }
+                }
+                
                 /// 断网导致播放停止的情况
                 if (self.duration - self.currentPlaybackTime >= 1) {
                     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPlaybackInterrupted:)]) {
@@ -637,6 +660,14 @@ PLVAdvViewDelegate
 - (BOOL)plvLivePlayerGetInLinkMic:(PLVLivePlayer *)livePlayer{
     if ([self.delegate respondsToSelector:@selector(playerPresenterGetInLinkMic:)]) {
         return [self.delegate playerPresenterGetInLinkMic:self];
+    }else{
+        return NO;
+    }
+}
+
+- (BOOL)plvLivePlayerGetPausedWatchNoDelay:(PLVLivePlayer *)livePlayer {
+    if ([self.delegate respondsToSelector:@selector(playerPresenterGetPausedWatchNoDelay:)]) {
+        return [self.delegate playerPresenterGetPausedWatchNoDelay:self];
     }else{
         return NO;
     }

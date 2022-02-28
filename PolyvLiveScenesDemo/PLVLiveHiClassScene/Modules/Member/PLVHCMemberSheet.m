@@ -181,17 +181,34 @@ PLVHCKickedMemberCellDelegate
 #pragma mark Action
 
 - (void)closeMicButtonAction {
-    self.headerView.closeMicButton.selected =     !self.headerView.closeMicButton.isSelected;
-    if (self.delegate && [self.delegate respondsToSelector:@selector(muteAllLinkMicUserMicInMemberSheet:mute:)]) {
-        [self.delegate muteAllLinkMicUserMicInMemberSheet:self mute:self.headerView.closeMicButton.isSelected];
+    self.headerView.closeMicButton.selected = !self.headerView.closeMicButton.isSelected;
+    BOOL mute = self.headerView.closeMicButton.isSelected;
+    if (mute) {
+        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_MicAllAanned message:@"已全体禁麦"];
+    } else {
+        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenMic message:@"已取消全体禁麦"];
+    }
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(muteAllLinkMicUserMicInMemberSheet:mute:)]) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            [weakSelf.delegate muteAllLinkMicUserMicInMemberSheet:weakSelf mute:mute];
+        })
     }
 }
 
 - (void)leaveLinkMicButtonAction {
     __weak typeof(self) weakSelf = self;
     [PLVHCUtils showAlertWithTitle:@"学生下台" message:@"要将所有学生下台吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
-        if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(closeAllLinkMicUserInMemberSheet:)]) {
-            [weakSelf.delegate closeAllLinkMicUserInMemberSheet:weakSelf];
+        if (weakSelf.delegate &&
+            [weakSelf.delegate respondsToSelector:@selector(closeAllLinkMicUserInMemberSheet:)]) {
+            plv_dispatch_main_async_safe(^{
+                BOOL success = [weakSelf.delegate closeAllLinkMicUserInMemberSheet:weakSelf];
+                if (success) {
+                    [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_AllStepDown message:@"已全体下台"];
+                }
+            })
         }
     }];
 }
@@ -215,6 +232,18 @@ PLVHCKickedMemberCellDelegate
 
 - (void)kickedUserListChangedInMemberViewModel:(PLVHCMemberViewModel *)viewModel {
     [self updateUI];
+}
+
+- (void)raiseHandStatusChanged:(PLVHCMemberViewModel *)viewModel status:(BOOL)raiseHandStatus count:(NSInteger)raiseHandCount {
+    [self setHandupLabelCount:raiseHandCount];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(raiseHandStatusChanged:status:count:)]) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            [weakSelf.delegate raiseHandStatusChanged:weakSelf status:raiseHandStatus count:raiseHandCount];
+        })
+    }
 }
 
 #pragma mark PLVHCMemberSheetSelectViewDelegate
@@ -321,8 +350,12 @@ PLVHCKickedMemberCellDelegate
 }
 
 - (void)linkMicInOnlineMemberCell:(PLVHCOnlineMemberCell *)memberCell linkMicUser:(PLVChatUser *)user linkMic:(BOOL)linkMic {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(inviteUserLinkMicInMemberSheet:linkMic:chatUser:)]) {
-        [self.delegate inviteUserLinkMicInMemberSheet:self linkMic:linkMic chatUser:user];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(inviteUserLinkMicInMemberSheet:linkMic:chatUser:)]) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            [weakSelf.delegate inviteUserLinkMicInMemberSheet:weakSelf linkMic:linkMic chatUser:user];
+        })
     }
 }
 

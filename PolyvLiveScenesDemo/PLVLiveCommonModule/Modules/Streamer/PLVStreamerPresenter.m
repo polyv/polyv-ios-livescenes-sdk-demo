@@ -393,11 +393,11 @@ PLVChannelClassManagerDelegate
 }
 
 /// 挂断全部连麦用户
-- (void)closeAllLinkMicUser{
+- (void)closeAllLinkMicUser {
     if (self.arraySafeQueue) {
         __weak typeof(self) weakSelf = self;
         dispatch_async(self.arraySafeQueue, ^{
-            PLVLinkMicOnlineUser * user;
+            PLVLinkMicOnlineUser *user;
             for (int i = 0; i < weakSelf.onlineUserMuArray.count; i++) {
                 user = weakSelf.onlineUserMuArray[i];
                 if (![user.linkMicUserId isEqualToString:self.linkMicUserId]) {
@@ -1946,7 +1946,7 @@ PLVChannelClassManagerDelegate
 
 - (PLVChannelClassManager *)channelClassManager{
     if (!_channelClassManager) {
-        _channelClassManager = [[PLVChannelClassManager alloc] init];
+        _channelClassManager = [[PLVChannelClassManager alloc] initWithChannelId:self.channelId];
         _channelClassManager.delegate = self;
     }
     return _channelClassManager;

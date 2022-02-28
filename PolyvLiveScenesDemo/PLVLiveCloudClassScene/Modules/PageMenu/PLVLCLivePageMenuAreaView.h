@@ -25,7 +25,11 @@ typedef NS_ENUM(NSInteger, PLVLCLivePageMenuType) {
 /// 将后端返回的menu字符串转化为枚举值PLVLCLivePageMenuType
 PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
+@protocol PLVLCLivePageMenuAreaViewDelegate;
+
 @interface PLVLCLivePageMenuAreaView : UIView
+
+@property (nonatomic, weak) id <PLVLCLivePageMenuAreaViewDelegate> delegate;
 
 /// 互动聊天页，退出直播时需要clearResource，切换全屏时需要提取聊天室的点赞Button
 @property (nonatomic, strong) PLVLCChatViewController *chatVctrl;
@@ -39,4 +43,16 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
 @end
 
+@protocol PLVLCLivePageMenuAreaViewDelegate <NSObject>
+
+/// 获取当前播放进度
+/// @param pageMenuAreaView 菜单视图
+- (NSTimeInterval)plvLCLivePageMenuAreaViewGetPlayerCurrentTime:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
+
+/// 跳转到指定时间
+/// @param pageMenuAreaView 菜单视图
+/// @param time 跳转指定时间
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView seekTime:(NSTimeInterval)time;
+
+@end
 NS_ASSUME_NONNULL_END

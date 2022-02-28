@@ -50,8 +50,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param userCount 在线成员总数（在线成员总数不一定等于数组userList的count）
 - (instancetype)initWithUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount;
 
-/// 更新成员列表数据、在线成员总数
-- (void)updateUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount;
+/// 更新成员列表弹层所需数据
+/// @param userList 成员列表数据
+/// @param userCount 在线成员总数
+/// @param onlineCount 连麦人数
+- (void)updateUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount onlineCount:(NSInteger)onlineCount;
 
 
 @end

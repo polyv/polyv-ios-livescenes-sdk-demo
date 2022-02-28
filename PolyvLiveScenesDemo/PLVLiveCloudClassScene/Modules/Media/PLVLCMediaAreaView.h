@@ -58,6 +58,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 @property (nonatomic, assign) CGFloat topPaddingBelowiOS11;
 
 #pragma mark 状态
+/// 当前播放时间
+@property (nonatomic, assign, readonly) NSTimeInterval currentPlayTime;
+
 /// 当前播放器类型
 ///
 /// @note 可通过 [switchAreaViewLiveSceneTypeTo:] 方法进行切换；仅适用在视频类型为 ‘直播’ 时使用此类型值
@@ -136,6 +139,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///       因此以下该“对外方法”，仅应该在 连麦场景中 被调用。
 - (UIView *)getContentViewForExchange;
 
+///  视频跳至某个时间点
+- (void)seekLivePlaybackToTime:(NSTimeInterval)time;
+
 /// 显示网络不佳提示视图
 - (void)showNetworkQualityMiddleView;
 
@@ -159,6 +165,15 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @return BOOL 由外部告知的当前是否连麦中 (YES:正在连麦中 NO:不在连麦中)
 - (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView;
+
+/// 媒体区域视图需要得知当前‘是否暂停无延迟观看’
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param mediaAreaView 媒体区域视图
+///
+/// @return BOOL 由外部告知的当前是否已暂停无延迟观看 (YES:已暂停 NO:未暂停)
+- (BOOL)plvLCMediaAreaViewGetPausedWatchNoDelay:(PLVLCMediaAreaView *)mediaAreaView;
 
 /// 媒体区域视图需要得知当前‘是否在RTC房间中’
 ///

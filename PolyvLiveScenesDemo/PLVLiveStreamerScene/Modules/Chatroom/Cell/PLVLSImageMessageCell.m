@@ -7,19 +7,23 @@
 //
 
 #import "PLVLSImageMessageCell.h"
-#import "PLVChatModel.h"
-#import "PLVPhotoBrowser.h"
+
+// 工具类
 #import "PLVLSUtils.h"
-#import <PLVLiveScenesSDK/PLVImageMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+
+// UI
+#import "PLVPhotoBrowser.h"
+#import "PLVLSProhibitWordTipView.h"
+
+// 模块
+#import "PLVChatModel.h"
+
+// 依赖库
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSImageMessageCell ()
-
-#pragma mark 数据
-
-@property (nonatomic, assign) CGFloat cellWidth; /// cell宽度
-@property (nonatomic, strong) NSString *loginUserId; /// 登录用户的聊天室userId
 
 #pragma mark UI
  
@@ -27,7 +31,13 @@
 @property (nonatomic, strong) UIImageView *chatImageView; /// 聊天消息图片
 @property (nonatomic, strong) UIView *bubbleView; /// 背景气泡
 @property (nonatomic, strong) PLVPhotoBrowser *photoBrowser; /// 消息图片Browser
-@property (nonatomic, strong) UILabel *prohibitImageTipLabel;  /// 严禁词提示
+@property (nonatomic, strong) UIImageView *prohibitImageView;  // 违规图提示
+@property (nonatomic, strong) PLVLSProhibitWordTipView *prohibitWordTipView; // 违规图提示视图
+
+#pragma mark 数据
+
+@property (nonatomic, assign) CGFloat cellWidth; /// cell宽度
+@property (nonatomic, strong) NSString *loginUserId; /// 登录用户的聊天室userId
 
 @end
 
@@ -43,7 +53,7 @@
         [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.nickLabel];
         [self.contentView addSubview:self.chatImageView];
-        [self.contentView addSubview:self.prohibitImageTipLabel];
+        [self.contentView addSubview:self.prohibitImageView];
         
         self.photoBrowser = [[PLVPhotoBrowser alloc] init];
     }
@@ -64,28 +74,28 @@
     self.nickLabel.frame = CGRectMake(originX, originY, nickLabelSize.width, 16);
     originY += 16 + 4; // nickLabel跟图片之间距离4
     
-    CGSize imageViewSize = [PLVLSImageMessageCell calculateImageViewSizeWithMessage:self.model.message];
-    self.chatImageView.frame = CGRectMake(originX, originY, imageViewSize.width, imageViewSize.height);
-    originY += imageViewSize.height + 4;
-    
-    CGFloat bubbleWidth = MAX(nickLabelSize.width, imageViewSize.width) + bubbleXPadding * 2;
-    
+    CGFloat bubbleWidth;
     if ([self.model isProhibitMsg]) {
         // 设置为本地图片36*36
-        originY = 4 + 16 + 4; // 恢复到昵称下面显示
         self.chatImageView.frame = CGRectMake(originX, originY, 36, 36);
         originY += 36 + 4;
+        // 设置 bubbleWidth
         bubbleWidth = MAX(nickLabelSize.width, 36) + bubbleXPadding * 2;
         
-        // 违规提示语
-        NSAttributedString *tipAttri = self.prohibitImageTipLabel.attributedText;
-        CGSize labelViewSize =  [tipAttri boundingRectWithSize:CGSizeMake(MAXFLOAT, 17) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+        // 提示图标
+        self.prohibitImageView.frame = CGRectMake(CGRectGetMaxX(self.chatImageView.frame) - 7, CGRectGetMaxY(self.chatImageView.frame) - 14, 14, 14);
         
-        self.prohibitImageTipLabel.frame = CGRectMake(originX, CGRectGetMaxY(self.chatImageView.frame) + 4,  labelViewSize.width, labelViewSize.height);
+        if (!self.model.prohibitWordTipIsShowed) {
+            self.prohibitWordTipView.frame = CGRectMake(0, originY + 4, 80, 38);
+        } else {
+            self.prohibitWordTipView.frame = CGRectZero;
+        }
+    } else {
+        CGSize imageViewSize = [PLVLSImageMessageCell calculateImageViewSizeWithMessage:self.model.message];
+        self.chatImageView.frame = CGRectMake(originX, originY, imageViewSize.width, imageViewSize.height);
+        originY += imageViewSize.height + 8;
         
-        originY += labelViewSize.height + 4;
-        bubbleWidth = MAX(bubbleWidth, CGRectGetMaxY(self.prohibitImageTipLabel.frame));
-        
+        bubbleWidth = MAX(nickLabelSize.width, imageViewSize.width) + bubbleXPadding * 2;
     }
     
     self.bubbleView.frame = CGRectMake(0, 0, bubbleWidth, originY);
@@ -124,15 +134,22 @@
     return _chatImageView;
 }
 
-- (UILabel *)prohibitImageTipLabel {
-    if(!_prohibitImageTipLabel) {
-        _prohibitImageTipLabel = [[UILabel alloc] init];
-        _prohibitImageTipLabel.font = [UIFont systemFontOfSize:12];
-        _prohibitImageTipLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:0.6];
-        _prohibitImageTipLabel.hidden = YES;
+- (UIImageView *)prohibitImageView {
+    if (!_prohibitImageView) {
+        _prohibitImageView = [[UIImageView alloc] init];
+        _prohibitImageView.image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_signal_error_icon"];
+        _prohibitImageView.hidden = YES;
     }
-    return _prohibitImageTipLabel;
+    return _prohibitImageView;
 }
+
+- (PLVLSProhibitWordTipView *)prohibitWordTipView {
+    if (!_prohibitWordTipView) {
+        _prohibitWordTipView = [[PLVLSProhibitWordTipView alloc] init];
+    }
+    return _prohibitWordTipView;
+}
+
 #pragma mark - UI
 
 - (void)updateWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
@@ -152,25 +169,12 @@
                                                                                          loginUserId:self.loginUserId];
     self.nickLabel.attributedText = nickLabelString;
     
-    PLVImageMessage *message = (PLVImageMessage *)model.message;
-    NSURL *imageURL = [PLVLSImageMessageCell imageURLWithMessage:message];
-    UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
-    // 如果是违规图片，设置本地图片，并跳过后续操作
+    self.prohibitImageView.hidden = ![model isProhibitMsg];
+    // 如果是违规图片，设置本地图片
     if ([model isProhibitMsg]) {
-        [self.chatImageView setImage:[PLVLSUtils imageForStatusResource:@"plvls_status_signal_error_img_icon"]];
-        self.prohibitImageTipLabel.attributedText = [PLVLSImageMessageCell contentLabelAttributedStringWithProhibitWordTip:[PLVLSImageMessageCell prohibitWordTip]];
-        self.prohibitImageTipLabel.hidden = NO;
-        return;
-    }
-    self.prohibitImageTipLabel.hidden = YES;
-    if (imageURL) {
-        [self.chatImageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
-    } else if (message.image) {
-        [self.chatImageView setImage:message.image];
+        [self dealProhibitWordTipWithModel:model];
     } else {
-        [self.chatImageView setImage:placeHolderImage];
+        [self loadImageWithModel:model];
     }
 }
 
@@ -237,7 +241,11 @@
     CGFloat prohibitTipHeight = 0; // 违禁提示语高度
     if ([model isProhibitMsg]) {
         imageViewSize = CGSizeMake(36, 36);
-        prohibitTipHeight = 4 + 17 + 4;
+        if (!model.prohibitWordTipIsShowed) {
+            prohibitTipHeight = 8 + 38 + 4;
+        }
+    } else {
+        prohibitTipHeight = 8;
     }
     return bubbleYPadding + nickLabelHeight + 4 + imageViewSize.height + prohibitTipHeight + bubbleYPadding + 4; // nickLabel跟图片之间距离4，气泡底部外间距4
 }
@@ -262,10 +270,57 @@
     }
 }
 
+#pragma mark 根据数据源设置cell视图
+
+- (void)dealProhibitWordTipWithModel:(PLVChatModel *)model {
+    [self.chatImageView setImage:[PLVLSUtils imageForChatroomResource:@"plvls_chatroom_signal_error_img_icon"]];
+    
+    self.prohibitImageView.hidden = NO;
+
+    // 严禁图提示
+    if (!model.prohibitWordTipIsShowed) {
+    
+        self.prohibitWordTipView.hidden = NO;
+        [self.prohibitWordTipView setTipType:PLVLSProhibitWordTipTypeImage prohibitWord:model.prohibitWord];
+        [self.prohibitWordTipView showWithSuperView:self.contentView];
+        
+        __weak typeof(self)weakSelf = self;
+        self.prohibitWordTipView.dismissBlock = ^{
+            weakSelf.model.prohibitWordTipShowed = YES;
+            if (weakSelf.refreshCellHandler) {
+                weakSelf.refreshCellHandler();
+            }
+        };
+        
+    }else{
+        self.prohibitWordTipView.hidden = YES;
+    }
+}
+
+- (void)loadImageWithModel:(PLVChatModel *)model {
+    PLVImageMessage *message = (PLVImageMessage *)model.message;
+    NSURL *imageURL = [PLVLSImageMessageCell imageURLWithMessage:message];
+    UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
+    if (imageURL) {
+        [self.chatImageView sd_setImageWithURL:imageURL placeholderImage:placeHolderImage];
+    } else if (message.image) {
+        [self.chatImageView setImage:message.image];
+    } else {
+        [self.chatImageView setImage:placeHolderImage];
+    }
+}
+
 #pragma mark - Action
 
 - (void)tapImageViewAction {
-    [self.photoBrowser scaleImageViewToFullScreen:self.chatImageView];
+    if (self.model.isProhibitMsg) {
+        if (self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
+            self.model.prohibitWordTipShowed = NO;
+            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+        }
+    } else {
+        [self.photoBrowser scaleImageViewToFullScreen:self.chatImageView];
+    }
 }
 
 #pragma mark - Utils

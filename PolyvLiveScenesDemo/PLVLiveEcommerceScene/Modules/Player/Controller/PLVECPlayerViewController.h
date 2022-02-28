@@ -114,6 +114,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换速率
 - (void)speedRate:(NSTimeInterval)speed;
 
+/// 切换回放
+- (void)changeVid:(NSString *)vid;
+
 #pragma mark 视图
 
 /// 在[无延迟播放场景] 下 播放器区域中展示的一个内容视图

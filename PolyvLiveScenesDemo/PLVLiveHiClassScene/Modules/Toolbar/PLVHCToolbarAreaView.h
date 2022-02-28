@@ -50,9 +50,7 @@ typedef NS_ENUM(NSInteger, PLVHCToolbarViewStatus) {
 /// 【讲师端】收到学生举手数量提醒
 /// @param raiseHand (YES 举手 NO 取消举手)
 /// @param count 举手数量 当举手数为0时则隐藏举手提醒
-- (void)toolbarAreaViewRaiseHand:(BOOL)raiseHand
-                          userId:(NSString *)userId
-                           count:(NSInteger)count;
+- (void)raiseHand:(BOOL)raiseHand count:(NSInteger)count;
 
 ///【讲师端】【学生端】收到新消息提醒
 - (void)toolbarAreaViewReceiveNewMessage;

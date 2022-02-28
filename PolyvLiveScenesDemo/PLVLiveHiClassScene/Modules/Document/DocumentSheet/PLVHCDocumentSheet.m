@@ -179,7 +179,10 @@ UIDocumentPickerDelegate
 - (void)documentListView:(PLVHCDocumentListView *)documentListView didSelectItemModel:(PLVDocumentModel *)model {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(documentSheet:didSelectAutoId:)]) {
-        [self.delegate documentSheet:self didSelectAutoId:model.autoId];
+        BOOL allow = [self.delegate documentSheet:self didSelectAutoId:model.autoId];
+        if (!allow) {
+            [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_DocumentCountOver message:@"只支持同时打开5个文件"];
+        }
     }
 }
 

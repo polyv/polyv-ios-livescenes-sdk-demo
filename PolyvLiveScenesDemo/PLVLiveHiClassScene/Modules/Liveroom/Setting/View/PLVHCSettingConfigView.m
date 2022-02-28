@@ -12,6 +12,7 @@
 #import "PLVRoomDataManager.h"
 
 // 工具
+#import "PLVHCCaptureDeviceManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVHCUtils.h"
 
@@ -122,21 +123,22 @@ static NSString *const kSCCameraIsFrontConfigKey = @"kSCCameraIsFrontConfigKey";
     }
 }
 
-- (void)synchronizeConfig:(NSDictionary *)dict {
+- (void)synchronizeConfig {
     if (self.type == PLVHCSettingConfigViewLogoutClass) {
-        if ([PLVFdUtil checkDictionaryUseable:dict]) {
-            UISwitch *microphoneSwitch = (UISwitch *)[self viewWithTag:1];
-            microphoneSwitch.on = PLV_SafeBoolForDictKey(dict, kSCMicrophoneEnableConfigKey);
-            
-            UISwitch *cameraSwitch = (UISwitch *)[self viewWithTag:2];
-            cameraSwitch.on = PLV_SafeBoolForDictKey(dict, kSCCameraEnableConfigKey);
-            
-            UIButton *cameraDirectionButton = (UIButton *)[self viewWithTag:999];
-            cameraDirectionButton.selected = PLV_SafeBoolForDictKey(dict, kSCCameraIsFrontConfigKey);
-            
-            [self notifyControlSwitchAction:microphoneSwitch];
-            [self notifyControlSwitchAction:cameraSwitch];
-            [self notifyCameraDirectionButtonAction:cameraDirectionButton];
+        PLVHCCaptureDeviceManager *deviceManager = [PLVHCCaptureDeviceManager sharedManager];
+        
+        UISwitch *microphoneSwitch = (UISwitch *)[self viewWithTag:1];
+        microphoneSwitch.on = deviceManager.micOpen;
+        
+        UISwitch *cameraSwitch = (UISwitch *)[self viewWithTag:2];
+        cameraSwitch.on = deviceManager.cameraOpen;
+        
+        UIButton *cameraDirectionButton = (UIButton *)[self viewWithTag:999];
+        cameraDirectionButton.selected = !deviceManager.cameraFront;
+        if (cameraDirectionButton.selected) {
+            self.cameraDirectionButtonLayer.frame = CGRectMake(CGRectGetWidth(cameraDirectionButton.bounds) / 2 - 5, 0, CGRectGetWidth(cameraDirectionButton.bounds) + 5, 23);
+        } else {
+            self.cameraDirectionButtonLayer.frame = CGRectMake(0, 0, CGRectGetWidth(cameraDirectionButton.bounds) / 2 + 5, 23);
         }
     }
 }
@@ -165,6 +167,20 @@ static NSString *const kSCCameraIsFrontConfigKey = @"kSCCameraIsFrontConfigKey";
         return;
     }
     [self cameraDirectionButtonAction:cameraDirectionButton];
+}
+
+- (void)audioVolumeChanged:(CGFloat)volume {
+    NSInteger volumeLevel = volume * volumeMaxLevel;
+    for (int i = 0; i < volumeLevel; i++) {
+        CALayer *layer = self.volumeView.layer.sublayers[i];
+        layer.backgroundColor = PLV_UIColorFromRGB(@"#00B16C").CGColor;
+    }
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        for (int i = 0; i < volumeMaxLevel; i++) {
+            CALayer *layer = self.volumeView.layer.sublayers[i];
+            layer.backgroundColor = PLV_UIColorFromRGB(@"#767676").CGColor;
+        }
+    });
 }
 
 #pragma mark - [ Private Method ]
@@ -269,12 +285,8 @@ static NSString *const kSCCameraIsFrontConfigKey = @"kSCCameraIsFrontConfigKey";
 
 - (void)notifyControlSwitchAction:(UISwitch *)sender {
     if (sender.tag == 1 || sender.tag == 2) {
-        [PLVAuthorizationManager requestAuthorizationForAudioAndVideo:^(BOOL granted) {
-            if (!granted) {
-                [PLVHCUtils showToastInWindowWithMessage:@"你没开通访问相机或者麦克风的权限，如要开通，请移步到:设置->隐私 进行开启"];
-                sender.on = NO;
-                return;
-            } else {
+        [[PLVHCCaptureDeviceManager sharedManager] requestAuthorizationWithCompletion:^(BOOL grant) {
+            if (grant) {
                 if (sender.tag == 1) { // 麦克风开关
                     self.micSwitchOn = sender.on;
                     self.volumeView.hidden = !sender.on;

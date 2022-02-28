@@ -331,6 +331,10 @@ PLVECLinkMicAreaViewDelegate
     [self.homePageView updatePlayerState:playing];
 }
 
+- (void)roomDataManager_didVidChanged:(NSString *)vid {
+    [self.playerVC changeVid:vid];
+}
+
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     for (PLVLiveVideoChannelMenu *menu in menuInfo.channelMenus) {

@@ -253,6 +253,10 @@ PLVLinkMicManagerDelegate
     }
 }
 
+- (void)setupStreamQuality:(PLVBLinkMicStreamQuality)streamQuality {
+    [self.linkMicManager setupStreamQuality:streamQuality];
+}
+
 - (void)answerForJoinResponse {
     [[PLVSocketManager sharedManager] emitEvent:@"joinAnswer" content:@{@"status": @(1)}];
     if (self.inRTCRoom) {
@@ -1112,16 +1116,18 @@ PLVLinkMicManagerDelegate
     NSInteger autoLinkMicTime = kAllJoinResponseInterval - [PLVHiClassManager sharedManager].duration;
     dispatch_time_t startClassDelayTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(autoLinkMicTime * NSEC_PER_SEC));
     dispatch_after(startClassDelayTime, dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT), ^{
+        __strong typeof(weakSelf)strongSelf = weakSelf;
         // 上课超过30秒，标记startClassInHalfMin为NO
-        weakSelf.startClassInHalfMin = NO;
-        [weakSelf.emitedJoinResponseUserIdArray removeAllObjects];
+        strongSelf.startClassInHalfMin = NO;
+        [strongSelf.emitedJoinResponseUserIdArray removeAllObjects];
     });
     
     // 1秒后对成员列表数据逐一发送 joinResponse 消息
     // 给成员列表模块1秒时间用来在上课之后获取成员列表
     dispatch_time_t getOnlineUserArrayDelayTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC));
     dispatch_after(getOnlineUserArrayDelayTime, dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT), ^{
-        [weakSelf emitJoinResponseEventWithOnlineUserArray];
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        [strongSelf emitJoinResponseEventWithOnlineUserArray];
     });
 }
 
@@ -1134,6 +1140,9 @@ PLVLinkMicManagerDelegate
     
     BOOL exist = NO;
     for (NSString *enumUserId in self.emitedJoinResponseUserIdArray) {
+        if(![PLVFdUtil checkStringUseable:enumUserId]){
+            continue;
+        }
         if ([enumUserId isEqualToString:userId]) {
             exist = YES;
             break;
@@ -1800,8 +1809,10 @@ PLVLinkMicManagerDelegate
     }
     if (linkMicUser) {
         linkMicUser.streamLeaveRoom = NO; // 若讲师的流加入教室，标注streamLeaveRoom为NO用于隐藏讲师流不在教室时的占位图
-        [self addLinkMicUser:linkMicUser];
-        [self subscribeStreamWithLinkMicUser:linkMicUser streamSourceType:streamSourceType];
+        BOOL add = [self addLinkMicUser:linkMicUser];
+        if (add) {
+            [self subscribeStreamWithLinkMicUser:linkMicUser streamSourceType:streamSourceType];
+        }
     } else {
         if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Screen) {
             [self recordUnsubscribeScreenStreamWithLinkMicId:userRTCId];

@@ -30,6 +30,7 @@ PLVSocketManagerProtocol,
 PLVLCMediaAreaViewDelegate,
 PLVLCLinkMicAreaViewDelegate,
 PLVLCLiveRoomPlayerSkinViewDelegate,
+PLVLCLivePageMenuAreaViewDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol
 >
@@ -280,7 +281,7 @@ PLVRoomDataManagerProtocol
         }
         [self.view insertSubview:self.chatLandscapeView belowSubview:self.liveRoomSkinView];
        
-        CGFloat linkMicAreaViewWidth = isPad ? 180.0 + rightPadding : 150.0 + rightPadding;
+        CGFloat linkMicAreaViewWidth = isPad ? 180.0 + rightPadding + commonPadding : 150.0 + rightPadding + commonPadding;
         linkMicAreaViewWidth = showLinkMicAreaView ? linkMicAreaViewWidth : 0;
         CGRect linkMicAreaViewFrame = CGRectMake(CGRectGetWidth(self.view.bounds) - linkMicAreaViewWidth,
                                                  0,
@@ -399,6 +400,7 @@ PLVRoomDataManagerProtocol
 - (PLVLCLivePageMenuAreaView *)menuAreaView{
     if (!_menuAreaView) {
         _menuAreaView = [[PLVLCLivePageMenuAreaView alloc] initWithLiveRoom:self];
+        _menuAreaView.delegate = self;
     }
     return _menuAreaView;
 }
@@ -578,6 +580,10 @@ PLVRoomDataManagerProtocol
 /// 媒体区域视图需要得知当前‘是否正在连麦’
 - (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView{
     return self.linkMicAreaView.inLinkMic;
+}
+
+- (BOOL)plvLCMediaAreaViewGetPausedWatchNoDelay:(PLVLCMediaAreaView *)mediaAreaView {
+    return self.linkMicAreaView.pausedWatchNoDelay;
 }
 
 /// 媒体区域视图需要得知当前‘是否在RTC房间中’
@@ -821,6 +827,16 @@ PLVRoomDataManagerProtocol
     } else if (rxQuality == PLVBLinkMicNetworkQualityBad) {
         [self.mediaAreaView showNetworkQualityPoorView];
     }
+}
+
+#pragma mark PLVLCLivePageMenuAreaViewDelegate
+
+- (NSTimeInterval)plvLCLivePageMenuAreaViewGetPlayerCurrentTime:(PLVLCLivePageMenuAreaView *)pageMenuAreaView{
+    return self.mediaAreaView.currentPlayTime;
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView seekTime:(NSTimeInterval)time{
+    [self.mediaAreaView seekLivePlaybackToTime:time];
 }
 
 @end

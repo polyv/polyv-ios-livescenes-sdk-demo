@@ -20,6 +20,7 @@ NSString *PLVRoomDataKeyPathChannelInfo = @"channelInfo";
 NSString *PLVRoomDataKeyPathMenuInfo    = @"menuInfo";
 NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 NSString *PLVRoomDataKeyPathHiClassStatus   = @"hiClassStatus";
+NSString *PLVRoomDataKeyPathVid   = @"vid";
 
 @interface PLVRoomData ()
 

@@ -98,7 +98,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param tip 自定义消息tip字段
 /// @param emitMode 自定义消息emitMode字段
 /// @return 是否成功发送的布尔值
-- (BOOL)sendCustomMessageWithEvent:(NSString *)event
+- (PLVChatModel * _Nullable)sendCustomMessageWithEvent:(NSString *)event
                               data:(NSDictionary *)data
                                tip:(NSString * _Nullable)tip
                           emitMode:(int)emitMode;

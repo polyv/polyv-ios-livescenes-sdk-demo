@@ -738,7 +738,7 @@ PLVMemberPresenterDelegate
 #pragma mark PLVMemberPresenterDelegate
 
 - (void)userListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter {
-    [_memberSheet updateUserList:[self.memberPresenter userList] userCount:self.memberPresenter.userCount];
+    [_memberSheet updateUserList:[self.memberPresenter userList] userCount:self.memberPresenter.userCount onlineCount:self.streamerPresenter.onlineUserArray.count];
 }
 
 - (NSArray *)currentOnlineUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter{

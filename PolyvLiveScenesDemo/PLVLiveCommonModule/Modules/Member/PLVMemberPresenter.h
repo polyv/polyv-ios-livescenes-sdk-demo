@@ -58,8 +58,10 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 
 @optional
 
+/// 在线成员数据发生变化
 - (void)kickedUserListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
 
+/// 踢出成员数据发生变化
 - (NSArray *)currentOnlineUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
 
 @end

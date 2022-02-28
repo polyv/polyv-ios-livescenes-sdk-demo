@@ -180,7 +180,9 @@ PLVHCDocumentListViewModelDelegate
         UICollectionViewFlowLayout *cvfLayout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
         
         CGFloat itemWidth = (collectionViewWidth - cvfLayout.minimumInteritemSpacing * 3) / 4;
-        
+        if([PLVHCUtils sharedUtils].isPad) {
+            itemWidth = (collectionViewWidth - cvfLayout.minimumInteritemSpacing * 4) / 5;
+        }
         _cellSize = CGSizeMake(itemWidth, itemWidth * defaultImgSize.height / defaultImgSize.width + 28);
     }
     

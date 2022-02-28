@@ -590,7 +590,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         } else if (!isSplitView || self.status != PLVLCLinkMicControlBarStatus_Joined) {
             self.cameraButtonEnable = YES;
             self.cameraButton.userInteractionEnabled = YES;
-            self.cameraButton.alpha = (self.status == PLVLCLinkMicControlBarStatus_Joined && self.barType == PLVLCLinkMicControlBarType_Video) ? 1.0 : 0.0;
+            self.cameraButton.alpha = (self.status == PLVLCLinkMicControlBarStatus_Joined && self.barType == PLVLCLinkMicControlBarType_Video && !_foldSelf) ? 1.0 : 0.0;
         }
     }
 }

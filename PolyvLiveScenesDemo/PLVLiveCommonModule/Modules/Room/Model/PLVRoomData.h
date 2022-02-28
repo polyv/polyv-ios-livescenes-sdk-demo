@@ -62,10 +62,18 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) PLVChannelLinkMicSceneType linkMicSceneType;
 
 #pragma mark 直播回放独有属性
-/// 回放视频 vid
+/// 回放视频 vid，点播系统生成的回放id，用于大部分回放相关接口请求
 @property (nonatomic, copy) NSString *vid;
+/// 回放视频 videoId，直播系统生成的回放id，主要用于章节数据的获取
+@property (nonatomic, copy) NSString *videoId;
 /// 是否是点播列表
 @property (nonatomic, assign) BOOL vodList;
+/// 回放列表
+@property (nonatomic, strong) PLVPlaybackListModel *playbackList;
+/// 章节功能是否可用
+@property (nonatomic, assign) BOOL sectionEnable;
+/// 章节列表
+@property (nonatomic, strong) NSArray<PLVLivePlaybackSectionModel *> *sectionList;
 
 #pragma mark 聊天室独有属性
 

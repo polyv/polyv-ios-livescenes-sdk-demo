@@ -291,9 +291,6 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
         !self.channelIdTF.text || self.channelIdTF.text.length == 0) {
         return NO;
     }
-    if (!live && (!self.vIdTF.text || self.vIdTF.text.length == 0)) {
-        return NO;
-    }
     return YES;
 }
 
@@ -344,6 +341,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     __weak typeof(self)weakSelf = self;
     [PLVRoomLoginClient loginPlaybackRoomWithChannelType:channelType
                                                channelId:self.channelIdTF.text
+                                                 vodList:self.vodListSwitch.isOn
                                                      vid:self.vIdTF.text
                                                   userId:self.userIDTF.text
                                                    appId:self.appIDTF.text
@@ -361,9 +359,6 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
             return;
         }
         [weakSelf saveParamsToFile];
-        /// 可在此处配置 ‘点播列表’ 开关
-        /// YES:请求 ‘点播列表’ 视频，NO:请求非 ‘点播列表’ 视频
-        [PLVRoomDataManager sharedManager].roomData.vodList = weakSelf.vodListSwitch.isOn;
         
         if (successHandler) {
             successHandler();
@@ -413,6 +408,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     __weak typeof(self)weakSelf = self;
     [PLVRoomLoginClient loginPlaybackRoomWithChannelType:channelType
                                                channelId:self.channelIdTF.text
+                                                 vodList:self.vodListSwitch.isOn
                                                      vid:self.vIdTF.text
                                                   userId:self.userIDTF.text
                                                    appId:self.appIDTF.text
@@ -425,9 +421,6 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
         [hud hideAnimated:YES];
         [weakSelf saveParamsToFile];
-        /// 可在此处配置 ‘点播列表’ 开关
-        /// YES:请求 ‘点播列表’ 视频，NO:请求非 ‘点播列表’ 视频
-        [PLVRoomDataManager sharedManager].roomData.vodList = weakSelf.vodListSwitch.isOn;
         
         if (successHandler) {
             successHandler();
@@ -436,6 +429,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
         [hud hideAnimated:YES];
         [weakSelf showHud:errorMessage detail:nil];
     }];
+    
 }
 
 #pragma mark - 读写缓存账号信息

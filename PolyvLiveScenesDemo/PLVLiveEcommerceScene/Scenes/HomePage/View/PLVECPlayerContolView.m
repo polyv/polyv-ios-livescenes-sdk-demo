@@ -57,7 +57,7 @@
     self.currentTimeLabel.frame = CGRectMake(CGRectGetMaxX(self.playButton.frame)+10, originY+4, currentTimeWidth, 12);
     
     CGFloat totalTimeWidth = [self getLabelTextWidth:self.totalTimeLabel];
-    self.totalTimeLabel.frame = CGRectMake(CGRectGetWidth(self.bounds)-41, originY+4, totalTimeWidth, 12);
+    self.totalTimeLabel.frame = CGRectMake(CGRectGetWidth(self.bounds)-totalTimeWidth, originY+4, totalTimeWidth, 12);
     
     self.progressSlider.frame = CGRectMake(CGRectGetMaxX(self.currentTimeLabel.frame)+4, originY+4, CGRectGetMinX(self.totalTimeLabel.frame)-CGRectGetMaxX(self.currentTimeLabel.frame)-8, 12);
 }

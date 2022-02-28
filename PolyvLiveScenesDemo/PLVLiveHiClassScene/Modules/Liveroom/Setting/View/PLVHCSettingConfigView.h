@@ -69,15 +69,13 @@ typedef NS_ENUM(NSUInteger, PLVHCSettingConfigViewType) {
 
 @property (nonatomic, weak) id<PLVHCSettingConfigViewDelegate> delegate;
 
-@property (nonatomic, strong, readonly) UIView *volumeView; // 麦克风音量等级
-
 - (instancetype)initWithType:(PLVHCSettingConfigViewType)type;
 
 // 打开麦克风和摄像头（该方法只能用于进入教室类型UI）
 - (void)openMediaSwitch;
 
 // 同步设备设置页控件的开关状态（该方法只能用于退出教室类型UI）
-- (void)synchronizeConfig:(NSDictionary *)dict;
+- (void)synchronizeConfig;
 
 /// 同步麦克风开关
 /// @param open YES-开启;NO-关闭
@@ -90,6 +88,9 @@ typedef NS_ENUM(NSUInteger, PLVHCSettingConfigViewType) {
 /// 同步摄像头前后置切换
 /// @param front YES-前置;NO-后置
 - (void)cameraDirectionChange:(BOOL)front;
+
+/// 修改麦克风音量
+- (void)audioVolumeChanged:(CGFloat)volume;
 
 @end
 

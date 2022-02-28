@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 
-@class PLVChatUser;
+@class PLVChatUser, PLVLSMemberCell;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,6 +23,8 @@ extern NSString *PLVLSMemberCellNotification;
 - (void)memberCell_didTapKickWithUer:(PLVChatUser *)user;
 
 - (void)memberCell_didTapCameraSwitch;
+
+- (BOOL)allowLinkMicInCell:(PLVLSMemberCell *)cell;
 
 @end
 

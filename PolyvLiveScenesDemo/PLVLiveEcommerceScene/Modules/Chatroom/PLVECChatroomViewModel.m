@@ -118,16 +118,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (BOOL)sendGiftMessageWithData:(NSDictionary *)data tip:(NSString *)tip {
-    BOOL success = [self sendCustomMessageWithEvent:@"GiftMessage" data:data tip:tip emitMode:1];
-    return success;
+    PLVChatModel *chatModel = [self sendCustomMessageWithEvent:@"GiftMessage" data:data tip:tip emitMode:1];
+    if (chatModel) {
+        [self addPublicChatModel:chatModel];
+    }
+    return chatModel;
 }
 
-- (BOOL)sendCustomMessageWithEvent:(NSString *)event
+- (PLVChatModel * _Nullable)sendCustomMessageWithEvent:(NSString *)event
                               data:(NSDictionary *)data
                                tip:(NSString * _Nullable)tip
                           emitMode:(int)emitMode {
-    BOOL success = [self.presenter sendCustomMessageWithEvent:event data:data tip:tip emitMode:emitMode];
-    return success;
+    return [self.presenter sendCustomMessageWithEvent:event data:data tip:tip emitMode:emitMode];
 }
 
 - (void)sendLike {
@@ -295,8 +297,58 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         }
     }
 }
+#pragma mark 生成 礼物 消息模型
+
+- (PLVChatModel *)giftChatModeWithData:(NSDictionary *)data tip:(NSString *)tip user:(PLVChatUser *)user {
+    if (![PLVFdUtil checkDictionaryUseable:data] ||
+        ![PLVFdUtil checkStringUseable:tip] ||
+        !user) {
+        return nil;
+    }
+    
+    PLVCustomMessage *customMessage = [[PLVCustomMessage alloc] init];
+    customMessage.data = data;
+    customMessage.tip = tip;
+    
+    PLVChatModel *chatModel = [[PLVChatModel alloc] init];
+    chatModel.user = user;
+    chatModel.message = customMessage;
+    
+    return chatModel;
+}
+
+#pragma mark 处理 礼物 消息
+
+- (void)giftMessageEvent:(NSDictionary *)jsonDict {
+    NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+    NSDictionary *user = PLV_SafeDictionaryForDictKey(jsonDict, @"user");
+    if (![PLVFdUtil checkDictionaryUseable:user] ||
+        [[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId  isEqualToString:PLV_SafeStringForDictKey(user, @"userId")]) { // 自己的消息无需重复处理
+        return;
+    }
+    
+    NSString *tip = PLV_SafeStringForDictKey(jsonDict, @"tip");
+    PLVChatUser *userModel = [[PLVChatUser alloc] initWithUserInfo:user];
+    PLVChatModel *chatModel = [self giftChatModeWithData:data tip:tip user:userModel];
+    
+    [self addPublicChatModel:chatModel];
+}
 
 #pragma mark - PLVSocketManager Protocol
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    if ([event isEqualToString:@"customMessage"] &&
+        [subEvent isEqualToString:@"GiftMessage"]) { // 礼物消息
+        [self giftMessageEvent:jsonDict];
+    }
+}
 
 - (void)socketMananger_didReceiveMessage:(NSString *)subEvent
                                     json:(NSString *)jsonString

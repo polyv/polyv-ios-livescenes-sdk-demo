@@ -27,6 +27,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前屏幕方向，根据setupInterfaceOrientation:方法配置，缺省值为UIInterfaceOrientationLandscapeRight
 @property (nonatomic, assign, readonly) UIInterfaceOrientation interfaceOrientation;
 
+/// 当前设备是否为iPad
+@property (nonatomic, assign, readonly, getter=isPad) BOOL pad;
+
 /// 单例
 + (instancetype)sharedUtils;
 

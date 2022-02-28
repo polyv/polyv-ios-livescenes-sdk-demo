@@ -94,6 +94,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param front YES-前置; NO-后置
 - (void)switchLocalUserCamera:(BOOL)front;
 
+/// 配置 流清晰度
+///
+/// @note 支持在 正在推流 期间进行调用
+///
+/// @param streamQuality 流清晰度
+- (void)setupStreamQuality:(PLVBLinkMicStreamQuality)streamQuality;
+
 #pragma mark 本地用户管理（以下API仅学员身份时有效）
 
 /// 答复讲师发出的上台请求并加入连麦

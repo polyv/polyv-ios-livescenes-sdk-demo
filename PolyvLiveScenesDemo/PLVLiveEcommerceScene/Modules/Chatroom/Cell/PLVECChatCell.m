@@ -7,15 +7,22 @@
 //
 
 #import "PLVECChatCell.h"
+
+// 工具
+#import "PLVECUtils.h"
+
+// UI
+#import "PLVPhotoBrowser.h"
+
+// 模块
 #import "PLVChatModel.h"
 #import "PLVChatUser.h"
-#import "PLVECUtils.h"
 #import "PLVEmoticonManager.h"
-#import "PLVPhotoBrowser.h"
-#import <PLVLiveScenesSDK/PLVSpeakMessage.h>
-#import <PLVLiveScenesSDK/PLVQuoteMessage.h>
-#import <PLVLiveScenesSDK/PLVImageMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+#import "PLVRoomDataManager.h"
+
+// 依赖库
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVECChatCell ()
@@ -156,21 +163,26 @@
 #pragma mark UI - ViewModel
 
 + (NSAttributedString *)chatLabelAttributedStringWithModel:(PLVChatModel *)model {
-    NSAttributedString *actorAttributedString = [PLVECChatCell actorAttributedStringWithUser:model.user];
-    NSAttributedString *nickNameAttributedString = [PLVECChatCell nickNameAttributedStringWithUser:model.user];
-    NSAttributedString *contentAttributedString = [PLVECChatCell contentAttributedStringWithMessage:model.message];
-    
-    NSMutableAttributedString *mutableAttributedString = [[NSMutableAttributedString alloc] init];
-    if (actorAttributedString) {
-        [mutableAttributedString appendAttributedString:actorAttributedString];
+    if ([model.message isKindOfClass:[PLVCustomMessage class]]) { // 自定义消息
+        NSAttributedString *contentAttributedString = [PLVECChatCell contentAttributedStringWithChatModel:model];
+        return [contentAttributedString copy];
+    } else {
+        NSAttributedString *actorAttributedString = [PLVECChatCell actorAttributedStringWithUser:model.user];
+        NSAttributedString *nickNameAttributedString = [PLVECChatCell nickNameAttributedStringWithUser:model.user];
+        NSAttributedString *contentAttributedString = [PLVECChatCell contentAttributedStringWithChatModel:model];
+        
+        NSMutableAttributedString *mutableAttributedString = [[NSMutableAttributedString alloc] init];
+        if (actorAttributedString) {
+            [mutableAttributedString appendAttributedString:actorAttributedString];
+        }
+        if (nickNameAttributedString) {
+            [mutableAttributedString appendAttributedString:nickNameAttributedString];
+        }
+        if (contentAttributedString) {
+            [mutableAttributedString appendAttributedString:contentAttributedString];
+        }
+        return [mutableAttributedString copy];
     }
-    if (nickNameAttributedString) {
-        [mutableAttributedString appendAttributedString:nickNameAttributedString];
-    }
-    if (contentAttributedString) {
-        [mutableAttributedString appendAttributedString:contentAttributedString];
-    }
-    return [mutableAttributedString copy];
 }
 
 /// 获取头衔
@@ -229,6 +241,8 @@
     return backgroundColor;
 }
 
+#pragma mark AttributedString
+
 /// 获取昵称
 + (NSAttributedString *)nickNameAttributedStringWithUser:(PLVChatUser *)user {
     if (!user.userName || ![user.userName isKindOfClass:[NSString class]] || user.userName.length == 0) {
@@ -245,31 +259,67 @@
 }
 
 /// 获取聊天文本
-+ (NSAttributedString *)contentAttributedStringWithMessage:(id)message {
-    if (![message isKindOfClass:[PLVSpeakMessage class]] &&
++ (NSAttributedString *)contentAttributedStringWithChatModel:(PLVChatModel *)chatModel {
+    id message = chatModel.message;
+    if (!message &&
+        ![message isKindOfClass:[PLVCustomMessage class]] &&
+        ![message isKindOfClass:[PLVSpeakMessage class]] &&
         ![message isKindOfClass:[PLVQuoteMessage class]]) {
         return nil;
     }
     
-    NSString *content = @"";
-    if ([message isKindOfClass:[PLVSpeakMessage class]]) {
-        PLVSpeakMessage *speakMessage = (PLVSpeakMessage *)message;
-        content = speakMessage.content;
+    if ([message isKindOfClass:[PLVCustomMessage class]]) {
+        PLVCustomMessage *customMessage = (PLVCustomMessage *)message;
+        UIFont *font = [UIFont systemFontOfSize:12.0];
+        NSDictionary *contentAttDict = @{NSFontAttributeName: font,
+                                         NSForegroundColorAttributeName:[UIColor whiteColor]};
+        NSDictionary *dataDic = customMessage.data;
+        
+        // 礼物内容(昵称 + 礼物名称)
+        NSString *tip = customMessage.tip;
+        tip = [PLVFdUtil checkStringUseable:tip] ? tip : @"";
+        PLVChatUser *user = chatModel.user;
+        if ([user.userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]) { // 自己的赠送记录
+            NSString *giftName = PLV_SafeStringForDictKey(dataDic, @"giftName");
+            giftName = [PLVFdUtil checkStringUseable:giftName] ? giftName : @"";
+            tip = [NSString stringWithFormat:@"%@(我) 赠送了 %@", user.userName, giftName];
+        }
+        NSMutableAttributedString *conentString = [[NSMutableAttributedString alloc] initWithString:tip attributes:contentAttDict];
+        
+        // 礼物图片
+        NSString *giftType = PLV_SafeStringForDictKey(dataDic, @"giftType");
+        giftType = [PLVFdUtil checkStringUseable:giftType] ? giftType : @"";
+        NSString *giftImageStr = [NSString stringWithFormat:@"plv_gift_icon_%@",giftType];
+        NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
+        attachment.image = [PLVECUtils imageForWatchResource:giftImageStr];
+        attachment.bounds = CGRectMake(0, font.descender, font.lineHeight, font.lineHeight);
+        NSAttributedString *emoticonAttrStr = [NSAttributedString attributedStringWithAttachment:attachment];
+        
+        // 礼物内容 + 图片
+        [conentString appendAttributedString:emoticonAttrStr];
+        
+        return [[[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:conentString font:font] copy];
     } else {
-        PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)message;
-        content = quoteMessage.content;
+        NSString *content = @"";
+        if ([message isKindOfClass:[PLVSpeakMessage class]]) {
+            PLVSpeakMessage *speakMessage = (PLVSpeakMessage *)message;
+            content = speakMessage.content;
+        } else if([message isKindOfClass:[PLVQuoteMessage class]]){
+            PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)message;
+            content = quoteMessage.content;
+        }
+        
+        if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
+            return nil;
+        }
+        
+        NSDictionary *attributeDict = @{
+                                        NSFontAttributeName: [UIFont systemFontOfSize:12.0],
+                                        NSForegroundColorAttributeName:[UIColor whiteColor]
+        };
+        NSMutableAttributedString *emotionAttrStr = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:content attributes:attributeDict];
+        return [emotionAttrStr copy];
     }
-    
-    if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
-        return nil;
-    }
-    
-    NSDictionary *attributeDict = @{
-                                    NSFontAttributeName: [UIFont systemFontOfSize:12.0],
-                                    NSForegroundColorAttributeName:[UIColor whiteColor]
-    };
-    NSMutableAttributedString *emotionAttrStr = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:content attributes:attributeDict];
-    return [emotionAttrStr copy];
 }
 
 /// 获取聊天图片URL
@@ -361,7 +411,8 @@
         (![message isKindOfClass:[PLVSpeakMessage class]] &&
          ![message isKindOfClass:[PLVQuoteMessage class]] &&
          ![message isKindOfClass:[PLVImageMessage class]] &&
-         ![message isKindOfClass:[PLVImageEmotionMessage class]])) {
+         ![message isKindOfClass:[PLVImageEmotionMessage class]] &&
+         ![message isKindOfClass:[PLVCustomMessage class]])) {
         return NO;
     }
     

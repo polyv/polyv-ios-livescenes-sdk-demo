@@ -21,7 +21,7 @@
 #import "PLVHCMemberSheet.h"
 #import "PLVHCChatroomSheet.h"
 #import "PLVHCSettingSheet.h"
-#import "PLVHCGrantCupView.h"
+#import "PLVHCLinkMicZoomAreaView.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -30,8 +30,9 @@
 #import "PLVMultiRoleLinkMicPresenter.h"
 #import "PLVHCChatroomViewModel.h"
 #import "PLVHCMemberViewModel.h"
-#import "PLVHCPermissionEvent.h"
 #import "PLVHCLiveroomViewModel.h"
+#import "PLVHCLinkMicZoomManager.h"
+#import "PLVHCCaptureDeviceManager.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -45,16 +46,17 @@ static NSString *const kPLVHCTeacherLoginClassName = @"PLVHCTeacherLoginManager"
 
 @interface PLVHCHiClassViewController ()<
 PLVMultiRoleLinkMicPresenterDelegate,
+PLVHCCaptureDeviceManagerDelegate,
 PLVHCHiClassSettingViewDelegate, // 设备设置视图回调
 PLVHCToolbarAreaViewDelegate, // 状态栏区域视图回调
 PLVHCSettingSheetDelegate, // 设备弹层视图回调
 PLVHCDocumentSheetDelegate, // 文档管理弹层视图回调
 PLVHCDocumentAreaViewDelegate, // PPT/白板区域视图回调
-PLVHCPermissionEventDelegate, // TEACHER_SET_PERMISSION 事件管理器回调
 PLVHCLiveroomViewModelDelegate, //教室上下课流程类的回调
 PLVHCMemberSheetDelegate, //成员管理操作的回调
 PLVHCLinkMicAreaViewDelegate, //连麦区域回调
-PLVHCChatroomSheetDelegate // 聊天室视图回调
+PLVHCChatroomSheetDelegate, // 聊天室视图回调
+PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
 >
 
 #pragma mark UI
@@ -73,7 +75,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 @property (nonatomic, strong) PLVHCChatroomSheet *chatroomSheet; // 聊天室弹层
 @property (nonatomic, strong) PLVHCMemberSheet *memberSheet; // 成员列表弹层
 @property (nonatomic, strong) PLVHCDocumentSheet *documentSheet; // 文档管理弹层
-@property (nonatomic, strong) PLVHCGrantCupView *grantCupView; // 授予学生奖杯视图
+@property (nonatomic, strong) PLVHCLinkMicZoomAreaView *linkMicZoomAreaView; // 连麦放大区域
 
 #pragma mark 状态
 @property (nonatomic, assign, getter=isFullscreen) BOOL fullscreen; // 是否处于文档区域全屏状态，默认为NO
@@ -106,6 +108,8 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor colorWithRed:0x13/255.0 green:0x14/255.0 blue:0x15/255.0 alpha:1];
     
+    [PLVHCCaptureDeviceManager sharedManager].delegate = self;
+    
     [self setupUI];
     // 注册屏幕旋转通知
     [self deviceOrientationDidChangeNotification];
@@ -129,6 +133,9 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     // 1v6人以下连麦，连麦区域高度固定60；1v7以上连麦，连麦区域高度固定85
     NSInteger linkNumber = [PLVRoomDataManager sharedManager].roomData.linkNumber;
     CGFloat linkMicAreaViewHeight = linkNumber > 6 ? 85 : 60;
+    if ([PLVHCUtils sharedUtils].isPad) { // iPad适配
+        linkMicAreaViewHeight = linkNumber > 6 ? 115.3 : 82;
+    }
     self.linkMicAreaView.frame = CGRectMake(0, CGRectGetMaxY(self.statusbarAreaView.frame), screenSize.width, linkMicAreaViewHeight);
   
     // 工具栏
@@ -143,11 +150,18 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     CGFloat sheetMaxWidth = screenSize.width - sheetEdgeInsetsRight - edgeInsets.left;
     
     // 设置弹层，宽固定203，高固定255，底部距离（17 + 底部安全区域高度）
-    _settingSheet.frame = CGRectMake(screenSize.width - sheetEdgeInsetsRight - 203, screenSize.height - 255 - 17 - edgeInsets.bottom, 203, 255);
+    CGFloat settingSheetY = screenSize.height - 255 - 17 - edgeInsets.bottom;
+    if ([PLVHCUtils sharedUtils].isPad) { // iPad适配
+        settingSheetY = (CGRectGetHeight(self.toolbarAreaView.frame) - 255) / 2 + self.toolbarAreaView.frame.origin.y;
+    }
+    _settingSheet.frame = CGRectMake(screenSize.width - sheetEdgeInsetsRight - 203, settingSheetY, 203, 255);
     
     // 成员弹层，顶部距离连麦区域8.5，底部距离（7.5 + 底部安全区域高度）
     CGFloat memberSheetOriginY = documentY + 8.5;
     CGFloat memberSheetWidthScale = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? (656.0 / 812.0) : (408.0 / 812.0);
+    if ([PLVHCUtils sharedUtils].isPad) {
+        memberSheetWidthScale = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? (656.0 / 1024.0) : (408.0 / 1024.0);
+    }
     CGFloat memberSheetWidth = memberSheetWidthScale * screenSize.width;
     _memberSheet.frame = CGRectMake(screenSize.width - sheetEdgeInsetsRight - memberSheetWidth, memberSheetOriginY, memberSheetWidth, screenSize.height - memberSheetOriginY - 7.5 - edgeInsets.bottom);
     
@@ -157,6 +171,17 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     // PPT/白板区域宽度：屏幕宽度-左边安全距离-右边安全距离
     CGFloat documentAreaViewWidth = screenSize.width - edgeInsets.left - edgeInsetsRight;
     self.documentAreaView.frame = CGRectMake(edgeInsets.left, documentY, documentAreaViewWidth, documentViewHeight);
+    [self.documentAreaView setNeedsLayout];
+    [self.documentAreaView layoutIfNeeded];
+    
+    // 连麦悬浮窗区域, 与PPT/白板区域内部的WebView视图frame一致
+    if (CGRectEqualToRect(CGRectZero, self.linkMicZoomAreaView.frame)) {
+        CGRect zoomAreaViewFrame = self.documentAreaView.containerView.frame;
+        zoomAreaViewFrame = [self.documentAreaView convertRect:zoomAreaViewFrame toView:self.view]; // 将zoomAreaViewFrame坐标从self.documentAreaView的坐标 转成self.view的坐标
+        self.linkMicZoomAreaView.frame = zoomAreaViewFrame;
+    }
+    CGPoint zoomAreaCenter = self.documentAreaView.containerView.center;
+    self.linkMicZoomAreaView.center = [self.documentAreaView convertPoint:zoomAreaCenter toView:self.view];
     
     // 文档管理弹层，宽度固定为屏幕80%，高度:PPT/白板区域高度 - 顶部间距8 - 底部间距8
     CGSize documentSheetSize = CGSizeMake(screenSize.width * 0.8,  documentViewHeight - 8 * 2);
@@ -207,14 +232,21 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     self.linkMicPresenter = [[PLVMultiRoleLinkMicPresenter alloc] init];
     self.linkMicPresenter.delegate = self;
     
-    // 启动TEACHER_SET_PERMISSION 事件管理器
-    [PLVHCPermissionEvent sharedInstance].delegate = self;
-    [[PLVHCPermissionEvent sharedInstance] setup];
+    PLVHCCaptureDeviceManager *deviceManager = [PLVHCCaptureDeviceManager sharedManager];
+    [self.linkMicPresenter openLocalUserMic:deviceManager.micOpen];
+    [self.linkMicPresenter openLocalUserCamera:deviceManager.cameraOpen];
+    [self.linkMicPresenter switchLocalUserCamera:deviceManager.cameraFront];
     
-    //教室上下课流程类的代理
+    // 教室上下课流程类的代理
     [[PLVHCLiveroomViewModel sharedViewModel] setup];
     [PLVHCLiveroomViewModel sharedViewModel].delegate = self;
     [[PLVHCLiveroomViewModel sharedViewModel] enterClassroom];
+    
+    // 启动连麦放大视图管理器
+    [[PLVHCLinkMicZoomManager sharedInstance] setup];
+    [PLVHCLinkMicZoomManager sharedInstance].delegate = self.linkMicZoomAreaView;
+
+    [[PLVHCCaptureDeviceManager sharedManager] enterClassroom];
 }
 
 /// 登出操作
@@ -223,15 +255,20 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [[PLVHCChatroomViewModel sharedViewModel] clear];
     [[PLVSocketManager sharedManager] logout];
     [[PLVHCMemberViewModel sharedViewModel] clear];
-    [[PLVHCPermissionEvent sharedInstance] clear];
     [self.toolbarAreaView clear];
     [[PLVDocumentUploadClient sharedClient] stopAllUpload]; // 停止一切上传任务
     [[PLVDocumentConvertManager sharedManager] clear]; // 清空文档转码轮询队列
     //退出教室
     [[PLVHCLiveroomViewModel sharedViewModel] clear];
+
+    // 清除连麦放大视图管理器数据
+    [[PLVHCLinkMicZoomManager sharedInstance] clear];
+
+    [[PLVHCCaptureDeviceManager sharedManager] clearResource];
 }
 
 - (void)startClass {
+    [[PLVHCCaptureDeviceManager sharedManager] clearResource];
     // 开始上课才开始获取成员列表
     [[PLVHCMemberViewModel sharedViewModel] start];
     
@@ -240,9 +277,12 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [self.toolbarAreaView startClass];
     [self.chatroomSheet startClass];
     [self.linkMicPresenter joinRTCChannel];
+    // 移除本地预览连麦放大窗口
+    [self.linkMicZoomAreaView removeLocalPreviewZoom];
 }
 
 - (void)finishClass {
+    [[PLVHCLinkMicZoomManager sharedInstance] zoomOutAll]; // 下课前移除所有放大区域视图
     // 下课停止定时获取成员列表数据
     [[PLVHCMemberViewModel sharedViewModel] stop];
     
@@ -254,11 +294,13 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     
     // 清除学生自己的画笔权限
     [self removeSelfPaintBrushAuth];
+    
 }
 
 - (void)enterClassroom {
     [self setupModule];
     [self removeSettingView];
+    [self.linkMicAreaView startPreview];
     [self.documentAreaView enterClassroom];
 }
 
@@ -348,6 +390,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 - (void)setupUI {
     [self.view addSubview:self.linkMicAreaView];
     [self.view insertSubview:self.documentAreaView aboveSubview:self.linkMicAreaView];
+    [self.view insertSubview:self.linkMicZoomAreaView aboveSubview:self.documentAreaView];
     [self.view insertSubview:self.toolbarAreaView aboveSubview:self.documentAreaView];
     [self.view insertSubview:self.statusbarAreaView aboveSubview:self.toolbarAreaView];
     [self.view addSubview:self.settingView]; // 初次进入主页，设置子视图一定要在最前方
@@ -389,6 +432,16 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         [_statusbarAreaView setClassTitle:roomData.channelName];
         [_statusbarAreaView setLessonId:[PLVHiClassManager sharedManager].lessonId];
+        
+        PLVHiClassStatusbarState state = PLVHiClassStatusbarStateNotInClass;
+        if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusNotInClass) { // 未上课
+            if ([PLVFdUtil curTimeInterval] > [PLVHiClassManager sharedManager].lessonStartTime) { // 超时未上课
+                state = PLVHiClassStatusbarStateDelayStartClass;
+            }
+        } else if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusFinishClass) { // 已结束
+            state = PLVHiClassStatusbarStateFinishClass;
+        }
+        [_statusbarAreaView updateState:state];
     }
     return _statusbarAreaView;
 }
@@ -449,22 +502,21 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     return _documentSheet;
 }
 
-- (PLVHCGrantCupView *)grantCupView {
-    if (!_grantCupView) {
-        _grantCupView = [[PLVHCGrantCupView alloc] init];
+- (PLVHCLinkMicZoomAreaView *)linkMicZoomAreaView {
+    if (!_linkMicZoomAreaView) {
+        _linkMicZoomAreaView = [[PLVHCLinkMicZoomAreaView alloc] init];
+        _linkMicZoomAreaView.delegate = self;
     }
-    return _grantCupView;
+    return _linkMicZoomAreaView;
 }
-
 
 #pragma mark Show/Hide Subview
 
 - (void)removeSettingView {
-    [self.settingSheet synchronizeConfig:self.settingView.configDict];
     [self.settingView removeFromSuperview];
-    [self.settingView clear];
-    [self.linkMicAreaView linkMicAreaViewStartRunning];
     self.settingView = nil;
+    
+    [self.settingSheet synchronizeConfig];
 }
 
 - (void)showDocumentSheet:(BOOL)show {
@@ -583,6 +635,9 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [self.linkMicAreaView reloadLinkMicUserWindows];
     // 刷新成员列表数据
     [[PLVHCMemberViewModel sharedViewModel] refreshUserListWithLinkMicOnlineUserArray:linkMicUserArray];
+    
+    // 刷新连麦放大视图 UI
+    [self.linkMicZoomAreaView reloadLinkMicUserZoom];
 }
 
 - (void)multiRoleLinkMicPresenter:(PLVMultiRoleLinkMicPresenter *)presenter
@@ -623,7 +678,10 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 }
 
 - (void)multiRoleLinkMicPresenter:(PLVMultiRoleLinkMicPresenter *)presenter grantCupUser:(PLVLinkMicOnlineUser *)grantUser {
-    [[PLVHCPermissionEvent sharedInstance] sendGrantCupMessageWithUserId:grantUser.linkMicUserId];
+    if ([PLVFdUtil checkStringUseable:grantUser.linkMicUserId] &&
+        [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:grantUser.linkMicUserId type:PLVSocketPermissionTypeCup status:YES];
+    }
 }
 
 - (void)multiRoleLinkMicPresenter:(PLVMultiRoleLinkMicPresenter *)presenter didTeacherScreenStreamRenderdIn:(UIView *)screenStreamView {
@@ -634,6 +692,37 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 
 - (void)multiRoleLinkMicPresenter:(PLVMultiRoleLinkMicPresenter *)presenter didTeacherScreenStreamRemovedIn:(UIView *)screenStreamView {
     [screenStreamView removeFromSuperview];
+}
+
+#pragma mark PLVHCCaptureDeviceManagerDelegate
+
+- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didAudioVolumeChanged:(CGFloat)volume {
+    if (_settingView) {
+        [self.settingView audioVolumeChanged:volume];
+    }
+}
+
+- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didMicrophoneOpen:(BOOL)open {
+    if (_settingSheet) {
+        [self.settingSheet microphoneSwitchChange:open];
+    }
+    [self.linkMicAreaView enableLocalMic:open];
+    [self.linkMicPresenter openLocalUserMic:open];
+}
+
+- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didCameraOpen:(BOOL)open {
+    if (_settingSheet) {
+        [self.settingSheet cameraSwitchChange:open];
+    }
+    [self.linkMicAreaView enableLocalCamera:open];
+    [self.linkMicPresenter openLocalUserCamera:open];
+}
+
+- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didCameraSwitch:(BOOL)front {
+    if (_settingSheet) {
+        [self.settingSheet cameraDirectionChange:front];
+    }
+    [self.linkMicPresenter switchLocalUserCamera:front];
 }
 
 #pragma mark PLVHCHiClassSettingViewDelegate
@@ -657,14 +746,11 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 
 - (void)toolbarAreaView_classButtonSelected:(PLVHCToolbarAreaView *)toolbarAreaView startClass:(BOOL)starClass {
     __weak typeof(self) weakSelf = self;
-    if (starClass) { //开始上课
-        [PLVAuthorizationManager requestAuthorizationForAudioAndVideo:^(BOOL granted) {
-            if (granted) { // 再次确保有【麦克风&摄像头】权限
+    if (starClass) { //开始上课, 再次确保有【麦克风&摄像头】权限
+        [[PLVHCCaptureDeviceManager sharedManager] requestAuthorizationWithCompletion:^(BOOL grant) {
+            if (grant) {
                 [weakSelf.toolbarAreaView setClassButtonEnable:NO];
                 [[PLVHCLiveroomViewModel sharedViewModel] startClass];
-            } else { // 触发无摄像头麦克风权限回调通知UI
-                NSString *msg = [NSString stringWithFormat:@"需要获取您的音视频权限，请前往设置"];
-                [PLVAuthorizationManager showAlertWithTitle:@"提示" message:msg viewController:weakSelf];
             }
         }];
     } else { //结束课程
@@ -690,7 +776,8 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 
 - (void)toolbarAreaView_handUpButtonSelected:(PLVHCToolbarAreaView *)toolbarAreaView
                                       userId:(NSString *)userId {
-    [[PLVHCPermissionEvent sharedInstance] sendRaiseHandMessageWithUserId:userId];
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:roomUser.viewerId type:PLVSocketPermissionTypeRaiseHand status:YES];
 }
 
 - (void)toolbarAreaView_CallingTeacher:(PLVHCToolbarAreaView *)toolbarAreaView {
@@ -713,43 +800,12 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 
 #pragma mark PLVHCSettingSheetDelegate
 
-- (void)didChangeMicrophoneSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet enable:(BOOL)enable {
-    [self.linkMicPresenter openLocalUserMic:enable];
-    [self.linkMicAreaView linkMicAreaViewEnableLocalMic:enable];
-    BOOL inSettingView = _settingView && _settingView.superview == self.view;
-    if (!inSettingView) {
-        if (enable) {
-            [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenMic message:@"已开启麦克风"];
-        } else {
-            [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_CloseMic message:@"已关闭麦克风"];
-        }
-    }
-}
-
-- (void)didChangeCameraSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet enable:(BOOL)enable {
-    [self.linkMicPresenter openLocalUserCamera:enable];
-    [self.linkMicAreaView linkMicAreaViewEnableLocalCamera:enable];
-    BOOL inSettingView = _settingView && _settingView.superview == self.view;
-    if (!inSettingView) {
-        if (enable) {
-            [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenCamera message:@"已开启摄像头"];
-        } else {
-            [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_CloseCamera message:@"已关闭摄像头"];
-        }
-    }
-}
-
-- (void)didChangeCameraDirectionSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet front:(BOOL)isFront {
-    [self.linkMicPresenter switchLocalUserCamera:isFront];
-    [self.linkMicAreaView linkMicAreaViewSwitchLocalCameraFront:isFront];
-}
-
 - (void)didChangeFullScreenSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet fullScreen:(BOOL)fullScreen {
     self.fullscreen = fullScreen;
     self.linkMicAreaView.hidden = fullScreen; // 全屏模式下隐藏连麦窗口
     [self.view setNeedsLayout];
-    NSString *fullScreenMessage = fullScreen ? @"已开启全屏模式" : @"退出全屏模式";
-    [PLVHCUtils showToastInWindowWithMessage:fullScreenMessage];
+    [self.view layoutIfNeeded];
+    [self.linkMicZoomAreaView changeFullScreen:fullScreen]; // 改变全屏状态
 }
 
 - (void)didTapLogoutButtonInSettingSheet:(PLVHCSettingSheet *)settingSheet {
@@ -758,13 +814,13 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
 
 #pragma mark PLVHCDocumentSheetDelegate
 
-- (void)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectAutoId:(NSUInteger)autoId {
-    if (self.documentAreaView.isMaxMinimumNum) {
-        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_DocumentCountOver message:@"只支持同时打开5个文件"];
-    } else {
+- (BOOL)documentSheet:(PLVHCDocumentSheet *)documentSheet didSelectAutoId:(NSUInteger)autoId {
+    BOOL allow = !self.documentAreaView.isMaxMinimumNum;
+    if (allow) {
         [self.documentAreaView openPptWithAutoId:autoId];
         [self.toolbarAreaView clearAllButtonSelected];
     }
+    return allow;
 }
 
 
@@ -777,25 +833,11 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [[PLVHCMemberViewModel sharedViewModel] brushPermissionWithUserId:userId auth:permission];
 }
 
-#pragma mark PLVHCPermissionEventDelegate
-
-- (void)permissionEvent:(PLVHCPermissionEvent *)permissionEvent didGrantCupWithUserId:(NSString *)userId {
-    NSString *nickname = [[PLVHCMemberViewModel sharedViewModel] grantCupWithUserId:userId];
-    [self.grantCupView showInView:self.view nickName:nickname];
-}
-
-- (void)permissionEvent:(PLVHCPermissionEvent *)permissionEvent didChangeRaiseHandStatus:(BOOL)raiseHandStatus userId:(NSString *)userId raiseHandCount:(NSInteger)raiseHandCount{
-    [self.toolbarAreaView toolbarAreaViewRaiseHand:raiseHandStatus userId:userId count:raiseHandCount];
-    [[PLVHCMemberViewModel sharedViewModel] handUpWithUserId:userId handUp:raiseHandStatus];
-    [_memberSheet setHandupLabelCount:raiseHandCount];
-}
-
 #pragma mark PLVHCLiveroomViewModelDelegate
 
 - (void)liveroomViewModelStartClass:(PLVHCLiveroomViewModel *)viewModel {
     [self.toolbarAreaView setClassButtonEnable:YES];
     [self startClass];
-    [PLVHCUtils showToastInWindowWithMessage:@"课程开始"];
 }
 
 - (void)liveroomViewModelFinishClass:(PLVHCLiveroomViewModel *)viewModel {
@@ -834,6 +876,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [self.linkMicPresenter changeChannel]; // 切换RTC频道
     [[PLVHCMemberViewModel sharedViewModel] loadOnlineUserList]; // 重新加载在线成员数据
     [[PLVHCChatroomViewModel sharedViewModel] changeRoom]; // 切换聊天室房间
+    [[PLVHCLinkMicZoomManager sharedInstance] startGroup]; // 加入分组
 }
 
 /// 进入分组后，获取到分组名称、组长ID、组长名称
@@ -871,6 +914,7 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     [self.linkMicPresenter changeChannel]; // 切换RTC频道
     [[PLVHCMemberViewModel sharedViewModel] loadOnlineUserList]; // 重新加载在线成员数据
     [[PLVHCChatroomViewModel sharedViewModel] changeRoom]; // 切换聊天室房间
+    [[PLVHCLinkMicZoomManager sharedInstance] leaveGroupRoomWithAckData:data]; // 从分组切换回大房间
 }
 
 - (void)liveroomViewModelDidCancelRequestHelp:(PLVHCLiveroomViewModel *)viewModel {
@@ -889,21 +933,17 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     }
 }
 
-- (void)closeAllLinkMicUserInMemberSheet:(PLVHCMemberSheet *)memberSheet {
-    BOOL success = [self.linkMicPresenter closeAllLinkMicUser];
-    if (success) {
-        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_AllStepDown message:@"已全体下台"];
-    }
+- (BOOL)closeAllLinkMicUserInMemberSheet:(PLVHCMemberSheet *)memberSheet {
+    return [self.linkMicPresenter closeAllLinkMicUser];
 }
 
 - (void)muteAllLinkMicUserMicInMemberSheet:(PLVHCMemberSheet *)memberSheet
                                       mute:(BOOL)mute {
     [self.linkMicPresenter muteAllLinkMicUserMicrophone:mute];
-    if (mute) {
-        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_MicAllAanned message:@"已全体禁麦"];
-    } else {
-        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenMic message:@"已取消全体禁麦"];
-    }
+}
+
+- (void)raiseHandStatusChanged:(PLVHCMemberSheet *)memberSheet status:(BOOL)raiseHandStatus count:(NSInteger)raiseHandCount {
+    [self.toolbarAreaView raiseHand:raiseHandStatus count:raiseHandCount];
 }
 
 #pragma mark PLVHCLinkMicAreaViewDelegate
@@ -922,16 +962,24 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     return [self.linkMicPresenter linkMicUserWithIndex:targetIndex];
 }
 
-- (void)plvHCLinkMicAreaView:(PLVHCLinkMicAreaView *)linkMicAreaView enableLocalMic:(BOOL)enable {
-    [self.settingSheet microphoneSwitchChange:enable];
+- (void)plvHCLinkMicAreaView:(PLVHCLinkMicAreaView *)linkMicAreaView didSwitchLinkMicWithExternalView:(UIView *)externalView userId:(nonnull NSString *)userId showInZoom:(BOOL)showInZoom {
+    BOOL isSelf = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
+    if (showInZoom) {
+        if (isSelf) {
+            PLVResolutionType type =  [PLVRoomDataManager sharedManager].roomData.maxResolution;
+            [self.linkMicPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:type]]; // 显示在放大区域，推流分辨率设为最高分辨率
+        }
+        [self.linkMicZoomAreaView displayExternalView:externalView userId:userId];
+    } else {
+        if (isSelf) {
+            [self.linkMicPresenter setupStreamQuality:PLVBLinkMicStreamQuality180P]; //从放大区域移除，推流分辨率设为180P
+        }
+        [self.linkMicZoomAreaView removeExternalView:externalView userId:userId];
+    }
 }
 
-- (void)plvHCLinkMicAreaView:(PLVHCLinkMicAreaView *)linkMicAreaView enableLocalCamera:(BOOL)enable {
-    [self.settingSheet cameraSwitchChange:enable];
-}
-
-- (void)plvHCLinkMicAreaView:(PLVHCLinkMicAreaView *)linkMicAreaView switchLocalCameraFront:(BOOL)switchFront {
-    [self.settingSheet cameraDirectionChange:switchFront];
+- (void)plvHCLinkMicAreaView:(PLVHCLinkMicAreaView *)linkMicAreaView didRefreshLinkMiItemView:(nonnull PLVHCLinkMicItemView *)linkMicItemView {
+    [self.linkMicZoomAreaView refreshLinkMicItemView:linkMicItemView];
 }
 
 #pragma mark PLVHCChatroomSheetDelegate
@@ -940,6 +988,28 @@ PLVHCChatroomSheetDelegate // 聊天室视图回调
     if (newMessageCount > 0) {
         [self.toolbarAreaView toolbarAreaViewReceiveNewMessage];
     }
+}
+
+#pragma mark PLVHCLinkMicZoomAreaViewDelegate
+
+- (NSArray *)linkMicZoomAreaViewGetCurrentUserModelArray:(PLVHCLinkMicZoomAreaView *)linkMicZoomAreaView {
+    return self.linkMicPresenter.currentLinkMicUserArray;
+}
+
+- (void)linkMicZoomAreaView:(PLVHCLinkMicZoomAreaView *)linkMicZoomAreaView didTapActionWithUserData:(PLVLinkMicOnlineUser * _Nullable)userData {
+    if (!userData) { // 本地预览
+        [self.linkMicAreaView showLocalSettingView];
+    } else { // 连麦视图
+        [self.linkMicAreaView showSettingViewWithUser:userData];
+    }
+}
+
+- (void)linkMicZoomAreaViewDidReLoadLinkMicUserWindows:(PLVHCLinkMicZoomAreaView *)linkMicZoomAreaView {
+    [self.linkMicAreaView reloadLinkMicUserWindows];
+}
+
+- (UIView *)linkMicZoomAreaView:(PLVHCLinkMicZoomAreaView *)linkMicZoomAreaView getLinkMicItemViewWithUserId:(NSString *)userId {
+    return [self.linkMicAreaView getLinkMicItemViewWithUserId:userId];
 }
 
 @end

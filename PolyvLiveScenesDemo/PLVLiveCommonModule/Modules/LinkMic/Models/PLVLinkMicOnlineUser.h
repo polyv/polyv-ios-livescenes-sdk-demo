@@ -260,6 +260,9 @@ typedef void (^PLVLinkMicOnlineUserWantGrantCupBlock)(PLVLinkMicOnlineUser * onl
 /// 当前用户的流是否已离开房间，默认为NO，为YES时可用于显示占位图（目前该字段只在互动学堂场景讲师身份时有效）
 @property (nonatomic, assign) BOOL streamLeaveRoom;
 
+/// 当前用户的连麦画面是否在放大区域，默认为NO，此时连麦画面在连麦列表上，为YES时表示在放大区域，当前连麦列表需要显示占位图（目前该字段只在互动学堂场景有效）
+@property (nonatomic, assign) BOOL inLinkMicZoom;
+
 #pragma mark - [ 方法 ]
 #pragma mark 创建
 

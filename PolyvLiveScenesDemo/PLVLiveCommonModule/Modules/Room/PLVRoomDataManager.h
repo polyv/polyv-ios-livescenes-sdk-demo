@@ -44,6 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 直播状态 liveState 更新
 - (void)roomDataManager_didLiveStateChanged:(PLVChannelLiveStreamState)liveState;
 
+/// 直播回放vid改变
+- (void)roomDataManager_didVidChanged:(NSString *)vid;
+
 @end
 
 @interface PLVRoomDataManager : NSObject

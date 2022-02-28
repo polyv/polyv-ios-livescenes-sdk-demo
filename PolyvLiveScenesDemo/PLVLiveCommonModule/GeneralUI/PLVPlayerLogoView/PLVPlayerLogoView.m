@@ -67,6 +67,7 @@
     if (self) {
         self.clipsToBounds = YES;
         self.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+        self.userInteractionEnabled = NO;
         _logos = [[NSMutableArray alloc] initWithCapacity:2];
         _logoParams = [[NSMutableArray alloc] initWithCapacity:2];
     }

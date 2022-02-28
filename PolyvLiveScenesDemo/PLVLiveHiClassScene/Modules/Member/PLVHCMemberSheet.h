@@ -37,6 +37,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/// 成员列表回调
+/// @note 在主线程触发
 @protocol PLVHCMemberSheetDelegate <NSObject>
 
 @optional
@@ -48,12 +50,20 @@ NS_ASSUME_NONNULL_BEGIN
                               chatUser:(PLVChatUser *)chatUser;
 
 /// 全员下台操作
-- (void)closeAllLinkMicUserInMemberSheet:(PLVHCMemberSheet *)memberSheet;
+/// @return YES-操作成功；NO-操作失败
+- (BOOL)closeAllLinkMicUserInMemberSheet:(PLVHCMemberSheet *)memberSheet;
 
 /// 全员静音操作
 /// @param mute (YES-静音;NO-取消静音 )
 - (void)muteAllLinkMicUserMicInMemberSheet:(PLVHCMemberSheet *)memberSheet
                                       mute:(BOOL)mute;
+
+/// 【讲师端】举手状态有变化
+/// @param raiseHandStatus 举手状态 YES:举手，NO:取消举手(此动作由服务器发起)
+/// @param raiseHandCount 举手人数
+- (void)raiseHandStatusChanged:(PLVHCMemberSheet *)memberSheet
+                        status:(BOOL)raiseHandStatus
+                         count:(NSInteger)raiseHandCount;
 
 @end
 

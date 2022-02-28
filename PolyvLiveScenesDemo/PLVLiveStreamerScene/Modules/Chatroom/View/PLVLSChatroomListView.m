@@ -163,6 +163,16 @@ UITableViewDataSource
     }
 }
 
+#pragma mark cell方法
+- (UITableViewCell *)createDefaultCellWithTableview:(UITableView *)tableView {
+    static NSString *cellIdentify = @"cellIdentify";
+    UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
+    if (!cell) {
+        cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+    }
+    return cell;
+}
+
 #pragma mark - Public Method
 
 - (void)didSendMessage {
@@ -223,7 +233,20 @@ UITableViewDataSource
     return [[[PLVLSChatroomViewModel sharedViewModel] chatArray] count];
 }
 
+- (void)refreshCellWithIndex:(NSIndexPath *)indexPath {
+    [self.tableView reloadData];
+    if (indexPath.row >= [PLVLSChatroomViewModel sharedViewModel].chatArray.count - 2) { // 最后两行需要将tablView滑动到底部
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self scrollsToBottom:NO];
+        });
+    }
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.row >= [PLVLSChatroomViewModel sharedViewModel].chatArray.count) {
+        return [self createDefaultCellWithTableview:tableView];
+    }
+    
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     PLVChatModel *model = [[PLVLSChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     
@@ -242,6 +265,10 @@ UITableViewDataSource
             }
         }];
         
+        [cell setRefreshCellHandler:^{
+            [weakSelf refreshCellWithIndex:indexPath];
+        }];
+        
         return cell;
     } else if ([PLVLSImageMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVLSImageMessageCell";
@@ -256,6 +283,10 @@ UITableViewDataSource
             if (weakSelf.didTapReplyMenuItem) {
                 weakSelf.didTapReplyMenuItem(model);
             }
+        }];
+        
+        [cell setRefreshCellHandler:^{
+            [weakSelf refreshCellWithIndex:indexPath];
         }];
         
         return cell;
@@ -274,6 +305,10 @@ UITableViewDataSource
             }
         }];
         
+        [cell setRefreshCellHandler:^{
+            [weakSelf.tableView reloadData];
+        }];
+        
         return cell;
     } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVLSQuoteMessageCell";
@@ -290,6 +325,10 @@ UITableViewDataSource
             }
         }];
         
+        [cell setRefreshCellHandler:^{
+            [weakSelf refreshCellWithIndex:indexPath];
+        }];
+        
         return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
@@ -304,6 +343,10 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.row >= [PLVLSChatroomViewModel sharedViewModel].chatArray.count) {
+        return 0.0;
+    }
+    
     CGFloat cellHeight =  44.0;
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
@@ -317,7 +360,7 @@ UITableViewDataSource
     } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
         cellHeight = [PLVLSQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else {
-        cellHeight = 0;
+        cellHeight = 0.0;
     }
     
     return cellHeight;

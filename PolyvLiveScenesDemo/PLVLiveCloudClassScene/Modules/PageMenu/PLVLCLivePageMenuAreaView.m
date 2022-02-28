@@ -14,6 +14,8 @@
 #import "PLVLCTextViewController.h"
 #import "PLVLCQAViewController.h"
 #import "PLVLCIframeViewController.h"
+#import "PLVLCPlaybackListViewController.h"
+#import "PLVLCSectionViewController.h"
 #import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 
@@ -42,6 +44,7 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
 
 @interface PLVLCLivePageMenuAreaView ()<
 PLVLCTuwenDelegate,
+PLVLCSectionViewControllerDelegate,
 PLVRoomDataManagerProtocol
 >
 
@@ -50,6 +53,10 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCDescViewController *descVctrl;
 /// 提问咨询页
 @property (nonatomic, strong) PLVLCQuizViewController *quizVctrl;
+/// 回放列表
+@property (nonatomic, strong) PLVLCPlaybackListViewController *playbackListVctrl;
+/// 章节列表页
+@property (nonatomic, strong) PLVLCSectionViewController *sectionVctrl;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
@@ -114,6 +121,21 @@ PLVRoomDataManagerProtocol
         [ctrlArray addObject:vctrl];
     }
     
+    if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
+        PLVLCPlaybackListViewController *vctrl = [[PLVLCPlaybackListViewController alloc] initWithPlaybackList:[PLVRoomDataManager sharedManager].roomData.playbackList];
+        self.playbackListVctrl = vctrl;
+        [titleArray addObject:@"往期"];
+        [ctrlArray addObject:vctrl];
+    }
+    
+    if ([PLVRoomDataManager sharedManager].roomData.sectionEnable) {
+        PLVLCSectionViewController *vctrl = [[PLVLCSectionViewController alloc] initWithSectionList:[PLVRoomDataManager sharedManager].roomData.sectionList];
+        self.sectionVctrl = vctrl;
+        self.sectionVctrl.delegate = self;
+        [titleArray addObject:@"章节"];
+        [ctrlArray addObject:vctrl];
+    }
+
     [self.pageController setTitles:[titleArray copy] controllers:[ctrlArray copy]];
 }
 
@@ -164,6 +186,22 @@ PLVRoomDataManagerProtocol
 
 - (void)clickTuwenImage:(BOOL)showImage {
     [self.pageController scrollEnable:!showImage];
+}
+
+#pragma mark - PLVLCSectionViewControllerDelegate
+
+- (NSTimeInterval)plvLCSectionViewGetPlayerCurrentTime:(PLVLCSectionViewController *)PLVLCSectionViewController {
+    if ([self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaViewGetPlayerCurrentTime:)]) {
+        return [self.delegate plvLCLivePageMenuAreaViewGetPlayerCurrentTime:self];
+    } else {
+        return 0;
+    }
+}
+
+- (void)plvLCSectionView:(PLVLCSectionViewController *)PLVLCSectionViewController seekTime:(NSTimeInterval)time {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:seekTime:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self seekTime:time];
+    }
 }
 
 @end

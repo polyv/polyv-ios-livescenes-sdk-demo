@@ -114,7 +114,7 @@
         _pptImageView.layer.cornerRadius = 4;
         _pptImageView.layer.borderColor = PLV_UIColorFromRGB(@"#4399FF").CGColor;
         _pptImageView.clipsToBounds = YES;
-        _pptImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _pptImageView.contentMode = [PLVHCUtils sharedUtils].isPad ? UIViewContentModeScaleAspectFill : UIViewContentModeScaleAspectFit;
     }
     return _pptImageView;
 }

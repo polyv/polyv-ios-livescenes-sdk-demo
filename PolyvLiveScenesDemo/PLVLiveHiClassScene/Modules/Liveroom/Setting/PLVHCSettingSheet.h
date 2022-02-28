@@ -15,18 +15,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol PLVHCSettingSheetDelegate <NSObject>
 
-/// 点击【麦克风】开关触发回调
-/// @param settingSheet 设置弹层
-- (void)didChangeMicrophoneSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet enable:(BOOL)enable;
-
-/// 点击【摄像头】开关触发回调
-/// @param settingSheet 设置弹层
-- (void)didChangeCameraSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet enable:(BOOL)enable;
-
-/// 点击【方向】开关触发回调
-/// @param settingSheet 设置弹层
-- (void)didChangeCameraDirectionSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet front:(BOOL)isFront;
-
 /// 点击【全屏】开关触发回调
 /// @param settingSheet 设置弹层
 - (void)didChangeFullScreenSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet fullScreen:(BOOL)fullScreen;
@@ -56,7 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)dismiss;
 
 /// 同步设备设置页控件的开关状态
-- (void)synchronizeConfig:(NSDictionary *)dict;
+- (void)synchronizeConfig;
 
 /// 同步麦克风开关
 /// @param open YES-开启;NO-关闭

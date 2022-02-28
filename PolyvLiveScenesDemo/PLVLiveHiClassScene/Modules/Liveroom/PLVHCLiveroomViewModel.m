@@ -11,6 +11,8 @@
 //UI
 #import "PLVHCClassAlertView.h"
 #import "PLVHCGuidePagesView.h"
+#import "PLVHCGroupLeaderGuidePagesView.h"
+#import "PLVHCBroadcastAlertView.h"
 
 //工具类
 #import "PLVHCUtils.h"
@@ -88,6 +90,8 @@ PLVSocketManagerProtocol // socket回调
                 }];
             } else { // 超时未上课通知主页上课延误
                 [weakSelf notifyDelayInClass];
+                // 讲师超时未上课显示占位图
+                [PLVHCClassAlertView showOvertimeNoClassInView:weakSelf.homeVCView];
             }
         } else if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass) { // 已经处于上课中则显示开始上课倒计时
             [self startStudentThreeSesondCountDownWithCompletion:^{
@@ -417,6 +421,7 @@ PLVSocketManagerProtocol // socket回调
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     if (roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        [PLVHCUtils showToastInWindowWithMessage:@"课程开始"];
         [self notifyStartClass];
     } else { // 学生需要先进行倒计时，倒计时完毕在触发回调 '-liveroomViewModelStartClass:'
         __weak typeof(self) weakSelf = self;
@@ -511,6 +516,7 @@ PLVSocketManagerProtocol // socket回调
         [PLVHCClassAlertView showStudentGroupCountdownInView:self.homeVCView titleString:message confirmActionTitle:nil endCallback:nil];
     }
     
+    [PLVHCGroupLeaderGuidePagesView showGuidePagesViewinView:[PLVHCUtils sharedUtils].homeVC.view endBlock:nil];
     [self notifyGroupLeaderUpdate];
 }
 
@@ -533,7 +539,7 @@ PLVSocketManagerProtocol // socket回调
 }
 
 - (void)hiClassManager:(PLVHiClassManager *)manager didReceiveHostBroadcast:(NSString *)content {
-    [PLVHCClassAlertView showStudentGroupCountdownInView:self.homeVCView titleString:content confirmActionTitle:nil endCallback:nil];
+    [PLVHCBroadcastAlertView showAlertViewWithMessage:content confirmActionBlock:nil];
 }
 
 @end

@@ -333,9 +333,14 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 
 - (void)notifyListenerlinkMicButtonAction {
     if (self.user.waitUser) {
-        [self.user.waitUser wantAllowUserJoinLinkMic];
-        // 刷新按钮状态为等待连麦
-        [self refreshLinkMicButtonStateWithWait];
+        BOOL allowLinkmic = [self.delegate allowLinkMicInCell:self];
+        if (allowLinkmic) {
+            [self.user.waitUser wantAllowUserJoinLinkMic];
+            // 刷新按钮状态为等待连麦
+            [self refreshLinkMicButtonStateWithWait];
+        } else {
+            [PLVLSUtils showToastInHomeVCWithMessage:@"当前连麦人数已达上限"];
+        }
     }else if (self.user.onlineUser){
         [self.user.onlineUser wantCloseUserLinkMic];
     }else{

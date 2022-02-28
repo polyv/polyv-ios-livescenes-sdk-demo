@@ -163,6 +163,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换倍速 (范围值 0.0~2.0)
 - (void)switchLivePlaybackSpeedRate:(CGFloat)toSpeed;
 
+/// 切换回放视频
+/// @param vid 回放视频id
+- (void)changeVid:(NSString *)vid;
+
 @end
 
 @protocol PLVPlayerPresenterDelegate <NSObject>
@@ -219,6 +223,13 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param playerPresenter 播放器管理器
 - (BOOL)playerPresenterGetInLinkMic:(PLVPlayerPresenter *)playerPresenter;
+
+/// 直播播放器 需获知外部 ‘当前是否暂停无延迟观看’
+///
+/// @note 此回调不保证在主线程触发
+///
+/// @param playerPresenter 播放器管理器
+- (BOOL)playerPresenterGetPausedWatchNoDelay:(PLVPlayerPresenter *)playerPresenter;
 
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
 ///

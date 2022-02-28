@@ -312,14 +312,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 #pragma mark 自定义消息
 
-- (BOOL)sendCustomMessageWithEvent:(NSString *)event
+- (PLVChatModel * _Nullable)sendCustomMessageWithEvent:(NSString *)event
                               data:(NSDictionary *)data
                                tip:(NSString * _Nullable)tip
                           emitMode:(int)emitMode {
     if (!event || ![event isKindOfClass:[NSString class]] || event.length == 0 ||
         !data || ![data isKindOfClass:[NSDictionary class]] || [data count] == 0 ||
         !tip || ![tip isKindOfClass:[NSString class]] || tip.length == 0) {
-        return NO;
+        return nil;
     }
     
     PLVCustomMessage *message = [[PLVCustomMessage alloc] init];
@@ -333,7 +333,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     model.message = message;
     
     BOOL success = [[PLVChatroomManager sharedManager] sendCustonMessage:message];
-    return success;
+    return success ? model : nil;
 }
 
 #pragma mark 生成教师回复信息

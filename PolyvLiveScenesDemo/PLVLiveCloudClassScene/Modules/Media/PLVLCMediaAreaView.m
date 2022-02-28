@@ -12,6 +12,7 @@
 #import "PLVLCMediaPlayerCanvasView.h"
 #import "PLVLCMediaMoreView.h"
 #import "PLVPlayerLogoView.h"
+#import "PLVWatermarkView.h"
 
 // 模块
 #import "PLVDocumentView.h"
@@ -39,7 +40,8 @@ PLVLCMediaMoreViewDelegate,
 PLVLCMediaPlayerCanvasViewDelegate,
 PLVDocumentViewDelegate,
 PLVPlayerPresenterDelegate,
-PLVLCRetryPlayViewDelegate
+PLVLCRetryPlayViewDelegate,
+PLVRoomDataManagerProtocol
 >
 
 #pragma mark 状态
@@ -55,11 +57,15 @@ PLVLCRetryPlayViewDelegate
 @property (nonatomic, assign, readonly) BOOL pptOnMainSite;     // 只读，PPT当前是否处于主屏 (此属性仅适合判断PPT是否在主屏，不适合判断其他视图所处位置)
 @property (nonatomic, assign) BOOL networkQualityMiddleViewShowed;         // 网络不佳提示视图是否显示过
 @property (nonatomic, assign) BOOL networkQualityPoorViewShowed;   // 网络糟糕提示视图是否显示过
+@property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay; //只读，是否暂停无延迟直播
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
 @property (nonatomic, strong) PLVDocumentView * pptView;                 // PPT 功能模块
 @property (nonatomic, assign) NSInteger tryPlayPPTViewNum; // 尝试播放PPTView次数
+
+#pragma mark 数据
+@property (nonatomic, readonly) PLVRoomData *roomData;  // 只读，当前直播间数据
 
 #pragma mark UI
 /// view hierarchy
@@ -69,6 +75,7 @@ PLVLCRetryPlayViewDelegate
 /// ├── (PLVLCMediaAreaView) self
 /// │   ├── (UIView) contentBackgroudView
 /// │   │    └── (PLVLCMediaPlayerCanvasView) canvasView
+/// │   ├── (PLVWatermarkView) watermarkView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
 /// ├── (PLVMarqueeView) marqueeView
@@ -82,6 +89,7 @@ PLVLCRetryPlayViewDelegate
 /// ├── (PLVLCMediaAreaView) self
 /// │   ├── (UIView) contentBackgroudView
 /// │   │    └── (PLVPPTView) pptView
+/// │   ├── (PLVWatermarkView) watermarkView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
 /// ├── (PLVMarqueeView) marqueeView
@@ -94,7 +102,8 @@ PLVLCRetryPlayViewDelegate
 /// (UIView) superview
 /// ├── (PLVLCMediaAreaView) self
 /// │   └── (UIView) contentBackgroudView
-/// │       └── (PLVLCMediaPlayerCanvasView) canvasView
+/// │   ├── (PLVWatermarkView) watermarkView
+/// │   └── (PLVLCMediaPlayerCanvasView) canvasView
 /// │
 /// ├── (PLVLCMediaFloatView) floatView
 /// │     └── (UIView) contentBackgroudView
@@ -108,7 +117,8 @@ PLVLCRetryPlayViewDelegate
 /// (UIView) superview
 /// ├── (PLVLCMediaAreaView) self
 /// │   └── (UIView) contentBackgroudView
-/// │       └── (PLVLCMediaPlayerCanvasView) pptView
+/// │   ├── (PLVWatermarkView) watermarkView
+/// │   └── (PLVLCMediaPlayerCanvasView) pptView
 /// │
 /// ├── (PLVLCMediaFloatView) floatView
 /// │     └── (UIView) contentBackgroudView
@@ -124,7 +134,8 @@ PLVLCRetryPlayViewDelegate
 @property (nonatomic, strong) PLVLCMediaMoreView * moreView;
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
-@property (nonatomic, strong) UIView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
+@property (nonatomic, strong) PLVPlayerLogoView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
+@property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) PLVLCRetryPlayView *retryPlayView; // 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable; // 网络不佳提示视图
@@ -213,12 +224,13 @@ PLVLCRetryPlayViewDelegate
     }
 
     self.retryPlayView.frame = self.frame;
+    self.watermarkView.frame = self.contentBackgroudView.frame;
 }
 
 
 #pragma mark - [ Public Methods ]
 - (void)refreshUIInfo {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVRoomData *roomData = self.roomData;
     [self.skinView setTitleLabelWithText:roomData.menuInfo.name];
     [self.skinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
 }
@@ -349,6 +361,10 @@ PLVLCRetryPlayViewDelegate
     return nil;
 }
 
+- (void)seekLivePlaybackToTime:(NSTimeInterval)time {
+    [self.playerPresenter seekLivePlaybackToTime:time];
+}
+
 - (BOOL)isPptView:(UIView *)view {
     if (view &&
         [view isKindOfClass:[PLVDocumentView class]]) {
@@ -460,6 +476,7 @@ PLVLCRetryPlayViewDelegate
         
     }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 直播回放 模块
+        [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:PLVChannelVideoType_Playback];
         self.playerPresenter.delegate = self;
         [self.playerPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview];
@@ -472,7 +489,7 @@ PLVLCRetryPlayViewDelegate
 }
 
 - (void)playPPTView {
-    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    NSString *channelId = self.roomData.channelId;
     NSString *videoId = self.playerPresenter.videoId;
     if ([PLVFdUtil checkStringUseable:channelId] &&
         [PLVFdUtil checkStringUseable:videoId]) { // videoId 在app启动后立马取值不一定有值，需要递归处理
@@ -655,6 +672,20 @@ PLVLCRetryPlayViewDelegate
     });
 }
 
+#pragma mark  播放器LOGO
+- (void)setupPlayerLogoImage {
+    if (self.canvasView) {
+        [self.logoView addAtView:self.canvasView];
+    }
+}
+
+#pragma mark 防录屏水印
+- (void)setupWatermark {
+    if (self.contentBackgroudView) {
+        [self addSubview:self.watermarkView];
+    }
+}
+
 #pragma mark Getter
 - (CGFloat)topPaddingBelowiOS11{
     /// 仅在 [limitContentViewInSafeArea] 为YES，会使用此值，否则均返回 0
@@ -743,6 +774,39 @@ PLVLCRetryPlayViewDelegate
     return _retryPlayView;
 }
 
+- (PLVWatermarkView *)watermarkView {
+    if (!_watermarkView) {
+        PLVChannelInfoModel *channel = self.roomData.channelInfo;
+        if (channel.watermarkRestrict) {
+            NSString *content = channel.watermarkContent;
+            if (channel.watermarkType == PLVChannelWatermarkType_Nick) {
+                content = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerName;
+            }
+            PLVWatermarkModel *model = [PLVWatermarkModel watermarkModelWithContent:content fontSize:channel.watermarkFontSize opacity:channel.watermarkOpacity];
+            _watermarkView = [[PLVWatermarkView alloc] initWithWatermarkModel:model];
+        }
+    }
+    return _watermarkView;
+}
+
+- (PLVPlayerLogoView *)logoView {
+    if (!_logoView) {
+        PLVChannelInfoModel *channel = self.roomData.channelInfo;
+        if ([PLVFdUtil checkStringUseable:channel.logoImageUrl]) {
+            PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
+            logoParam.logoUrl = channel.logoImageUrl;
+            logoParam.position = channel.logoPosition;
+            logoParam.logoAlpha = channel.logoOpacity;
+            logoParam.logoWidthScale = 0.14;
+            logoParam.logoHeightScale = 0.25;
+
+            _logoView = [[PLVPlayerLogoView alloc] init];
+            [_logoView insertLogoWithParam:logoParam];
+        }
+    }
+    return _logoView;
+}
+
 - (UILabel *)networkQualityMiddleLable {
     if (!_networkQualityMiddleLable) {
         _networkQualityMiddleLable = [[UILabel alloc] init];
@@ -800,6 +864,15 @@ PLVLCRetryPlayViewDelegate
     }
 }
 
+- (BOOL)pausedWatchNoDelay {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetPausedWatchNoDelay:)]) {
+        return [self.delegate plvLCMediaAreaViewGetPausedWatchNoDelay:self];
+    }else{
+        NSLog(@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetPausedWatchNoDelay:]");
+        return NO;
+    }
+}
+
 - (BOOL)inRTCRoom{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMic:)]) {
         return [self.delegate plvLCMediaAreaViewGetInRTCRoom:self];
@@ -807,6 +880,14 @@ PLVLCRetryPlayViewDelegate
         NSLog(@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetInRTCRoom:]");
         return NO;
     }
+}
+
+- (NSTimeInterval)currentPlayTime {
+    return self.playerPresenter.currentPlaybackTime;
+}
+
+- (PLVRoomData *)roomData {
+    return [PLVRoomDataManager sharedManager].roomData;
 }
 
 - (BOOL)isOnlyAudio {
@@ -1077,8 +1158,12 @@ PLVLCRetryPlayViewDelegate
 /// 播放器 ‘频道信息’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
     /// 设置 跑马灯
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVRoomData *roomData = self.roomData;
     [self setupMarquee:roomData.channelInfo customNick:roomData.roomUser.viewerName];
+    if (self.videoType == PLVChannelVideoType_Playback) {
+        [self setupWatermark];
+        [self setupPlayerLogoImage];
+    }
 }
 
 // 直播相关
@@ -1102,11 +1187,12 @@ PLVLCRetryPlayViewDelegate
         [self.marqueeView start];
         
         /// 设置播放器logo
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        [self setupPlayerLogoImage:roomData.channelInfo];
+        [self setupPlayerLogoImage];
+        /// 设置防录屏水印
+        [self setupWatermark];
         
         if (self.isOnlyAudio) {
-            [self.canvasView setSplashImageWithURLString:roomData.menuInfo.splashImg];
+            [self.canvasView setSplashImageWithURLString:self.roomData.menuInfo.splashImg];
             [self.playerPresenter switchLiveToAudioMode:YES];
         }
     }else if (newestStreamState == PLVChannelLiveStreamState_Stop ||
@@ -1116,6 +1202,7 @@ PLVLCRetryPlayViewDelegate
             [self.floatView triggerViewExchangeEvent];
         }
         [self.logoView removeFromSuperview];
+        [self.watermarkView removeFromSuperview];
         [self.floatView forceShowFloatView:NO];
         [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
         
@@ -1144,6 +1231,11 @@ PLVLCRetryPlayViewDelegate
 /// 直播播放器 需获知外部 ‘当前是否正在连麦’
 - (BOOL)playerPresenterGetInLinkMic:(PLVPlayerPresenter *)playerPresenter{
     return self.inLinkMic;
+}
+
+/// 直播播放器 需获知外部 ‘当前是否已暂停无延迟观看’
+- (BOOL)playerPresenterGetPausedWatchNoDelay:(PLVPlayerPresenter *)playerPresenter{
+    return self.pausedWatchNoDelay;
 }
 
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
@@ -1186,30 +1278,15 @@ PLVLCRetryPlayViewDelegate
     [self.playerPresenter resumePlay];
 }
 
-#pragma mark - 播放器LOGO
-- (void)setupPlayerLogoImage:(PLVChannelInfoModel *)channel {
-    if ([PLVFdUtil checkStringUseable:channel.logoImageUrl]) {
-        PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
-        logoParam.logoUrl = channel.logoImageUrl;
-        logoParam.position = channel.logoPosition;
-        logoParam.logoAlpha = channel.logoOpacity;
-        logoParam.logoWidthScale = 0.14;
-        logoParam.logoHeightScale = 0.25;
-
-        PLVPlayerLogoView *playerLogo = [[PLVPlayerLogoView alloc] init];
-        [playerLogo insertLogoWithParam:logoParam];
-        [self addPlayerLogo:playerLogo];
-    }
+#pragma mark PLVRoomDataManagerProtocol
+- (void)roomDataManager_didVidChanged:(NSString *)vid {
+    NSString *videoId = [PLVRoomDataManager sharedManager].roomData.videoId;
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    [self.playerPresenter changeVid:vid];
+    [self.pptView pptStartWithVideoId:videoId channelId:channelId];
 }
 
-- (void)addPlayerLogo:(PLVPlayerLogoView *)logo {
-    if (self.canvasView) {
-        self.logoView = logo;
-        [logo addAtView:self.canvasView];
-    }
-}
-
-#pragma mark - Action
+#pragma mark - [ Action ]
 - (void)swithDelayLiveClick:(UIButton *)button {
     [self switchToNoDelayWatchMode:NO];
     self.networkQualityPoorView.hidden = YES;

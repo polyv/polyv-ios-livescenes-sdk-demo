@@ -49,15 +49,25 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat left = 34;
+    CGFloat top = 33;
+    CGFloat loginButtonLeft = 24;
+    CGFloat agreementButtonLeft = 105;
+    if (isPad) {
+        left = 203;
+        top = 88;
+        loginButtonLeft = 202;
+        agreementButtonLeft = 202;
+    } 
     UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:self.bounds byRoundingCorners:UIRectCornerTopLeft cornerRadii:CGSizeMake(40,40)];
     CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
     maskLayer.frame = self.bounds;
     maskLayer.path = maskPath.CGPath;
     self.layer.mask = maskLayer;
-    self.titleLabel.frame = CGRectMake(34, 33, 104, 37);
+    self.titleLabel.frame = CGRectMake(left, top, 104, 37);
     self.titleImageView.center = CGPointMake(CGRectGetMaxX(self.titleLabel.frame) + 10 + CGRectGetWidth(self.titleImageView.bounds)/2, CGRectGetMidY(self.titleLabel.frame));
-    self.textField.frame = CGRectMake(34, CGRectGetMaxY(self.titleLabel.frame) + 42, CGRectGetWidth(self.bounds) - 34 * 2, 40);
+    self.textField.frame = CGRectMake(left, CGRectGetMaxY(self.titleLabel.frame) + 42, CGRectGetWidth(self.bounds) - left * 2, 40);
     self.textFieldLine.frame = CGRectMake(CGRectGetMinX(self.textField.frame), CGRectGetMaxY(self.textField.frame) + 5, CGRectGetWidth(self.textField.bounds), 1);
     
     if (_viewType == PLVHCStudentLoginViewType_CourseOrLesson) {
@@ -67,7 +77,11 @@
                 bottomPadding = self.superview.safeAreaInsets.bottom;
             }
         }
-        self.agreementButton.frame = CGRectMake(105, CGRectGetMaxY(self.bounds) - bottomPadding - 20 - 16, 16, 16);
+        if (isPad) {
+            self.agreementButton.frame = CGRectMake(agreementButtonLeft, CGRectGetMaxY(self.loginButton.frame) + 42, 16, 16);
+        } else {
+            self.agreementButton.frame = CGRectMake(agreementButtonLeft, CGRectGetMaxY(self.bounds) - bottomPadding - 20 - 16, 16, 16);
+        }
         self.agreementLabel.frame = CGRectMake(CGRectGetMaxX(self.agreementButton.frame) + 4, CGRectGetMidY(self.agreementButton.frame) - 32 / 2, 75, 32);
         self.readAgreementButton.frame = CGRectMake(CGRectGetMaxX(self.agreementLabel.frame), CGRectGetMinY(self.agreementLabel.frame), 80, 32);        
     } else if (_viewType == PLVHCStudentLoginViewType_Code) {
@@ -76,7 +90,8 @@
         self.textField.frame = CGRectMake(CGRectGetMinX(self.passwordTextField.frame), CGRectGetMaxY(self.passwordTextFieldLine.frame) + 42, CGRectGetWidth(self.passwordTextField.bounds), CGRectGetHeight(self.passwordTextField.bounds));
         self.textFieldLine.frame = CGRectMake(CGRectGetMinX(self.textField.frame), CGRectGetMaxY(self.textField.frame) + 5, CGRectGetWidth(self.textField.bounds), 1);
     }
-    self.loginButton.frame = CGRectMake(24, CGRectGetMaxY(self.textFieldLine.frame) + 48, CGRectGetWidth(self.bounds) - 24 * 2, 50);
+    
+    self.loginButton.frame = CGRectMake(loginButtonLeft, CGRectGetMaxY(self.textFieldLine.frame) + 48, CGRectGetWidth(self.bounds) - loginButtonLeft * 2, 50);
     [self.loginButton setBackgroundImage:[self createImageWithColorSize:self.loginButton.bounds.size isGradient:YES] forState:UIControlStateNormal];
 }
 
@@ -95,18 +110,22 @@
         [self addSubview:self.readAgreementButton];
         self.titleLabel.text = @"登录课程";
         _textField.attributedPlaceholder = [self placeholderAttributedStringWithString:@"请输入课程号 / 课节号"];
+        [_loginButton setTitle:@"登录" forState:UIControlStateNormal];
     } else if (_viewType == PLVHCStudentLoginViewType_Null) {
         self.titleLabel.text = @"设置名称";
         _textField.attributedPlaceholder = [self placeholderAttributedStringWithString:@"请设置你的名称"];
+        [_loginButton setTitle:@"下一步" forState:UIControlStateNormal];
     } else if(_viewType == PLVHCStudentLoginViewType_WhiteList) {
         self.titleLabel.text = @"学生码";
         _textField.attributedPlaceholder = [self placeholderAttributedStringWithString:@"请输入学生码"];
+        [_loginButton setTitle:@"下一步" forState:UIControlStateNormal];
     } else if(_viewType == PLVHCStudentLoginViewType_Code) {
         [self addSubview:self.passwordTextField];
         [self.layer addSublayer:self.passwordTextFieldLine];
         self.titleLabel.text = @"验证信息";
         _passwordTextField.attributedPlaceholder = [self placeholderAttributedStringWithString:@"请输入密码"];
         _textField.attributedPlaceholder = [self placeholderAttributedStringWithString:@"请设置你的名称"];
+        [_loginButton setTitle:@"下一步" forState:UIControlStateNormal];
     }
 }
     
@@ -275,6 +294,7 @@
 }
 
 - (void)loginButtonAction {
+    [self.textField endEditing:YES];
     if (self.delegate && [self.delegate respondsToSelector:@selector(studentLoginViewLoginSelected:)]) {
         [self.delegate studentLoginViewLoginSelected:self];
     }

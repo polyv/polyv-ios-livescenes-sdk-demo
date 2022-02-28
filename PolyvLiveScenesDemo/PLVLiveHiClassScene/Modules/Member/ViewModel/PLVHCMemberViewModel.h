@@ -19,9 +19,16 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @protocol PLVHCMemberViewModelDelegate <NSObject>
 
+/// 成员列表在线成员数据发生变化
 - (void)onlineUserListChangedInMemberViewModel:(PLVHCMemberViewModel *)viewModel;
 
+/// 成员列表被踢出成员数据发生变化
 - (void)kickedUserListChangedInMemberViewModel:(PLVHCMemberViewModel *)viewModel;
+
+/// 【讲师端】举手状态有变化
+/// @param raiseHandStatus 举手状态 YES:举手，NO:取消举手(此动作由服务器发起)
+/// @param raiseHandCount 举手人数
+- (void)raiseHandStatusChanged:(PLVHCMemberViewModel *)viewModel status:(BOOL)raiseHandStatus count:(NSInteger)raiseHandCount;
 
 @end
 
@@ -77,15 +84,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 讲师端禁言/取消禁言某个学员后调用
 - (void)banUserWithUserId:(NSString *)userId banned:(BOOL)banned;
-
-/// 讲师端收到某个学员举手动作后调用
-/// 用于更新用户 ‘当前是否举手’ 属性 currentHandUp，并触发回调 [-onlineUserListChangedInMemberViewModel:]
-- (void)handUpWithUserId:(NSString *)userId handUp:(BOOL)handUp;
-
-/// 收到授予奖杯事件时，更新用户的 ‘授予奖杯数量’、同时返回用户的昵称
-/// @param userId 授予奖杯的用户
-/// @return 根据 userId 返回用户的昵称
-- (NSString *)grantCupWithUserId:(NSString *)userId;
 
 /// 收到授权画笔的事件时，更新用户的 ‘画笔授权状态’
 /// @param userId 画笔授权事件相关用户

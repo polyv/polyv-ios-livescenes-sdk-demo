@@ -7,7 +7,7 @@
 //
 
 #import "PLVHCUtils.h"
-#import "PLVHCHiClassAlertView.h"
+#import "PLVHCAlertView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVHCUtils ()
@@ -65,7 +65,7 @@
         ![PLVFdUtil checkStringUseable:message]) {
         return;
     }
-    [PLVHCHiClassAlertView alertViewWithTitle:title message:message cancelTitle:cancelActionTitle confirmTitle:confirmActionTitle cancelActionBlock:cancelActionBlock confirmActionBlock:confirmActionBlock];
+    [PLVHCAlertView alertViewWithTitle:title message:message cancelTitle:cancelActionTitle confirmTitle:confirmActionTitle cancelActionBlock:cancelActionBlock confirmActionBlock:confirmActionBlock];
 }
 
 + (void)showAlertWithMessage:(NSString *)message cancelActionTitle:(NSString *)cancelActionTitle cancelActionBlock:(void (^)(void))cancelActionBlock confirmActionTitle:(NSString *)confirmActionTitle confirmActionBlock:(void (^)(void))confirmActionBlock {
@@ -73,7 +73,7 @@
         return;
     }
     
-    [PLVHCHiClassAlertView alertViewWithTitle:nil message:message cancelTitle:cancelActionTitle confirmTitle:confirmActionTitle cancelActionBlock:cancelActionBlock confirmActionBlock:confirmActionBlock];
+    [PLVHCAlertView alertViewWithTitle:nil message:message cancelTitle:cancelActionTitle confirmTitle:confirmActionTitle cancelActionBlock:cancelActionBlock confirmActionBlock:confirmActionBlock];
 }
 
 #pragma mark Image
@@ -111,6 +111,11 @@
 + (NSBundle *)bundlerForLiveroom {
     NSBundle * resourceBundle = [NSBundle bundleWithPath:[[PLVHCUtils bundle] pathForResource:@"PLVHCLiveroom" ofType:@"bundle"]];
     return resourceBundle;
+}
+
+#pragma mark Getter
+- (BOOL)isPad {
+    return [UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad;
 }
 
 #pragma mark - [ Private Method ]

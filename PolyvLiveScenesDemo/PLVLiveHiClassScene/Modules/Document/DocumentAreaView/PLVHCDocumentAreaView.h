@@ -11,6 +11,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVHCBrushToolBarView.h"
 #import "PLVRoomUser.h"
+#import "PLVDocumentContainerView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -29,7 +30,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVHCDocumentAreaView : UIView
 
 @property (nonatomic, weak) id<PLVHCDocumentAreaViewDelegate> delegate;
-
+/// PPT、白板功能模块视图
+@property (nonatomic, strong, readonly) PLVDocumentContainerView *containerView;
 /// 是否为最大最小化文档数量，当前版本限制最多为5个
 @property (nonatomic, assign, readonly, getter=isMaxMinimumNum) BOOL maxMinimumNum;
 

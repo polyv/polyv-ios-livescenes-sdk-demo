@@ -7,28 +7,34 @@
 //
 
 #import "PLVLSSpeakMessageCell.h"
-#import "PLVChatModel.h"
-#import "PLVChatTextView.h"
-#import "PLVEmoticonManager.h"
+
 // 工具类
 #import "PLVLSUtils.h"
 
-#import <PLVLiveScenesSDK/PLVSpeakMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+// UI
+#import "PLVChatTextView.h"
+#import "PLVLSProhibitWordTipView.h"
+
+// 模块
+#import "PLVChatModel.h"
+#import "PLVEmoticonManager.h"
+
+// 依赖库
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLSSpeakMessageCell ()
 
-#pragma mark 数据
-
-@property (nonatomic, assign) CGFloat cellWidth; /// cell宽度
-@property (nonatomic, strong) NSString *loginUserId; /// 登录用户的聊天室userId
-
 #pragma mark UI
-
 @property (nonatomic, strong) PLVChatTextView *textView; /// 消息文本内容视图
 @property (nonatomic, strong) UIView *bubbleView; /// 背景气泡
 @property (nonatomic, strong) UIView *lineView;   /// 严禁词分割线
-@property (nonatomic, strong) UILabel *prohibitWordTipLabel;  /// 严禁词提示
+@property (nonatomic, strong) PLVLSProhibitWordTipView *prohibitWordTipView; // 严禁词提示视图
+@property (nonatomic, strong) UIButton *prohibitWordTipButton; // 严禁词提示按钮
+
+#pragma mark 数据
+@property (nonatomic, assign) CGFloat cellWidth; /// cell宽度
+@property (nonatomic, strong) NSString *loginUserId; /// 登录用户的聊天室userId
 
 @end
 
@@ -44,8 +50,7 @@
         [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.textView];
         [self.contentView addSubview:self.lineView];
-        [self.contentView addSubview:self.prohibitWordTipLabel];
-        
+        [self.contentView addSubview:self.prohibitWordTipButton];
     }
     return self;
 }
@@ -59,26 +64,37 @@
     CGFloat yPadding = -4.0; // 气泡与textView的上下内间距
     
     CGFloat maxTextViewWidth = self.cellWidth - xPadding * 2;
+    if (self.model.isProhibitMsg) {
+        maxTextViewWidth = maxTextViewWidth - 6 - 16 - 12;
+    }
     CGSize textViewSize = [self.textView sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
     self.textView.frame = CGRectMake(xPadding, yPadding, textViewSize.width, textViewSize.height);
     
     CGSize bubbleSize = CGSizeMake(textViewSize.width + xPadding * 2, textViewSize.height + yPadding * 2);
-    
-    if ([self.model isProhibitMsg]) {
-        self.lineView.frame = CGRectMake(xPadding, CGRectGetMaxY(self.textView.frame), textViewSize.width, 1);
-        CGSize labelViewSize = [self.prohibitWordTipLabel sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
-        self.prohibitWordTipLabel.frame = CGRectMake(xPadding, CGRectGetMaxY(self.lineView.frame) + 4,  labelViewSize.width, labelViewSize.height);
+    if (self.model.isProhibitMsg) {
+        bubbleSize = CGSizeMake(bubbleSize.width + 6 + 16, bubbleSize.height);
+    }
+    bubbleSize.width = ceilf(bubbleSize.width);
+    if ([self.model isProhibitMsg] &&
+        !self.model.prohibitWordTipIsShowed) {
         
-        bubbleSize = CGSizeMake(MAX(bubbleSize.width, CGRectGetMaxX(self.prohibitWordTipLabel.frame) +4), bubbleSize.height + ceilf(labelViewSize.height) + 1 + 4 + 4 + 4);
+        NSAttributedString *attri = [PLVLSSpeakMessageCell contentLabelAttributedStringWithProhibitWordTip:[PLVLSSpeakMessageCell prohibitWordTipWithModel:self.model]];
+        CGSize maxSize = CGSizeMake(bubbleSize.width, CGFLOAT_MAX);
+        CGSize tipSize = [attri boundingRectWithSize:maxSize options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+        tipSize.width = MIN(tipSize.width + 16, bubbleSize.width); // 适配换行时
+        self.prohibitWordTipView.frame = CGRectMake(bubbleSize.width - tipSize.width, CGRectGetMaxY(self.textView.frame), tipSize.width, tipSize.height + 20);
+    } else {
+        self.prohibitWordTipView.frame = CGRectZero;
     }
     
     if (bubbleSize.height <= 25) {
-        self.bubbleView.frame = CGRectMake(0, 0, ceilf(bubbleSize.width), 25);
+        self.bubbleView.frame = CGRectMake(0, 0, bubbleSize.width, 25);
         self.bubbleView.layer.cornerRadius = 12.5;
     } else {
-        self.bubbleView.frame = CGRectMake(0, 0, ceilf(bubbleSize.width), bubbleSize.height);
+        self.bubbleView.frame = CGRectMake(0, 0, bubbleSize.width, bubbleSize.height);
         self.bubbleView.layer.cornerRadius = 8.0;
     }
+    self.prohibitWordTipButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 6, (self.bubbleView.frame.size.height - 16 ) / 2, 16, 16);
 }
 
 #pragma mark - Getter
@@ -95,6 +111,10 @@
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
+        _textView.userInteractionEnabled = YES;
+        
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction)];
+        [_textView addGestureRecognizer:tapGesture];
     }
     return _textView;
 }
@@ -108,15 +128,23 @@
     return  _lineView;
 }
 
-- (UILabel *)prohibitWordTipLabel {
-    if(!_prohibitWordTipLabel) {
-        _prohibitWordTipLabel = [[UILabel alloc] init];
-        _prohibitWordTipLabel.font = [UIFont systemFontOfSize:12];
-        _prohibitWordTipLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:0.6];
-        _prohibitWordTipLabel.hidden = YES;
+- (PLVLSProhibitWordTipView *)prohibitWordTipView {
+    if (!_prohibitWordTipView) {
+        _prohibitWordTipView = [[PLVLSProhibitWordTipView alloc] init];
     }
-    return _prohibitWordTipLabel;
+    return _prohibitWordTipView;
 }
+
+- (UIButton *)prohibitWordTipButton {
+    if (!_prohibitWordTipButton) {
+        _prohibitWordTipButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_prohibitWordTipButton setImage:[PLVLSUtils imageForStatusResource:@"plvls_status_signal_error_icon"] forState:UIControlStateNormal];
+        [_prohibitWordTipButton addTarget:self action:@selector(prohibitWordTipButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _prohibitWordTipButton.hidden = YES;
+    }
+    return _prohibitWordTipButton;
+}
+
 #pragma mark - UI
 
 - (void)updateWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
@@ -137,17 +165,24 @@
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     // 严禁词提示
-    if ([model isProhibitMsg]) {
-        self.lineView.hidden = NO;
-        self.prohibitWordTipLabel.hidden = NO;
+    if ([model isProhibitMsg] &&
+        !model.prohibitWordTipIsShowed) {
+    
+        self.prohibitWordTipView.hidden = NO;
+        [self.prohibitWordTipView setTipType:PLVLSProhibitWordTipTypeText prohibitWord:model.prohibitWord];
+        [self.prohibitWordTipView showWithSuperView:self.contentView];
         
-        self.prohibitWordTipLabel.text = [PLVLSSpeakMessageCell prohibitWordTipWithModel:model];
+        __weak typeof(self)weakSelf = self;
+        self.prohibitWordTipView.dismissBlock = ^{
+            weakSelf.model.prohibitWordTipShowed = YES;
+            if (weakSelf.refreshCellHandler) {
+                weakSelf.refreshCellHandler();
+            }
+        };
     }else{
-        self.lineView.hidden = YES;
-        self.prohibitWordTipLabel.hidden = YES;
-        
-        self.prohibitWordTipLabel.text = @"";
+        self.prohibitWordTipView.hidden = YES;
     }
+    self.prohibitWordTipButton.hidden = ![model isProhibitMsg];
     
     __weak typeof(self) weakSelf = self;
     [self.textView setReplyHandler:^{
@@ -191,17 +226,6 @@
     [contentLabelString appendAttributedString:nickNameString];
     [contentLabelString appendAttributedString:[emojiContentString copy]];
     
-    // 含有严禁内容,添加提示图片
-    if (prohibitWord && prohibitWord.length >0) {
-        CGFloat paddingTop = font.lineHeight - font.pointSize;
-        NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
-        attachment.bounds = CGRectMake(0, -ceilf(paddingTop), font.lineHeight, font.lineHeight);
-        attachment.image = [PLVLSUtils imageForStatusResource:@"plvls_status_signal_error_icon"];
-        // 设置文字与图片间隔
-        [contentLabelString appendAttributedString:[[NSAttributedString alloc] initWithString:@" "]];
-        NSAttributedString *attachAttri = [NSAttributedString attributedStringWithAttachment:attachment];
-        [contentLabelString appendAttributedString:attachAttri];
-    }
     return contentLabelString;
 }
 
@@ -210,8 +234,13 @@
     UIFont *font = [UIFont systemFontOfSize:12.0];
     UIColor *color = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:0.6];
     
+    NSMutableParagraphStyle *style = [[NSMutableParagraphStyle alloc] init];
+    style.lineBreakMode = NSLineBreakByCharWrapping; //适配特殊字符，默认的NSLineBreakByWordWrapping遇到特殊字符会提前换行
+    
     NSDictionary *AttDict = @{NSFontAttributeName: font,
-                                      NSForegroundColorAttributeName: color};
+                              NSForegroundColorAttributeName: color, NSParagraphStyleAttributeName : style};
+    
+    
     NSAttributedString *attributed = [[NSAttributedString alloc] initWithString:prohibitTipString attributes:AttDict];
     
     return attributed;
@@ -229,14 +258,18 @@
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
     NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord];
+    if (model.isProhibitMsg) {
+        maxTextViewWidth = maxTextViewWidth - 6 - 16 -12;
+    }
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-    
+
     // 严禁词高度
-    if ([model isProhibitMsg]) {
+    if (model.isProhibitMsg &&
+        !model.prohibitWordTipIsShowed) {
+        
         NSAttributedString *attri = [PLVLSSpeakMessageCell contentLabelAttributedStringWithProhibitWordTip:[PLVLSSpeakMessageCell prohibitWordTipWithModel:model]];
-        CGSize tipSize = [attri boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-        CGFloat lineViewHeight = 4+1+4;
-        contentLabelSize.height += lineViewHeight + tipSize.height + 4;
+        CGSize tipSize = [attri boundingRectWithSize:CGSizeMake(xPadding * 2 + contentLabelSize.width + 6 + 16, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin context:nil].size;
+        contentLabelSize.height += tipSize.height + 20 + 8;
     }
     CGFloat bubbleHeight = 4 + contentLabelSize.height + 4; // content文本与气泡的内部有上下间距4
     bubbleHeight = ceilf(bubbleHeight);
@@ -251,6 +284,22 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVSpeakMessage *message = self.model.message;
     pasteboard.string = message.content;
+}
+
+- (void)tapGestureAction {
+    if (self.model.isProhibitMsg &&
+        self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
+            self.model.prohibitWordTipShowed = NO;
+            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+    }
+}
+
+- (void)prohibitWordTipButtonAction {
+    if (self.model.isProhibitMsg &&
+        self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
+            self.model.prohibitWordTipShowed = NO;
+            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+    }
 }
 
 #pragma mark - Utils

@@ -12,7 +12,6 @@
 #import "PLVHCUtils.h"
 
 /// UI
-#import "PLVDocumentContainerView.h"
 #import "PLVHCDocumentInputView.h"
 #import "PLVHCDocumentMinimumSheet.h"
 #import "PLVHCBrushToolBarView.h"

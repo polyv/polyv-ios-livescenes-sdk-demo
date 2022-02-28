@@ -95,10 +95,20 @@ PLVHCAreaCodeChooseViewDelegate>
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-    
-    self.teacherBackgroundImageView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) / 2.88);
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat left = 34;
+    CGFloat top = 33;
+    CGFloat loginButtonLeft = 24;
+    CGFloat rememberAccountButtonLeft = 63;
+    if (isPad) {
+        left = 203;
+        top = 88;
+        loginButtonLeft = 202;
+        rememberAccountButtonLeft = 202;
+    } 
+    self.teacherBackgroundImageView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) * 0.36);
     self.backButton.frame = CGRectMake(24, 53, 36, 36);
-
+    
     self.contentView.frame = CGRectMake(0, CGRectGetMaxY(self.teacherBackgroundImageView.frame) - 42, CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - CGRectGetHeight(self.teacherBackgroundImageView.frame) + 42);
     UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:self.contentView.bounds byRoundingCorners:UIRectCornerTopLeft cornerRadii:CGSizeMake(40,40)];
     CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
@@ -106,24 +116,24 @@ PLVHCAreaCodeChooseViewDelegate>
     maskLayer.path = maskPath.CGPath;
     self.contentView.layer.mask = maskLayer;
     
-    self.titleLabel.frame = CGRectMake(34, 33, 104, 37);
+    self.titleLabel.frame = CGRectMake(left, top, 104, 37);
     self.titleImageView.frame = CGRectMake(CGRectGetMaxX(self.titleLabel.frame) + 10, CGRectGetMidY(self.titleLabel.frame) - 24 / 2, 48, 24);
-    self.chooseAreaCodeButton.frame = CGRectMake(34, CGRectGetMaxY(self.titleLabel.frame) + 38, 65, 40);
-    self.accountLine.frame = CGRectMake(34, CGRectGetMaxY(self.chooseAreaCodeButton.frame) + 5, CGRectGetWidth(self.view.frame) - 34 * 2, 1);
+    self.chooseAreaCodeButton.frame = CGRectMake(left, CGRectGetMaxY(self.titleLabel.frame) + 38, 65, 40);
+    self.accountLine.frame = CGRectMake(left, CGRectGetMaxY(self.chooseAreaCodeButton.frame) + 5, CGRectGetWidth(self.view.frame) - left * 2, 1);
     self.areaCodeLabel.frame = CGRectMake(0, 0, 45, 40);
-    self.accountTextField.frame = CGRectMake(CGRectGetMaxX(self.chooseAreaCodeButton.frame) + 10, CGRectGetMaxY(self.titleLabel.frame) + 38, CGRectGetWidth(self.view.frame) - 34 - CGRectGetMaxX(self.chooseAreaCodeButton.frame) - 10, 40);
+    self.accountTextField.frame = CGRectMake(CGRectGetMaxX(self.chooseAreaCodeButton.frame) + 10, CGRectGetMaxY(self.titleLabel.frame) + 38, CGRectGetWidth(self.view.frame) - left - CGRectGetMaxX(self.chooseAreaCodeButton.frame) - 10, 40);
     self.arrowImageView.frame = CGRectMake(CGRectGetMaxX(self.areaCodeLabel.frame) + 3, CGRectGetMidY(self.areaCodeLabel.frame) - 11 / 2, 12, 11);
     self.areaCodeLine.frame = CGRectMake(CGRectGetMaxX(self.chooseAreaCodeButton.frame) + 5, CGRectGetMidY(self.chooseAreaCodeButton.frame) - 8, 1, 16);
     
-    self.passwordTextField.frame = CGRectMake(34, CGRectGetMaxY(self.accountLine.frame) + 38, CGRectGetWidth(self.view.frame) - 34 * 2 - 45, 40);
-    self.passwordLine.frame = CGRectMake(34, CGRectGetMaxY(self.passwordTextField.frame) + 5, CGRectGetWidth(self.view.frame) - 34 * 2, 1);
+    self.passwordTextField.frame = CGRectMake(left, CGRectGetMaxY(self.accountLine.frame) + 38, CGRectGetWidth(self.view.frame) - left * 2 - 45, 40);
+    self.passwordLine.frame = CGRectMake(left, CGRectGetMaxY(self.passwordTextField.frame) + 5, CGRectGetWidth(self.view.frame) - left * 2, 1);
     self.showPasswordButton.frame = CGRectMake(CGRectGetMaxX(self.passwordLine.frame) - 12 - 20, CGRectGetMidY(self.passwordTextField.frame) - 18 / 2, 20, 18);
 
     
-    self.loginButton.frame = CGRectMake(24, CGRectGetMaxY(self.passwordLine.frame)  + 37, CGRectGetWidth(self.view.frame) - 24 * 2, 50);
+    self.loginButton.frame = CGRectMake(loginButtonLeft, CGRectGetMaxY(self.passwordLine.frame)  + 37, CGRectGetWidth(self.view.frame) - loginButtonLeft * 2, 50);
     self.gradientLayer.frame = self.loginButton.bounds;
     
-    self.rememberAccountButton.frame = CGRectMake(CGRectGetMidX(self.contentView.frame) - 100, CGRectGetMaxY(self.loginButton.frame) + 24, 16, 16);
+    self.rememberAccountButton.frame = CGRectMake(rememberAccountButtonLeft, CGRectGetMaxY(self.loginButton.frame) + (isPad ? 49 : 24), 16, 16);
     self.rememberAccountLabel.frame = CGRectMake(CGRectGetMaxX(self.rememberAccountButton.frame) + 4, CGRectGetMidY(self.rememberAccountButton.frame) - 32 / 2, 200, 32);
     
     self.agreementButton.frame = CGRectMake(CGRectGetMinX(self.rememberAccountButton.frame), CGRectGetMaxY(self.rememberAccountButton.frame) + 18, 16, 16);
@@ -361,6 +371,7 @@ PLVHCAreaCodeChooseViewDelegate>
 - (UIImageView *)teacherBackgroundImageView {
     if (!_teacherBackgroundImageView) {
         _teacherBackgroundImageView = [[UIImageView alloc] initWithImage:[PLVHCDemoUtils imageForHiClassResource:@"plvhc_teacher_bg_image"]];
+        _teacherBackgroundImageView.contentMode = UIViewContentModeScaleAspectFill;
     }
     return _teacherBackgroundImageView;
 }

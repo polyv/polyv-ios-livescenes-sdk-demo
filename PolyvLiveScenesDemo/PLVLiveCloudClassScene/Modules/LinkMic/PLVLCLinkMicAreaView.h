@@ -37,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前 是否连麦中 (YES:正在连麦中 NO:不在连麦中)
 @property (nonatomic, assign, readonly) BOOL inLinkMic;
 
+/// 当前 是否已暂停无延迟观看(YES:已暂停 NO:未暂停)
+@property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay;
+
 /// 当前 是否显示连麦区域视图
 ///
 /// @note 代表的是 ”用户的主观意愿 是否希望连麦区域视图显示“；

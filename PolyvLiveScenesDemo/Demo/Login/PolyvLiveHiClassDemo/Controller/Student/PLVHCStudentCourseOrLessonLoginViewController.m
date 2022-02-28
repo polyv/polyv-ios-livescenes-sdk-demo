@@ -46,12 +46,11 @@ static NSString *const kPLVUserDefaultStudentClassCode = @"kPLVUserDefaultStuden
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
-    
     CGFloat bottomPadding = 0;
     if (@available(iOS 11.0, *)) {
         bottomPadding = self.view.safeAreaInsets.bottom;
     }
-    self.studentBackgroundImageView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.frame), 292);
+    self.studentBackgroundImageView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) * 0.36);
     self.backButton.frame = CGRectMake(24, 53, 36, 36);
     CGFloat viewOriginY = CGRectGetMaxY(self.studentBackgroundImageView.frame) - 42;
     self.courseOrLessonLoginView.frame = CGRectMake(0, viewOriginY, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - viewOriginY);
@@ -173,6 +172,7 @@ static NSString *const kPLVUserDefaultStudentClassCode = @"kPLVUserDefaultStuden
 - (UIImageView *)studentBackgroundImageView {
     if (!_studentBackgroundImageView) {
         _studentBackgroundImageView = [[UIImageView alloc] initWithImage:[PLVHCDemoUtils imageForHiClassResource:@"plvhc_student_bg_image"]];
+        _studentBackgroundImageView.contentMode = UIViewContentModeScaleAspectFill;
     }
     return _studentBackgroundImageView;
 }

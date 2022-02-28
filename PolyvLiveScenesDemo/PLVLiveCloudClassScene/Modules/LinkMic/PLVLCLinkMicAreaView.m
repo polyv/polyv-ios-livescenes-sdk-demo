@@ -149,6 +149,10 @@ PLVLCLinkMicWindowsViewDelegate
 }
 
 
+- (BOOL)pausedWatchNoDelay {
+    return self.presenter.pausedWatchNoDelay;
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setup{
     // 添加 连麦功能模块

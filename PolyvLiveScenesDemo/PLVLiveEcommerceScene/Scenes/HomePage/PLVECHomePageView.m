@@ -16,6 +16,7 @@
 #import "PLVECCommodityPushView.h"
 #import "PLVECGiftView.h"
 #import "PLVECRewardController.h"
+#import "PLVECPlaybackListViewController.h"
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
 
 // UI
@@ -88,6 +89,7 @@ PLVSocketManagerProtocol
 @property (nonatomic, strong) PLVECRewardController *rewardCtrl;       // 打赏控制器
 @property (nonatomic, weak) PLVECCommodityViewController *commodityVC; // 商品视图
 @property (nonatomic, strong) PLVECCommodityPushView *pushView;        // 商品推送视图
+@property (nonatomic, weak) PLVECPlaybackListViewController *playbackListVC;     //回放列表视图
 
 #pragma mark UI
 
@@ -98,6 +100,7 @@ PLVSocketManagerProtocol
 @property (nonatomic, strong) UIButton *moreButton;                    // 更多按钮
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
+@property (nonatomic, strong) UIButton *playbackListButton;            // 回放列表按钮
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable;      // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
 
@@ -147,8 +150,14 @@ PLVSocketManagerProtocol
         self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
     } else if (self.type == PLVECHomePageType_Playback) {
         // 底部控件
-        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
-        self.playerContolView.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-41-P_SafeAreaBottomEdgeInsets(), CGRectGetMinX(self.moreButton.frame)-8, 41);
+        if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
+            self.playbackListButton.frame = CGRectMake(15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+            self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+            self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 32, CGRectGetMaxX(self.moreButton.frame), 41);
+        } else {
+            self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+            self.playerContolView.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-41-P_SafeAreaBottomEdgeInsets(), CGRectGetMinX(self.moreButton.frame)-8, 41);
+        }
     }
 }
 
@@ -170,6 +179,7 @@ PLVSocketManagerProtocol
         [self addSubview:self.shoppingCartButton];
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.playerContolView];
+        [self addSubview:self.playbackListButton];
     }
     
     [self addSubview:self.moreButton];
@@ -237,6 +247,15 @@ PLVSocketManagerProtocol
         _shoppingCartButton.hidden = YES;
     }
     return _shoppingCartButton;
+}
+
+- (UIButton *)playbackListButton {
+    if (!_playbackListButton) {
+        _playbackListButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_playbackListButton setImage:[PLVECUtils imageForWatchResource:@"plv_playbackList_btn"] forState:UIControlStateNormal];
+        [_playbackListButton addTarget:self action:@selector(playbackListButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _playbackListButton;
 }
 
 - (PLVECMoreView *)moreView {
@@ -554,10 +573,23 @@ PLVSocketManagerProtocol
     commodityVC.delegate = self;
     commodityVC.providesPresentationContextTransitionStyle = YES;
     commodityVC.definesPresentationContext = YES;
-    commodityVC.modalPresentationStyle =UIModalPresentationOverCurrentContext;
+    commodityVC.modalPresentationStyle = UIModalPresentationOverCurrentContext;
     [[PLVFdUtil getCurrentViewController] presentViewController:commodityVC animated:YES completion:nil];
     
     self.commodityVC = commodityVC;
+}
+
+- (void)playbackListButtonAction:(id)sender {
+    if (self.playbackListVC) {
+        self.playbackListVC = nil;
+    }
+    PLVECPlaybackListViewController *playbackListVC = [[PLVECPlaybackListViewController alloc] init];
+    playbackListVC.providesPresentationContextTransitionStyle = YES;
+    playbackListVC.definesPresentationContext = YES;
+    playbackListVC.modalPresentationStyle =UIModalPresentationOverCurrentContext;
+    [[PLVFdUtil getCurrentViewController] presentViewController:playbackListVC animated:YES completion:nil];
+    
+    self.playbackListVC = playbackListVC;
 }
 
 - (void)swithDelayLiveClick:(UIButton *)button {

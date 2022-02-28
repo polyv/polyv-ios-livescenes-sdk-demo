@@ -65,6 +65,10 @@ UITableViewDataSource
         bottomPadding = self.safeAreaInsets.bottom;
     }
     
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        topPadding = self.bounds.size.height * 0.288;
+    }
+    
     self.topTitleView.frame = CGRectMake(0, topPadding, self.bounds.size.width, 64);
     self.topTitleView.layer.mask = self.topTitleViewLayer;
     

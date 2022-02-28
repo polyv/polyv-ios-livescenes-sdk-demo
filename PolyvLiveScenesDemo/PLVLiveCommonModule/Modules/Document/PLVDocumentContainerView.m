@@ -195,6 +195,9 @@ PLVSocketManagerProtocol
 - (WKWebView *)webView {
     if (!_webView) {
         WKWebViewConfiguration *config = [WKWebViewConfiguration new];
+        if (@available(iOS 13.0, *)) {
+            config.defaultWebpagePreferences.preferredContentMode = WKContentModeMobile;
+        }
         _webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:config];
         _webView.backgroundColor = [UIColor whiteColor];
         _webView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);

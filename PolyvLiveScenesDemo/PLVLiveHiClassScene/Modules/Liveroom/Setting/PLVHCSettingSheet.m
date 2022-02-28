@@ -10,7 +10,11 @@
 #import "PLVHCSettingSheet.h"
 #import "PLVHCSettingConfigView.h"
 
+// 模块
+#import "PLVHCCaptureDeviceManager.h"
+
 // 工具
+#import "PLVHCUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVHCSettingSheet ()<PLVHCSettingConfigViewDelegate>
@@ -48,10 +52,8 @@
     [self removeFromSuperview];
 }
 
-- (void)synchronizeConfig:(NSDictionary *)dict {
-    if ([PLVFdUtil checkDictionaryUseable:dict]) {
-        [self.configView synchronizeConfig:dict];
-    }
+- (void)synchronizeConfig {
+    [self.configView synchronizeConfig];
 }
 
 - (void)microphoneSwitchChange:(BOOL)open {
@@ -94,27 +96,34 @@
 
 /// 麦克风开关
 - (void)didChangeMicrophoneSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView enable:(BOOL)enable {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(didChangeMicrophoneSwitchInSettingSheet:enable:)]) {
-        [self.delegate didChangeMicrophoneSwitchInSettingSheet:self enable:enable];
+    [[PLVHCCaptureDeviceManager sharedManager] openMicrophone:enable];
+    if (enable) {
+        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenMic message:@"已开启麦克风"];
+    } else {
+        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_CloseMic message:@"已关闭麦克风"];
     }
 }
 
 /// 摄像头开关
 - (void)didChangeCameraSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView enable:(BOOL)enable {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(didChangeCameraSwitchInSettingSheet:enable:)]) {
-        [self.delegate didChangeCameraSwitchInSettingSheet:self enable:enable];
+    [[PLVHCCaptureDeviceManager sharedManager] openCamera:enable];
+    if (enable) {
+        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenCamera message:@"已开启摄像头"];
+    } else {
+        [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_CloseCamera message:@"已关闭摄像头"];
     }
 }
 
 /// 切换摄像头方向
 - (void)didChangeCameraDirectionSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView front:(BOOL)isFront {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(didChangeCameraDirectionSwitchInSettingSheet:front:)]) {
-        [self.delegate didChangeCameraDirectionSwitchInSettingSheet:self front:isFront];
-    }
+    [[PLVHCCaptureDeviceManager sharedManager] switchCamera:isFront];
 }
 
 /// 全屏切换
 - (void)didChangeFullScreenSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView fullScreen:(BOOL)fullScreen {
+    NSString *fullScreenMessage = fullScreen ? @"已开启全屏模式" : @"退出全屏模式";
+    [PLVHCUtils showToastInWindowWithMessage:fullScreenMessage];
+    
     if (self.delegate && [self.delegate respondsToSelector:@selector(didChangeFullScreenSwitchInSettingSheet:fullScreen:)]) {
         [self.delegate didChangeFullScreenSwitchInSettingSheet:self fullScreen:fullScreen];
     }

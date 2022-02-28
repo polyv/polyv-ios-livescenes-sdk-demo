@@ -17,9 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVHCHiClassSettingViewDelegate> delegate;
 
-@property (nonatomic, strong, readonly) NSMutableDictionary *configDict;
-
-- (void)clear;
+- (void)audioVolumeChanged:(CGFloat)volume;
 
 @end
 

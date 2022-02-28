@@ -86,7 +86,8 @@ UICollectionViewDelegate
         // 横屏
 
         selfWidth = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 180.0 : 150.0;
-        self.collectionView.frame = CGRectMake(8, 0, selfWidth, selfHeight);
+        CGFloat originX = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 15 : 8;
+        self.collectionView.frame = CGRectMake(originX, 0, selfWidth, selfHeight);
         self.collectionView.alwaysBounceHorizontal = NO;
         self.collectionView.alwaysBounceVertical = YES;
         
@@ -105,12 +106,14 @@ UICollectionViewDelegate
         
         [self showGuideView];
     }
-    [self.collectionView setCollectionViewLayout:self.collectionViewLayout animated:YES];
     
     if (selfHeight > 0 && self.collectionReloadBlock) {
         self.collectionReloadBlock();
         self.collectionReloadBlock = nil;
     }
+    
+    [self.collectionView.collectionViewLayout invalidateLayout];
+    [self.collectionView setCollectionViewLayout:self.collectionViewLayout animated:YES];
 }
 
 - (void)layoutGuideView{
