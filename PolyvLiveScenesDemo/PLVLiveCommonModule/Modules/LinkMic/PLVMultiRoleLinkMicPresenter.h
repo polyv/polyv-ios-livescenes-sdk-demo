@@ -127,7 +127,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (PLVLinkMicOnlineUser *)linkMicUserWithLinkMicId:(NSString *)linkMicId;
 
 /// 切换组长时，更新连麦用户的groupLeader字段，并对用户列表重新排序，组长排在讲师之后，组员之前
-- (void)updateGroudLeader;
+- (void)updateGroupLeader;
 
 #pragma mark 连麦用户操作管理（以下API仅讲师身份时有效）
 

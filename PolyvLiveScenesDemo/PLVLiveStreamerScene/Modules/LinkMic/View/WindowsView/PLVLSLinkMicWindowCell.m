@@ -38,6 +38,7 @@
 @property (nonatomic, strong) UIButton * micButton;               // 麦克风按钮 (负责展示 不同状态下的麦克风图标)
 @property (nonatomic, strong) UILabel * nicknameLabel;            // 昵称文本框 (负责展示 用户昵称)
 @property (nonatomic, strong) UILabel * linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
+@property (nonatomic, strong) UIImageView * speakerAuthImageView; // 显示主讲权限的图像视图 (负责展示 主讲权限)
 
 @end
 
@@ -85,6 +86,9 @@
                                           nicknameLabelHeight);
     
     self.linkMicStatusLabel.frame = CGRectMake(2, 2, 41, 16);
+    
+    CGFloat speakerImageViewOriginX = self.linkMicStatusLabel.isHidden ? 2 : CGRectGetMaxX(self.linkMicStatusLabel.frame) + 8;
+    self.speakerAuthImageView.frame = CGRectMake(speakerImageViewOriginX, 2, 16, 16);
 }
 
 
@@ -127,18 +131,34 @@
         }
     };
     
+    /// 主讲权限
+    if (userModel.userType == PLVSocketUserTypeGuest) {
+        self.speakerAuthImageView.hidden = !userModel.isRealMainSpeaker;
+        userModel.currentSpeakerAuthChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if ([onlineUser.linkMicUserId isEqualToString:weakSelf.userModel.linkMicUserId]) {
+                weakSelf.speakerAuthImageView.hidden = !onlineUser.isRealMainSpeaker;
+            }
+        };
+    }else{
+        self.speakerAuthImageView.hidden = YES;
+    }
+    
     /// 连麦状态
     if (userModel.userType == PLVSocketUserTypeGuest && userModel.localUser) {
         self.linkMicStatusLabel.hidden = NO;
         [self setLinkMicStatusLabelWithInVoice:userModel.currentStatusVoice];
+        [self setSpeakerAuthImageViewWithInVoice:userModel.currentStatusVoice];
         userModel.currentStatusVoiceChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             if ([onlineUser.linkMicUserId isEqualToString:weakSelf.userModel.linkMicUserId]) {
                 [weakSelf setLinkMicStatusLabelWithInVoice:onlineUser.currentStatusVoice];
+                [weakSelf setSpeakerAuthImageViewWithInVoice:onlineUser.currentStatusVoice];
             }
         };
     }else{
         self.linkMicStatusLabel.hidden = YES;
     }
+    
+    [self setNeedsLayout];
 }
 
 #pragma mark - [ Private Methods ]
@@ -172,6 +192,12 @@
     }
 }
 
+- (void)setSpeakerAuthImageViewWithInVoice:(BOOL)inLinkMic{
+    if (!inLinkMic) {
+        self.speakerAuthImageView.hidden = YES;
+    }
+}
+
 #pragma mark UI
 - (void)setupUI{
     // 添加 视图
@@ -180,6 +206,7 @@
     [self.contentView addSubview:self.micButton];
     [self.contentView addSubview:self.nicknameLabel];
     [self.contentView addSubview:self.linkMicStatusLabel];
+    [self.contentView addSubview:self.speakerAuthImageView];
 }
 
 #pragma mark Getter
@@ -233,6 +260,15 @@
         _linkMicStatusLabel.hidden = YES;
     }
     return _linkMicStatusLabel;
+}
+
+- (UIImageView *)speakerAuthImageView {
+    if (!_speakerAuthImageView) {
+        _speakerAuthImageView = [[UIImageView alloc] init];
+        _speakerAuthImageView.image = [self getImageWithName:@"plvls_linkmic_speakerauth_icon"];
+        _speakerAuthImageView.hidden = YES;
+    }
+    return _speakerAuthImageView;
 }
 
 - (BOOL)showActorLabelWithUser:(PLVSocketUserType)userType {

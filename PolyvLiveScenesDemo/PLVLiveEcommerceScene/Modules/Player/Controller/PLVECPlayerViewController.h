@@ -53,6 +53,17 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)playerController:(PLVECPlayerViewController *)playerController
   noDelayLiveStartUpdate:(BOOL)noDelayLiveStart;
 
+/// [无延迟直播] 无延迟观看模式 发生改变
+///
+/// @note 仅 无延迟直播 频道会触发，快直播不会触发该回调；
+- (void)playerController:(PLVECPlayerViewController *)playerController noDelayWatchModeSwitched:(BOOL)noDelayWatchMode;
+
+/// [无延迟直播] 无延迟直播 ‘播放或暂停’
+- (void)playerController:(PLVECPlayerViewController *)playerController noDelayLiveWannaPlay:(BOOL)wannaPlay;
+
+/// 播放器视图需要得知当前‘是否暂停无延迟观看’
+- (BOOL)playerControllerGetPausedWatchNoDelay:(PLVECPlayerViewController *)playerController;
+
 #pragma mark 跑马灯的回调
 
 /// 跑马灯校验失败回调
@@ -76,6 +87,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 广告播放状态
 @property (nonatomic, readonly) BOOL advPlaying;
 
+/// 是否为无延迟模式
+@property (nonatomic, readonly) BOOL noDelayWatchMode;
+
 /// 播放直播/回放
 - (void)play;
 
@@ -87,6 +101,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 取消静音 播放器
 - (void)cancelMute;
+
+/// 清理播放器
+- (void)cleanPlayer;
 
 #pragma mark 直播的API
 

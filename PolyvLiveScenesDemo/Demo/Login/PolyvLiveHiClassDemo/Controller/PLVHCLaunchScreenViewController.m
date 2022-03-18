@@ -58,7 +58,7 @@
         _copyrightLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _copyrightLable.textAlignment = NSTextAlignmentCenter;
         _copyrightLable.textColor = [UIColor colorWithRed:143/255.0 green:143/255.0 blue:143/255.0 alpha:1];
-        _copyrightLable.text = @"© 2013-2021 POLYV保利威";
+        _copyrightLable.text = @"© 2013-2022 POLYV保利威";
     }
     return _copyrightLable;
 }

@@ -80,6 +80,7 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
 #pragma mark 状态
 @property (nonatomic, assign, getter=isFullscreen) BOOL fullscreen; // 是否处于文档区域全屏状态，默认为NO
 @property (nonatomic, assign, getter=isHideDevicePreview) BOOL hideDevicePreview; // 是否隐藏设备预览页
+@property (nonatomic, assign) BOOL switchedFullscreen; // 已切换全屏状态
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVMultiRoleLinkMicPresenter *linkMicPresenter;
@@ -175,14 +176,16 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     [self.documentAreaView layoutIfNeeded];
     
     // 连麦悬浮窗区域, 与PPT/白板区域内部的WebView视图frame一致
-    if (CGRectEqualToRect(CGRectZero, self.linkMicZoomAreaView.frame)) {
+    if (CGRectEqualToRect(CGRectZero, self.linkMicZoomAreaView.frame) ||
+        self.switchedFullscreen) { // 初始化、切换全屏转态时赋值
+        self.switchedFullscreen = NO;
         CGRect zoomAreaViewFrame = self.documentAreaView.containerView.frame;
         zoomAreaViewFrame = [self.documentAreaView convertRect:zoomAreaViewFrame toView:self.view]; // 将zoomAreaViewFrame坐标从self.documentAreaView的坐标 转成self.view的坐标
         self.linkMicZoomAreaView.frame = zoomAreaViewFrame;
+        self.linkMicZoomAreaView.originalSize = zoomAreaViewFrame.size;
     }
     CGPoint zoomAreaCenter = self.documentAreaView.containerView.center;
     self.linkMicZoomAreaView.center = [self.documentAreaView convertPoint:zoomAreaCenter toView:self.view];
-    
     // 文档管理弹层，宽度固定为屏幕80%，高度:PPT/白板区域高度 - 顶部间距8 - 底部间距8
     CGSize documentSheetSize = CGSizeMake(screenSize.width * 0.8,  documentViewHeight - 8 * 2);
     CGFloat documentSheetX = sheetMaxWidth - documentSheetSize.width + edgeInsets.left;
@@ -349,31 +352,13 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     if (PLVHCChooseRoleVC && PLVHCNavigationController) {
         UINavigationController *navController = [((UINavigationController *)[PLVHCNavigationController alloc]) initWithRootViewController:[PLVHCChooseRoleVC new]];
         navController.navigationBar.hidden = YES;
-        UIWindow *window = [self getCurrentWindow];
+        UIWindow *window = [PLVHCUtils getCurrentWindow];
         [UIView transitionWithView:window duration:0.5f options:UIViewAnimationOptionTransitionCrossDissolve animations:^{
             BOOL oldState = [UIView areAnimationsEnabled];
             [UIView setAnimationsEnabled:NO];
             window.rootViewController = navController;
             [UIView setAnimationsEnabled:oldState];
         } completion:nil];
-    }
-}
-
-- (UIWindow *)getCurrentWindow {
-    if ([UIApplication sharedApplication].delegate.window) {
-        return [UIApplication sharedApplication].delegate.window;
-    } else {
-        if (@available(iOS 13.0, *)) { // iOS 13.0+
-            NSArray *array = [[[UIApplication sharedApplication] connectedScenes] allObjects];
-            UIWindowScene *windowScene = (UIWindowScene *)array[0];
-            UIWindow *window = [windowScene valueForKeyPath:@"delegate.window"];
-            if (!window) {
-                window = [UIApplication sharedApplication].windows.firstObject;
-            }
-            return window;
-        } else {
-            return [UIApplication sharedApplication].keyWindow;
-        }
     }
 }
 
@@ -802,6 +787,7 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
 
 - (void)didChangeFullScreenSwitchInSettingSheet:(PLVHCSettingSheet *)settingSheet fullScreen:(BOOL)fullScreen {
     self.fullscreen = fullScreen;
+    self.switchedFullscreen = YES;
     self.linkMicAreaView.hidden = fullScreen; // 全屏模式下隐藏连麦窗口
     [self.view setNeedsLayout];
     [self.view layoutIfNeeded];
@@ -899,7 +885,7 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     
     [self.statusbarAreaView setClassTitle:title]; // 更新状态栏标题
     
-    [self.linkMicPresenter updateGroudLeader];
+    [self.linkMicPresenter updateGroupLeader];
 }
 
 /// 结束分组

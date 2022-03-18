@@ -295,7 +295,7 @@ UIDocumentPickerDelegate
 - (void)documentListView:(PLVLSDocumentListView *)documentListView didSelectItemModel:(PLVDocumentModel *)model changeDocument:(BOOL)isChangeDocument {
     _isChangeDocument = isChangeDocument;
     
-    _pagesTitle = [NSString stringWithFormat:@"%@.%@", model.fileName, model.fileType];
+    _pagesTitle = model.fileName;
     
     if (isChangeDocument) {
         [documentListView startSelectCellLoading];

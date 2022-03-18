@@ -33,7 +33,7 @@
 #define SelectedWidth           32.0
 
 #define LimitCount              5
-
+DEPRECATED_MSG_ATTRIBUTE("已废弃，该模块与PLVImagePickerControllernen能力重复，后续请使用PLVImagePickerController")
 typedef NS_ENUM(NSInteger, PickerModer) {
     PickerModerOfNormal = 0,
     PickerModerOfVideo  = 1

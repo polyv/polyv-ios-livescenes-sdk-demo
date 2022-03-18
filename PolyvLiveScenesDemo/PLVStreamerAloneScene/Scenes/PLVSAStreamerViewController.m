@@ -97,6 +97,7 @@ PLVSAStreamerHomeViewDelegate
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign, readonly) NSString * channelId; // 当前频道号
+@property (nonatomic, assign) NSTimeInterval showMicTipsTimeInterval; // 显示'请打开麦克风提示'时的时间戳
 
 @end
 
@@ -745,6 +746,7 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     if (self.viewState == PLVSAStreamerViewStateSteaming) {
         [PLVSAUtils showToastWithMessage:(currentMicOpen ? @"已开启麦克风" : @"已关闭麦克风") inView:self.view];
     }
+    self.showMicTipsTimeInterval = 0;
     [self.homeView setCurrentMicOpen:currentMicOpen];
 }
 
@@ -786,6 +788,17 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     message = [message stringByAppendingFormat:@" code:%@",fullErrorCodeString];
     
     [PLVSAUtils showToastWithMessage:message inView:self.view afterDelay:3];
+}
+
+/// 本地用户 麦克风音量大小检测
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserVoiceValue:(CGFloat)localVoiceValue receivedLocalAudibleVoice:(BOOL)voiceAudible {
+    if (!self.streamerPresenter.currentMicOpen && localVoiceValue >= 0.4) {
+        NSTimeInterval currentTimeInterval = [[NSDate date] timeIntervalSince1970];
+        if (currentTimeInterval - self.showMicTipsTimeInterval > 180) {
+            [PLVSAUtils showToastWithMessage:@"您已静音，请开启麦克风后发言" inView:self.view];
+            self.showMicTipsTimeInterval = [[NSDate date] timeIntervalSince1970];
+        }
+    }
 }
 
 #pragma mark PLVSALinkMicAreaViewDelegate

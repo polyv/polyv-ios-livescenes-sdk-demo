@@ -51,7 +51,6 @@ UIGestureRecognizerDelegate
 @property (nonatomic, assign) NSInteger lastAutoId;                 // 直播中断前的文档autoId
 @property (nonatomic, assign) NSInteger lastPageId;                 // 直播中断前的文档pageId
 
-
 @end
 
 @implementation PLVLSDocumentAreaView
@@ -251,6 +250,10 @@ UIGestureRecognizerDelegate
     [self.docSheet showInView:self.superview];
 }
 
+- (void)dismissDocument {
+    [self.docSheet dismiss];
+}
+
 - (void)showWaitLivePlaceholderView:(BOOL)show{
     self.waitLivePlaceholderView.hidden = !show;
 }
@@ -277,6 +280,11 @@ UIGestureRecognizerDelegate
         [self.pageNum setCurrentPage:0 totalPage:0];
         [self showWaitLivePlaceholderView:YES];
     }
+}
+
+- (void)updateDocumentSpeakerAuth:(BOOL)auth {
+    [self.toolView showBtnNexth:auth];
+    [self.toolView showBtnPrevious:auth];
 }
 
 - (NSDictionary *)getCurrentDocumentInfoDict {

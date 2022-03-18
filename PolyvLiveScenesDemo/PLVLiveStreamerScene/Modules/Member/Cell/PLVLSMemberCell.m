@@ -33,6 +33,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 @property (nonatomic, strong) UIButton *cameraButton;
 @property (nonatomic, strong) UIButton *cameraSwitchButton;
 @property (nonatomic, strong) UIButton *linkmicButton;
+@property (nonatomic, strong) UIButton *authSpeakerButton;
 @property (nonatomic, strong) UIView *seperatorLine;
 @property (nonatomic, strong) UIView *leftDragingView;  // 触发左滑view
 
@@ -48,6 +49,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 @property (nonatomic, strong) PLVLinkMicOnlineUserMicOpenChangedBlock micOpenChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraShouldShowChangedBlock cameraShouldShowChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraFrontChangedBlock cameraFrontChangedBlock;
+@property (nonatomic, strong) PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock currentSpeakerAuthChangedBlock;
 
 @end
 
@@ -77,8 +79,9 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
             [self.gestureView addSubview:self.cameraButton];
             [self.gestureView addSubview:self.cameraSwitchButton];
         }
+        [self.gestureView addSubview:self.authSpeakerButton];
         [self.gestureView addSubview:self.linkmicButton];
-        
+
         [self.actorBgView addSubview:self.actorLabel];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationAction:) name:PLVLSMemberCellNotification object:nil];
@@ -112,15 +115,34 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         originX += self.actorBgView.frame.size.width + 4;
     }
     
-    self.nickNameLabel.frame = CGRectMake(originX, 15, self.bounds.size.width - 44 * 3 + 8 - originX, 18);
+    self.nickNameLabel.frame = CGRectMake(originX, 15, self.bounds.size.width - 44 * 4 + 8 - originX, 18);
     
-    self.linkmicButton.frame = CGRectMake(self.bounds.size.width - 36, 2, 44, 44);
+    CGFloat rightOriginX = self.bounds.size.width - 36;
+    self.linkmicButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
     if (self.isOnlyAudio) {
-        self.microPhoneButton.frame = CGRectMake(CGRectGetMinX(self.linkmicButton.frame) - 44, 2, 44, 44);
+        if (!self.authSpeakerButton.hidden) {
+            self.authSpeakerButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+        }
+        
+        self.microPhoneButton.frame = CGRectMake(rightOriginX - 44, 2, 44, 44);
     } else {
-        self.cameraSwitchButton.frame = CGRectMake(self.bounds.size.width - 36, 2, 44, 44);
-        self.cameraButton.frame = CGRectMake(CGRectGetMinX(self.cameraSwitchButton.frame) - 44, 2, 44, 44);
-        self.microPhoneButton.frame = CGRectMake(CGRectGetMinX(self.cameraButton.frame) - 44, 2, 44, 44);
+        if (!self.cameraSwitchButton.isHidden) {
+            self.cameraSwitchButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+            rightOriginX = CGRectGetMinX(self.cameraSwitchButton.frame) - 44;
+        }
+        
+        if (!self.authSpeakerButton.isHidden) {
+            self.authSpeakerButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+            rightOriginX = CGRectGetMinX(self.authSpeakerButton.frame) - 44;
+        }
+        
+        if (rightOriginX == CGRectGetMinX(self.linkmicButton.frame)) {
+            rightOriginX = CGRectGetMinX(self.linkmicButton.frame) - 44;
+        }
+        
+        self.cameraButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+        rightOriginX = CGRectGetMinX(self.cameraButton.frame) - 44;
+        self.microPhoneButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
     }
     self.seperatorLine.frame = CGRectMake(0, self.bounds.size.height - 1, self.bounds.size.width, 1);
 }
@@ -239,6 +261,17 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     return _linkmicButton;
 }
 
+- (UIButton *)authSpeakerButton{
+    if (!_authSpeakerButton) {
+        _authSpeakerButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_authSpeakerButton setImage:[PLVLSUtils imageForMemberResource:@"plvls_member_speaker_default_btn"] forState:UIControlStateNormal];
+        [_authSpeakerButton setImage:[PLVLSUtils imageForMemberResource:@"plvls_member_speaker_auth_btn"] forState:UIControlStateSelected];
+        [_authSpeakerButton addTarget:self action:@selector(authSpeakerButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _authSpeakerButton.hidden = YES;
+    }
+    return _authSpeakerButton;
+}
+
 - (UIView *)seperatorLine {
     if (!_seperatorLine) {
         _seperatorLine = [[UIView alloc] init];
@@ -284,42 +317,60 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     return _cameraFrontChangedBlock;
 }
 
+- (PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)currentSpeakerAuthChangedBlock{
+    if (!_currentSpeakerAuthChangedBlock) {
+        __weak typeof(self) weakSelf = self;
+        _currentSpeakerAuthChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if ([onlineUser.userId isEqualToString:weakSelf.user.userId]) {
+                weakSelf.authSpeakerButton.selected = onlineUser.isRealMainSpeaker;
+            }
+        };
+    }
+    return _currentSpeakerAuthChangedBlock;
+}
+
 #pragma mark - Action
 
 - (void)microPhoneButtonAction {
-    self.microPhoneButton.selected = !self.microPhoneButton.selected;
-    
-    if (self.user.onlineUser) {
-        [self.user.onlineUser wantOpenUserMic:!self.microPhoneButton.selected];
-    }else{
-        NSLog(@"PLVLSMemberCell - microPhoneButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
-    }
+    [self checkMediaGrantedCompletion:^{
+        self.microPhoneButton.selected = !self.microPhoneButton.selected;
+        
+        if (self.user.onlineUser) {
+            [self.user.onlineUser wantOpenUserMic:!self.microPhoneButton.selected];
+        }else{
+            NSLog(@"PLVLSMemberCell - microPhoneButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+        }
+    }];
 }
 
 - (void)cameraButtonAction {
-    self.cameraButton.selected = !self.cameraButton.selected;
-    self.cameraSwitchButton.enabled = !self.cameraButton.selected;
-    
-    if (self.user.onlineUser) {
-        [self.user.onlineUser wantOpenUserCamera:!self.cameraButton.selected];
-    }else{
-        NSLog(@"PLVLSMemberCell - cameraButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
-    }
+    [self checkMediaGrantedCompletion:^{
+        self.cameraButton.selected = !self.cameraButton.selected;
+        self.cameraSwitchButton.enabled = !self.cameraButton.selected;
+        
+        if (self.user.onlineUser) {
+            [self.user.onlineUser wantOpenUserCamera:!self.cameraButton.selected];
+        }else{
+            NSLog(@"PLVLSMemberCell - cameraButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+        }
+    }];
 }
 
 - (void)cameraSwitchButtonAction {
-    self.cameraSwitchButton.selected = !self.cameraSwitchButton.selected;
-    
-    if (self.user.onlineUser) {
-        [self.user.onlineUser wantSwitchUserFrontCamera:!self.cameraSwitchButton.selected];
-    }else{
-        NSLog(@"PLVLSMemberCell - cameraSwitchButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
-    }
-    
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(memberCell_didTapCameraSwitch)]) {
-        [self.delegate memberCell_didTapCameraSwitch];
-    }
+    [self checkMediaGrantedCompletion:^{
+        self.cameraSwitchButton.selected = !self.cameraSwitchButton.selected;
+        
+        if (self.user.onlineUser) {
+            [self.user.onlineUser wantSwitchUserFrontCamera:!self.cameraSwitchButton.selected];
+        }else{
+            NSLog(@"PLVLSMemberCell - cameraSwitchButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+        }
+        
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(memberCell_didTapCameraSwitch)]) {
+            [self.delegate memberCell_didTapCameraSwitch];
+        }
+    }];
 }
 
 - (void)linkMicButtonAction{
@@ -329,6 +380,15 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         [self notifyListenerlinkMicButtonAction];
     }
     self.linkMicBtnLastTimeInterval = curTimeInterval;
+}
+
+- (void)authSpeakerButtonAction {
+    self.authSpeakerButton.selected = !self.authSpeakerButton.isSelected;
+    if (self.user.onlineUser) {
+        [self.user.onlineUser wantAuthUserSpeaker:self.authSpeakerButton.isSelected];
+    }else{
+        NSLog(@"PLVLSMemberCell - authSpeakerButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+    }
 }
 
 - (void)notifyListenerlinkMicButtonAction {
@@ -405,10 +465,12 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     user.onlineUserChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull currentOnlineUser) {
         [weakSelf refreshLinkMicButtonState];
         [weakSelf refreshMediaControlButtonsState];
+        [weakSelf refreshAuthControlButtonsState];
     };
     
     [self refreshLinkMicButtonState];
     [self refreshMediaControlButtonsState];
+    [self refreshAuthControlButtonsState];
 }
 
 - (void)refreshLinkMicButtonState{
@@ -464,10 +526,24 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     }
 }
 
+- (void)refreshAuthControlButtonsState {
+    self.authSpeakerButton.hidden = YES;
+    if (self.user.onlineUser) {
+        BOOL showSpeakerAuthButton = self.canManagerSpeakerAuth && self.user.onlineUser.userType == PLVRoomUserTypeGuest;
+        self.authSpeakerButton.hidden = !showSpeakerAuthButton;
+        self.authSpeakerButton.selected = self.user.onlineUser.isRealMainSpeaker;
+        [self.user.onlineUser addCurrentSpeakerAuthChangedBlock:self.currentSpeakerAuthChangedBlock blockKey:self];
+    }
+}
+
 - (void)showLeftDragAnimation {
     self.leftDraging = YES;
     [self leftDragAnimation];
     [self performSelector:@selector(endLeftDrag:) withObject:@(YES) afterDelay:3];
+}
+
+- (void)closeLinkmicAndCamera {
+    self.microPhoneButton.selected = self.cameraButton.selected = YES;
 }
 
 + (CGFloat)cellHeight {
@@ -598,15 +674,40 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     }
 }
 
-- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event{
-    UIView *view = [super hitTest:point withEvent:event];
-    if (view == self.leftDragingView) {
-        self.aloneRespondLeftDraging = YES;
-    }else{
-        self.aloneRespondLeftDraging = NO;
-    }
-    return view;
+/// 讲师可以管理主讲授权操作
+- (BOOL)canManagerSpeakerAuth {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return userType == PLVRoomUserTypeTeacher;
 }
+
+- (void)checkMediaGrantedCompletion:(void (^)(void))completion  {
+    BOOL isLoginUser = [self isLoginUser:self.user.userId];
+    if (!isLoginUser) {
+        completion();
+        return;
+    }
+    PLVAuthorizationType type = self.isOnlyAudio ? PLVAuthorizationTypeMediaAudio : PLVAuthorizationTypeMediaAudioAndVideo;
+    [PLVAuthorizationManager requestAuthorizationWithType:type completion:^(BOOL granted) {
+        if (granted) {
+            completion();
+        } else {
+            [PLVLSUtils showAlertWithTitle:@"音视频权限申请"
+                                   message:@"请前往“设置-隐私”开启权限"
+                         cancelActionTitle:@"取消"
+                         cancelActionBlock:nil
+                        confirmActionTitle:@"前往设置" confirmActionBlock:^{
+                    NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                    if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                        [[UIApplication sharedApplication] openURL:url];
+                    }
+            }];
+        }
+    }];
+}
+
+#pragma mark - [ Delegate ]
+
+#pragma mark UIGestureRecognizerDelegate
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch{
     if (touch.view == self.leftDragingView) {
@@ -619,5 +720,16 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     return !self.aloneRespondLeftDraging;
 }
 
+#pragma mark - [ Override ]
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event{
+    UIView *view = [super hitTest:point withEvent:event];
+    if (view == self.leftDragingView) {
+        self.aloneRespondLeftDraging = YES;
+    }else{
+        self.aloneRespondLeftDraging = NO;
+    }
+    return view;
+}
 
 @end

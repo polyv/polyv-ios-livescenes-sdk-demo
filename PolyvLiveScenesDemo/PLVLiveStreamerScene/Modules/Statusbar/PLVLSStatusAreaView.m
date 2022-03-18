@@ -41,6 +41,8 @@ static CGFloat kStatusBarHeight = 44;
 /// 数据
 @property (nonatomic, assign) BOOL inClass;
 @property (nonatomic, assign) BOOL hasNewMemberState;
+@property (nonatomic, assign, getter=isSpeaker) BOOL speaker;
+
 @end
 
 @implementation PLVLSStatusAreaView
@@ -462,6 +464,11 @@ static CGFloat kStatusBarHeight = 44;
     }
 }
 
+- (BOOL)isGuest {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return userType == PLVRoomUserTypeGuest;
+}
+
 #pragma mark - Action
 
 - (void)channelInfoButtonAction {
@@ -471,6 +478,12 @@ static CGFloat kStatusBarHeight = 44;
 }
 
 - (void)whiteboardOrDocumentButtonAction:(id)sender {
+    if ([self isGuest] &&
+        !self.isSpeaker) {
+        [PLVLSUtils showToastInHomeVCWithMessage:@"被授权后才可以使用课件功能"];
+        return;
+    }
+    
     UIButton *button = (UIButton *)sender;
     BOOL whiteboard = (button == self.whiteboardButton);
     self.whiteboardButton.selected = whiteboard;
@@ -565,6 +578,14 @@ static CGFloat kStatusBarHeight = 44;
     if ([self canManagerLinkMic]) {
         [self.linkMicApplyView showAtView:self];
     }
+}
+
+- (void)updateDocumentSpeakerAuth:(BOOL)auth {
+    if (!auth &&
+        self.documentButton.selected) {
+        self.documentButton.selected = NO;
+    }
+    self.speaker = auth;
 }
 
 @end

@@ -38,11 +38,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// 显示文档
 - (void)showDocument;
 
+/// 关闭文档
+- (void)dismissDocument;
+
 /// 开始上课
 - (void)startClass:(NSDictionary *)onSliceStartDict;
 
 /// 下课（直播结束）
 - (void)finishClass;
+
+/// 本地用户授权为主讲(当为主讲权限时，可以进行PPT翻页)
+/// @param auth 是否授权(YES授权，NO取消授权)
+- (void)updateDocumentSpeakerAuth:(BOOL)auth;
 
 /// 获取当前文档信息
 - (NSDictionary *)getCurrentDocumentInfoDict;

@@ -420,7 +420,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 - (void)muteRemoteUserCamera:(PLVLinkMicOnlineUser *)onlineUser muteCamera:(BOOL)muteCamera emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock;
 
 /// 挂断全部连麦用户
-- (void)closeAllLinkMicUser;
+///
+/// @return '挂断全部连麦用户' 是否请求成功
+- (BOOL)closeAllLinkMicUser;
 
 /// 静音全部连麦用户的麦克风
 ///
@@ -587,6 +589,14 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param currentCameraTorchOpen 本地用户的 闪光灯 当前是否开启
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserCameraTorchOpenChanged:(BOOL)currentCameraTorchOpen;
 
+/// 本地用户麦克风音量大小 监测回调
+///
+/// @param presenter 推流管理器
+/// @param localVoiceValue 本地用户麦克风音量大小；取值范围为 0.0 ~ 1.0
+/// @param voiceAudible 是否接收到本地可听得见的声音（以 localVoiceValue 是否大于 0.156 为准；若需以其他值为准，可自行根据 localVoiceValue 作判断）
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserVoiceValue:(CGFloat)localVoiceValue receivedLocalAudibleVoice:(BOOL)voiceAudible;
+
+
 #pragma mark 连麦用户事件
 /// ’等待连麦用户数组‘ 发生改变
 ///
@@ -619,6 +629,15 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param linkMicOnlineUser 连麦在线用户
 /// @param videoMuted 当前 ’视频流是否禁用‘
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicOnlineUser:(PLVLinkMicOnlineUser *)linkMicOnlineUser videoMuted:(BOOL)videoMuted;
+
+/// 连麦在线用户的 ’主讲权限‘ 发生改变
+///
+/// @param presenter 推流管理器
+/// @param onlineUser 连麦在线用户
+/// @param authSpeaker 是否授权主讲(YES授权，NO取消授权)
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
+           linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
+                 authSpeaker:(BOOL)authSpeaker;
 
 /// 已挂断 某位远端连麦用户 事件回调
 ///

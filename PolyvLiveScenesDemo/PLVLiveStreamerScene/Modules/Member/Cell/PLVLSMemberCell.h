@@ -37,6 +37,9 @@ extern NSString *PLVLSMemberCellNotification;
 /// 显示左滑动画
 - (void)showLeftDragAnimation;
 
+/// 关闭麦克风和摄像头 (调用该方法时 app暂未获得麦克风和摄像头权限 所以该方法只是在UI上做了处理)
+- (void)closeLinkmicAndCamera;
+
 + (CGFloat)cellHeight;
 
 @end

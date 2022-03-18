@@ -18,6 +18,7 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraShouldShowChangedBlock> * cameraShouldShowChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraFrontChangedBlock> * cameraFrontChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraTorchOpenChangedBlock> * cameraTorchOpenChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock> * currentSpeakerAuthChanged_MultiReceiverMap;
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * userId;
@@ -41,6 +42,7 @@
 @property (nonatomic, assign) BOOL updateUserCurrentGrantCupCountCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentHandUpCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentStatusVoiceCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentSpeakerAuthCallbackBefore;
 @property (nonatomic, assign) CGFloat currentVolume;
 @property (nonatomic, assign) BOOL currentMicOpen;
 @property (nonatomic, assign) BOOL currentCameraOpen;
@@ -52,6 +54,7 @@
 @property (nonatomic, assign) BOOL currentBrushAuth;
 @property (nonatomic, assign) NSInteger currentCupCount;
 @property (nonatomic, assign) BOOL currentHandUp;
+@property (nonatomic, assign) BOOL isRealMainSpeaker;
 
 @end
 
@@ -113,6 +116,13 @@
         _cameraTorchOpenChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
     }
     return _cameraTorchOpenChanged_MultiReceiverMap;
+}
+
+- (NSMapTable<id,PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock> *)currentSpeakerAuthChanged_MultiReceiverMap{
+    if (!_currentSpeakerAuthChanged_MultiReceiverMap) {
+        _currentSpeakerAuthChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
+    }
+    return _currentSpeakerAuthChanged_MultiReceiverMap;
 }
 
 #pragma mark - [ Public Methods ]
@@ -209,6 +219,7 @@
         NSInteger currentCupCount = PLV_SafeIntegerForDictKey(classStatusDict, @"cup");
         BOOL currentHandUp = ([NSString stringWithFormat:@"%@",classStatusDict[@"raiseHand"]].intValue == 1);
         self.groupLeader = ([NSString stringWithFormat:@"%@",classStatusDict[@"groupLeader"]].intValue == 1);
+        BOOL isRealMainSpeaker = ([NSString stringWithFormat:@"%@",classStatusDict[@"speaker"]].intValue == 1);
         
         BOOL localUser = self.localUser; // 缓存真实状态
         if (self.userType == PLVSocketUserTypeGuest) {
@@ -220,6 +231,7 @@
         [self updateUserCurrentBrushAuth:currentBrushAuth];
         [self updateUserCurrentGrantCupCount:currentCupCount];
         [self updateUserCurrentHandUp:currentHandUp];
+        [self updateUserCurrentSpeakerAuth:isRealMainSpeaker];
     }
     
     /// 原始数据
@@ -465,6 +477,34 @@
     }
 }
 
+- (void)updateUserCurrentSpeakerAuth:(BOOL)isRealMainSpeaker {
+    BOOL needCallBack = (_isRealMainSpeaker != isRealMainSpeaker);
+    if (!_updateUserCurrentSpeakerAuthCallbackBefore) {
+        needCallBack = YES;
+    }
+    
+    _isRealMainSpeaker = isRealMainSpeaker;
+    if (needCallBack && self.currentSpeakerAuthChangedBlock) {
+        _updateUserCurrentSpeakerAuthCallbackBefore = YES;
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.currentSpeakerAuthChangedBlock(weakSelf); }
+        })
+    }
+    
+    if (needCallBack && _currentSpeakerAuthChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentSpeakerAuthCallbackBefore = YES;
+        NSEnumerator * enumerator = [_currentSpeakerAuthChanged_MultiReceiverMap objectEnumerator];
+        PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock block;
+        __weak typeof(self) weakSelf = self;
+        while ((block = [enumerator nextObject])) {
+            plv_dispatch_main_async_safe(^{
+                if (weakSelf) { block(weakSelf); }
+            })
+        }
+    }
+}
+
 #pragma mark 通知机制
 - (void)wantOpenUserMic:(BOOL)openMic{
     if (self.wantOpenMicBlock) {
@@ -515,11 +555,19 @@
     if (self.wantGrantCupBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            if (weakSelf) { weakSelf.wantGrantCupBlock(weakSelf ); }
+            if (weakSelf) { weakSelf.wantGrantCupBlock(weakSelf); }
         })
     }
 }
 
+- (void)wantAuthUserSpeaker:(BOOL)authSpeaker {
+    if (self.wantAuthSpeakerBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantAuthSpeakerBlock(weakSelf, authSpeaker); }
+        })
+    }
+}
 
 #pragma mark 多接收方回调配置
 - (void)addWillDeallocBlock:(PLVLinkMicOnlineUserWillDeallocBlock)strongBlock blockKey:(id)weakBlockKey{
@@ -600,6 +648,22 @@
         return;
     }
     [self.cameraTorchOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
+}
+
+- (void)addCurrentSpeakerAuthChangedBlock:(PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey{
+    if (!strongBlock) {
+        NSLog(@"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，strongBlock illegal");
+        return;
+    }
+    if (!weakBlockKey) {
+        NSLog(@"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        return;
+    }
+    if (self.currentSpeakerAuthChanged_MultiReceiverMap.count > 20) {
+        NSLog(@"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，block registration limit has been reached");
+        return;
+    }
+    [self.currentSpeakerAuthChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
 }
 
 @end

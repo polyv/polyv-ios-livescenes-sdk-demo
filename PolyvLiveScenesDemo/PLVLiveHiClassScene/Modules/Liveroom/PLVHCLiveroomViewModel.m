@@ -499,6 +499,7 @@ PLVSocketManagerProtocol // socket回调
     NSString *message = nil;
     if ([PLVHiClassManager sharedManager].currentUserIsGroupLeader) { // 当前组长是自己
         message = [NSString stringWithFormat:@"你已进入 %@,并成为组长", manager.groupName];
+        [PLVHCGroupLeaderGuidePagesView showGuidePagesViewinView:[PLVHCUtils sharedUtils].homeVC.view endBlock:nil];
     } else { // 当前组长是其他人
         NSString *userId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
         if ([originalLeaderId isEqualToString:userId] || originalLeaderId) { // 刚从组长位置卸任，或者切换组长时
@@ -516,7 +517,6 @@ PLVSocketManagerProtocol // socket回调
         [PLVHCClassAlertView showStudentGroupCountdownInView:self.homeVCView titleString:message confirmActionTitle:nil endCallback:nil];
     }
     
-    [PLVHCGroupLeaderGuidePagesView showGuidePagesViewinView:[PLVHCUtils sharedUtils].homeVC.view endBlock:nil];
     [self notifyGroupLeaderUpdate];
 }
 

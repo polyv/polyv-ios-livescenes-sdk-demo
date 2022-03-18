@@ -10,7 +10,7 @@
 #import "PLVPreCollectionViewCell.h"
 
 @protocol PLVAlbumPhotoPreViewControllerDelegate;
-
+DEPRECATED_MSG_ATTRIBUTE("已废弃，该模块与PLVImagePickerControllernen能力重复，后续请使用PLVImagePickerController")
 @interface PLVAlbumPhotoPreViewController : PLVPhotoPreBaseViewController <UICollectionViewDelegateFlowLayout, UICollectionViewDataSource, UIScrollViewDelegate, PLVPreCollectionViewCellDelegate>
 
 @property (nonatomic, assign) id<PLVAlbumPhotoPreViewControllerDelegate> delegate;

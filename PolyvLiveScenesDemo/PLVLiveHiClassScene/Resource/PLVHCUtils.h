@@ -107,6 +107,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取PLVHCLiveroom.bundle路径
 + (NSBundle *)bundlerForLiveroom;
 
+/// 获取当前window
++ (UIWindow *)getCurrentWindow;
+
 @end
 
 NS_ASSUME_NONNULL_END

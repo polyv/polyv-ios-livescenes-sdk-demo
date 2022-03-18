@@ -40,6 +40,9 @@ PLVHCLinkMicItemView;
 
 @property (nonatomic, weak) id<PLVHCLinkMicZoomAreaViewDelegate> delegate;
 
+/// 放大区域原始尺寸，画面缩放时作为参照值
+@property (nonatomic, assign) CGSize originalSize;
+
 #pragma mark 【通用】刷新视图
 
 /// 更新连麦视图

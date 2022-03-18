@@ -28,6 +28,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param rtcViewShow rtcview 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)rtcViewShow:(BOOL)rtcViewShow;
 
+/// pauseWatchNoDelayImageView 隐藏/显示
+///
+/// @param show pauseWatchNoDelayImageView 隐藏或显示 (YES:显示 NO:隐藏)
+- (void)pauseWatchNoDelayImageViewShow:(BOOL)show;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -63,6 +63,20 @@ NS_ASSUME_NONNULL_BEGIN
           confirmActionTitle:(NSString * _Nullable)confirmActionTitle
           confirmActionBlock:(void(^ _Nullable)(void))confirmActionBlock;
 
+/// 显示自定义 alert 弹窗便捷方法3
+/// @param title 弹窗标题
+/// @param message 弹窗文本
+/// @param cancelActionTitle 取消按钮的文本（若传nil，则默认为‘取消’）
+/// @param cancelActionBlock 取消按钮的点击事件
+/// @param confirmActionTitle 确认按钮的文本（若传nil，则无此按钮）
+/// @param confirmActionBlock 确认按钮的点击事件
++ (void)showAlertWithTitle:(NSString *)title
+                   message:(NSString *)message
+         cancelActionTitle:(NSString * _Nullable)cancelActionTitle
+         cancelActionBlock:(void(^ _Nullable)(void))cancelActionBlock
+        confirmActionTitle:(NSString * _Nullable)confirmActionTitle
+        confirmActionBlock:(void(^ _Nullable)(void))confirmActionBlock;
+
 + (UIImage *)imageForStatusResource:(NSString *)imageName;
 
 + (UIImage *)imageForDocumentResource:(NSString *)imageName;

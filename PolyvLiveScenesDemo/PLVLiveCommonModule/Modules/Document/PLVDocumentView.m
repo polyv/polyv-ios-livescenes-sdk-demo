@@ -365,8 +365,8 @@ PLVSocketManagerProtocol
     
     if (self.scene != PLVDocumentViewSceneCloudClass &&
         self.scene != PLVDocumentViewSceneEcommerce &&
-        self.viewerType == PLVRoomUserTypeTeacher) { // 推流场景且讲师角色未断流，只需要监听"onSliceID"消息
-        if (self.liveStatusIsLiving) {
+        self.viewerType == PLVRoomUserTypeTeacher) {
+        if (self.liveStatusIsLiving) { // 推流场景且讲师角色未断流，只需要监听"onSliceID"消息
             if ([subEvent isEqualToString:@"onSliceID"]) {
                 NSDictionary * dataDict = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
                 NSInteger autoId = PLV_SafeIntegerForDictKey(dataDict, @"autoId");
@@ -376,6 +376,14 @@ PLVSocketManagerProtocol
                 }
             }
         }
+
+        if ([subEvent isEqualToString:@"onSliceOpen"] ||
+            [subEvent isEqualToString:@"onSliceDraw"] ||
+            [subEvent isEqualToString:@"onSliceControl"]) {
+            // 讲师也需要监听 "onSliceStart" "onSliceControl" "onSliceDraw" 消息
+            [self receiveOnSliceMessageWithjson:jsonString jsonObject:jsonDict];
+        }
+        
         return;
     }
     
@@ -425,7 +433,7 @@ PLVSocketManagerProtocol
                            jsonObject:(NSDictionary *)jsonDict {
     if (self.scene != PLVDocumentViewSceneCloudClass &&
         self.scene != PLVDocumentViewSceneEcommerce &&
-        self.viewerType == PLVRoomUserTypeTeacher) { // 推流场景且讲师角色，不需要用到以下消息监听
+        self.scene != PLVDocumentViewSceneStreamer) {
         return;
     }
         

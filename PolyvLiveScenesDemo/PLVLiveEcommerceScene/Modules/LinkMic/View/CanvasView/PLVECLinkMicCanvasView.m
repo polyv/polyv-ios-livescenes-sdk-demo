@@ -7,7 +7,9 @@
 //
 
 #import "PLVECLinkMicCanvasView.h"
-
+// 工具
+#import "PLVECUtils.h"
+// 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVECLinkMicCanvasView ()
@@ -16,6 +18,8 @@
 /// (PLVECLinkMicCanvasView) self
 ///  └── (UIView) external rtc View
 @property (nonatomic, weak) UIView * rtcView; // rtcView (弱引用；仅用作记录)
+
+@property (nonatomic, strong) UIImageView * pauseWatchNoDelayImageView; // 无延迟直播暂停后显示的占位图
 
 @end
 
@@ -31,6 +35,11 @@
         [self setupUI];
     }
     return self;
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    self.pauseWatchNoDelayImageView.frame = self.bounds;
 }
 
 #pragma mark - [ Public Methods ]
@@ -49,6 +58,7 @@
 
 - (void)removeRTCView{
     for (UIView * subview in self.subviews) { [subview removeFromSuperview]; }
+    [self addSubview:self.pauseWatchNoDelayImageView];
 }
 
 - (void)rtcViewShow:(BOOL)rtcViewShow{
@@ -59,10 +69,25 @@
     }
 }
 
+- (void)pauseWatchNoDelayImageViewShow:(BOOL)show {
+    self.pauseWatchNoDelayImageView.hidden = !show;
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
     self.clipsToBounds = YES;
     self.backgroundColor = PLV_UIColorFromRGB(@"2B3145");
+    [self addSubview:self.pauseWatchNoDelayImageView];
+}
+
+- (UIImageView *)pauseWatchNoDelayImageView {
+    if (!_pauseWatchNoDelayImageView) {
+        _pauseWatchNoDelayImageView = [[UIImageView alloc] init];
+        _pauseWatchNoDelayImageView.hidden = YES;
+        _pauseWatchNoDelayImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _pauseWatchNoDelayImageView.image = [PLVECUtils imageForWatchResource:@"plvec_linkmic_window_pauseWatchNoDelay_placeholder"];
+    }
+    return _pauseWatchNoDelayImageView;
 }
 
 @end

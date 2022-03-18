@@ -236,7 +236,7 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
+    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] privateChatArray] count]) {
         return 0.0;
     }
     

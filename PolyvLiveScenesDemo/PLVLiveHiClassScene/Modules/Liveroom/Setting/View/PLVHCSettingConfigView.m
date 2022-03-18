@@ -18,12 +18,6 @@
 
 // 麦克风音量最大等级
 static int volumeMaxLevel = 17;
-// 麦克风开关
-static NSString *const kSCMicrophoneEnableConfigKey = @"kSCMicrophoneEnableConfigKey";
-// 摄像头开关
-static NSString *const kSCCameraEnableConfigKey = @"kSCCameraEnableConfigKey";
-// 摄像头方向是否为前置
-static NSString *const kSCCameraIsFrontConfigKey = @"kSCCameraIsFrontConfigKey";
 
 @interface PLVHCSettingConfigView()
 
@@ -129,9 +123,12 @@ static NSString *const kSCCameraIsFrontConfigKey = @"kSCCameraIsFrontConfigKey";
         
         UISwitch *microphoneSwitch = (UISwitch *)[self viewWithTag:1];
         microphoneSwitch.on = deviceManager.micOpen;
+        self.micSwitchOn = deviceManager.micOpen;
         
         UISwitch *cameraSwitch = (UISwitch *)[self viewWithTag:2];
         cameraSwitch.on = deviceManager.cameraOpen;
+        self.cameraSwitchOn = deviceManager.cameraOpen;
+        self.cameraDirectionConfigView.hidden = !deviceManager.cameraOpen;
         
         UIButton *cameraDirectionButton = (UIButton *)[self viewWithTag:999];
         cameraDirectionButton.selected = !deviceManager.cameraFront;

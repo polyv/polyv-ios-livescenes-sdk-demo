@@ -59,6 +59,7 @@
         [PLVNetworkAccessibility setAlertEnable:YES];
         [PLVNetworkAccessibility start];
     }
+    
     PLVLiveStreamerLoginViewController *vctrl = [[PLVLiveStreamerLoginViewController alloc] init];
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     self.window.rootViewController = vctrl;

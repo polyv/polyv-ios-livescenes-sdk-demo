@@ -493,6 +493,21 @@ PLVECLinkMicAreaViewDelegate
     [self exitCurrentController];
 }
 
+- (void)playerController:(PLVECPlayerViewController *)playerController noDelayLiveWannaPlay:(BOOL)wannaPlay {
+    [self.linkMicAreaView pauseWatchNoDelay:!wannaPlay];
+}
+
+- (BOOL)playerControllerGetPausedWatchNoDelay:(PLVECPlayerViewController *)playerController {
+    return self.linkMicAreaView.pausedWatchNoDelay;
+}
+
+- (void)playerController:(PLVECPlayerViewController *)playerController noDelayWatchModeSwitched:(BOOL)noDelayWatchMode {
+    [self.linkMicAreaView startWatchNoDelay:noDelayWatchMode];
+    if (noDelayWatchMode) {
+        [self.linkMicAreaView pauseWatchNoDelay:NO]; 
+    }
+}
+
 #pragma mark PLVECLinkMicAreaViewDelegate
 
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView {
@@ -505,6 +520,13 @@ PLVECLinkMicAreaViewDelegate
         [self.homePageView showNetworkQualityMiddleView];
     } else if (rxQuality == PLVBLinkMicNetworkQualityBad) {
         [self.homePageView showNetworkQualityPoorView];
+    }
+}
+
+/// ‘是否在RTC房间中’ 状态值发生改变
+- (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inRTCRoomChanged:(BOOL)inRTCRoom {
+    if (inRTCRoom) {
+        [self.playerVC cleanPlayer];
     }
 }
 

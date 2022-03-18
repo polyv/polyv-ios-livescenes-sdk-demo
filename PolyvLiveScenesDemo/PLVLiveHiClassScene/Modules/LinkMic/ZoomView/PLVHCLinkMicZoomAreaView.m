@@ -253,7 +253,7 @@
 // 根据'讲师端放大区域宽高比' 更新本地放大区域宽高
 - (void)updateAreaViewFrameWithZoomModel:(PLVHCLinkMicZoomModel *)zoomModel {
     CGFloat scale = zoomModel.parentWidth / zoomModel.parentHeight; // 讲师端放大区域宽高比
-    CGSize selfSize = self.bounds.size;
+    CGSize selfSize = self.originalSize;
     CGFloat propHeight = selfSize.width / scale;
     CGFloat propWidth = selfSize.height * scale;
     if (propHeight >= selfSize.height) {

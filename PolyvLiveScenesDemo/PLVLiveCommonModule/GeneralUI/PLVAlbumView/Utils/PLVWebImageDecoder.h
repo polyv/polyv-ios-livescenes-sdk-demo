@@ -11,7 +11,7 @@
 #import <UIKit/UIKit.h>
 #import <Photos/Photos.h>
 #import "PLVImageInfo.h"
-
+DEPRECATED_MSG_ATTRIBUTE("已废弃，该模块与PLVImagePickerControllernen能力重复，后续请使用PLVImagePickerController")
 @interface UIImage (ForceDecode)
 
 + (void)requestThumbnailsImage:(PHAsset*)asset deliveryMode:(PHImageRequestOptionsDeliveryMode)deliveryMode resultHandler:(void (^)(UIImage *result, NSDictionary *info))resultHandler;

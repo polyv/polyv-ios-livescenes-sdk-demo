@@ -33,6 +33,20 @@ NS_ASSUME_NONNULL_BEGIN
                         confirmActionTitle:(NSString * _Nullable)confirmActionTitle
                             confirmHandler:(void(^ _Nullable)(void))confirmHandler;
 
+/// 初始化方法 3
+/// @param title 弹窗提示标题
+/// @param message 弹窗提示文本
+/// @param cancelActionTitle cancel 按钮文本，为空时默认“取消”
+/// @param cancelHandler cancel 按钮事件，可为空
+/// @param confirmActionTitle confirm 按钮文本，可为空
+/// @param confirmHandler confirm 按钮事件，可为空
++ (instancetype)alertControllerWithTitle:(NSString *)title
+                                 message:(NSString *)message
+                       cancelActionTitle:(NSString * _Nullable)cancelActionTitle
+                           cancelHandler:(void(^ _Nullable)(void))cancelHandler
+                      confirmActionTitle:(NSString * _Nullable)confirmActionTitle
+                          confirmHandler:(void(^ _Nullable)(void))confirmHandler;
+
 @end
 
 NS_ASSUME_NONNULL_END

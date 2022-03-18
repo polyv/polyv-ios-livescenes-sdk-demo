@@ -7,6 +7,8 @@
 //
 
 #import "PLVHCBroadcastAlertView.h"
+// 工具
+#import "PLVHCUtils.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -87,21 +89,7 @@ static CGFloat kPLVHCBroadcastAlertViewMaxHeight = 254.0; // 弹窗最大高度
 #pragma mark Getter
 
 - (UIWindow *)frontWindow {
-    if ([UIApplication sharedApplication].delegate.window) {
-        return [UIApplication sharedApplication].delegate.window;
-    } else {
-        if (@available(iOS 13.0, *)) { // iOS 13.0+
-            NSArray *array = [[[UIApplication sharedApplication] connectedScenes] allObjects];
-            UIWindowScene *windowScene = (UIWindowScene *)array[0];
-            UIWindow *window = [windowScene valueForKeyPath:@"delegate.window"];
-            if (!window) {
-                window = [UIApplication sharedApplication].windows.firstObject;
-            }
-            return window;
-        } else {
-            return [UIApplication sharedApplication].keyWindow;
-        }
-    }
+    return [PLVHCUtils getCurrentWindow];
 }
 
 - (UIView *)backgroundView {

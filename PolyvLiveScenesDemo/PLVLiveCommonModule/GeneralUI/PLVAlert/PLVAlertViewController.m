@@ -7,6 +7,7 @@
 //
 
 #import "PLVAlertViewController.h"
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 /// 确认按钮用到的回调类型
 typedef void (^PLVAlertConfirmAction)(void);
@@ -41,6 +42,9 @@ typedef NS_ENUM(NSUInteger, PLVAlertStyle) {
 @property (nonatomic, strong) NSDictionary *messageLabelAttributesDict; // messageLabel 多属性文本显示属性
 @property (nonatomic, assign) CGSize minMessageLabelSize; // messageLabel 最小显示宽高
 @property (nonatomic, assign) CGSize maxMessageLabelSize; // messageLabel 最大显示宽高
+
+/// 标题文本相关属性
+@property (nonatomic, strong) UILabel *titleLabel; // 标题文本控件
 
 /// 按钮相关属性
 @property (nonatomic, strong) UIButton *cancelButton; // 取消按钮控件，响应事件仅为隐藏弹窗
@@ -79,6 +83,7 @@ typedef NS_ENUM(NSUInteger, PLVAlertStyle) {
     [super viewDidLoad];
     
     [self.view addSubview:self.contentView];
+    [self.contentView addSubview:self.titleLabel];
     [self.contentView addSubview:self.messageLabel];
     [self.contentView addSubview:self.cancelButton];
     [self.contentView addSubview:self.confirmButton];
@@ -101,8 +106,17 @@ typedef NS_ENUM(NSUInteger, PLVAlertStyle) {
     CGFloat messageLabelHeight = multipleLine ? messageSize.height + 3 * 2 : self.minMessageLabelSize.height;
     self.messageLabel.frame = CGRectMake(kAlertInnerLeftAndRightGap, messageTopGap, kAlertWidth - kAlertInnerLeftAndRightGap * 2, messageLabelHeight);
     
+    // 设置提示标题位置与大小
+    // 若有标题存在，提示文本将显示在标题底部
+    CGFloat titleLabelHeight = 0;
+    if (self.titleLabel.attributedText) {
+        titleLabelHeight = 22;
+        self.titleLabel.frame = CGRectMake(kAlertInnerLeftAndRightGap, 20, kAlertWidth - kAlertInnerLeftAndRightGap * 2, titleLabelHeight);
+        self.messageLabel.frame = CGRectMake(kAlertInnerLeftAndRightGap, CGRectGetMaxY(self.titleLabel.frame) + messageTopGap / 2, kAlertWidth - kAlertInnerLeftAndRightGap * 2, messageLabelHeight);
+    }
+    
     // 设置提示文本与按钮之间的分割线位置与大小
-    CGFloat topPartHeight = messageLabelHeight + messageTopGap * 2;
+    CGFloat topPartHeight = messageLabelHeight + messageTopGap * 2 + titleLabelHeight;
     self.splitLine.frame = CGRectMake(0, topPartHeight, kAlertWidth, 1.0);
     
     // 设置按钮与按钮之间的分割线(如果需要的话)位置与大小
@@ -184,6 +198,14 @@ typedef NS_ENUM(NSUInteger, PLVAlertStyle) {
     return _confirmButton;
 }
 
+- (UILabel *)titleLabel {
+    if (!_titleLabel) {
+        _titleLabel = [[UILabel alloc] init];
+        _titleLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _titleLabel;
+}
+
 #pragma mark - Action
 
 - (void)cancelButtonAction {
@@ -223,6 +245,20 @@ typedef NS_ENUM(NSUInteger, PLVAlertStyle) {
     return alert;
 }
 
++ (instancetype)alertControllerWithTitle:(NSString *)title
+                                 message:(NSString *)message
+                       cancelActionTitle:(NSString * _Nullable)cancelActionTitle
+                           cancelHandler:(void(^ _Nullable)(void))cancelHandler
+                      confirmActionTitle:(NSString * _Nullable)confirmActionTitle
+                          confirmHandler:(void(^ _Nullable)(void))confirmHandler {
+    PLVAlertViewController *alert = [[PLVAlertViewController alloc] init];
+    [alert setupAlertTitle:title message:message];
+    [alert setupButtonWithCancelTitle:cancelActionTitle confirmTitle:confirmActionTitle];
+    alert.cancelHandler = cancelHandler;
+    alert.confirmHandler = confirmHandler;
+    return alert;
+}
+
 #pragma mark - Private
 
 - (void)setupAlertMessage:(NSString *)message {
@@ -234,6 +270,24 @@ typedef NS_ENUM(NSUInteger, PLVAlertStyle) {
     self.message = message;
     self.messageLabel.attributedText = [[NSAttributedString alloc] initWithString:message
                                                                        attributes:self.messageLabelAttributesDict];
+}
+
+- (void)setupAlertTitle:(NSString *)title message:(NSString *)message {
+    // 传入文本容错处理
+    if (!title || ![title isKindOfClass:[NSString class]] || title.length == 0) {
+        title = @"null";
+    }
+    self.titleLabel.attributedText = [[NSAttributedString alloc] initWithString:title
+                                                                     attributes:@{NSFontAttributeName : [UIFont systemFontOfSize:16],
+                                                                                  NSForegroundColorAttributeName : PLV_UIColorFromRGB(@"#FFFFFF")}];
+    
+    if (!message || ![message isKindOfClass:[NSString class]] || message.length == 0) {
+        message = @"null";
+    }
+    self.message = message;
+    self.messageLabel.attributedText = [[NSAttributedString alloc] initWithString:message
+                                                                       attributes:@{NSFontAttributeName : [UIFont systemFontOfSize:12],
+                                                                                    NSForegroundColorAttributeName : PLV_UIColorFromRGBA(@"#FFFFFF",0.6)}];
 }
 
 - (void)setupButtonWithCancelTitle:(NSString *)cancelTitle confirmTitle:(NSString *)confirmTitle {

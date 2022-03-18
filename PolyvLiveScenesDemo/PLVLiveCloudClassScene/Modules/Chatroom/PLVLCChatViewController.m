@@ -15,28 +15,25 @@
 #import "PLVLCImageMessageCell.h"
 #import "PLVLCImageEmotionMessageCell.h"
 #import "PLVLCQuoteMessageCell.h"
-#import "PLVAlbumNavigationController.h"
-#import "PLVPickerController.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatroomViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
-#import "PLVCameraViewController.h"
-#import "PLVAlbumTool.h"
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVAuthorizationManager.h>
+#import <PLVImagePickerController/PLVImagePickerController.h>
 
 NSString *PLVLCChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNotification";
 
 @interface PLVLCChatViewController ()<
 PLVLCKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
-PLVPickerControllerDelegate,
-PLVCameraViewControllerDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
+UINavigationControllerDelegate,
+UIImagePickerControllerDelegate,
 UITableViewDelegate,
 UITableViewDataSource
 >
@@ -58,8 +55,6 @@ UITableViewDataSource
 @property (nonatomic, strong) PLVLCWelcomeView *welcomeView;
 /// 聊天室顶部公告横幅
 @property (nonatomic, strong) PLVLCNotifyMarqueeView *notifyMarqueeView;
-
-@property (nonatomic, assign) id<PLVPickerControllerDelegate> delegate;
 
 @end
 
@@ -304,14 +299,14 @@ UITableViewDataSource
     [PLVLiveVideoConfig sharedInstance].unableRotate = YES;
     [PLVFdUtil changeDeviceOrientationToPortrait];
     
-    PLVCameraViewController *cameraVC = [[PLVCameraViewController alloc] init];
+    UIImagePickerController *cameraVC = [[UIImagePickerController alloc] init];
     cameraVC.delegate = self;
-    cameraVC.modalPresentationStyle = UIModalPresentationFullScreen;
+    cameraVC.sourceType = UIImagePickerControllerSourceTypeCamera;
     [self.liveRoom presentViewController:cameraVC animated:YES completion:nil];
 }
 
 - (void)presentAlertController:(NSString *)message {
-    [PLVAlbumTool presentAlertController:message inViewController:self];
+    [PLVAuthorizationManager showAlertWithTitle:nil message:message viewController:self];
 }
 
 - (BOOL)currentIsFullScreen {
@@ -551,14 +546,76 @@ UITableViewDataSource
 }
 
 - (void)keyboardToolView_openAlbum:(PLVLCKeyboardToolView *)toolView {
-    [PLVLiveVideoConfig sharedInstance].unableRotate = YES;
-    [PLVFdUtil changeDeviceOrientationToPortrait];
+    PLVImagePickerController *vctrl = [[PLVImagePickerController alloc]
+                                       initWithMaxImagesCount:1 columnNumber:4 delegate:nil];;
+    vctrl.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
+    vctrl.showSelectBtn = YES;
+    vctrl.allowTakeVideo = NO;
+    vctrl.allowPickingVideo = NO;
+    vctrl.allowTakePicture = NO;
+    vctrl.allowPickingOriginalPhoto = NO;
+    vctrl.showPhotoCannotSelectLayer = YES;
+    vctrl.cannotSelectLayerColor = [UIColor colorWithWhite:1.0 alpha:0.6];
     
-    PLVPickerController *vctrl = [[PLVPickerController alloc] initWithPickerModer:PickerModerOfNormal];
-    vctrl.delegate = self;
-    PLVAlbumNavigationController *nav = [[PLVAlbumNavigationController alloc] initWithRootViewController:vctrl];
-    nav.modalPresentationStyle = UIModalPresentationFullScreen;
-    [self.liveRoom presentViewController:nav animated:YES completion:nil];
+    vctrl.iconThemeColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
+    vctrl.oKButtonTitleColorNormal = UIColor.whiteColor;
+    vctrl.naviTitleColor = [UIColor colorWithWhite:0.6 alpha:1];
+    vctrl.naviTitleFont = [UIFont systemFontOfSize:14.0];
+    vctrl.barItemTextColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
+    vctrl.barItemTextFont = [UIFont systemFontOfSize:14.0];
+    vctrl.naviBgColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
+    
+    [vctrl setPhotoPickerPageUIConfigBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
+        divideLine.hidden = YES;
+        collectionView.showsHorizontalScrollIndicator = NO;
+        collectionView.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
+        bottomToolBar.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
+        bottomToolBar.layer.shadowColor = [UIColor colorWithRed:10/255.0 green:10/255.0 blue:17/255.0 alpha:1.0].CGColor;
+        bottomToolBar.layer.shadowOffset = CGSizeMake(0,-1);
+        bottomToolBar.layer.shadowOpacity = 1;
+        bottomToolBar.layer.shadowRadius = 0;
+
+        UIResponder *nextResponder = [collectionView nextResponder];
+        if ([nextResponder isKindOfClass:UIView.class]) {
+            [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
+        }
+    }];
+    [vctrl setPhotoPickerPageDidLayoutSubviewsBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
+        previewButton.hidden = YES;
+
+        doneButton.layer.cornerRadius = 14.0;
+        doneButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
+        doneButton.frame = CGRectMake(CGRectGetMinX(doneButton.frame)-74.0/2, (CGRectGetHeight(doneButton.bounds)-28.0)/2, 74.0, 28.0);
+    }];
+
+    [vctrl setPhotoPickerPageDidRefreshStateBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
+        numberLabel.hidden = YES;
+        numberImageView.hidden = YES;
+    }];
+
+    [vctrl setAlbumCellDidLayoutSubviewsBlock:^(PLVAlbumCell *cell, UIImageView *posterImageView, UILabel *titleLabel) {
+        titleLabel.textColor = UIColor.lightGrayColor;
+        [(UITableViewCell *)cell setBackgroundColor:UIColor.clearColor];
+        [(UITableViewCell *)cell setSelectionStyle:UITableViewCellSelectionStyleNone];
+        UIResponder *nextResponder = [(UITableViewCell *)cell nextResponder];
+        if ([nextResponder isKindOfClass:UIView.class]) {
+            [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
+        }
+        nextResponder = nextResponder.nextResponder;
+        if ([nextResponder isKindOfClass:UIView.class]) {
+            [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
+        }
+    }];
+
+    [vctrl setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
+        if ([photos isKindOfClass:NSArray.class]) {
+            BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendImageMessage:photos.firstObject];
+            if (!success) {
+                [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+            }
+        }
+    }];
+    [self.liveRoom presentViewController:vctrl animated:YES completion:nil];
 }
 
 - (void)keyboardToolView_openCamera:(PLVLCKeyboardToolView *)toolView {
@@ -597,32 +654,16 @@ UITableViewDataSource
     [[PLVLCChatroomViewModel sharedViewModel] sendLike];
 }
 
-#pragma mark - PLVPickerController Delegate
+#pragma mark - UIImagePickerControllerDelegate
 
-- (void)pickerController:(PLVPickerController*)pVC uploadImage:(UIImage *)uploadImage {
-    BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendImageMessage:uploadImage];
-    if (!success) {
-        [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
-    }
+- (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary<UIImagePickerControllerInfoKey,id> *)info {
+    UIImage *image = info[UIImagePickerControllerOriginalImage];
+    [picker dismissViewControllerAnimated:YES completion:nil];
+    [[PLVLCChatroomViewModel sharedViewModel] sendImageMessage:image];
 }
 
-- (void)dismissPickerController:(PLVPickerController*)pVC {
-    UIViewController *liveRoomVC = (UIViewController *)self.liveRoom;
-    [liveRoomVC dismissViewControllerAnimated:YES completion:^{
-        [PLVLiveVideoConfig sharedInstance].unableRotate = NO;
-    }];
-}
-
-#pragma mark - PLVCameraViewControllerDelegate Delegate
-- (void)cameraViewController:(PLVCameraViewController *)cameraVC uploadImage:(UIImage *)uploadImage {
-    [[PLVLCChatroomViewModel sharedViewModel] sendImageMessage:uploadImage];
-}
-
-- (void)dismissCameraViewController:(PLVCameraViewController*)cameraVC {
-    UIViewController *liveRoomVC = (UIViewController *)self.liveRoom;
-    [liveRoomVC dismissViewControllerAnimated:YES completion:^{
-        [PLVLiveVideoConfig sharedInstance].unableRotate = NO;
-    }];
+- (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
+    [picker dismissViewControllerAnimated:YES completion:nil];
 }
 
 @end

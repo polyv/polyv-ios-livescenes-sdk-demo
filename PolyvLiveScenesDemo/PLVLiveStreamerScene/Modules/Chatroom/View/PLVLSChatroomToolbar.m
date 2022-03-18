@@ -175,29 +175,33 @@ static CGFloat kToolbarHeight = 36.0;
 }
 
 - (void)microphoneButtonAction:(id)sender {
-    UIButton *button = (UIButton *)sender;
-    button.selected = !button.selected;
-    
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideButton) object:nil];
-    [self performSelector:@selector(hideButton) withObject:nil afterDelay:3.0];
-    
-    if (self.didTapMicrophoneButton) {
-        self.didTapMicrophoneButton(!button.selected);
-    }
+    [self checkMediaGrantedCompletion:^{
+        UIButton *button = (UIButton *)sender;
+        button.selected = !button.selected;
+        
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideButton) object:nil];
+        [self performSelector:@selector(hideButton) withObject:nil afterDelay:3.0];
+        
+        if (self.didTapMicrophoneButton) {
+            self.didTapMicrophoneButton(!button.selected);
+        }
+    }];
 }
 
 - (void)cameraButtonAction:(id)sender {
-    UIButton *button = (UIButton *)sender;
-    button.selected = !button.selected;
-    
-    self.cameraSwitchButton.enabled = !self.cameraButton.selected;
-    
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideButton) object:nil];
-    [self performSelector:@selector(hideButton) withObject:nil afterDelay:3.0];
-    
-    if (self.didTapCameraButton) {
-        self.didTapCameraButton(!button.selected);
-    }
+    [self checkMediaGrantedCompletion:^{
+        UIButton *button = (UIButton *)sender;
+        button.selected = !button.selected;
+        
+        self.cameraSwitchButton.enabled = !self.cameraButton.selected;
+        
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideButton) object:nil];
+        [self performSelector:@selector(hideButton) withObject:nil afterDelay:3.0];
+        
+        if (self.didTapCameraButton) {
+            self.didTapCameraButton(!button.selected);
+        }
+    }];
 }
 
 - (void)cameraSwitchButtonAction:(id)sender {
@@ -250,6 +254,26 @@ static CGFloat kToolbarHeight = 36.0;
     if (!hide) {
         [self performSelector:@selector(hideButton) withObject:nil afterDelay:3.0];
     }
+}
+
+- (void)checkMediaGrantedCompletion:(void (^)(void))completion  {
+    PLVAuthorizationType type = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio ? PLVAuthorizationTypeMediaAudio : PLVAuthorizationTypeMediaAudioAndVideo;
+    [PLVAuthorizationManager requestAuthorizationWithType:type completion:^(BOOL granted) {
+        if (granted) {
+            completion();
+        } else {
+            [PLVLSUtils showAlertWithTitle:@"音视频权限申请"
+                                   message:@"请前往“设置-隐私”开启权限"
+                         cancelActionTitle:@"取消"
+                         cancelActionBlock:nil
+                        confirmActionTitle:@"前往设置" confirmActionBlock:^{
+                    NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                    if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                        [[UIApplication sharedApplication] openURL:url];
+                    }
+            }];
+        }
+    }];
 }
 
 @end

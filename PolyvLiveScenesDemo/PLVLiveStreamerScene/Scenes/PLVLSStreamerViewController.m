@@ -67,6 +67,7 @@ PLVMemberPresenterDelegate
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign, readonly) BOOL isOnlyAudio; // 当前频道是否为音频模式
+@property (nonatomic, assign) NSTimeInterval showMicTipsTimeInterval; // 显示'请打开麦克风提示'时的时间戳
 
 @end
 
@@ -360,9 +361,20 @@ PLVMemberPresenterDelegate
         }
    
         if (!granted) {
-            NSString *msg = weakSelf.isOnlyAudio ? @"需要获取您的音频权限，请前往设置" : @"需要获取您的音视频权限，请前往设置";
-            [PLVAuthorizationManager showAlertWithTitle:@"提示" message:msg viewController:weakSelf];
+            [PLVLSUtils showAlertWithTitle:@"音视频权限申请"
+                                   message:@"请前往“设置-隐私”开启权限"
+                         cancelActionTitle:@"取消"
+                         cancelActionBlock:nil
+                        confirmActionTitle:@"前往设置" confirmActionBlock:^{
+                    NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                    if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                        [[UIApplication sharedApplication] openURL:url];
+                    }
+            }];
+            [weakSelf.chatroomAreaView microphoneButtonOpen:NO];
+            [weakSelf.chatroomAreaView cameraButtonOpen:NO];
         }
+        weakSelf.memberSheet.mediaGranted = granted;
     }];
 }
 
@@ -583,9 +595,9 @@ PLVMemberPresenterDelegate
     if (self.viewerType == PLVRoomUserTypeGuest) {
         PLVChannelLiveStreamState streamState = self.streamerPresenter.currentStreamState;
         if(streamState == PLVChannelLiveStreamState_Live){
-            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_TimeLabel | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton;
+            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_TimeLabel | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_DocumentButton;
         }else{
-            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton;
+            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_DocumentButton;
         }
     }
     return PLVLSStatusBarControls_All;
@@ -629,8 +641,10 @@ PLVMemberPresenterDelegate
     }else{
         __weak typeof(self) weakSelf = self;
         [PLVLSUtils showAlertWithMessage:@"确认全体下麦？" cancelActionTitle:@"按错了" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
-            [weakSelf.streamerPresenter closeAllLinkMicUser];
-            [PLVLSUtils showToastWithMessage:@"已全体下麦" inView:weakSelf.view];
+            BOOL success = [weakSelf.streamerPresenter closeAllLinkMicUser];
+            if (success) {
+                [PLVLSUtils showToastWithMessage:@"已全体下麦" inView:weakSelf.view];
+            }
             if (changeBlock) { changeBlock(YES); }
         }];
     }
@@ -802,6 +816,20 @@ PLVMemberPresenterDelegate
     [self.memberPresenter refreshUserListWithLinkMicOnlineUserArray:onlineUserArray];
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
+           linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
+                 authSpeaker:(BOOL)authSpeaker {
+    if ([onlineUser.linkMicUserId isEqualToString:self.streamerPresenter.localOnlineUser.linkMicUserId]) {
+        NSString *message = authSpeaker ? @"已授予主讲权限" : @"已收回主讲权限";
+        [PLVLSUtils showToastWithMessage:message inView:self.view];
+        [self.documentAreaView updateDocumentSpeakerAuth:authSpeaker];
+        [self.statusAreaView updateDocumentSpeakerAuth:authSpeaker];
+        if (!authSpeaker) {
+            [self.documentAreaView dismissDocument];
+        }
+    }
+}
+
 /// ‘是否推流已开始’ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter pushStreamStartedDidChanged:(BOOL)pushStreamStarted{
 }
@@ -834,6 +862,7 @@ PLVMemberPresenterDelegate
     [PLVRoomDataManager sharedManager].roomData.liveDuration = presenter.pushStreamValidDuration;
     if (classStarted) {
         [self startClass:startClassInfoDict];
+        self.showMicTipsTimeInterval = 0;
     }
 }
 
@@ -855,6 +884,7 @@ PLVMemberPresenterDelegate
 /// 本地用户的 ’麦克风开关状态‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserMicOpenChanged:(BOOL)currentMicOpen{
     [self.chatroomAreaView microphoneButtonOpen:currentMicOpen];
+    self.showMicTipsTimeInterval = 0;
     [PLVLSUtils showToastWithMessage:(currentMicOpen ? @"已开启麦克风" : @"已关闭麦克风") inView:self.view];
 }
 
@@ -894,6 +924,17 @@ PLVMemberPresenterDelegate
     message = [message stringByAppendingFormat:@" code:%@",fullErrorCodeString];
     
     [PLVLSUtils showToastWithMessage:message inView:self.view afterDelay:3];
+}
+
+/// 本地用户 麦克风音量大小检测
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserVoiceValue:(CGFloat)localVoiceValue receivedLocalAudibleVoice:(BOOL)voiceAudible {
+    if (!self.streamerPresenter.currentMicOpen && localVoiceValue >= 0.4) {
+        NSTimeInterval currentTimeInterval = [[NSDate date] timeIntervalSince1970];
+        if (currentTimeInterval - self.showMicTipsTimeInterval > 180) {
+            [PLVLSUtils showToastWithMessage:@"您已静音，请开启麦克风后发言" inView:self.view];
+            self.showMicTipsTimeInterval = [[NSDate date] timeIntervalSince1970];
+        }
+    }
 }
 
 #pragma mark - PLVLSLinkMicAreaViewDelegate

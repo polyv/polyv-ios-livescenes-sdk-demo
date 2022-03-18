@@ -934,7 +934,7 @@ PLVLinkMicManagerDelegate
         self.localMainSpeakerUser.isLocalMainSpeaker = NO;
         self.localMainSpeakerUser = nowLocalMainSpeakerUser;
         self.localMainSpeakerUser.isLocalMainSpeaker = YES;
-        self.localMainSpeakerUser.isRealMainSpeaker = (self.localMainSpeakerUser == self.realMainSpeakerUser);
+        [self.localMainSpeakerUser updateUserCurrentSpeakerAuth:(self.localMainSpeakerUser == self.realMainSpeakerUser)];
         
         // “真实主讲” 更新值
         self.realMainSpeakerUser.isLocalMainSpeaker = (self.localMainSpeakerUser == self.realMainSpeakerUser);
@@ -948,18 +948,18 @@ PLVLinkMicManagerDelegate
     if (self.realMainSpeakerUser != nowRealMainSpeakerUser) {
         // “真实主讲” 发生变更
         BOOL needSwitchSubscribeStreamMediaType = (self.rtcAudioSubEnabled && ![nowRealMainSpeakerUser.linkMicUserId isEqualToString:self.realMainSpeakerUser.linkMicUserId]);
-        self.realMainSpeakerUser.isRealMainSpeaker = NO;
+        [self.realMainSpeakerUser updateUserCurrentSpeakerAuth:NO];
         if (needSwitchSubscribeStreamMediaType) {
             [self.linkMicManager switchSubscribeStreamMediaTypeWithRTCUserId:self.realMainSpeakerUser.linkMicUserId mediaType:PLVBRTCSubscribeStreamMediaType_Audio];
         }
         self.realMainSpeakerUser = nowRealMainSpeakerUser;
-        self.realMainSpeakerUser.isRealMainSpeaker = YES;
+        [self.realMainSpeakerUser updateUserCurrentSpeakerAuth:YES];
         if (needSwitchSubscribeStreamMediaType) {
             [self.linkMicManager switchSubscribeStreamMediaTypeWithRTCUserId:self.realMainSpeakerUser.linkMicUserId mediaType:PLVBRTCSubscribeStreamMediaType_Audio | PLVBRTCSubscribeStreamMediaType_Video];
         }
         
         // ”本地主讲“ 更新值
-        self.localMainSpeakerUser.isRealMainSpeaker = (self.localMainSpeakerUser == self.realMainSpeakerUser);
+        [self.localMainSpeakerUser updateUserCurrentSpeakerAuth:(self.localMainSpeakerUser == self.realMainSpeakerUser)];
         
         if (!self.localMainSpeakerUserByLocalOperation || forceSynchronLocal) {
             // 若没有 本地操作变更过 或 需要强制同步，则同步更新 “本地主讲”
@@ -1103,7 +1103,7 @@ PLVLinkMicManagerDelegate
         
         // 设置主讲人标记
         if ([master isEqualToString:onlineUser.linkMicUserId]) {
-            onlineUser.isRealMainSpeaker = YES;
+            [onlineUser updateUserCurrentSpeakerAuth:YES];
         }
         
         // 添加用户

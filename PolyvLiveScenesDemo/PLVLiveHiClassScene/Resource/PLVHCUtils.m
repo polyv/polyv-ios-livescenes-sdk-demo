@@ -113,6 +113,12 @@
     return resourceBundle;
 }
 
+#pragma mark UIWindow
+
++ (UIWindow *)getCurrentWindow {
+    return [PLVFdUtil getFirstUIWindowFormUIApplication];
+}
+
 #pragma mark Getter
 - (BOOL)isPad {
     return [UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad;

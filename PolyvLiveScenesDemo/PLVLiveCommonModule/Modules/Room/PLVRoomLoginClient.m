@@ -268,7 +268,7 @@
         
         NSString *pptAnimationString = PLV_SafeStringForDictKey(data, @"pptAnimationEnabled");
         BOOL pptAnimationEnable = pptAnimationString.boolValue;
-        [[PLVDocumentUploadClient sharedClient] setupWithChannelId:channelId pptAnimationEnable:pptAnimationEnable];
+        [[PLVDocumentUploadClient sharedClient] setupWithChannelId:roomData.channelId pptAnimationEnable:pptAnimationEnable];
         
         [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
             !completion ?: completion();

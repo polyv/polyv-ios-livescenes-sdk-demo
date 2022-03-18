@@ -254,8 +254,8 @@
     [self updateRTCViewWithUser:userModel];
     ///授予奖杯
     [self updateCupViewCount:userModel.currentCupCount];
-    ///授予画笔
-    [self updateAuthBrushViewShow:userModel.currentBrushAuth];
+    ///授予画笔，讲师不显示
+    [self updateAuthBrushViewShow:userModel.currentBrushAuth && !isTeacher];
     ///举手
     [self updateHandUpViewState:userModel.currentHandUp];
 

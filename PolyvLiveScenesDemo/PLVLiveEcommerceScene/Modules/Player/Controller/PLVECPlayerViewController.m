@@ -51,6 +51,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, assign) CGRect displayRect; // 播放器区域rect
 @property (nonatomic, assign) CGSize videoSize; // 视频源尺寸
 @property (nonatomic, readonly) PLVRoomData *roomData; // 只读，当前直播间数据
+@property (nonatomic, assign) BOOL playing; // 播放器播放状态
 
 @end
 
@@ -64,6 +65,8 @@ PLVPlayerPresenterDelegate
         self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:self.roomData.videoType];
         self.playerPresenter.openAdv = YES;
         self.playerPresenter.delegate = self;
+        
+        [self addTapGestureRecognizer];
     }
     return self;
 }
@@ -293,20 +296,6 @@ PLVPlayerPresenterDelegate
 - (UIView *)displayView {
     if (!_displayView) {
         _displayView = [[UIView alloc] init];
-        // 单击、双击手势控制播放器和UI
-        UITapGestureRecognizer *doubleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
-        doubleGestureRecognizer.numberOfTapsRequired = 2;
-        doubleGestureRecognizer.numberOfTouchesRequired = 1;
-        [doubleGestureRecognizer addTarget:self action:@selector(displayViewTapAction:)];
-        [_displayView addGestureRecognizer:doubleGestureRecognizer];
-        
-        UITapGestureRecognizer *singleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
-        singleGestureRecognizer.numberOfTapsRequired = 1;
-        singleGestureRecognizer.numberOfTouchesRequired = 1;
-        [singleGestureRecognizer addTarget:self action:@selector(displayViewTapAction:)];
-        [_displayView addGestureRecognizer:singleGestureRecognizer];
-
-        [singleGestureRecognizer requireGestureRecognizerToFail:doubleGestureRecognizer];
     }
     return _displayView;
 }
@@ -334,6 +323,10 @@ PLVPlayerPresenterDelegate
 
 - (BOOL)advPlaying {
     return _playerPresenter.advPlaying;
+}
+
+- (BOOL)noDelayWatchMode {
+    return _playerPresenter.noDelayWatchMode;
 }
 
 - (NSString *)advLinkUrl {
@@ -388,6 +381,32 @@ PLVPlayerPresenterDelegate
     return [PLVRoomDataManager sharedManager].roomData;
 }
 
+- (BOOL)pausedWatchNoDelay {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerGetPausedWatchNoDelay:)]) {
+        return [self.delegate playerControllerGetPausedWatchNoDelay:self];
+    }else{
+        NSLog(@"PLVECPlayerViewController - delegate not implement method:[playerControllerGetPausedWatchNoDelay:]");
+        return NO;
+    }
+}
+
+- (void)addTapGestureRecognizer {
+    // 单击、双击手势控制播放器和UI
+    UITapGestureRecognizer *doubleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+    doubleGestureRecognizer.numberOfTapsRequired = 2;
+    doubleGestureRecognizer.numberOfTouchesRequired = 1;
+    [doubleGestureRecognizer addTarget:self action:@selector(displayViewTapAction:)];
+    [self.view addGestureRecognizer:doubleGestureRecognizer];
+    
+    UITapGestureRecognizer *singleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+    singleGestureRecognizer.numberOfTapsRequired = 1;
+    singleGestureRecognizer.numberOfTouchesRequired = 1;
+    [singleGestureRecognizer addTarget:self action:@selector(displayViewTapAction:)];
+    [self.view addGestureRecognizer:singleGestureRecognizer];
+
+    [singleGestureRecognizer requireGestureRecognizerToFail:doubleGestureRecognizer];
+}
+
 #pragma mark - [ Action ]
 - (void)displayViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
     /** 播放广告中，点击屏幕跳转广告链接 */
@@ -420,13 +439,27 @@ PLVPlayerPresenterDelegate
 #pragma mark - Public
 
 - (void)play {
-    if ([self.playerPresenter resumePlay]) {
+    if (self.playerPresenter.noDelayWatchMode) {
+        self.playing = YES;
+        self.playButton.hidden = YES;
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(playerController:noDelayLiveWannaPlay:)]) {
+            [self.delegate playerController:self noDelayLiveWannaPlay:self.playing];
+        }
+    } else if ([self.playerPresenter resumePlay]) {
         self.playButton.hidden = YES;
     }
 }
 
 - (void)pause {
-    if ([self.playerPresenter pausePlay]) {
+    if (self.playerPresenter.noDelayWatchMode) {
+        self.playing = NO;
+        self.playButton.hidden = NO;
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(playerController:noDelayLiveWannaPlay:)]) {
+            [self.delegate playerController:self noDelayLiveWannaPlay:self.playing];
+        }
+    } else if ([self.playerPresenter pausePlay]) {
         self.playButton.hidden = NO;
     }
 }
@@ -445,6 +478,14 @@ PLVPlayerPresenterDelegate
     }else{
         NSLog(@"PLVECPlayerViewController - displayExternalView failed, view is illegal : %@",contentView);
     }
+}
+
+- (void)cleanPlayer {
+    [self.playerPresenter cleanPlayer];
+}
+
+- (BOOL)channelInLive {
+    return self.playerPresenter.channelInLive;
 }
 
 #pragma mark 直播方法
@@ -488,8 +529,14 @@ PLVPlayerPresenterDelegate
     if (self.roomData.videoType != PLVChannelVideoType_Live) {
         return;
     }
-    if (self.playerPresenter.noDelayLiveWatching) {
+    self.playButton.hidden = YES;
+    if (self.playerPresenter.channelWatchNoDelay) {
+        self.playing = ![self pausedWatchNoDelay]; // 无延迟切换后无[playerPresenter:noDelayLiveStartUpdate:noDelayLiveStartDidChanged:]回调，但是会自动播放
         [self contentBackgroundViewDisplaySubview:self.displayView];
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(playerController:noDelayWatchModeSwitched:)]) {
+            [self.delegate playerController:self noDelayWatchModeSwitched:noDelayWatchMode];
+        }
     }
     [self.playerPresenter switchToNoDelayWatchMode:noDelayWatchMode];
 }
@@ -512,7 +559,7 @@ PLVPlayerPresenterDelegate
 #pragma mark - PLVPlayerPresenterDelegate Delegate
 /// 播放器 ‘正在播放状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playerPlayingStateDidChanged:(BOOL)playing{
-    _playing = playing;
+    self.playing = playing;
     if (playing) {
         [self.marqueeView start];
     }else {
@@ -594,8 +641,16 @@ PLVPlayerPresenterDelegate
     self.playButton.hidden = NO;
 }
 
+/// 直播播放器 需获知外部 ‘当前是否已暂停无延迟观看’
+- (BOOL)playerPresenterGetPausedWatchNoDelay:(PLVPlayerPresenter *)playerPresenter{
+    BOOL pausedWatchNoDelay = self.pausedWatchNoDelay;
+    NSLog(@"pausedWatchNoDelay#:%d", pausedWatchNoDelay);
+    return pausedWatchNoDelay;
+}
+
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter noDelayLiveStartUpdate:(BOOL)noDelayLiveStart noDelayLiveStartDidChanged:(BOOL)noDelayLiveStartDidChanged {
+    self.playing = noDelayLiveStart;
     if (noDelayLiveStart) {
         [self.playerPresenter cleanPlayer];
     } else {

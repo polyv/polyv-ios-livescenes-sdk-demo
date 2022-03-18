@@ -82,6 +82,10 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 /// 收到新的连麦申请
 - (void)receivedNewJoinLinkMicRequest;
 
+/// 本地用户授权为主讲(当为主讲权限时，可以管理文档)
+/// @param auth 是否授权(YES授权，NO取消授权)
+- (void)updateDocumentSpeakerAuth:(BOOL)auth;
+
 @end
 
 NS_ASSUME_NONNULL_END

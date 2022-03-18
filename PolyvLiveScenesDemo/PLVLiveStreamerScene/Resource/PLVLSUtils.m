@@ -81,6 +81,16 @@ static float _safeTopPad = 0;
     [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
 }
 
++ (void)showAlertWithTitle:(NSString *)title
+                   message:(NSString *)message
+         cancelActionTitle:(NSString * _Nullable)cancelActionTitle
+         cancelActionBlock:(void(^ _Nullable)(void))cancelActionBlock
+        confirmActionTitle:(NSString * _Nullable)confirmActionTitle
+        confirmActionBlock:(void(^ _Nullable)(void))confirmActionBlock {
+    PLVAlertViewController *alert = [PLVAlertViewController alertControllerWithTitle:title message:message cancelActionTitle:cancelActionTitle cancelHandler:cancelActionBlock confirmActionTitle:confirmActionTitle confirmHandler:confirmActionBlock];
+    [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+}
+
 + (UIImage *)imageForStatusResource:(NSString *)imageName {
     return [self imageFromBundle:@"PLVLSStatus" imageName:imageName];
 }

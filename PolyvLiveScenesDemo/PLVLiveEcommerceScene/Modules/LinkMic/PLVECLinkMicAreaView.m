@@ -17,6 +17,7 @@ PLVLinkMicPresenterDelegate
 @property (nonatomic, readonly) NSArray <PLVLinkMicOnlineUser *> * dataArray; // 只读，当前连麦在线用户数组
 #pragma mark 对象
 @property (nonatomic, strong) PLVLinkMicPresenter * presenter; // 连麦逻辑处理模块
+@property (nonatomic, assign) BOOL externalNoDelayPaused;   // 外部的 ‘无延迟播放’ 是否已暂停
 
 @end
 
@@ -44,6 +45,10 @@ PLVLinkMicPresenterDelegate
     return self.presenter.inLinkMic;
 }
 
+- (BOOL)pausedWatchNoDelay {
+    return self.presenter.pausedWatchNoDelay;
+}
+
 #pragma mark - [Private Method]
 
 // 若 连麦用户Model 未有 连麦rtc画布视图，则此时需创建并交由 连麦用户Model 进行管理
@@ -51,6 +56,7 @@ PLVLinkMicPresenterDelegate
     if (linkMicUserModel.canvasView == nil) {
         PLVECLinkMicCanvasView * canvasView = [[PLVECLinkMicCanvasView alloc] init];
         [canvasView addRTCView:linkMicUserModel.rtcView];
+        [canvasView pauseWatchNoDelayImageViewShow:self.externalNoDelayPaused];
         linkMicUserModel.canvasView = canvasView;
     }
 }
@@ -87,6 +93,19 @@ PLVLinkMicPresenterDelegate
     }
 }
 
+- (void)pauseWatchNoDelay:(BOOL)pause {
+    [self.presenter pauseWatchNoDelay:pause];
+    [self refreshLinkMicCanvasPauseImageView:self.presenter.pausedWatchNoDelay];
+}
+
+- (void)refreshLinkMicCanvasPauseImageView:(BOOL)noDelayPaused{
+    _externalNoDelayPaused = noDelayPaused;
+    PLVLinkMicOnlineUser * firstSiteOnlineUser = self.dataArray.firstObject;
+    if (firstSiteOnlineUser) {
+        [firstSiteOnlineUser.canvasView pauseWatchNoDelayImageViewShow:noDelayPaused];
+    }
+}
+
 #pragma mark - [Delegate]
 
 #pragma mark PLVLinkMicPresenterDelegate
@@ -102,6 +121,14 @@ PLVLinkMicPresenterDelegate
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvECLinkMicAreaView:localUserNetworkRxQuality:)]) {
         [self.delegate plvECLinkMicAreaView:self localUserNetworkRxQuality:rxQuality];
+    }
+}
+
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter currentRtcRoomJoinStatus:(PLVLinkMicPresenterRoomJoinStatus)currentRtcRoomJoinStatus inRTCRoomChanged:(BOOL)inRTCRoomChanged inRTCRoom:(BOOL)inRTCRoom {
+    if (inRTCRoomChanged) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvECLinkMicAreaView:inRTCRoomChanged:)]) {
+            [self.delegate plvECLinkMicAreaView:self inRTCRoomChanged:inRTCRoom];
+        }
     }
 }
 

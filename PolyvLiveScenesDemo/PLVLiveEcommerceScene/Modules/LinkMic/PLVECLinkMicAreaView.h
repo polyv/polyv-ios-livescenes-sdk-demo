@@ -29,6 +29,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param rxQuality 当前下行网络质量
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality;
 
+/// ‘是否在RTC房间中’ 状态值发生改变
+///
+/// @param linkMicAreaView 连麦区域视图
+/// @param inRTCRoom 当前 是否在RTC房间中
+- (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inRTCRoomChanged:(BOOL)inRTCRoom;
+
 @end
 
 /// 连麦区域视图
@@ -41,10 +47,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// PLVECLinkMicAreaViewDelegate代理
 @property (nonatomic, weak) id<PLVECLinkMicAreaViewDelegate> delegate;
 
+/// 当前 是否已暂停无延迟观看(YES:已暂停 NO:未暂停)
+@property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay;
+
 #pragma mark - Method
 
 /// 开始/结束观看无延迟直播
 - (void)startWatchNoDelay:(BOOL)startWatch;
+
+/// 暂停或取消暂停 无延迟观看
+///
+/// @note 调用后，将改变 [pausedWatchNoDelay] 值；
+///
+/// @param pause 暂停或取消暂停 (YES:暂停；NO:取消暂停)
+- (void)pauseWatchNoDelay:(BOOL)pause;
 
 @end
 

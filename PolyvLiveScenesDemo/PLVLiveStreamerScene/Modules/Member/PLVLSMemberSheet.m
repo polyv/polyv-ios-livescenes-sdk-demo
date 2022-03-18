@@ -308,6 +308,10 @@ UITableViewDataSource
     }
     PLVChatUser *user = self.userList[indexPath.row];
     [cell updateUser:user];
+    BOOL isLoginUser = [self isLoginUser:user.userId];
+    if (isLoginUser && !self.mediaGranted) {
+        [cell closeLinkmicAndCamera];
+    }
     
     // 第一个普通观众显示左滑动画
     if (!self.showLeftDragAnimation &&
