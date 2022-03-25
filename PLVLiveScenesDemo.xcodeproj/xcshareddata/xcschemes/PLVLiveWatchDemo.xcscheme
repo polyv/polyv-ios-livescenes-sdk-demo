@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1240"
+   LastUpgradeVersion = "1320"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,10 +14,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "215D04032605875300E86BEF"
-               BuildableName = "PolyvLiveStreamerDemo.app"
-               BlueprintName = "PolyvLiveStreamerDemo"
-               ReferencedContainer = "container:PolyvLiveScenesDemo.xcodeproj">
+               BlueprintIdentifier = "005F1746264BBB410093E874"
+               BuildableName = "PLVLiveWatchDemo.app"
+               BlueprintName = "PLVLiveWatchDemo"
+               ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -44,10 +44,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "215D04032605875300E86BEF"
-            BuildableName = "PolyvLiveStreamerDemo.app"
-            BlueprintName = "PolyvLiveStreamerDemo"
-            ReferencedContainer = "container:PolyvLiveScenesDemo.xcodeproj">
+            BlueprintIdentifier = "005F1746264BBB410093E874"
+            BuildableName = "PLVLiveWatchDemo.app"
+            BlueprintName = "PLVLiveWatchDemo"
+            ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -61,10 +61,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "215D04032605875300E86BEF"
-            BuildableName = "PolyvLiveStreamerDemo.app"
-            BlueprintName = "PolyvLiveStreamerDemo"
-            ReferencedContainer = "container:PolyvLiveScenesDemo.xcodeproj">
+            BlueprintIdentifier = "005F1746264BBB410093E874"
+            BuildableName = "PLVLiveWatchDemo.app"
+            BlueprintName = "PLVLiveWatchDemo"
+            ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

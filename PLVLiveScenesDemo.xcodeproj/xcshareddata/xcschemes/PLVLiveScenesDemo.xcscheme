@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1130"
+   LastUpgradeVersion = "1320"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "633923A32459877B00C0ACE9"
-               BuildableName = "PolyvLiveScenesDemo.app"
-               BlueprintName = "PolyvLiveScenesDemo"
-               ReferencedContainer = "container:PolyvLiveScenesDemo.xcodeproj">
+               BuildableName = "PLVLiveScenesDemo.app"
+               BlueprintName = "PLVLiveScenesDemo"
+               ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -34,7 +34,6 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      disableMainThreadChecker = "YES"
       launchStyle = "0"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
@@ -46,9 +45,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "633923A32459877B00C0ACE9"
-            BuildableName = "PolyvLiveScenesDemo.app"
-            BlueprintName = "PolyvLiveScenesDemo"
-            ReferencedContainer = "container:PolyvLiveScenesDemo.xcodeproj">
+            BuildableName = "PLVLiveScenesDemo.app"
+            BlueprintName = "PLVLiveScenesDemo"
+            ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -63,9 +62,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "633923A32459877B00C0ACE9"
-            BuildableName = "PolyvLiveScenesDemo.app"
-            BlueprintName = "PolyvLiveScenesDemo"
-            ReferencedContainer = "container:PolyvLiveScenesDemo.xcodeproj">
+            BuildableName = "PLVLiveScenesDemo.app"
+            BlueprintName = "PLVLiveScenesDemo"
+            ReferencedContainer = "container:PLVLiveScenesDemo.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
