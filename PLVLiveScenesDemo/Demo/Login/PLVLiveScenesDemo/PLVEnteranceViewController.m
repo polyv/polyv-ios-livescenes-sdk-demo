@@ -33,7 +33,7 @@
     
     [self.view addSubview:self.bgImageView];
     
-    self.buttonArray = @[ self.streamerButton, self.watchButton, self.hiClassButton ];
+    self.buttonArray = @[ self.streamerButton, self.watchButton];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -118,7 +118,7 @@
         _hiClassButton.titleLabel.font = [UIFont systemFontOfSize:24];
         _hiClassButton.titleLabel.textAlignment = NSTextAlignmentLeft;
         [_hiClassButton addTarget:self action:@selector(hiClassButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:_hiClassButton];
+//        [self.view addSubview:_hiClassButton];
     }
     return _hiClassButton;
 }

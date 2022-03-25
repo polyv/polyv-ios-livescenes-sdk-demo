@@ -1,6 +1,6 @@
 //
 //  PLVHCLinkMicZoomAreaView.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/11/15.
 //  Copyright © 2021 PLV. All rights reserved.

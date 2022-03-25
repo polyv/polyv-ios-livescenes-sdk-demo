@@ -1,6 +1,6 @@
 //
 //  PLVLCDocumentToolViewPopup.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/10/20.
 //  Copyright © 2021 PLV. All rights reserved.

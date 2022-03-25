@@ -1,6 +1,6 @@
 //
 //  PLVHCCaptureDeviceManager.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by MissYasiky on 2021/11/19.
 //  Copyright © 2021 PLV. All rights reserved.

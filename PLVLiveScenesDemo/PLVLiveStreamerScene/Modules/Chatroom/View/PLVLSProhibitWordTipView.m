@@ -1,6 +1,6 @@
 //
 //  PLVLSProhibitWordTipView.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by lijingtong on 2021/12/20.
 //  Copyright © 2021 PLV. All rights reserved.

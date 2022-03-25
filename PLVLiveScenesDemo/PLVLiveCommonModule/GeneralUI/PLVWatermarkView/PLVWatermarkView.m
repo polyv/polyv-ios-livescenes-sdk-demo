@@ -1,6 +1,6 @@
 //
 //  PLVWatermark.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by jiaweihuang on 2021/12/14.
 //  Copyright © 2021 PLV. All rights reserved.

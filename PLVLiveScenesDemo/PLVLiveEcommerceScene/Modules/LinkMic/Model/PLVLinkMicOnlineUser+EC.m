@@ -1,6 +1,6 @@
 //
 //  PLVLinkMicOnlineUser+EC.m
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
 //  Created by Sakya on 2021/10/11.
 //  Copyright © 2021 PLV. All rights reserved.

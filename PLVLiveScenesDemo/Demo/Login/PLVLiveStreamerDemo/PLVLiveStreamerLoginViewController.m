@@ -82,9 +82,9 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     [self.view addSubview:self.tfNickName];
     [self.view addSubview:self.btnLogin];
     [self.view addSubview:self.rememberPasswordButton];
-    [self.view addSubview:self.btnAgree];
-    [self.view addSubview:self.btnPrivacyPolicy];
-    [self.view addSubview:self.btnUserProtocol];
+//    [self.view addSubview:self.btnAgree];
+//    [self.view addSubview:self.btnPrivacyPolicy];
+//    [self.view addSubview:self.btnUserProtocol];
     
     UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction:)];
     [self.view addGestureRecognizer:tapGes];
@@ -322,6 +322,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         if (agree && [agree integerValue] == 1) {
             _btnAgree.selected = YES;
         }
+        _btnAgree.selected = YES;
     }
     
     return _btnAgree;
