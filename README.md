@@ -1,7 +1,7 @@
 # polyv-ios-livescenes-sdk-demo
 
 ### 1 简介
-多场景项目的项目架构图如下：
+项目架构图如下：
 
 ![多场景架构简图](https://polyv-repo.oss-cn-shenzhen.aliyuncs.com/android/resource/hierarchy.png)
 
@@ -46,7 +46,11 @@
 | CocoaPods | 1.7.0+      |
 | 集成工具  | Xcode 11.0+ |
 
-### 3 Wiki 文档
+### 3 体验 Demo
+
+Demo [下载链接](https://www.pgyer.com/XHBi) （密码：polyv）
+
+### 4 Wiki 文档
 
 可在 [Wiki 文档](https://help.polyv.net/index.html#/live/ios/) 中，了解 **项目结构、SDK 能力、源码释义** 等内容
 
