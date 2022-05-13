@@ -18,6 +18,9 @@
 #import "PLVLinkMicOnlineUser.h"
 #import "PLVChatUser.h"
 
+// 模块
+#import "PLVRoomDataManager.h"
+
 // 框架
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -31,10 +34,13 @@
 @property (nonatomic, strong) UIView *lineView; // 分割线
 @property (nonatomic, strong) UIButton *cameraButton; // 摄像头按钮
 @property (nonatomic, strong) UIButton *micphoneButton; // 麦克风按钮
+@property (nonatomic, strong) UIButton *authSpeakerButton; // 授权主讲按钮
+@property (nonatomic, strong) UIButton *fullScreenButton; // 全屏按钮
 @property (nonatomic, strong) UIButton *stopLinkMicButton; // 下麦按钮
 
 // Data
 @property (nonatomic, weak) PLVLinkMicOnlineUser *user;
+@property (nonatomic, assign, readonly) PLVRoomUserType viewerType; // 本地用户类型
 
 @end
 
@@ -51,6 +57,8 @@
         [self.contentView addSubview:self.lineView];
         [self.contentView addSubview:self.cameraButton];
         [self.contentView addSubview:self.micphoneButton];
+        [self.contentView addSubview:self.authSpeakerButton];
+        [self.contentView addSubview:self.fullScreenButton];
         [self.contentView addSubview:self.stopLinkMicButton];
     }
     return self;
@@ -66,19 +74,8 @@
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
     CGFloat width = self.contentView.frame.size.width;
-    CGFloat buttonWidth = 44;
-    CGFloat buttonHeight = 58;
-    CGFloat buttonCount = specialType ? 2 : 3;
-    CGFloat buttonPadding = (width - buttonWidth * buttonCount) / (buttonCount + 1);
-    CGFloat buttonTop = self.bounds.size.height > 667 ? 32 : 18;
-    CGFloat lineViewTop = 12;
-    CGFloat lineViewMargin = 23.5;
-
-    if (isPad) {
-        buttonPadding = 0.28 * (width - buttonWidth * buttonCount) / (buttonCount - 1);
-        lineViewTop = 24;
-        lineViewMargin = 56;
-    }
+    CGFloat lineViewTop = isPad ? 24 : 12;
+    CGFloat lineViewMargin = isPad ? 56 : 23.5;
    
     self.headerImageView.frame = CGRectMake((width - 66) / 2, isLandscape ? 32 :  17, 66, 66);
     
@@ -88,24 +85,26 @@
     self.nicknameLabel.frame = CGRectMake(lineViewMargin, CGRectGetMaxY(self.actorLabel.frame) + 9, width - lineViewMargin *2, 20);
     
     self.lineView.frame = CGRectMake(lineViewMargin, CGRectGetMaxY(self.nicknameLabel.frame) + lineViewTop, width - lineViewMargin *2, 1);
-    
-    if (specialType) {
-        CGFloat cameraButtonLeft = isPad ? (width - buttonPadding) / 2 - buttonWidth : buttonPadding;
-        self.cameraButton.frame = CGRectMake(cameraButtonLeft, CGRectGetMaxY(self.lineView.frame) + buttonTop, buttonWidth, buttonHeight);
+        
+    NSMutableArray *buttonArray = [NSMutableArray arrayWithCapacity:6];
+    if (self.viewerType == PLVRoomUserTypeGuest) {
+        [buttonArray addObject:self.fullScreenButton];
+    } else if(self.viewerType == PLVRoomUserTypeTeacher) {
+        [buttonArray addObjectsFromArray:@[self.cameraButton,
+                                           self.micphoneButton]];
+        if (specialType) {
+            [buttonArray addObject:self.authSpeakerButton];
+        }
+        
+        [buttonArray addObject:self.fullScreenButton];
 
-        self.micphoneButton.frame = CGRectMake(CGRectGetMaxX(self.cameraButton.frame) + buttonPadding, self.cameraButton.frame.origin.y, buttonWidth, buttonHeight);
-        
-    } else {
-        self.micphoneButton.frame = CGRectMake((width - buttonWidth) / 2, CGRectGetMaxY(self.lineView.frame) + buttonTop, buttonWidth, buttonHeight);
-        
-        self.cameraButton.frame = CGRectMake(CGRectGetMinX(self.micphoneButton.frame) - buttonPadding - buttonWidth, self.micphoneButton.frame.origin.y, buttonWidth, buttonHeight);
-        
-        self.stopLinkMicButton.frame = CGRectMake(CGRectGetMinX(self.micphoneButton.frame) + buttonPadding + buttonWidth, self.micphoneButton.frame.origin.y, buttonWidth, buttonHeight);
+        if (!specialType) {
+            [buttonArray addObject:self.stopLinkMicButton];
+        }
     }
     
-    [self setButtonInsetsWithArray:@[self.cameraButton,
-                                     self.micphoneButton,
-                                     self.stopLinkMicButton]];
+    [self setButtonFrameWithArray:buttonArray];
+    [self setButtonInsetsWithArray:buttonArray];
 }
 
 #pragma mark - [ Public Method ]
@@ -118,17 +117,20 @@
     self.user = user;
 
     BOOL specialType = [self isSpecialIdentityWithUserType:user.userType];
-    
+    BOOL isTeacher = self.viewerType == PLVRoomUserTypeTeacher;
     NSString *imageName = specialType ? @"plvsa_member_teacher_avatar" : @"plvsa_member_student_avatar";
     UIImage *placeholder = [PLVSAUtils imageForMemberResource:imageName];
     [self.headerImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarPic]
                             placeholderImage:placeholder];
-    
     if (specialType) {
         self.actorLabel.text = user.actor;
     }
+    
     self.actorLabel.hidden = !specialType && user.actor;
-    self.stopLinkMicButton.hidden = specialType;
+    self.cameraButton.hidden = !isTeacher;
+    self.micphoneButton.hidden = !isTeacher;
+    self.authSpeakerButton.hidden = !isTeacher;
+    self.stopLinkMicButton.hidden = specialType || !isTeacher;
     
     NSString *colorHexString = [self actorBgColorHexStringWithUserType:user.userType];
     if (colorHexString && !self.actorLabel.hidden) {
@@ -230,6 +232,34 @@
     return _micphoneButton;
 }
 
+- (UIButton *)authSpeakerButton {
+    if (!_authSpeakerButton) {
+        _authSpeakerButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _authSpeakerButton.titleLabel.font = [UIFont systemFontOfSize:14];
+        _authSpeakerButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _authSpeakerButton.titleLabel.numberOfLines = 0;
+        _authSpeakerButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_authSpeakerButton setTitle:@"授予主讲权限" forState:UIControlStateNormal];
+        [_authSpeakerButton setTitle:@"移除主讲权限" forState:UIControlStateSelected];
+        [_authSpeakerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_authspeaker"] forState:UIControlStateNormal];
+        [_authSpeakerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_authspeaker"] forState:UIControlStateSelected];
+        [_authSpeakerButton addTarget:self action:@selector(authSpeakerButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _authSpeakerButton;
+}
+
+- (UIButton *)fullScreenButton {
+    if (!_fullScreenButton) {
+        _fullScreenButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _fullScreenButton.titleLabel.font = [UIFont systemFontOfSize:14];
+        _fullScreenButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_fullScreenButton setTitle:@"全屏" forState:UIControlStateNormal];
+        [_fullScreenButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_fullscreen_open"] forState:UIControlStateNormal];
+        [_fullScreenButton addTarget:self action:@selector(fullScreenButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _fullScreenButton;
+}
+
 - (UIButton *)stopLinkMicButton {
     if (!_stopLinkMicButton) {
         _stopLinkMicButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -242,24 +272,73 @@
     return _stopLinkMicButton;
 }
 
+- (PLVRoomUserType)viewerType{
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+}
+
 #pragma mark UI
 
 - (void)setButtonInsetsWithArray:(NSArray *)buttonArray {
     for (int i = 0; i < buttonArray.count ; i++) {
         UIButton *but = buttonArray[i];
         CGFloat padding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 8 : 5;
-        [but setTitleEdgeInsets:
-               UIEdgeInsetsMake(but.frame.size.height/2 + padding,
-                                -but.imageView.frame.size.width,
-                                0,
-                                0)];
-
+        CGFloat imageSizeHeight = 30;
+        CGFloat imageInsetsTop = but.frame.size.height - but.titleLabel.intrinsicContentSize.height - imageSizeHeight - padding * 2;
+        NSAttributedString *attr = [[NSAttributedString alloc] initWithString:but.titleLabel.text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:14]}];
+        CGSize titleSize = [attr boundingRectWithSize:CGSizeMake(but.frame.size.width, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+        
         [but setImageEdgeInsets:
          UIEdgeInsetsMake(
-                          0,
+                          - imageInsetsTop,
                           (but.frame.size.width-but.imageView.frame.size.width)/2,
                           but.titleLabel.intrinsicContentSize.height,
                           (but.frame.size.width-but.imageView.frame.size.width)/2)];
+        
+        [but setTitleEdgeInsets:
+               UIEdgeInsetsMake(imageSizeHeight + padding * 2,
+                                -but.imageView.frame.size.width,
+                                but.titleLabel.intrinsicContentSize.height * 2 - titleSize.height,
+                                0)];
+    }
+}
+
+- (void)setButtonFrameWithArray:(NSArray *)buttonArray {
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+
+    CGFloat lineButtonCount = isLandscape ? 3 : (buttonArray.count == 1 ? (isPad ? 6 : 4) : MIN(buttonArray.count, (isPad ? 6 : 4)));
+    CGFloat width = self.contentView.frame.size.width;
+    CGFloat buttonWidth = 60;
+    CGFloat buttonHeight = 75;
+    CGFloat buttonPadding = (width - buttonWidth * lineButtonCount) / (lineButtonCount + 1);
+    CGFloat buttonTop = self.bounds.size.height > 667 ? 32 : 18;
+    if (isPad) {
+        buttonPadding = 0.28 * (width - buttonWidth * lineButtonCount) / (lineButtonCount - 1);
+    }
+    
+    CGFloat cameraButtonLeft = isPad ? (width - buttonPadding * (lineButtonCount - 1) - buttonWidth * lineButtonCount)/2 : buttonPadding;
+    CGFloat buttonOriginX = cameraButtonLeft;
+    CGFloat buttonOriginY = CGRectGetMaxY(self.lineView.frame) + buttonTop;
+    for (int i = 0; i < buttonArray.count ; i++) {
+        UIButton *button = buttonArray[i];
+        if (i != 0) {
+            if (isLandscape) {
+                if (i%3 == 0) {
+                    buttonOriginX = cameraButtonLeft;
+                    buttonOriginY += (buttonHeight + buttonTop);
+                } else {
+                    buttonOriginX +=(buttonWidth + buttonPadding);
+                }
+            } else {
+                if (!isPad && i%4 == 0) {
+                    buttonOriginX = cameraButtonLeft;
+                    buttonOriginY += (buttonHeight + buttonTop);
+                } else {
+                    buttonOriginX +=(buttonWidth + buttonPadding);
+                }
+            }
+        }
+        button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
     }
 }
 
@@ -274,7 +353,6 @@
         return NO;
     }
 }
-
 
 - (NSString *)actorBgColorHexStringWithUserType:(PLVSocketUserType)userType {
     NSString *colorHexString = nil;
@@ -301,6 +379,7 @@
 - (void)refreshButtonState {
     self.cameraButton.selected = self.user.currentCameraOpen;
     self.micphoneButton.selected = self.user.currentMicOpen;
+    self.authSpeakerButton.selected = self.user.isRealMainSpeaker;
 }
 
 - (void)addUserInfoChangedBlock:(PLVLinkMicOnlineUser *)user{
@@ -317,6 +396,10 @@
             weakSelf.micphoneButton.selected = onlineUser.currentMicOpen;
             weakSelf.micphoneButton.enabled = YES;
         })
+    } blockKey:self];
+    
+    [user addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        weakSelf.authSpeakerButton.selected = onlineUser.isRealMainSpeaker;
     } blockKey:self];
     
     [user addWillDeallocBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
@@ -340,6 +423,19 @@
     self.micphoneButton.selected = !self.micphoneButton.selected;
     [self.user wantOpenUserMic:self.micphoneButton.selected];
     self.micphoneButton.enabled = NO;
+}
+
+- (void)authSpeakerButtonAction {
+    if (self.user.userType != PLVSocketUserTypeGuest) {
+        return;
+    }
+    
+    self.authSpeakerButtonClickBlock ? self.authSpeakerButtonClickBlock(self.user, !self.authSpeakerButton.selected) : nil;    
+}
+
+- (void)fullScreenButtonAction {
+    [self dismiss];
+    self.fullScreenButtonClickBlock ? self.fullScreenButtonClickBlock(self.user) : nil;
 }
 
 - (void)stopLinkMicButtonAction {

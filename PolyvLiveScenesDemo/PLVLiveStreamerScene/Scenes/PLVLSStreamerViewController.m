@@ -78,13 +78,15 @@ PLVMemberPresenterDelegate
 - (instancetype)init {
     self = [super init];
     if (self) {
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        PLVRoomUser *roomUser = roomData.roomUser;
-
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
         // 启动聊天室管理器
         [[PLVLSChatroomViewModel sharedViewModel] setup];
+        
+        // 开启提醒消息，请求提醒消息历史记录
+        if ([PLVRoomDataManager sharedManager].roomData.menuInfo.remindEnabled) {
+            [[PLVLSChatroomViewModel sharedViewModel] loadRemindHistory];
+        }
         
         // 监听socket消息
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
@@ -132,7 +134,7 @@ PLVMemberPresenterDelegate
     self.linkMicAreaView.frame = CGRectMake(CGRectGetMaxX(self.documentAreaView.frame) + linkMicAreaViewLeftPadding, CGRectGetMaxY(self.statusAreaView.frame), linkMicAreaViewWidth, ducomentViewHeight);
         
     // 设置聊天室宽高
-    CGFloat chatroomAreaViewWidth = [UIScreen mainScreen].bounds.size.width * ([UIScreen mainScreen].bounds.size.width <= 667 ? 0.5 : 0.34); // 适配小屏输入框无法响应点击事件，chatroomAreaView内部适配聊天宽度
+    CGFloat chatroomAreaViewWidth = documentAreaViewWidth - 36 - linkMicAreaViewLeftPadding * 2; // 适配小屏输入框无法响应点击事件，chatroomAreaView内部适配聊天宽度
     CGFloat chatroomAreaViewHeigh = [UIScreen mainScreen].bounds.size.height * (isPad ? 0.28 : 0.42) + 44;
     
     self.chatroomAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, screenSize.height - PLVLSUtils.safeBottomPad - chatroomAreaViewHeigh, chatroomAreaViewWidth, chatroomAreaViewHeigh);
@@ -340,6 +342,8 @@ PLVMemberPresenterDelegate
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((self.streamerPresenter.classStarted ? 0.5 : 0) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [[PLVSocketManager sharedManager] logout];
     });
+    
+    [self.chatroomAreaView logout];
     
     [self dismissViewControllerAnimated:YES completion:nil];
 }
@@ -595,9 +599,9 @@ PLVMemberPresenterDelegate
     if (self.viewerType == PLVRoomUserTypeGuest) {
         PLVChannelLiveStreamState streamState = self.streamerPresenter.currentStreamState;
         if(streamState == PLVChannelLiveStreamState_Live){
-            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_TimeLabel | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_DocumentButton;
+            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_TimeLabel | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_WhiteboardButton | PLVLSStatusBarControls_DocumentButton;
         }else{
-            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_DocumentButton;
+            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_WhiteboardButton | PLVLSStatusBarControls_DocumentButton;
         }
     }
     return PLVLSStatusBarControls_All;
@@ -688,6 +692,11 @@ PLVMemberPresenterDelegate
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView changeFullScreen:(BOOL)isFullScreen {
     self.fullscreen = isFullScreen;
     [self documentFullscreen:self.fullscreen];
+    [self.chatroomAreaView documentChangeFullScreen:self.fullscreen];
+}
+
+- (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView didShowWhiteboardOrDocument:(BOOL)whiteboard {
+    [self.statusAreaView syncSelectedWhiteboardOrDocument:whiteboard];
 }
 
 #pragma mark - PLVSocketManager Protocol
@@ -747,6 +756,7 @@ PLVMemberPresenterDelegate
             })
         }
     }
+    self.chatroomAreaView.netState = connectStatus;
 }
 
 #pragma mark PLVMemberPresenterDelegate

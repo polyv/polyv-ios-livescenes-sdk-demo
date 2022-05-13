@@ -29,6 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 镜像 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeMirrorOpen:(BOOL)mirrorOpen;
 
+/// 点击 屏幕共享 按钮 触发回调
+- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeScreenShareOpen:(BOOL)screenShareOpen;
+
 /// 点击 闪光灯 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeFlashOpen:(BOOL)flashOpen;
 
@@ -63,8 +66,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前 全体禁言 当前是否开启
 @property (nonatomic, assign) BOOL closeRoom;
 
+/// 开始上课/结束上课
+/// @param start YES - 开始上课 NO - 结束上课
+- (void)startClass:(BOOL)start;
+
 /// 改变闪光灯按钮选中状态
 - (void)changeFlashButtonSelectedState:(BOOL)selectedState;
+
+/// 改变屏幕共享按钮选中状态
+- (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
 
 @end
 

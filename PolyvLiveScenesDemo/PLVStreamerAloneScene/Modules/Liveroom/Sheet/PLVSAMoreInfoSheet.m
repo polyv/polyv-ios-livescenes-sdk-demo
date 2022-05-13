@@ -21,12 +21,16 @@
 // UI
 @property (nonatomic, strong) UILabel *titleLabel; // 标题
 @property (nonatomic, strong) UIButton *cameraButton; // 摄像头
-@property (nonatomic, strong) UIButton *micphoneButton; // 麦克风
+@property (nonatomic, strong) UIButton *microphoneButton; // 麦克风
 @property (nonatomic, strong) UIButton *cameraReverseButton; // 翻转
 @property (nonatomic, strong) UIButton *mirrorButton; // 镜像
+@property (nonatomic, strong) UIButton *screenShareButton; // 屏幕共享
 @property (nonatomic, strong) UIButton *flashButton; // 闪光灯
 @property (nonatomic, strong) UIButton *cameraBitRateButton; // 摄像头清晰度
 @property (nonatomic, strong) UIButton *closeRoomButton; // 全体禁言
+
+// 数据
+@property (nonatomic, assign, readonly) PLVRoomUserType userType;
 
 @end
 
@@ -39,9 +43,10 @@
     if (self) {
         [self.contentView addSubview:self.titleLabel];
         [self.contentView addSubview:self.cameraButton];
-        [self.contentView addSubview:self.micphoneButton];
+        [self.contentView addSubview:self.microphoneButton];
         [self.contentView addSubview:self.cameraReverseButton];
         [self.contentView addSubview:self.mirrorButton];
+        [self.contentView addSubview:self.screenShareButton];
         [self.contentView addSubview:self.flashButton];
         [self.contentView addSubview:self.cameraBitRateButton];
         [self.contentView addSubview:self.closeRoomButton];
@@ -57,18 +62,25 @@
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
-    CGFloat titleX = isPad ? 56 : (isLandscape ? 32 : 16);
+    CGFloat titleX = isLandscape ? 32 : (isPad ? 56 :16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
     NSMutableArray *buttonArray = [NSMutableArray arrayWithArray:@[self.cameraButton,
-                                                                   self.micphoneButton,
+                                                                   self.microphoneButton,
                                                                    self.cameraReverseButton,
-                                                                   self.mirrorButton,
-                                                                   self.flashButton,
-                                                                   self.cameraBitRateButton]];
-    self.closeRoomButton.hidden = YES;
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType != PLVRoomUserTypeGuest) {
-        self.closeRoomButton.hidden = NO;
+                                                                   self.mirrorButton]];
+    
+    // 屏幕共享
+    self.screenShareButton.hidden = ![self canScreenShare];
+    if ([self canScreenShare]) {
+        [buttonArray addObject:self.screenShareButton];
+    }
+    
+    [buttonArray addObjectsFromArray:@[self.flashButton,
+                                       self.cameraBitRateButton]];
+    // 全体禁言
+    self.closeRoomButton.hidden = ![self canManagerCloseRoom];
+    if ([self canManagerCloseRoom]) {
         [buttonArray addObject:self.closeRoomButton];
     }
     
@@ -78,15 +90,27 @@
 
 
 #pragma mark - [ Public Method ]
+- (void)startClass:(BOOL)start {
+    self.screenShareButton.enabled = start;
+    [self changeScreenShareButtonSelectedState:NO];
+}
+
 - (void)changeFlashButtonSelectedState:(BOOL)selectedState{
     self.flashButton.selected = selectedState;
     _currentCameraFlash = self.flashButton.selected;
 }
 
+- (void)changeScreenShareButtonSelectedState:(BOOL)selectedState {
+    self.screenShareButton.selected = selectedState;
+    self.cameraButton.enabled = !selectedState;
+    self.cameraReverseButton.enabled = !selectedState;
+    self.mirrorButton.enabled = !selectedState;
+}
+
 #pragma mark 当前用户配置
 - (void)setCurrentMicOpen:(BOOL)currentMicOpen {
     _currentMicOpen = currentMicOpen;
-    self.micphoneButton.selected = currentMicOpen;
+    self.microphoneButton.selected = currentMicOpen;
 }
 
 - (void)setStreamQuality:(PLVResolutionType)streamQuality {
@@ -148,24 +172,25 @@
         [_cameraButton setTitle:@"摄像头" forState:UIControlStateSelected];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_close"] forState:UIControlStateNormal];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_open"] forState:UIControlStateSelected];
+        [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_disabled"] forState:UIControlStateSelected|UIControlStateDisabled];
         [_cameraButton addTarget:self action:@selector(cameraButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     
     return _cameraButton;
 }
 
-- (UIButton *)micphoneButton {
-    if (!_micphoneButton) {
-        _micphoneButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        _micphoneButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        _micphoneButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_micphoneButton setTitle:@"麦克风" forState:UIControlStateNormal];
-        [_micphoneButton setTitle:@"麦克风" forState:UIControlStateSelected];
-        [_micphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
-        [_micphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
-        [_micphoneButton addTarget:self action:@selector(micphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
+- (UIButton *)microphoneButton {
+    if (!_microphoneButton) {
+        _microphoneButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _microphoneButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _microphoneButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_microphoneButton setTitle:@"麦克风" forState:UIControlStateNormal];
+        [_microphoneButton setTitle:@"麦克风" forState:UIControlStateSelected];
+        [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
+        [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
+        [_microphoneButton addTarget:self action:@selector(micphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
-    return _micphoneButton;
+    return _microphoneButton;
 }
 
 - (UIButton *)cameraReverseButton {
@@ -188,11 +213,26 @@
         [_mirrorButton setTitle:@"镜像" forState:UIControlStateNormal];
         [_mirrorButton setTitle:@"镜像" forState:UIControlStateSelected];
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorClose"] forState:UIControlStateNormal];
-
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorOpen"] forState:UIControlStateSelected];
         [_mirrorButton addTarget:self action:@selector(mirrorButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _mirrorButton;
+}
+
+- (UIButton *)screenShareButton {
+    if (!_screenShareButton) {
+        _screenShareButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _screenShareButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _screenShareButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_screenShareButton setTitle:@"屏幕共享" forState:UIControlStateNormal];
+        [_screenShareButton setTitle:@"结束共享" forState:UIControlStateSelected];
+        [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_open"] forState:UIControlStateNormal];
+        [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_close"] forState:UIControlStateSelected];
+        [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_disabled"] forState:UIControlStateDisabled];
+        [_screenShareButton addTarget:self action:@selector(screenShareButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _screenShareButton.enabled = NO;
+    }
+    return _screenShareButton;
 }
 
 - (UIButton *)flashButton {
@@ -230,8 +270,9 @@
         _closeRoomButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         _closeRoomButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        NSString *normalTitle = isPad ? @"开启全体禁言" : @"开启全\n体禁言";
-        NSString *selectedTitle = isPad ? @"取消全体禁言" : @"取消全\n体禁言";
+        BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+        NSString *normalTitle = isPad && !isLandscape ? @"开启全体禁言" : @"开启全\n体禁言";
+        NSString *selectedTitle = isPad && !isLandscape ? @"取消全体禁言" : @"取消全\n体禁言";
         [_closeRoomButton setTitle:normalTitle forState:UIControlStateNormal];
         [_closeRoomButton setTitle:selectedTitle forState:UIControlStateSelected];
         [_closeRoomButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_allmicphoneClose"] forState:UIControlStateNormal];
@@ -239,6 +280,10 @@
         [_closeRoomButton addTarget:self action:@selector(closeRoomButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _closeRoomButton;
+}
+
+- (PLVRoomUserType)userType{
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
 }
 
 #pragma mark setButtonFrame
@@ -261,7 +306,7 @@
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
     CGFloat titleLabelMaxY =  ((self.bounds.size.height > 667 || isLandscape) ? 32 : 18) + 18;
-    CGFloat buttonX = isLandscape ? 38 : 21.5;
+    CGFloat buttonX = isLandscape ? 38 : (isPad ? 56 : 21.5);
     CGFloat buttonY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : titleLabelMaxY + 10;
     CGFloat buttonImageHeight = 28;
     CGFloat buttonWidth = [self getMaxButtonWidthWithArray:buttonArray];
@@ -274,9 +319,7 @@
     }
     CGFloat margin = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
     
-    if (isPad) {
-        buttonWidth = 88;
-        buttonX = isLandscape ? (self.contentView.bounds.size.width -buttonWidth) / 2:(self.bounds.size.width - buttonWidth * 7) / 2;
+    if (isPad && !isLandscape) {
         buttonY = CGRectGetMaxY(self.titleLabel.frame) + 24;
         padding = 0;
         if (buttonX < 0) {
@@ -296,10 +339,8 @@
         
         // 换行
         if (isLandscape) {
-            if (isPad) {
-                buttonY += buttonHeight + margin;
-            }else if (i == 3 || i == 6) {
-                buttonX = 43;
+            if (i == 3 || i == 6) {
+                buttonX = isLandscape ? 38 : 21.5;;
                 buttonY += buttonHeight + margin;
             }
         } else {
@@ -312,9 +353,7 @@
         // frame
         button.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
         // buttonX
-        if (!(isPad && isLandscape)) {
-            buttonX += buttonWidth + padding;
-        }
+        buttonX += buttonWidth + padding;
     }
 }
 
@@ -385,6 +424,26 @@
     [self.cameraBitRateButton setTitle:title forState:UIControlStateNormal];
     [self.cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:imageName] forState:UIControlStateNormal];
 }
+
+/// 讲师、助教、管理员可以禁言操作
+- (BOOL)canManagerCloseRoom {
+    if (self.userType == PLVRoomUserTypeTeacher ||
+        self.userType == PLVRoomUserTypeAssistant ||
+        self.userType == PLVRoomUserTypeManager) {
+        return YES;
+    }
+    return NO;
+}
+
+/// 讲师和嘉宾可以进行屏幕共享操作
+- (BOOL)canScreenShare {
+    if (![[PLVRoomDataManager sharedManager].roomData.menuInfo.rtcType isEqualToString:@"agora"] &&
+        (self.userType == PLVRoomUserTypeTeacher || self.userType == PLVRoomUserTypeGuest)) {
+        return YES;
+    }
+    return NO;
+}
+
 #pragma mark - Event
 
 #pragma mark Action
@@ -399,7 +458,7 @@
 - (void)micphoneButtonAction {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeMicOpen:)]) {
-        [self.delegate moreInfoSheet:self didChangeMicOpen:!self.micphoneButton.selected];
+        [self.delegate moreInfoSheet:self didChangeMicOpen:!self.microphoneButton.selected];
     }
 }
 
@@ -426,6 +485,14 @@
         [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeMirrorOpen:)]) {
         [self.delegate moreInfoSheet:self didChangeMirrorOpen:!self.mirrorButton.selected];
         self.currentCameraMirror = !self.mirrorButton.selected;
+    }
+}
+
+- (void)screenShareButtonAction {
+    [self changeScreenShareButtonSelectedState:!self.screenShareButton.isSelected];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeScreenShareOpen:)]) {
+        [self.delegate moreInfoSheet:self didChangeScreenShareOpen:self.screenShareButton.isSelected];
     }
 }
 
@@ -456,6 +523,5 @@
         [self.delegate moreInfoSheet:self didChangeCloseRoom:self.closeRoomButton.selected];
     }
 }
-
 
 @end

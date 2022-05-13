@@ -35,6 +35,10 @@ typedef void (^PLVLSCollectionViewDidSelectBlock)(NSInteger index);
 ///键盘的图片表情
 @property (nonatomic, strong) NSArray *imageEmotions;
 
+/// 初始化
+/// @param remindMsg YES:提醒消息 NO:公屏消息
+- (instancetype)initWithRemindMsg:(BOOL)remindMsg;
+
 - (void)sendButtonEnable:(BOOL)enable;
 
 @end

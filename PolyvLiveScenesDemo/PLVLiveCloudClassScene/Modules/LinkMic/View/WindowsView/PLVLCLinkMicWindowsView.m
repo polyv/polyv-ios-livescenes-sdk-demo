@@ -44,6 +44,8 @@ UICollectionViewDelegate
 @property (nonatomic, weak) UIView * externalView; // 外部视图 (正在被显示在 PLVLCLinkMicWindowsView 窗口列表中的外部视图；弱引用)
 @property (nonatomic, readonly) UICollectionViewFlowLayout * collectionViewLayout; // 集合视图的布局
 
+@property (nonatomic, strong) UIImageView * logoImageView;
+
 /// view hierarchy
 ///
 /// (PLVLCLinkMicWindowsView) self
@@ -402,6 +404,9 @@ UICollectionViewDelegate
         };
     }
     [linkMicUserModel.canvasView logoViewShow:linkMicUserModel.isRealMainSpeaker]; //真实主讲(即第一画面) 显示播放器LOGO
+    if (linkMicUserModel.isRealMainSpeaker) {
+        self.logoImageView = linkMicUserModel.canvasView.logoImageView;
+    }
 }
 
 // 设置 连麦用户Model的 ’即将销毁Block‘ Block

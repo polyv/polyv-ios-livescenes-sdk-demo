@@ -12,7 +12,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol PLVSALinkMicWindowCellDelegate;
+
 @interface PLVSALinkMicWindowCell : UICollectionViewCell
+
+@property (nonatomic, weak) id <PLVSALinkMicWindowCellDelegate> delegate;
 
 #pragma mark 方法
 
@@ -20,6 +24,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param onlineUser 数据模型
 /// @param hide 是否需要隐藏昵称，同时当摄像头关闭时，是否要显示canvasView视图
 - (void)setUserModel:(PLVLinkMicOnlineUser *)onlineUser hideCanvasViewWhenCameraClose:(BOOL)hide;
+
+@end
+
+@protocol PLVSALinkMicWindowCellDelegate <NSObject>
+
+- (void)linkMicWindowCellDidSelectCell:(PLVSALinkMicWindowCell *)collectionViewCell;
+
+- (void)linkMicWindowCell:(PLVSALinkMicWindowCell *)collectionViewCell
+              linkMicUser:(PLVLinkMicOnlineUser *)onlineUser
+            didFullScreen:(BOOL)fullScreen;
+
+- (void)linkMicWindowCell:(PLVSALinkMicWindowCell *)collectionViewCell didScreenShareForRemoteUser:(PLVLinkMicOnlineUser *)onlineUser;
 
 @end
 

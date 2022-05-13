@@ -35,7 +35,7 @@ static CGFloat kAlertFontSize = 14.0; // 提示文本、按钮标题字体大小
 
 /// alert 尺寸预定义
 static CGFloat kAlertWidth = 260.0; // 弹窗宽度
-static CGFloat kAlertInnerLeftAndRightGap = 24.0; // 弹窗内部控件与弹窗边界的左右间距
+static CGFloat kAlertInnerLeftAndRightGap = 22.0; // 弹窗内部控件与弹窗边界的左右间距
 static CGFloat kAlertButtonHeight = 36.0; // 按钮的高度
 
 

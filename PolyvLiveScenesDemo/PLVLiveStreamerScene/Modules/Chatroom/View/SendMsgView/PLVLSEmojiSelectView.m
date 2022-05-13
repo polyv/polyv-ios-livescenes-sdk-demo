@@ -41,15 +41,18 @@ static CGFloat kLSEmojiToolHeight = 40; //切换表情工具栏高度
 
 @property (nonatomic, assign) CGFloat buttonCornerRadius;
 
+@property (nonatomic, assign, getter=isRemindMsg) BOOL remindMsg; // 是否为提醒消息
+
 @end
 
 @implementation PLVLSEmojiSelectView
 
-- (instancetype)init {
+- (instancetype)initWithRemindMsg:(BOOL)remindMsg {
     self = [super init];
     if (self) {
         //手机横屏开播，bottom一定会有安全距离
         _buttonCornerRadius = 4;
+        self.remindMsg = remindMsg;
         [self setupUI];
         self.faces = [PLVEmoticonManager sharedManager].models;
         self.defaultEmojiSelectView.faces = self.faces;
@@ -85,7 +88,8 @@ static CGFloat kLSEmojiToolHeight = 40; //切换表情工具栏高度
     CGSize contentViewSize = CGSizeMake(CGRectGetWidth(self.scrollView.bounds), CGRectGetHeight(self.scrollView.bounds));
     
     //图片表情需要更新的布局
-    self.scrollView.contentSize = CGSizeMake(contentViewSize.width * 2, contentViewSize.height);
+    NSInteger maxIndex = self.remindMsg ? 1 : 2;
+    self.scrollView.contentSize = CGSizeMake(contentViewSize.width * maxIndex, contentViewSize.height);
     
     //切换表情的ScrollView
     self.emojiToolScrollView.frame = CGRectMake(0, CGRectGetMaxY(self.scrollView.frame), CGRectGetWidth(self.bounds), kLSEmojiToolHeight);
@@ -162,7 +166,8 @@ static CGFloat kLSEmojiToolHeight = 40; //切换表情工具栏高度
         }
         _emojiToolScrollView.pagingEnabled = YES;
         _emojiToolScrollView.alwaysBounceHorizontal = YES;
-        for (NSInteger index = 0; index < 2; index ++) {
+        NSInteger maxIndex = self.isRemindMsg ? 1 : 2;
+        for (NSInteger index = 0; index < maxIndex; index ++) {
             UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
             button.bounds = CGRectMake(0, 0, 60, kLSEmojiToolHeight);
             button.tag = 10000 + index;

@@ -145,6 +145,8 @@
     [self contentBackgroudViewAddView:rtcCanvasView];
     
     self.layoutType = PLVLCLinkMicWindowCellLayoutType_Default;
+    
+    self.userModel.canvasView.logoImageView.userInteractionEnabled = NO;
 }
 
 /// 切换至 显示外部内容视图
@@ -156,6 +158,8 @@
     [self contentBackgroudViewAddView:externalContentView];
 
     self.layoutType = PLVLCLinkMicWindowCellLayoutType_External;
+    
+    self.userModel.canvasView.logoImageView.userInteractionEnabled = YES;
 }
 
 

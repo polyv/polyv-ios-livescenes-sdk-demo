@@ -25,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVLSChatroomAreaViewProtocol> delegate;
 
+/// 网络状态，发送消息前判断网络是否异常
+@property (nonatomic, assign) NSInteger netState;
+
 /// 麦克风按钮状态修改
 - (void)microphoneButtonOpen:(BOOL)open;
 
@@ -33,6 +36,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 切换前后置摄像头按钮状态修改
 - (void)cameraSwitchButtonFront:(BOOL)open;
+
+/// 退出登录
+- (void)logout;
+
+/// 文档切换全屏状态
+/// @param fullScreen 是否全屏
+- (void)documentChangeFullScreen:(BOOL)fullScreen;
 
 @end
 

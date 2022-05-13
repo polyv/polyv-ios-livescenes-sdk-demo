@@ -543,8 +543,10 @@ PLVLinkMicManagerDelegate
         return;
     }
     
+    linkMicUser.subscribeStreamType = linkMicUser.subscribeStreamType | streamSourceType;
+    
     PLVBRTCSubscribeStreamMediaType mediaType = PLVBRTCSubscribeStreamMediaType_Audio | PLVBRTCSubscribeStreamMediaType_Video;
-    if ([self teacherOrGroupLeaderWithLinkMicUser:linkMicUser]) { // 讲师身份\讲师不在时的组长身份，使用单一的流订阅方式
+    if ([self teacherOrGroupLeaderWithLinkMicUser:linkMicUser]) { // 讲师身份\组长身份，使用单一的流订阅方式
         if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Screen) { // 屏幕流应订阅在 rtcScreenStreamView 视图上
             plv_dispatch_main_async_safe(^{
                 if (self.rtcScreenStreamView &&
@@ -955,7 +957,9 @@ PLVLinkMicManagerDelegate
                         [needRemoveLinkMicIdArray addObject:linkMicUser.linkMicUserId];
                     }
                 } else {
-                    [needRemoveLinkMicIdArray addObject:linkMicUser.linkMicUserId];
+                    if (![self groupLeaderWithLinkMicUserId:linkMicUser.linkMicUserId]) {
+                        [needRemoveLinkMicIdArray addObject:linkMicUser.linkMicUserId];
+                    }
                 }
             }
         }
@@ -989,7 +993,7 @@ PLVLinkMicManagerDelegate
             
             // 订阅流
             if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Unknown) {
-                if ([self teacherOrGroupLeaderWithLinkMicUser:linkMicUser]) { // 讲师身份\讲师不在时的组长身份
+                if ([self teacherOrGroupLeaderWithLinkMicUser:linkMicUser]) { // 讲师身份\组长身份
                     linkMicUser.streamLeaveRoom = YES; //  未收到讲师的流加入教室，标注streamLeaveRoom为YES用于UI显示讲师摄像头流不在教室时的占位图
                 }
                 // 表示讲师、学生第一次订阅流
@@ -1280,7 +1284,7 @@ PLVLinkMicManagerDelegate
     NSString *linkMicId = PLV_SafeStringForDictKey(dict, @"userId");
     // 把相应用户从连麦列表中移除
     BOOL exist = [self removeLinkMicUserWithLinkMicId:linkMicId];
-    if (exist) {
+    if (exist && ![self groupLeaderWithLinkMicUserId:linkMicId]) { // 不是组长移除订阅
         [self unsubscribeStreamWithRTCUserId:linkMicId];
     }
 }
@@ -1737,13 +1741,21 @@ PLVLinkMicManagerDelegate
 }
 
 #pragma mark 身份判断
-/// 讲师身份\讲师不在时的组长身份
+/// 讲师身份\组长身份
 - (BOOL)teacherOrGroupLeaderWithLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser {
     BOOL isAddUserTeacher = linkMicUser.userType == PLVBSocketUserTypeTeacher;
     PLVHiClassManager *manager = [PLVHiClassManager sharedManager];
     BOOL isAddUserGroupLeader = (manager.groupState == PLVHiClassGroupStateInGroup && [linkMicUser.userId isEqualToString:manager.groupLeaderId]);
-    BOOL isTeacherInGroup = manager.teacherInGroup;
-    return (isAddUserTeacher || (isAddUserGroupLeader && !isTeacherInGroup));
+    return (isAddUserTeacher || isAddUserGroupLeader);
+}
+
+- (BOOL)groupLeaderWithLinkMicUserId:(NSString *)userId {
+    if (![PLVFdUtil checkStringUseable:userId]) {
+        return NO;
+    }
+    PLVHiClassManager *manager = [PLVHiClassManager sharedManager];
+    BOOL isAddUserGroupLeader = (manager.groupState == PLVHiClassGroupStateInGroup && [userId isEqualToString:manager.groupLeaderId]);
+    return isAddUserGroupLeader;
 }
 
 #pragma mark - [ Event ]
@@ -1892,8 +1904,12 @@ PLVLinkMicManagerDelegate
         linkMicUser.streamLeaveRoom = NO; // 若讲师的流加入教室，标注streamLeaveRoom为NO用于隐藏讲师流不在教室时的占位图
         BOOL add = [self addLinkMicUser:linkMicUser];
         if (add ||
-            [self teacherOrGroupLeaderWithLinkMicUser:linkMicUser]) { // 讲师身份\讲师不在时的组长身份同时开启了屏幕流、摄像头流
+            ([self teacherOrGroupLeaderWithLinkMicUser:linkMicUser] &&
+             (linkMicUser.subscribeStreamType & streamSourceType) == 0)) { // 讲师身份\组长身份同时开启了屏幕流、摄像头流
             [self subscribeStreamWithLinkMicUser:linkMicUser streamSourceType:streamSourceType];
+        }
+        if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Screen) {
+            [self notifyDidTeacherScreenStreamRenderd];
         }
     } else {
         if (streamSourceType == PLVBRTCSubscribeStreamSourceType_Screen) {
@@ -1902,6 +1918,7 @@ PLVLinkMicManagerDelegate
             [self recordUnsubscribeCameraStreamWithLinkMicId:userRTCId];
         }
     }
+    [self notifyLinkMicUserArrayChanged];
 }
 
 - (void)plvLinkMicManager:(PLVLinkMicManager *)manager streamLeaveRoom:(PLVBRTCSubscribeStreamSourceType)streamSourceType userRTCId:(NSString *)userRTCId {
@@ -1911,10 +1928,10 @@ PLVLinkMicManagerDelegate
         if (!linkMicUser) {
             return;
         }
-        if (linkMicUser.userType == PLVBSocketUserTypeTeacher ||
-            ([PLVHiClassManager sharedManager].groupState == PLVHiClassGroupStateInGroup && linkMicUser.groupLeader)) {
+        if ([self groupLeaderWithLinkMicUserId:userRTCId]) {
             plv_dispatch_main_async_safe(^{
                 [self.linkMicManager unsubscribeStreamWithRTCUserId:userRTCId subscribeMode:PLVBRTCSubscribeStreamSubscribeMode_Screen];
+                linkMicUser.subscribeStreamType &= ~ PLVBRTCSubscribeStreamSubscribeMode_Screen;
                 [self notifyDidTeacherScreenStreamRemoved];
             })
         }
@@ -1922,6 +1939,17 @@ PLVLinkMicManagerDelegate
         [self removeRecordUnsubscribeCameraStreamWihtLinkMicId:userRTCId];
         if ([userRTCId isEqualToString:self.teacherLinkMicUser.linkMicUserId]) {
             [self removeLinkMicUserWithLinkMicId:userRTCId];
+        } else {
+            if ([self groupLeaderWithLinkMicUserId:userRTCId]) { // 组长
+                PLVLinkMicOnlineUser *linkMicUser = [self linkMicUserWithLinkMicId:userRTCId];
+                if (!linkMicUser) {
+                    return;
+                }
+                plv_dispatch_main_async_safe(^{
+                    [self.linkMicManager unsubscribeStreamWithRTCUserId:userRTCId subscribeMode:PLVBRTCSubscribeStreamSubscribeMode_Camera];
+                    linkMicUser.subscribeStreamType &= ~ PLVBRTCSubscribeStreamSubscribeMode_Camera;
+                })
+            }
         }
     }
 }

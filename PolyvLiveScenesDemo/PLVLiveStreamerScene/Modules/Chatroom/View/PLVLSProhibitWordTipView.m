@@ -72,17 +72,17 @@
 /// 显示视图
 - (void)show {
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dismiss) object:nil];
-
     [self performSelector:@selector(dismiss) withObject:nil afterDelay:3.0];
 }
 
 /// 关闭menu
 - (void)dismiss {
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dismiss) object:nil];
-    [self removeFromSuperview];
-    if (self.dismissBlock) {
+    if (self.dismissBlock &&
+        self.superview) {
         self.dismissBlock();
     }
+    [self removeFromSuperview];
 }
 
 #pragma mark - [ Private Method ]

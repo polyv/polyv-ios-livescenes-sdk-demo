@@ -151,6 +151,11 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 /// @param channelId 频道Id
 - (void)pptStartWithVideoId:(NSString *)videoId channelId:(NSString *)channelId;
 
+/// 【观看暂存时】加载暂存PPT
+/// @param fileId 暂存视频的fileId
+/// @param channelId 频道Id
+- (void)pptStartWithFileId:(NSString *)fileId channelId:(NSString *)channelId;
+
 #pragma mark - 推流专用方法(scene == PLVDocumentViewSceneStreamer 时方生效）
 
 /// 设置画板是否处于可绘制状态

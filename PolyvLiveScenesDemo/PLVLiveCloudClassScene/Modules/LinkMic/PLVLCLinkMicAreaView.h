@@ -56,6 +56,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) id <PLVLCLinkMicControlBarProtocol> currentControlBar;
 
+@property (nonatomic, strong, readonly) UIImageView * logoImageView; // 播放器LOGO图片
+
 
 #pragma mark - [ 方法 ]
 /// 连麦区域视图 切换至 ”显示/隐藏“ 状态

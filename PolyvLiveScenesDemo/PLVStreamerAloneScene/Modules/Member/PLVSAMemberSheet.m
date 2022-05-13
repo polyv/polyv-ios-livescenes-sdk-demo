@@ -184,6 +184,31 @@ PLVSAMemberCellDelegate
     }];
 }
 
+- (void)authUserSpeakerWithUser:(PLVChatUser *)user auth:(BOOL)auth {
+    PLVLinkMicOnlineUser *speakerUser = nil;
+    if (auth) {
+        for (int i = 0; i < self.userList.count; i++) {
+            PLVChatUser *chatUser = self.userList[i];
+            if (chatUser.onlineUser.isRealMainSpeaker) {
+                speakerUser = chatUser.onlineUser;
+                break;
+            }
+        }
+    }
+    
+    if ((auth && speakerUser) ||
+        (!auth && user.onlineUser.currentScreenShareOpen)) {
+        NSString *titlePrefix = auth ? @"确定授予ta" : @"确定移除ta的";
+        NSString *message = auth ? @"当前已有主讲人，确定后将替换为新的主讲人" : @"移除后主讲人的屏幕共享将会自动结束";
+        NSString *alertTitle = [NSString stringWithFormat:@"%@主讲权限吗？", titlePrefix];
+        [PLVSAUtils showAlertWithTitle:alertTitle Message:message cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+            [user.onlineUser wantAuthUserSpeaker:auth];
+        }];
+    } else {
+        [user.onlineUser wantAuthUserSpeaker:auth];
+    }
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark UITableViewDataSource
@@ -237,6 +262,9 @@ PLVSAMemberCellDelegate
     };
     popup.bandUserBlock = ^(NSString * _Nonnull userId, NSString * _Nonnull userName, BOOL banned) {
         [weakSelf banUserWitUserId:userId userName:userName banned:banned];
+    };
+    popup.authUserBlock = ^(PLVChatUser * _Nonnull user, BOOL auth) {
+        [weakSelf authUserSpeakerWithUser:user auth:auth];
     };
     popup.didDismissBlock = ^{
         weakSelf.showingPopup = NO;

@@ -56,7 +56,6 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
     self.splashImageView.frame = self.bounds;
-    self.logoView.frame = self.bounds;
     self.pauseWatchNoDelayImageView.frame = self.bounds;
     
     CGFloat placeholderImageViewHeight = MIN(viewHeight , viewWidth)  * 0.485;
@@ -146,6 +145,9 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     [self.splashImageView sd_setImageWithURL:[NSURL URLWithString:urlString]];
 }
 
+- (UIImageView *)logoImageView {
+    return self.logoView.logoImageView;
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
@@ -187,8 +189,9 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
             logoParam.logoAlpha = channelInfo.logoOpacity;
             logoParam.logoWidthScale = 0.14;
             logoParam.logoHeightScale = 0.25;
+            logoParam.logoHref = channelInfo.logoHref;
             [_logoView insertLogoWithParam:logoParam];
-            [_logoView addAtView:self];
+            [self addSubview:_logoView];
         }
     }
     return _logoView;

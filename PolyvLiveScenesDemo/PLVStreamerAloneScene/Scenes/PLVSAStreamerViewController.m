@@ -19,6 +19,7 @@
 #import "PLVSAStreamerHomeView.h"
 #import "PLVSAStreamerFinishView.h"
 #import "PLVSAFinishStreamerSheet.h"
+#import "PLVBroadcastExtensionLauncher.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -698,6 +699,35 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
     [self.homeView updateHomeViewOnlineUserCount:onlineUserArray.count];
 }
 
+/// ‘主讲权限’ 发生变化
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
+           linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
+                 authSpeaker:(BOOL)authSpeaker {
+    if (onlineUser.userType == PLVSocketUserTypeTeacher) {
+        /// 讲师主讲权限变更不需要提醒
+        return;
+    }
+    
+    NSString *message = nil;
+    if (onlineUser.localUser) {
+        if (authSpeaker) {
+           message = @"你已被授予主讲权限";
+        } else if (self.streamerPresenter.localOnlineUser.currentScreenShareOpen) {
+            message = @"你已被移除主讲权限，屏幕共享已结束";
+            [self.streamerPresenter.localOnlineUser wantOpenScreenShare:NO];
+        } else {
+            message = @"你已被移除主讲权限";
+        }
+    } else {
+        if (authSpeaker) {
+           message = [NSString stringWithFormat:@"%@ 成为主讲人", onlineUser.nickname];
+        } else {
+            message = [NSString stringWithFormat:@"%@ 的主讲权限已被移除", onlineUser.nickname];
+        }
+    }
+    [PLVSAUtils showToastWithMessage:message inView:self.view];
+}
+
 /// ‘是否上课已开始’ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
       classStartedDidChanged:(BOOL)classStarted
@@ -761,6 +791,21 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 /// 本地用户的 ’摄像头前后置状态值‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
  localUserCameraFrontChanged:(BOOL)currentCameraFront {
+}
+
+/// 本地用户的 ’屏幕共享开关状态‘ 发生变化
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserScreenShareOpenChanged:(BOOL)currentScreenShareOpen {
+    if (self.streamerPresenter.localOnlineUser.isRealMainSpeaker ||
+        self.streamerPresenter.localOnlineUser.userType == PLVSocketUserTypeTeacher) {
+        NSString *message = currentScreenShareOpen ? @"其他人现在可以看到你的屏幕" : @"共享已结束";
+        [PLVSAUtils showToastWithMessage:message inView:self.view];
+    }
+    [self.homeView changeScreenShareButtonSelectedState:currentScreenShareOpen];
+}
+
+/// 远程用户的  ’屏幕共享开关状态‘  发生变化
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser screenShareOpenChanged:(BOOL)screenShareOpen {
+
 }
 
 /// 推流管理器 ‘发生错误’ 回调
@@ -834,6 +879,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (BOOL)classStartedInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
     return self.streamerPresenter.classStarted;
+}
+
+- (void)linkMicAreaView:(PLVSALinkMicAreaView *)areaView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen {
+
 }
 
 #pragma mark PLVSAStreamerSettingViewDelegate
@@ -912,6 +961,32 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)moreInfoSheet didChangeMirrorOpen:(BOOL)mirrorOpen{
     [self.streamerPresenter setupLocalVideoPreviewMirrorMode:(mirrorOpen ? PLVBRTCVideoMirrorMode_Auto : PLVBRTCVideoMirrorMode_Disabled)];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeScreenShareOpen:(BOOL)screenShareOpen {
+    if (self.viewerType != PLVRoomUserTypeTeacher &&
+        !self.streamerPresenter.localOnlineUser.isRealMainSpeaker) {
+        [PLVSAUtils showToastWithMessage:@"屏幕共享需讲师授权" inView:self.view];
+        [self.homeView changeScreenShareButtonSelectedState:NO];
+        return;
+    }
+    
+    if (@available(iOS 11.0, *)) {
+        [self.streamerPresenter openLocalUserScreenShare:screenShareOpen];
+        if (screenShareOpen) {
+            if (@available(iOS 12.0, *)) {
+                [[PLVBroadcastExtensionLauncher sharedInstance] launch];
+            } else {
+                NSString *message = @"请到控制中心，长按录制按钮，选择 POLYV屏幕共享 打开录制";
+                [PLVSAUtils showAlertWithMessage:message cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:@"我知道了" confirmActionBlock:nil];
+            }
+        }
+     } else {
+         if (screenShareOpen) {
+             [PLVSAUtils showToastWithMessage:@"屏幕共享功能需要iOS11以上系统支持" inView:self.view];
+             [self.homeView changeScreenShareButtonSelectedState:!screenShareOpen];
+         }
+     }
 }
 
 - (PLVResolutionType)streamerHomeViewCurrentQuality:(PLVSAStreamerHomeView *)homeView {

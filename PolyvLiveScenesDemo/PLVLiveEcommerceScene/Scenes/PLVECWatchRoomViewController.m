@@ -15,7 +15,7 @@
 #import "PLVECGoodsDetailViewController.h"
 #import "PLVBaseNavigationController.h"
 #import "PLVECFloatingWindow.h"
-#import "PLVInteractView.h"
+#import "PLVInteractGenericView.h"
 #import "PLVECLinkMicAreaView.h"
 
 // UI
@@ -48,7 +48,7 @@ PLVECLinkMicAreaViewDelegate
 #pragma mark 模块
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
 @property (nonatomic, strong) PLVECGoodsDetailViewController *goodsDetailVC; // 商品详情页控制器
-@property (nonatomic, strong) PLVInteractView *interactView; // 互动
+@property (nonatomic, strong) PLVInteractGenericView *interactView; // 互动
 @property (nonatomic, strong) PLVECLinkMicAreaView *linkMicAreaView; //连麦
 
 #pragma mark UI
@@ -277,10 +277,10 @@ PLVECLinkMicAreaViewDelegate
     return _liveDetailPageView;
 }
 
-- (PLVInteractView *)interactView{
+- (PLVInteractGenericView *)interactView{
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
     if (!_interactView && videoType == PLVChannelVideoType_Live) {
-        _interactView = [[PLVInteractView alloc] init];
+        _interactView = [[PLVInteractGenericView alloc] init];
         _interactView.frame = self.view.bounds;
         _interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [_interactView loadOnlineInteract];
@@ -318,6 +318,10 @@ PLVECLinkMicAreaViewDelegate
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVRoomDataManagerProtocol
+
+- (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
+    [self.interactView updateUserInfo];
+}
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
     [self.homePageView updateRoomInfoCount:onlineCount];
@@ -574,11 +578,11 @@ PLVECLinkMicAreaViewDelegate
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPause:(BOOL)pause {
-    /** 播放广告中，点击屏幕跳转广告链接 */
-    if (self.playerVC.advPlaying) {
-        if ([PLVFdUtil checkStringUseable:self.playerVC.advLinkUrl]) {
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.playerVC.advLinkUrl]];
-        }
+    /// 播放广告中点击暂停按钮跳转页面
+    NSString *advertHref = [PLVRoomDataManager sharedManager].roomData.channelInfo.advertHref;
+    if (self.playerVC.advertPlaying && [PLVFdUtil checkStringUseable:advertHref]) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:advertHref]];
+        [self.homePageView updatePlayerState:NO];
         return;
     }
     

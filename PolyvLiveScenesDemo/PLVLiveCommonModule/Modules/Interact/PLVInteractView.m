@@ -212,7 +212,10 @@ didReceiveInteractMessageString:(NSString *)msgString
 - (void)plvInteractApp:(PLVInteractBaseApp *)interactApp webviewShow:(BOOL)show{
     if (show) {
         self.hidden = NO; /// 出现互动视图
-        if (self.keepInteractViewTop) { [self.superview bringSubviewToFront:self]; } /// 移至最顶层
+        if (self.keepInteractViewTop) {
+            [[UIApplication sharedApplication].keyWindow addSubview:self];
+            [self.superview bringSubviewToFront:self];
+        } /// 移至最顶层
     }
 }
 

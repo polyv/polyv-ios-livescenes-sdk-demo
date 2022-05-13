@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 背景视图 (负责展示 占位图)
 @property (nonatomic, strong, readonly) UIImageView * placeholderImageView;
 
+@property (nonatomic, strong, readonly) UIImageView *logoImageView;
+
 #pragma mark - [ 方法 ]
 /// 添加 rtcview
 - (void)addRTCView:(UIView *)rtcView;

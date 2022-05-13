@@ -19,6 +19,7 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraFrontChangedBlock> * cameraFrontChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraTorchOpenChangedBlock> * cameraTorchOpenChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock> * currentSpeakerAuthChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserScreenShareOpenChangedBlock> * currentScreenShareOpenChanged_MultiReceiverMap;
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * userId;
@@ -43,6 +44,7 @@
 @property (nonatomic, assign) BOOL updateUserCurrentHandUpCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentStatusVoiceCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentSpeakerAuthCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentScreenShareOpenCallbackBefore;
 @property (nonatomic, assign) CGFloat currentVolume;
 @property (nonatomic, assign) BOOL currentMicOpen;
 @property (nonatomic, assign) BOOL currentCameraOpen;
@@ -55,6 +57,7 @@
 @property (nonatomic, assign) NSInteger currentCupCount;
 @property (nonatomic, assign) BOOL currentHandUp;
 @property (nonatomic, assign) BOOL isRealMainSpeaker;
+@property (nonatomic, assign) BOOL currentScreenShareOpen;
 
 @end
 
@@ -123,6 +126,13 @@
         _currentSpeakerAuthChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
     }
     return _currentSpeakerAuthChanged_MultiReceiverMap;
+}
+
+- (NSMapTable<id,PLVLinkMicOnlineUserScreenShareOpenChangedBlock> *)currentScreenShareOpenChanged_MultiReceiverMap{
+    if (!_currentScreenShareOpenChanged_MultiReceiverMap) {
+        _currentScreenShareOpenChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
+    }
+    return _currentScreenShareOpenChanged_MultiReceiverMap;
 }
 
 #pragma mark - [ Public Methods ]
@@ -479,7 +489,10 @@
 
 - (void)updateUserCurrentSpeakerAuth:(BOOL)isRealMainSpeaker {
     BOOL needCallBack = (_isRealMainSpeaker != isRealMainSpeaker);
-    if (!_updateUserCurrentSpeakerAuthCallbackBefore) {
+
+    /// 注：
+    /// _isRealMainSpeaker 默认值为NO， isRealMainSpeaker 值为NO时不需要更新
+    if (!_updateUserCurrentSpeakerAuthCallbackBefore && isRealMainSpeaker) {
         needCallBack = YES;
     }
     
@@ -504,6 +517,35 @@
         }
     }
 }
+
+- (void)updateUserCurrentScreenShareOpen:(BOOL)screenShareOpen {
+    BOOL needCallBack = (_currentScreenShareOpen != screenShareOpen);
+    if (!_updateUserCurrentScreenShareOpenCallbackBefore) {
+        needCallBack = YES;
+    }
+    
+    _currentScreenShareOpen = screenShareOpen;
+    if (needCallBack && self.screenShareOpenChangedBlock) {
+        _updateUserCurrentScreenShareOpenCallbackBefore = YES;
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.screenShareOpenChangedBlock(weakSelf); }
+        })
+    }
+    
+    if (needCallBack && _currentScreenShareOpenChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentScreenShareOpenCallbackBefore = YES;
+        NSEnumerator * enumerator = [_currentScreenShareOpenChanged_MultiReceiverMap objectEnumerator];
+        PLVLinkMicOnlineUserScreenShareOpenChangedBlock block;
+        __weak typeof(self) weakSelf = self;
+        while ((block = [enumerator nextObject])) {
+            plv_dispatch_main_async_safe(^{
+                if (weakSelf) { block(weakSelf); }
+            })
+        }
+    }
+}
+
 
 #pragma mark 通知机制
 - (void)wantOpenUserMic:(BOOL)openMic{
@@ -565,6 +607,15 @@
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.wantAuthSpeakerBlock(weakSelf, authSpeaker); }
+        })
+    }
+}
+
+- (void)wantOpenScreenShare:(BOOL)openScreenShare {
+    if (self.wantOpenScreenShareBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantOpenScreenShareBlock(weakSelf, openScreenShare);}
         })
     }
 }
@@ -664,6 +715,22 @@
         return;
     }
     [self.currentSpeakerAuthChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
+}
+
+- (void)addScreenShareOpenChangedBlock:(PLVLinkMicOnlineUserScreenShareOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey{
+    if (!strongBlock) {
+        NSLog(@"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，strongBlock illegal");
+        return;
+    }
+    if (!weakBlockKey) {
+        NSLog(@"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        return;
+    }
+    if (self.currentScreenShareOpenChanged_MultiReceiverMap.count > 20) {
+        NSLog(@"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，block registration limit has been reached");
+        return;
+    }
+    [self.currentScreenShareOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
 }
 
 @end

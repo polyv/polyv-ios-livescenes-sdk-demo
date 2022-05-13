@@ -40,6 +40,9 @@ typedef void (^PLVLinkMicOnlineUserHandUpChangedBlock)(PLVLinkMicOnlineUser * on
 typedef void (^PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’当前的主讲权限‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户的 ’屏幕共享开关状态‘ 改变Block
+typedef void (^PLVLinkMicOnlineUserScreenShareOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+
 ///
 /// [事件] 用户模型 即将销毁 回调Block
 typedef void (^PLVLinkMicOnlineUserWillDeallocBlock)(PLVLinkMicOnlineUser * onlineUser);
@@ -57,6 +60,8 @@ typedef void (^PLVLinkMicOnlineUserWantBrushAuthBlock)(PLVLinkMicOnlineUser * on
 typedef void (^PLVLinkMicOnlineUserWantGrantCupBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [事件] 希望授予用户主讲权限 回调Block
 typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantAuth);
+/// [事件] 希望开关该用户的屏幕共享 回调Block
+typedef void (^PLVLinkMicOnlineUserWantOpenScreenShareBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantOpen);
  
 /// RTC在线用户模型
 ///
@@ -143,6 +148,12 @@ typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUse
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock currentSpeakerAuthChangedBlock;
 
+/// [状态] 用户的 ‘屏幕共享开关状态’ 改变Block
+///
+/// @note 仅在 currentScreenShareOpen 开关值 有改变时会触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserScreenShareOpenChangedBlock screenShareOpenChangedBlock;
+
 /// [事件] 用户模型 即将销毁 回调Block
 ///
 /// @note 不保证在主线程回调
@@ -190,9 +201,11 @@ typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUse
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantAuthUserSpeakerBlock wantAuthSpeakerBlock;
 
-/// 是否为 真实主讲 (代表推流端设置的主讲)
-/// 主讲将会拥有第一画面、上传打开课件、翻页PPT、画笔权限
-@property (nonatomic, assign, readonly) BOOL isRealMainSpeaker;
+/// [事件] 希望开关该用户的屏幕共享 回调Block
+///
+/// @note 由 [wantOpenScreenShare] 方法直接触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantOpenScreenShareBlock wantOpenScreenShareBlock;
 
 /// 是否为 本地主讲 (即‘第一画面’；可能是本地点击而成为的主讲)
 @property (nonatomic, assign) BOOL isLocalMainSpeaker;
@@ -277,8 +290,18 @@ typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUse
 /// 当前用户的流是否已离开房间，默认为NO，为YES时可用于显示占位图（目前该字段只在互动学堂场景讲师身份时有效）
 @property (nonatomic, assign) BOOL streamLeaveRoom;
 
+/// 是否为 真实主讲 (代表推流端设置的主讲)
+/// 主讲将会拥有第一画面、上传打开课件、翻页PPT、画笔权限
+@property (nonatomic, assign, readonly) BOOL isRealMainSpeaker;
+
+/// 用户的 屏幕共享 当前是否开启
+@property (nonatomic, assign, readonly) BOOL currentScreenShareOpen;
+
 /// 当前用户的连麦画面是否在放大区域，默认为NO，此时连麦画面在连麦列表上，为YES时表示在放大区域，当前连麦列表需要显示占位图（目前该字段只在互动学堂场景有效）
 @property (nonatomic, assign) BOOL inLinkMicZoom;
+
+/// 当前用户已订阅的流类型
+@property (nonatomic, assign) PLVBRTCSubscribeStreamSourceType subscribeStreamType;
 
 #pragma mark - [ 方法 ]
 #pragma mark 创建
@@ -356,6 +379,11 @@ typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUse
 /// @note 若最终 用户当前主讲权限 有所改变，则将触发 [currentSpeakerAuthChangedBlock]；
 - (void)updateUserCurrentSpeakerAuth:(BOOL)isRealMainSpeaker;
 
+/// 更新用户的 ‘屏幕共享状态’
+///
+/// @note 若最终 用户屏幕共享状态 有所改变，则将触发 [screenShareOpenChangedBlock]；
+- (void)updateUserCurrentScreenShareOpen:(BOOL)screenShareOpen;
+
 #pragma mark 通知机制
 /// 希望开关该用户的麦克风
 ///
@@ -406,6 +434,14 @@ typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUse
 ///       而是作为通知机制，直接触发 [wantAuthSpeakerBlock]，由Block实现方去执行相关逻辑
 /// @param authSpeaker (YES 授权 NO取消授权)
 - (void)wantAuthUserSpeaker:(BOOL)authSpeaker;
+
+/// 希望开关该用户的屏幕共享
+///
+/// @note 不直接改变该模型内部的任何值；
+///       而是作为通知机制，直接触发 [wantOpenScreenShareBlock]，由Block实现方去执行相关逻辑
+///
+/// @param openScreenShare 是否希望开启该用户的屏幕共享 (YES:开启，NO:关闭)
+- (void)wantOpenScreenShare:(BOOL)openScreenShare;
 
 #pragma mark 多接收方回调配置
 /// 使用 blockKey 添加一个 ’用户模型 即将销毁‘ 回调Block
@@ -473,6 +509,17 @@ typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUse
 /// @param strongBlock ’当前主讲权限‘ 改变Block (强引用)
 /// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
 - (void)addCurrentSpeakerAuthChangedBlock:(PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey;
+
+/// 使用 blockKey 添加一个 ’屏幕共享开关状态‘ 改变Block
+///
+/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
+///           否则，建议直接使用属性声明中的 [screenShareOpenChangedBlock]，将更加便捷；
+///       (2) 具体回调规则，与 [screenShareOpenChangedBlock] 相同无异；
+///       (3) 无需考虑 ‘什么时机去释放、去解除绑定’，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
+///
+/// @param strongBlock ’主讲授权状态‘ 改变Block (强引用)
+/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
+- (void)addScreenShareOpenChangedBlock:(PLVLinkMicOnlineUserScreenShareOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey;
 
 @end
 

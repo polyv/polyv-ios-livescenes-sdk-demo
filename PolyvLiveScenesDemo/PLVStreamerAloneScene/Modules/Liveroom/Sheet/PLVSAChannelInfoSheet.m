@@ -77,7 +77,8 @@
     CGSize titleContentSize = [self.liveTitleContentLabel sizeThatFits:CGSizeMake(maxWidth, CGFLOAT_MAX)];
     self.liveTitleContentLabel.frame = CGRectMake(contentLabelX, contentLabelY, titleContentSize.width, titleContentSize.height);
   
-    self.beginTimeTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.liveTitleContentLabel.frame) + 12, size.width, size.height);
+    CGFloat labelBottomMargin = isLandscape ? 22 : 12;
+    self.beginTimeTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.liveTitleContentLabel.frame) + labelBottomMargin, size.width, size.height);
     contentLabelX = isLandscape ? self.beginTimeTitleLabel.frame.origin.x : CGRectGetMaxX(self.beginTimeTitleLabel.frame);
     contentLabelY = isLandscape ? CGRectGetMaxY(self.beginTimeTitleLabel.frame) + 6 : self.beginTimeTitleLabel.frame.origin.y;
     maxWidth = isLandscape ? width : width - self.beginTimeTitleLabel.frame.size.width;
@@ -85,8 +86,9 @@
     
     
     CGFloat buttonWidth = isPad ? 80 : 50;
+    labelBottomMargin = isLandscape ? 22 : 16;
     size = [self.channelIdTitleLabel sizeThatFits:CGSizeMake(width, 20)];
-    self.channelIdTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.beginTimeContentLabel.frame) + 16, size.width, size.height);
+    self.channelIdTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.beginTimeContentLabel.frame) + labelBottomMargin, size.width, size.height);
     contentLabelX = isLandscape ? self.channelIdTitleLabel.frame.origin.x : CGRectGetMaxX(self.channelIdTitleLabel.frame);
     contentLabelY = isLandscape ? CGRectGetMaxY(self.channelIdTitleLabel.frame) + 6 : self.channelIdTitleLabel.frame.origin.y;
     maxWidth = isLandscape ? width : width - self.channelIdTitleLabel.frame.size.width - buttonWidth;
@@ -178,7 +180,7 @@
     if (!_beginTimeTitleLabel) {
         _beginTimeTitleLabel = [[UILabel alloc] init];
         _beginTimeTitleLabel.font = [UIFont systemFontOfSize:14];
-        _beginTimeTitleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+        _beginTimeTitleLabel.textColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6);
         _beginTimeTitleLabel.text = @"开始时间：";
     }
     return _beginTimeTitleLabel;
@@ -198,7 +200,7 @@
     if (!_channelIdTitleLabel) {
         _channelIdTitleLabel = [[UILabel alloc] init];
         _channelIdTitleLabel.font = [UIFont systemFontOfSize:14];
-        _channelIdTitleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+        _channelIdTitleLabel.textColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6);
         _channelIdTitleLabel.text = @"频道号：";
     }
     return _channelIdTitleLabel;

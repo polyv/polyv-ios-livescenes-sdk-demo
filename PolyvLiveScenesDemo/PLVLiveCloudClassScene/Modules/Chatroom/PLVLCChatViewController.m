@@ -27,6 +27,12 @@
 
 NSString *PLVLCChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNotification";
 
+NSString *PLVLCChatroomOpenLotteryRecordNotification = @"PLVLCChatroomOpenLotteryRecordNotification";
+
+NSString *PLVLCChatroomOpenRewardViewNotification = @"PLVLCChatroomOpenRewardViewNotification";
+
+NSString *PLVInteractLotteryWinRecordMessageNewCallbackNotification = @"PLVInteractLotteryWinRecordMessageNewCallbackNotification";
+
 @interface PLVLCChatViewController ()<
 PLVLCKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
@@ -221,6 +227,9 @@ UITableViewDataSource
                                              selector:@selector(gotChatroomFunction:)
                                                  name:PLVLCChatroomFunctionGotNotification
                                                object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(lotteryWinRecordCallback:) name:PLVInteractLotteryWinRecordMessageNewCallbackNotification
+                                               object:nil];
 }
 
 - (void)removeObserver {
@@ -229,6 +238,9 @@ UITableViewDataSource
                                                   object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:PLVLCChatroomFunctionGotNotification
+                                                  object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:PLVInteractLotteryWinRecordMessageNewCallbackNotification
                                                   object:nil];
 }
 
@@ -241,6 +253,12 @@ UITableViewDataSource
 - (void)gotChatroomFunction:(NSNotification *)notification {
     self.keyboardToolView.enableSendImage = ![PLVRoomDataManager sharedManager].roomData.sendImageDisable;
     self.likeButtonView.hidden = [PLVRoomDataManager sharedManager].roomData.sendLikeDisable;
+}
+
+- (void)lotteryWinRecordCallback:(NSNotification *)notification {
+    NSDictionary *dict = notification.userInfo;
+    self.keyboardToolView.hideLotteryWinRecord = ![dict[@"isShow"] boolValue];
+    self.keyboardToolView.isNewLotteryMessage = [dict[@"hasNew"] boolValue];
 }
 
 #pragma mark - Public Method
@@ -646,6 +664,15 @@ UITableViewDataSource
 
 - (void)keyboardToolView_readBulletin:(PLVLCKeyboardToolView *)toolView {
     [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenBulletinNotification object:nil];
+}
+
+
+- (void)keyboardToolView_openLotteryRecord:(PLVLCKeyboardToolView *)toolView {
+    [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenLotteryRecordNotification object:nil];
+}
+
+- (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView {
+    [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenRewardViewNotification object:nil];
 }
 
 #pragma mark - PLVLCLikeButtonView Delegate

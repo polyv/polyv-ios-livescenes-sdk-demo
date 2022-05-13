@@ -57,7 +57,7 @@
     self.publisherImageView.frame = CGRectMake(commonOrigin, CGRectGetMaxY(self.line.frame) + 10, 16, 16);
     self.publisherLabel.frame = CGRectMake(commonOrigin + 20, CGRectGetMaxY(self.line.frame) + 12, self.bounds.size.width - 36 - 56 - 16, 13);
     
-    if (self.status == PLVLCLiveStatusNone) {
+    if (self.status == PLVLCLiveStatusNone || self.status == PLVLCLiveStatusStop) {
         self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - commonOrigin, 15, 64, 24);
     } else {
         self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - commonOrigin, 15, 50, 24);
@@ -178,6 +178,18 @@
         self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
         self.statusLabel.text = @"等待中";
         statusLabelColor = [UIColor colorWithRed:0x78/255.0 green:0xa7/255.0 blue:0xed/255.0 alpha:1];
+    } else if (status == PLVLCLiveStatusUnStart) {
+        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
+        self.statusLabel.text = @"未开始";
+        statusLabelColor = [UIColor colorWithRed:0x78/255.0 green:0xa7/255.0 blue:0xed/255.0 alpha:1];
+    } else if (status == PLVLCLiveStatusEnd) {
+        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
+        self.statusLabel.text = @"已结束";
+        statusLabelColor = kLightGrayColor;
+    } else if (status == PLVLCLiveStatusStop) {
+        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - 16, 15, 64, 24);
+        self.statusLabel.text = @"直播暂停";
+        statusLabelColor = [UIColor colorWithRed:0xe9/255.0 green:0x60/255.0 blue:0x64/255.0 alpha:1];
     } else {
         self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - 16, 15, 64, 24);
         self.statusLabel.text = @"暂无直播";
@@ -190,7 +202,7 @@
 #pragma mark - Private Method
 
 - (PLVLCLiveStatus)liveStatusWithString:(NSString *)statusString {
-    if (!statusString || ![statusString isKindOfClass:[NSString class]] || statusString.length == 0) {
+    if (![PLVFdUtil checkStringUseable:statusString]) {
         return PLVLCLiveStatusNone;
     }
     
@@ -198,9 +210,30 @@
         return PLVLCLiveStatusLiving;
     } else if ([statusString isEqualToString:@"waiting"]) {
         return PLVLCLiveStatusWaiting;
-    } else {
-        return PLVLCLiveStatusNone;
+    } else if ([statusString isEqualToString:@"unStart"]) {
+        return PLVLCLiveStatusUnStart;
+    } else if ([statusString isEqualToString:@"end"]) {
+        return PLVLCLiveStatusEnd;
+    } else if ([statusString isEqualToString:@"playback"]) {
+        if ([self startTimeIsPast]) {
+            return PLVLCLiveStatusPlayback;
+        } else {
+            return PLVLCLiveStatusWaiting;
+        }
+    } else if ([statusString isEqualToString:@"stop"]) {
+        return PLVLCLiveStatusStop;
     }
+    return PLVLCLiveStatusNone;
+}
+
+- (BOOL)startTimeIsPast {
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    [formatter setDateFormat:@"yyyy/MM/dd HH:mm:ss"];
+    NSDate *startTime = [formatter dateFromString:self.channelInfo.startTime];
+    NSInteger startTimeStamp = [[NSNumber numberWithDouble:[startTime timeIntervalSince1970]] integerValue];
+    NSInteger nowTimeStamp = [[NSNumber numberWithDouble:[[NSDate date] timeIntervalSince1970]] integerValue];
+    
+    return startTimeStamp < nowTimeStamp;
 }
 
 @end

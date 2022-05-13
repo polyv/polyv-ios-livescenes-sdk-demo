@@ -20,7 +20,7 @@
 #import "PLVLCLivePageMenuAreaView.h"
 #import "PLVLCLiveRoomPlayerSkinView.h"
 #import "PLVLCChatLandscapeView.h"
-#import "PLVInteractView.h"
+#import "PLVInteractGenericView.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -62,7 +62,7 @@ PLVRoomDataManagerProtocol
 /// ├── (PLVLCLinkMicAreaView) linkMicAreaView
 /// ├── (PLVLCMediaFloatView) floatView (由 mediaAreaView 持有及管理)
 /// ├── (PLVLCLinkMicPortraitControlBar) portraitControlBar (由 linkMicAreaView 持有及管理)
-/// └── (PLVInteractView) interactView
+/// └── (PLVInteractGenericView) interactView
 ///
 /// [直播] 横屏
 /// (UIView) self.view
@@ -73,11 +73,11 @@ PLVRoomDataManagerProtocol
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// ├── (PLVLCLinkMicLandscapeControlBar) landscapeControlBar (由 linkMicAreaView 持有及管理)
 /// ├── (UIView) marqueeView (由 mediaAreaView 持有及管理)
-/// └── (PLVInteractView) interactView
+/// └── (PLVInteractGenericView) interactView
 @property (nonatomic, strong) PLVLCMediaAreaView *mediaAreaView;        // 媒体区
 @property (nonatomic, strong) PLVLCLinkMicAreaView *linkMicAreaView;    // 连麦区
 @property (nonatomic, strong) PLVLCLivePageMenuAreaView *menuAreaView;  // 菜单区
-@property (nonatomic, strong) PLVInteractView *interactView;            // 互动
+@property (nonatomic, strong) PLVInteractGenericView *interactView;     // 互动
 
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
 @property (nonatomic, strong) PLVLCLiveRoomPlayerSkinView * liveRoomSkinView;// 横屏频道皮肤
@@ -137,6 +137,10 @@ PLVRoomDataManagerProtocol
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations{
+    if ([PLVLiveVideoConfig sharedInstance].triviaCardUnableRotate) {
+        return UIInterfaceOrientationMaskPortrait;
+    }
+
     return (UIInterfaceOrientationMaskPortrait | UIInterfaceOrientationMaskLandscapeRight);
 }
 
@@ -152,6 +156,7 @@ PLVRoomDataManagerProtocol
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLCChatroomOpenBulletinNotification object:nil];
         
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenLotteryRecord:) name:PLVLCChatroomOpenLotteryRecordNotification object:nil];
         
     } else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     
@@ -421,9 +426,9 @@ PLVRoomDataManagerProtocol
     return _chatLandscapeView;
 }
 
-- (PLVInteractView *)interactView{
+- (PLVInteractGenericView *)interactView{
     if (!_interactView && self.videoType == PLVChannelVideoType_Live) {
-        _interactView = [[PLVInteractView alloc] init];
+        _interactView = [[PLVInteractGenericView alloc] init];
         _interactView.frame = self.view.bounds;
         _interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [_interactView loadOnlineInteract];
@@ -472,12 +477,17 @@ PLVRoomDataManagerProtocol
     [self.interactView openLastBulletin];
 }
 
+- (void)notificationForOpenLotteryRecord:(NSNotification *)notif {
+    [self.interactView openLotteryWinRecord];
+}
+
 #pragma mark - [ Delegate ]
 #pragma mark PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     self.liveRoomSkinView.danmuButtonShow = !roomData.channelInfo.closeDanmuEnable;
+    [self.interactView updateUserInfo];
 }
 
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
@@ -598,15 +608,20 @@ PLVRoomDataManagerProtocol
         if (self.linkMicAreaView.inLinkMic == NO) {
             [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
         }
+        
+        [self.menuAreaView updateLiveStatus:PLVLCLiveStatusLiving];
     }else if (livePlayerState == PLVChannelLiveStreamState_Stop){
         [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+        
+        [self.menuAreaView updateLiveStatus:PLVLCLiveStatusStop];
     }else{
         if (livePlayerState == PLVChannelLiveStreamState_End) {
             [self startCountdownTimer];
         }
         [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+        
+        [self.menuAreaView updateLiveStatus:PLVLCLiveStatusEnd];
     }
-    [self.menuAreaView updateliveStatue:(livePlayerState == PLVChannelLiveStreamState_Live)];
 }
 
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
@@ -655,6 +670,9 @@ PLVRoomDataManagerProtocol
             /// 横屏连麦区域视图 显示时，判断触摸事件是否应由 ‘连麦区域视图’ 处理
             return YES;
         }
+    }
+    if ([PLVLCBasePlayerSkinView checkView:self.linkMicAreaView.logoImageView canBeHandlerForTouchPoint:point onSkinView:skinView]){
+        return YES;
     }
     return NO;
 }

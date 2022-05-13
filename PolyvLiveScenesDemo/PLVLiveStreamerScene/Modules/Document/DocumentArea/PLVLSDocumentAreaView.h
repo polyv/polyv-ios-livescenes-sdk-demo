@@ -26,6 +26,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param isFullScreen YES： 全屏，NO： 非全屏
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView changeFullScreen:(BOOL)isFullScreen;
 
+/// 讲师切换显示白板或文档
+/// @param documentAreaView 白板&PPT区域对象
+/// @param whiteboard YES：显示白板，NO：显示文档
+- (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView didShowWhiteboardOrDocument:(BOOL)whiteboard;
+
 @end
 
 @interface PLVLSDocumentAreaView : UIView

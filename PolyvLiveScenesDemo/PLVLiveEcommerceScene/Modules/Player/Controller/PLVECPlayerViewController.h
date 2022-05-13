@@ -81,11 +81,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 播放器播放状态
 @property (nonatomic, assign, readonly) BOOL playing;
 
-/// 广告跳转链接
-@property (nonatomic, readonly) NSString *advLinkUrl;
-
 /// 广告播放状态
-@property (nonatomic, readonly) BOOL advPlaying;
+@property (nonatomic, readonly) BOOL advertPlaying;
 
 /// 是否为无延迟模式
 @property (nonatomic, readonly) BOOL noDelayWatchMode;

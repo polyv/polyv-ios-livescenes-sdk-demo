@@ -76,6 +76,10 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 /// @param whiteboard YES - 选中白板 NO - 选中文档
 - (void)selectedWhiteboardOrDocument:(BOOL)whiteboard;
 
+/// 同步白板或文档选中状态，只做UI同步
+/// @param whiteboard YES - 选中白板 NO - 选中文档
+- (void)syncSelectedWhiteboardOrDocument:(BOOL)whiteboard;
+
 /// 有新成员上线，成员按钮显示红点
 - (void)hasNewMember;
 

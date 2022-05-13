@@ -8,7 +8,6 @@
 
 #import "PLVLCLivePageMenuAreaView.h"
 #import "PLVLCPageController.h"
-#import "PLVLCDescViewController.h"
 #import "PLVLCQuizViewController.h"
 #import "PLVLCTuwenViewController.h"
 #import "PLVLCTextViewController.h"
@@ -90,9 +89,9 @@ PLVRoomDataManagerProtocol
     return self;
 }
 
-- (void)updateliveStatue:(BOOL)living {
+- (void)updateLiveStatus:(PLVLCLiveStatus)liveStatus {
     if (self.descVctrl) {
-        [self.descVctrl updateliveStatue:living];
+        [self.descVctrl updateLiveStatus:liveStatus];
     }
 }
 

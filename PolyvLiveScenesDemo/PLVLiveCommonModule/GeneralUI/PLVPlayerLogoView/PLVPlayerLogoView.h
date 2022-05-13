@@ -44,14 +44,17 @@ typedef NS_ENUM(NSInteger, PLVPlayerLogoPosition) {
 /// logo图片的URL，必须使用 https 协议
 @property (nonatomic, copy) NSString *logoUrl;
 
+/// logo图片的跳转链接
+@property (nonatomic, copy) NSString *logoHref;
 
 @end
 
 @interface PLVPlayerLogoView : UIView
 
+@property (nonatomic, readonly) UIImageView *logoImageView;
+
 /// 添加 logo，一个 PLVPlayerLogo 对象可同时添加最多两个 logo
 - (void)insertLogoWithParam:(PLVPlayerLogoParam *)param;
 
-- (void)addAtView:(UIView *)container;
 
 @end

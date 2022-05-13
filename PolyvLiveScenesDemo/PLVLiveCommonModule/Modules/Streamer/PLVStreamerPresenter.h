@@ -378,6 +378,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param mirrorMode 本地视频预览画面的镜像类型 (默认值:PLVBRTCVideoMirrorMode_Auto)
 - (void)setupLocalVideoPreviewMirrorMode:(PLVBRTCVideoMirrorMode)mirrorMode;
 
+/// 开启或关闭 本地用户 的屏幕共享
+///
+/// @param openScreenShare 开启或关闭 屏幕共享 (YES:开启；NO:关闭)
+- (void)openLocalUserScreenShare:(BOOL)openScreenShare API_AVAILABLE(ios(11.0));
+
 #pragma mark 连麦事件管理
 /// 开启或关闭 ”视频连麦“
 ///
@@ -589,6 +594,12 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param currentCameraTorchOpen 本地用户的 闪光灯 当前是否开启
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserCameraTorchOpenChanged:(BOOL)currentCameraTorchOpen;
 
+/// 本地用户的 ’屏幕共享开关状态‘ 发生变化
+///
+/// @param presenter presenter 推流管理器
+/// @param currentScreenShareOpen 本地用户的 屏幕共享 当前是否开启
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserScreenShareOpenChanged:(BOOL)currentScreenShareOpen;
+
 /// 本地用户麦克风音量大小 监测回调
 ///
 /// @param presenter 推流管理器
@@ -660,6 +671,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param presenter 推流管理器
 /// @param currentSpeakingUsers 当前正在讲话的连麦用户数组
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter reportCurrentSpeakingUsers:(NSArray<PLVLinkMicOnlineUser *> * _Nonnull)currentSpeakingUsers;
+
+/// ’远端 在线用户 屏幕共享开启状态‘ 发生改变
+///
+/// @param presenter 推流管理器
+/// @param onlineUser 远端用户RTC在线模型
+/// @param screenShareOpen 当前正在讲话的连麦用户数组
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter   remoteOnlineUser:(PLVLinkMicOnlineUser *)onlineUser screenShareOpenChanged:(BOOL)screenShareOpen;
 
 #pragma mark 管理器状态事件
 /// 推流管理器 ‘发生错误’ 回调

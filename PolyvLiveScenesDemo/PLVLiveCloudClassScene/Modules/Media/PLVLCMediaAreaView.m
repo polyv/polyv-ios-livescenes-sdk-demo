@@ -11,7 +11,6 @@
 // UI
 #import "PLVLCMediaPlayerCanvasView.h"
 #import "PLVLCMediaMoreView.h"
-#import "PLVPlayerLogoView.h"
 #import "PLVWatermarkView.h"
 
 // 模块
@@ -134,7 +133,6 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCMediaMoreView * moreView;
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
-@property (nonatomic, strong) PLVPlayerLogoView * logoView; // LOGO视图 （用于显示 '播放器LOGO'）
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) PLVLCRetryPlayView *retryPlayView; // 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
@@ -491,9 +489,14 @@ PLVRoomDataManagerProtocol
 - (void)playPPTView {
     NSString *channelId = self.roomData.channelId;
     NSString *videoId = self.playerPresenter.videoId;
+    NSString *fileId = self.roomData.recordFile.fileId;
     if ([PLVFdUtil checkStringUseable:channelId] &&
-        [PLVFdUtil checkStringUseable:videoId]) { // videoId 在app启动后立马取值不一定有值，需要递归处理
-        [self.pptView pptStartWithVideoId:videoId channelId:channelId];
+        ([PLVFdUtil checkStringUseable:videoId] || [PLVFdUtil checkStringUseable:fileId])) { // videoId 在app启动后立马取值不一定有值，需要递归处理
+        if (self.roomData.recordEnable) {
+            [self.pptView pptStartWithFileId:fileId channelId:channelId];
+        } else {
+            [self.pptView pptStartWithVideoId:videoId channelId:channelId];
+        }
     } else {
         if(self.tryPlayPPTViewNum < PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum) { // 限制重试次数
             __weak typeof(self)weakSelf = self;
@@ -587,7 +590,6 @@ PLVRoomDataManagerProtocol
 
 /// 音视频观看模式切换
 - (void)switchLiveToAudioMode:(BOOL)audioMode {
-    self.logoView.hidden = !audioMode;
     [self.canvasView switchTypeTo:audioMode ? PLVLCMediaPlayerCanvasViewType_Audio : PLVLCMediaPlayerCanvasViewType_Video];
     [self.playerPresenter switchLiveToAudioMode:audioMode];
 }
@@ -670,13 +672,6 @@ PLVRoomDataManagerProtocol
         [weakSelf.marqueeView setPLVMarqueeModel:model];
         [weakSelf.marqueeView start];
     });
-}
-
-#pragma mark  播放器LOGO
-- (void)setupPlayerLogoImage {
-    if (self.canvasView) {
-        [self.logoView addAtView:self.canvasView];
-    }
 }
 
 #pragma mark 防录屏水印
@@ -787,24 +782,6 @@ PLVRoomDataManagerProtocol
         }
     }
     return _watermarkView;
-}
-
-- (PLVPlayerLogoView *)logoView {
-    if (!_logoView) {
-        PLVChannelInfoModel *channel = self.roomData.channelInfo;
-        if ([PLVFdUtil checkStringUseable:channel.logoImageUrl]) {
-            PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
-            logoParam.logoUrl = channel.logoImageUrl;
-            logoParam.position = channel.logoPosition;
-            logoParam.logoAlpha = channel.logoOpacity;
-            logoParam.logoWidthScale = 0.14;
-            logoParam.logoHeightScale = 0.25;
-
-            _logoView = [[PLVPlayerLogoView alloc] init];
-            [_logoView insertLogoWithParam:logoParam];
-        }
-    }
-    return _logoView;
 }
 
 - (UILabel *)networkQualityMiddleLable {
@@ -993,6 +970,10 @@ PLVRoomDataManagerProtocol
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.networkQualityPoorView canBeHandlerForTouchPoint:point onSkinView:skinView]){
         return YES;
+    }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.logoImageView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+        return YES;
+    }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.advertView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+        return YES;
     }else{
         BOOL externalViewHandle = NO;
         /// 询问外部视图
@@ -1162,7 +1143,6 @@ PLVRoomDataManagerProtocol
     [self setupMarquee:roomData.channelInfo customNick:roomData.roomUser.viewerName];
     if (self.videoType == PLVChannelVideoType_Playback) {
         [self setupWatermark];
-        [self setupPlayerLogoImage];
     }
 }
 
@@ -1185,9 +1165,6 @@ PLVRoomDataManagerProtocol
         
         /// 开启跑马灯
         [self.marqueeView start];
-        
-        /// 设置播放器logo
-        [self setupPlayerLogoImage];
         /// 设置防录屏水印
         [self setupWatermark];
         
@@ -1201,7 +1178,6 @@ PLVRoomDataManagerProtocol
         if (self.pptOnMainSite) {
             [self.floatView triggerViewExchangeEvent];
         }
-        [self.logoView removeFromSuperview];
         [self.watermarkView removeFromSuperview];
         [self.floatView forceShowFloatView:NO];
         [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];

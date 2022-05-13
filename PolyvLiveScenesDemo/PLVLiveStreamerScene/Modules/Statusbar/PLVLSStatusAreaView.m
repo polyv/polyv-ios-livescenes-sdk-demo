@@ -18,6 +18,7 @@
 #import "PLVRoomDataManager.h"
 
 static CGFloat kStatusBarHeight = 44;
+static NSString *kGustDefaultTintColor  = @"0x888888";
 
 @interface PLVLSStatusAreaView ()
 
@@ -41,7 +42,9 @@ static CGFloat kStatusBarHeight = 44;
 /// 数据
 @property (nonatomic, assign) BOOL inClass;
 @property (nonatomic, assign) BOOL hasNewMemberState;
-@property (nonatomic, assign, getter=isSpeaker) BOOL speaker;
+@property (nonatomic, assign, getter=isSpeaker) BOOL speaker; // 是否为主讲
+@property (nonatomic, assign, getter=isGuest) BOOL guest; // 是否为嘉宾
+@property (nonatomic, assign) BOOL whiteboardSelected; // 白板是否已选中
 
 @end
 
@@ -53,7 +56,7 @@ static CGFloat kStatusBarHeight = 44;
     self = [super init];
     if (self) {
         self.backgroundColor = [UIColor clearColor];
-
+        
         [self addSubview:self.channelInfoLabel];
         [self addSubview:self.channelInfoButton];
         [self addSubview:self.timeLabel];
@@ -63,7 +66,6 @@ static CGFloat kStatusBarHeight = 44;
         [self addSubview:self.linkmicButton];
         [self addSubview:self.memberButton];
         [self addSubview:self.settingButton];
-//        [self addSubview:self.shareButton];
         [self addSubview:self.startPushButton];
         [self addSubview:self.stopPushButton];
         
@@ -92,7 +94,7 @@ static CGFloat kStatusBarHeight = 44;
         self.channelInfoLabel.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 84, 28);
         self.channelInfoButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 84, 28);
     }
-
+    
     originX = self.channelInfoLabel.hidden ? originX : CGRectGetMaxX(self.channelInfoButton.frame) + 12;
     self.timeLabel.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_TimeLabel) {
@@ -108,7 +110,7 @@ static CGFloat kStatusBarHeight = 44;
         self.signalButton.titleEdgeInsets = UIEdgeInsetsMake(0, -1, 0, 0);
         self.signalButton.imageEdgeInsets = UIEdgeInsetsMake(0, -8, 0, 0);
     }
-        
+    
     /// 右侧控件
     originX = self.bounds.size.width;
     self.startPushButton.hidden = YES;
@@ -121,16 +123,13 @@ static CGFloat kStatusBarHeight = 44;
         self.stopPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 60, 28);
     }
     
-    // self.shareButton.frame = CGRectMake(originX, 0, 44, 44);
-    // originX -= 44;
-    
     self.settingButton.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_SettingButton) {
         originX = (self.startPushButton.hidden && self.stopPushButton.hidden) ? (originX - 44) : originX - (44 + 16);
         self.settingButton.hidden = NO;
         self.settingButton.frame = CGRectMake(originX, 0, 44, 44);
     }
-        
+    
     self.memberButton.hidden = YES;
     self.memberRedDot.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_MemberButton) {
@@ -238,11 +237,19 @@ static CGFloat kStatusBarHeight = 44;
         _whiteboardButton = [UIButton buttonWithType:UIButtonTypeCustom];
         UIImage *normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_whiteboard_btn"];
         UIImage *highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_whiteboard_btn_selected"];
+        
+        if (self.isGuest) {
+            normalImage = [normalImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            _whiteboardButton.tintColor = [PLVColorUtil colorFromHexString:kGustDefaultTintColor];
+        } else {
+            _whiteboardButton.selected = YES;
+        }
+        
         [_whiteboardButton setImage:normalImage forState:UIControlStateNormal];
         [_whiteboardButton setImage:highlightImage forState:UIControlStateHighlighted];
         [_whiteboardButton setImage:highlightImage forState:UIControlStateSelected];
         [_whiteboardButton addTarget:self action:@selector(whiteboardOrDocumentButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _whiteboardButton.selected = YES;
+        
     }
     return _whiteboardButton;
 }
@@ -252,10 +259,18 @@ static CGFloat kStatusBarHeight = 44;
         _documentButton = [UIButton buttonWithType:UIButtonTypeCustom];
         UIImage *normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_document_btn"];
         UIImage *highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_document_btn_selected"];
+        
+        if (self.isGuest) {
+            normalImage = [normalImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
+            _documentButton.tintColor = [PLVColorUtil colorFromHexString:kGustDefaultTintColor];
+        }
+        
         [_documentButton setImage:normalImage forState:UIControlStateNormal];
         [_documentButton setImage:highlightImage forState:UIControlStateHighlighted];
         [_documentButton setImage:highlightImage forState:UIControlStateSelected];
         [_documentButton addTarget:self action:@selector(whiteboardOrDocumentButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        
+        
     }
     return _documentButton;
 }
@@ -478,13 +493,15 @@ static CGFloat kStatusBarHeight = 44;
 }
 
 - (void)whiteboardOrDocumentButtonAction:(id)sender {
-    if ([self isGuest] &&
+    UIButton *button = (UIButton *)sender;
+    if (self.isGuest &&
         !self.isSpeaker) {
-        [PLVLSUtils showToastInHomeVCWithMessage:@"被授权后才可以使用课件功能"];
+        if (button == self.documentButton) {
+            [PLVLSUtils showToastInHomeVCWithMessage:@"被授权后才可以使用课件功能"];
+        }
         return;
     }
     
-    UIButton *button = (UIButton *)sender;
     BOOL whiteboard = (button == self.whiteboardButton);
     self.whiteboardButton.selected = whiteboard;
     self.documentButton.selected = !whiteboard;
@@ -567,6 +584,15 @@ static CGFloat kStatusBarHeight = 44;
     [self whiteboardOrDocumentButtonAction:button];
 }
 
+- (void)syncSelectedWhiteboardOrDocument:(BOOL)whiteboard {
+    self.whiteboardSelected = whiteboard;
+    if (self.isGuest &&
+        self.speaker) {
+        self.whiteboardButton.selected = whiteboard;
+        self.documentButton.selected = !whiteboard;
+    }
+}
+
 - (void)hasNewMember {
     self.hasNewMemberState = YES;
     if (!self.memberButton.hidden) {
@@ -581,11 +607,28 @@ static CGFloat kStatusBarHeight = 44;
 }
 
 - (void)updateDocumentSpeakerAuth:(BOOL)auth {
+    self.speaker = auth;
+    
     if (!auth &&
         self.documentButton.selected) {
         self.documentButton.selected = NO;
     }
-    self.speaker = auth;
+    
+    if (auth) {
+        self.whiteboardButton.tintColor = [UIColor whiteColor];
+        self.documentButton.tintColor = [UIColor whiteColor];
+        
+        self.whiteboardButton.selected = self.whiteboardSelected;
+        self.documentButton.selected = !self.whiteboardSelected;
+        
+    } else {
+        self.whiteboardButton.tintColor = [PLVColorUtil colorFromHexString:kGustDefaultTintColor];
+        self.documentButton.tintColor = [PLVColorUtil colorFromHexString:kGustDefaultTintColor];
+        
+        self.whiteboardButton.selected = NO;
+        self.documentButton.selected = NO;
+    }
+    
 }
 
 @end

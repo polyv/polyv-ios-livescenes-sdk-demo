@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVLCChatViewController.h"
+#import "PLVLCDescViewController.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -38,8 +39,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param liveRoom 直播间控制器，传递给互动聊天室用于弹出拍照、相册控制器
 - (instancetype)initWithLiveRoom:(UIViewController *)liveRoom;
 
-/// 直播状态改变时调用，调用该方法自动将 inPlaybackScene 置为 NO
-- (void)updateliveStatue:(BOOL)living;
+/// 直播状态改变时调用
+- (void)updateLiveStatus:(PLVLCLiveStatus)liveStatus;
 
 @end
 

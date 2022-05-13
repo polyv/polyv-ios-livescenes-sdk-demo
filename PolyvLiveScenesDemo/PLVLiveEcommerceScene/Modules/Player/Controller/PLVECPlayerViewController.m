@@ -12,7 +12,6 @@
 #import "PLVECAudioAnimalView.h"
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
-#import "PLVPlayerLogoView.h"
 #import "PLVPlayerPresenter.h"
 #import "PLVWatermarkView.h"
 
@@ -30,7 +29,6 @@ PLVPlayerPresenterDelegate
 /// │   ├── (PLVECPlayerBackgroundView) playerBackgroundView 显示播放器（未开播时的）背景图
 /// │   ├── (UIView) contentBackgroudView 内容背景视图 (负责承载 播放器画面)
 /// │   │   └── (UIView) displayView  播放器区域
-/// │   ├── (UIView) logoMainView  LOGO父视图 （用于显示 '播放器LOGO'）
 /// │   ├── (PLVWatermarkView) watermarkView  防录屏水印
 /// │   ├── (PLVECAudioAnimalView) audioAnimalView  // 显示音频模式背景图
 /// │   └── (UIButton) playButton  //播放器暂停、播放按钮
@@ -41,8 +39,6 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) UIView *contentBackgroudView; // 内容背景视图 (负责承载 播放器画面)
 @property (nonatomic, strong) PLVECAudioAnimalView *audioAnimalView; // 显示音频模式背景图
 @property (nonatomic, strong) UIView *displayView; // 播放器区域
-@property (nonatomic, strong) UIView * logoMainView; // LOGO父视图 （用于显示 '播放器LOGO'）
-@property (nonatomic, strong) PLVPlayerLogoView *logoView; // 播放器LOGO
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) UIButton * playButton; // 播放器暂停、播放按钮
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
@@ -63,7 +59,6 @@ PLVPlayerPresenterDelegate
     if (self) {
         /// 播放器
         self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:self.roomData.videoType];
-        self.playerPresenter.openAdv = YES;
         self.playerPresenter.delegate = self;
         
         [self addTapGestureRecognizer];
@@ -77,7 +72,6 @@ PLVPlayerPresenterDelegate
     [self.view addSubview:self.backgroundView];
     [self.view addSubview:self.playerBackgroundView];
     [self.view addSubview:self.contentBackgroudView];
-    [self.view addSubview:self.logoMainView];
     [self contentBackgroundViewDisplaySubview:self.displayView];
     [self.view addSubview:self.audioAnimalView];
     [self.view addSubview:self.playButton];
@@ -113,14 +107,6 @@ PLVPlayerPresenterDelegate
     
     // 设置防录屏水印位置、尺寸
     self.watermarkView.frame = self.contentBackgroudView.frame;
-    
-    CGFloat margin = 15;
-    CGRect logoMainViewFrame = self.view.frame;
-    logoMainViewFrame.origin.x = margin;
-    logoMainViewFrame.origin.y = P_SafeAreaTopEdgeInsets() + margin;
-    logoMainViewFrame.size.width -= margin * 2;
-    logoMainViewFrame.size.height -= margin * 2 + P_SafeAreaTopEdgeInsets() + P_SafeAreaBottomEdgeInsets();
-    self.logoMainView.frame = logoMainViewFrame;
     
     self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, (CGRectGetHeight(self.view.frame) - 72) / 2, 74, 72);
 }
@@ -244,13 +230,6 @@ PLVPlayerPresenterDelegate
     }
 }
 
-#pragma mark  播放器LOGO
-- (void)setupPlayerLogoImage {
-    if (self.logoMainView) {
-        [self.logoView addAtView:self.logoMainView];
-    }
-}
-
 #pragma mark  防录屏水印
 - (void)setupWatermark {
     if (self.contentBackgroudView) {
@@ -300,15 +279,6 @@ PLVPlayerPresenterDelegate
     return _displayView;
 }
 
-- (UIView *)logoMainView {
-    if (!_logoMainView) {
-        _logoMainView = [[UIView alloc]init];
-        _logoMainView.userInteractionEnabled = NO;
-        _logoMainView.backgroundColor = [UIColor clearColor];
-    }
-    return _logoMainView;
-}
-
 - (UIButton *)playButton {
     if (! _playButton) {
         UIImage *imgPlay = [PLVECUtils imageForWatchResource:@"plv_player_play_big_btn"];
@@ -321,16 +291,12 @@ PLVPlayerPresenterDelegate
     return _playButton;
 }
 
-- (BOOL)advPlaying {
-    return _playerPresenter.advPlaying;
-}
-
 - (BOOL)noDelayWatchMode {
     return _playerPresenter.noDelayWatchMode;
 }
 
-- (NSString *)advLinkUrl {
-    return _playerPresenter.advLinkUrl;
+- (BOOL)advertPlaying {
+    return _playerPresenter.advertPlaying;
 }
 
 - (PLVMarqueeView *)marqueeView{
@@ -355,26 +321,6 @@ PLVPlayerPresenterDelegate
         }
     }
     return _watermarkView;
-}
-
-- (PLVPlayerLogoView *)logoView {
-    if (!_logoView) {
-        PLVChannelInfoModel *channel = self.roomData.channelInfo;
-        if ([PLVFdUtil checkStringUseable:channel.logoImageUrl]) {
-            PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
-            logoParam.logoUrl = channel.logoImageUrl;
-            logoParam.position = channel.logoPosition;
-            logoParam.logoAlpha = channel.logoOpacity;
-            logoParam.logoWidthScale = 100.0f / CGRectGetWidth(self.logoMainView.bounds);
-            logoParam.logoHeightScale = 100.0f / CGRectGetHeight(self.logoMainView.bounds);
-            logoParam.xOffsetScale = 0;
-            logoParam.yOffsetScale = 0;
-
-            self.logoView = [[PLVPlayerLogoView alloc] init];
-            [self.logoView insertLogoWithParam:logoParam];
-        }
-    }
-    return _logoView;
 }
 
 - (PLVRoomData *)roomData {
@@ -409,14 +355,6 @@ PLVPlayerPresenterDelegate
 
 #pragma mark - [ Action ]
 - (void)displayViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
-    /** 播放广告中，点击屏幕跳转广告链接 */
-    if (self.advPlaying) {
-        if ([PLVFdUtil checkStringUseable:self.advLinkUrl]) {
-            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.advLinkUrl]];
-        }
-        return;
-    }
-    
     PLVRoomData *roomData = self.roomData;
     if (roomData.videoType == PLVChannelVideoType_Live &&
         roomData.liveState != PLVChannelLiveStreamState_Live) { // 直播时未开播，不响应播放
@@ -521,7 +459,6 @@ PLVPlayerPresenterDelegate
         [self.audioAnimalView stopAnimating];
         self.contentBackgroudView.hidden = NO;
     }
-    self.logoMainView.hidden = self.contentBackgroudView.hidden;
     [self.playerPresenter switchLiveToAudioMode:audioMode];
 }
 
@@ -603,15 +540,10 @@ PLVPlayerPresenterDelegate
     }
     
     if (newestStreamState == PLVChannelLiveStreamState_Live) {
-        // 设置logo
-        [self setupPlayerLogoImage];
         [self.marqueeView start];
         // 设置水印
         [self setupWatermark];
     } else {
-        
-        // 设置去掉logo
-        [self.logoMainView removeFromSuperview];
         // 移除水印
         [self.watermarkView removeFromSuperview];
     }
@@ -670,8 +602,6 @@ PLVPlayerPresenterDelegate
     if (self.roomData.videoType == PLVChannelVideoType_Playback) {
         /// 设置防录屏水印
         [self setupWatermark];
-        /// 设置播放器LOGO
-        [self setupPlayerLogoImage];
     }
 }
 

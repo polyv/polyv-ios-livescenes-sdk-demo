@@ -28,11 +28,15 @@
 ///          │       └── (PLVLCLinkMicCanvasView) canvasView
 ///          ├── (UILabel) linkMicStatusLabel
 ///          ├── (UILabel) nickNameLabel
+///          ├── (UIButton) closeFullScreenButton
 ///          └── (UIButton) micButton
 @property (nonatomic, strong) UIView *contentBackgroudView; // 内容背景视图 (负责承载 不同类型的内容画面[RTC画面、PPT画面]；直接决定了’内容画面‘在Cell中的布局、图层、圆角)
 @property (nonatomic, strong) UILabel *nickNameLabel; // 昵称文本框 (负责展示 用户昵称)
 @property (nonatomic, strong) UIButton *micButton; // 麦克风按钮 (负责展示 不同状态下的麦克风图标)
 @property (nonatomic, strong) UILabel *linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
+@property (nonatomic, strong) UIButton *closeFullScreenButton; // 关闭全屏 按钮
+@property (nonatomic, strong) UIImageView *screenSharingImageView; // 屏幕共享时 背景图
+@property (nonatomic, strong) UILabel *screenSharingLabel; // 屏幕共享时 文本框
 
 @end
 
@@ -50,18 +54,29 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    CGFloat padding = isPad ? 12 : 8;
     
+    // 当前是否处于全屏模式
+    BOOL isFullScreen = self.contentView.superview != self;    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat leftPadding = isFullScreen ? 16 : (isPad ? 12 : 8);
+    CGFloat bottomPadding = isFullScreen ? 32 : (isPad ? 12 : 8);
     CGFloat contentViewWidth = self.contentView.bounds.size.width;
     CGFloat contentViewHeight = self.contentView.bounds.size.height;
-    
-    self.contentBackgroudView.frame = self.contentView.bounds;
-    self.micButton.frame = CGRectMake(padding, contentViewHeight - 14 - padding, 14, 14);
-    self.linkMicStatusLabel.frame = CGRectMake(2, 2, 41, 16);
+    CGFloat statusLabelLeftPadding = isFullScreen ? 16 : 2;
+    CGFloat statusBarHeight = [[UIApplication sharedApplication] statusBarFrame].size.height;
+    CGFloat statusLabelTopPadding = isFullScreen ? statusBarHeight + 20 : 2;
 
-    CGFloat nickNameLabelWidth = contentViewWidth -  CGRectGetMaxX(self.micButton.frame) - padding - padding;
-    self.nickNameLabel.frame = CGRectMake(CGRectGetMaxX(self.micButton.frame) + padding, CGRectGetMinY(self.micButton.frame), nickNameLabelWidth, 14);
+    self.contentBackgroudView.frame = self.contentView.bounds;
+    self.micButton.frame = CGRectMake(leftPadding, contentViewHeight - 14 - bottomPadding, 14, 14);
+    self.linkMicStatusLabel.frame = CGRectMake(statusLabelLeftPadding, statusLabelTopPadding, 41, 16);
+    self.screenSharingImageView.frame = CGRectMake((contentViewWidth - 44)/2, (contentViewHeight - 44)/2 - 20, 44, 44);
+    self.screenSharingLabel.frame = CGRectMake((contentViewWidth - 100)/2, CGRectGetMaxY(self.screenSharingImageView.frame) + 4, 100, 18);
+    
+    CGFloat nickNameLabelWidth = contentViewWidth -  CGRectGetMaxX(self.micButton.frame) - leftPadding - 8;
+    self.nickNameLabel.frame = CGRectMake(CGRectGetMaxX(self.micButton.frame) + 8, CGRectGetMinY(self.micButton.frame), nickNameLabelWidth, 14);
+    
+    self.closeFullScreenButton.hidden = !isFullScreen;
+    self.closeFullScreenButton.frame = CGRectMake(CGRectGetWidth(self.contentView.frame) - 32 - 12, statusBarHeight + 16, 32, 32);
 }
 
 #pragma mark - [ Public Method ]
@@ -139,6 +154,17 @@
     } else {
         [self.contentBackgroudView addSubview:aOnlineUser.canvasView];
     }
+    
+    // 屏幕共享事件的响应、更新
+    [self updateScreenShareViewWithOnlineUser:aOnlineUser];
+    [aOnlineUser addScreenShareOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        if ([onlineUser.linkMicUserId isEqualToString:weakSelf.onlineUser.linkMicUserId]) {
+            [weakSelf updateScreenShareViewWithOnlineUser:onlineUser];
+        }
+        if (!onlineUser.localUser) {
+            [weakSelf callbackForRemoteUserDidScreenShare:onlineUser];
+        }
+    } blockKey:self];
 }
 
 #pragma mark - [ Private Method ]
@@ -148,6 +174,20 @@
     [self.contentView addSubview:self.micButton];
     [self.contentView addSubview:self.nickNameLabel];
     [self.contentView addSubview:self.linkMicStatusLabel];
+    [self.contentView addSubview:self.closeFullScreenButton];
+    [self.contentView addSubview:self.screenSharingImageView];
+    [self.contentView addSubview:self.screenSharingLabel];
+
+    UITapGestureRecognizer *singleTapGesture = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(handleSingleTap)];
+    singleTapGesture.numberOfTapsRequired = 1;
+    [self.contentView addGestureRecognizer:singleTapGesture];
+    
+    UITapGestureRecognizer *doubleTapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleDoubleTap)];
+    doubleTapGesture.numberOfTapsRequired = 2;
+    [self.contentView addGestureRecognizer:doubleTapGesture];
+
+    // 只有当doubleTapGesture识别失败的时候(即识别出这不是双击操作)，singleTapGesture才能开始识别，singleTapGesture触发会有延迟
+    [singleTapGesture requireGestureRecognizerToFail:doubleTapGesture];
 }
 
 /// 根据音量更新 micButton 图标
@@ -184,6 +224,38 @@
     }
 }
 
+- (void)updateScreenShareViewWithOnlineUser:(PLVLinkMicOnlineUser *)onlineUser {
+    BOOL localUserScreenShareOpen = onlineUser.localUser ? onlineUser.currentScreenShareOpen : NO;
+    self.screenSharingLabel.hidden = !localUserScreenShareOpen;
+    self.screenSharingImageView.hidden = !localUserScreenShareOpen;
+    [onlineUser.canvasView rtcViewShow:!localUserScreenShareOpen && onlineUser.currentCameraShouldShow];
+    onlineUser.canvasView.placeholderImageView.hidden = localUserScreenShareOpen;
+}
+
+#pragma mark Callback
+
+- (void)callbackForDidSelectCell {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowCellDidSelectCell:)]) {
+        [self.delegate linkMicWindowCellDidSelectCell:self];
+    }
+}
+
+- (void)callbackForCellDidFullScreen:(BOOL)isFullScreen {
+    plv_dispatch_main_async_safe(^{
+        if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowCell:linkMicUser:didFullScreen:)]) {
+            [self.delegate linkMicWindowCell:self linkMicUser:self.onlineUser didFullScreen:isFullScreen];
+        }
+    })
+}
+
+- (void)callbackForRemoteUserDidScreenShare:(PLVLinkMicOnlineUser *)onlineUser {
+    plv_dispatch_main_async_safe(^{
+        if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowCell:didScreenShareForRemoteUser:)]) {
+            [self.delegate linkMicWindowCell:self didScreenShareForRemoteUser:onlineUser];
+        }
+    })
+}
+
 #pragma mark Getter & Setter
 
 - (UIView *)contentBackgroudView {
@@ -216,6 +288,17 @@
     return _micButton;
 }
 
+- (UIButton *)closeFullScreenButton {
+    if (!_closeFullScreenButton) {
+        _closeFullScreenButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        UIImage *normalImage = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_window_fullscreen_close"];
+        [_closeFullScreenButton setImage:normalImage forState:UIControlStateNormal];
+        [_closeFullScreenButton addTarget:self action:@selector(closeFullScreenButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _closeFullScreenButton.hidden = YES;
+    }
+    return _closeFullScreenButton;
+}
+
 - (UILabel *)linkMicStatusLabel{
     if (!_linkMicStatusLabel) {
         _linkMicStatusLabel = [[UILabel alloc]init];
@@ -227,6 +310,52 @@
         _linkMicStatusLabel.hidden = YES;
     }
     return _linkMicStatusLabel;
+}
+
+- (UIImageView *)screenSharingImageView{
+    if (!_screenSharingImageView) {
+        _screenSharingImageView = [[UIImageView alloc]init];
+        _screenSharingImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_window_screensharing_icon"];
+        _screenSharingImageView.hidden = YES;
+    }
+    return _screenSharingImageView;
+}
+
+- (UILabel *)screenSharingLabel{
+    if (!_screenSharingLabel) {
+        _screenSharingLabel = [[UILabel alloc]init];
+        _screenSharingLabel.text = @"您正在共享屏幕";
+        _screenSharingLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
+        _screenSharingLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
+        _screenSharingLabel.textAlignment = NSTextAlignmentCenter;
+        _screenSharingLabel.hidden = YES;
+    }
+    return _screenSharingLabel;
+}
+
+#pragma mark - [ Event ]
+
+#pragma mark Action
+
+- (void)closeFullScreenButtonAction {
+    [self callbackForCellDidFullScreen:NO];
+}
+
+#pragma mark Gesture
+
+- (void)handleSingleTap {
+    // 全屏状态下不响应单击事件
+    if (self.contentView.superview != self) {
+        return;
+    }
+
+    [self callbackForDidSelectCell];
+}
+
+- (void)handleDoubleTap {
+    if (!(self.onlineUser.localUser && self.onlineUser.currentScreenShareOpen)) {
+        [self callbackForCellDidFullScreen:(self.contentView.superview == self)];
+    }
 }
 
 @end

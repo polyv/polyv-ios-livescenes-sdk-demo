@@ -9,6 +9,7 @@
 #import <Foundation/Foundation.h>
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import "PLVAdvertView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -56,14 +57,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前直播回放的 视频总时长 (单位:秒；仅非直播场景下有值)
 @property (nonatomic, readonly) NSTimeInterval duration;
 
-/// 广告跳转链接
-@property (nonatomic, readonly) NSString *advLinkUrl;
-
 /// 广告播放状态
-@property (nonatomic, readonly) BOOL advPlaying;
-
-/// 广告播放状态
-@property (nonatomic, assign) BOOL openAdv;
+@property (nonatomic, readonly) BOOL advertPlaying;
 
 /// 是否允许点击暖场图片跳转到相应的链接（默认允许）
 @property (nonatomic, assign) BOOL warmUpHrefEnable;
@@ -106,6 +101,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 暖场图片（当前频道存在暖场图片时显示）
 @property (nonatomic, strong, readonly) UIImageView *warmUpImageView;
+
+/// LOGO视图（当前频道存在播放器LOGO时显示）
+@property (nonatomic, readonly) UIImageView *logoImageView;
+
+/// 广告视图（当前频道存在片头广告或暂停广告时显示）
+@property (nonatomic, readonly) PLVAdvertView *advertView;
 
 #pragma mark - [ 方法 ]
 #pragma mark 通用

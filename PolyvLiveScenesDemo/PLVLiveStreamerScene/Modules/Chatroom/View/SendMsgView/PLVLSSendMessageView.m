@@ -57,6 +57,7 @@ UITextViewDelegate
 @property (nonatomic, assign) CGFloat toolViewHeight; // toolView 高度
 @property (nonatomic, assign) CGFloat emojiboardHeight; // emojiBoard 高度
 @property (nonatomic, assign) CGFloat keyboardHeight; // keyboard 高度
+@property (nonatomic, assign) BOOL remindMsg; // 是否为提醒消息
 
 @property (nonatomic, strong) PLVChatModel *replyModel;
 
@@ -67,14 +68,19 @@ UITextViewDelegate
 #pragma mark - Life Cycle
 
 - (instancetype)init {
+    return [self initWithRemindMsg:NO];
+}
+
+- (instancetype)initWithRemindMsg:(BOOL)remindMsg {
     self = [super init];
     if (self) {
+        self.remindMsg = remindMsg;
         self.bottomHeight = MAX(10, P_SafeAreaBottomEdgeInsets());
         self.toolViewHeight = 44 + self.bottomHeight;
         self.emojiboardHeight = 209.0 + self.bottomHeight;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
-        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardDidHideNotification object:nil];
         
         // 提前初始化 sendMsgView，避免弹出时才初始化导致卡顿
         [self bgView];
@@ -123,7 +129,7 @@ UITextViewDelegate
 
 - (PLVLSEmojiSelectView *)emojiboard {
     if (!_emojiboard) {
-        _emojiboard = [[PLVLSEmojiSelectView alloc] init];
+        _emojiboard = [[PLVLSEmojiSelectView alloc] initWithRemindMsg:self.remindMsg];
         _emojiboard.delegate = self;
     }
     return _emojiboard;
@@ -370,7 +376,13 @@ UITextViewDelegate
     if (self.toolView.textView.attributedText.length > 0) {
         NSString *text = [self.toolView.textView plvTextForRange:NSMakeRange(0, self.toolView.textView.attributedText.length)];
         
-        BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:self.replyModel];
+        BOOL success = NO;
+        if (self.remindMsg) {
+            success = [[PLVLSChatroomViewModel sharedViewModel] sendRemindSpeakMessage:text];
+        } else {
+            success = [[PLVLSChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:self.replyModel];
+        }
+        
         if (!success) {
             [PLVLSUtils showToastInHomeVCWithMessage:@"发送消息失败"];
         }
@@ -380,7 +392,12 @@ UITextViewDelegate
 }
 
 - (void)sendImageWithImage:(UIImage *)image {
-    BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendImageMessage:image];
+    BOOL success = NO;
+    if (self.remindMsg) {
+        success = [[PLVLSChatroomViewModel sharedViewModel] sendRemindImageMessage:image];
+    } else {
+        success = [[PLVLSChatroomViewModel sharedViewModel] sendImageMessage:image];
+    }
     if (!success) {
         [PLVLSUtils showToastInHomeVCWithMessage:@"消息发送失败"];
     }
@@ -393,6 +410,10 @@ UITextViewDelegate
     // 中文键盘或第三方键盘第一次弹出时会收到两至三次弹出事件通知
     self.keyboardHeight = height;
     [self showKeyboard];
+}
+
+- (void)keyboardWillHide:(NSNotification *)notification {
+    [self removeFromWindow];
 }
 
 - (void)showKeyboard {

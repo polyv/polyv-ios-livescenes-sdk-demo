@@ -127,10 +127,19 @@
     }
         
     NSMutableDictionary * muDict = [[NSMutableDictionary alloc] init];
-    muDict[@"lotteryId"] = [NSString stringWithFormat:@"%@",self.lotteryId];
-    muDict[@"viewerId"] = [NSString stringWithFormat:@"%@",self.viewerId];
-    muDict[@"winnerCode"] = [NSString stringWithFormat:@"%@",self.winnerCode];
-    muDict[@"sessionId"] = [NSString stringWithFormat:@"%@",self.sessionId];
+    /// 从消息记录里提交数据的话，当前的lotteryId为空，所以需要用js回调的数据进行提交
+    if ([PLVFdUtil checkStringUseable:self.lotteryId]) {
+        muDict[@"lotteryId"] = [NSString stringWithFormat:@"%@",self.lotteryId];
+        muDict[@"viewerId"] = [NSString stringWithFormat:@"%@",self.viewerId];
+        muDict[@"winnerCode"] = [NSString stringWithFormat:@"%@",self.winnerCode];
+        muDict[@"sessionId"] = [NSString stringWithFormat:@"%@",self.sessionId];
+    } else {
+        muDict[@"lotteryId"] = dict[@"lotteryId"];
+        muDict[@"viewerId"] = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+        muDict[@"winnerCode"] = dict[@"winnerCode"];
+        muDict[@"sessionId"] = dict[@"lotterySessionId"];
+        
+    }
     muDict[@"receiveInfo"] = [self generateLotteryCollectString:dict[@"receiveInfo"]];
     
     NSMutableDictionary * jsonDict = [[NSMutableDictionary alloc] init];

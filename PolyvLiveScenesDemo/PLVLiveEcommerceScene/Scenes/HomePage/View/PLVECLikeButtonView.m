@@ -63,7 +63,7 @@
 - (void)setLikeCount:(NSUInteger)likeCount {
     _likeCount = likeCount;
     NSString *string = nil;
-    if (likeCount <= 0) {
+    if (likeCount < 0) {
         string = @"";
     } else if (likeCount > 9999) {
         string = [NSString stringWithFormat:@"%.1fw", likeCount/10000.0];

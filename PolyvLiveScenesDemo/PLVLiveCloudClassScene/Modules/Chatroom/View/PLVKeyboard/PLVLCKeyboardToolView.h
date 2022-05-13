@@ -49,6 +49,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)keyboardToolView_openCamera:(PLVLCKeyboardToolView *)toolView;
 /// 打开公告
 - (void)keyboardToolView_readBulletin:(PLVLCKeyboardToolView *)toolView;
+/// 打开中奖列表
+- (void)keyboardToolView_openLotteryRecord:(PLVLCKeyboardToolView *)toolView;
+/// 打开积分打赏面板
+- (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView;
 
 @end
 
@@ -61,6 +65,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL enableSendImage;
 /// 是否隐藏公告按钮，默认 NO；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hiddenBulletin;
+/// 是否隐藏消息按钮，默认 YES；YES - 隐藏，NO - 显示
+@property (nonatomic, assign) BOOL hideLotteryWinRecord;
+/// 是否有新中奖消息
+@property (nonatomic, assign) BOOL isNewLotteryMessage;
+/// 是否隐藏积分打赏按钮，默认NO；YES - 显示，NO - 隐藏
+@property (nonatomic, assign) BOOL enablePointReward;
 ///键盘的图片表情
 @property (nonatomic, strong) NSArray *imageEmotions;
 

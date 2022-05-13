@@ -56,7 +56,7 @@
 #pragma mark - Action
 
 - (void)tapAction {
-    [self updateMeesageCount:0];
+    [self updateMessageCount:0];
     if (self.didTapNewMessageView) {
         self.didTapNewMessageView();
     }
@@ -64,7 +64,7 @@
 
 #pragma mark - Public
 
-- (void)updateMeesageCount:(NSUInteger)count {
+- (void)updateMessageCount:(NSUInteger)count {
     self.messageCount = count;
     // 调整文本内容
     NSAttributedString *attributedString = [self labelText];

@@ -25,6 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取历史聊天消息失败时触发
 - (void)chatroomPresenter_loadHistoryFailure;
 
+/// 获取提醒历史聊天消息成功时触发
+/// @param modelArray 聊天消息队列
+/// @param noMore 是否还有更多历史消息，YES表示已加载完
+- (void)chatroomPresenter_loadRemindHistorySuccess:(NSArray <PLVChatModel *> *)modelArray noMore:(BOOL)noMore;
+
+/// 获取提醒历史聊天消息失败时触发
+- (void)chatroomPresenter_loadRemindHistoryFailure;
+
 /// 获取图片表情数据
 - (void)chatroomPresenter_loadImageEmotionsSuccess;
 
@@ -129,6 +137,16 @@ NS_ASSUME_NONNULL_BEGIN
 - (PLVChatModel * _Nullable)sendSpeakMessage:(NSString *)content
                               replyChatModel:(PLVChatModel * _Nullable)replyChatModel;
 
+/// 发送 提醒 文本消息
+/// @param content 消息文本
+/// @return 消息数据模型, 发送失败时，返回nil
+- (PLVChatModel * _Nullable)sendRemindSpeakMessage:(NSString *)content;
+
+/// 发送 提醒 图片消息
+/// @param image 图片
+/// @return 消息数据模型（开始上传图片即返回消息数据模型，否则返回nil）
+- (PLVChatModel * _Nullable)sendRemindImageMessage:(UIImage *)image;
+
 /// 发送图片消息
 /// @param image 图片
 /// @return 消息数据模型（开始上传图片即返回消息数据模型，否则返回nil）
@@ -161,6 +179,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 加载历史聊天记录
 - (void)loadHistory;
+
+/// 加载提醒消息历史记录
+- (void)loadRemindHistory;
 
 ///加载图片表情
 - (void)loadImageEmotions;

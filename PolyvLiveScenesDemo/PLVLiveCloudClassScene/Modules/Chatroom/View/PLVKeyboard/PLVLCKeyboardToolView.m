@@ -172,6 +172,19 @@ PLVLCKeyboardMoreViewDelegate
     self.moreboard.sendImageEnable = enableSendImage;
 }
 
+- (void)setHideLotteryWinRecord:(BOOL)hideLotteryWinRecord {
+    if (_hideLotteryWinRecord == hideLotteryWinRecord) {
+        return;
+    }
+    _hideLotteryWinRecord = hideLotteryWinRecord;
+    self.moreboard.hideLotteryWinRecord = hideLotteryWinRecord;
+}
+
+- (void)setIsNewLotteryMessage:(BOOL)isNewLotteryMessage {
+    _isNewLotteryMessage = isNewLotteryMessage;
+    self.moreboard.isNewLotteryMessage = isNewLotteryMessage;
+}
+
 - (void)setDisableOtherButtonsInTeacherMode:(BOOL)disableOtherButtonsInTeacherMode {
     if (_disableOtherButtonsInTeacherMode == disableOtherButtonsInTeacherMode) {
         return;
@@ -276,7 +289,8 @@ PLVLCKeyboardMoreViewDelegate
         _mode = MAX(MIN(PLVLCKeyboardToolModeSimple, mode), 0);
         _enableSendImage = YES;
         _disableOtherButtonsInTeacherMode = NO;
-        
+        _enablePointReward = NO;
+        _hideLotteryWinRecord = YES;
         [self setupUI];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
@@ -565,6 +579,13 @@ PLVLCKeyboardMoreViewDelegate
     [self tapAction:nil];
     if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_readBulletin:)]) {
         [self.delegate keyboardToolView_readBulletin:self];
+    }
+}
+
+- (void)keyboardMoreView_openLotteryRecord:(PLVLCKeyboardMoreView *)moreView {
+    [self tapAction:nil];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_openLotteryRecord:)]) {
+        [self.delegate keyboardToolView_openLotteryRecord:self];
     }
 }
 

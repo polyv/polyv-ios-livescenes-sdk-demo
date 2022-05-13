@@ -236,6 +236,14 @@ PLVSocketManagerProtocol
     [self.jsBridge pptStartWithVideoId:videoId channelId:channelId];
 }
 
+- (void)pptStartWithFileId:(NSString *)fileId channelId:(NSString *)channelId {
+    if (self.scene != PLVDocumentViewSceneCloudClass &&
+        self.scene != PLVDocumentViewSceneEcommerce) {
+        return;
+    }
+    [self.jsBridge pptStartWithFileId:fileId channelId:channelId];
+}
+
 #pragma mark 推流专用方法
 
 - (void)setPaintStatus:(BOOL)open {

@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PLVLCDescTopView.h"
 
 @class PLVLiveVideoChannelMenuInfo;
 
@@ -16,8 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (instancetype)initWithChannelInfo:(PLVLiveVideoChannelMenuInfo *)channelInfo content:(NSString *)content;
 
-/// 直播状态改变时调用，调用该方法自动将 inPlaybackScene 置为 NO
-- (void)updateliveStatue:(BOOL)living;
+/// 直播状态改变时调用
+- (void)updateLiveStatus:(PLVLCLiveStatus)liveStatus;
 
 @end
 

@@ -26,10 +26,13 @@ typedef NS_ENUM(NSInteger, PLVSALinkMicLayoutMode) {
 //连麦窗口宽高比例 横屏 3:2 竖屏2:3
 static CGFloat PLVSALinkMicCellAspectRatio = 1.5;
 static NSString *kCellIdentifier = @"PLVSALinkMicWindowCellID";
+static NSString *kFullScreenOpenCountKey = @"PLVSAFullScreenOpenCount";
+static NSString *kFullScreenCloseCountKey = @"PLVSAFullScreenCloseCount";
 
 @interface PLVSALinkMicWindowsView ()<
 UICollectionViewDataSource,
-UICollectionViewDelegate
+UICollectionViewDelegate,
+PLVSALinkMicWindowCellDelegate
 >
 
 #pragma mark 数据
@@ -40,6 +43,8 @@ UICollectionViewDelegate
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, copy) NSString *currentSpeakerLinkMicUserId; //当前显示主讲用户的连麦id[布局模式切换时缓存此id]
 @property (nonatomic, strong) NSIndexPath *showingSpeakerIndexPath; // 主讲显示的画面数据对应本应在collectionView的下标 (仅在讲师角色 PLVSALinkMicLayoutModeSpeaker下有效)
+@property (nonatomic, copy) NSString *fullScreenUserId; // 全屏用户的Id
+@property (nonatomic, assign) BOOL delayDisplayToast; // 是否需要延迟显示toast
 
 #pragma mark UI
 /// view hierarchy
@@ -53,6 +58,8 @@ UICollectionViewDelegate
 @property (nonatomic, strong, readonly) UICollectionViewFlowLayout *collectionViewLayout; // 集合视图的布局
 @property (nonatomic, strong) PLVSALinkMicWindowsSpeakerView *speakerView; // 主讲模式下的第一画面
 @property (nonatomic, strong) PLVSALinkMicSpeakerPlaceholderView *speakerPlaceholderView; // 嘉宾角色登录时 主播的占位图
+@property (nonatomic, strong) UILabel *linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
+@property (nonatomic, strong) PLVSALinkMicWindowCell *fullScreenCell; // 全屏视图
 
 @end
 
@@ -64,6 +71,7 @@ UICollectionViewDelegate
     self = [super init];
     if (self) {
         self.linkMicLayoutMode = PLVSALinkMicLayoutModeTiled;
+        [self showToastWithFullScreen:YES reset:YES];
         [self setupUI];
     }
     return self;
@@ -115,9 +123,13 @@ UICollectionViewDelegate
     [self.collectionView reloadData];
 }
 
+- (void)fullScreenLinkMicUser:(PLVLinkMicOnlineUser *)onlineUser {
+    [self fullScreenViewOnlineUser:onlineUser didFullScreen:YES];
+}
+
 #pragma mark - [ Private Method ]
 
-/// 根据下标值获取对应连麦用户model
+/// 根据连麦列表视图下标 获取在线用户model [经过业务逻辑处理 与 dataArray 数据并不对应]
 - (PLVLinkMicOnlineUser *)onlineUserWithIndex:(NSInteger)targetIndex {
     if (self.linkMicUserCount == 1 && targetIndex == 0 &&
         [self isLocalUserPreviewView]) {
@@ -129,7 +141,13 @@ UICollectionViewDelegate
         targetIndex >= self.showingSpeakerIndexPath.row) {
         targetIndex ++;
     }
-    PLVLinkMicOnlineUser *onlineUser = nil;
+    
+    return [self readUserModelFromDataArray:targetIndex];
+}
+
+/// 从 dataArray 的对应 targetIndex 获取在线用户
+- (PLVLinkMicOnlineUser *)readUserModelFromDataArray:(NSInteger)targetIndex{
+    PLVLinkMicOnlineUser *onlineUser;
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(onlineUserInLinkMicWindowsView:withTargetIndex:)]) {
         onlineUser = [self.delegate onlineUserInLinkMicWindowsView:self withTargetIndex:targetIndex];
@@ -141,7 +159,7 @@ UICollectionViewDelegate
     NSInteger targetUserIndex = -1;
     if ([self.delegate respondsToSelector:@selector(onlineUserIndexInLinkMicWindowsView:filterBlock:)]) {
         targetUserIndex = [self.delegate onlineUserIndexInLinkMicWindowsView:self filterBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
-            if ([enumerateUser.linkMicUserId isEqualToString:userId]) { return YES; }
+            if ([enumerateUser.linkMicUserId isEqualToString:userId] || [enumerateUser.userId isEqualToString:userId]) { return YES; }
             return NO;
         }];
     }
@@ -164,7 +182,7 @@ UICollectionViewDelegate
     }
 }
 
-// 设置连麦用户model的’即将销毁Block‘，用于在连麦用户退出时及时回收资源
+/// 设置连麦用户model的’即将销毁Block‘，用于在连麦用户退出时及时回收资源
 - (void)setupWillDeallocBlockWithOnlineUser:(PLVLinkMicOnlineUser *)aOnlineUser {
     __weak typeof(self) weakSelf = self;
     aOnlineUser.willDeallocBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
@@ -172,8 +190,12 @@ UICollectionViewDelegate
         NSString * didLeftLinkMicUserId = onlineUser.linkMicUserId;
         dispatch_async(dispatch_get_main_queue(), ^{ // 回收资源
             if ([didLeftLinkMicUserId isEqualToString:weakSelf.currentSpeakerLinkMicUserId]) {
-                /// 连麦用户退出时，清理第一画面视图资源
+                /// 连麦用户销毁时，清理第一画面视图资源
                 [weakSelf cleanSpeakerView];
+            }
+            if ([didLeftLinkMicUserId isEqualToString:weakSelf.fullScreenUserId]) {
+                /// 连麦用户销毁时，并且此用户全屏则需要 关闭全屏
+                [weakSelf fullScreenViewOnlineUser:nil didFullScreen:NO];
             }
             [canvasView removeRTCView];
             [canvasView removeFromSuperview];
@@ -204,7 +226,7 @@ UICollectionViewDelegate
         self.showingSpeakerIndexPath = [NSIndexPath indexPathForRow:indexRow inSection:0];
         [self setupLinkMicCanvasViewWithOnlineUser:firstSiteOnlineUser];
         [self setupWillDeallocBlockWithOnlineUser:firstSiteOnlineUser];
-        [self.speakerView showSpeakerViewWithUserModel:firstSiteOnlineUser];
+        [self.speakerView showSpeakerViewWithUserModel:firstSiteOnlineUser delegate:self];
     }
 }
 
@@ -263,7 +285,7 @@ UICollectionViewDelegate
     CGFloat collectionViewX = left;
     CGFloat collectionViewY = top;
     self.speakerPlaceholderView.hidden = YES;
-    
+
     if (self.linkMicUserCount <= 1 && ![self showSpeakerPlaceholderView]) { //连麦人数1人以下,且不需要显示讲师讲师占位图
         self.collectionView.frame = self.bounds;
     } else if (self.linkMicUserCount <= 1 && [self showSpeakerPlaceholderView]) {
@@ -318,6 +340,53 @@ UICollectionViewDelegate
     self.collectionView.contentOffset = CGPointZero;
     [self.collectionView.collectionViewLayout invalidateLayout];
     [self.collectionView setCollectionViewLayout:self.collectionViewLayout animated:YES];
+}
+
+- (void)fullScreenViewOnlineUser:(PLVLinkMicOnlineUser *)onlineUser didFullScreen:(BOOL)fullScreen {
+    PLVSALinkMicWindowCell *collectionViewCell;
+    NSInteger indexRow = [self findCellIndexWithUserId:onlineUser.userId];
+    if (indexRow > -1) {
+        // 主讲模式下，indexPath 会有改变
+        if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker &&
+            indexRow == self.showingSpeakerIndexPath.row) {
+            collectionViewCell = self.speakerView.linkMicWindowCell;
+        } else {
+            if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker &&
+                indexRow > self.showingSpeakerIndexPath.row) {
+                indexRow --;
+            }
+            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:indexRow inSection:0];
+            collectionViewCell = (PLVSALinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:indexPath];
+        }
+    }
+
+    if (!fullScreen) { // 取消全屏
+        if (collectionViewCell) { // 恢复 Cell 数据
+            BOOL hideCanvasView = [self isLocalUserPreviewView] || (self.linkMicUserCount == 1 && ![self showSpeakerPlaceholderView]);
+            [collectionViewCell setUserModel:onlineUser hideCanvasViewWhenCameraClose:hideCanvasView];
+        }
+        
+        [self.fullScreenCell.contentView removeFromSuperview];
+        self.fullScreenCell.delegate = nil;
+        self.fullScreenCell = nil;
+        self.fullScreenUserId = nil;
+        [self showToastWithFullScreen:NO reset:NO];
+    } else if (fullScreen && !self.fullScreenCell && indexRow > -1) { // 开启全屏
+        [collectionViewCell setUserModel:[PLVLinkMicOnlineUser new] hideCanvasViewWhenCameraClose:NO];
+        // 创建全屏视图
+        self.fullScreenCell = [[PLVSALinkMicWindowCell alloc] init];
+        self.fullScreenCell.delegate = self;
+        self.fullScreenCell.frame = self.bounds;
+        [[PLVSAUtils sharedUtils].homeVC.view addSubview:self.fullScreenCell.contentView];
+        [self.fullScreenCell setNeedsLayout];
+        [self.fullScreenCell layoutIfNeeded];
+        [self.fullScreenCell setUserModel:onlineUser hideCanvasViewWhenCameraClose:NO];
+        self.fullScreenUserId = onlineUser.linkMicUserId;
+        [self showToastWithFullScreen:YES reset:NO];
+    }
+    
+    // 全屏时需要隐藏状态栏
+    [[UIApplication sharedApplication] setStatusBarHidden:fullScreen];
 }
 
 #pragma mark Initialize
@@ -409,15 +478,49 @@ UICollectionViewDelegate
     return isLoginUser;
 }
 
-/// 讲师、助教、管理员可以管理连麦操作
-- (BOOL)canManagerLinkMic {
+/// 讲师、助教、管理员、嘉宾可以 点击查看 连麦用户
+- (BOOL)canCheckLinkMicUser {
     PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
     if (userType == PLVRoomUserTypeTeacher ||
         userType == PLVRoomUserTypeAssistant ||
-        userType == PLVRoomUserTypeManager) {
+        userType == PLVRoomUserTypeManager ||
+        userType == PLVRoomUserTypeGuest) {
         return YES;
     } else {
         return NO;
+    }
+}
+
+/// 全屏或者关闭全屏后 Toast 提示
+/// @param fullScreen 是否全屏
+/// @param reset 是否重置统计数量
+- (void)showToastWithFullScreen:(BOOL)fullScreen reset:(BOOL)reset {
+    NSUserDefaults *userDefaults = [NSUserDefaults standardUserDefaults];
+    if (reset) {
+        [userDefaults setInteger:0 forKey:kFullScreenOpenCountKey];
+        [userDefaults setInteger:0 forKey:kFullScreenCloseCountKey];
+        return;
+    }
+    
+    NSString *fullScreenCountKey = fullScreen ? kFullScreenCloseCountKey : kFullScreenOpenCountKey;
+    NSInteger fullScreenCount = [userDefaults integerForKey:fullScreenCountKey];
+    NSInteger maxCount = fullScreen ? 1 : 0;
+    NSString *message = fullScreen ? @"双击退出全屏" : @"双击窗口放大";
+    if (fullScreenCount > maxCount) {
+        return;
+    }
+    
+    fullScreenCount += 1;
+    [userDefaults setInteger:fullScreenCount forKey:fullScreenCountKey];
+    [userDefaults synchronize];
+    
+    if (self.delayDisplayToast) {
+        self.delayDisplayToast = NO;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [PLVSAUtils showToastInHomeVCWithMessage:message];
+        });
+    } else {
+        [PLVSAUtils showToastInHomeVCWithMessage:message];
     }
 }
 
@@ -436,8 +539,7 @@ UICollectionViewDelegate
 
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView
                            cellForItemAtIndexPath:(NSIndexPath *)indexPath {
-    PLVLinkMicOnlineUser *onlineUser = nil;
-    onlineUser = [self onlineUserWithIndex:indexPath.row];
+    PLVLinkMicOnlineUser *onlineUser = [self onlineUserWithIndex:indexPath.row];
     if (!onlineUser) {
         return [collectionView dequeueReusableCellWithReuseIdentifier:kCellIdentifier forIndexPath:indexPath];
     }
@@ -445,9 +547,13 @@ UICollectionViewDelegate
     [self setupWillDeallocBlockWithOnlineUser:onlineUser];
     
     PLVSALinkMicWindowCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kCellIdentifier forIndexPath:indexPath];
-    // 设备检测页或者连麦人数为1时不显示占位图的情况下，不显示昵称且关闭摄像头时不显示canvasView
-    BOOL hideCanvasView = [self isLocalUserPreviewView] || (self.linkMicUserCount == 1 && ![self showSpeakerPlaceholderView]);
-    [cell setUserModel:onlineUser hideCanvasViewWhenCameraClose:hideCanvasView];
+    cell.delegate = self;
+    if (![onlineUser.linkMicUserId isEqualToString:self.fullScreenUserId]) {
+        // 设备检测页或者连麦人数为1时不显示占位图的情况下，不显示昵称且关闭摄像头时不显示canvasView
+        BOOL hideCanvasView = [self isLocalUserPreviewView] || (self.linkMicUserCount == 1 && ![self showSpeakerPlaceholderView]);
+        [cell setUserModel:onlineUser hideCanvasViewWhenCameraClose:hideCanvasView];
+    }
+    
     return cell;
 }
 
@@ -494,19 +600,41 @@ UICollectionViewDelegate
     return CGSizeMake(collectionCellWidth, collectionCellHeigth);
 }
 
-- (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    if (![self canManagerLinkMic]) {
+#pragma mark PLVSALinkMicWindowCellDelegate
+
+- (void)linkMicWindowCellDidSelectCell:(PLVSALinkMicWindowCell *)collectionViewCell {
+    if (![self canCheckLinkMicUser]) {
+        return;
+    }
+
+    NSIndexPath *indexPath = [self.collectionView indexPathForCell:collectionViewCell];
+    PLVLinkMicOnlineUser *onlineUser = [self onlineUserWithIndex:indexPath.row];
+    if (!indexPath || !onlineUser || onlineUser.localUser) {
         return;
     }
     
-    PLVLinkMicOnlineUser *onlineUser = [self onlineUserWithIndex:indexPath.row];
-    if (!onlineUser || onlineUser.localUser) {
-        return;
-    }
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(linkMicWindowsView:didSelectOnlineUser:)]) {
         [self.delegate linkMicWindowsView:self didSelectOnlineUser:onlineUser];
     }
+}
+
+- (void)linkMicWindowCell:(PLVSALinkMicWindowCell *)collectionViewCell linkMicUser:(PLVLinkMicOnlineUser *)onlineUser didFullScreen:(BOOL)fullScreen {
+    [self fullScreenViewOnlineUser:onlineUser didFullScreen:fullScreen];
+}
+
+- (void)linkMicWindowCell:(PLVSALinkMicWindowCell *)collectionViewCell didScreenShareForRemoteUser:(PLVLinkMicOnlineUser *)onlineUser {
+    // 远端用户 屏幕共享 开启关闭 状态改变
+    NSString *message = nil;
+    if (onlineUser.userType == PLVRoomUserTypeTeacher) {
+        message = onlineUser.currentScreenShareOpen ? @"主持人开始共享" : @"主持人结束共享";
+    } else if (onlineUser.userType == PLVSocketUserTypeGuest) {
+        message = onlineUser.currentScreenShareOpen ? [NSString stringWithFormat:@"%@开始共享",onlineUser.nickname] : [NSString stringWithFormat:@"%@结束共享",onlineUser.nickname];
+    }
+    
+    self.delayDisplayToast = YES;
+    [self fullScreenViewOnlineUser:onlineUser didFullScreen:onlineUser.currentScreenShareOpen];
+    [PLVSAUtils showToastInHomeVCWithMessage:message];
 }
 
 @end

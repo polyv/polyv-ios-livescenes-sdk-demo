@@ -16,6 +16,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送消息界面
 @interface PLVLSSendMessageView : UIView
 
+/// 初始化
+/// @param remindMsg YES:提醒消息 NO:公屏消息
+- (instancetype)initWithRemindMsg:(BOOL)remindMsg;
+
 //图片表情资源
 @property (nonatomic, strong) NSArray *imageEmotionArray;
 

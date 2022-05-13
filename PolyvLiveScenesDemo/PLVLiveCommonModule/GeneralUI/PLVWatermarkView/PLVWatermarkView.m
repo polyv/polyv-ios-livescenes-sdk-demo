@@ -70,6 +70,9 @@ static NSInteger const PLVWatermarkLargeHeight  = 30;
 
 @property (nonatomic, assign) CGFloat watermarkHeight;
 
+#pragma mark UI
+@property (nonatomic, strong) UIView *contentView;
+
 @end
 
 @implementation PLVWatermarkView
@@ -85,19 +88,28 @@ static NSInteger const PLVWatermarkLargeHeight  = 30;
         
         self.model = model;
         [self calcWatermarkWidth];
+        [self initUI];
     }
     return self;
 }
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    [self updateUI];
+    /// 为兼容某些版本操作系统
+    __weak typeof(self)weakSelf = self;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [weakSelf updateUI];
+    });
 }
 
 #pragma mark - [ Private Method ]
 
+- (void)initUI {
+    [self addSubview:self.contentView];
+}
+
 - (void)clearWatermark {
-    for (UIView *view in self.subviews) {
+    for (UIView *view in self.contentView.subviews) {
         if ([view isKindOfClass:UILabel.class]){
             [view removeFromSuperview];
         }
@@ -105,22 +117,23 @@ static NSInteger const PLVWatermarkLargeHeight  = 30;
 }
 
 - (void)calcWatermarkWidth {
-    UILabel *lable = [[UILabel alloc] init];
-    lable.font = [UIFont systemFontOfSize:self.fontSize];
-    lable.text = self.model.content;
-    self.watermarkWidth = [lable sizeThatFits:CGSizeMake(MAXFLOAT, self.watermarkHeight)].width;
+    UILabel *label = [[UILabel alloc] init];
+    label.font = [UIFont systemFontOfSize:self.fontSize];
+    label.text = self.model.content;
+    self.watermarkWidth = [label sizeThatFits:CGSizeMake(MAXFLOAT, self.watermarkHeight)].width;
 }
 
 - (void)updateUI {
     if (!self.watermarkWidth) {
         return;
     }
+    self.contentView.frame = self.bounds;
 
     [self clearWatermark];
     CGFloat xPadding = self.fontSize;
     CGFloat yPadding = 30;
-    CGFloat selfWidth = CGRectGetWidth(self.frame);
-    CGFloat selfHeight = CGRectGetHeight(self.frame);
+    CGFloat selfWidth = CGRectGetWidth(self.contentView.bounds);
+    CGFloat selfHeight = CGRectGetHeight(self.contentView.bounds);
     /// 计算X轴能容纳的水印数量
     NSInteger rowNum = selfWidth / self.watermarkWidth;
     NSInteger finalRowNum;
@@ -138,14 +151,14 @@ static NSInteger const PLVWatermarkLargeHeight  = 30;
     /// 计算Y轴能容纳的水印数量
     NSInteger columnNum = selfHeight / self.watermarkHeight;
     CGFloat columnOffset = (columnNum - 1) * yPadding;
-    NSInteger finalColunmNum = ceil((selfHeight - columnOffset) / self.watermarkHeight);
-    if (columnNum > finalColunmNum) {
-        NSInteger offsetHeight = (columnNum - finalColunmNum - 1) * yPadding;
-        finalColunmNum = ceil((selfHeight - columnOffset + offsetHeight) / self.watermarkHeight);
+    NSInteger finalColumnNum = ceil((selfHeight - columnOffset) / self.watermarkHeight);
+    if (columnNum > finalColumnNum) {
+        NSInteger offsetHeight = (columnNum - finalColumnNum - 1) * yPadding;
+        finalColumnNum = ceil((selfHeight - columnOffset + offsetHeight) / self.watermarkHeight);
     }
     
     /// 总数量
-    NSInteger total = finalRowNum * finalColunmNum;
+    NSInteger total = finalRowNum * finalColumnNum;
     for (int i = 0; i < total; i++) {
         PLVWatermarkLabel *label = [[PLVWatermarkLabel alloc] init];
         label.text = self.model.content;
@@ -159,11 +172,19 @@ static NSInteger const PLVWatermarkLargeHeight  = 30;
         float y = section * height + section * yPadding;
         label.frame = CGRectMake(x, y, width, height);
         label.transform = CGAffineTransformMakeRotation(-0.3);
-        [self addSubview:label];
+        [self.contentView addSubview:label];
     }
 }
 
-#pragma mark [ Setter ]
+#pragma mark Getter & Setter
+
+- (UIView *)contentView {
+    if (!_contentView) {
+        _contentView = [[UIView alloc] init];
+        _contentView.backgroundColor = [UIColor clearColor];
+    }
+    return _contentView;
+}
 
 - (void)setModel:(PLVWatermarkModel *)model {
     _model = model;

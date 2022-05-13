@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - [ 属性 ]
 
 /// 背景视图 (负责展示 占位图)
-//@property (nonatomic, strong, readonly) UIImageView * placeholderImageView;
+@property (nonatomic, strong, readonly) UIImageView * placeholderImageView;
 
 #pragma mark - [ 方法 ]
 /// 添加 rtcview

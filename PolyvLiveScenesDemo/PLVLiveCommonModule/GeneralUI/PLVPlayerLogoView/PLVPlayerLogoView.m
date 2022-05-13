@@ -7,6 +7,7 @@
 //
 
 #import "PLVPlayerLogoView.h"
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @implementation PLVPlayerLogoParam
 
@@ -51,10 +52,10 @@
 
 @interface PLVPlayerLogoView ()
 
-@property (nonatomic, strong) UIView *container;
-
 @property (nonatomic, strong) NSMutableArray <UIImageView *> *logos;
 @property (nonatomic, strong) NSMutableArray <PLVPlayerLogoParam *> *logoParams;
+@property (nonatomic, assign) NSString *logoHref;
+@property (nonatomic, strong) UIImageView *logoImageView;
 
 @end
 
@@ -66,7 +67,7 @@
     self = [super init];
     if (self) {
         self.clipsToBounds = YES;
-        self.autoresizingMask = UIViewAutoresizingFlexibleWidth|UIViewAutoresizingFlexibleHeight;
+        self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         self.userInteractionEnabled = NO;
         _logos = [[NSMutableArray alloc] initWithCapacity:2];
         _logoParams = [[NSMutableArray alloc] initWithCapacity:2];
@@ -75,6 +76,7 @@
 }
 
 - (void)layoutSubviews {
+    self.frame = self.superview.bounds;
     for (int i = 0; i < [self.logos count]; i++) {
         UIImageView *imageView = self.logos[i];
         PLVPlayerLogoParam *param = self.logoParams[i];
@@ -119,12 +121,10 @@
     [self addSubview:imageView];
     [self.logos addObject:imageView];
     [self.logoParams addObject:param];
-}
-
-- (void)addAtView:(UIView *)container {
-    self.frame = container.bounds;
-    self.container = container;
-    [self.container addSubview:self];
+    if ([PLVFdUtil checkStringUseable:param.logoHref]) {
+        self.logoHref = param.logoHref;
+        [self logoImageAddTapGestureRecognizer:imageView];
+    }
 }
 
 #pragma mark - Private
@@ -132,10 +132,19 @@
 /// 计算 logo frame 值
 - (CGRect)getLogoRectWithParam:(PLVPlayerLogoParam *)param imageSize:(CGSize)imageSize {
     CGSize logoSize = [self getLogoSizeWithParam:param imageSize:imageSize];
-    CGSize containerSize = self.container.bounds.size;
+    CGSize containerSize = self.bounds.size;
     CGPoint origin = CGPointZero;
-    CGFloat xOffset = self.superview.frame.size.width * param.xOffsetScale;
-    CGFloat yOffset = self.superview.frame.size.height * param.yOffsetScale;
+    CGFloat xOffset = containerSize.width * param.xOffsetScale;
+    CGFloat yOffset = containerSize.height * param.yOffsetScale;
+    
+    /// 当视频源宽度  > 当前屏幕宽度时
+    CGSize keyWindowSize = [UIApplication sharedApplication].keyWindow.bounds.size;
+    CGFloat widthOffset = containerSize.width - keyWindowSize.width;
+    if (widthOffset > 0) {
+        xOffset += widthOffset / 2;
+        yOffset += keyWindowSize.height / 7;
+    }
+    
     switch (param.position) {
         case PLVPlayerLogoPositionLeftUp:
             origin = CGPointMake(xOffset, yOffset);
@@ -164,7 +173,7 @@
         logoSize.width = param.logoWidth;
         logoSize.height = param.logoHeight;
     } else if (param.logoWidthScale > 0 && param.logoHeightScale > 0) {
-        CGSize containerSize = self.container.bounds.size;
+        CGSize containerSize = self.bounds.size;
         logoSize.width = containerSize.width * param.logoWidthScale;
         logoSize.height = containerSize.height * param.logoHeightScale;
     }
@@ -179,6 +188,25 @@
         }
     }
     return logoSize;
+}
+
+/// logo图片添加点击事件
+- (void)logoImageAddTapGestureRecognizer:(UIImageView *)imageView {
+    if (!imageView) {
+        return;
+    }
+    self.logoImageView = imageView;
+    self.userInteractionEnabled = YES;
+    imageView.userInteractionEnabled = YES;
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction)];
+    [imageView addGestureRecognizer:tap];
+}
+
+#pragma mark - [ Event ]
+#pragma mark Action
+
+- (void)tapAction {
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.logoHref]];
 }
 
 @end

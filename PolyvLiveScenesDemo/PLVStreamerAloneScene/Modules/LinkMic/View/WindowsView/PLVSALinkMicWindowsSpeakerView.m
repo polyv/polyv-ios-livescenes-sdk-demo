@@ -8,11 +8,9 @@
 
 #import "PLVSALinkMicWindowsSpeakerView.h"
 
-#import "PLVLinkMicOnlineUser+SA.h"
-
 @interface PLVSALinkMicWindowsSpeakerView ()
 
-@property (nonatomic, strong) UIView *contentBackgroudView; // 内容背景视图 (负责承载 RTC画面)
+@property (nonatomic, strong) PLVSALinkMicWindowCell *linkMicWindowCell;
 
 @end
 
@@ -31,54 +29,35 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    self.contentBackgroudView.frame = self.bounds;
+    self.linkMicWindowCell.frame = self.bounds;
 }
 
 #pragma mark - [ Public Method ]
 
-- (void)showSpeakerViewWithUserModel:(PLVLinkMicOnlineUser *)aOnlineUser {
+- (void)showSpeakerViewWithUserModel:(PLVLinkMicOnlineUser *)aOnlineUser delegate:(id<PLVSALinkMicWindowCellDelegate>)delegate {
     self.hidden = NO;
-    [aOnlineUser.canvasView rtcViewShow:aOnlineUser.currentCameraShouldShow];
-    aOnlineUser.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-        [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
-    };
-    [self contentBackgroundViewDisplaySubview:aOnlineUser.canvasView];
+    self.linkMicWindowCell.delegate = delegate;
+    [self.linkMicWindowCell setUserModel:aOnlineUser hideCanvasViewWhenCameraClose:NO];
 }
 
 - (void)hideSpeakerView {
     self.hidden = YES;
-    [self removeSubviewsFromSuperview:self.contentBackgroudView];
 }
 
 #pragma mark - [ Private Method ]
 
 - (void)setupUI {
     self.hidden = YES;
-    [self addSubview:self.contentBackgroudView];
-}
-
-- (void)removeSubviewsFromSuperview:(UIView *)superview{
-    for (UIView * subview in superview.subviews) { [subview removeFromSuperview]; }
-}
-
-- (void)contentBackgroundViewDisplaySubview:(UIView *)subview {
-    if (subview && [subview isKindOfClass:UIView.class]) {
-        [self removeSubviewsFromSuperview:self.contentBackgroudView];
-        [self.contentBackgroudView addSubview:subview];
-        subview.frame = self.contentBackgroudView.bounds;
-        subview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    }else{
-        NSLog(@"PLVSALinkMicWindowsSpeakerView - contentBackgroundViewDisplaySubview failed, subview:%@",subview);
-    }
+    [self addSubview:self.linkMicWindowCell];
 }
 
 #pragma mark Getter
 
-- (UIView *)contentBackgroudView {
-    if (!_contentBackgroudView) {
-        _contentBackgroudView = [[UIView alloc] init];
+- (PLVSALinkMicWindowCell *)linkMicWindowCell {
+    if (!_linkMicWindowCell) {
+        _linkMicWindowCell = [[PLVSALinkMicWindowCell alloc] init];
     }
-    return _contentBackgroudView;
+    return _linkMicWindowCell;
 }
 
 @end

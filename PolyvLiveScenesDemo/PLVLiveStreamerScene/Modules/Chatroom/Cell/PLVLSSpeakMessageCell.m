@@ -55,6 +55,14 @@
     return self;
 }
 
+// cell 复用前清除数据
+- (void)prepareForReuse {
+    [super prepareForReuse];
+    if (_prohibitWordTipView) {
+        [self.prohibitWordTipView dismiss];
+    }
+}
+
 - (void)layoutSubviews {
     if (self.cellWidth == 0) {
         return;
@@ -82,7 +90,7 @@
         CGSize maxSize = CGSizeMake(bubbleSize.width, CGFLOAT_MAX);
         CGSize tipSize = [attri boundingRectWithSize:maxSize options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
         tipSize.width = MIN(tipSize.width + 16, bubbleSize.width); // 适配换行时
-        self.prohibitWordTipView.frame = CGRectMake(bubbleSize.width - tipSize.width, CGRectGetMaxY(self.textView.frame), tipSize.width, tipSize.height + 20);
+        self.prohibitWordTipView.frame = CGRectMake(bubbleSize.width - tipSize.width, CGRectGetMaxY(self.textView.frame), tipSize.width, tipSize.height + 20 + 8);
     } else {
         self.prohibitWordTipView.frame = CGRectZero;
     }
@@ -160,7 +168,7 @@
     }
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
     
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
@@ -175,8 +183,8 @@
         __weak typeof(self)weakSelf = self;
         self.prohibitWordTipView.dismissBlock = ^{
             weakSelf.model.prohibitWordTipShowed = YES;
-            if (weakSelf.refreshCellHandler) {
-                weakSelf.refreshCellHandler();
+            if (weakSelf.prohibitWordDismissHandler) {
+                weakSelf.prohibitWordDismissHandler();
             }
         };
     }else{
@@ -197,7 +205,7 @@
 /// 获取消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
-                                                           loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord{
+                                                           loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord isRemindMsg:(BOOL)isRemindMsg {
     UIFont *font = [UIFont systemFontOfSize:12.0];
     NSString *nickNameColorHexString = [user isUserSpecial] ? @"#FFCA43" : @"#4399FF";
     UIColor *nickNameColor = [PLVColorUtil colorFromHexString:nickNameColorHexString];
@@ -226,6 +234,19 @@
     [contentLabelString appendAttributedString:nickNameString];
     [contentLabelString appendAttributedString:[emojiContentString copy]];
     
+    // 提醒消息
+    if (isRemindMsg) {
+        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_tag"];
+        //创建Image的富文本格式
+        NSTextAttachment *attach = [[NSTextAttachment alloc] init];
+        CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
+        attach.bounds = CGRectMake(0, -ceilf(paddingTop), image.size.width, image.size.height);
+        attach.image = image;
+        //添加到富文本对象里
+        NSAttributedString * imageStr = [NSAttributedString attributedStringWithAttachment:attach];
+        [contentLabelString insertAttributedString:[[NSAttributedString alloc] initWithString:@" "] atIndex:0];
+        [contentLabelString insertAttributedString:imageStr atIndex:0];
+    }
     return contentLabelString;
 }
 
@@ -257,7 +278,7 @@
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
     if (model.isProhibitMsg) {
         maxTextViewWidth = maxTextViewWidth - 6 - 16 -12;
     }
@@ -268,8 +289,9 @@
         !model.prohibitWordTipIsShowed) {
         
         NSAttributedString *attri = [PLVLSSpeakMessageCell contentLabelAttributedStringWithProhibitWordTip:[PLVLSSpeakMessageCell prohibitWordTipWithModel:model]];
-        CGSize tipSize = [attri boundingRectWithSize:CGSizeMake(xPadding * 2 + contentLabelSize.width + 6 + 16, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin context:nil].size;
-        contentLabelSize.height += tipSize.height + 20 + 8;
+        CGFloat maxWidth = xPadding * 2 + contentLabelSize.width + 6 + 16;
+        CGSize tipSize = [attri boundingRectWithSize:CGSizeMake(maxWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin context:nil].size;
+        contentLabelSize.height += tipSize.height + 20 + 8 + 2;
     }
     CGFloat bubbleHeight = 4 + contentLabelSize.height + 4; // content文本与气泡的内部有上下间距4
     bubbleHeight = ceilf(bubbleHeight);
@@ -290,7 +312,7 @@
     if (self.model.isProhibitMsg &&
         self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
             self.model.prohibitWordTipShowed = NO;
-            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+            self.prohibitWordShowHandler ? self.prohibitWordShowHandler() : nil;
     }
 }
 
@@ -298,7 +320,7 @@
     if (self.model.isProhibitMsg &&
         self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
             self.model.prohibitWordTipShowed = NO;
-            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+            self.prohibitWordShowHandler ? self.prohibitWordShowHandler() : nil;
     }
 }
 

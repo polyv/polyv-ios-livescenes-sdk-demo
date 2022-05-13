@@ -27,6 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param linkMicUserId 设置主讲模式时的主讲用户Id【当为空时会在内部设置连麦列表第一个人为主讲】
 - (void)switchLinkMicWindowsLayoutSpeakerMode:(BOOL)speakerMode linkMicWindowMainSpeaker:(NSString * _Nullable)linkMicUserId;
 
+/// 连麦用户全屏操作
+/// @param onlineUser 连麦用户信息
+- (void)fullScreenLinkMicUser:(PLVLinkMicOnlineUser *)onlineUser;
+
 @end
 
 @protocol PLVSALinkMicWindowsViewDelegate <NSObject>

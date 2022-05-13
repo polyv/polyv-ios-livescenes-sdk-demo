@@ -68,6 +68,10 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, copy) NSString *videoId;
 /// 是否是点播列表
 @property (nonatomic, assign) BOOL vodList;
+/// 是否是直播暂存
+@property (nonatomic, assign) BOOL recordEnable;
+/// 暂存文件
+@property (nonatomic, strong) PLVLiveRecordFileModel *recordFile;
 /// 回放列表
 @property (nonatomic, strong) PLVPlaybackListModel *playbackList;
 /// 章节功能是否可用

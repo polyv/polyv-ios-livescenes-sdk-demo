@@ -58,7 +58,6 @@
 /// 清晰度切换
 - (void)streamerSettingViewBitRateButtonClickWithResolutionType:(PLVResolutionType)type;
 
-
 @end
 
 

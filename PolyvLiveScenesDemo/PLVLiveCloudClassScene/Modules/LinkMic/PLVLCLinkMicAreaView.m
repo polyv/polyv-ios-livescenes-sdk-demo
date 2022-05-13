@@ -33,6 +33,8 @@ PLVLCLinkMicWindowsViewDelegate
 #pragma mark 对象
 @property (nonatomic, strong) PLVLinkMicPresenter * presenter; // 连麦逻辑处理模块
 
+@property (nonatomic, strong) UIImageView * logoImageView;
+
 #pragma mark UI
 /// view hierarchy
 ///
@@ -294,6 +296,9 @@ PLVLCLinkMicWindowsViewDelegate
 
 /// 连麦窗口列表视图 需外部展示 ‘第一画面连麦窗口’
 - (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView{
+    if (self.logoImageView) {
+        self.logoImageView.userInteractionEnabled = YES;
+    }
     if ([self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:showFirstSiteCanvasViewOnExternal:)]) {
         [self.delegate plvLCLinkMicAreaView:self showFirstSiteCanvasViewOnExternal:canvasView];
     }
@@ -405,7 +410,9 @@ PLVLCLinkMicWindowsViewDelegate
         }
     }
     
-    [self.windowsView reloadLinkMicUserWindowsWithCompleteBlock:nil];
+    [self.windowsView reloadLinkMicUserWindowsWithCompleteBlock:^{
+        self.logoImageView = self.windowsView.logoImageView ?: nil;
+    }];
 }
 
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerLinkMicUserId:(NSString *)mainSpeakerLinkMicUserId mainSpeakerToMainScreen:(BOOL)mainSpeakerToMainScreen{
@@ -435,7 +442,7 @@ PLVLCLinkMicWindowsViewDelegate
             showed = YES;
             [PLVAuthorizationManager showAlertWithTitle:title message:msg viewController:currentVC];
         } else if (errorCode == PLVLinkMicErrorCode_RequestJoinFailedStatusIllegal){
-            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld,%ld",(long)errorCode,(long)extraCode];
+            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld,%ld 请稍后再试或重进直播间",(long)errorCode,(long)extraCode];
         } else if (errorCode == PLVLinkMicErrorCode_RequestJoinFailedRtcEnabledGetFail){
             msg = [NSString stringWithFormat:@"接口请求失败，请稍后再试 %ld",(long)errorCode];
         } else if (errorCode == PLVLinkMicErrorCode_RequestJoinFailedNoRtcType){
@@ -453,7 +460,7 @@ PLVLCLinkMicWindowsViewDelegate
     } else if (errorCode == PLVLinkMicErrorCode_CancelRequestJoinFailedStatusIllegal){ /// 取消举手失败
         NSString * msg = @"";
         if (errorCode == PLVLinkMicErrorCode_CancelRequestJoinFailedStatusIllegal) {
-            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld 请稍后再试",(long)presenter.linkMicStatus];
+            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld 请稍后再试或重进直播间",(long)presenter.linkMicStatus];
         }
         
         [PLVLCUtils showHUDWithTitle:@"取消举手失败" detail:msg view:currentVC.view];
@@ -463,7 +470,7 @@ PLVLCLinkMicWindowsViewDelegate
         if (errorCode == PLVLinkMicErrorCode_JoinChannelFailed) {
             msg = [NSString stringWithFormat:@"连麦引擎创建错误 %ld,%ld",(long)errorCode,(long)extraCode];
         }else if (errorCode == PLVLinkMicErrorCode_JoinChannelFailedStatusIllegal){
-            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld 请稍后再试",(long)presenter.linkMicStatus];
+            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld 请稍后再试或重进直播间",(long)presenter.linkMicStatus];
         } else if (errorCode == PLVLinkMicErrorCode_JoinChannelFailedSocketCannotSend){
             msg = [NSString stringWithFormat:@"消息暂时无法发送，请稍后再试 %ld",(long)errorCode];
         }
@@ -483,7 +490,7 @@ PLVLCLinkMicWindowsViewDelegate
                errorCode <= PLVLinkMicErrorCode_LeaveChannelFailedSocketCannotSend){ /// 退出连麦失败
         NSString * msg = @"";
         if (errorCode == PLVLinkMicErrorCode_LeaveChannelFailedStatusIllegal) {
-            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld 请稍后再试",(long)presenter.linkMicStatus];
+            msg = [NSString stringWithFormat:@"当前连麦状态不匹配 %ld 请稍后再试或重进直播间",(long)presenter.linkMicStatus];
         } else if (errorCode == PLVLinkMicErrorCode_LeaveChannelFailedSocketCannotSend){
             msg = [NSString stringWithFormat:@"消息暂时无法发送，请稍后再试 %ld",(long)errorCode];
         }

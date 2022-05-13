@@ -72,7 +72,7 @@
     NSAttributedString *nickAttributeString = self.nickLabel.attributedText;
     CGSize nickLabelSize = [nickAttributeString boundingRectWithSize:CGSizeMake(MAXFLOAT, 16) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     self.nickLabel.frame = CGRectMake(originX, originY, nickLabelSize.width, 16);
-    originY += 16 + 4; // nickLabel跟图片之间距离4
+    originY += 16 + 8; // nickLabel跟图片之间距离8
     
     CGFloat bubbleWidth;
     if ([self.model isProhibitMsg]) {
@@ -116,6 +116,7 @@
 - (UILabel *)nickLabel {
     if (!_nickLabel) {
         _nickLabel = [[UILabel alloc] init];
+        _nickLabel.font = [UIFont systemFontOfSize:12];
     }
     return _nickLabel;
 }
@@ -164,9 +165,10 @@
         self.loginUserId = loginUserId;
     }
     
+    PLVImageMessage *message = (PLVImageMessage *)model.message;
     // 设置昵称文本
     NSAttributedString *nickLabelString = [PLVLSImageMessageCell nickLabelAttributedStringWithUser:model.user
-                                                                                         loginUserId:self.loginUserId];
+                                                                                         loginUserId:self.loginUserId source:message.source];
     self.nickLabel.attributedText = nickLabelString;
     
     self.prohibitImageView.hidden = ![model isProhibitMsg];
@@ -182,7 +184,8 @@
 
 /// 获取昵称多属性文本
 + (NSAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
-                                              loginUserId:(NSString *)loginUserId {
+                                              loginUserId:(NSString *)loginUserId
+                                                   source:(NSString *)source {
     if (!user.userName || ![user.userName isKindOfClass:[NSString class]] || user.userName.length == 0) {
         return nil;
     }
@@ -196,13 +199,29 @@
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
     }
     content = [content stringByAppendingString:@"："];
-    
+    UIFont *font = [UIFont systemFontOfSize:12.0];
     NSString *colorHexString = [user isUserSpecial] ? @"#FFCA43" : @"#4399FF";
     NSDictionary *attributeDict = @{
-                                    NSFontAttributeName: [UIFont systemFontOfSize:12.0],
+                                    NSFontAttributeName: font,
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:colorHexString]
     };
-    NSAttributedString *string = [[NSAttributedString alloc] initWithString:content attributes:attributeDict];
+    NSMutableAttributedString *string = [[NSMutableAttributedString alloc] initWithString:content attributes:attributeDict];
+    // 提醒消息
+    if ([PLVFdUtil checkStringUseable:source] &&
+        [source isEqualToString:@"extend"]) {
+        
+        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_tag"];
+        //创建Image的富文本格式
+        NSTextAttachment *attach = [[NSTextAttachment alloc] init];
+        CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
+        attach.bounds = CGRectMake(0, -ceilf(paddingTop), image.size.width, image.size.height);
+        attach.image = image;
+        //添加到富文本对象里
+        NSAttributedString * imageStr = [NSAttributedString attributedStringWithAttachment:attach];
+        [string insertAttributedString:[[NSAttributedString alloc] initWithString:@" "] atIndex:0];
+        [string insertAttributedString:imageStr atIndex:0];
+    }
+    
     return string;
 }
 
@@ -247,7 +266,7 @@
     } else {
         prohibitTipHeight = 8;
     }
-    return bubbleYPadding + nickLabelHeight + 4 + imageViewSize.height + prohibitTipHeight + bubbleYPadding + 4; // nickLabel跟图片之间距离4，气泡底部外间距4
+    return bubbleYPadding + nickLabelHeight + 8 + imageViewSize.height + prohibitTipHeight + bubbleYPadding + 4; // nickLabel跟图片之间距离4，气泡底部外间距4
 }
 
 + (CGSize)calculateImageViewSizeWithMessage:(PLVImageMessage *)message {
@@ -287,8 +306,8 @@
         __weak typeof(self)weakSelf = self;
         self.prohibitWordTipView.dismissBlock = ^{
             weakSelf.model.prohibitWordTipShowed = YES;
-            if (weakSelf.refreshCellHandler) {
-                weakSelf.refreshCellHandler();
+            if (weakSelf.prohibitWordDismissHandler) {
+                weakSelf.prohibitWordDismissHandler();
             }
         };
         
@@ -316,7 +335,7 @@
     if (self.model.isProhibitMsg) {
         if (self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
             self.model.prohibitWordTipShowed = NO;
-            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+            self.prohibitWordShowHandler ? self.prohibitWordShowHandler() : nil;
         }
     } else {
         [self.photoBrowser scaleImageViewToFullScreen:self.chatImageView];

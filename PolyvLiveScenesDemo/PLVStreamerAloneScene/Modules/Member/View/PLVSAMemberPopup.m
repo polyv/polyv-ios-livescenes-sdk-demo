@@ -15,6 +15,7 @@ static NSInteger kButtonTagConst = 100;
 typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
     PLVSAMemberPopupButtonCamera = 0,
     PLVSAMemberPopupButtonMicrophone,
+    PLVSAMemberPopupButtonAuthSpeaker,
     PLVSAMemberPopupButtonKick,
     PLVSAMemberPopupButtonBanned
 };
@@ -99,6 +100,11 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     if (linkMicing) {
         [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonCamera), @(PLVSAMemberPopupButtonMicrophone)]];
     }
+    
+    if (self.chatUser.userType == PLVRoomUserTypeGuest) {
+        [muArray addObject:@(PLVSAMemberPopupButtonAuthSpeaker)];
+    }
+    
     if (!specialType) {
         [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonKick), @(PLVSAMemberPopupButtonBanned)]];
     }
@@ -106,12 +112,15 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     
     // 根据需要显示的按钮，获取气泡宽高
     CGFloat width = 112;
-    if (self.chatUser.banned) {
+    if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonAuthSpeaker)]) {
+        width = 166;
+    } else if (self.chatUser.banned) {
         width = 140.0;
     } else if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonCamera)] ||
                [self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonMicrophone)]) {
         width = 126;
     }
+    
     if (isPad) {
         width += 30;
     }
@@ -203,6 +212,9 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
         case PLVSAMemberPopupButtonMicrophone:
             button.selected = !self.chatUser.onlineUser.currentMicOpen;
             break;
+        case PLVSAMemberPopupButtonAuthSpeaker:
+            button.selected = self.chatUser.onlineUser.isRealMainSpeaker;
+            break;
         case PLVSAMemberPopupButtonBanned:
             button.selected = self.chatUser.banned;
             break;
@@ -230,6 +242,9 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
                 imageName = @"plvsa_member_popup_mic_icon_selected";
             }
         } break;
+        case PLVSAMemberPopupButtonAuthSpeaker: {
+            imageName = @"plvsa_member_popup_speaker_icon";
+        } break;
         case PLVSAMemberPopupButtonKick: {
             imageName = @"plvsa_member_popup_kick_icon";
         } break;
@@ -255,6 +270,13 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
         } break;
         case PLVSAMemberPopupButtonMicrophone: {
             buttonTitle = @"麦克风";
+        } break;
+        case PLVSAMemberPopupButtonAuthSpeaker: {
+            if (self.chatUser.onlineUser && self.chatUser.onlineUser.isRealMainSpeaker) {
+                buttonTitle = @"移除主讲权限";
+            } else {
+                buttonTitle = @"授予主讲权限";
+            }
         } break;
         case PLVSAMemberPopupButtonKick: {
             buttonTitle = @"踢出";
@@ -378,6 +400,11 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
             button.selected = !button.selected;
             NSString *tips = [NSString stringWithFormat:@"已%@麦克风", (button.selected ? @"关闭" : @"开启")];
             [PLVSAUtils showToastInHomeVCWithMessage:tips];
+        } break;
+        case PLVSAMemberPopupButtonAuthSpeaker: {
+            if (self.authUserBlock) {
+                self.authUserBlock(self.chatUser, !button.selected);
+            }
         } break;
         case PLVSAMemberPopupButtonKick: {
             if (self.kickUserBlock) {

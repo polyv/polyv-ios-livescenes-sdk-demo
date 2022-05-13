@@ -251,8 +251,8 @@
         __weak typeof(self)weakSelf = self;
         self.prohibitWordTipView.dismissBlock = ^{
             weakSelf.model.prohibitWordTipShowed = YES;
-            if (weakSelf.refreshCellHandler) {
-                weakSelf.refreshCellHandler();
+            if (weakSelf.prohibitWordDismissHandler) {
+                weakSelf.prohibitWordDismissHandler();
             }
         };
     }else{
@@ -431,7 +431,7 @@
     if (self.model.isProhibitMsg &&
         self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
             self.model.prohibitWordTipShowed = NO;
-            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+            self.prohibitWordShowHandler ? self.prohibitWordShowHandler() : nil;
     }
 }
 
@@ -439,7 +439,7 @@
     if (self.model.isProhibitMsg &&
         self.model.prohibitWordTipShowed) { // 已显示过的提示，点击可以重复提示
             self.model.prohibitWordTipShowed = NO;
-            self.refreshCellHandler ? self.refreshCellHandler() : nil;
+            self.prohibitWordShowHandler ? self.prohibitWordShowHandler() : nil;
     } 
 }
 

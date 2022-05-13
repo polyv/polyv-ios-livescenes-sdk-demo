@@ -37,6 +37,11 @@ DEPRECATED_MSG_ATTRIBUTE("已废弃，请使用PLVDocumentView")
 /// @param channelId 频道Id
 - (void)pptStartWithVideoId:(NSString *)videoId channelId:(NSString *)channelId;
 
+/// 【观看暂存时】加载暂存PPT
+/// @param fileId 暂存视频的fileId
+/// @param channelId 频道Id
+- (void)pptStartWithFileId:(NSString *)fileId channelId:(NSString *)channelId;
+
 /// PPT 恢复播放
 ///
 /// @param currentTime 当前播放时间点

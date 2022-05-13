@@ -21,6 +21,9 @@
 /// 打开公告
 - (void)keyboardMoreView_openBulletin:(PLVLCKeyboardMoreView *)moreView;
 
+/// 打开中奖记录
+- (void)keyboardMoreView_openLotteryRecord:(PLVLCKeyboardMoreView *)moreView;
+
 /// 点击【查看全部】或【只看讲师】按钮
 /// @param on YES - 只看教师；NO - 查看全部
 - (void)keyboardMoreView_onlyTeacher:(PLVLCKeyboardMoreView *)moreView on:(BOOL)on;
@@ -37,5 +40,10 @@
 /// 是否隐藏公告按钮，默认 NO；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hiddenBulletin;
 
+/// 是否隐藏消息按钮，默认 YES；YES - 隐藏，NO - 显示
+@property (nonatomic, assign) BOOL hideLotteryWinRecord;
+
+/// 消息按钮红点是否显示，默认 NO；YES - 显示，NO - 隐藏
+@property (nonatomic, assign) BOOL isNewLotteryMessage;
 
 @end

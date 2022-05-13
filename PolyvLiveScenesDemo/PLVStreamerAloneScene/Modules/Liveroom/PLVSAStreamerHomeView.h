@@ -50,6 +50,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 镜像 按钮 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMirrorOpen:(BOOL)mirrorOpen;
 
+/// 点击 屏幕共享 按钮 触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeScreenShareOpen:(BOOL)screenShareOpen;
+
 /// 点击 闪光灯 按钮触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeFlashOpen:(BOOL)flashOpen;
 
@@ -112,6 +115,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 改变闪光灯按钮选中状态
 /// @param selectedState 选中状态 (YES:选中，闪光灯开启 NO:未选中，闪光灯关闭)
 - (void)changeFlashButtonSelectedState:(BOOL)selectedState;
+
+/// 改变屏幕共享按钮选中状态
+/// @param selectedState 选中状态 (YES:选中，开启屏幕共享 NO:未选中，关闭屏幕共享)
+- (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
 
 @end
 

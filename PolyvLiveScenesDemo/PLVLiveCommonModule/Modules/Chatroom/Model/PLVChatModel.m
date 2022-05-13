@@ -58,6 +58,27 @@
     }
 }
 
+- (BOOL)isRemindMsg {
+    id messageObject = self.message;
+    NSString *source = nil;
+    BOOL isRemindMsg = NO;
+    
+     if ([messageObject isKindOfClass:[PLVSpeakMessage class]]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)messageObject;
+         source = message.source;
+    } else if ([messageObject isKindOfClass:[PLVImageMessage class]]) {
+        PLVImageMessage *message = (PLVImageMessage *)messageObject;
+        source = message.source;
+    }
+    
+    if ([PLVFdUtil checkStringUseable:source] &&
+        [source isEqualToString:@"extend"]) { // source字段值为"extend"表示为：提醒消息
+        isRemindMsg = YES;
+    }
+    
+    return isRemindMsg;
+}
+
 - (NSTimeInterval)time {
     id messageObject = self.message;
     NSTimeInterval time = 0;
@@ -70,7 +91,7 @@
     } else if ([messageObject isKindOfClass:[PLVImageMessage class]]) {
         PLVImageMessage *message = (PLVImageMessage *)messageObject;
         time = message.time;
-    } 
+    }
     return time;
 }
 

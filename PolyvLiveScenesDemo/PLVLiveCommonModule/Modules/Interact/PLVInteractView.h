@@ -20,10 +20,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 此时是否不允许转屏 (默认NO；接收到不同互动消息时，此值将根据业务要求，相应地变化)
 @property (nonatomic, assign, readonly) BOOL forbidRotateNow;
 
-/// 是否保持互动视图在同级视图中最顶层
+/// 是否保持互动视图在视图中最顶层
 ///
 /// @note 互动视图需要最顶层，才能保证接收到最新互动时，可完整地被用户查看
-///      (YES:每次互动出现时，自动移至同级最顶层 NO:每次互动出现时，不做层级上的变动；默认为YES)
+///      (YES:每次互动出现时，自动移至最顶层 NO:每次互动出现时，不做层级上的变动；默认为YES)
 @property (nonatomic, assign) BOOL keepInteractViewTop;
 
 - (void)openLastBulletin;

@@ -39,7 +39,6 @@ PLVSocketManagerProtocol
     if (self) {
         [self addSubview:self.webView];
         // 需要注册js -> native 方法后,才成功建立与js的桥接
-        [self.jsBridge registerSendSocketData];
         [self.jsBridge registerStartEditText];
         [self.jsBridge registerToggleOperationStatus];
         
@@ -214,7 +213,7 @@ PLVSocketManagerProtocol
 
 - (PLVContainerWebViewBridge *)jsBridge {
     if (!_jsBridge) {
-        _jsBridge = [[PLVContainerWebViewBridge alloc] initBridgeWithWebview:self.webView webviewDelegate:self];
+        _jsBridge = [[PLVContainerWebViewBridge alloc] initBridgeWithWebView:self.webView webViewDelegate:self];
         _jsBridge.delegate = self;
     }
     return _jsBridge;
@@ -396,30 +395,6 @@ PLVSocketManagerProtocol
 
 #pragma mark PLVContainerWebViewBridgeDelegate
 
-- (void)containerWebViewBridge:(PLVContainerWebViewBridge *)containerWebViewBridge didSendSocketEventWithJsonObject:(id)jsonObject {
-    if (jsonObject) {
-        NSDictionary *tempDict = nil;
-        if ([jsonObject isKindOfClass:[NSString class]]) {
-            NSData *data = [jsonObject dataUsingEncoding:NSUTF8StringEncoding];
-            tempDict = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-        } else if ([jsonObject isKindOfClass:[NSDictionary class]]) {
-            tempDict = (NSDictionary *)jsonObject;
-        }
-        
-        if (tempDict &&
-            [tempDict isKindOfClass:[NSDictionary class]]) {
-            NSString *socketDataString = PLV_SafeStringForDictKey(tempDict, @"socketData");
-            if ([PLVFdUtil checkStringUseable:socketDataString]) {
-                NSData *data = [socketDataString dataUsingEncoding:NSUTF8StringEncoding];
-                NSDictionary *socketDataDict = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-                if (socketDataDict) {
-                    [[PLVSocketManager sharedManager] emitMessage:socketDataDict];
-                }
-            }
-        }
-    }
-}
-
 - (void)containerWebViewBridge:(PLVContainerWebViewBridge *)containerWebViewBridge  didRefreshMinimizeContainerDataWithJsonObject:(id)jsonObject {
     [self notifyListenerDidRefreshMinimizeContainerDataWithJsonObject:jsonObject];
 }
@@ -458,14 +433,7 @@ PLVSocketManagerProtocol
     if (![jsonDict isKindOfClass:[NSDictionary class]]) {
         return;
     }
-    // webview 关心的事件需要转发给webview
-    if ([subEvent isEqualToString:@"onSliceID"] ||
-        [subEvent isEqualToString:@"onSliceDraw"] ||
-        [subEvent isEqualToString:@"onSliceOpen"] ||
-        [subEvent isEqualToString:@"onSliceClose"] ||
-        [subEvent isEqualToString:@"onSliceControl"]) {
-        [self.jsBridge joinSocketData:jsonString];
-    }
+
     // 讲师给学生授予画笔权限
     if ([subEvent isEqualToString:@"TEACHER_SET_PERMISSION"]) {
         [self handleSocket_TEACHER_SET_PERMISSION:jsonDict];

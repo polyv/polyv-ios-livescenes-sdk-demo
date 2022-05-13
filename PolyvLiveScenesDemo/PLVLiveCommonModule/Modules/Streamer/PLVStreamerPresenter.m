@@ -13,6 +13,7 @@
 static NSString *const PLVStreamerPresenter_DictValue_GuestAllowed = @"allowed";
 static NSString *const PLVStreamerPresenter_DictValue_GuestAllowedWithRaiseHand = @"allowedWithRaiseHand";
 static NSString *const PLVStreamerPresenter_DictValue_GuestJoined = @"joined";
+static NSString *const PLVStreamerPresenter_AppGroup = @"group.net.plv.PolyvLiveScenesDemo.ScreenShare";
 
 @interface PLVStreamerPresenter ()<
 PLVSocketManagerProtocol,
@@ -331,6 +332,11 @@ PLVChannelClassManagerDelegate
     if (self.localVideoPreviewSameAsRemoteWatch) {
         [self.rtcStreamerManager setupLocalVideoStreamMirrorMode:self.localVideoMirrorMode];
     }
+}
+
+- (void)openLocalUserScreenShare:(BOOL)openScreenShare API_AVAILABLE(ios(11.0)) {
+    PLVBRTCStreamSourceType streamSourceType = openScreenShare ? PLVBRTCStreamSourceType_Screen : PLVBRTCStreamSourceType_Camera;
+    [self.rtcStreamerManager switchLocalUserStreamSourceType:streamSourceType];
 }
 
 #pragma mark 连麦事件管理
@@ -722,6 +728,8 @@ PLVChannelClassManagerDelegate
         
         _rtcStreamerManager = [PLVRTCStreamerManager rtcStreamerManagerWithRTCType:self.rtcType channelId:self.channelId];
         _rtcStreamerManager.delegate = self;
+        /// 屏幕共享设置
+        [_rtcStreamerManager setupAppGroup:PLVStreamerPresenter_AppGroup rtcType:self.rtcType];
     }
     return _rtcStreamerManager;
 }
@@ -760,7 +768,7 @@ PLVChannelClassManagerDelegate
     getTokenModel.channelId = self.channelId;
     getTokenModel.userId = self.linkMicUserId;
     getTokenModel.channelType = [PLVRoomDataManager sharedManager].roomData.channelType;
-    getTokenModel.viewerId = self.channelId;
+    getTokenModel.viewerId = self.userId;
     getTokenModel.nickname = self.linkMicUserNickname;
     getTokenModel.sessionId = self.sessionId;
 
@@ -907,7 +915,13 @@ PLVChannelClassManagerDelegate
             PLVRTCStreamerMixUser * mixUser = [[PLVRTCStreamerMixUser alloc] init];
             mixUser.userRTCId = onlineUser.linkMicUserId;
             mixUser.renderMode = PLVRTCStreamerMixUserRenderMode_Fill;
-            mixUser.inputType = onlineUser.currentCameraOpen ? PLVRTCStreamerMixUserInputType_AudioVideo : PLVRTCStreamerMixUserInputType_Audio;
+            if (onlineUser.currentScreenShareOpen) {
+                mixUser.inputType = PLVRTCStreamerMixUserInputType_AudioVideo;
+                mixUser.streamType = PLVRTCStreamerMixUserStreamType_Screen;
+            } else {
+                mixUser.inputType = onlineUser.currentCameraOpen ? PLVRTCStreamerMixUserInputType_AudioVideo : PLVRTCStreamerMixUserInputType_Audio;
+                mixUser.streamType = PLVRTCStreamerMixUserStreamType_Camera;
+            }
             [mixUserList addObject:mixUser];
         }else{
             continue;
@@ -916,6 +930,23 @@ PLVChannelClassManagerDelegate
     
     if ([PLVFdUtil checkArrayUseable:mixUserList]) {
         [self.rtcStreamerManager setupMixUserList:mixUserList];
+    }
+}
+
+- (void)updateLinkMicUser:(NSString *)linkMicUserId screenShareOpen:(BOOL)screenShareOpen{
+    if (self.arraySafeQueue) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_async(self.arraySafeQueue, ^{
+            for (int i = 0; i < weakSelf.onlineUserArray.count; i++) {
+                PLVLinkMicOnlineUser *onlineUser = weakSelf.onlineUserArray[i];
+                if ([onlineUser.linkMicUserId isEqualToString:linkMicUserId]) {
+                    [onlineUser updateUserCurrentScreenShareOpen:screenShareOpen];
+                    [weakSelf callbackForLinkMicUser:onlineUser screenShareOpenChanged:screenShareOpen];
+                    [weakSelf updateMixUserList];
+                    break;
+                }
+            }
+        });
     }
 }
 
@@ -1009,10 +1040,14 @@ PLVChannelClassManagerDelegate
                 if ([onlineUser.linkMicUserId isEqualToString:linkMicUserId]) {
                     if (auth) {
                         weakSelf.realMainSpeakerUser = onlineUser;
+                    } else if ([weakSelf.realMainSpeakerUser.linkMicUserId isEqualToString:linkMicUserId]) {
+                        weakSelf.realMainSpeakerUser = nil;
                     }
                     
                     [onlineUser updateUserCurrentSpeakerAuth:auth];
-                    [weakSelf callbackForLinkMicUser:onlineUser authSpeaker:auth];
+                    if (!onlineUser.localUser) {
+                        [weakSelf callbackForLinkMicUser:onlineUser authSpeaker:auth];
+                    }
                     break;
                 }
             }
@@ -1038,6 +1073,7 @@ PLVChannelClassManagerDelegate
     if (self.realMainSpeakerUser &&
         [PLVFdUtil checkStringUseable:self.realMainSpeakerUser.userId]) {
         [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:self.realMainSpeakerUser.userId type:PLVSocketPermissionTypeSpeaker status:NO];
+        self.realMainSpeakerUser = nil;
     }
 }
 
@@ -1077,6 +1113,12 @@ PLVChannelClassManagerDelegate
             [weakSelf switchLocalUserCamera:wantFront];
         };
         
+        localOnlineUser.wantOpenScreenShareBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL wantOpen) {
+            if (@available(iOS 11.0, *)) {
+                [weakSelf openLocalUserScreenShare:wantOpen];
+            }
+        };
+        
         /// 监听 本地用户 状态变化Block
         [localOnlineUser addMicOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             [weakSelf callbackForLocalUserMicOpenChanged];
@@ -1096,6 +1138,10 @@ PLVChannelClassManagerDelegate
         
         [localOnlineUser addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             [weakSelf callbackForLinkMicUser:onlineUser authSpeaker:onlineUser.isRealMainSpeaker];
+        } blockKey:self];
+
+        [localOnlineUser addScreenShareOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            [weakSelf callbackForLocalUserScreenShareOpenChanged];
         } blockKey:self];
     }else{
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"createLocalOnlineUser failed, localOnlineUser exist %p",_localOnlineUser);
@@ -1689,6 +1735,11 @@ PLVChannelClassManagerDelegate
             /// 设置主讲权限
             [self updateGuestAuthSpeaker:userId auth:[status isEqualToString:@"1"]];
         }
+    }else if([type isEqualToString:@"screenShare"]){
+        if ([PLVFdUtil checkStringUseable:userId] && !localUser) {
+            /// 远端用户 开启、关闭屏幕共享
+            [self updateLinkMicUser:userId screenShareOpen:[status isEqualToString:@"1"]];
+        }
     }
 }
 
@@ -1770,6 +1821,14 @@ PLVChannelClassManagerDelegate
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:operationInProgress:)]) {
             [self.delegate plvStreamerPresenter:self operationInProgress:self.inProgress];
+        }
+    })
+}
+
+- (void)callbackForLocalUserScreenShareOpenChanged {
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:localUserScreenShareOpenChanged:)]) {
+            [self.delegate plvStreamerPresenter:self localUserScreenShareOpenChanged:self.localOnlineUser.currentScreenShareOpen];
         }
     })
 }
@@ -1938,6 +1997,14 @@ PLVChannelClassManagerDelegate
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:currentRemotePushDuration:)]) {
             [self.delegate plvStreamerPresenter:self currentRemotePushDuration:self.currentRemotePushDuration];
+        }
+    })
+}
+
+- (void)callbackForLinkMicUser:(PLVLinkMicOnlineUser *)onlineUser screenShareOpenChanged:(BOOL)screenShareOpen{
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:remoteOnlineUser:screenShareOpenChanged:)]) {
+            [self.delegate plvStreamerPresenter:self remoteOnlineUser:onlineUser screenShareOpenChanged:screenShareOpen];
         }
     })
 }
@@ -2202,6 +2269,20 @@ PLVChannelClassManagerDelegate
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager reportAudioVolumeOfSpeakers:(NSDictionary<NSString *,NSNumber *> *)volumeDict{
     [self updateLinkMicUserVolumeWithVolumeDictionary:volumeDict];
     [self callbackForReportAudioVolumeOfSpeakers:volumeDict];
+}
+
+- (void)plvRTCStreamerManagerDidScreenCaptureStarted:(PLVRTCStreamerManager *)manager {
+    [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:self.localOnlineUser.userId type:PLVSocketPermissionTypeScreenShare status:YES];
+    [self.localOnlineUser updateUserCurrentScreenShareOpen:YES];
+    // 更新混流数据
+    [self updateMixUserList];
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager didScreenCaptureStopedReason:(PLVBRTCScreenCaptureFinishedReason)reason {
+    [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:self.localOnlineUser.userId type:PLVSocketPermissionTypeScreenShare status:NO];
+    [self.localOnlineUser updateUserCurrentScreenShareOpen:NO];
+    // 更新混流数据
+    [self updateMixUserList];
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager didOccurError:(NSError *)error{

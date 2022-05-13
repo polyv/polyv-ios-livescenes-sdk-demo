@@ -12,7 +12,7 @@
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import "PLVAdvView.h"
+#import "PLVPlayerLogoView.h"
 
 @interface PLVPlayerPresenterBackgroundView : UIView /// 仅 PLVPlayerPresenter 内部使用的背景视图类
 
@@ -25,13 +25,13 @@
 PLVPlayerDelegate,
 PLVLivePlayerDelegate,
 PLVLivePlaybackPlayerDelegate,
-PLVAdvViewDelegate
+PLVAdvertViewDelegate
 >
 
 #pragma mark 状态
 @property (nonatomic, assign) PLVChannelVideoType currentVideoType;
 @property (nonatomic, assign) BOOL needShowLoading;
-@property (nonatomic, assign) BOOL keepShowAdv;
+@property (nonatomic, assign) BOOL keepShowAdvert;
 @property (nonatomic, assign) BOOL currentNoDelayLiveStart;
 @property (nonatomic, assign) PLVLivePlayerQuickLiveNetworkQuality networkQuality;
 @property (nonatomic, assign) NSInteger networkQualityRepeatCount;
@@ -44,19 +44,24 @@ PLVAdvViewDelegate
 ///      ├── (UIView) playerBackgroundView
 ///      ├── (UIImageView) warmUpImageView
 ///      ├── (UIActivityIndicatorView) activityView
-///      └── (UILabel) loadSpeedLabel
+///      ├── (UILabel) loadSpeedLabel
+///      └── (PLVPlayerLogoView) logoView
 @property (nonatomic, weak) UIView * displayView;
 @property (nonatomic, strong) PLVPlayerPresenterBackgroundView * backgroundView;
 @property (nonatomic, strong) UIView * playerBackgroundView;
 @property (nonatomic, strong) UIImageView * warmUpImageView;
+@property (nonatomic, strong) PLVPlayerLogoView * logoView;
 @property (nonatomic, strong) UIActivityIndicatorView * activityView;
 @property (nonatomic, strong) UILabel * loadSpeedLabel;
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVLivePlayer * livePlayer;
 @property (nonatomic, strong) PLVLivePlaybackPlayer * livePlaybackPlayer;
-@property (nonatomic, strong) PLVAdvView * advView;
+@property (nonatomic, strong) PLVAdvertView * advertView;
 @property (nonatomic, strong) NSTimer * timer;
+
+#pragma mark 数据
+@property (nonatomic, readonly) PLVChannelInfoModel *channelInfo;
 
 @end
 
@@ -69,9 +74,8 @@ PLVAdvViewDelegate
         _timer = nil;
     }
     
-    if (self.advView) {
-        [self.advView distroy];
-        self.advView = nil;
+    if (_advertView) {
+        [_advertView destroyTitleAdvert];
     }
 
     NSLog(@"%s",__FUNCTION__);
@@ -104,12 +108,8 @@ PLVAdvViewDelegate
     return self.livePlaybackPlayer.duration;
 }
 
-- (BOOL)advPlaying {
-    return self.advView.playing;
-}
-
-- (NSString *)advLinkUrl {
-    return [PLVRoomDataManager sharedManager].roomData.channelInfo.advertHref;
+- (BOOL)advertPlaying {
+    return self.advertView.startAdvertIsPlaying;
 }
 
 - (BOOL)channelInLive{
@@ -145,6 +145,10 @@ PLVAdvViewDelegate
     return self.livePlayer.audioMode;
 }
 
+- (UIImageView *)logoImageView {
+    return self.logoView.logoImageView;
+}
+
 #pragma mark Setter
 - (void)setWarmUpHrefEnable:(BOOL)warmUpHrefEnable {
     _warmUpHrefEnable = warmUpHrefEnable;
@@ -160,7 +164,7 @@ PLVAdvViewDelegate
     self = [super init];
     if (self) {
         self.currentVideoType = videoType;
-        
+        self.keepShowAdvert = YES;
         [self setup];
         [self setupPlayer];
     }
@@ -191,7 +195,7 @@ PLVAdvViewDelegate
 }
 
 - (BOOL)resumePlay{
-    if (self.advView.playing) { // 片头广告显示中
+    if (self.advertPlaying) { // 片头广告显示中
         return NO;
     }
     
@@ -200,14 +204,11 @@ PLVAdvViewDelegate
     } else if (self.currentVideoType == PLVChannelVideoType_Playback){
         [self.livePlaybackPlayer play];
     }
+    [self.advertView hideStopAdvertView];
     return YES;
 }
 
 - (BOOL)pausePlay{
-    if (self.advView.playing) { // 片头广告显示中
-        return NO;
-    }
-    
     if (self.currentVideoType == PLVChannelVideoType_Live) {
         [self.livePlayer pause];
     } else if (self.currentVideoType == PLVChannelVideoType_Playback){
@@ -228,6 +229,7 @@ PLVAdvViewDelegate
 
 #pragma mark 直播相关
 - (void)switchLiveToAudioMode:(BOOL)audioMode{
+    self.logoView.hidden = audioMode;
     [self.livePlayer switchToAudioMode:audioMode];
 }
 
@@ -245,7 +247,7 @@ PLVAdvViewDelegate
 
 #pragma mark 非直播相关
 - (void)seekLivePlaybackToTime:(NSTimeInterval)toTime{
-    if (self.advView.playing) { // 片头广告显示中
+    if (self.advertPlaying) { // 片头广告显示中
         return;
     }
     
@@ -253,7 +255,7 @@ PLVAdvViewDelegate
 }
 
 - (void)switchLivePlaybackSpeedRate:(CGFloat)toSpeed{
-    if (self.advView.playing) { // 片头广告显示中
+    if (self.advertPlaying) { // 片头广告显示中
         return;
     }
     
@@ -269,8 +271,6 @@ PLVAdvViewDelegate
 - (void)setup{
     self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(timerEvent:) userInfo:nil repeats:YES];
     [[NSRunLoop currentRunLoop] addTimer:self.timer forMode:NSRunLoopCommonModes];
-    
-    _keepShowAdv = YES;
 }
 
 - (void)setupPlayer{
@@ -288,7 +288,11 @@ PLVAdvViewDelegate
         self.livePlayer.chaseFrame = NO;
         self.livePlayer.customParam = roomData.customParam;
     }else if (self.currentVideoType == PLVChannelVideoType_Playback){ /// 回放
-        self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId vodId:roomData.vid vodList:roomData.vodList];
+        if (roomData.recordEnable && ![PLVFdUtil checkStringUseable:roomData.vid]) {
+            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId recordFile:roomData.recordFile];
+        } else {
+            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId vodId:roomData.vid vodList:roomData.vodList];
+        }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
@@ -333,38 +337,22 @@ PLVAdvViewDelegate
     };
 }
 
-- (void)showAdv {
-    /** 不显示片头广告(此开关应对云课堂暂时不显示片头广告情况，后面云课程支持片头广告，需去掉openAdv) */
-    if (! self.openAdv) {
-        return;
-    }
-    
+- (void)showTitleAdvert {
     /// 无延迟直播不显示片头广告
     if (self.channelWatchNoDelay) {
         return;
     }
     
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    
-    // 存在片头广告
-    if ((roomData.liveState == PLVChannelLiveStreamState_Live ||
-         roomData.videoType == PLVChannelVideoType_Playback) && // 直播开播了或者是点播
-        ([PLVFdUtil checkStringUseable:roomData.channelInfo.advertImage] ||
-         [PLVFdUtil checkStringUseable:roomData.channelInfo.advertFlvUrl])) { // 存在片头图片或视频
-        [self pausePlay];
-
-        if (! self.advView) { // 广告播放器初始化
-            _advView = [[PLVAdvView alloc] init];
-            self.advView.delegate = self;
-            [self.advView setupDisplaySuperview:self.playerBackgroundView];
-        }
-        
-        if ([PLVFdUtil checkStringUseable:roomData.channelInfo.advertImage]) {
-            [self.advView showImageWithUrl:roomData.channelInfo.advertImage time:roomData.channelInfo.advertDuration];
-        } else {
-            [self.advView showVideoWithUrl:roomData.channelInfo.advertFlvUrl time:roomData.channelInfo.advertDuration];
-        }
+    /// 正在直播中或回放
+    if (self.channelInLive || self.currentVideoType == PLVChannelVideoType_Playback) {
+        /// 替换广告视图
+        [self.advertView setupDisplaySuperview:self.backgroundView];
+        [self.advertView showTitleAdvert];
     }
+}
+
+- (void)setupPlayerLogoImage {
+    [self.backgroundView addSubview:self.logoView];
 }
 
 #pragma mark Getter
@@ -394,6 +382,25 @@ PLVAdvViewDelegate
     return _warmUpImageView;
 }
 
+- (PLVPlayerLogoView *)logoView {
+    if (!_logoView) {
+        PLVChannelInfoModel *channel = self.channelInfo;
+        if ([PLVFdUtil checkStringUseable:channel.logoImageUrl]) {
+            PLVPlayerLogoParam *logoParam = [[PLVPlayerLogoParam alloc] init];
+            logoParam.logoUrl = channel.logoImageUrl;
+            logoParam.position = channel.logoPosition;
+            logoParam.logoAlpha = channel.logoOpacity;
+            logoParam.logoHref = channel.logoHref;
+            logoParam.logoWidthScale = 0.14;
+            logoParam.logoHeightScale = 0.25;
+
+            _logoView = [[PLVPlayerLogoView alloc] init];
+            [_logoView insertLogoWithParam:logoParam];
+        }
+    }
+    return _logoView;
+}
+
 - (UIActivityIndicatorView *)activityView{
     if (!_activityView) {
         _activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhite];
@@ -413,9 +420,31 @@ PLVAdvViewDelegate
     return _loadSpeedLabel;
 }
 
+- (PLVAdvertView *)advertView {
+    if (!_advertView) {
+        PLVChannelInfoModel *channelInfo = self.channelInfo;
+        PLVAdvertParam *param = [[PLVAdvertParam alloc] init];
+        param.advertType = channelInfo.advertType;
+        param.advertImageUrl = channelInfo.advertImageUrl;
+        param.advertFlvUrl = channelInfo.advertFlvUrl;
+        param.advertHref = channelInfo.advertHref;
+        param.advertDuration = channelInfo.advertDuration;
+        param.stopAdvertImageUrl = channelInfo.stopAdvertImageUrl;
+        param.stopAdvertHref = channelInfo.stopAdvertHref;
+        
+        _advertView = [[PLVAdvertView alloc] initWithParam:param];
+        _advertView.delegate = self;
+    }
+    return _advertView;
+}
+
+- (PLVChannelInfoModel *)channelInfo {
+    return [PLVRoomDataManager sharedManager].roomData.channelInfo;
+}
+
 #pragma mark - [ Action ]
 - (void)warmUpImageViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
-    NSString *warmUpContentUrlString = [PLVRoomDataManager sharedManager].roomData.channelInfo.warmUpImageHREF;
+    NSString *warmUpContentUrlString = self.channelInfo.warmUpImageHREF;
     [[UIApplication sharedApplication] openURL:[NSURL URLWithString:warmUpContentUrlString]];
 }
 
@@ -427,16 +456,6 @@ PLVAdvViewDelegate
         self.loadSpeedLabel.text = self.livePlayer.tcpSpeed;
     }else{
         self.loadSpeedLabel.hidden = YES;
-    }
-    
-    /** 断网后联网回看重新播放-从广告开始 */
-    if (self.currentVideoType == PLVChannelVideoType_Playback) {
-        PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
-        if (networkStatus != PLVNotReachable && self.keepShowAdv &&
-            self.livePlaybackPlayer.showingContent) {
-            _keepShowAdv = NO;
-            [self showAdv];
-        }
     }
 }
 
@@ -466,13 +485,10 @@ PLVAdvViewDelegate
     [self.activityView stopAnimating];
     [self timerEvent:nil];
     
-    /**
-     * 此处两种情况会执行：
-     * 1. 直播、回看初始播放广告；
-     * 2. 直播断开后联网也会调用此方法进行重新播放 */
-    if (self.keepShowAdv) {
-        _keepShowAdv = NO;
-        [self showAdv];
+    if (self.keepShowAdvert && self.channelInfo.advertType != PLVChannelAdvertType_None) {
+        self.keepShowAdvert = NO;
+        [self showTitleAdvert];
+        return;
     }
 
     if ([self.delegate respondsToSelector:@selector(playerPresenter:videoSizeChange:)]) {
@@ -574,21 +590,10 @@ PLVAdvViewDelegate
 /// 直播播放器 ‘流状态’ 更新
 - (void)plvLivePlayer:(PLVLivePlayer *)livePlayer streamStateUpdate:(PLVChannelLiveStreamState)newestStreamState streamStateDidChanged:(BOOL)streamStateDidChanged{
     [PLVRoomDataManager sharedManager].roomData.liveState = newestStreamState;
-    
-    /** 直播断开，设置联网后播放广告 */
-    if (newestStreamState != PLVChannelLiveStreamState_Live) {
-//        _keepShowAdv = YES;
-        PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
-        if (networkStatus == PLVNotReachable) {
-            if (self.advView.playing) { // 广告在播放则不后续操作
-                return;
-            }
-        } else {
-            if (self.advView) {
-                [self.advView distroy];
-                self.advView = nil;
-            }
-        }
+    if (newestStreamState == PLVChannelLiveStreamState_Live) {
+        [self setupPlayerLogoImage];
+    } else {
+        [self.logoView removeFromSuperview];
     }
     
     if ([self.delegate respondsToSelector:@selector(playerPresenter:streamStateUpdate:streamStateDidChanged:)]) {
@@ -643,7 +648,6 @@ PLVAdvViewDelegate
 /// 直播播放器 ‘频道信息’ 发生改变
 - (void)plvLivePlayer:(PLVLivePlayer *)livePlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
     [PLVRoomDataManager sharedManager].roomData.channelInfo = channelInfo;
-    
     if ([self.delegate respondsToSelector:@selector(playerPresenter:channelInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self channelInfoDidUpdated:channelInfo];
     }
@@ -678,7 +682,7 @@ PLVAdvViewDelegate
     if (show) {
         self.warmUpImageView.hidden = NO;
         [self.warmUpImageView sd_setImageWithURL:[NSURL URLWithString:warmUpImageURLString] placeholderImage:nil options:SDWebImageRetryFailed];
-        NSString *warmUpImageHREF = [PLVRoomDataManager sharedManager].roomData.channelInfo.warmUpImageHREF;
+        NSString *warmUpImageHREF = self.channelInfo.warmUpImageHREF;
         if ([PLVFdUtil checkStringUseable:warmUpImageHREF]) {
             self.warmUpImageView.userInteractionEnabled = YES;
         }
@@ -726,12 +730,6 @@ PLVAdvViewDelegate
 
 /// 直播回放播放器 定时返回当前播放进度
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer downloadProgress:(CGFloat)downloadProgress playedProgress:(CGFloat)playedProgress playedTimeString:(NSString *)playedTimeString durationTimeString:(NSString *)durationTimeString{
-//    /** 回看播放中监控到断网了，设置联网后播放广告 */
-//    PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
-//    if (networkStatus == NotReachable) {
-//        _keepShowAdv = YES;
-//    }
-    
     if ([self.delegate respondsToSelector:@selector(playerPresenter:downloadProgress:playedProgress:playedTimeString:durationTimeString:)]) {
         [self.delegate playerPresenter:self downloadProgress:downloadProgress playedProgress:playedProgress playedTimeString:playedTimeString durationTimeString:durationTimeString];
     }
@@ -740,27 +738,28 @@ PLVAdvViewDelegate
 /// 直播回放播放器 ‘频道信息’ 发生改变
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
     [PLVRoomDataManager sharedManager].roomData.channelInfo = channelInfo;
+    /// 设置播放器LOGO
+    [self setupPlayerLogoImage];
     if ([self.delegate respondsToSelector:@selector(playerPresenter:channelInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self channelInfoDidUpdated:channelInfo];
     }
 }
 
-#pragma mark PLVAdvViewDelegate
-/// 广告状态回调
-- (void)advView:(PLVAdvView *)advView status:(PLVAdvViewStatus)status {
-    if (status == PLVAdvViewStatusPlay) {
-        
-    } else if (status == PLVAdvViewStatusFinish) {
-        PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
-        if (networkStatus != PLVNotReachable &&
-            (!self.keepShowAdv || self.livePlaybackPlayer.downloadProgress == 1)) {
-            [self.advView distroy];
-            self.advView = nil;
+#pragma mark PLVAdvertViewDelegate
+
+- (void)plvAdvertView:(PLVAdvertView *)advertView playStateDidChange:(PLVAdvertViewPlayState)state {
+    if (state == PLVAdvertViewPlayStatePlay) {
+        [self pausePlay];
+    } else if (state == PLVAdvertViewPlayStateFinish) {
+        if (!self.keepShowAdvert) {
+            [self.advertView destroyTitleAdvert];
             [self resumePlay];
-        } else {
-            _keepShowAdv = YES;
         }
     }
+}
+
+- (void)plvAdvertView:(PLVAdvertView *)advertView clickStartAdvertWithHref:(NSURL *)advertHref {
+    [[UIApplication sharedApplication] openURL:advertHref];
 }
 
 @end

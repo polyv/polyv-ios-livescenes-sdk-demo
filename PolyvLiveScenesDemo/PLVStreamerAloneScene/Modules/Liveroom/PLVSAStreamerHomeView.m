@@ -203,6 +203,7 @@ PLVSALinkMicTipViewDelegate
 
 - (void)startClass:(BOOL)start {
     [self.statusbarAreaView startClass:start];
+    [self.moreInfoSheet startClass:start];
 }
 
 - (void)setPushStreamDuration:(NSTimeInterval)duration {
@@ -279,6 +280,10 @@ PLVSALinkMicTipViewDelegate
     [self.moreInfoSheet changeFlashButtonSelectedState:selectedState];
 }
 
+- (void)changeScreenShareButtonSelectedState:(BOOL)selectedState{
+    [self.moreInfoSheet changeScreenShareButtonSelectedState:selectedState];
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupUIWithLinkMicWindowsView:(PLVSALinkMicWindowsView *)linkMicWindowsView {
@@ -332,6 +337,7 @@ PLVSALinkMicTipViewDelegate
     self.moreInfoSheet.currentCameraFront = self.localOnlineUser.currentCameraFront;
     self.moreInfoSheet.closeRoom = self.chatroomAreaView.closeRoom;
     self.moreInfoSheet.currentCameraMirror = self.localOnlineUser.localVideoMirrorMode == PLVBRTCVideoMirrorMode_Auto;
+    [self.moreInfoSheet changeScreenShareButtonSelectedState:self.localOnlineUser.currentScreenShareOpen];
     
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentQuality:)]) {
@@ -465,7 +471,7 @@ PLVSALinkMicTipViewDelegate
 - (PLVSAMoreInfoSheet *)moreInfoSheet {
     if (!_moreInfoSheet) {
         CGFloat heightScale = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0.246 : 0.34;
-        CGFloat widthScale =  [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0.18 :0.37;
+        CGFloat widthScale = 0.37;
         CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = maxWH * widthScale;
@@ -641,6 +647,19 @@ PLVSALinkMicTipViewDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeMirrorOpen:)]) {
         [self.delegate streamerHomeView:self didChangeMirrorOpen:mirrorOpen];
+    }
+}
+
+- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeScreenShareOpen:(BOOL)screenShareOpen {
+    if (screenShareOpen && !self.localOnlineUser.currentCameraOpen) {
+        [self.moreInfoSheet changeScreenShareButtonSelectedState:NO];
+        [PLVSAUtils showToastInHomeVCWithMessage:@"请先打开摄像头"];
+        return;
+    }
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeScreenShareOpen:)]) {
+        [self.delegate streamerHomeView:self didChangeScreenShareOpen:screenShareOpen];
     }
 }
 

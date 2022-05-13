@@ -23,7 +23,7 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
 
 #pragma mark 数据
 @property (nonatomic, assign) BOOL superLandscape; // 是否支持横屏
-@property (nonatomic, assign) UIInterfaceOrientation currentOrientaion; // 当前方向
+@property (nonatomic, assign) UIInterfaceOrientation currentOrientation; // 当前方向
 
 @end
 
@@ -39,7 +39,6 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
     self = [super init];
     if (self) {
         self.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
-        self.currentOrientaion = [PLVSAUtils sharedUtils].interfaceOrientation;
         self.sheetHight = MAX(0, sheetHeight);
         self.sheetLandscapeWidth = sheetLandscapeWidth;
         self.superLandscape = sheetLandscapeWidth > 0;
@@ -100,6 +99,10 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
         _effectView = [[UIVisualEffectView alloc] initWithEffect:effect];
     }
     return _effectView;
+}
+
+- (UIInterfaceOrientation)currentOrientation {
+    return [PLVSAUtils sharedUtils].interfaceOrientation;
 }
 
 #pragma mark - Show & Hide
@@ -173,13 +176,12 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
 
 - (void)deviceOrientationDidChangeNotification:(NSNotification *)notify {
     UIInterfaceOrientation orientaion = [UIApplication sharedApplication].statusBarOrientation;
-    if (orientaion == self.currentOrientaion) {
+    if (orientaion == self.currentOrientation) {
         return;
     }
     if (orientaion == UIInterfaceOrientationPortrait ||
         orientaion == UIInterfaceOrientationLandscapeLeft ||
         orientaion == UIInterfaceOrientationLandscapeRight) {
-        self.currentOrientaion = orientaion;
         [self deviceOrientationDidChange];
     }
 }

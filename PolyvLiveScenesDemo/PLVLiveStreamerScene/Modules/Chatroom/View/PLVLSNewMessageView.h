@@ -17,7 +17,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 更新文案上的消息数
 ///  消息数为0时隐藏视图，大于0才显示
-- (void)updateMeesageCount:(NSUInteger)count;
+- (void)updateMessageCount:(NSUInteger)count;
 
 @end
 

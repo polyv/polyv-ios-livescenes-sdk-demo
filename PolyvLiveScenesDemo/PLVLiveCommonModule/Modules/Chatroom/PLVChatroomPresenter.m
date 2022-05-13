@@ -44,6 +44,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// socket处于已连接且登陆成功的状态时为YES，默认为NO
 @property (nonatomic, assign, readonly) BOOL online;
 
+#pragma mark 提醒消息历史聊天记录
+/// 是否正在获取提醒消息历史记录
+@property (nonatomic, assign) BOOL loadingRemindHistory;
+/// 获取提醒消息历史记录成功的次数
+@property (nonatomic, assign) NSInteger getRemindHistoryTime;
+
 @end
 
 @implementation PLVChatroomPresenter {
@@ -146,6 +152,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     self.chatCachTimer = nil;
     
     self.getHistoryTime = 0;
+    self.getRemindHistoryTime = 0;
 }
 
 #pragma mark - Getter & Setter
@@ -203,6 +210,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 }
 
 - (PLVChatModel *)sendSpeakMessage:(NSString *)content replyChatModel:(PLVChatModel *)replyChatModel {
+    return [self sendSpeakMessage:content replyChatModel:replyChatModel source:nil];
+}
+
+- (PLVChatModel *)sendRemindSpeakMessage:(NSString *)content {
+    return [self sendSpeakMessage:content replyChatModel:nil source:@"extend"]; // source字段值为"extend"表示为：提醒消息
+}
+
+- (PLVChatModel *)sendSpeakMessage:(NSString *)content replyChatModel:(PLVChatModel *)replyChatModel source:(NSString * _Nullable)source {
     if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
         return nil;
     }
@@ -212,8 +227,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.content = content;
+    message.source = source;
     model.message = message;
-    
+
     if (replyChatModel && replyChatModel.message &&
         ([replyChatModel.message isKindOfClass:[PLVSpeakMessage class]] ||
          [replyChatModel.message isKindOfClass:[PLVImageMessage class]] ||
@@ -269,6 +285,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 #pragma mark 图片消息
 
 - (PLVChatModel *)sendImageMessage:(UIImage *)image {
+    return [self sendImageMessage:image source:nil];
+}
+
+- (PLVChatModel *)sendRemindImageMessage:(UIImage *)image {
+    return [self sendImageMessage:image source:@"extend"]; // source字段值为"extend"表示为：提醒消息
+}
+
+- (PLVChatModel *)sendImageMessage:(UIImage *)image source:(NSString * _Nullable)source {
     if (!image || ![image isKindOfClass:[UIImage class]]) {
         return nil;
     }
@@ -276,6 +300,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     PLVImageMessage *message = [[PLVImageMessage alloc] init];
     message.image = image;
     message.time = [PLVFdUtil curTimeInterval];
+    message.source = source;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = self.loginChatUser;
@@ -361,7 +386,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 - (void)changeRoom {
     self.getHistoryTime = 0;
+    self.getRemindHistoryTime = 0;
     self.loadingHistory = NO;
+    self.loadingRemindHistory = NO;
     [self loadHistory];
 }
 
@@ -415,6 +442,46 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     } failure:^(NSError * _Nonnull error) {
         [weakSelf notifyListenerLoadHistoryFailure];
         weakSelf.loadingHistory = NO;
+    }];
+}
+
+- (void)loadRemindHistory {
+    if (self.loadingRemindHistory) {
+        return;
+    }
+    self.loadingRemindHistory = YES;
+    
+    __weak typeof(self) weakSelf = self;
+    NSString *roomId = [PLVSocketManager sharedManager].roomId;
+    if (![PLVFdUtil checkStringUseable:roomId]) {
+        roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    }
+    NSInteger startIndex = self.getRemindHistoryTime * self.eachLoadingHistoryCount;
+    NSInteger endIndex = (self.getRemindHistoryTime + 1) * self.eachLoadingHistoryCount - 1;
+    [PLVLiveVideoAPI requestChatRoomRemindHistoryWithRoomId:roomId startIndex:startIndex endIndex:endIndex completion:^(NSArray * _Nonnull historyList) {
+        BOOL success = [PLVFdUtil checkArrayUseable:historyList];
+        if (success) {
+            if ([historyList count] > 0) {
+                NSMutableArray *tempArray = [[NSMutableArray alloc] initWithCapacity:[historyList count]];
+                [historyList enumerateObjectsUsingBlock:^(NSDictionary *dict, NSUInteger idx, BOOL * _Nonnull stop) {
+                    PLVChatModel *model = [weakSelf modelWithHistoryDict:dict];
+                    if (model) {
+                        [tempArray addObject:model];
+                    }
+                }];
+                BOOL noMoreHistory = [historyList count] < weakSelf.eachLoadingHistoryCount;
+                [weakSelf notifyListenerLoadRemindHistorySuccess:[tempArray copy] noMore:noMoreHistory];
+            } else {
+                [weakSelf notifyListenerLoadRemindHistorySuccess:@[] noMore:YES];
+            }
+        } else {
+            [weakSelf notifyListenerLoadRemindHistoryFailure];
+        }
+        weakSelf.getRemindHistoryTime++;
+        weakSelf.loadingRemindHistory = NO;
+    } failure:^(NSError * _Nonnull error) {
+        [weakSelf notifyListenerLoadRemindHistoryFailure];
+        weakSelf.loadingRemindHistory = NO;
     }];
 }
 
@@ -696,6 +763,19 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
 }
 
+- (void)notifyListenerLoadRemindHistorySuccess:(NSArray <PLVChatModel *> *)modelArray noMore:(BOOL)noMore {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomPresenter_loadRemindHistorySuccess:noMore:)]) {
+        [self.delegate chatroomPresenter_loadRemindHistorySuccess:modelArray noMore:noMore];
+    }
+}
+
+- (void)notifyListenerLoadRemindHistoryFailure {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_loadRemindHistoryFailure)]) {
+        [self.delegate chatroomPresenter_loadRemindHistoryFailure];
+    }
+}
+
 - (void)notifyListenerLoadImageEmotionsSuccess {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_loadImageEmotionsSuccess)]) {
         [self.delegate chatroomPresenter_loadImageEmotionsSuccess];
@@ -829,6 +909,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSDictionary *quote = PLV_SafeDictionaryForDictKey(data, @"quote");
     NSString *content = (NSString *)values.firstObject;
     NSTimeInterval time = PLV_SafeIntegerForDictKey(data, @"time");
+    NSString *source = PLV_SafeStringForDictKey(data, @"source");
     if (quote) {
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.msgId = msgId;
@@ -852,6 +933,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         message.msgId = msgId;
         message.content = content;
         message.time = time;
+        message.source = source;
         model.message = message;
         [self cachChatModel:model];
     }
@@ -877,6 +959,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     PLVImageMessage *message = [[PLVImageMessage alloc] init];
     message.msgId = PLV_SafeStringForDictKey(data, @"id");
     message.time = PLV_SafeIntegerForDictKey(data, @"time");
+    message.source = PLV_SafeStringForDictKey(data, @"source");
     
     NSDictionary *content = PLV_SafeDictionaryForValue(values.firstObject);
     message.imageId = PLV_SafeStringForDictKey(content, @"id");

@@ -173,6 +173,15 @@ UITableViewDataSource
     return cell;
 }
 
+- (void)refreshCellWithIndex:(NSIndexPath *)indexPath {
+    [self.tableView reloadData];
+    if (indexPath.row >= [PLVLSChatroomViewModel sharedViewModel].chatArray.count - 2) { // 最后两行需要将tableView滑动到底部
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self scrollsToBottom:NO];
+        });
+    }
+}
+
 #pragma mark - Public Method
 
 - (void)didSendMessage {
@@ -233,15 +242,6 @@ UITableViewDataSource
     return [[[PLVLSChatroomViewModel sharedViewModel] chatArray] count];
 }
 
-- (void)refreshCellWithIndex:(NSIndexPath *)indexPath {
-    [self.tableView reloadData];
-    if (indexPath.row >= [PLVLSChatroomViewModel sharedViewModel].chatArray.count - 2) { // 最后两行需要将tablView滑动到底部
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self scrollsToBottom:NO];
-        });
-    }
-}
-
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.row >= [PLVLSChatroomViewModel sharedViewModel].chatArray.count) {
         return [self createDefaultCellWithTableview:tableView];
@@ -265,8 +265,12 @@ UITableViewDataSource
             }
         }];
         
-        [cell setRefreshCellHandler:^{
+        [cell setProhibitWordShowHandler:^{
             [weakSelf refreshCellWithIndex:indexPath];
+        }];
+        
+        [cell setProhibitWordDismissHandler:^{
+            [weakSelf.tableView reloadData];
         }];
         
         return cell;
@@ -285,8 +289,12 @@ UITableViewDataSource
             }
         }];
         
-        [cell setRefreshCellHandler:^{
+        [cell setProhibitWordShowHandler:^{
             [weakSelf refreshCellWithIndex:indexPath];
+        }];
+        
+        [cell setProhibitWordDismissHandler:^{
+            [weakSelf.tableView reloadData];
         }];
         
         return cell;
@@ -305,7 +313,11 @@ UITableViewDataSource
             }
         }];
         
-        [cell setRefreshCellHandler:^{
+        [cell setProhibitWordShowHandler:^{
+            [weakSelf.tableView reloadData];
+        }];
+        
+        [cell setProhibitWordDismissHandler:^{
             [weakSelf.tableView reloadData];
         }];
         
@@ -325,8 +337,12 @@ UITableViewDataSource
             }
         }];
         
-        [cell setRefreshCellHandler:^{
+        [cell setProhibitWordShowHandler:^{
             [weakSelf refreshCellWithIndex:indexPath];
+        }];
+        
+        [cell setProhibitWordDismissHandler:^{
+            [weakSelf.tableView reloadData];
         }];
         
         return cell;

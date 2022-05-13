@@ -21,8 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL allowReply;
 
 @property (nonatomic, copy) void(^ _Nullable replyHandler)(PLVChatModel *model);
-/// 违禁词自动隐藏、手动显示时 触发
-@property (nonatomic, copy) void(^ _Nullable refreshCellHandler)(void);
+/// 违禁词手动触发显示时 触发
+@property (nonatomic, copy) void(^ _Nullable prohibitWordShowHandler)(void);
+/// 违禁词隐藏时 触发
+@property (nonatomic, copy) void(^ _Nullable prohibitWordDismissHandler)(void);
 
 @end
 

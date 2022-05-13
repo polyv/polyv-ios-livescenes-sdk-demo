@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// delegate
 @property (nonatomic, weak) id <PLVLCLinkMicWindowsViewDelegate> delegate;
 
+@property (nonatomic, strong, readonly) UIImageView * logoImageView;
+
 
 #pragma mark - [ 方法 ]
 /// 刷新 连麦窗口列表

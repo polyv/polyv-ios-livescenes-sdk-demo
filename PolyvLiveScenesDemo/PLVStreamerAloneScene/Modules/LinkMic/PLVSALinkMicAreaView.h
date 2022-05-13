@@ -79,6 +79,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param areaView 连麦窗口列表视图
 - (BOOL)classStartedInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView;
 
+/// 开启 或者 关闭全屏
+/// @param areaView 连麦窗口列表视图
+/// @param onlineUser 连麦用户信息
+/// @param isFullScreen 是否开启全屏(YES 开启 NO 关闭)
+- (void)linkMicAreaView:(PLVSALinkMicAreaView *)areaView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen;
+
 @end
 
 NS_ASSUME_NONNULL_END

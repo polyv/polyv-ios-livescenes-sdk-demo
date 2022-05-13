@@ -22,9 +22,6 @@ typedef void (^PLVLSProhibitWordTipViewDismissBlock) (void);
 @property (nonatomic, copy) PLVLSProhibitWordTipViewDismissBlock dismissBlock;
 
 /// 显示视图,三秒后自动消失
-- (void)show;
-
-/// 显示视图,三秒后自动消失
 /// @param superView 显示的父类
 - (void)showWithSuperView:(UIView *)superView;
 

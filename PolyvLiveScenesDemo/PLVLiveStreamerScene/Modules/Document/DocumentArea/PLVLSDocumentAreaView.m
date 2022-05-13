@@ -363,6 +363,11 @@ UIGestureRecognizerDelegate
     [self.pageNum setCurrentPage:pageNumber + 1 totalPage:totalPage];
     [self.toolView setPageNum:pageNumber + 1 totalNum:totalPage];
     [self.docSheet selectDocumentWithAutoId:autoId pageIndex:pageNumber];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(documentAreaView:didShowWhiteboardOrDocument:)]) {
+        [self.delegate documentAreaView:self didShowWhiteboardOrDocument:!autoId];
+    }
 }
 
 - (void)documentView_continueClassWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber {
