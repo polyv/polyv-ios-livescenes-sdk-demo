@@ -14,6 +14,7 @@
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
 #import <MJRefresh/MJRefresh.h>
+#import "PLVRewardDisplayManager.h"
 
 #define TEXT_MAX_COUNT 200
 
@@ -32,6 +33,10 @@ PLVECChatroomViewModelProtocol
 @property (nonatomic, strong) MJRefreshNormalHeader *refresher;
 /// 新消息提示条幅
 @property (nonatomic, strong) PLVECNewMessageView *receiveNewMessageView;
+/// 打赏成功提示条幅
+@property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager;
+/// 条幅视图
+@property (nonatomic, strong) UIView *rewardDisplayView;
 
 @property (nonatomic, strong) PLVECWelcomView *welcomView;
 @property (nonatomic, assign) CGRect originWelcomViewFrame;
@@ -79,6 +84,7 @@ PLVECChatroomViewModelProtocol
         self.welcomView = [[PLVECWelcomView alloc] init];
         self.welcomView.hidden = YES;
         [self addSubview:self.welcomView];
+        [self addSubview:self.rewardDisplayView];
         
         // 渐变蒙层
         self.gradientLayer = [CAGradientLayer layer];
@@ -145,6 +151,7 @@ PLVECChatroomViewModelProtocol
     self.gradientLayer.frame = self.tableViewBackgroundView.bounds;
     self.welcomView.frame = CGRectMake(-258, CGRectGetMinY(self.tableViewBackgroundView.frame)-22-15, 258, 22);
     self.originWelcomViewFrame = self.welcomView.frame;
+    self.rewardDisplayView.frame = CGRectMake(0, CGRectGetMidY(self.bounds) - 150/2, PLVScreenWidth, CGRectGetHeight(self.bounds) - CGRectGetMidY(self.bounds) + 150/2);
     
     CGFloat tvbBottom = self.tableViewBackgroundView.frame.origin.y + tableViewHeight;
     self.receiveNewMessageView.frame = CGRectMake(15, tvbBottom - 24, 86, 24);
@@ -190,6 +197,23 @@ PLVECChatroomViewModelProtocol
         [_refresher.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
     }
     return _refresher;
+}
+
+- (PLVRewardDisplayManager *)rewardDisplayManager{
+    if (!_rewardDisplayManager) {
+        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] init];
+        _rewardDisplayManager.superView = self.rewardDisplayView;
+    }
+    return _rewardDisplayManager;
+}
+
+- (UIView *)rewardDisplayView {
+    if (!_rewardDisplayView) {
+        _rewardDisplayView = [[UIView alloc]init];
+        _rewardDisplayView.backgroundColor = [UIColor clearColor];
+        _rewardDisplayView.userInteractionEnabled = NO;
+    }
+    return _rewardDisplayView;
 }
 
 #pragma mark - Action
@@ -313,6 +337,21 @@ PLVECChatroomViewModelProtocol
 - (void)chatroomManager_loadHistoryFailure {
     [self.refresher endRefreshing];
     [PLVECUtils showHUDWithTitle:@"聊天记录获取失败" detail:@"" view:self];
+}
+
+- (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict {
+    NSInteger num = [modelDict[@"goodNum"] integerValue];
+    NSString *unick = modelDict[@"unick"];
+    PLVRewardGoodsModel *model = [PLVRewardGoodsModel modelWithSocketObject:modelDict];
+    [self.rewardDisplayManager addGoodsShowWithModel:model goodsNum:num personName:unick];
+}
+
+- (void)chatroomManager_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomView_loadRewardEnable:payWay:rewardModelArray:pointUnit:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomView_loadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
+        });
+    }
 }
 
 #pragma mark 显示欢迎语

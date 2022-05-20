@@ -10,6 +10,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVECPlayerBackgroundView.h"
 #import "PLVECAudioAnimalView.h"
+#import "PLVLivePictureInPicturePlaceholderView.h"
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVPlayerPresenter.h"
@@ -31,7 +32,8 @@ PLVPlayerPresenterDelegate
 /// │   │   └── (UIView) displayView  播放器区域
 /// │   ├── (PLVWatermarkView) watermarkView  防录屏水印
 /// │   ├── (PLVECAudioAnimalView) audioAnimalView  // 显示音频模式背景图
-/// │   └── (UIButton) playButton  //播放器暂停、播放按钮
+/// │   ├── (UIButton) playButton  //播放器暂停、播放按钮
+/// │   └── (PLVLivePictureInPicturePlaceholderView) pictureInPicturePlaceholderView
 /// └── (PLVMarqueeView) marqueeView // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 
 @property (nonatomic, strong) UIImageView *backgroundView; // 全尺寸背景图
@@ -41,6 +43,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) UIView *displayView; // 播放器区域
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) UIButton * playButton; // 播放器暂停、播放按钮
+@property (nonatomic, strong) PLVLivePictureInPicturePlaceholderView *pictureInPicturePlaceholderView;    // 画中画占位图
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 
 #pragma mark 基本数据
@@ -66,6 +69,10 @@ PLVPlayerPresenterDelegate
     return self;
 }
 
+- (void)dealloc {
+    NSLog(@"%s",__FUNCTION__);
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -75,6 +82,7 @@ PLVPlayerPresenterDelegate
     [self contentBackgroundViewDisplaySubview:self.displayView];
     [self.view addSubview:self.audioAnimalView];
     [self.view addSubview:self.playButton];
+    [self.view addSubview:self.pictureInPicturePlaceholderView];
     
     [self.playerPresenter setupPlayerWithDisplayView:self.displayView];
     if (!self.marqueeView.superview) {
@@ -109,6 +117,9 @@ PLVPlayerPresenterDelegate
     self.watermarkView.frame = self.contentBackgroudView.frame;
     
     self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, (CGRectGetHeight(self.view.frame) - 72) / 2, 74, 72);
+    
+    // 设置画中画占位图
+    self.pictureInPicturePlaceholderView.frame = self.contentBackgroudView.frame;
 }
 
 - (CGRect)getDisplayViewRect {
@@ -272,6 +283,14 @@ PLVPlayerPresenterDelegate
     return _audioAnimalView;
 }
 
+- (PLVLivePictureInPicturePlaceholderView *)pictureInPicturePlaceholderView {
+    if (!_pictureInPicturePlaceholderView) {
+        _pictureInPicturePlaceholderView = [[PLVLivePictureInPicturePlaceholderView alloc] init];
+        _pictureInPicturePlaceholderView.hidden = YES;
+    }
+    return _pictureInPicturePlaceholderView;
+}
+
 - (UIView *)displayView {
     if (!_displayView) {
         _displayView = [[UIView alloc] init];
@@ -297,6 +316,10 @@ PLVPlayerPresenterDelegate
 
 - (BOOL)advertPlaying {
     return _playerPresenter.advertPlaying;
+}
+
+- (BOOL)noDelayLiveWatching{
+    return self.playerPresenter.noDelayLiveWatching;
 }
 
 - (PLVMarqueeView *)marqueeView{
@@ -478,6 +501,20 @@ PLVPlayerPresenterDelegate
     [self.playerPresenter switchToNoDelayWatchMode:noDelayWatchMode];
 }
 
+- (void)startPictureInPicture {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live) {
+        return;
+    }
+    [self.playerPresenter startPictureInPictureFromOriginView:self.contentBackgroudView];
+}
+
+- (void)stopPictureInPicture {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live) {
+        return;
+    }
+    [self.playerPresenter stopPictureInPicture];
+}
+
 #pragma mark 回放方法
 
 - (void)seek:(NSTimeInterval)time {
@@ -524,6 +561,7 @@ PLVPlayerPresenterDelegate
     self.displayRect = [self getDisplayViewRect];
     self.contentBackgroudView.frame = self.displayRect;
     self.watermarkView.frame = self.contentBackgroudView.frame;
+    self.pictureInPicturePlaceholderView.frame = self.displayRect;
 }
 
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter streamStateUpdate:(PLVChannelLiveStreamState)newestStreamState streamStateDidChanged:(BOOL)streamStateDidChanged{
@@ -534,6 +572,7 @@ PLVPlayerPresenterDelegate
         self.contentBackgroudView.hidden = YES;
         self.displayRect = self.backgroundView.frame;
         self.contentBackgroudView.frame = self.displayRect;
+        self.pictureInPicturePlaceholderView.frame = self.displayRect;
         [self.marqueeView stop];
     } else {
         self.contentBackgroudView.hidden = NO;
@@ -602,6 +641,38 @@ PLVPlayerPresenterDelegate
     if (self.roomData.videoType == PLVChannelVideoType_Playback) {
         /// 设置防录屏水印
         [self setupWatermark];
+    }
+}
+
+- (void)playerPresenterPictureInPictureWillStart:(PLVPlayerPresenter *)playerPresenter {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerPictureInPictureWillStart:)]) {
+        [self.delegate playerControllerPictureInPictureWillStart:self];
+    }
+}
+
+- (void)playerPresenterPictureInPictureDidStart:(PLVPlayerPresenter *)playerPresenter {
+    self.pictureInPicturePlaceholderView.hidden = NO;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerPictureInPictureDidStart:)]) {
+        [self.delegate playerControllerPictureInPictureDidStart:self];
+    }
+}
+
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPictureFailedToStartWithError:(NSError *)error {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:pictureInPictureFailedToStartWithError:)]) {
+        [self.delegate playerController:self pictureInPictureFailedToStartWithError:error];
+    }
+}
+
+- (void)playerPresenterPictureInPictureWillStop:(PLVPlayerPresenter *)playerPresenter {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerPictureInPictureWillStop:)]) {
+        [self.delegate playerControllerPictureInPictureWillStop:self];
+    }
+}
+
+- (void)playerPresenterPictureInPictureDidStop:(PLVPlayerPresenter *)playerPresenter {
+    self.pictureInPicturePlaceholderView.hidden = YES;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerPictureInPictureDidStop:)]) {
+        [self.delegate playerControllerPictureInPictureDidStop:self];
     }
 }
 

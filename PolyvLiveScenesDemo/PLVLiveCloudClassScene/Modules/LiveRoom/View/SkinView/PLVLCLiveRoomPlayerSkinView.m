@@ -20,6 +20,7 @@
 @property (nonatomic, strong) UIButton * danmuButton;
 @property (nonatomic, strong) UILabel * guideChatLabel;
 @property (nonatomic, strong) UIView * likeButtonBackgroudView;
+@property (nonatomic, strong) UIButton *rewardButton;
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
 
 @end
@@ -86,6 +87,7 @@
         self.moreButton.frame = CGRectMake(viewWidth - rightSafePadding - backButtonSize.width, topPadding, backButtonSize.width, backButtonSize.height);
         
         [self refreshBulletinButtonFrame];
+        [self refreshPictureInPictureButtonFrame];
         
         [self refreshTitleLabelFrameInSmallScreen];
         [self refreshPlayTimesLabelFrame];
@@ -104,6 +106,7 @@
         
         CGFloat likeButtonWidth = 46.0;
         self.likeButtonBackgroudView.frame = CGRectMake(viewWidth - rightSafePadding - 10 - likeButtonWidth, self.playButton.center.y - likeButtonWidth / 2.0f, likeButtonWidth, likeButtonWidth);
+        self.rewardButton.frame = CGRectMake(CGRectGetMinX(self.likeButtonBackgroudView.frame) - 30 - likeButtonWidth, CGRectGetMinY(self.likeButtonBackgroudView.frame), likeButtonWidth, likeButtonWidth);
         
         CGFloat timeLabelWidth = [self getLabelTextWidth:self.currentTimeLabel];
         self.currentTimeLabel.frame = CGRectMake(CGRectGetMinX(self.playButton.frame), CGRectGetMinY(self.playButton.frame) - 14 - backButtonSize.height, timeLabelWidth, backButtonSize.height);
@@ -165,6 +168,26 @@
     CGSize backButtonSize = CGSizeMake(40.0, 20.0);
     CGFloat bulletinButtonX = self.moreButton.hidden ? (viewWidth - rightSafePadding - backButtonSize.width) : (CGRectGetMinX(self.moreButton.frame) - backButtonSize.width - intervalPadding);
     self.bulletinButton.frame = CGRectMake(bulletinButtonX, topPadding, backButtonSize.width, backButtonSize.height);
+}
+
+- (void)refreshPictureInPictureButtonFrame{
+    CGFloat rightSafePadding = 0;
+    CGFloat topPadding = 16.0;
+    CGFloat intervalPadding = 0;
+
+    if (@available(iOS 11.0, *)) {
+        rightSafePadding = self.safeAreaInsets.right;
+    }
+    // iPad适配
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        rightSafePadding = 20.0;
+        topPadding = 30.0;
+        intervalPadding = 10.0;
+    }
+    
+    CGSize backButtonSize = CGSizeMake(40.0, 20.0);
+    CGFloat pictureInPictureButtonX = self.bulletinButton.frame.origin.x - backButtonSize.width;
+    self.pictureInPictureButton.frame = CGRectMake(pictureInPictureButtonX, topPadding, backButtonSize.width, backButtonSize.height);
 }
 
 - (void)refreshTitleLabelFrameInSmallScreen{
@@ -303,6 +326,16 @@
     return _likeButtonBackgroudView;
 }
 
+- (UIButton *)rewardButton {
+    if (!_rewardButton) {
+        _rewardButton = [[UIButton alloc]init];
+        [_rewardButton setImage: [PLVLCUtils imageForLiveRoomResource:@"plv_liveroom_reward"] forState:UIControlStateNormal];
+        _rewardButton.hidden = YES;
+        [_rewardButton addTarget:self action:@selector(rewardButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _rewardButton;
+}
+
 - (PLVLCLiveRoomLandscapeInputView *)landscapeInputView{
     if (!_landscapeInputView) {
         _landscapeInputView = [[PLVLCLiveRoomLandscapeInputView alloc]init];
@@ -332,6 +365,7 @@
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 视频类型为 直播
         /// 顶部UI
         [self addSubview:self.bulletinButton];
+        [self addSubview:self.rewardButton];
     }
 }
 
@@ -344,6 +378,7 @@
         
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshBulletinButtonFrame];
+        [self refreshPictureInPictureButtonFrame];
         [self refreshTitleLabelFrameInSmallScreen];
         [self refreshPlayTimesLabelFrame];
         [self refreshRefreshButtonFrame];
@@ -364,6 +399,11 @@
     // 横屏不需要显示提示，仅重写覆盖即可
 }
 
+- (void)refreshMoreButtonHiddenOrRestore:(BOOL)hidden {
+    [super refreshMoreButtonHiddenOrRestore:hidden];
+    [self refreshBulletinButtonFrame];
+    [self refreshPictureInPictureButtonFrame];
+}
 
 #pragma mark Father Animation
 - (void)controlsSwitchShowStatusWithAnimation:(BOOL)showStatus{
@@ -431,6 +471,12 @@
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:userWannaShowDanmu:)]) {
         BOOL showDanmu = !self.danmuButton.selected;
         [self.delegate plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:self userWannaShowDanmu:showDanmu];
+    }
+}
+
+- (void)rewardButtonAction:(UIButton *)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewRewardButtonClicked:)]) {
+        [self.delegate plvLCLiveRoomPlayerSkinViewRewardButtonClicked:self];
     }
 }
 

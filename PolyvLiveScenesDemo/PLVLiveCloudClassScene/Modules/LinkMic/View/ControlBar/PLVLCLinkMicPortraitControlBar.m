@@ -10,6 +10,7 @@
 
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
 #define PLVLCLinkMicControlBar_HoverTime 5.0  // 悬停时长 (控制栏展开后，悬停多久后自动折叠)
 
@@ -661,6 +662,10 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 }
 
 - (void)onOffButtonAction:(UIButton *)button{
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [PLVLCUtils showHUDWithTitle:@"小窗播放中，不支持连麦" detail:@"" view:self.superview];
+        return;
+    }
     // 防止短时间内重复点击，kLinkMicBtnTouchInterval间隔内的点击会直接忽略
     NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
     if (curTimeInterval - self.linkMicBtnLastTimeInterval > kLinkMicBtnTouchInterval) {
@@ -670,6 +675,9 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 }
 
 - (void)notifyListenerOnOffButtonClickedCurrentStatus {
+    
+    
+    
     BOOL joinedAndFold = self.status == PLVLCLinkMicControlBarStatus_Joined && self.foldSelf;
     if (self.status == PLVLCLinkMicControlBarStatus_Open || joinedAndFold) {
         [self unfoldSelfView];

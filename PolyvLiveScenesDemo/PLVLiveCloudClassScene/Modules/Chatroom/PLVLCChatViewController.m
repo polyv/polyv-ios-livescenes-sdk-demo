@@ -15,6 +15,11 @@
 #import "PLVLCImageMessageCell.h"
 #import "PLVLCImageEmotionMessageCell.h"
 #import "PLVLCQuoteMessageCell.h"
+#import "PLVLCRewardMessageCell.h"
+#import "PLVAlbumNavigationController.h"
+#import "PLVGiveRewardPresenter.h"
+#import "PLVRewardGoodsModel.h"
+#import "PLVRewardDisplayManager.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatroomViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
@@ -61,6 +66,8 @@ UITableViewDataSource
 @property (nonatomic, strong) PLVLCWelcomeView *welcomeView;
 /// 聊天室顶部公告横幅
 @property (nonatomic, strong) PLVLCNotifyMarqueeView *notifyMarqueeView;
+/// 打赏成功提示条幅
+@property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager;
 
 @end
 
@@ -203,6 +210,14 @@ UITableViewDataSource
         _notifyMarqueeView = [[PLVLCNotifyMarqueeView alloc] init];
     }
     return _notifyMarqueeView;
+}
+
+- (PLVRewardDisplayManager *)rewardDisplayManager {
+    if (!_rewardDisplayManager) {
+        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] init];
+        _rewardDisplayManager.superView = self.view;
+    }
+    return _rewardDisplayManager;
 }
 
 #pragma mark - Action
@@ -433,6 +448,23 @@ UITableViewDataSource
     [PLVLCUtils showHUDWithTitle:@"图片表情数据获取失败" detail:@"" view:self.view];
 }
 
+- (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict {
+    if (![PLVLCChatroomViewModel sharedViewModel].hideRewardDisplay) {
+        NSInteger num = [modelDict[@"goodNum"] integerValue];
+        NSString *unick = modelDict[@"unick"];
+        PLVRewardGoodsModel *model = [PLVRewardGoodsModel modelWithSocketObject:modelDict];
+        [self.rewardDisplayManager addGoodsShowWithModel:model goodsNum:num personName:unick];
+    }
+}
+
+- (void)chatroomManager_loadRewardEnable:(BOOL)enable payWay:payWay rewardModelArray:(NSArray *)modelArray pointUnit:(NSString *)pointUnit {
+    /// 回放场景不支持礼物打赏
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+        self.keyboardToolView.enableReward = enable;
+        [self.keyboardToolView updateTextViewAndButton];
+    }
+}
+
 #pragma mark - UITableView DataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -483,6 +515,14 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVLCRewardMessageCell isModelValid:model]) {
+        static NSString *rewardMessageCellIdentify = @"PLVLCRewardCell";
+        PLVLCRewardMessageCell *cell = (PLVLCRewardMessageCell *)[tableView dequeueReusableCellWithIdentifier:rewardMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCRewardMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:rewardMessageCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -511,6 +551,8 @@ UITableViewDataSource
         cellHeight = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
         cellHeight = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCRewardMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else {
         cellHeight = 0;
     }

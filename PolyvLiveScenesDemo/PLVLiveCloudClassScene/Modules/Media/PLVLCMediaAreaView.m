@@ -62,6 +62,7 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
 @property (nonatomic, strong) PLVDocumentView * pptView;                 // PPT 功能模块
 @property (nonatomic, assign) NSInteger tryPlayPPTViewNum; // 尝试播放PPTView次数
+@property (nonatomic, assign) UIView *pictureInPictureOriginView;   // 画中画视图的起始视图，这个视图必须是激活状态的，否则无法开启画中画。
 
 #pragma mark 数据
 @property (nonatomic, readonly) PLVRoomData *roomData;  // 只读，当前直播间数据
@@ -372,6 +373,10 @@ PLVRoomDataManagerProtocol
     }
 }
 
+- (void)refreshPictureInPictureButtonShow:(BOOL)show {
+    [self.skinView refreshPictureInPictureButtonShow:show];
+}
+
 #pragma mark 网络质量
 - (void)showNetworkQualityMiddleView {
     if (self.networkQualityMiddleViewShowed) {
@@ -397,6 +402,21 @@ PLVRoomDataManagerProtocol
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         weakSelf.networkQualityPoorView.hidden = YES;
     });
+}
+
+- (void)startPictureInPicture {
+    if (self.videoType == PLVChannelVideoType_Live) {
+        PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.superview animated:YES];
+        [hud.label setText:@"正在开启小窗..."];
+        [hud hideAnimated:YES afterDelay:3.0];
+        [self.playerPresenter startPictureInPictureFromOriginView:self.pictureInPictureOriginView];
+    }
+}
+
+- (void)stopPictureInPicture {
+    if (self.videoType == PLVChannelVideoType_Live) {
+        [self.playerPresenter stopPictureInPicture];
+    }
 }
 
 #pragma mark Getter
@@ -459,6 +479,7 @@ PLVRoomDataManagerProtocol
     [self.contentBackgroudView addSubview:subview];
     subview.frame = self.contentBackgroudView.bounds;
     subview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.pictureInPictureOriginView = subview;
 }
 
 - (void)setupModule{
@@ -925,6 +946,14 @@ PLVRoomDataManagerProtocol
     [self.moreView updateMoreViewOnSuperview:skinView.superview];
 }
 
+-(void)plvLCBasePlayerSkinViewPictureInPictureButtonClicked:(PLVLCBasePlayerSkinView *)skinView {
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [self.playerPresenter stopPictureInPicture];
+    }else {
+        [self startPictureInPicture];
+    }
+}
+
 - (void)plvLCBasePlayerSkinViewMoreButtonClicked:(PLVLCBasePlayerSkinView *)skinView{
     [self.moreView showMoreViewOnSuperview:skinView.superview];
 }
@@ -1004,6 +1033,14 @@ PLVRoomDataManagerProtocol
 
 - (BOOL)plvLCBasePlayerSkinViewShouldShowDocumentToolView:(PLVLCBasePlayerSkinView *)skinView {
     return self.pptOnMainSite; // ppt在主屏时可显示翻页工具
+}
+
+- (BOOL)plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:(PLVLCBasePlayerSkinView *)skinView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMicProcess:)]) {
+        BOOL inLinkMicProcess = [self.delegate plvLCMediaAreaViewGetInLinkMicProcess:self];
+        return !inLinkMicProcess;
+    }
+    return YES;
 }
 
 #pragma mark PLVLCFloatViewDelegate
@@ -1245,6 +1282,71 @@ PLVRoomDataManagerProtocol
 // 回放视频播放中断
 - (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter {
     self.retryPlayView.hidden = NO;
+}
+
+/// 画中画即将开启
+- (void)playerPresenterPictureInPictureWillStart:(PLVPlayerPresenter *)playerPresenter {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureWillStart:)]) {
+        [self.delegate plvLCMediaAreaViewPictureInPictureWillStart:self];
+    }
+}
+
+/// 画中画已经开启
+- (void)playerPresenterPictureInPictureDidStart:(PLVPlayerPresenter *)playerPresenter {
+    [PLVProgressHUD hideHUDForView:self.superview animated:YES];
+    [PLVLCUtils showHUDWithTitle:@"小窗播放中，可能存在画面延后的情况" detail:@"" view:self.superview];
+    
+    // 更多按钮显示控制
+    [self.skinView refreshMoreButtonHiddenOrRestore:YES];
+    
+    // 画中画占位视图显示控制、播放控制
+    if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+        [self.canvasView setPictureInPicturePlaceholderShow:YES];
+        [self.playerPresenter pausePlay];
+    }else {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
+            [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:NO];
+        }
+    }
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureDidStart:)]) {
+        [self.delegate plvLCMediaAreaViewPictureInPictureDidStart:self];
+    }
+}
+
+/// 画中画开启错误
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPictureFailedToStartWithError:(NSError *)error {
+    [PLVProgressHUD hideHUDForView:self.superview animated:YES];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:pictureInPictureFailedToStartWithError:)]) {
+        [self.delegate plvLCMediaAreaView:self pictureInPictureFailedToStartWithError:error];
+    }
+}
+
+/// 画中画即将关闭
+- (void)playerPresenterPictureInPictureWillStop:(PLVPlayerPresenter *)playerPresenter {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureWillStop:)]) {
+        [self.delegate plvLCMediaAreaViewPictureInPictureWillStop:self];
+    }
+}
+
+/// 画中画已经关闭
+- (void)playerPresenterPictureInPictureDidStop:(PLVPlayerPresenter *)playerPresenter {
+    // 更多按钮显示控制
+    [self.skinView refreshMoreButtonHiddenOrRestore:NO];
+    
+    // 画中画展位视图显示控制、播放控制
+    if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+        [self.canvasView setPictureInPicturePlaceholderShow:NO];
+        [self.playerPresenter resumePlay];
+    }else {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
+            [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:YES];
+        }
+    }
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureDidStop:)]) {
+        [self.delegate plvLCMediaAreaViewPictureInPictureDidStop:self];
+    }
 }
 
 #pragma mark PLVLCRetryPlayViewDelegate

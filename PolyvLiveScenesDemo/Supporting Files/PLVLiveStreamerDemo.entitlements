@@ -4,7 +4,7 @@
 <dict>
 	<key>com.apple.security.application-groups</key>
 	<array>
-		<string>group.net.plv.PolyvLiveScenesDemo.ScreenShare</string>
+		<string>group.polyv.PolyvLiveScenesDemo.ScreenShare.test</string>
 	</array>
 </dict>
 </plist>

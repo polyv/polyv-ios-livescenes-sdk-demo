@@ -148,6 +148,17 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 显示网络糟糕提示视图
 - (void)showNetworkQualityPoorView;
 
+/// 刷新画中画按钮是否显示
+/// @param show YES:显示，NO:隐藏
+- (void)refreshPictureInPictureButtonShow:(BOOL)show;
+
+/// 开始画中画播放
+/// 该方法将触发 [plvLCMediaAreaViewPictureInPictureDidStart:] 回调
+- (void)startPictureInPicture;
+
+/// 结束画中画播放
+- (void)stopPictureInPicture;
+
 @end
 
 @protocol PLVLCMediaAreaViewDelegate <NSObject>
@@ -165,6 +176,11 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @return BOOL 由外部告知的当前是否连麦中 (YES:正在连麦中 NO:不在连麦中)
 - (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView;
+
+/// 媒体区域视图需要得知当前‘是否正在连麦的过程中’ 
+/// @param mediaAreaView 媒体区域视图
+/// @return BOOL 由外部告知的当前是否在连麦过程中 (YES:正在连麦过程中 NO:不在连麦过程中:PLVLinkMicStatus_Open、PLVLinkMicStatus_NotOpen)
+- (BOOL)plvLCMediaAreaViewGetInLinkMicProcess:(PLVLCMediaAreaView *)mediaAreaView;
 
 /// 媒体区域视图需要得知当前‘是否暂停无延迟观看’
 ///
@@ -221,6 +237,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// [无延迟直播] 无延迟直播 ‘播放或暂停’
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveWannaPlay:(BOOL)wannaPlay;
 
+/// [无延迟直播] 无延迟直播 ‘显示 / 隐藏 画中画占位视图’
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPicturePlaceholder:(BOOL)show;
+
 /// 回放场景
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;
 
@@ -230,6 +249,27 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// mainSpeakerPPTOnMain 发生改变回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain;
 
+#pragma mark 画中画的回调
+/// 画中画即将开始
+/// @param mediaAreaView 播放器管理器
+- (void)plvLCMediaAreaViewPictureInPictureWillStart:(PLVLCMediaAreaView *)mediaAreaView;
+
+/// 画中画已经开始
+/// @param mediaAreaView 播放器管理器
+- (void)plvLCMediaAreaViewPictureInPictureDidStart:(PLVLCMediaAreaView *)mediaAreaView;
+
+/// 画中画开启失败
+/// @param mediaAreaView 播放器管理器
+/// @param error 失败错误原因
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPictureFailedToStartWithError:(NSError *)error;
+
+/// 画中画即将停止
+/// @param mediaAreaView 播放器管理器
+- (void)plvLCMediaAreaViewPictureInPictureWillStop:(PLVLCMediaAreaView *)mediaAreaView;
+
+/// 画中画已经停止
+/// @param mediaAreaView 播放器管理器
+- (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView;
 @end
 
 NS_ASSUME_NONNULL_END

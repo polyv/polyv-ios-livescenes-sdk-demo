@@ -12,7 +12,9 @@
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatroomViewModel.h"
+#import "PLVPopoverView.h"
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
+#import "PLVLivePictureInPictureRestoreManager.h"
 
 // UI
 #import "PLVLCMediaAreaView.h"
@@ -20,7 +22,11 @@
 #import "PLVLCLivePageMenuAreaView.h"
 #import "PLVLCLiveRoomPlayerSkinView.h"
 #import "PLVLCChatLandscapeView.h"
-#import "PLVInteractGenericView.h"
+#import "PLVRewardDisplayManager.h"
+#import "PLVCommodityPushView.h"
+#import "PLVBaseNavigationController.h"
+#import "PLVCommodityDetailViewController.h"
+
 
 // 工具
 #import "PLVLCUtils.h"
@@ -32,18 +38,24 @@ PLVLCLinkMicAreaViewDelegate,
 PLVLCLiveRoomPlayerSkinViewDelegate,
 PLVLCLivePageMenuAreaViewDelegate,
 PLVLCChatroomViewModelProtocol,
-PLVRoomDataManagerProtocol
+PLVRoomDataManagerProtocol,
+PLVCommodityPushViewDelegate,
+PLVCommodityDetailViewControllerDelegate,
+PLVPopoverViewDelegate
 >
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVChannelType channelType; // 只读，当前 频道类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType videoType; // 只读，当前 视频类型
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
+@property (nonatomic, strong) NSURL *commodityURL;
+@property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentLandscape;    // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
 @property (nonatomic, assign) BOOL fullScreenDifferent; // 在更新UI布局之前，横竖屏是否发现了变化 (YES:已变化 NO:没有变化)
 @property (nonatomic, assign) BOOL hideLinkMicAreaViewInSmallScreen;// 连麦列表是否在iPad小分屏时隐藏
+@property (nonatomic, assign) PLVLinkMicStatus linkMicStatus;   // 当前的连麦状态
 
 #pragma mark 模块
 @property (nonatomic, strong) NSTimer * countdownTimer;
@@ -62,22 +74,26 @@ PLVRoomDataManagerProtocol
 /// ├── (PLVLCLinkMicAreaView) linkMicAreaView
 /// ├── (PLVLCMediaFloatView) floatView (由 mediaAreaView 持有及管理)
 /// ├── (PLVLCLinkMicPortraitControlBar) portraitControlBar (由 linkMicAreaView 持有及管理)
-/// └── (PLVInteractGenericView) interactView
+/// └── (PLVPopoverView) popoverView
 ///
 /// [直播] 横屏
 /// (UIView) self.view
 /// ├── (PLVLCMediaAreaView) mediaAreaView
+/// ├── (UIView) rewardSvgaView
 /// ├── (PLVLCLinkMicAreaView) linkMicAreaView
 /// ├── (PLVLCChatLandscapeView) chatLandscapeView
 /// ├── (PLVLCMediaFloatView) floatView (由 mediaAreaView 持有及管理)
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// ├── (PLVLCLinkMicLandscapeControlBar) landscapeControlBar (由 linkMicAreaView 持有及管理)
 /// ├── (UIView) marqueeView (由 mediaAreaView 持有及管理)
-/// └── (PLVInteractGenericView) interactView
+/// └── (PLVPopoverView) popoverView
 @property (nonatomic, strong) PLVLCMediaAreaView *mediaAreaView;        // 媒体区
 @property (nonatomic, strong) PLVLCLinkMicAreaView *linkMicAreaView;    // 连麦区
 @property (nonatomic, strong) PLVLCLivePageMenuAreaView *menuAreaView;  // 菜单区
-@property (nonatomic, strong) PLVInteractGenericView *interactView;     // 互动
+@property (nonatomic, strong) PLVPopoverView *popoverView;              // 浮动区域
+@property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager; // 礼物打赏动画管理器
+@property (nonatomic, strong) UIView *rewardSvgaView;                   // 礼物打赏动画父视图 （仅在横屏下有效）
+@property (nonatomic, strong) PLVCommodityPushView *pushView;           // 商品推送视图 （仅在竖屏下有效）
 
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
 @property (nonatomic, strong) PLVLCLiveRoomPlayerSkinView * liveRoomSkinView;// 横屏频道皮肤
@@ -127,6 +143,11 @@ PLVRoomDataManagerProtocol
     [self updateUI];
 }
 
+-(void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    self.logoutWhenStopPictureInPicutre = NO;
+}
+
 - (UIStatusBarStyle)preferredStatusBarStyle{
     return UIStatusBarStyleLightContent;
 }
@@ -158,6 +179,9 @@ PLVRoomDataManagerProtocol
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenLotteryRecord:) name:PLVLCChatroomOpenLotteryRecordNotification object:nil];
         
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenRewardView:) name:PLVLCChatroomOpenRewardViewNotification object:nil];
+
+        
     } else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     
     }
@@ -174,16 +198,15 @@ PLVRoomDataManagerProtocol
     if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 创建添加视图
         [self.view addSubview:self.mediaAreaView];    // 媒体区
+        [self.view addSubview:self.rewardSvgaView];
         [self.view addSubview:self.menuAreaView];     // 菜单区
         [self.view addSubview:self.linkMicAreaView];  // 连麦区
         [self.view addSubview:self.chatLandscapeView];// 横屏聊天区
         [self.view addSubview:self.liveRoomSkinView]; // 横屏频道皮肤
-        [self.view addSubview:self.interactView];     // 互动
+        [self.view addSubview:self.popoverView];      // 浮动区域
 
         /// 配置
-        self.interactView.frame = self.view.bounds;
-        self.interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [self.interactView loadOnlineInteract];
+        self.popoverView.frame = self.view.bounds;
         
         self.liveRoomSkinView.frame = self.view.bounds;
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -248,6 +271,7 @@ PLVRoomDataManagerProtocol
 
         CGRect mediaAreaViewFrame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetWidth(self.view.bounds) * PPTPlayerViewScale + P_SafeAreaTopEdgeInsets());
         self.mediaAreaView.frame = mediaAreaViewFrame;
+        [self enableRewardSvgaPlayer:NO];
         
         CGFloat linkMicAreaViewHeight = 0;
         if (showLinkMicAreaView) {
@@ -262,8 +286,8 @@ PLVRoomDataManagerProtocol
         
         /// 图层管理
         [self.view insertSubview:self.mediaAreaView.marqueeView aboveSubview:self.mediaAreaView]; /// 保证高于 mediaAreaView 即可
-        [self.view insertSubview:self.mediaAreaView.floatView belowSubview:self.interactView]; /// 保证低于 interactView
-        [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.interactView]; /// 保证低于 interactView 即可
+        [self.view insertSubview:self.mediaAreaView.floatView belowSubview:self.popoverView.interactView]; /// 保证低于 interactView
+        [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView 即可
         
     } else {
         // 横屏
@@ -293,6 +317,7 @@ PLVRoomDataManagerProtocol
                                                  linkMicAreaViewWidth,
                                                  CGRectGetHeight(self.view.bounds));
         self.linkMicAreaView.frame = linkMicAreaViewFrame;
+        [self enableRewardSvgaPlayer:YES];
         
         if (isPad) {
             // iPad横屏的分屏变换时，刷新连麦工具栏布局
@@ -310,7 +335,7 @@ PLVRoomDataManagerProtocol
         [self.view insertSubview:self.mediaAreaView.floatView belowSubview:self.liveRoomSkinView]; /// 保证低于 liveRoomSkinView
         [self.view insertSubview:self.mediaAreaView.marqueeView aboveSubview:self.liveRoomSkinView]; /// 保证高于 liveRoomSkinView 即可
         [self.view insertSubview:self.mediaAreaView.retryPlayView aboveSubview:self.liveRoomSkinView]; /// 保证高于 liveRoomSkinView 即可
-        [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.interactView]; /// 保证低于 interactView
+        [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView
     }
     
     self.fullScreenDifferent = NO;
@@ -382,6 +407,32 @@ PLVRoomDataManagerProtocol
     [self.mediaAreaView.skinView setPlayButtonWithPlaying:play];
 }
 
+/// 是否在播放器区域展示打赏动画
+- (void)enableRewardSvgaPlayer:(BOOL)enable {
+    UIView *superView = enable ? self.rewardSvgaView : nil;
+    self.rewardDisplayManager.superView = superView;
+    CGRect frame = enable ? self.mediaAreaView.frame : CGRectZero;
+    self.rewardSvgaView.frame = frame;
+    self.rewardSvgaView.hidden = !enable;
+}
+
+/// 跳转至商品详情页
+- (void)jumpToCommodityDetailViewController {
+    PLVCommodityDetailViewController *commodityDetailVC = [[PLVCommodityDetailViewController alloc] initWithCommodityURL:self.commodityURL];
+    commodityDetailVC.delegate = self;
+    self.commodityURL = nil;
+    if (self.navigationController) {
+        self.navigationController.navigationBarHidden = NO;
+        [self.navigationController pushViewController:commodityDetailVC animated:YES];
+    } else {
+        [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
+        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:commodityDetailVC];
+        nav.navigationBarHidden = NO;
+        nav.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+}
+
 #pragma mark Getter
 - (PLVLCMediaAreaView *)mediaAreaView{
     if (!_mediaAreaView) {
@@ -426,14 +477,41 @@ PLVRoomDataManagerProtocol
     return _chatLandscapeView;
 }
 
-- (PLVInteractGenericView *)interactView{
-    if (!_interactView && self.videoType == PLVChannelVideoType_Live) {
-        _interactView = [[PLVInteractGenericView alloc] init];
-        _interactView.frame = self.view.bounds;
-        _interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [_interactView loadOnlineInteract];
+- (PLVPopoverView *)popoverView {
+    if (!_popoverView && self.videoType == PLVChannelVideoType_Live) {
+        _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeLC];
+        _popoverView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        _popoverView.delegate = self;
     }
-    return _interactView;
+    return _popoverView;
+}
+
+- (UIView *)rewardSvgaView {
+    if (!_rewardSvgaView) {
+        _rewardSvgaView = [[UIView alloc] init];
+        _rewardSvgaView.backgroundColor = [UIColor clearColor];
+        _rewardSvgaView.userInteractionEnabled = NO;
+        _rewardSvgaView.hidden = YES;
+    }
+    return _rewardSvgaView;
+}
+
+- (PLVRewardDisplayManager *)rewardDisplayManager{
+    if (!_rewardDisplayManager) {
+        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] init];
+    }
+    return _rewardDisplayManager;
+}
+
+- (PLVCommodityPushView *)pushView {
+    if (!_pushView) {
+        _pushView = [[PLVCommodityPushView alloc] initWithType:PLVCommodityPushViewTypeLC];
+        _pushView.layer.masksToBounds = YES;
+        _pushView.layer.cornerRadius = 4;
+        _pushView.backgroundColor = [UIColor whiteColor];
+        _pushView.delegate = self;
+    }
+    return _pushView;
 }
 
 - (PLVChannelType)channelType{
@@ -469,16 +547,24 @@ PLVRoomDataManagerProtocol
     // 其他相关代码，可在此文件中，搜索 “self.chatLandscapeView.hidden = ”
     self.chatLandscapeView.hidden = !(fullScreen && danmuEnable);
     
+    if (self.fullScreenDifferent) {
+        [self.popoverView hidRewardView];
+    }
+    
     // 调用setStatusBarHidden后状态栏旋转横屏不自动隐藏
     [[UIApplication sharedApplication] setStatusBarHidden:fullScreen];
 }
 
 - (void)notificationForOpenBulletin:(NSNotification *)notif {
-    [self.interactView openLastBulletin];
+    [self.popoverView.interactView openLastBulletin];
+}
+
+- (void)notificationForOpenRewardView:(NSNotification *)notif {
+    [self.popoverView showRewardView];
 }
 
 - (void)notificationForOpenLotteryRecord:(NSNotification *)notif {
-    [self.interactView openLotteryWinRecord];
+    [self.popoverView.interactView openLotteryWinRecord];
 }
 
 #pragma mark - [ Delegate ]
@@ -487,7 +573,8 @@ PLVRoomDataManagerProtocol
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     self.liveRoomSkinView.danmuButtonShow = !roomData.channelInfo.closeDanmuEnable;
-    [self.interactView updateUserInfo];
+    [self.menuAreaView updateLiveUserInfo];
+    [self.popoverView.interactView updateUserInfo];
 }
 
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
@@ -559,6 +646,8 @@ PLVRoomDataManagerProtocol
     
     if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin closes or opens the chatroom
         [self closeRoomEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
+        [self productMessageEvent:jsonDict];
     }
 }
 
@@ -574,22 +663,73 @@ PLVRoomDataManagerProtocol
     })
 }
 
+/// 推送商品
+- (void)productMessageEvent:(NSDictionary *)jsonDict {
+    NSInteger status = PLV_SafeIntegerForDictKey(jsonDict, @"status");
+    if (status == 9) {
+        NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
+        __weak typeof(self)weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            [weakSelf.pushView setModel:model];
+            [weakSelf.pushView showOnView:weakSelf.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(weakSelf.view.frame), 60, CGRectGetWidth(weakSelf.view.frame) - 40, 114)];
+        })
+    }
+}
+
 #pragma mark PLVLCChatroomViewModelProtocol
 
 - (void)chatroomManager_danmu:(NSString * )content {
     [self.mediaAreaView insertDanmu:content];
 }
 
+- (void)chatroomManager_loadRewardEnable:(BOOL)enable payWay:payWay rewardModelArray:(NSArray *)modelArray pointUnit:(NSString *)pointUnit {
+    self.liveRoomSkinView.rewardButton.hidden = !enable;
+    if (enable) {
+        [self.popoverView setRewardViewData:payWay rewardModelArray:modelArray pointUnit:pointUnit];
+    }
+}
+
+- (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict {
+    if (![PLVLCChatroomViewModel sharedViewModel].hideRewardDisplay) {
+        NSInteger num = [modelDict[@"goodNum"] integerValue];
+        NSString *unick = modelDict[@"unick"];
+        PLVRewardGoodsModel *model = [PLVRewardGoodsModel modelWithSocketObject:modelDict];
+        [self.rewardDisplayManager addGoodsShowWithModel:model goodsNum:num personName:unick];
+    }
+}
+
 #pragma mark PLVLCMediaAreaViewDelegate
 /// 用户希望退出当前页面
 - (void)plvLCMediaAreaViewWannaBack:(PLVLCMediaAreaView *)mediaAreaView{
-    [self.linkMicAreaView leaveLinkMicOnlyEmit];
-    [self exitCurrentController];
+    // 在打开画中画的时候退出直播间，则直接退出，当前控制器会被PLVLivePictureInPictureRestoreManager持有不被释放，恢复的时候再次显示
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        self.logoutWhenStopPictureInPicutre = YES;
+        if (self.navigationController) {
+            [self.navigationController popViewControllerAnimated:YES];
+        } else {
+            [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+            [self dismissViewControllerAnimated:YES completion:nil];
+        }
+    }else {
+        [self.linkMicAreaView leaveLinkMicOnlyEmit];
+        [self exitCurrentController];
+    }
 }
 
 /// 媒体区域视图需要得知当前‘是否正在连麦’
 - (BOOL)plvLCMediaAreaViewGetInLinkMic:(PLVLCMediaAreaView *)mediaAreaView{
     return self.linkMicAreaView.inLinkMic;
+}
+
+/// 媒体区域视图需要得知当前‘是否正在连麦的过程中’
+- (BOOL)plvLCMediaAreaViewGetInLinkMicProcess:(PLVLCMediaAreaView *)mediaAreaView {
+    if (self.linkMicStatus == PLVLinkMicStatus_Open ||
+        self.linkMicStatus == PLVLinkMicStatus_NotOpen ||
+        self.linkMicStatus == PLVLinkMicStatus_Unknown) {
+        return NO;
+    }
+    return YES;
 }
 
 - (BOOL)plvLCMediaAreaViewGetPausedWatchNoDelay:(PLVLCMediaAreaView *)mediaAreaView {
@@ -719,7 +859,7 @@ PLVRoomDataManagerProtocol
 
 #pragma mark PLVLCLiveRoomPlayerSkinViewDelegate
 - (void)plvLCLiveRoomPlayerSkinViewBulletinButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView{
-    [self.interactView openLastBulletin];
+    [self.popoverView.interactView openLastBulletin];
 }
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaShowDanmu:(BOOL)showDanmu{
@@ -731,6 +871,10 @@ PLVRoomDataManagerProtocol
 
 - (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaSendChatContent:(NSString *)chatContent {
     [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:chatContent];
+}
+
+- (void)plvLCLiveRoomPlayerSkinViewRewardButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
+    [self.popoverView showRewardView];
 }
 
 #pragma mark PLVLCLinkMicAreaViewDelegate
@@ -828,6 +972,20 @@ PLVRoomDataManagerProtocol
     }
 }
 
+/// ‘连麦状态’状态值改变
+-(void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView currentLinkMicStatus:(PLVLinkMicStatus)currentLinkMicStatus {
+    self.linkMicStatus = currentLinkMicStatus;
+    // 连麦的时候不允许开启画中画小窗
+    if (self.linkMicStatus == PLVLinkMicStatus_Open ||
+        self.linkMicStatus == PLVLinkMicStatus_NotOpen) {
+        [self.liveRoomSkinView refreshPictureInPictureButtonShow:YES];
+        [self.mediaAreaView refreshPictureInPictureButtonShow:YES];
+    }else {
+        [self.liveRoomSkinView refreshPictureInPictureButtonShow:NO];
+        [self.mediaAreaView refreshPictureInPictureButtonShow:NO];
+    }
+}
+
 /// 需获知 ‘当前频道是否直播中’
 - (BOOL)plvLCLinkMicAreaViewGetChannelInLive:(PLVLCLinkMicAreaView *)linkMicAreaView{
     return self.mediaAreaView.channelInLive;
@@ -855,6 +1013,93 @@ PLVRoomDataManagerProtocol
 
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView seekTime:(NSTimeInterval)time{
     [self.mediaAreaView seekLivePlaybackToTime:time];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL {
+    [self plvCommodityPushViewJumpToCommodityDetail:linkURL];
+}
+
+#pragma mark  PLVCommodityPushViewDelegate
+
+- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL {
+    self.commodityURL = commodityURL;
+    if (self.videoType == PLVChannelVideoType_Live) { /// 直播场景需要开启画中画播放
+        if (self.mediaAreaView.channelInLive &&
+            !self.linkMicAreaView.inLinkMic &&
+            [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+            [self.mediaAreaView startPictureInPicture];
+        } else {
+            [self jumpToCommodityDetailViewController];
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { /// 回放场景不支持画中画
+        [self jumpToCommodityDetailViewController];
+    }
+}
+
+#pragma mark  PLVCommodityDetailViewControllerDelegate
+
+- (void)plvCommodityDetailViewControllerAfterTheBack {
+    [self.mediaAreaView stopPictureInPicture];
+}
+
+- (void)plvLCMediaAreaViewPictureInPictureWillStart:(PLVLCMediaAreaView *)mediaAreaView {
+}
+
+- (void)plvLCMediaAreaViewPictureInPictureDidStart:(PLVLCMediaAreaView *)mediaAreaView {
+    // 更多按钮显示控制
+    [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:YES];
+    
+    // 画中画占位视图显示控制、播放控制
+    if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+        [self.linkMicAreaView setPictureInPicturePlaceholderShow:YES];
+    }
+    
+    // 设定画中画恢复逻辑的处理者为PLVLivePictureInPictureRestoreManager
+    [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = [PLVLivePictureInPictureRestoreManager sharedInstance];
+    // 开启画中画之后，让PLVLivePictureInPictureRestoreManager持有本控制器，使得退出本页面后还能通过画中画恢复
+    [PLVLivePictureInPictureRestoreManager sharedInstance].holdingViewController = self;
+    
+    if (!self.commodityURL) {
+        return;
+    }
+    [self jumpToCommodityDetailViewController];
+}
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPictureFailedToStartWithError:(NSError *)error {
+    // 清理恢复逻辑的处理者
+    [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
+- (void)plvLCMediaAreaViewPictureInPictureWillStop:(PLVLCMediaAreaView *)mediaAreaView {
+    if (self.logoutWhenStopPictureInPicutre &&
+        ![PLVLivePictureInPictureManager sharedInstance].restoreDelegate) {
+        [self.linkMicAreaView leaveLinkMicOnlyEmit];
+        [PLVRoomLoginClient logout];
+        [[PLVSocketManager sharedManager] logout];
+        [[NSNotificationCenter defaultCenter] removeObserver:self];
+        [[PLVLCChatroomViewModel sharedViewModel] clear];
+    }
+}
+
+- (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView {
+    // 更多按钮显示控制
+    [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:NO];
+    
+    // 画中画展位视图显示控制、播放控制
+    if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+        [self.linkMicAreaView setPictureInPicturePlaceholderShow:NO];
+    }
+    
+    // 清理恢复逻辑的处理者
+    [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
+#pragma mark  PLVPopoverViewDelegate
+
+- (void)popoverViewDidDonatePointWithError:(NSString *)error {
+    plv_dispatch_main_async_safe(^{
+        [PLVLCUtils showHUDWithTitle:error detail:@"" view:self.view];
+    })
 }
 
 @end

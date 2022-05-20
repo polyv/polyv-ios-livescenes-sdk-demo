@@ -11,6 +11,7 @@
 #import "PLVLCLinkMicPortraitControlBar.h"
 #import "PLVLCLinkMicLandscapeControlBar.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import "PLVLinkMicPresenter.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -75,6 +76,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 暂停/播放无延迟直播
 - (void)pauseWatchNoDelay:(BOOL)pause;
 
+/// 画中画占位视图的隐藏/显示
+/// @param show 隐藏或显示 (YES:显示 NO:隐藏)
+- (void)setPictureInPicturePlaceholderShow:(BOOL)show;
+
 /// 退出连麦(仅发送'退出连麦消息')
 ///
 /// @note 此方法用于将当前 等待连麦 、正在加入连麦 或 连麦中的用户退出连麦
@@ -126,6 +131,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param linkMicAreaView 连麦区域视图
 /// @param inLinkMic 当前是否正在连麦 (YES:正在连麦中 NO:不在连麦中)
 - (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic;
+
+/// ‘连麦状态’ 状态值改变
+/// @param linkMicAreaView 连麦区域视图
+/// @param currentLinkMicStatus 当前连麦状态
+- (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView currentLinkMicStatus:(PLVLinkMicStatus)currentLinkMicStatus;
 
 /// 需获知 ‘当前频道是否直播中’
 ///

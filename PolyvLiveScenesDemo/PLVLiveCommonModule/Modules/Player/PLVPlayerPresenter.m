@@ -24,6 +24,7 @@
 @interface PLVPlayerPresenter ()<
 PLVPlayerDelegate,
 PLVLivePlayerDelegate,
+PLVLivePlayerPictureInPictureDelegate,
 PLVLivePlaybackPlayerDelegate,
 PLVAdvertViewDelegate
 >
@@ -245,6 +246,14 @@ PLVAdvertViewDelegate
     [self.livePlayer switchToNoDelayWatchMode:noDelayWatchMode];
 }
 
+- (void)startPictureInPictureFromOriginView:(UIView *)originView {
+    [self.livePlayer startPictureInPictureFromOriginView:originView];
+}
+
+- (void)stopPictureInPicture {
+    [self.livePlayer stopPictureInPicture];
+}
+
 #pragma mark 非直播相关
 - (void)seekLivePlaybackToTime:(NSTimeInterval)toTime{
     if (self.advertPlaying) { // 片头广告显示中
@@ -280,6 +289,7 @@ PLVAdvertViewDelegate
         self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId];
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
+        self.livePlayer.pictureInPictureDelegate = self;
         self.livePlayer.channelWatchNoDelay = roomData.menuInfo.watchNoDelay;
         self.livePlayer.channelWatchQuickLive = roomData.menuInfo.quickLiveEnabled;
         [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
@@ -703,6 +713,44 @@ PLVAdvertViewDelegate
         if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:quickLiveNetworkQuality:)]) {
             [self.delegate playerPresenter:self quickLiveNetworkQuality:netWorkQuality];
         }
+    }
+}
+
+#pragma mark PLVLivePlayerPictureInPictureDelegate
+- (void)plvLivePlayerPictureInPictureWillStart:(PLVLivePlayer *)livePlayer {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureWillStart:)]) {
+        [self.delegate playerPresenterPictureInPictureWillStart:self];
+    }
+}
+
+- (void)plvLivePlayerPictureInPictureDidStart:(PLVLivePlayer *)livePlayer {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureDidStart:)]) {
+        [self.delegate playerPresenterPictureInPictureDidStart:self];
+    }
+}
+
+- (void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPictureFailedToStartWithError:(NSError *)error {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:pictureInPictureFailedToStartWithError:)]) {
+        [self.delegate playerPresenter:self pictureInPictureFailedToStartWithError:error];
+    }
+}
+
+- (void)plvLivePlayerPictureInPictureWillStop:(PLVLivePlayer *)livePlayer {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureWillStop:)]) {
+        [self.delegate playerPresenterPictureInPictureWillStop:self];
+    }
+}
+
+- (void)plvLivePlayerPictureInPictureDidStop:(PLVLivePlayer *)livePlayer {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureDidStop:)]) {
+        [self.delegate playerPresenterPictureInPictureDidStop:self];
+    }
+}
+
+-(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
+    [PLVRoomDataManager sharedManager].roomData.playing = playing;
+    if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
+        [self.delegate playerPresenter:self playerPlayingStateDidChanged:playing];
     }
 }
 

@@ -77,6 +77,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于提示用户‘图片表情加载失败’
 - (void)chatroomManager_loadImageEmotionFailure;
 
+/// 打赏成功时触发
+- (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict;
+
+/// 获取礼物打赏开关成功时触发
+/// @param enable 打赏开关
+/// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏
+/// @param modelArray 打赏数据模型
+/// @param pointUnit 打赏数据单位
+- (void)chatroomManager_loadRewardEnable:(BOOL)enable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray * _Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
+
 @end
 
 /*
@@ -97,6 +107,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 /// 私聊消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *privateChatArray;
+/// 是否打开【礼物打赏】开关
+@property (nonatomic, assign, readonly) BOOL enableReward;
+/// 是否屏蔽礼物打赏特效 默认不屏蔽
+@property (nonatomic, assign) BOOL hideRewardDisplay;
 /// 图片表情数组
 @property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 

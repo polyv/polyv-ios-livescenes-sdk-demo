@@ -636,6 +636,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     // 打赏内容：礼物打赏为礼物名称，现金打赏为金额
     NSString *rewardContent = PLV_SafeStringForDictKey(content, @"rewardContent");
     
+    // 礼物数量
+    NSString *goodNum = PLV_SafeStringForDictKey(content, @"goodNum");
+    
     // 礼物打赏为礼物图片，现金打赏为空
     NSString *gimg = PLV_SafeStringForDictKey(content, @"gimg");
     if ([PLVFdUtil checkStringUseable:gimg] &&
@@ -648,6 +651,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.unick = unick;
     message.rewardContent = rewardContent;
     message.gimg = gimg;
+    message.goodNum = goodNum;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;

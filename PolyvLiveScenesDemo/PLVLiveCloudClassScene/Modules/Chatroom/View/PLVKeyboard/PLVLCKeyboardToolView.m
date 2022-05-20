@@ -33,6 +33,8 @@ PLVLCKeyboardMoreViewDelegate
 @property (nonatomic, strong) PLVLCKeyboardTextView *textView;
 /// emoji 按钮
 @property (nonatomic, strong) UIButton *emojiButton;
+/// 打赏按钮
+@property (nonatomic, strong) UIButton *rewardButton;
 /// 打开更多面板按钮
 @property (nonatomic, strong) UIButton *moreButton;
 /// emoji 选择面板
@@ -94,6 +96,7 @@ PLVLCKeyboardMoreViewDelegate
     [self.textView addGestureRecognizer:self.tapGesture];
     if (self.mode == PLVLCKeyboardToolModeDefault) {
         [self addSubview:self.moreButton];
+        [self addSubview:self.rewardButton];
     }
 }
 
@@ -116,6 +119,17 @@ PLVLCKeyboardMoreViewDelegate
         [_emojiButton addTarget:self action:@selector(emojiAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _emojiButton;
+}
+
+- (UIButton *)rewardButton {
+    if (!_rewardButton) {
+        _rewardButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        UIImage *image = [PLVLCUtils imageForChatroomResource:@"plv_keyboard_btn_reward"];
+        [_rewardButton setImage:image forState:UIControlStateNormal];
+        [_rewardButton setImage:image forState:UIControlStateSelected];
+        [_rewardButton addTarget:self action:@selector(rewardAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _rewardButton;
 }
 
 - (UIButton *)moreButton {
@@ -183,6 +197,11 @@ PLVLCKeyboardMoreViewDelegate
 - (void)setIsNewLotteryMessage:(BOOL)isNewLotteryMessage {
     _isNewLotteryMessage = isNewLotteryMessage;
     self.moreboard.isNewLotteryMessage = isNewLotteryMessage;
+}
+
+- (void)setEnableReward:(BOOL)enableReward {
+    _enableReward = enableReward;
+    self.moreboard.hideRewardDisplaySwitch = !enableReward;
 }
 
 - (void)setDisableOtherButtonsInTeacherMode:(BOOL)disableOtherButtonsInTeacherMode {
@@ -255,6 +274,13 @@ PLVLCKeyboardMoreViewDelegate
 #pragma mark - [ Event ]
 #pragma mark Action
 
+- (void)rewardAction:(UIButton *)sender {
+    [self tapAction:nil];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_openReward:)]) {
+        [self.delegate keyboardToolView_openReward:self];
+    }
+}
+
 - (void)emojiAction:(UIButton *)sender {
     if (![self shouldInteract]) {
         return;
@@ -291,6 +317,7 @@ PLVLCKeyboardMoreViewDelegate
         _disableOtherButtonsInTeacherMode = NO;
         _enablePointReward = NO;
         _hideLotteryWinRecord = YES;
+        _enableReward = NO;
         [self setupUI];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
@@ -317,6 +344,11 @@ PLVLCKeyboardMoreViewDelegate
     CGFloat textViewWidth = rect.size.width - xPadding - (self.mode == PLVLCKeyboardToolModeSimple ? 40 + xPadding : 80 + xPadding);
     [self.textView setupWithFrame:CGRectMake(xPadding, 8, textViewWidth, 40)];
 
+    if (self.mode == PLVLCKeyboardToolModeDefault && self.enableReward) {
+        self.rewardButton.frame = CGRectMake(xPadding, 12, 32, 32);
+        [self.textView setupWithFrame:CGRectMake(CGRectGetMaxX(self.rewardButton.frame) + 8, 8, textViewWidth - 40, 40)];
+    }
+    
     self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
     self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
 }
@@ -600,6 +632,13 @@ PLVLCKeyboardMoreViewDelegate
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:onlyTeacher:)]) {
         [self.delegate keyboardToolView:self onlyTeacher:on];
+    }
+}
+
+- (void)keyboardMoreView_switchRewardDisplay:(PLVLCKeyboardMoreView *)moreView on:(BOOL)on {
+    [self tapAction:nil];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_switchRewardDisplay:on:)]) {
+        [self.delegate keyboardToolView_switchRewardDisplay:self on:on];
     }
 }
 

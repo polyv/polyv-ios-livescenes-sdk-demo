@@ -57,6 +57,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @property (nonatomic, strong) UIButton * backButton;
 @property (nonatomic, strong) UILabel * titleLabel;
 @property (nonatomic, strong) UILabel * playTimesLabel; // 仅直播
+@property (nonatomic, strong) UIButton * pictureInPictureButton;
 @property (nonatomic, strong) UIButton * moreButton;
 @property (nonatomic, strong) PLVLCMediaCountdownTimeView * countdownTimeView; // 仅直播
 
@@ -102,6 +103,14 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)refreshPlayTimesLabelFrame;
 
+/// 刷新画中画按钮是否显示
+/// @param show YES:显示，NO:隐藏
+- (void)refreshPictureInPictureButtonShow:(BOOL)show;
+
+/// 刷新更多按钮显示
+/// @param hidden YES:隐藏，NO:恢复原来状态
+- (void)refreshMoreButtonHiddenOrRestore:(BOOL)hidden;
+
 /// 工具方法 (与 PLVLCBasePlayerSkinView 类本身没有逻辑关联，仅业务上相关)
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView;
 
@@ -114,6 +123,8 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @protocol PLVLCBasePlayerSkinViewDelegate <NSObject>
 
 - (void)plvLCBasePlayerSkinViewBackButtonClicked:(PLVLCBasePlayerSkinView *)skinView currentFullScreen:(BOOL)currentFullScreen;
+
+- (void)plvLCBasePlayerSkinViewPictureInPictureButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
 - (void)plvLCBasePlayerSkinViewMoreButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
@@ -152,6 +163,9 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 /// 询问是否需要显示 翻页工具视图
 - (BOOL)plvLCBasePlayerSkinViewShouldShowDocumentToolView:(PLVLCBasePlayerSkinView *)skinView;
+
+/// 询问是否需要展示 画中画开启按钮
+- (BOOL)plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:(PLVLCBasePlayerSkinView *)skinView;
 
 @end
 

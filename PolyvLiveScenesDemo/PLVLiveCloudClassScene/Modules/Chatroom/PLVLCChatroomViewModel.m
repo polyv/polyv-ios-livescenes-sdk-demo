@@ -9,6 +9,7 @@
 #import "PLVLCChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVMulticastDelegate.h>
+#import "PLVGiveRewardPresenter.h"
 
 @interface PLVLCChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -25,6 +26,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSMutableArray <PLVChatUser *> *loginUserArray;
 /// 当前时间段内是否发生当前用户的登录事件
 @property (nonatomic, assign) BOOL isMyselfLogin;
+
+#pragma mark 礼物打赏
+/// 礼物打赏开关
+@property (nonatomic, assign) BOOL enableReward;
 
 #pragma mark 管理员文本消息上报
 
@@ -157,6 +162,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self removeAllPublicChatModels];
     
     self.onlyTeacher = NO;
+}
+
+#pragma mark - 加载打赏开关
+- (void)loadRewardEnable {
+    __weak typeof(self) weakSelf = self;
+    [PLVGiveRewardPresenter requestRewardSettingCompletion:^(BOOL rewardEnable, NSString *payWay, NSArray *modelArray, NSString *pointUnit) {
+        weakSelf.enableReward = rewardEnable;
+        weakSelf.hideRewardDisplay = !rewardEnable;
+        [weakSelf notifyDelegatesLoadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
+    } failure:^(NSString *error) {
+        
+    }];
 }
 
 #pragma mark - Getter
@@ -423,6 +440,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     });
 }
 
+- (void)notifyDelegatesListenerRewardSuccess:(NSDictionary *)modelDict {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_rewardSuccess:modelDict];
+    });
+}
+
+- (void)notifyDelegatesLoadRewardEnable:(BOOL)enable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray * _Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_loadRewardEnable:enable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
+    });
+}
+
 - (void)notifyDelegatesLoadImageEmotionSuccess {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_loadImageEmotionSuccess:self.imageEmotionArray];
@@ -566,7 +595,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     if ([subEvent isEqualToString:@"LOGIN"]) {   // someone logged in chatroom
         [self loginEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"REWARD"]) {
+        NSDictionary *contentDict = jsonDict[@"content"];
+        [self notifyDelegatesListenerRewardSuccess:contentDict];
     }
+}
+
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
+    [self loadRewardEnable];
 }
 
 #pragma mark - PLVChatroomPresenterProtocol

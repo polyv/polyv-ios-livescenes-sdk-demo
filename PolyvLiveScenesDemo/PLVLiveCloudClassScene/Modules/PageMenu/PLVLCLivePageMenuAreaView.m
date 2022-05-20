@@ -15,6 +15,7 @@
 #import "PLVLCIframeViewController.h"
 #import "PLVLCPlaybackListViewController.h"
 #import "PLVLCSectionViewController.h"
+#import "PLVLCBuyViewController.h"
 #import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 
@@ -37,12 +38,15 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
         return PLVLCLivePageMenuTypeQA;
     } else if ([menuString isEqualToString:@"iframe"]) {
         return PLVLCLivePageMenuTypeIframe;
+    } else if ([menuString isEqualToString:@"buy"]) {
+        return PLVLCLivePageMenuTypeBuy;
     }
     return PLVLCLivePageMenuTypeUnknown;
 }
 
 @interface PLVLCLivePageMenuAreaView ()<
 PLVLCTuwenDelegate,
+PLVLCBuyViewControllerDelegate,
 PLVLCSectionViewControllerDelegate,
 PLVRoomDataManagerProtocol
 >
@@ -56,6 +60,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCPlaybackListViewController *playbackListVctrl;
 /// 章节列表页
 @property (nonatomic, strong) PLVLCSectionViewController *sectionVctrl;
+/// 商品列表页
+@property (nonatomic, strong) PLVLCBuyViewController *productVctrl;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
@@ -92,6 +98,12 @@ PLVRoomDataManagerProtocol
 - (void)updateLiveStatus:(PLVLCLiveStatus)liveStatus {
     if (self.descVctrl) {
         [self.descVctrl updateLiveStatus:liveStatus];
+    }
+}
+
+- (void)updateLiveUserInfo {
+    if (self.productVctrl) {
+        [self.productVctrl updateUserInfo];
     }
 }
 
@@ -170,6 +182,11 @@ PLVRoomDataManagerProtocol
         PLVLCIframeViewController *vctrl = [[PLVLCIframeViewController alloc] init];
         [vctrl loadURLString:menu.content];
         return vctrl;
+    } else if (menuType == PLVLCLivePageMenuTypeBuy) {
+        PLVLCBuyViewController *vctrl = [[PLVLCBuyViewController alloc] init];
+        vctrl.delegate = self;
+        self.productVctrl = vctrl;
+        return vctrl;
     }
     
     return nil;
@@ -200,6 +217,14 @@ PLVRoomDataManagerProtocol
 - (void)plvLCSectionView:(PLVLCSectionViewController *)PLVLCSectionViewController seekTime:(NSTimeInterval)time {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:seekTime:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self seekTime:time];
+    }
+}
+
+#pragma mark - PLVLCBuyViewControllerDelegate
+
+- (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductLinkURL:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self clickProductLinkURL:linkURL];
     }
 }
 

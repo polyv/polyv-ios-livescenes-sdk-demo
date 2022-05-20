@@ -8,6 +8,7 @@
 
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
+#import "PLVGiveRewardPresenter.h"
 
 @interface PLVECChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -24,6 +25,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSMutableArray <PLVChatUser *> *loginUserArray;
 /// 当前时间段内是否发生当前用户的登录事件
 @property (nonatomic, assign) BOOL isMyselfLogin;
+/// 礼物打赏开关
+@property (nonatomic, assign) BOOL enableReward;
 
 #pragma mark 数据数组
 
@@ -247,6 +250,29 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+- (void)notifyListenerRewardSuccess:(NSDictionary *)modelDict {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_rewardSuccess:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_rewardSuccess:modelDict];
+        });
+    }
+}
+
+#pragma mark - 加载打赏开关
+- (void)loadRewardEnable {
+    __weak typeof(self) weakSelf = self;
+    [PLVGiveRewardPresenter requestRewardSettingCompletion:^(BOOL rewardEnable,NSString *payWay, NSArray *modelArray, NSString *pointUnit) {
+        weakSelf.enableReward = rewardEnable;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_loadRewardEnable:payWay:rewardModelArray:pointUnit:)]) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.delegate chatroomManager_loadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
+            });
+        }
+    } failure:^(NSString *error) {
+        
+    }];
+}
+
 #pragma mark - 定时上报登录用户
 
 /// 有用户登陆
@@ -359,7 +385,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     if ([subEvent isEqualToString:@"LOGIN"]) {   // someone logged in chatroom
         [self loginEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"REWARD"]) {
+        NSDictionary *contentDict = jsonDict[@"content"];
+        [self notifyListenerRewardSuccess:contentDict];
     }
+}
+
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
+    [self loadRewardEnable];
 }
 
 #pragma mark - PLVChatroomPresenterProtocol

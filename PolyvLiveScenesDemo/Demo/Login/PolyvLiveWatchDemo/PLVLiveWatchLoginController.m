@@ -16,6 +16,8 @@
 #import "PLVECWatchRoomViewController.h"
 #import "PLVBugReporter.h"
 
+#import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
+
 #define PushOrModel 0 // 进入页面方式（1-push、0-model）
 static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_demo";
 
@@ -260,6 +262,11 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
         if (self.liveSelectView.hidden) { // 回放
             [self loginCloudClassPlaybackRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone successHandler:successBlock];
         } else { // 直播
+            // 如果当前正在开启系统画中画，那么需要不走恢复逻辑关闭画中画
+            if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+                [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+                [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+            }
             [self loginCloudClassLiveRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone successHandler:successBlock];
         }
     } else { // 直播带货场景
@@ -279,6 +286,11 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
         if (self.liveSelectView.hidden) { // 回放
             [self loginEcommercePlaybackRoomWithChannelType:PLVChannelTypeAlone successHandler:successBlock];
         } else { // 直播
+            // 如果当前正在开启系统画中画，那么需要不走恢复逻辑关闭画中画
+            if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+                [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+                [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+            }
             [self loginEcommerceLiveRoomWithChannelType:PLVChannelTypeAlone successHandler:successBlock];
         }
     }

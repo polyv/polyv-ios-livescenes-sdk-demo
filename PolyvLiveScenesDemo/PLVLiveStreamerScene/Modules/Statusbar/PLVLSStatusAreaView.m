@@ -624,7 +624,6 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     } else {
         self.whiteboardButton.tintColor = [PLVColorUtil colorFromHexString:kGustDefaultTintColor];
         self.documentButton.tintColor = [PLVColorUtil colorFromHexString:kGustDefaultTintColor];
-        
         self.whiteboardButton.selected = NO;
         self.documentButton.selected = NO;
     }

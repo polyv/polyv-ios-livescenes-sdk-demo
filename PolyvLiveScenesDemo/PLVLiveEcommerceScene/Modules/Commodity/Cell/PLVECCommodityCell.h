@@ -33,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) UIButton *selectButton;
 
+/// 标签
+@property (nonatomic, strong) UILabel *firstTagLabel;
+
+@property (nonatomic, strong) UILabel *secondTagLabel;
+
 @property (nonatomic, strong) PLVCommodityModel *model;
 
 @property (nonatomic, weak) id<PLVECCommodityCellDelegate> delegate;

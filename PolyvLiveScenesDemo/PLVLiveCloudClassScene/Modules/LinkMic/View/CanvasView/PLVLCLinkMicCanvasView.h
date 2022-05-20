@@ -56,6 +56,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param show pauseWatchNoDelayImageView 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)pauseWatchNoDelayImageViewShow:(BOOL)show;
 
+/// 画中画占位视图的隐藏/显示
+/// @param show 隐藏或显示 (YES:显示 NO:隐藏)
+- (void)pictureInPicturePlaceholderShow:(BOOL)show;
+
 @end
 
 NS_ASSUME_NONNULL_END

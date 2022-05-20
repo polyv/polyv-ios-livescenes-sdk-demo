@@ -51,8 +51,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)keyboardToolView_readBulletin:(PLVLCKeyboardToolView *)toolView;
 /// 打开中奖列表
 - (void)keyboardToolView_openLotteryRecord:(PLVLCKeyboardToolView *)toolView;
-/// 打开积分打赏面板
+/// 打开礼物打赏面板
 - (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView;
+/// 点击【屏蔽特效】或【展示特效】
+- (void)keyboardToolView_switchRewardDisplay:(PLVLCKeyboardToolView *)moreView on:(BOOL)on;
 
 @end
 
@@ -73,6 +75,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL enablePointReward;
 ///键盘的图片表情
 @property (nonatomic, strong) NSArray *imageEmotions;
+/// 是否隐藏礼物打赏按钮，默认NO；YES - 显示，NO - 隐藏
+@property (nonatomic, assign) BOOL enableReward;
 
 /// 面板状态
 @property (nonatomic, assign, readonly) PLVLCKeyboardToolState toolState;

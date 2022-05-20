@@ -35,6 +35,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 弹幕开关按钮，用于外部读取弹幕开关状态
 @property (nonatomic, strong, readonly) UIButton * danmuButton;
 
+/// 礼物打赏按钮，用于外部读取礼物打赏开关后控制是否显示该按钮
+@property (nonatomic, strong, readonly) UIButton *rewardButton;
+
 - (void)displayLikeButtonView:(UIView *)likeButtonView;
 
 @end
@@ -46,6 +49,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaShowDanmu:(BOOL)showDanmu;
 
 - (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaSendChatContent:(NSString *)chatContent;
+
+- (void)plvLCLiveRoomPlayerSkinViewRewardButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
 
 @end
 

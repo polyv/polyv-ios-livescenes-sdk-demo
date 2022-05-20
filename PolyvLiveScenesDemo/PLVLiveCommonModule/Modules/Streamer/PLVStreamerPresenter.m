@@ -13,7 +13,7 @@
 static NSString *const PLVStreamerPresenter_DictValue_GuestAllowed = @"allowed";
 static NSString *const PLVStreamerPresenter_DictValue_GuestAllowedWithRaiseHand = @"allowedWithRaiseHand";
 static NSString *const PLVStreamerPresenter_DictValue_GuestJoined = @"joined";
-static NSString *const PLVStreamerPresenter_AppGroup = @"group.net.plv.PolyvLiveScenesDemo.ScreenShare";
+static NSString *const PLVStreamerPresenter_AppGroup = @"group.polyv.PolyvLiveScenesDemo.ScreenShare.test";
 
 @interface PLVStreamerPresenter ()<
 PLVSocketManagerProtocol,
@@ -1072,6 +1072,7 @@ PLVChannelClassManagerDelegate
 - (void)cancelAllGuestSpeakerAuth {
     if (self.realMainSpeakerUser &&
         [PLVFdUtil checkStringUseable:self.realMainSpeakerUser.userId]) {
+        self.realMainSpeakerUser = nil;
         [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:self.realMainSpeakerUser.userId type:PLVSocketPermissionTypeSpeaker status:NO];
         self.realMainSpeakerUser = nil;
     }

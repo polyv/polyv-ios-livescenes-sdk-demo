@@ -37,7 +37,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)homePageView:(PLVECHomePageView *)homePageView receiveBulletinMessage:(NSString * _Nullable)content open:(BOOL)open;
 
 /// 打开商品详情
-- (void)homePageView:(PLVECHomePageView *)homePageView openGoodsDetail:(NSURL *)goodsURL;
+- (void)homePageView:(PLVECHomePageView *)homePageView openCommodityDetail:(NSURL *)commodityURL;
+
+/// 打开礼物打赏面板
+- (void)homePageViewOpenRewardView:(PLVECHomePageView *)homePageView;
 
 /// 按下暂停、播放按钮
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPause:(BOOL)pause;
@@ -50,6 +53,16 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 /// 切换延迟模式
 - (void)homePageView:(PLVECHomePageView *)homePageView switchToNoDelayWatchMode:(BOOL)noDelayWatchMode;
+
+/// 打开小窗播放
+- (void)homePageViewClickPictureInPicture:(PLVECHomePageView *)homePageView;
+
+/// 加载打赏信息时触发
+/// @param rewardEnable 是否支持打赏
+/// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏
+/// @param modelArray 打赏数据模型数组
+/// @param pointUnit 打赏单位
+- (void)homePageView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
 
 @end
 
@@ -86,6 +99,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)showNetworkQualityMiddleView;
 
 - (void)showNetworkQualityPoorView;
+
+/// 更新更多按钮的显示或隐藏
+/// @param show YES:显示  NO:隐藏
+- (void)updateMoreButtonShow:(BOOL)show;
 
 @end
 

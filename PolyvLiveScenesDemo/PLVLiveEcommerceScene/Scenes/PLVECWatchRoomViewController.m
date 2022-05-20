@@ -12,11 +12,12 @@
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 #import "PLVECPlayerViewController.h"
-#import "PLVECGoodsDetailViewController.h"
+#import "PLVCommodityDetailViewController.h"
 #import "PLVBaseNavigationController.h"
 #import "PLVECFloatingWindow.h"
-#import "PLVInteractGenericView.h"
 #import "PLVECLinkMicAreaView.h"
+#import "PLVPopoverView.h"
+#import "PLVLivePictureInPictureRestoreManager.h"
 
 // UI
 #import "PLVECHomePageView.h"
@@ -39,17 +40,21 @@ PLVECFloatingWindowProtocol,
 PLVECPlayerViewControllerProtocol,
 PLVRoomDataManagerProtocol,
 UIScrollViewDelegate,
-PLVECLinkMicAreaViewDelegate
+PLVECLinkMicAreaViewDelegate,
+PLVLivePictureInPictureRestoreDelegate,
+PLVCommodityDetailViewControllerDelegate,
+PLVPopoverViewDelegate
 >
 
 #pragma mark 数据
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
+@property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
-@property (nonatomic, strong) PLVECGoodsDetailViewController *goodsDetailVC; // 商品详情页控制器
-@property (nonatomic, strong) PLVInteractGenericView *interactView; // 互动
+@property (nonatomic, strong) PLVCommodityDetailViewController *commodityDetailVC; // 商品详情页控制器
 @property (nonatomic, strong) PLVECLinkMicAreaView *linkMicAreaView; //连麦
+@property (nonatomic, strong) PLVPopoverView *popoverView; // 浮动区域
 
 #pragma mark UI
 @property (nonatomic, strong) PLVECWatchRoomScrollView * scrollView;
@@ -101,10 +106,6 @@ PLVECLinkMicAreaViewDelegate
     [super viewWillAppear:animated];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
     
-    if (![PLVECFloatingWindow sharedInstance].hidden) {
-        [[PLVECFloatingWindow sharedInstance] close]; // 关闭悬浮窗
-    }
-    
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
@@ -117,6 +118,8 @@ PLVECLinkMicAreaViewDelegate
         
         [self.playerVC cancelMute];
     }
+    
+    self.logoutWhenStopPictureInPicutre = NO;
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -183,12 +186,8 @@ PLVECLinkMicAreaViewDelegate
         self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
         
         /// 互动
-        [self.view addSubview:self.interactView];
-
-        /// 配置
-        self.interactView.frame = self.view.bounds;
-        self.interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [self.interactView loadOnlineInteract];
+        [self.view addSubview:self.popoverView];
+        self.popoverView.frame = self.view.bounds;
 
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
         
@@ -227,17 +226,28 @@ PLVECLinkMicAreaViewDelegate
 }
 
 - (void)exitCurrentController {
-    [PLVRoomLoginClient logout];
-    [[PLVSocketManager sharedManager] logout];
-    [self.homePageView destroy];
+    // 在打开画中画的时候退出直播间，则直接退出，当前控制器会被PLVLivePictureInPictureRestoreManager持有不被释放，恢复的时候再次显示
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        self.logoutWhenStopPictureInPicutre = YES;
+        if (self.navigationController) {
+            [self.navigationController popViewControllerAnimated:YES];
+        } else {
+            [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+            [self dismissViewControllerAnimated:YES completion:nil];
+        }
+    }else {
+        [PLVRoomLoginClient logout];
+        [[PLVSocketManager sharedManager] logout];
+        [self.homePageView destroy];
 
-    if (self.navigationController) {
-        [self.navigationController popViewControllerAnimated:YES];
-    } else {
-        [self dismissViewControllerAnimated:YES completion:nil];
+        if (self.navigationController) {
+            [self.navigationController popViewControllerAnimated:YES];
+        } else {
+            [self dismissViewControllerAnimated:YES completion:nil];
+        }
+        
+        [PLVECFloatingWindow sharedInstance].delegate = nil;
     }
-    
-    [PLVECFloatingWindow sharedInstance].delegate = nil;
 }
 
 #pragma mark Getter
@@ -277,15 +287,14 @@ PLVECLinkMicAreaViewDelegate
     return _liveDetailPageView;
 }
 
-- (PLVInteractGenericView *)interactView{
+- (PLVPopoverView *)popoverView {
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if (!_interactView && videoType == PLVChannelVideoType_Live) {
-        _interactView = [[PLVInteractGenericView alloc] init];
-        _interactView.frame = self.view.bounds;
-        _interactView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        [_interactView loadOnlineInteract];
+    if (!_popoverView && videoType == PLVChannelVideoType_Live) {
+        _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeEC];
+        _popoverView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        _popoverView.delegate = self;
     }
-    return _interactView;
+    return _popoverView;
 }
 
 - (UIButton *)closeButton{
@@ -313,14 +322,14 @@ PLVECLinkMicAreaViewDelegate
 
 #pragma mark Notification
 - (void)notificationForOpenBulletin:(NSNotification *)notif {
-    [self.interactView openLastBulletin];
+    [self.popoverView.interactView openLastBulletin];
 }
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
-    [self.interactView updateUserInfo];
+    [self.popoverView.interactView updateUserInfo];
 }
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
@@ -458,7 +467,7 @@ PLVECLinkMicAreaViewDelegate
         if (self.navigationController) {
             [self.navigationController popViewControllerAnimated:YES];
         } else {
-            [self.goodsDetailVC dismissViewControllerAnimated:YES completion:nil];
+            [self.commodityDetailVC dismissViewControllerAnimated:YES completion:nil];
         }
     } else {
         [self.playerVC mute];
@@ -512,6 +521,61 @@ PLVECLinkMicAreaViewDelegate
     }
 }
 
+/// 画中画即将开启
+-(void)playerControllerPictureInPictureWillStart:(PLVECPlayerViewController *)playerController {
+    [PLVProgressHUD hideHUDForView:self.view animated:YES];
+}
+
+/// 画中画已经开启
+-(void)playerControllerPictureInPictureDidStart:(PLVECPlayerViewController *)playerController {
+    [self.homePageView updateMoreButtonShow:NO];
+    [PLVECUtils showHUDWithTitle:@"小窗播放中，可能存在画面延后的情况" detail:@"" view:self.view];
+    
+    if (self.playerVC.noDelayLiveWatching) {
+        [self.linkMicAreaView pauseWatchNoDelay:YES];
+    }else {
+        [self.playerVC pause];
+    }
+    
+    // 设定画中画恢复逻辑的处理者为PLVLivePictureInPictureRestoreManager
+    [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = [PLVLivePictureInPictureRestoreManager sharedInstance];
+    // 开启画中画之后，让PLVLivePictureInPictureRestoreManager持有本控制器，使得退出本页面后还能通过画中画恢复
+    [PLVLivePictureInPictureRestoreManager sharedInstance].holdingViewController = self;
+}
+
+/// 画中画开启错误
+-(void)playerController:(PLVECPlayerViewController *)playerController pictureInPictureFailedToStartWithError:(NSError *)error {
+    [PLVProgressHUD hideHUDForView:self.view animated:YES];
+    // 清理恢复逻辑的处理者
+    [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
+/// 画中画即将关闭
+-(void)playerControllerPictureInPictureWillStop:(PLVECPlayerViewController *)playerController {
+    if (self.logoutWhenStopPictureInPicutre &&
+        ![PLVLivePictureInPictureManager sharedInstance].restoreDelegate) {
+        [PLVRoomLoginClient logout];
+        [[PLVSocketManager sharedManager] logout];
+        [self.homePageView destroy];
+        [PLVECFloatingWindow sharedInstance].delegate = nil;
+    }
+}
+
+/// 画中画已经关闭
+-(void)playerControllerPictureInPictureDidStop:(PLVECPlayerViewController *)playerController {
+    [self.homePageView updateMoreButtonShow:YES];
+    
+    if (self.playerVC.noDelayLiveWatching) {
+        [self.linkMicAreaView pauseWatchNoDelay:NO];
+    }else {
+        [self.playerVC play];
+    }
+    [self.homePageView updatePlayerState:YES];
+    
+    // 清理恢复逻辑的处理者
+    [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
 #pragma mark PLVECLinkMicAreaViewDelegate
 
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView {
@@ -558,19 +622,24 @@ PLVECLinkMicAreaViewDelegate
     });
 }
 
-- (void)homePageView:(PLVECHomePageView *)homePageView openGoodsDetail:(NSURL *)goodsURL {
+- (void)homePageView:(PLVECHomePageView *)homePageView openCommodityDetail:(NSURL *)commodityURL {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
-        [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view]; // 打开悬浮窗
+        
+        if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+            [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view]; // 打开应用内悬浮窗
+        }
     }
     
     // 跳转商品详情页
-    self.goodsDetailVC = [[PLVECGoodsDetailViewController alloc] initWithGoodsURL:goodsURL];
+    self.commodityDetailVC = [[PLVCommodityDetailViewController alloc] initWithCommodityURL:commodityURL];
+    self.commodityDetailVC.delegate = self;
     if (self.navigationController) {
         self.navigationController.navigationBarHidden = NO;
-        [self.navigationController pushViewController:self.goodsDetailVC animated:YES];
+        [self.navigationController pushViewController:self.commodityDetailVC animated:YES];
     } else {
-        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.goodsDetailVC];
+        [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
+        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.commodityDetailVC];
         nav.navigationBarHidden = NO;
         nav.modalPresentationStyle = UIModalPresentationFullScreen;
         [self presentViewController:nav animated:YES completion:nil];
@@ -604,8 +673,36 @@ PLVECLinkMicAreaViewDelegate
 - (void)homePageView:(PLVECHomePageView *)homePageView switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {
     if ([PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay) {
         [self.linkMicAreaView startWatchNoDelay:noDelayWatchMode];
+        if (noDelayWatchMode) {
+            [self.linkMicAreaView pauseWatchNoDelay:NO];
+        }
     }
     [self.playerVC switchToNoDelayWatchMode:noDelayWatchMode];
+}
+
+- (void)homePageViewOpenRewardView:(PLVECHomePageView *)homePageView {
+    [self.popoverView showRewardView];
+}
+
+- (void)homePageViewClickPictureInPicture:(PLVECHomePageView *)homePageView {
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [self.playerVC stopPictureInPicture];
+    }else {
+        PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.view animated:YES];
+        [hud.label setText:@"正在开启小窗..."];
+        [hud hideAnimated:YES afterDelay:3.0];
+        [self.playerVC startPictureInPicture];
+    }
+}
+
+- (void)plvCommodityDetailViewControllerAfterTheBack {
+    if (![PLVECFloatingWindow sharedInstance].hidden) {
+        [[PLVECFloatingWindow sharedInstance] close]; // 关闭悬浮窗
+    }
+}
+
+- (void)homePageView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit {
+    [self.popoverView setRewardViewData:payWay rewardModelArray:modelArray pointUnit:pointUnit];
 }
 
 #pragma mark UIScrollView Delegate
@@ -614,6 +711,14 @@ PLVECLinkMicAreaViewDelegate
     CGRect linkMicWindowFrame = self.playerVC.view.frame;
     linkMicWindowFrame.origin.x = scrollView.contentOffset.x;
     self.playerVC.view.frame = linkMicWindowFrame;
+}
+
+#pragma mark  PLVPopoverViewDelegate
+
+- (void)popoverViewDidDonatePointWithError:(NSString *)error {
+    plv_dispatch_main_async_safe(^{
+        [PLVECUtils showHUDWithTitle:error detail:@"" view:self.view];
+    })
 }
 
 @end

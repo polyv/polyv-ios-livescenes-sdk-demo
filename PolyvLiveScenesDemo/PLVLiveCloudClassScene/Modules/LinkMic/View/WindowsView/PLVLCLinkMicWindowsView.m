@@ -30,6 +30,7 @@ UICollectionViewDelegate
 @property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;
 @property (nonatomic, assign) BOOL hadAlignMainSpeakerSite; // 是否已对齐过主讲主副屏位置 (每次“从无用户到开始展示用户”，都需执行一次对齐)
 @property (nonatomic, assign) BOOL externalNoDelayPaused;   // 外部的 ‘无延迟播放’ 是否已暂停
+@property (nonatomic, assign) BOOL externalNoDelayPictureInPicturePlaceHolderShow;   // 外部的 ‘无延迟播放’ 是否显示画中画占位视图
 
 #pragma mark 数据
 @property (nonatomic, readonly) NSArray <PLVLinkMicOnlineUser *> * dataArray; // 只读，当前连麦在线用户数组
@@ -228,6 +229,13 @@ UICollectionViewDelegate
     }
 }
 
+- (void)refreshAllLinkMicCanvasPictureInPicturePlaceholder:(BOOL)show {
+    _externalNoDelayPictureInPicturePlaceHolderShow = show;
+    for (PLVLinkMicOnlineUser * onlineUser in self.dataArray) {
+        [onlineUser.canvasView pictureInPicturePlaceholderShow:show];
+    }
+}
+
 #pragma mark Getter
 - (BOOL)mainSpeakerPPTOnMain{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:)]) {
@@ -398,6 +406,7 @@ UICollectionViewDelegate
         PLVLCLinkMicCanvasView * canvasView = [[PLVLCLinkMicCanvasView alloc] init];
         [canvasView addRTCView:linkMicUserModel.rtcView];
         [canvasView pauseWatchNoDelayImageViewShow:self.externalNoDelayPaused];
+        [canvasView pictureInPicturePlaceholderShow:self.externalNoDelayPictureInPicturePlaceHolderShow];
         linkMicUserModel.canvasView = canvasView;
         linkMicUserModel.networkQualityChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             if (onlineUser.canvasView) { [onlineUser.canvasView updateNetworkQualityImageViewWithStatus:onlineUser.currentNetworkQuality]; }

@@ -171,8 +171,8 @@ UIGestureRecognizerDelegate
     NSLog(@"商品跳转：%@",jumpLinkUrl);
     [self dismissViewControllerAnimated:NO completion:^{}];
     
-    if (self.delegate && [self.delegate respondsToSelector:@selector(jumpToGoodsDetail:)]) {
-        [self.delegate jumpToGoodsDetail:jumpLinkUrl];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityViewControllerJumpToCommodityDetail:)]) {
+        [self.delegate plvCommodityViewControllerJumpToCommodityDetail:jumpLinkUrl];
     } else {
         if (![UIApplication.sharedApplication openURL:jumpLinkUrl]) {
             NSLog(@"url: %@",jumpLinkUrl);

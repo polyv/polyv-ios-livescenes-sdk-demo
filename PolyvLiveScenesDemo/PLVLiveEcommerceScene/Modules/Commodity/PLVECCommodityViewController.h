@@ -10,16 +10,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol PLVECCommodityDelegate <NSObject>
+@protocol PLVECCommodityViewControllerDelegate <NSObject>
 
 /// 商品跳转代理方法
-- (void)jumpToGoodsDetail:(NSURL *)goodsURL;
+- (void)plvCommodityViewControllerJumpToCommodityDetail:(NSURL *)commodityURL;
 
 @end
 
 @interface PLVECCommodityViewController : UIViewController
 
-@property (nonatomic, weak) id<PLVECCommodityDelegate> delegate;
+@property (nonatomic, weak) id<PLVECCommodityViewControllerDelegate> delegate;
 
 /// 处理socket商品信息
 ///

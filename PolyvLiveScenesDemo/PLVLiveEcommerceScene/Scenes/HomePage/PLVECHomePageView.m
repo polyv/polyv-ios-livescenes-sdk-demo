@@ -13,9 +13,7 @@
 #import "PLVECChatroomViewModel.h"
 #import "PLVECBulletinView.h"
 #import "PLVECCommodityViewController.h"
-#import "PLVECCommodityPushView.h"
-#import "PLVECGiftView.h"
-#import "PLVECRewardController.h"
+#import "PLVCommodityPushView.h"
 #import "PLVECPlaybackListViewController.h"
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
 
@@ -35,6 +33,7 @@ static NSString *const PLVECHomePageView_Data_AudioModeItemTitle = @"音频模�
 static NSString *const PLVECHomePageView_Data_RouteItemTitle     = @"线路";
 static NSString *const PLVECHomePageView_Data_QualityItemTitle   = @"清晰度";
 static NSString *const PLVECHomePageView_Data_DelayModeItemTitle = @"模式";
+static NSString *const PLVECHomePageView_Data_PictureInPictureItemTitle = @"小窗播放";
 
 /// SwitchView类型
 typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
@@ -54,9 +53,10 @@ typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
 PLVPlayerContolViewDelegate,
 PLVECMoreViewDelegate,
 PLVPlayerSwitchViewDelegate,
-PLVECCommodityDelegate,
-PLVECCommodityPushViewDelegate,
-PLVSocketManagerProtocol
+PLVECCommodityViewControllerDelegate,
+PLVCommodityPushViewDelegate,
+PLVSocketManagerProtocol,
+PLVECChatroomViewDelegate
 >
 
 #pragma mark 数据
@@ -85,10 +85,8 @@ PLVSocketManagerProtocol
 
 @property (nonatomic, strong) PLVECMoreView *moreView;                 // 更多视图
 @property (nonatomic, strong) PLVECSwitchView *switchView;             // 切换视图
-@property (nonatomic, strong) PLVECGiftView *giftView;                 // 礼物视图
-@property (nonatomic, strong) PLVECRewardController *rewardCtrl;       // 打赏控制器
 @property (nonatomic, weak) PLVECCommodityViewController *commodityVC; // 商品视图
-@property (nonatomic, strong) PLVECCommodityPushView *pushView;        // 商品推送视图
+@property (nonatomic, strong) PLVCommodityPushView *pushView;        // 商品推送视图
 @property (nonatomic, weak) PLVECPlaybackListViewController *playbackListVC;     //回放列表视图
 
 #pragma mark UI
@@ -134,37 +132,12 @@ PLVSocketManagerProtocol
     [super layoutSubviews];
     
     self.liveRoomInfoView.frame = CGRectMake(15, 10, 118, 36);
-    
-    CGFloat buttonWidth = 32.f;
-    if (self.type == PLVECHomePageType_Live) {
-        // 聊天室布局
-        self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-P_SafeAreaBottomEdgeInsets());
-        // 底部按钮
-        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
-        self.giftButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
-        self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
-        // 点赞按钮
-        self.likeButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
-        // 网络提示
-        self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - 219 - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, 219, 28);
-        self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
-    } else if (self.type == PLVECHomePageType_Playback) {
-        // 底部控件
-        if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
-            self.playbackListButton.frame = CGRectMake(15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
-            self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
-            self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 32, CGRectGetMaxX(self.moreButton.frame), 41);
-        } else {
-            self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
-            self.playerContolView.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-41-P_SafeAreaBottomEdgeInsets(), CGRectGetMinX(self.moreButton.frame)-8, 41);
-        }
-    }
+    [self updateUIFrame];
 }
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     _moreView.hidden = YES;
     _switchView.hidden = YES;
-    [_rewardCtrl hiddenView:YES];
 }
 
 #pragma mark - Initialize
@@ -181,7 +154,6 @@ PLVSocketManagerProtocol
         [self addSubview:self.playerContolView];
         [self addSubview:self.playbackListButton];
     }
-    
     [self addSubview:self.moreButton];
 }
 
@@ -197,6 +169,7 @@ PLVSocketManagerProtocol
 - (PLVECChatroomView *)chatroomView {
     if (!_chatroomView) {
         _chatroomView = [[PLVECChatroomView alloc] init];
+        _chatroomView.delegate = self;
     }
     return _chatroomView;
 }
@@ -278,36 +251,10 @@ PLVSocketManagerProtocol
     return _switchView;
 }
 
-- (PLVECGiftView *)giftView {
-    if (!_giftView) {
-        CGRect rect = CGRectMake(-270, CGRectGetHeight(self.bounds)-335-P_SafeAreaBottomEdgeInsets(), 270, 40);
-        _giftView = [[PLVECGiftView alloc] initWithFrame:rect];
-        [self addSubview:_giftView];
-    }
-    return _giftView;
-}
-
-- (PLVECRewardController *)rewardCtrl {
-    if (!_rewardCtrl) {
-        _rewardCtrl = [[PLVECRewardController alloc] init];
-        __weak typeof(self) weakSelf = self;
-        _rewardCtrl.didSendGift = ^(NSString * _Nonnull giftName, NSString * _Nonnull giftType) {
-            PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-            [weakSelf.giftView showGiftAnimation:roomUser.viewerName giftName:giftName giftType:giftType];
-        };
-        
-        CGFloat height = 258 + P_SafeAreaBottomEdgeInsets();
-        _rewardCtrl.view = [[PLVECRewardView alloc] initWithFrame:CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height)];
-        [self addSubview:_rewardCtrl.view];
-    }
-    return _rewardCtrl;
-}
-
-- (PLVECCommodityPushView *)pushView {
+- (PLVCommodityPushView *)pushView {
     if (!_pushView) {
-        _pushView = [[PLVECCommodityPushView alloc] initWithFrame:CGRectMake(16, CGRectGetMinY(self.shoppingCartButton.frame)-90, CGRectGetWidth(self.bounds)-110, 86)];
+        _pushView = [[PLVCommodityPushView alloc] initWithType:PLVCommodityPushViewTypeEC];
         _pushView.delegate = self;
-        [self addSubview:_pushView];
     }
     return _pushView;
 }
@@ -398,7 +345,6 @@ PLVSocketManagerProtocol
 #pragma mark - Public
 
 - (void)destroy {
-    [_pushView destroy];
     if (self.type == PLVECHomePageType_Live) {
         [_likeButtonView invalidTimer];
         [[PLVECChatroomViewModel sharedViewModel] clear];
@@ -511,6 +457,13 @@ PLVSocketManagerProtocol
     });
 }
 
+/// 更新更多按钮的显示或隐藏
+/// @param show YES:显示  NO:隐藏
+- (void)updateMoreButtonShow:(BOOL)show {
+    self.moreButton.hidden = !show;
+    [self updateUIFrame];
+}
+
 #pragma mark - Private
 
 - (void)updateCodeRateSwitchViewHiddenState {
@@ -534,6 +487,30 @@ PLVSocketManagerProtocol
     self.hiddenDelayModeSwitch = hidden;
     if (_moreView) {
         [self.moreView reloadData];
+    }
+}
+
+/// 更新UI布局的Frame
+- (void)updateUIFrame {
+    CGFloat buttonWidth = 32.f;
+    
+    if (self.type == PLVECHomePageType_Live) {
+        // 聊天室布局
+        self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-P_SafeAreaBottomEdgeInsets());
+        // 底部按钮
+        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+        self.giftButton.frame = self.moreButton.hidden ? self.moreButton.frame : CGRectMake(CGRectGetMinX(self.moreButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
+        self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
+        // 点赞按钮
+        self.likeButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
+        // 网络提示
+        self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - 219 - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, 219, 28);
+        self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
+        
+    } else if (self.type == PLVECHomePageType_Playback) {
+        // 底部控件
+        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+        self.playerContolView.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-41-P_SafeAreaBottomEdgeInsets(), CGRectGetMinX(self.moreButton.frame)-8, 41);
     }
 }
 
@@ -562,7 +539,11 @@ PLVSocketManagerProtocol
 }
 
 - (void)giftButtonAction:(id)sender {
-    [self.rewardCtrl hiddenView:NO];
+    if ([PLVECChatroomViewModel sharedViewModel].enableReward) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewOpenRewardView:)]) {
+            [self.delegate homePageViewOpenRewardView:self];
+        }
+    }
 }
 
 - (void)shoppingCardButtonAction:(id)sender {
@@ -631,9 +612,6 @@ PLVSocketManagerProtocol
     if (![jsonDict isKindOfClass:[NSDictionary class]]) {
         return;
     }
-    if ([event isEqualToString:@"customMessage"]) {
-        [self customMessageEvent:jsonDict subEvent:subEvent];
-    }
 }
 
 - (void)bulletinEvent:(NSDictionary *)jsonDict {
@@ -685,25 +663,11 @@ PLVSocketManagerProtocol
     if (9 == status) {
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
-        [self.pushView setModel:model];
-    }
-}
-
-- (void)customMessageEvent:(NSDictionary *)jsonDict subEvent:(NSString *)subEvent {
-    if ([subEvent isEqualToString:@"GiftMessage"]) {           // 自定义礼物消息
-        NSDictionary *user = PLV_SafeDictionaryForDictKey(jsonDict, @"user");
-        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
-        if ([[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId isEqualToString:PLV_SafeStringForDictKey(user, @"userId")]) {
-            return;
-        }
-        
-        NSString *nickName = PLV_SafeStringForDictKey(user, @"nick");
-        NSString *giftName = PLV_SafeStringForDictKey(data, @"giftName");
-        NSString *giftType = PLV_SafeStringForDictKey(data, @"giftType");
-        
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.giftView showGiftAnimation:nickName giftName:giftName giftType:giftType];
-        });
+        __weak typeof(self)weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            [weakSelf.pushView setModel:model];
+            [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 120, CGRectGetWidth(weakSelf.bounds) - 110, 114)];
+        })
     }
 }
 
@@ -730,11 +694,29 @@ PLVSocketManagerProtocol
     }
 }
 
-#pragma mark PLVECCommodityDelegate、PLVECCommodityPushViewDelegate
+#pragma mark PLVCommodityPushViewDelegate
 
-- (void)jumpToGoodsDetail:(NSURL *)goodsURL {
-    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openGoodsDetail:)]) {
-        [self.delegate homePageView:self openGoodsDetail:goodsURL];
+- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL {
+    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openCommodityDetail:)]) {
+        [self.delegate homePageView:self openCommodityDetail:commodityURL];
+    }
+}
+
+#pragma mark PLVECCommodityViewControllerDelegate
+
+- (void)plvCommodityViewControllerJumpToCommodityDetail:(NSURL *)commodityURL {
+    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openCommodityDetail:)]) {
+        [self.delegate homePageView:self openCommodityDetail:commodityURL];
+    }
+}
+
+#pragma mark PLVECChatroomViewDelegate
+
+- (void)chatroomView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_loadRewardEnable:payWay:rewardModelArray:pointUnit:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate homePageView_loadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
+        });
     }
 }
 
@@ -774,6 +756,14 @@ PLVSocketManagerProtocol
         [muArray addObject:item4];
     }
     
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive &&
+        [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+        PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
+        item5.title = PLVECHomePageView_Data_PictureInPictureItemTitle;
+        item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
+        [muArray addObject:item5];
+    }
+    
     return [muArray copy];
 }
 
@@ -799,6 +789,11 @@ PLVSocketManagerProtocol
             switchViewType = PLVECSwitchViewType_DelayMode;
         }
         [self updateSwitchView:switchViewType];
+    }else if ([title isEqualToString:PLVECHomePageView_Data_PictureInPictureItemTitle]) {
+        moreView.hidden = YES;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewClickPictureInPicture:)]) {
+            [self.delegate homePageViewClickPictureInPicture:self];
+        }
     }
 }
 

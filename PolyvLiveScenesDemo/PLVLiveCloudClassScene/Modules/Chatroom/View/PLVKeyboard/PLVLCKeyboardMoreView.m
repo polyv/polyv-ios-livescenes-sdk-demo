@@ -19,9 +19,10 @@ static CGFloat kCellImageLabelMargin = 8.0;
 typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     PLVLCKeyboardMoreButtonTypeUnknow = -1,
     PLVLCKeyboardMoreButtonTypeOnlyTeacher = 0,
-    PLVLCKeyboardMoreButtonTypeOpenCamera,
     PLVLCKeyboardMoreButtonTypeOpenAlbum,
+    PLVLCKeyboardMoreButtonTypeOpenCamera,
     PLVLCKeyboardMoreButtonTypeOpenBulletin,
+    PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay,
     PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord
 };
 
@@ -81,12 +82,17 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             [self.moreBtn setTitle:@"公告" forState:UIControlStateNormal];
             [self.moreBtn setTitle:@"公告" forState:UIControlStateSelected];
             break;
+        case PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay:
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_hide_reward_display"] forState:UIControlStateNormal];
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_show_reward_display"] forState:UIControlStateSelected];
+            [self.moreBtn setTitle:@"屏蔽特效" forState:UIControlStateNormal];
+            [self.moreBtn setTitle:@"展示特效" forState:UIControlStateSelected];
+            break;
         case PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_lottery_normal"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_lottery_newMessage"] forState:UIControlStateSelected];
             [self.moreBtn setTitle:@"消息" forState:UIControlStateNormal];
             [self.moreBtn setTitle:@"消息" forState:UIControlStateSelected];
-            break;
         default:
             break;
     }
@@ -114,6 +120,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         _sendImageEnable = YES;
         _hideLotteryWinRecord = YES;
         _isNewLotteryMessage = NO;
+        _hideRewardDisplaySwitch = YES;
         
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1.0];
         
@@ -121,11 +128,11 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         self.flowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
         self.flowLayout.itemSize = CGSizeMake(kCellButtonWidth, kCellButtonHeight);
         
-        float totalPadding = [UIScreen mainScreen].bounds.size.width - kCellButtonWidth * 4;
-        float paddingScale = totalPadding / 159.0;
-        float padding = 15.9 * paddingScale;
-        float commonPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 23.0 : padding ;
-        self.flowLayout.sectionInset = UIEdgeInsetsMake(15.9, commonPadding, 15.9, commonPadding);
+        float distanceWidth = [UIScreen mainScreen].bounds.size.width - kCellButtonWidth * 4;
+        float spacing = distanceWidth / 5;
+        self.flowLayout.minimumInteritemSpacing = spacing;
+        float padding = distanceWidth - spacing * 4;
+        self.flowLayout.sectionInset = UIEdgeInsetsMake(15.9, padding, 15.9, padding);
         
         CGRect rect = CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 24 + kCellButtonHeight + 24);
         self.collectionView = [[UICollectionView alloc] initWithFrame:rect collectionViewLayout:self.flowLayout];
@@ -139,17 +146,11 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     return self;
 }
 
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    CGRect rect = CGRectMake(0, 0, self.frame.size.width, 24 + kCellButtonHeight + 24);
-    self.collectionView.frame = rect;
-}
-
-#pragma mark - Getterr & Setter
+#pragma mark - Getter & Setter
 
 - (void)setSendImageEnable:(BOOL)sendImageEnable {
     if (_sendImageEnable == sendImageEnable) {
-        return;;
+        return;
     }
     _sendImageEnable = sendImageEnable;
     [self.collectionView reloadData];
@@ -157,7 +158,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 
 - (void)setHiddenBulletin:(BOOL)hiddenBulletin {
     if (_hiddenBulletin == hiddenBulletin) {
-        return;;
+        return;
     }
     _hiddenBulletin = hiddenBulletin;
     [self.collectionView reloadData];
@@ -179,6 +180,13 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     [self.collectionView reloadData];
 }
 
+- (void)setHideRewardDisplaySwitch:(BOOL)hideRewardDisplaySwitch {
+    if (_hideRewardDisplaySwitch == hideRewardDisplaySwitch) {
+        return;
+    }
+    _hideRewardDisplaySwitch = hideRewardDisplaySwitch;
+}
+
 #pragma mark - UICollectionView DataSource
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView*)collectionView {
@@ -186,11 +194,14 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 }
 
 - (NSInteger)collectionView:(UICollectionView*)collectionView numberOfItemsInSection:(NSInteger)section {
-    NSUInteger count = 5;
+    NSUInteger count = 6;
     if (!self.sendImageEnable) {
         count -= 2;
     }
     if (self.hiddenBulletin) {
+        count--;
+    }
+    if (self.hideRewardDisplaySwitch) {
         count--;
     }
     if (self.hideLotteryWinRecord) {
@@ -224,17 +235,22 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         }
     } else if (button.tag == 1) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openAlbum:)]) {
-            [self.delegate keyboardMoreView_openCamera:self];
+            [self.delegate keyboardMoreView_openAlbum:self];
         }
     } else if (button.tag == 2) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openCamera:)]) {
-            [self.delegate keyboardMoreView_openAlbum:self];
+            [self.delegate keyboardMoreView_openCamera:self];
         }
     } else if (button.tag == 3) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openBulletin:)]) {
             [self.delegate keyboardMoreView_openBulletin:self];
         }
     } else if (button.tag == 4) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_switchRewardDisplay:on:)]) {
+            [self.delegate keyboardMoreView_switchRewardDisplay:self on:button.selected];
+            button.selected = !button.selected;
+        }
+    } else if (button.tag == 5) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openLotteryRecord:)]) {
             [self.delegate keyboardMoreView_openLotteryRecord:self];
         }
@@ -254,13 +270,17 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             return PLVLCKeyboardMoreButtonTypeOpenCamera;
         } else if (index == 3 && !self.hiddenBulletin) {
             return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-        } else if (index == 4 && !self.hideLotteryWinRecord) {
+        } else if (index == 4 && !self.hideRewardDisplaySwitch) {
+            return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+        } else if (index == 5 && !self.hideLotteryWinRecord) {
             return PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord;
         }
     } else {
         if (index == 1 && !self.hiddenBulletin) {
             return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-        } else if (index == 2 && !self.hideLotteryWinRecord) {
+        } else if (index == 2 && !self.hideRewardDisplaySwitch) {
+            return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+        } else if (index == 3 && !self.hideLotteryWinRecord) {
             return PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord;
         }
     }

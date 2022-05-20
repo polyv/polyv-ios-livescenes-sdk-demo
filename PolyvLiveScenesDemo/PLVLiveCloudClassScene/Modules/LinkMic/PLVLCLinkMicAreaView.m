@@ -10,7 +10,6 @@
 
 #import "PLVLCLinkMicWindowsView.h"
 #import "PLVLCLinkMicSpeakingView.h"
-#import "PLVLinkMicPresenter.h"
 #import "PLVLCUtils.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -133,6 +132,10 @@ PLVLCLinkMicWindowsViewDelegate
     [self.windowsView refreshAllLinkMicCanvasPauseImageView:self.presenter.pausedWatchNoDelay];
 }
 
+- (void)setPictureInPicturePlaceholderShow:(BOOL)show {
+    [self.windowsView refreshAllLinkMicCanvasPictureInPicturePlaceholder:show];
+}
+
 - (void)leaveLinkMicOnlyEmit {
     [self.presenter leaveLinkMicOnlyEmit];
 }
@@ -149,7 +152,6 @@ PLVLCLinkMicWindowsViewDelegate
 - (BOOL)inLinkMic{
     return self.presenter.inLinkMic;
 }
-
 
 - (BOOL)pausedWatchNoDelay {
     return self.presenter.pausedWatchNoDelay;
@@ -364,6 +366,10 @@ PLVLCLinkMicWindowsViewDelegate
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:inLinkMicChanged:)]) {
             [self.delegate plvLCLinkMicAreaView:self inLinkMicChanged:inLinkMic];
         }
+    }
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:currentLinkMicStatus:)]) {
+        [self.delegate plvLCLinkMicAreaView:self currentLinkMicStatus:currentLinkMicStatus];
     }
     
     if (currentLinkMicStatus == PLVLinkMicStatus_NotOpen) {

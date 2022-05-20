@@ -12,6 +12,7 @@
 #import "PLVRoomDataManager.h"
 #import <MediaPlayer/MPVolumeView.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
 #import "PLVLCUtils.h"
 #import "PLVLCMediaBrightnessView.h"
@@ -29,6 +30,7 @@ PLVLCDocumentToolViewDelegate>
 @property (nonatomic, assign) CGPoint lastPoint;
 @property (nonatomic, assign) PLVBasePlayerSkinViewPanType panType;
 @property (nonatomic, strong) MPVolumeView *volumeView;
+@property (nonatomic, assign) BOOL moreButtonOriginalStatus;
 
 @end
 
@@ -113,28 +115,33 @@ PLVLCDocumentToolViewDelegate>
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 直播场景
         if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_None) {
             self.moreButton.hidden = YES;
+            self.pictureInPictureButton.hidden = YES;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = YES;
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living_CDN) {
             self.moreButton.hidden = NO;
+            self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = NO;
             self.refreshButton.hidden = NO;
             self.floatViewShowButton.hidden = NO;
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay){
             self.moreButton.hidden = NO;
+            self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = NO;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = NO;
             self.floatViewShowButton.selected = NO; /// 无延迟场景，默认显示‘开’
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC) {
             self.moreButton.hidden = YES;
+            self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = NO;
             self.floatViewShowButton.hidden = NO;
             self.floatViewShowButton.selected = NO;
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC) {
             self.moreButton.hidden = YES;
+            self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = NO;
@@ -142,6 +149,19 @@ PLVLCDocumentToolViewDelegate>
         } else {
             NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",NSStringFromClass(self.class),skinViewLiveStatus);
         }
+        // 除了直播状态决定之外，还需要根据外界的其他因素决定是否显示画中画按钮
+        if (!self.pictureInPictureButton.hidden) {
+            if (self.baseDelegate &&
+                [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:)]) {
+                BOOL show = [self.baseDelegate plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:self];
+                self.pictureInPictureButton.hidden = !show;
+            }
+        }
+        // 不支持画中画的设备隐藏按钮
+        if (!self.pictureInPictureButton.hidden) {
+            self.pictureInPictureButton.hidden = ![[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported];
+        }
+        self.moreButtonOriginalStatus = self.moreButton.hidden;
         // 检查当前PPT是否在主屏并设置数据
         [self checkMainSpeakerPPTOnMainAndSetData];
     }else{
@@ -233,6 +253,7 @@ PLVLCDocumentToolViewDelegate>
     [controlsSuperview.layer addSublayer:self.topShadowLayer];
     [controlsSuperview addSubview:self.backButton];
     [controlsSuperview addSubview:self.titleLabel];
+    [controlsSuperview addSubview:self.pictureInPictureButton];
     [controlsSuperview addSubview:self.moreButton];
 
     [controlsSuperview.layer addSublayer:self.bottomShadowLayer];
@@ -268,6 +289,22 @@ PLVLCDocumentToolViewDelegate>
 
 - (void)refreshPlayTimesLabelFrame{
     NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshPlayTimesLabelFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
+}
+
+- (void)refreshPictureInPictureButtonShow:(BOOL)show {
+    BOOL supported = [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported];
+    self.pictureInPictureButton.hidden = supported ? !show : YES;
+}
+
+/// 刷新更多按钮显示
+/// @param hidden YES:隐藏，NO:恢复原来状态
+- (void)refreshMoreButtonHiddenOrRestore:(BOOL)hidden {
+    if (hidden) {
+        self.moreButtonOriginalStatus = self.moreButton.hidden;
+        self.moreButton.hidden = YES;
+    }else {
+        self.moreButton.hidden = self.moreButtonOriginalStatus;
+    }
 }
 
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView{
@@ -370,12 +407,23 @@ PLVLCDocumentToolViewDelegate>
     return _playTimesLabel;
 }
 
+- (UIButton *)pictureInPictureButton{
+    if (!_pictureInPictureButton) {
+        _pictureInPictureButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_pictureInPictureButton setImage:[self getImageWithName:@"plvlc_media_skin_pictureinpicture"] forState:UIControlStateNormal];
+        [_pictureInPictureButton addTarget:self action:@selector(pictureInPictureButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _pictureInPictureButton.hidden = YES;
+    }
+    return _pictureInPictureButton;
+}
+
 - (UIButton *)moreButton{
     if (!_moreButton) {
         _moreButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_moreButton setImage:[self getImageWithName:@"plvlc_media_skin_more"] forState:UIControlStateNormal];
         [_moreButton addTarget:self action:@selector(moreButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _moreButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback ? YES : NO);
+        self.moreButtonOriginalStatus = _moreButton.hidden;
     }
     return _moreButton;
 }
@@ -599,6 +647,12 @@ PLVLCDocumentToolViewDelegate>
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewBackButtonClicked:currentFullScreen:)]) {
         [self.baseDelegate plvLCBasePlayerSkinViewBackButtonClicked:self currentFullScreen:fullScreen];
+    }
+}
+
+- (void)pictureInPictureButtonAction:(UIButton *)button{
+    if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewPictureInPictureButtonClicked:)]) {
+        [self.baseDelegate plvLCBasePlayerSkinViewPictureInPictureButtonClicked:self];
     }
 }
 

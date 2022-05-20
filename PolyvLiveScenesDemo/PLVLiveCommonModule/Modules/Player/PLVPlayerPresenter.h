@@ -157,6 +157,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// 开启或关闭 无延迟直播模式
 - (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode;
 
+/// 开启画中画功能
+/// @param originView 画中画播放器的起始视图
+- (void)startPictureInPictureFromOriginView:(UIView *)originView;
+
+/// 关闭画中画功能
+- (void)stopPictureInPicture;
+
 #pragma mark 非直播相关
 /// 跳至某个时间点 (单位: 秒)
 - (void)seekLivePlaybackToTime:(NSTimeInterval)toTime;
@@ -257,6 +264,28 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 直播回放播放器 播放中断（网络原因或者其它原因）
 - (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter;
+
+#pragma mark 画中画相关
+/// 画中画即将开始
+/// @param playerPresenter 播放器管理器
+- (void)playerPresenterPictureInPictureWillStart:(PLVPlayerPresenter *)playerPresenter;
+
+/// 画中画已经开始
+/// @param playerPresenter 播放器管理器
+- (void)playerPresenterPictureInPictureDidStart:(PLVPlayerPresenter *)playerPresenter;
+
+/// 画中画开启失败
+/// @param playerPresenter 播放器管理器
+/// @param error 失败错误原因
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPictureFailedToStartWithError:(NSError *)error;
+
+/// 画中画即将停止
+/// @param playerPresenter 播放器管理器
+- (void)playerPresenterPictureInPictureWillStop:(PLVPlayerPresenter *)playerPresenter;
+
+/// 画中画已经停止
+/// @param playerPresenter 播放器管理器
+- (void)playerPresenterPictureInPictureDidStop:(PLVPlayerPresenter *)playerPresenter;
 
 @end
 

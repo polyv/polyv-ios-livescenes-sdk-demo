@@ -46,6 +46,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param userArray 登录聊天室的用户数组，如果为nil，表示当前时间段内当前用户有登录事件
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray;
 
+/// 打赏成功时触发
+- (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict;
+
+/// 加载打赏信息时触发
+/// @param rewardEnable 是否支持打赏
+/// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏
+/// @param modelArray 打赏数据模型数组
+/// @param pointUnit 打赏单位
+- (void)chatroomManager_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
+
 @end
 
 /*
@@ -63,6 +73,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 全部消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
+
+/// 礼物打赏开关
+@property (nonatomic, assign, readonly) BOOL enableReward;
 
 #pragma mark API
 

@@ -13,6 +13,7 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVRoomDataManager.h"
 #import "PLVPlayerLogoView.h"
+#import "PLVLivePictureInPicturePlaceholderView.h"
 
 static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.net/default-img/channel/default-splash.png";//讲师默认封面图地址
 
@@ -26,7 +27,8 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 ///  ├── (PLVPlayerLogoView) logoView
 ///  └── (UIImageView) networkQualityImageView
 ///  ├── (UIImageView) splashImageView
-///  ├── (UIImageView) muteRemoteStreamImageView
+///  ├── (UIImageView) pauseWatchNoDelayImageView
+///  ├── (PLVLivePictureInPicturePlaceholderView) pictureInPicturePlaceholderView
 ///  └── (UIView) external rtc View
 @property (nonatomic, strong) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
 @property (nonatomic, strong) UIImageView * splashImageView; // 音频背景视图（只支持音频模式时显示）
@@ -34,6 +36,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 @property (nonatomic, strong) PLVPlayerLogoView * logoView; // 播放器LOGO视图
 @property (nonatomic, strong) UIImageView * networkQualityImageView; // 信号塔视图 (负责展示 信号状态图标)
 @property (nonatomic, strong) UIImageView * pauseWatchNoDelayImageView; // 无延迟直播暂停后显示的占位图
+@property (nonatomic, strong) PLVLivePictureInPicturePlaceholderView *pictureInPicturePlaceholderView;    // 画中画占位图
 
 @end
 
@@ -57,6 +60,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
     self.splashImageView.frame = self.bounds;
     self.pauseWatchNoDelayImageView.frame = self.bounds;
+    self.pictureInPicturePlaceholderView.frame = self.bounds;
     
     CGFloat placeholderImageViewHeight = MIN(viewHeight , viewWidth)  * 0.485;
     self.placeholderImageView.frame = CGRectMake((viewWidth - placeholderImageViewHeight) / 2.0,
@@ -80,6 +84,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
             rtcView.frame = self.bounds;
             rtcView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
             [self addSubview:rtcView];
+            [self bringSubviewToFront:self.pictureInPicturePlaceholderView];
             [self bringSubviewToFront:self.networkQualityImageView];
             self.rtcView = rtcView;
         }else{
@@ -97,6 +102,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     self.networkQualityImageView.hidden = YES;
     [self addSubview:self.splashImageView];
     [self addSubview:self.pauseWatchNoDelayImageView];
+    [self addSubview:self.pictureInPicturePlaceholderView];
 }
 
 - (void)rtcViewShow:(BOOL)rtcViewShow{
@@ -122,6 +128,10 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 
 - (void)pauseWatchNoDelayImageViewShow:(BOOL)show {
     self.pauseWatchNoDelayImageView.hidden = !show;
+}
+
+- (void)pictureInPicturePlaceholderShow:(BOOL)show {
+    self.pictureInPicturePlaceholderView.hidden = !show;
 }
 
 - (void)updateNetworkQualityImageViewWithStatus:(PLVBLinkMicNetworkQuality)status{
@@ -162,6 +172,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     self.networkQualityImageView.hidden = YES;
     [self addSubview:self.splashImageView];
     [self addSubview:self.pauseWatchNoDelayImageView];
+    [self addSubview:self.pictureInPicturePlaceholderView];
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -226,6 +237,14 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
         _pauseWatchNoDelayImageView.image = [self getImageWithName:@"plvlc_linkmic_window_pauseWatchNoDelay_placeholder"];
     }
     return _pauseWatchNoDelayImageView;
+}
+
+- (PLVLivePictureInPicturePlaceholderView *)pictureInPicturePlaceholderView {
+    if (!_pictureInPicturePlaceholderView) {
+        _pictureInPicturePlaceholderView = [[PLVLivePictureInPicturePlaceholderView alloc] init];
+        _pictureInPicturePlaceholderView.hidden = YES;
+    }
+    return _pictureInPicturePlaceholderView;
 }
 
 @end

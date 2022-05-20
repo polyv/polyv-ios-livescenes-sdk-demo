@@ -69,6 +69,28 @@ NS_ASSUME_NONNULL_BEGIN
 /// 跑马灯校验失败回调
 - (void)customMarqueeDefaultWithError:(NSError *)error;
 
+#pragma mark 画中画的回调
+/// 画中画即将开始
+/// @param playerController 播放器管理器
+- (void)playerControllerPictureInPictureWillStart:(PLVECPlayerViewController *)playerController;
+
+/// 画中画已经开始
+/// @param playerController 播放器管理器
+- (void)playerControllerPictureInPictureDidStart:(PLVECPlayerViewController *)playerController;
+
+/// 画中画开启失败
+/// @param playerController 播放器管理器
+/// @param error 失败错误原因
+- (void)playerController:(PLVECPlayerViewController *)playerController pictureInPictureFailedToStartWithError:(NSError *)error;
+
+/// 画中画即将停止
+/// @param playerController 播放器管理器
+- (void)playerControllerPictureInPictureWillStop:(PLVECPlayerViewController *)playerController;
+
+/// 画中画已经停止
+/// @param playerController 播放器管理器
+- (void)playerControllerPictureInPictureDidStop:(PLVECPlayerViewController *)playerController;
+
 @end
 
 @interface PLVECPlayerViewController : UIViewController
@@ -86,6 +108,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 是否为无延迟模式
 @property (nonatomic, readonly) BOOL noDelayWatchMode;
+
+/// 播放器当前是否正在播放无延迟直播
+@property (nonatomic, assign, readonly) BOOL noDelayLiveWatching;
 
 /// 播放直播/回放
 - (void)play;
@@ -119,6 +144,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换到无延迟观看模式
 /// noDelayWatchMode : YES  无延迟观看 noDelayWatchMode : NO 普通延迟观看
 - (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode;
+
+/// 开启画中画功能
+- (void)startPictureInPicture;
+
+/// 关闭画中画功能
+- (void)stopPictureInPicture;
 
 #pragma mark 回放的API
 

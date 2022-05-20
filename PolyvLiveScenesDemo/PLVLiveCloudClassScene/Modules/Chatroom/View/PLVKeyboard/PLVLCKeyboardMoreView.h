@@ -24,6 +24,10 @@
 /// 打开中奖记录
 - (void)keyboardMoreView_openLotteryRecord:(PLVLCKeyboardMoreView *)moreView;
 
+/// 点击【屏蔽特效】或【展示特效】
+/// @param on YES - 屏蔽特效；NO - 展示特效
+- (void)keyboardMoreView_switchRewardDisplay:(PLVLCKeyboardMoreView *)moreView on:(BOOL)on;
+
 /// 点击【查看全部】或【只看讲师】按钮
 /// @param on YES - 只看教师；NO - 查看全部
 - (void)keyboardMoreView_onlyTeacher:(PLVLCKeyboardMoreView *)moreView on:(BOOL)on;
@@ -45,5 +49,8 @@
 
 /// 消息按钮红点是否显示，默认 NO；YES - 显示，NO - 隐藏
 @property (nonatomic, assign) BOOL isNewLotteryMessage;
+
+/// 礼物打赏特效开关按钮是否隐藏，默认 YES；YES - 隐藏，NO - 显示
+@property (nonatomic, assign) BOOL hideRewardDisplaySwitch;
 
 @end

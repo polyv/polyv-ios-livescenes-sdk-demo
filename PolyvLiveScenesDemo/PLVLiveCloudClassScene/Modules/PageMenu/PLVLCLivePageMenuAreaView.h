@@ -21,6 +21,7 @@ typedef NS_ENUM(NSInteger, PLVLCLivePageMenuType) {
     PLVLCLivePageMenuTypeText,          // 自定义图文直播
     PLVLCLivePageMenuTypeQA,            // 问答功能
     PLVLCLivePageMenuTypeIframe,        // 推广外链
+    PLVLCLivePageMenuTypeBuy            // 边看边买
 };
 
 /// 将后端返回的menu字符串转化为枚举值PLVLCLivePageMenuType
@@ -42,6 +43,9 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 直播状态改变时调用
 - (void)updateLiveStatus:(PLVLCLiveStatus)liveStatus;
 
+/// 直播用户信息发生改变时调用
+- (void)updateLiveUserInfo;
+
 @end
 
 @protocol PLVLCLivePageMenuAreaViewDelegate <NSObject>
@@ -54,6 +58,11 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param time 跳转指定时间
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView seekTime:(NSTimeInterval)time;
+
+/// 点击商品库中的商品的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param linkURL 商品详情的链接url
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL;
 
 @end
 NS_ASSUME_NONNULL_END

@@ -10,6 +10,7 @@
 
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
 /// 固定值
 /// 宽度
@@ -477,6 +478,10 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 }
 
 - (void)onOffButtonAction:(UIButton *)button{
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [PLVLCUtils showHUDWithTitle:@"小窗播放中，不支持连麦" detail:@"" view:self.superview];
+        return;
+    }
     // 防止短时间内重复点击，kLinkMicBtnTouchInterval间隔内的点击会直接忽略
     NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
     if (curTimeInterval - self.linkMicBtnLastTimeInterval > kLinkMicBtnTouchInterval) {

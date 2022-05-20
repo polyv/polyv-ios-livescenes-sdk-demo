@@ -1,30 +1,30 @@
 //
-//  PLVECGoodsDetailViewController.m
+//  PLVCommodityDetailViewController.m
 //  PLVLiveScenesDemo
 //
 //  Created by MissYasiky on 2020/12/2.
 //  Copyright © 2020 PLV. All rights reserved.
 //
 
-#import "PLVECGoodsDetailViewController.h"
+#import "PLVCommodityDetailViewController.h"
 #import "PLVECFloatingWindow.h"
 #import <WebKit/WebKit.h>
 
-@interface PLVECGoodsDetailViewController ()
+@interface PLVCommodityDetailViewController ()
 
 @property (nonatomic, strong) WKWebView *webView;
-@property (nonatomic, strong) NSURL *goodsURL;
+@property (nonatomic, strong) NSURL *commodityURL;
 
 @end
 
-@implementation PLVECGoodsDetailViewController
+@implementation PLVCommodityDetailViewController
 
 #pragma mark - Life Cycle
 
-- (instancetype)initWithGoodsURL:(NSURL *)URL {
+- (instancetype)initWithCommodityURL:(NSURL *)URL {
     self = [super init];
     if (self) {
-        self.goodsURL = URL;
+        self.commodityURL = URL;
     }
     return self;
 }
@@ -79,10 +79,13 @@
     } else {
         [self dismissViewControllerAnimated:YES completion:nil];
     }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityDetailViewControllerAfterTheBack)]) {
+        [self.delegate plvCommodityDetailViewControllerAfterTheBack];
+    }
 }
 
 - (void)loadURL {
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:self.goodsURL
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:self.commodityURL
                                                            cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
     [self.webView loadRequest:request];
 }

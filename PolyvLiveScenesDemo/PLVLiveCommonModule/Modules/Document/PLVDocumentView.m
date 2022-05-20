@@ -13,7 +13,8 @@
 @interface PLVDocumentView ()<
 WKNavigationDelegate,
 PLVWebViewBridgeProtocol,
-PLVSocketManagerProtocol
+PLVSocketManagerProtocol,
+UIGestureRecognizerDelegate
 >
 
 /// view hierarchy
@@ -158,9 +159,19 @@ PLVSocketManagerProtocol
         } else {
             _webView.userInteractionEnabled = NO;
         }
+        
+        // 禁用拷贝查询弹出框
+        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:nil];
+        longPress.delegate = self;
+        longPress.minimumPressDuration = 0.4;
+        [_webView addGestureRecognizer:longPress];
     }
     
     return _webView;
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldRecognizeSimultaneouslyWithGestureRecognizer:(UIGestureRecognizer *)otherGestureRecognizer {
+    return NO;
 }
 
 - (PLVWebViewBridge *)jsBridge {

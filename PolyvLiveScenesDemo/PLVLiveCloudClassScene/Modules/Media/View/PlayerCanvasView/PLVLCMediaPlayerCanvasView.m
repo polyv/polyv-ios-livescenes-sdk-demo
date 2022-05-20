@@ -11,6 +11,7 @@
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
+#import "PLVLivePictureInPicturePlaceholderView.h"
 
 static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.net/default-img/channel/default-splash.png";//讲师默认封面图地址
 
@@ -28,26 +29,30 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 /// (PLVLCMediaPlayerCanvasView) self
 /// ├── (UIImageView) placeholderImageView (lowest)
 /// ├── (UILabel) tipsLabel
-/// └── (UIView) playerSuperview (top)
+/// ├── (UIView) playerSuperview
+/// └── (PLVLivePictureInPicturePlaceholderView) pictureInPicturePlaceholderView (top)
 ///
 /// 音频模式 时:
 /// (PLVLCMediaPlayerCanvasView) self
 /// ├── (UIImageView) placeholderImageView (lowest)
 /// ├── (UIButton) playerSuperview
-/// └── (UIView) playCanvasButton (top)
+/// ├── (UIView) playCanvasButton
+/// └── (PLVLivePictureInPicturePlaceholderView) pictureInPicturePlaceholderView (top)
 ///
 /// 仅支持音频模式 时:
 /// (PLVLCMediaPlayerCanvasView) self
 /// ├── (UIImageView) placeholderImageView (lowest)
 /// ├── (UIButton) playCanvasButton
 /// ├── (UIButton) playerSuperview
-/// └── (UIView) splashImageView (top)
+/// ├── (UIView) splashImageView
+/// └── (PLVLivePictureInPicturePlaceholderView) pictureInPicturePlaceholderView (top)
 @property (nonatomic, strong) UIImageView * placeholderImageView; // 背景视图 (负责展示 占位图)
 @property (nonatomic, strong) UIImageView *splashImageView; // 音频背景视图（只支持音频模式时显示）
 @property (nonatomic, strong) UILabel * tipsLabel;      // 提示文本框
 @property (nonatomic, strong) UIImageView * restImageView; // 休息一会视图
 @property (nonatomic, strong) UIView * playerSuperview; // 播放器父视图 (负责承载 播放器画面；决定了 播放器画面 所处在的图层层级)
 @property (nonatomic, strong) UIButton * playCanvasButton; // 播放画面按钮
+@property (nonatomic, strong) PLVLivePictureInPicturePlaceholderView *pictureInPicturePlaceholderView;    // 画中画占位图
 
 @end
 
@@ -106,6 +111,8 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     
     self.playerSuperview.frame = self.bounds;
     self.splashImageView.frame = self.playerSuperview.bounds;
+    
+    self.pictureInPicturePlaceholderView.frame = self.bounds;
 
     //[self refreshplayerSuperviewFrame];
 }
@@ -171,6 +178,10 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     self.splashImageView.hidden = YES;
 }
 
+- (void)setPictureInPicturePlaceholderShow:(BOOL)show {
+    self.pictureInPicturePlaceholderView.hidden = !show;
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
     self.backgroundColor = PLV_UIColorFromRGB(@"2B3145");
@@ -180,6 +191,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     [self addSubview:self.playerSuperview];
     [self addSubview:self.playCanvasButton];
     [self addSubview:self.splashImageView];
+    [self addSubview:self.pictureInPicturePlaceholderView];
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -240,6 +252,14 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     return _splashImageView;
 }
 
+- (PLVLivePictureInPicturePlaceholderView *)pictureInPicturePlaceholderView {
+    if (!_pictureInPicturePlaceholderView) {
+        _pictureInPicturePlaceholderView = [[PLVLivePictureInPicturePlaceholderView alloc] init];
+        _pictureInPicturePlaceholderView.hidden = YES;
+    }
+    return _pictureInPicturePlaceholderView;
+}
+
 - (UILabel *)tipsLabel{
     if (!_tipsLabel) {
         _tipsLabel = [[UILabel alloc] init];
@@ -291,7 +311,6 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     return viewWidth < CGRectGetWidth([UIScreen mainScreen].bounds) / 2.0;
 }
-
 
 #pragma mark - [ Event ]
 #pragma mark Action

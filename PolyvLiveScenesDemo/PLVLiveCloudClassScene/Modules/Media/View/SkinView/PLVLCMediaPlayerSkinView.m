@@ -65,6 +65,9 @@
         
         CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
         self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
+        self.pictureInPictureButton.frame = CGRectMake(self.moreButton.frame.origin.x - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
+        [self refreshPictureInPictureButtonFrame];
+        
         
         // 底部UI
         CGFloat bottomShadowLayerHeight = 70.0;
@@ -100,6 +103,22 @@
     }else{
         self.hidden = YES;
     }
+}
+
+- (void)refreshPictureInPictureButtonFrame {
+    CGFloat toppadding;
+    if (@available(iOS 11.0, *)) {
+        toppadding = self.safeAreaInsets.top;
+    } else {
+        toppadding = 20;
+    }
+    toppadding += 4; /// 顶部距离增加间隙值
+    CGSize buttonSize = CGSizeMake(40.0, 40.0);
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
+    CGFloat moreBtnFrameX = viewWidth - rightPadding - buttonSize.width;
+    CGFloat pipFrameX = self.moreButton.hidden ? moreBtnFrameX : moreBtnFrameX - buttonSize.width;
+    self.pictureInPictureButton.frame = CGRectMake(pipFrameX, toppadding, buttonSize.width, buttonSize.height);
 }
 
 #pragma mark - [ Father Public Methods ]
@@ -149,6 +168,8 @@
     if (_skinViewLiveStatus == skinViewLiveStatus) { return; }
 
     _skinViewLiveStatus = skinViewLiveStatus;
+    
+    [self refreshPictureInPictureButtonFrame];
         
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshRefreshButtonFrame];
@@ -176,6 +197,11 @@
     }
 
     self.floatViewShowButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
+}
+
+- (void)refreshMoreButtonHiddenOrRestore:(BOOL)hidden {
+    [super refreshMoreButtonHiddenOrRestore:hidden];
+    [self refreshPictureInPictureButtonFrame];
 }
 
 @end

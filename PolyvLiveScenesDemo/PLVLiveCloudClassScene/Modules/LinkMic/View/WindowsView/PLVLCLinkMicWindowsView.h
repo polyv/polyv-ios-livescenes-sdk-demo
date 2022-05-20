@@ -39,6 +39,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 刷新全部连麦画布视图
 - (void)refreshAllLinkMicCanvasPauseImageView:(BOOL)noDelayPaused;
 
+/// 刷新全部连麦画布视图的画中画占位图
+- (void)refreshAllLinkMicCanvasPictureInPicturePlaceholder:(BOOL)show;
+
 @end
 
 @protocol PLVLCLinkMicWindowsViewDelegate <NSObject>
