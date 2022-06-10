@@ -12,6 +12,7 @@
 #import "PLVLCMediaPlayerCanvasView.h"
 #import "PLVLCMediaMoreView.h"
 #import "PLVWatermarkView.h"
+#import "PLVLCDownloadBottomSheet.h"
 
 // 模块
 #import "PLVDocumentView.h"
@@ -26,6 +27,7 @@
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
+static NSString *const PLVLCMediaAreaView_Data_DownloadOptionTitle = @"下载";
 static NSString *const PLVLCMediaAreaView_Data_ModeOptionTitle = @"模式";
 static NSString *const PLVLCMediaAreaView_Data_QualityOptionTitle = @"视频质量";
 static NSString *const PLVLCMediaAreaView_Data_RouteOptionTitle = @"线路";
@@ -63,6 +65,7 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVDocumentView * pptView;                 // PPT 功能模块
 @property (nonatomic, assign) NSInteger tryPlayPPTViewNum; // 尝试播放PPTView次数
 @property (nonatomic, assign) UIView *pictureInPictureOriginView;   // 画中画视图的起始视图，这个视图必须是激活状态的，否则无法开启画中画。
+@property (nonatomic, strong) PLVLCDownloadBottomSheet *downloadSheet;
 
 #pragma mark 数据
 @property (nonatomic, readonly) PLVRoomData *roomData;  // 只读，当前直播间数据
@@ -377,6 +380,10 @@ PLVRoomDataManagerProtocol
     [self.skinView refreshPictureInPictureButtonShow:show];
 }
 
+- (void)changeFileId:(NSString *)fileId {
+    [self.playerPresenter changeFileId:fileId];
+}
+
 #pragma mark 网络质量
 - (void)showNetworkQualityMiddleView {
     if (self.networkQualityMiddleViewShowed) {
@@ -542,9 +549,19 @@ PLVRoomDataManagerProtocol
 
 - (NSArray *)getMoreViewDefaultDataArray{
     if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
+        PLVLCMediaMoreModel *downloadModel = nil;
+        if ([PLVRoomDataManager sharedManager].roomData.playbackVideoInfo.playbackCacheEnabled) {
+            downloadModel = [PLVLCMediaMoreModel modelWithSwitchTitle:PLVLCMediaAreaView_Data_DownloadOptionTitle normalImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selectedImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selected:NO];
+        }
+        
         PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_SpeedOptionTitle optionItemsArray:@[@"0.5x",@"1.0x",@"1.5x",@"2.0x"] selectedIndex:1];
         speedModel.optionSpecifiedWidth = 50.0;
-        return @[speedModel];
+        
+        NSMutableArray * modelArray = [[NSMutableArray alloc] init];
+        if (downloadModel) { [modelArray addObject:downloadModel]; }
+        [modelArray addObject:speedModel];
+        
+        return modelArray;
     }
     return nil;
 }
@@ -853,6 +870,19 @@ PLVRoomDataManagerProtocol
     return _networkQualityPoorView;
 }
 
+- (PLVLCDownloadBottomSheet *)downloadSheet {
+    if (!_downloadSheet) {
+        _downloadSheet = [[PLVLCDownloadBottomSheet alloc]initWithSheetHeight:293];
+        __weak typeof(self) weakSelf = self;
+        [_downloadSheet setClickDownloadListBlock:^{
+            if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(plvLCMediaAreaViewClickDownloadListButton:)]) {
+                [weakSelf.delegate plvLCMediaAreaViewClickDownloadListButton:weakSelf];
+            }
+        }];
+    }
+    return _downloadSheet;
+}
+
 - (BOOL)inLinkMic{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMic:)]) {
         return [self.delegate plvLCMediaAreaViewGetInLinkMic:self];
@@ -1086,6 +1116,9 @@ PLVRoomDataManagerProtocol
     } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_LiveDelayOptionTitle]) {
         // 用户点选了“延迟”中的选项
         [self switchToNoDelayWatchMode:model.selectedIndex == 0];
+    } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_DownloadOptionTitle]) {
+        // 用户点击了“下载”按钮
+        [self.downloadSheet showInView:self.superview];
     }
 }
 
@@ -1180,6 +1213,34 @@ PLVRoomDataManagerProtocol
     [self setupMarquee:roomData.channelInfo customNick:roomData.roomUser.viewerName];
     if (self.videoType == PLVChannelVideoType_Playback) {
         [self setupWatermark];
+    }
+}
+
+/// 播放器 ‘回放视频信息’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [self.downloadSheet updatePlaybackInfoWithData:roomData];
+    
+    if ([videoInfo isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]]) {
+        // 本地回放视频信息
+        PLVPlaybackLocalVideoInfoModel *localPlaybackVideoInfo = (PLVPlaybackLocalVideoInfoModel *)videoInfo;
+        NSString *localHtmlPath = localPlaybackVideoInfo.localHtmlPath;
+        NSString *accessPath = localPlaybackVideoInfo.fileIdPath;
+        [self.pptView loadRequestWithLocalHtml:localHtmlPath allowingReadAccessToURL:accessPath];
+        
+        [self.pptView pptSetOfflinePath:localPlaybackVideoInfo.pptPath];
+        if ([localPlaybackVideoInfo.listType isEqualToString:@"record"]) {
+            [self.pptView pptLocalStartWithVideoId:localPlaybackVideoInfo.fileId vid:localPlaybackVideoInfo.fileId];
+        }else {
+            [self.pptView pptLocalStartWithVideoId:localPlaybackVideoInfo.videoId vid:localPlaybackVideoInfo.videoPoolId];
+        }
+    }
+    
+    [self.moreView refreshTableViewWithDataArray:[self getMoreViewDefaultDataArray]];
+    [self.moreView refreshTableView];
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playbackVideoInfoDidUpdated:)]) {
+        [self.delegate plvLCMediaAreaView:self playbackVideoInfoDidUpdated:videoInfo];
     }
 }
 

@@ -14,10 +14,12 @@
 
 #pragma mark 数据
 @property (nonatomic, strong) PLVLCMediaMoreModel * currentModel;
+@property (nonatomic, assign) PLVLCMediaMoreModelMode cellMode;
 
 #pragma mark UI
 @property (nonatomic, strong) UIButton * currentSelectedButton;
 @property (nonatomic, strong) NSMutableArray <UIButton *> * buttonsArray;
+@property (nonatomic, strong) NSMutableArray <PLVLCMediaMoreModel *> * currentSwitchesDataArray;
 /// view hierarchy
 ///
 /// (PLVLCMediaMoreCell) self
@@ -44,15 +46,17 @@
 - (void)layoutSubviews{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL isSwitchMode = self.cellMode == PLVLCMediaMoreModelMode_Switch;
     
-    if (!fullScreen) {
+    if (!fullScreen && !isPad) {
         // 竖屏布局
         CGFloat topPadding = 15.0;
         
         CGFloat leftPaddingScale = 88.0 / 375.0;
         CGFloat leftPadding = leftPaddingScale * viewWidth;
         
-        CGFloat controlsHeight = 26.0;
+        CGFloat controlsHeight = isSwitchMode ? 52 : 26.0;
         
         CGFloat optionTitleLabelLeftPaddingForTail = leftPadding - 24.0;
         CGFloat optionTitleLabelWidth = [self.optionTitleLabel sizeThatFits:CGSizeMake(60, controlsHeight)].width;
@@ -65,7 +69,12 @@
             UIButton * button = self.buttonsArray[i];
             
             CGFloat buttonsPadding = 16.0;
-            CGFloat buttonX = (i == 0 ? leftPadding : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+            CGFloat buttonX;
+            if (isSwitchMode) {
+                buttonX = (i == 0 ? optionTitleLabelX : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+            } else {
+                buttonX = (i == 0 ? leftPadding : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+            }
             CGFloat buttonWidth = [button.titleLabel sizeThatFits:CGSizeMake(100, controlsHeight)].width + (12 * 2);
             if (self.currentModel.optionSpecifiedWidth > 0) {
                 buttonWidth = self.currentModel.optionSpecifiedWidth;
@@ -73,6 +82,10 @@
                 buttonWidth = 66.0;
             }
             button.frame = CGRectMake(buttonX, topPadding, buttonWidth, controlsHeight);
+            if (isSwitchMode) {
+                button.titleEdgeInsets = UIEdgeInsetsMake(0, -button.imageView.frame.size.width, -button.imageView.frame.size.height, 0);
+                button.imageEdgeInsets = UIEdgeInsetsMake(-button.titleLabel.intrinsicContentSize.height, 0, 0, -button.titleLabel.intrinsicContentSize.width);
+            }
             lastButton = button;
         }
     }else{
@@ -94,6 +107,11 @@
                 buttonWidth = 66.0;
             }
             button.frame = CGRectMake(buttonX, 32, buttonWidth, 26.0);
+            if (isSwitchMode) {
+                button.frame = CGRectMake(buttonX, 0, buttonWidth, 52.0);
+                button.titleEdgeInsets = UIEdgeInsetsMake(0, -button.imageView.frame.size.width, -button.imageView.frame.size.height, 0);
+                button.imageEdgeInsets = UIEdgeInsetsMake(-button.titleLabel.intrinsicContentSize.height, 0, 0, -button.titleLabel.intrinsicContentSize.width);
+            }
             lastButton = button;
         }
     }
@@ -111,29 +129,56 @@
     }
     
     self.optionTitleLabel.text = model.optionTitle;
+    self.optionTitleLabel.hidden = NO;
+    self.cellMode = model.mediaMoreModelMode;
     [self resetCurrentSelectedButton];
     
-    /// 创建或复用 Buttons
+    /// 创建 Buttons
     if ([PLVFdUtil checkArrayUseable:model.optionItemsArray]) {
+        [self.buttonsArray removeAllObjects];
         for (int i = 0; i < model.optionItemsArray.count; i++) {
             NSString * optionItemTitle = model.optionItemsArray[i];
-            UIButton * button;
-            if (i < self.buttonsArray.count) { button = self.buttonsArray[i]; }
-            if (button) {
-                [button setTitle:optionItemTitle forState:UIControlStateNormal];
-            }else{
-                button = [self createButtonWithOptionItemTitle:optionItemTitle];
-                [self.contentView addSubview:button];
-                [self.buttonsArray addObject:button];
-            }
+            UIButton * button = [self createButtonWithOptionItemTitle:optionItemTitle];
+            [self.contentView addSubview:button];
+            [self.buttonsArray addObject:button];
             if (model.selectedIndex == i) { self.currentSelectedButton = button; }
-            button.hidden = NO;
         }
     }
     
     self.currentModel = model;
 }
 
+- (void)openDanmuButton:(BOOL)open {
+    for (int i = 0; i < self.buttonsArray.count ; i++) {
+        UIButton *button = self.buttonsArray[i];
+        if ([button.titleLabel.text isEqualToString:@"弹幕"]) {
+            button.selected = open;
+            break;
+        }
+    };
+}
+
+- (void)setSwitchesDataArray:(NSMutableArray<PLVLCMediaMoreModel *> *)switchesDataArray {
+    for (UIView * subviews in self.contentView.subviews) {
+        if ([subviews isKindOfClass:UIButton.class]) {
+            subviews.hidden = YES;
+        }
+    }
+    self.optionTitleLabel.hidden = YES;
+
+    [self resetCurrentSelectedButton];
+    
+    if ([PLVFdUtil checkArrayUseable:switchesDataArray]) {
+        self.currentSwitchesDataArray = [switchesDataArray mutableCopy];
+        self.cellMode = switchesDataArray.firstObject.mediaMoreModelMode;
+        [self.buttonsArray removeAllObjects];
+        for (int i = 0; i < switchesDataArray.count; i++) {
+            UIButton * button = [self createButtonWithModel:switchesDataArray[i]];
+            [self.contentView addSubview:button];
+            [self.buttonsArray addObject:button];
+        }
+    }
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setupData{
@@ -144,7 +189,9 @@
     self.backgroundColor = [UIColor clearColor];
     
     // 添加视图
-    [self.contentView addSubview:self.optionTitleLabel];
+    if (self.cellMode == PLVLCMediaMoreModelMode_Options) {
+        [self.contentView addSubview:self.optionTitleLabel];
+    }
 }
 
 - (UIButton *)createButtonWithOptionItemTitle:(NSString *)optionItemTitle{
@@ -160,6 +207,20 @@
     [button addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     return button;
 }
+
+- (UIButton *)createButtonWithModel:(PLVLCMediaMoreModel *)model{
+    UIButton * button = [UIButton buttonWithType:UIButtonTypeCustom];
+    [button setTitle:model.optionTitle forState:UIControlStateNormal];
+    [button setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [button setTitleColor:PLV_UIColorFromRGB(@"6DA7FF") forState:UIControlStateSelected];
+    button.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
+    [button setImage:model.switchNormalImage forState:UIControlStateNormal];
+    [button setImage:model.switchSelectedImage forState:UIControlStateSelected];
+    button.selected = model.selectedIndex == 1 ? YES : NO;
+    [button addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
+    return button;
+}
+
 
 - (void)resetCurrentSelectedButton{
     if (_currentSelectedButton) {
@@ -193,10 +254,23 @@
 - (void)buttonAction:(UIButton *)button{
     [self resetCurrentSelectedButton];
     
-    self.currentSelectedButton = button;
-    
-    NSInteger buttonIndex = [self.buttonsArray indexOfObject:button];
-    self.currentModel.selectedIndex = buttonIndex;
+    if (self.cellMode == PLVLCMediaMoreModelMode_Options) {
+        self.currentSelectedButton = button;
+        
+        NSInteger buttonIndex = [self.buttonsArray indexOfObject:button];
+        self.currentModel.selectedIndex = buttonIndex;
+    } else {
+        if ([PLVFdUtil checkArrayUseable:self.currentSwitchesDataArray]) {
+            for (int i = 0; i < self.currentSwitchesDataArray.count; i++) {
+
+                if ([button.titleLabel.text isEqualToString:self.currentSwitchesDataArray[i].optionTitle]) {
+                    self.currentModel = self.currentSwitchesDataArray[i];
+                    self.currentModel.selectedIndex = !button.selected ? 1 : 0;
+                    break;
+                }
+            }
+        }
+    }
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaMoreCell:buttonClickedWithModel:)]) {
         [self.delegate plvLCMediaMoreCell:self buttonClickedWithModel:self.currentModel];

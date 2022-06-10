@@ -15,6 +15,7 @@
 #import "PLVPopoverView.h"
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
 #import "PLVLivePictureInPictureRestoreManager.h"
+#import "PLVLCDownloadViewModel.h"
 
 // UI
 #import "PLVLCMediaAreaView.h"
@@ -26,7 +27,7 @@
 #import "PLVCommodityPushView.h"
 #import "PLVBaseNavigationController.h"
 #import "PLVCommodityDetailViewController.h"
-
+#import "PLVLCDownloadListViewController.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -177,14 +178,38 @@ PLVPopoverViewDelegate
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLCChatroomOpenBulletinNotification object:nil];
         
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenLotteryRecord:) name:PLVLCChatroomOpenLotteryRecordNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenInteractApp:) name:PLVLCChatroomOpenInteractAppNotification object:nil];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenRewardView:) name:PLVLCChatroomOpenRewardViewNotification object:nil];
 
         
     } else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
-    
+        __weak typeof(self) weakSelf = self;
+        [[PLVLCDownloadViewModel sharedViewModel] setup];
+        NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+        [[PLVLCDownloadViewModel sharedViewModel] setupDownloadViewerId:viewerId];
+        [[PLVLCDownloadViewModel sharedViewModel] setExitViewControllerFromDownlaodListBlock:^{
+            [weakSelf releaseCurrenrController];
+        }];
+        
+        [[PLVLCDownloadViewModel sharedViewModel] setRefreshWatchPlayerAfterDeleteTaskInfoBlock:^(NSString * _Nonnull deleteFileId) {
+            PLVPlaybackVideoInfoModel *model = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+            if ([model isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]] &&
+                [model.fileId isEqualToString:deleteFileId]) {
+                // 当删除的视频 是当前正在播放的视频的时候，刷新播放器
+                [weakSelf.mediaAreaView changeFileId:deleteFileId];
+            }
+        }];
     }
+}
+
+- (void)releaseCurrenrController {
+    [PLVRoomLoginClient logout];
+    [[PLVSocketManager sharedManager] logout];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    
+    [[PLVLCChatroomViewModel sharedViewModel] clear];
+    [[PLVLCDownloadViewModel sharedViewModel] clear];
 }
 
 - (void)setupUI {
@@ -359,6 +384,7 @@ PLVPopoverViewDelegate
     }
     
     [[PLVLCChatroomViewModel sharedViewModel] clear];
+    [[PLVLCDownloadViewModel sharedViewModel] clear];
 }
 
 - (void)startCountdownTimer {
@@ -563,8 +589,10 @@ PLVPopoverViewDelegate
     [self.popoverView showRewardView];
 }
 
-- (void)notificationForOpenLotteryRecord:(NSNotification *)notif {
-    [self.popoverView.interactView openLotteryWinRecord];
+- (void)notificationForOpenInteractApp:(NSNotification *)notif {
+    if ([PLVFdUtil checkStringUseable:notif.object]) {
+        [self.popoverView.interactView openInteractAppWithEventName:notif.object];
+    }
 }
 
 #pragma mark - [ Delegate ]
@@ -855,6 +883,29 @@ PLVPopoverViewDelegate
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveWannaPlay:(BOOL)wannaPlay {
     [self noDelayLiveWannaPlay:wannaPlay];
     [self.linkMicAreaView pauseWatchNoDelay:!wannaPlay];
+}
+
+-(void)plvLCMediaAreaViewClickDownloadListButton:(PLVLCMediaAreaView *)mediaAreaView {
+    PLVLCDownloadListViewController *downlistVC = [[PLVLCDownloadListViewController alloc]init];
+    
+    if (self.navigationController) {
+        self.navigationController.navigationBarHidden = NO;
+        [self.navigationController pushViewController:downlistVC animated:YES];
+    } else {
+        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:downlistVC];
+        nav.navigationBarHidden = NO;
+        nav.modalPresentationStyle = UIModalPresentationFullScreen;
+        
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+}
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
+    if ([videoInfo isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]]) {
+        [self.menuAreaView updateLiveStatus:PLVLCLiveStatusCached];
+    }else {
+        [self.menuAreaView updateLiveStatus:PLVLCLiveStatusPlayback];
+    }
 }
 
 #pragma mark PLVLCLiveRoomPlayerSkinViewDelegate

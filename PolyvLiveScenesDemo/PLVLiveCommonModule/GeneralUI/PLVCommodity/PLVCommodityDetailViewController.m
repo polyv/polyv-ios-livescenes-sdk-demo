@@ -7,7 +7,6 @@
 //
 
 #import "PLVCommodityDetailViewController.h"
-#import "PLVECFloatingWindow.h"
 #import <WebKit/WebKit.h>
 
 @interface PLVCommodityDetailViewController ()

@@ -21,6 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setModel:(PLVLCMediaMoreModel *)model;
 
+- (void)openDanmuButton:(BOOL)open;
+
+/// 配置功能开关数据
+/// @param switchesDataArray 功能开关数据
+- (void)setSwitchesDataArray:(NSMutableArray<PLVLCMediaMoreModel *> *)switchesDataArray;
+
 @end
 
 @protocol PLVLCMediaMoreCellDelegate <NSObject>

@@ -94,6 +94,8 @@ static CGFloat kSideSheetAnimationDuration = 0.5;
     }];
 }
 
+- (void)initView {}
+
 - (void)reset {
     self.frame = self.superview.bounds;
     self.gestureView.frame = self.bounds;

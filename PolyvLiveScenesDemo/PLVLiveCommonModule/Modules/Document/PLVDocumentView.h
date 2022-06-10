@@ -131,12 +131,26 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 /// @param paramString h5链接后面的参数字符串（key=value&key=value&...）
 - (void)loadRequestWitParamString:(NSString * _Nullable)paramString;
 
+/// 加载本地 ppt 链接
+/// @param filePath 本地ppt路径
+/// @param accessPath 允许的本地资源路径
+- (void)loadRequestWithLocalHtml:(NSString *)filePath allowingReadAccessToURL:(NSString *)accessPath;
+
 /// 白板、PPT内部翻页
 /// @note 区别 'changePPTWithAutoId:pageNumber:'，不可用于白板与PPT之间的切换，或打开另一份PPT文档
 /// @param type 翻页类型
 - (void)changePPTPageWithType:(PLVChangePPTPageType)type;
 
 #pragma mark - 观看专用方法(scene == PLVDocumentViewSceneCloudClass/PLVDocumentViewSceneEcommerce 时方生效）
+
+/// 【观看回放时】设置本地ppt路径
+/// @param path ppt路径
+- (void)pptSetOfflinePath:(NSString *)path;
+
+/// 【观看回放时】加载本地ppt
+/// @param videoId 暂存视频为fileId，回放视频为videoId
+/// @param vid 暂存视频为fileId，回放视频为videopoolId
+- (void)pptLocalStartWithVideoId:(NSString *)videoId vid:(NSString *)vid;
 
 /// 【观看直播时】设置视频SEI信息
 /// @param newTimeStamp SEI信息

@@ -149,12 +149,14 @@ PLVECChatroomViewDelegate
         [self addSubview:self.chatroomView];
         [self addSubview:self.likeButtonView];
         [self addSubview:self.giftButton];
-        [self addSubview:self.shoppingCartButton];
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.playerContolView];
-        [self addSubview:self.playbackListButton];
+        if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
+            [self addSubview:self.playbackListButton];
+        }
     }
     [self addSubview:self.moreButton];
+    [self addSubview:self.shoppingCartButton];
 }
 
 #pragma mark - Getter & Setter
@@ -509,8 +511,10 @@ PLVECChatroomViewDelegate
         
     } else if (self.type == PLVECHomePageType_Playback) {
         // 底部控件
-        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
-        self.playerContolView.frame = CGRectMake(0, CGRectGetHeight(self.bounds)-41-P_SafeAreaBottomEdgeInsets(), CGRectGetMinX(self.moreButton.frame)-8, 41);
+        self.playbackListButton.frame = CGRectMake(15, CGRectGetHeight(self.bounds) - buttonWidth - 15 - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - buttonWidth - 15, CGRectGetHeight(self.bounds) - buttonWidth - 15 - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+        self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
+        self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 32, CGRectGetMaxX(self.moreButton.frame), 41);
     }
 }
 

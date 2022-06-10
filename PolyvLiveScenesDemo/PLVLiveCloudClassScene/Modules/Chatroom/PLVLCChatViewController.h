@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString *PLVLCChatroomOpenBulletinNotification;
 
-extern NSString *PLVLCChatroomOpenLotteryRecordNotification;
+extern NSString *PLVLCChatroomOpenInteractAppNotification;
 
 extern NSString *PLVLCChatroomOpenRewardViewNotification;
 

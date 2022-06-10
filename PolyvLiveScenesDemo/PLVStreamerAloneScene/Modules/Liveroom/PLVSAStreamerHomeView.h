@@ -59,6 +59,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 关闭 按钮触发回调
 - (void)streamerHomeViewDidTapCloseButton:(PLVSAStreamerHomeView *)homeView;
 
+/// 点击 美颜 按钮触发回调
+- (void)streamerHomeViewDidTapBeautyButton:(PLVSAStreamerHomeView *)homeView;
+
+
 @end
 
 @interface PLVSAStreamerHomeView : UIView
@@ -119,6 +123,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 改变屏幕共享按钮选中状态
 /// @param selectedState 选中状态 (YES:选中，开启屏幕共享 NO:未选中，关闭屏幕共享)
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
+
+/// 是否显示美颜弹窗
+/// @param show YES: 显示；NO：隐藏
+- (void)showBeautySheet:(BOOL)show;
 
 @end
 

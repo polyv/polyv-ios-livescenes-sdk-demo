@@ -106,6 +106,49 @@
     return [self imageFromBundle:@"PLVHCLinkMic" imageName:imageName];
 }
 
++ (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder {
+    [self setImageView:imageView url:url placeholderImage:placeholder options:0 progress:nil completed:nil];
+}
+
++ (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder completed:(nullable SDExternalCompletionBlock)completedBlock {
+    [self setImageView:imageView url:url placeholderImage:placeholder options:0 progress:nil completed:completedBlock];
+}
+
++ (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder options:(SDWebImageOptions)options {
+    [self setImageView:imageView url:url placeholderImage:placeholder options:options progress:nil completed:nil];
+}
+
++ (void)setImageView:(UIImageView *)imageView
+                 url:(nullable NSURL *)url
+    placeholderImage:(nullable UIImage *)placeholder
+             options:(SDWebImageOptions)options
+            progress:(nullable SDWebImageDownloaderProgressBlock)progressBlock
+           completed:(nullable SDExternalCompletionBlock)completedBlock {
+    if (!imageView || ![imageView isKindOfClass:UIImageView.class]) {
+        return;
+    }
+    
+    if (!url) {
+        return;
+    }
+    
+    if ([url.absoluteString containsString:@".gif"]) {
+        [[SDWebImageDownloader sharedDownloader]downloadImageWithURL:url options:SDWebImageDownloaderUseNSURLCache progress:progressBlock completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
+            if (finished) {
+                UIImage *imageData = [UIImage imageWithData:data];
+                [imageView setImage:imageData];
+            } else {
+                imageView.image = placeholder;
+            }
+            if (completedBlock) {
+                completedBlock(image, error, SDImageCacheTypeNone, nil);
+            }
+        }];
+    } else {
+        [imageView sd_setImageWithURL:url placeholderImage:placeholder options:options progress:progressBlock completed:completedBlock];
+    }
+}
+
 #pragma mark NSBundle
 
 + (NSBundle *)bundlerForLiveroom {

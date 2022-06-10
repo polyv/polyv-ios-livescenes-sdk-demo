@@ -23,7 +23,6 @@
 // SDK
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 
 @interface PLVSAQuoteMessageCell ()
@@ -183,7 +182,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     self.quoteImageView.hidden = !quoteImageURL;
     if (quoteImageURL) {
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
-        [self.quoteImageView sd_setImageWithURL:quoteImageURL
+        [PLVSAUtils setImageView:self.quoteImageView url:quoteImageURL
                                placeholderImage:placeHolderImage
                                         options:SDWebImageRetryFailed];
     }

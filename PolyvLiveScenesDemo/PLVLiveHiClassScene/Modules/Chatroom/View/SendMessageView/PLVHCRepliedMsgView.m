@@ -16,7 +16,6 @@
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVHCRepliedMsgView()
 
@@ -107,9 +106,7 @@
         NSURL *imageURL = [PLVHCRepliedMsgView imageURLWithMessage:imageMsg];
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
         if (imageURL) {
-            [self.imageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+            [PLVHCUtils setImageView:self.imageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
         } else if (imageMsg.image) {
             [self.imageView setImage:imageMsg.image];
         } else {

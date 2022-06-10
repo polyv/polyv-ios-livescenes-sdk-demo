@@ -8,7 +8,6 @@
 
 #import "PLVLCPlaybackListViewCell.h"
 #import "PLVRoomDataManager.h"
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVLCUtils.h"
 
@@ -154,7 +153,7 @@
     self.startTimeLabel.text = [self startTimeExchangeWithString:playbackVideo.startTime];
     if ([PLVFdUtil checkStringUseable:playbackVideo.firstImage]) {
         NSString *url = [PLVFdUtil packageURLStringWithHTTPS:playbackVideo.firstImage];
-        [self.coverImageView sd_setImageWithURL:[NSURL URLWithString:url]];
+        [PLVLCUtils setImageView:self.coverImageView url:[NSURL URLWithString:url]];
     }
     
 }

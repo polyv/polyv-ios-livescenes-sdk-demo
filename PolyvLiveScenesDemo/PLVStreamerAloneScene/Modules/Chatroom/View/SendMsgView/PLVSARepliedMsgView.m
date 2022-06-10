@@ -17,7 +17,6 @@
 
 // SDK
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVSARepliedMsgView ()
 @property (nonatomic, strong) PLVChatModel *chatModel; // 被引用的消息模型
@@ -114,9 +113,7 @@
         NSURL *imageURL = [PLVSARepliedMsgView imageURLWithMessageImageUrl:imageMsg.imageUrl];
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
         if (imageURL) {
-            [self.imageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+            [PLVSAUtils setImageView:self.imageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
         } else if (imageMsg.image) {
             [self.imageView setImage:imageMsg.image];
         } else {
@@ -129,9 +126,7 @@
         NSURL *imageURL = [PLVSARepliedMsgView imageURLWithMessageImageUrl:imageMsg.imageUrl];
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
         if (imageURL) {
-            [self.imageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+            [PLVSAUtils setImageView:self.imageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
         } else {
             [self.imageView setImage:placeHolderImage];
         }

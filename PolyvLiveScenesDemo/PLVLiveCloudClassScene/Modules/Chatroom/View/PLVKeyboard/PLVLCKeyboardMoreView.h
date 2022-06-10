@@ -21,8 +21,8 @@
 /// 打开公告
 - (void)keyboardMoreView_openBulletin:(PLVLCKeyboardMoreView *)moreView;
 
-/// 打开中奖记录
-- (void)keyboardMoreView_openLotteryRecord:(PLVLCKeyboardMoreView *)moreView;
+/// 打开互动应用模块
+- (void)keyboardMoreView_openInteractApp:(PLVLCKeyboardMoreView *)moreView eventName:(NSString *)eventName;
 
 /// 点击【屏蔽特效】或【展示特效】
 /// @param on YES - 屏蔽特效；NO - 展示特效
@@ -44,11 +44,9 @@
 /// 是否隐藏公告按钮，默认 NO；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hiddenBulletin;
 
-/// 是否隐藏消息按钮，默认 YES；YES - 隐藏，NO - 显示
-@property (nonatomic, assign) BOOL hideLotteryWinRecord;
-
-/// 消息按钮红点是否显示，默认 NO；YES - 显示，NO - 隐藏
-@property (nonatomic, assign) BOOL isNewLotteryMessage;
+/// 更新按钮数据（根据传入的数据动态更新按钮）
+/// @param dataArray 前端传入的按钮数据
+- (void)updateChatButtonDataArray:(NSArray *)dataArray;
 
 /// 礼物打赏特效开关按钮是否隐藏，默认 YES；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hideRewardDisplaySwitch;

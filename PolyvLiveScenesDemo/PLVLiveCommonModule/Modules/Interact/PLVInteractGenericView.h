@@ -46,8 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 打开公告
 - (void)openLastBulletin;
 
-/// 打开抽奖记录
-- (void)openLotteryWinRecord;
+/// 打开互动应用弹窗
+/// @param eventName 事件名称，由 JS 传递过来。
+- (void)openInteractAppWithEventName:(NSString *)eventName;
 
 @end
 

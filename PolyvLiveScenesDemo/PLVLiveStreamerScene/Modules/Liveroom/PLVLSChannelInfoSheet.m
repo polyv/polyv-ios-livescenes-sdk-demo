@@ -11,7 +11,6 @@
 #import "PLVRoomDataManager.h"
 #import "PLVLSUtils.h"
 #import "PLVPhotoBrowser.h"
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 #import <WebKit/WebKit.h>
 
@@ -253,7 +252,7 @@ WKNavigationDelegate
         if (self.imageArray.count != 0) {
 //            NSUInteger index = [self.imageArray indexOfObject:imageUrlStr];
             UIImageView *imageView = [[UIImageView alloc] init];
-            [imageView sd_setImageWithURL:[NSURL URLWithString:imageUrlStr]];
+            [PLVLSUtils setImageView:imageView url:[NSURL URLWithString:imageUrlStr]];
             imageView.frame = CGRectMake(0, 0, 0, 0);
             imageView.center = CGPointMake(self.superview.bounds.size.width / 2.0, self.superview.bounds.size.height / 2.0);
             [self.photoBrowser scaleImageViewToFullScreen:imageView];

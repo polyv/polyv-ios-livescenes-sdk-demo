@@ -11,7 +11,7 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVRoomDataManager.h"
 
-static NSString *const PLVInteractLotteryWinRecordMessageNewCallbackNotification = @"PLVInteractLotteryWinRecordMessageNewCallbackNotification";
+static NSString *const PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
 
 @interface PLVInteractGenericView () <
 WKNavigationDelegate,
@@ -70,8 +70,10 @@ PLVInteractWebViewBridgeDelegate>
     [self.webViewBridge callWebViewEvent:@{@"event" : @"SHOW_BULLETIN"}];
 }
 
-- (void)openLotteryWinRecord {
-    [self.webViewBridge callWebViewEvent:@{@"event" : @"SHOW_LOTTERY_RECORD"}];
+- (void)openInteractAppWithEventName:(NSString *)eventName {
+    if ([PLVFdUtil checkStringUseable:eventName]) {
+        [self.webViewBridge callWebViewEvent:@{@"event" : eventName}];
+    }
 }
 
 #pragma mark - [ Private Method ]
@@ -255,9 +257,9 @@ PLVInteractWebViewBridgeDelegate>
 - (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge updateAppStatuWithJSONObject:(id)jsonObject {
     NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
     NSString *event = PLV_SafeStringForDictKey(dict, @"event");
-    if ([event isEqualToString:@"SHOW_LOTTERY_RECORD"]) { // 中奖记录按钮状态
+    if ([event isEqualToString:@"UPDATE_CHAT_BUTTON"]) { // 更新聊天室按钮
         NSDictionary *eventDict = PLV_SafeDictionaryForDictKey(dict, @"value");
-        [[NSNotificationCenter defaultCenter] postNotificationName:PLVInteractLotteryWinRecordMessageNewCallbackNotification object:nil userInfo:eventDict];
+        [[NSNotificationCenter defaultCenter] postNotificationName:PLVInteractUpdateChatButtonCallbackNotification object:nil userInfo:eventDict];
     }
 }
 

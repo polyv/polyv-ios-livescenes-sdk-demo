@@ -78,7 +78,7 @@
     if (!_closeButton) {
         _closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _closeButton.frame = CGRectMake(self.windowSize.width - 24, 0, 24, 24);
-        UIImage *image = [PLVECUtils imageForWatchResource:@"plv_commodity_close_btn"];
+        UIImage *image = [PLVECUtils imageForWatchResource:@"plv_floating_winow_close_btn"];
         [_closeButton setImage:image forState:UIControlStateNormal];
         [_closeButton addTarget:self action:@selector(closeAction) forControlEvents:UIControlEventTouchUpInside];
     }

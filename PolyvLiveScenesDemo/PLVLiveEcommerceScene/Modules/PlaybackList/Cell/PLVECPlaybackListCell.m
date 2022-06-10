@@ -7,7 +7,6 @@
 //
 
 #import "PLVECPlaybackListCell.h"
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVECUtils.h"
 
@@ -73,7 +72,7 @@
     self.timeLabel.text = videoModel.duration;
     self.titleLabel.text = videoModel.title;
     if ([PLVFdUtil checkStringUseable:videoModel.firstImage]) {
-        [self.firstImageView sd_setImageWithURL:[NSURL URLWithString:videoModel.firstImage]];
+        [PLVECUtils setImageView:self.firstImageView url:[NSURL URLWithString:videoModel.firstImage]];
     }
 
 }

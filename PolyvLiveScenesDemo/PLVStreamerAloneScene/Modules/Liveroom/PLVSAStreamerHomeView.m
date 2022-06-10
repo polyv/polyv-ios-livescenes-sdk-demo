@@ -284,6 +284,11 @@ PLVSALinkMicTipViewDelegate
     [self.moreInfoSheet changeScreenShareButtonSelectedState:selectedState];
 }
 
+- (void)showBeautySheet:(BOOL)show {
+    self.closeButton.hidden = show;
+    self.homePageView.hidden = show;
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupUIWithLinkMicWindowsView:(PLVSALinkMicWindowsView *)linkMicWindowsView {
@@ -665,6 +670,13 @@ PLVSALinkMicTipViewDelegate
 
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeCloseRoom:(BOOL)closeRoom {
     self.chatroomAreaView.closeRoom = closeRoom;
+}
+
+- (void)moreInfoSheetDidTapBeautyButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapBeautyButton:)]) {
+        [self.delegate streamerHomeViewDidTapBeautyButton:self];
+    }
 }
 
 #pragma mark PLVSABitRateSheetDelegate

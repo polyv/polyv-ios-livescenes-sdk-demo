@@ -21,7 +21,6 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVHCImageMessageCell()
 
@@ -263,7 +262,7 @@ static CGFloat kCellTopMargin = 10;
         self.imageLoadState = PLVChatMsgStateImageLoading;
         
         __weak typeof(self) weakSelf = self;
-        [self.chatImageView sd_setImageWithURL:imageURL placeholderImage:placeHolderImage completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
+        [PLVHCUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeHolderImage completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
             weakSelf.imageLoadState = image ? PLVChatMsgStateImageLoadSuccess : PLVChatMsgStateImageLoadFail;
         }];
     } else if (message.image) {
@@ -287,7 +286,7 @@ static CGFloat kCellTopMargin = 10;
     
     NSURL *imageURL = [NSURL URLWithString:user.avatarUrl];
     if (imageURL) {
-        [self.headerImageView sd_setImageWithURL:imageURL placeholderImage:placeHolderImage];
+        [PLVHCUtils setImageView:self.headerImageView url:imageURL placeholderImage:placeHolderImage];
     } else {
         [self.headerImageView setImage:placeHolderImage];
     }

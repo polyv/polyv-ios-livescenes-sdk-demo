@@ -18,7 +18,6 @@
 // SDK
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVSARewardMessageCell()
 
@@ -108,7 +107,7 @@
     
     // 礼物打赏为礼物图片，现金打赏为空
     if ([PLVFdUtil checkStringUseable:message.gimg]) {
-        [self.rewardImageView sd_setImageWithURL:[NSURL URLWithString:message.gimg]];
+        [PLVSAUtils setImageView:self.rewardImageView url:[NSURL URLWithString:message.gimg]];
     } else {
         self.rewardImageView.image = [PLVSAUtils imageForChatroomResource:@"plvsa_chatroom_gift_icon_cash"];
     }

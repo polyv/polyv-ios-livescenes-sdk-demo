@@ -10,7 +10,6 @@
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVLSUtils.h"
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSDocumentPagesCell ()
 
@@ -41,7 +40,7 @@
 - (void)setImgUrl:(NSString *)imgUrl index:(NSInteger)index {
     NSURL *url = [NSURL URLWithString:imgUrl];
     UIImage *imgPlaceholder = [PLVLSUtils imageForDocumentResource:@"plvls_doc_placeholder"];
-    [self.ivLogo sd_setImageWithURL:url placeholderImage:imgPlaceholder options:SDWebImageRetryFailed];
+    [PLVLSUtils setImageView:self.ivLogo url:url placeholderImage:imgPlaceholder options:SDWebImageRetryFailed];
     
     [self.btnCount setTitle:[NSString stringWithFormat:@"%ld", (long)index] forState:UIControlStateNormal];
 }

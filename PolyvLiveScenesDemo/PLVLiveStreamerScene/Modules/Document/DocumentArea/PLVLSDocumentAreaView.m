@@ -268,6 +268,7 @@ UIGestureRecognizerDelegate
     if (self.viewerType == PLVRoomUserTypeGuest) {
         self.toolView.hidden = NO;
         [self showWaitLivePlaceholderView:NO];
+        [self.pageNum setCurrentPage:self.pptView.currPageNum + 1 totalPage:self.pptView.totalPageNum];
     }
 }
 
@@ -305,6 +306,9 @@ UIGestureRecognizerDelegate
     [self.docSheet setDocumentWithAutoId:self.lastAutoId pageId:self.lastPageId];
 }
 
+- (void)documentToolViewShow:(BOOL)show {
+    self.toolView.hidden = show;
+}
 #pragma mark - [ Private Methods ]
 
 // 开启webview loading
@@ -360,7 +364,12 @@ UIGestureRecognizerDelegate
         self.currWhiteboardNum = pageNumber;
     }
     
-    [self.pageNum setCurrentPage:pageNumber + 1 totalPage:totalPage];
+    if (self.viewerType == PLVRoomUserTypeGuest && !self.pptView.startClass) { // 嘉宾身份时，当前没有开始上课，则不要显示页码
+        [self.pageNum setCurrentPage:0 totalPage:0];
+    } else {
+        [self.pageNum setCurrentPage:pageNumber + 1 totalPage:totalPage];
+    }
+    
     [self.toolView setPageNum:pageNumber + 1 totalNum:totalPage];
     [self.docSheet selectDocumentWithAutoId:autoId pageIndex:pageNumber];
     

@@ -13,7 +13,6 @@
 #import "PLVLSUtils.h"
 #import "PLVDocumentConvertManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSDocumentListCell ()
 
@@ -190,7 +189,7 @@
     self.titleLabel.text = titleLabelString;
     
     UIImage *image = [PLVLSUtils imageForDocumentResource:@"plvls_doc_placeholder"];
-    [self.pptImageView sd_setImageWithURL:[NSURL URLWithString:documentModel.previewImage] placeholderImage:image options:SDWebImageRetryFailed];
+    [PLVLSUtils setImageView:self.pptImageView url:[NSURL URLWithString:documentModel.previewImage] placeholderImage:image options:SDWebImageRetryFailed];
 
     BOOL animateLoss = [PLVDocumentConvertManager isAnimateLossFromCacheWithFileId:documentModel.fileId];
     self.animateLossMaskView.hidden = !animateLoss;

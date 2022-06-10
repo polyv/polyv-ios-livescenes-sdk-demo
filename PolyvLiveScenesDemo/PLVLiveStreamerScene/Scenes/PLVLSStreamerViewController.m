@@ -13,13 +13,15 @@
 
 // UI
 #import "PLVLSChannelInfoSheet.h"
-#import "PLVLSSettingSheet.h"
+#import "PLVLSResolutionSheet.h"
 #import "PLVLSStatusAreaView.h"
 #import "PLVLSDocumentAreaView.h"
 #import "PLVLSCountDownView.h"
 #import "PLVLSChatroomAreaView.h"
 #import "PLVLSMemberSheet.h"
 #import "PLVLSLinkMicAreaView.h"
+#import "PLVLSBeautySheet.h"
+#import "PLVLSMoreInfoSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -28,6 +30,7 @@
 #import "PLVLSChatroomViewModel.h"
 #import "PLVStreamerPresenter.h"
 #import "PLVMemberPresenter.h"
+#import "PLVLSBeautyViewModel.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -36,14 +39,16 @@
 @interface PLVLSStreamerViewController ()<
 PLVSocketManagerProtocol,
 PLVRoomDataManagerProtocol,
-PLVLSSettingSheetProtocol,
+PLVLSResolutionSheetDelegate,
 PLVLSStatusAreaViewProtocol,
 PLVLSDocumentAreaViewDelegate,
 PLVLSChatroomAreaViewProtocol,
 PLVLSMemberSheetDelegate,
 PLVLSLinkMicAreaViewDelegate,
 PLVStreamerPresenterDelegate,
-PLVMemberPresenterDelegate
+PLVMemberPresenterDelegate,
+PLVLSBeautySheetDelegate,
+PLVLSMoreInfoSheetDelegate
 >
 
 #pragma mark 功能
@@ -59,15 +64,18 @@ PLVMemberPresenterDelegate
 @property (nonatomic, strong) PLVLSChatroomAreaView *chatroomAreaView;   // 左下角聊天室区域
 @property (nonatomic, strong) PLVLSLinkMicAreaView *linkMicAreaView;
 @property (nonatomic, strong) PLVLSChannelInfoSheet *channelInfoSheet;
-@property (nonatomic, strong) PLVLSSettingSheet *settingSheet;
+@property (nonatomic, strong) PLVLSResolutionSheet *settingSheet;
 @property (nonatomic, strong) PLVLSMemberSheet *memberSheet;
 @property (nonatomic, strong) PLVLSCountDownView *coutBackView; // 开始上课时的倒数蒙层
+@property (nonatomic, strong) PLVLSBeautySheet *beautySheet; // 美颜设置弹层
+@property (nonatomic, strong) PLVLSMoreInfoSheet *moreInfoSheet; // 更多弹层
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign, readonly) BOOL isOnlyAudio; // 当前频道是否为音频模式
 @property (nonatomic, assign) NSTimeInterval showMicTipsTimeInterval; // 显示'请打开麦克风提示'时的时间戳
+@property (nonatomic, assign) BOOL chatroomAreaViewOriginalShow; // chatroomAreaView原本的显示状态
 
 @end
 
@@ -176,7 +184,8 @@ PLVMemberPresenterDelegate
     [self.view addSubview:self.statusAreaView];
 
     // 初始化
-    [self.settingSheet showInView:nil]; /// 仅用于初始化
+    [self.settingSheet initView]; /// 仅用于初始化
+    [self.moreInfoSheet initView];
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.menuInfo) {
@@ -200,6 +209,9 @@ PLVMemberPresenterDelegate
     self.memberPresenter = [[PLVMemberPresenter alloc] init];
     self.memberPresenter.delegate = self;
     [self.memberPresenter start];// 开始获取成员列表数据并开启自动更新
+    
+    // 初始化美颜
+    [self.streamerPresenter initBeauty];
 }
 
 - (void)getEdgeInset {
@@ -248,10 +260,10 @@ PLVMemberPresenterDelegate
     return _channelInfoSheet;
 }
 
-- (PLVLSSettingSheet *)settingSheet {
+- (PLVLSResolutionSheet *)settingSheet {
     if (!_settingSheet) {
         CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
-        _settingSheet = [[PLVLSSettingSheet alloc] initWithSheetWidth:sheetWidth];
+        _settingSheet = [[PLVLSResolutionSheet alloc] initWithSheetWidth:sheetWidth];
         _settingSheet.delegate = self;
     }
     return _settingSheet;
@@ -318,6 +330,23 @@ PLVMemberPresenterDelegate
     return [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
 }
 
+- (PLVLSBeautySheet *)beautySheet {
+    if (!_beautySheet) {
+        _beautySheet = [[PLVLSBeautySheet alloc] initWithSheetHeight:172 showSlider:NO];
+        _beautySheet.delegate = self;
+    }
+    return _beautySheet;
+}
+
+- (PLVLSMoreInfoSheet *)moreInfoSheet {
+    if (!_moreInfoSheet) {
+        CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
+        _moreInfoSheet = [[PLVLSMoreInfoSheet alloc] initWithSheetWidth:sheetWidth];
+        _moreInfoSheet.delegate = self;
+    }
+    return _moreInfoSheet;
+}
+
 #pragma mark - Private
 
 - (void)documentFullscreen:(BOOL)fullscreen {
@@ -338,6 +367,8 @@ PLVMemberPresenterDelegate
     [[PLVDocumentUploadClient sharedClient] stopAllUpload]; // 停止一切上传任务
     [[PLVDocumentConvertManager sharedManager] clear]; // 清空文档转码轮询队列
     [self.memberPresenter stop]; // 成员列表数据停止自动更新
+    [self.streamerPresenter enableBeautyProcess:NO]; // 关闭美颜管理器
+    [[PLVLSBeautyViewModel sharedViewModel] clear]; // 美颜资源释放、状态位清零
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((self.streamerPresenter.classStarted ? 0.5 : 0) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [[PLVSocketManager sharedManager] logout];
@@ -360,6 +391,9 @@ PLVMemberPresenterDelegate
                     
                     /// 确认是否需要‘恢复直播’
                     [weakSelf tryResumeClass];
+                    
+                    // 开启RTC图像数据回调给美颜处理
+                    [weakSelf.streamerPresenter enableBeautyProcess:[PLVLSBeautyViewModel sharedViewModel].beautyIsOpen];
                 }
             }];
         }
@@ -493,6 +527,22 @@ PLVMemberPresenterDelegate
     })
 }
 
+#pragma mark 美颜
+- (void)showBeautySheet:(BOOL)show {
+    if (![PLVLSBeautyViewModel sharedViewModel].beautyIsReady) {
+        [PLVLSUtils showToastInHomeVCWithMessage:@"美颜未准备就绪，请退出重新登录"];
+        return;
+    }
+    
+    if (show) {
+        [self.beautySheet showInView:self.view];
+    } else {
+        if (_beautySheet) {
+            [self.beautySheet dismiss];
+        }
+    }
+}
+
 #pragma mark - PLVRoomDataManager Protocol
 
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
@@ -519,7 +569,7 @@ PLVMemberPresenterDelegate
 }
 
 - (void)statusAreaView_didTapSettingButton {
-    [self.settingSheet showInView:self.view];
+    [self.moreInfoSheet showInView:self.view];
 }
 
 - (void)statusAreaView_didTapShareButton {
@@ -607,14 +657,7 @@ PLVMemberPresenterDelegate
     return PLVLSStatusBarControls_All;
 }
 
-#pragma mark - PLVLSSettingSheet Protocol
-
-- (void)settingSheet_didTapLogoutButton {
-    [PLVLSUtils showAlertWithMessage:@"确认结束直播吗？" cancelActionTitle:@"按错了" cancelActionBlock:nil  confirmActionTitle:@"确定" confirmActionBlock:^{
-        [self logout];
-        [self dismissViewControllerAnimated:YES completion:nil];
-    }];
-}
+#pragma mark - PLVLSResolutionSheetDelegate
 
 - (void)settingSheet_didChangeResolution:(PLVResolutionType)resolution {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:resolution];
@@ -947,6 +990,23 @@ PLVMemberPresenterDelegate
     }
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter beautyDidInitWithResult:(int)result {
+    if (result == 0) {
+        // 配置美颜
+        PLVBeautyManager *beautyManager = [self.streamerPresenter shareBeautyManager];
+        [[PLVLSBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
+    } else {
+        [PLVLSUtils showToastInHomeVCWithMessage:[NSString stringWithFormat:@"美颜初始化失败 %d 请重进直播间", result]];
+    }
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter beautyProcessDidOccurError:(NSError *)error {
+    if (error) {
+        NSString *errorDes = error.userInfo[NSLocalizedDescriptionKey];
+        [PLVLSUtils showToastInHomeVCWithMessage:errorDes];
+    }
+}
+
 #pragma mark - PLVLSLinkMicAreaViewDelegate
 - (NSArray *)plvLSLinkMicAreaViewGetCurrentUserModelArray:(PLVLSLinkMicAreaView *)linkMicAreaView{
     return self.streamerPresenter.onlineUserArray;
@@ -962,5 +1022,40 @@ PLVMemberPresenterDelegate
     return [self.streamerPresenter getOnlineUserModelFromOnlineUserArrayWithIndex:targetIndex];
 }
 
+#pragma mark PLVLSBeautySheetDelegate
+- (void)beautySheet:(PLVLSBeautySheet *)beautySheet didChangeOn:(BOOL)on {
+    [self.streamerPresenter enableBeautyProcess:on];
+}
+
+- (void)beautySheet:(PLVLSBeautySheet *)beautySheet didChangeShow:(BOOL)show {
+    if (show) {
+        self.chatroomAreaViewOriginalShow = self.chatroomAreaView.hidden;
+        self.chatroomAreaView.hidden  = show;
+    }else {
+        self.chatroomAreaView.hidden  = self.chatroomAreaViewOriginalShow;
+    }
+    
+    [self.documentAreaView documentToolViewShow:show];
+}
+
+#pragma mark PLVLSMoreInfoSheetDelegate
+- (void)moreInfoSheetDidTapBeautyButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    if (self.streamerPresenter.currentCameraOpen) {
+        [self showBeautySheet:YES];
+    } else {
+        [PLVLSUtils showToastWithMessage:@"请开启摄像头后使用" inView:self.view];
+    }
+}
+
+- (void)moreInfoSheetDidTapResolutionButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.settingSheet showInView:self.view];
+}
+
+- (void)moreInfoSheetDidTapLogoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [PLVLSUtils showAlertWithMessage:@"确认结束直播吗？" cancelActionTitle:@"按错了" cancelActionBlock:nil  confirmActionTitle:@"确定" confirmActionBlock:^{
+        [self logout];
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }];
+}
 
 @end

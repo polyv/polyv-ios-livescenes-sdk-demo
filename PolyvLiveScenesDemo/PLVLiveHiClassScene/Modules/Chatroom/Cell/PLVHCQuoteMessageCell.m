@@ -23,7 +23,6 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVHCQuoteMessageCell ()<
 UITextViewDelegate>
@@ -252,9 +251,7 @@ static CGFloat kCellTopMargin = 10;
     self.quoteImageView.hidden = !quoteImageURL;
     if (quoteImageURL) {
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
-        [self.quoteImageView sd_setImageWithURL:quoteImageURL
-                               placeholderImage:placeHolderImage
-                                        options:SDWebImageRetryFailed];
+        [PLVHCUtils setImageView:self.quoteImageView url:quoteImageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
     }
     // 重发按钮是否隐藏
     self.msgState = model.msgState;
@@ -622,7 +619,7 @@ static CGFloat kCellTopMargin = 10;
     
     NSURL *imageURL = [NSURL URLWithString:user.avatarUrl];
     if (imageURL) {
-        [self.headerImageView sd_setImageWithURL:imageURL placeholderImage:placeHolderImage];
+        [PLVHCUtils setImageView:self.headerImageView url:imageURL placeholderImage:placeHolderImage];
     } else {
         [self.headerImageView setImage:placeHolderImage];
     }

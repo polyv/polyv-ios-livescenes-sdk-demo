@@ -1,12 +1,12 @@
 //
-//  PLVLSSettingSheet.m
+//  PLVLSResolutionSheet.m
 //  PLVLiveStreamerDemo
 //
 //  Created by MissYasiky on 2021/3/5.
 //  Copyright © 2021 PLV. All rights reserved.
 //
 
-#import "PLVLSSettingSheet.h"
+#import "PLVLSResolutionSheet.h"
 #import "PLVLSSettingSheetCell.h"
 #import "PLVLSUtils.h"
 #import "PLVRoomDataManager.h"
@@ -15,7 +15,7 @@
 static NSString *kResolutionCellIdentifier = @"resolutionCellIdentifier";
 static NSString *const kSettingResolutionKey = @"settingResolutionKey";
 
-@interface PLVLSSettingSheet ()<
+@interface PLVLSResolutionSheet ()<
 UITableViewDataSource,
 UITableViewDelegate
 >
@@ -24,9 +24,6 @@ UITableViewDelegate
 @property (nonatomic, strong) UILabel *sheetTitleLabel; // 弹层顶部标题
 @property (nonatomic, strong) UIView *titleSplitLine; // 标题底部分割线
 @property (nonatomic, strong) UITableView *tableView; // 设置项列表
-@property (nonatomic, strong) UIView *buttonSplitLine; // 退出登陆按钮顶部分割线
-@property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登陆按钮背后的文本
-@property (nonatomic, strong) UIButton *logoutButton; // 退出登陆按钮
 
 /// 数据
 @property (nonatomic, strong) NSArray *resolutionTypeArray; // 可选清晰度枚举值数组
@@ -35,7 +32,7 @@ UITableViewDelegate
 
 @end
 
-@implementation PLVLSSettingSheet
+@implementation PLVLSResolutionSheet
 
 @synthesize sheetWidth = _sheetWidth;
 
@@ -47,9 +44,6 @@ UITableViewDelegate
         [self.contentView addSubview:self.sheetTitleLabel];
         [self.contentView addSubview:self.titleSplitLine];
         [self.contentView addSubview:self.tableView];
-        [self.contentView addSubview:self.buttonSplitLine];
-        [self.contentView addSubview:self.logoutButtonLabel];
-        [self.contentView addSubview:self.logoutButton];
     }
     return self;
 }
@@ -71,12 +65,8 @@ UITableViewDelegate
     self.sheetTitleLabel.frame = CGRectMake(originX, sheetTitleLabelTop, self.sheetWidth - originX * 2, 22);
     self.titleSplitLine.frame = CGRectMake(originX, titleSplitLineTop, self.sheetWidth - originX * 2, 1);
     
-    self.buttonSplitLine.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight - 1, self.sheetWidth - originX * 2, 1);
-    self.logoutButtonLabel.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
-    self.logoutButton.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
-    
     CGFloat tableViewOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 35;
-    CGFloat tableViewHeight = self.contentView.frame.size.height - tableViewOriginY - self.logoutButton.frame.size.height - 35;
+    CGFloat tableViewHeight = self.contentView.frame.size.height - tableViewOriginY - 35;
     CGFloat rightPad = PLVLSUtils.safeSidePad;
     self.tableView.frame = CGRectMake(originX, tableViewOriginY, self.sheetWidth - originX - rightPad, tableViewHeight);
 }
@@ -97,7 +87,7 @@ UITableViewDelegate
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _sheetTitleLabel.font = [UIFont boldSystemFontOfSize:16];
-        _sheetTitleLabel.text = @"设置";
+        _sheetTitleLabel.text = @"清晰度";
     }
     return _sheetTitleLabel;
 }
@@ -130,46 +120,6 @@ UITableViewDelegate
     return _tableView;
 }
 
-- (UIView *)buttonSplitLine {
-    if (!_buttonSplitLine) {
-        _buttonSplitLine = [[UIView alloc] init];
-        _buttonSplitLine.backgroundColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:0.1];
-    }
-    return _buttonSplitLine;
-}
-
-- (UILabel *)logoutButtonLabel {
-    if (!_logoutButtonLabel) {
-        _logoutButtonLabel = [[UILabel alloc] init];
-        _logoutButtonLabel.textAlignment = NSTextAlignmentCenter;
-        
-        UIImage *image = [PLVLSUtils imageForStatusResource:@"plvls_status_exit_btn"];
-        NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
-        attachment.image = image;
-        NSAttributedString *iconAttributedString = [NSAttributedString attributedStringWithAttachment:attachment];
-        attachment.bounds = CGRectMake(-1, -2, image.size.width, image.size.height);
-        
-        NSDictionary *attributedDict = @{NSFontAttributeName: [UIFont systemFontOfSize:14],
-                                         NSForegroundColorAttributeName:[UIColor colorWithRed:0xff/255.0 green:0x63/255.0 blue:0x63/255.0 alpha:1]
-        };
-        NSAttributedString *textAttributedString = [[NSAttributedString alloc] initWithString:@" 退出登录" attributes:attributedDict];
-        
-        NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
-        [muString appendAttributedString:iconAttributedString];
-        [muString appendAttributedString:textAttributedString];
-        _logoutButtonLabel.attributedText = [muString copy];
-    }
-    return _logoutButtonLabel;
-}
-
-- (UIButton *)logoutButton {
-    if (!_logoutButton) {
-        _logoutButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_logoutButton addTarget:self action:@selector(logoutButtonAction) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _logoutButton;
-}
-
 - (NSArray *)resolutionTypeArray {
     if (!_resolutionTypeArray) {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
@@ -197,16 +147,6 @@ UITableViewDelegate
     return _resolutionStringArray;
 }
 
-#pragma mark - Action
-
-- (void)logoutButtonAction {
-    [self dismiss];
-    
-    if (self.delegate) {
-        [self.delegate settingSheet_didTapLogoutButton];
-    }
-}
-
 #pragma mark - UITableView DataSource & Delegate
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
@@ -217,7 +157,7 @@ UITableViewDelegate
     if (indexPath.row == 0) { // 清晰度设置
         PLVLSSettingSheetCell *cell = (PLVLSSettingSheetCell *)[tableView dequeueReusableCellWithIdentifier:kResolutionCellIdentifier];
         NSInteger selectedIndex = [self selectedResolutionIndex];
-        [cell setTitle:@"清晰度" optionsArray:self.resolutionStringArray selectedIndex:selectedIndex];
+        [cell setOptionsArray:self.resolutionStringArray selectedIndex:selectedIndex];
         __weak typeof(self) weakSelf = self;
         [cell setDidSelectedAtIndex:^(NSInteger index) {
             PLVResolutionType resolutionType = [weakSelf.resolutionTypeArray[index] integerValue];

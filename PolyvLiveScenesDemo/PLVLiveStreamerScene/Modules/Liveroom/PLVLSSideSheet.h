@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param parentView 展示弹层的父视图，弹层会插入到父视图的最顶上
 - (void)showInView:(UIView *)parentView;
 
+/// 初始化图层，不显示图层
+- (void)initView;
+
 /// 收起弹层
 - (void)dismiss;
 

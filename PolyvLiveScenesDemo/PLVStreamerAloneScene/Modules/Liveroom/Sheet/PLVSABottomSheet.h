@@ -30,6 +30,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param sheetLandscapeWidth  弹层横屏时弹出宽度，需要支持横屏时此值必须大于0
 - (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth;
 
+/// 初始化方法，支持横竖屏
+/// @note 竖屏时：弹窗宽充满屏幕宽度，高度为sheetHeight；
+///       横屏时：弹窗宽为sheetLandscapeWidth + 右安全距离，高度充满屏幕高度。
+/// @param sheetHeight 弹层弹出宽度
+/// @param sheetLandscapeWidth  弹层横屏时弹出宽度，需要支持横屏时此值必须大于0
+/// @param backgroundColor 背景色，默认为黑色半透明
+- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth backgroundColor:(UIColor *)backgroundColor;
+
 /// 弹出弹层
 /// @param parentView 展示弹层的父视图，弹层会插入到父视图的最顶上
 - (void)showInView:(UIView *)parentView;

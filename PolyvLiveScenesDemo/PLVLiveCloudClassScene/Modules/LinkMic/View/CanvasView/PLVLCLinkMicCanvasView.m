@@ -9,7 +9,6 @@
 #import "PLVLCLinkMicCanvasView.h"
 
 #import "PLVLCUtils.h"
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVRoomDataManager.h"
 #import "PLVPlayerLogoView.h"
@@ -152,7 +151,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
         urlString = kPLVLCTeacherSplashImgURLString;
     }
     self.splashImageView.hidden = NO;
-    [self.splashImageView sd_setImageWithURL:[NSURL URLWithString:urlString]];
+    [PLVLCUtils setImageView:self.splashImageView url:[NSURL URLWithString:urlString]];
 }
 
 - (UIImageView *)logoImageView {

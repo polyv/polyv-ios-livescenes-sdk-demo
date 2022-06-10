@@ -23,7 +23,6 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVECChatCell ()
 
@@ -149,9 +148,7 @@
     self.chatImageView.hidden = !imageURL;
     if (imageURL) {
         UIImage *placeholderImage = [PLVECUtils imageForWatchResource:@"plv_chatroom_thumbnail_imag"];
-        [self.chatImageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeholderImage
-                                       options:SDWebImageRetryFailed];
+        [PLVECUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeholderImage options:SDWebImageRetryFailed];
     }
     
     // 设置 "昵称：文本（如果有的话）"

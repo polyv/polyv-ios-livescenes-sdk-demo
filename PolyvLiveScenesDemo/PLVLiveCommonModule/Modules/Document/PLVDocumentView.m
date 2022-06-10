@@ -217,11 +217,39 @@ UIGestureRecognizerDelegate
     [self.webView loadRequest:request];
 }
 
+- (void)loadRequestWithLocalHtml:(NSString *)filePath allowingReadAccessToURL:(NSString *)accessPath {
+    if ([PLVFdUtil checkStringUseable:filePath] &&
+        [PLVFdUtil checkStringUseable:accessPath]) {
+        
+        NSURL *fileUrl = [NSURL fileURLWithPath:filePath];
+        NSURL *accessUrl = [NSURL fileURLWithPath:accessPath isDirectory: YES];
+        if (@available(iOS 9.0, *)) {
+            [self.webView loadFileURL:fileUrl allowingReadAccessToURL:accessUrl];
+        }
+    }
+}
+
 - (void)changePPTPageWithType:(PLVChangePPTPageType)type {
     [self.jsBridge changePPTPageWithType:type];
 }
 
 #pragma mark 观看专用方法
+
+- (void)pptSetOfflinePath:(NSString *)path {
+    if (self.scene != PLVDocumentViewSceneCloudClass &&
+        self.scene != PLVDocumentViewSceneEcommerce) {
+        return;
+    }
+    [self.jsBridge pptSetLocalPath:path];
+}
+
+- (void)pptLocalStartWithVideoId:(NSString *)videoId vid:(NSString *)vid {
+    if (self.scene != PLVDocumentViewSceneCloudClass &&
+        self.scene != PLVDocumentViewSceneEcommerce) {
+        return;
+    }
+    [self.jsBridge pptLocalStartWithVideoId:videoId vid:vid];
+}
 
 - (void)setSEIDataWithNewTimestamp:(long)newTimeStamp {
     if (self.scene != PLVDocumentViewSceneCloudClass &&

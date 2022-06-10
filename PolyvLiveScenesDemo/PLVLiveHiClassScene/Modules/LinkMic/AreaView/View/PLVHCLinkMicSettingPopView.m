@@ -17,7 +17,6 @@
 #import "PLVHCCaptureDeviceManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 // 麦克风开关
 static NSString *const kSCMicrophoneEnableConfigKey = @"kSCMicrophoneEnableConfigKey";
@@ -418,7 +417,7 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
         placeholderImage = [PLVHCUtils imageForLinkMicResource:@"plvhc_linkmic_device_student_icon"];
     }
     NSURL *avatarImageURL = [NSURL URLWithString:imageURL];
-    [self.avatarImageView sd_setImageWithURL:avatarImageURL placeholderImage:placeholderImage];
+    [PLVHCUtils setImageView:self.avatarImageView url:avatarImageURL placeholderImage:placeholderImage];
 }
 
 - (void)show {

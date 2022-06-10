@@ -159,6 +159,10 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 结束画中画播放
 - (void)stopPictureInPicture;
 
+/// 切换暂存视频
+/// @param fileId 暂存视频fileId
+- (void)changeFileId:(NSString *)fileId;
+
 @end
 
 @protocol PLVLCMediaAreaViewDelegate <NSObject>
@@ -237,9 +241,6 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// [无延迟直播] 无延迟直播 ‘播放或暂停’
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveWannaPlay:(BOOL)wannaPlay;
 
-/// [无延迟直播] 无延迟直播 ‘显示 / 隐藏 画中画占位视图’
-- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPicturePlaceholder:(BOOL)show;
-
 /// 回放场景
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;
 
@@ -248,6 +249,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// mainSpeakerPPTOnMain 发生改变回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain;
+
+/// 播放器 ‘回放视频信息’ 发生改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo;
 
 #pragma mark 画中画的回调
 /// 画中画即将开始
@@ -270,6 +274,11 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 画中画已经停止
 /// @param mediaAreaView 播放器管理器
 - (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView;
+
+
+#pragma mark 下载视图的回调
+- (void)plvLCMediaAreaViewClickDownloadListButton:(PLVLCMediaAreaView *)mediaAreaView;
+
 @end
 
 NS_ASSUME_NONNULL_END

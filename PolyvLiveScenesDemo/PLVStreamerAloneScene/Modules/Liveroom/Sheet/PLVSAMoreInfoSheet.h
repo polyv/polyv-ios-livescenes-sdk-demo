@@ -38,6 +38,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 全体禁言 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeCloseRoom:(BOOL)closeRoom;
 
+/// 点击 美颜 按钮 触发回调
+- (void)moreInfoSheetDidTapBeautyButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层

@@ -10,7 +10,6 @@
 
 #import "PLVLSUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 static NSString * const kPLVLSTeacherSplashImgURLString = @"https://s1.videocc.net/default-img/channel/default-splash.png";//讲师默认封面图地址
 
@@ -90,7 +89,7 @@ static NSString * const kPLVLSTeacherSplashImgURLString = @"https://s1.videocc.n
         urlString = kPLVLSTeacherSplashImgURLString;
     }
     self.splashImageView.hidden = NO;
-    [self.splashImageView sd_setImageWithURL:[NSURL URLWithString:urlString]];
+    [PLVLSUtils setImageView:self.splashImageView url:[NSURL URLWithString:urlString]];
 }
 
 

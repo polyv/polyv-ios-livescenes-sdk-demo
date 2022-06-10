@@ -11,7 +11,6 @@
 // 工具
 #import "PLVHCDemoUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 /// Cell样式枚举
 typedef NS_ENUM(NSUInteger, PLVHCLessonTableViewCellStyle) {
@@ -122,9 +121,7 @@ typedef NS_ENUM(NSUInteger, PLVHCLessonTableViewCellStyle) {
     NSURL *coverURL = [PLVHCLessonTableViewCell coverImageURLWithString:model.cover];
     UIImage *placeholderImage = [PLVHCDemoUtils imageForHiClassResource:@"plvhc_default_lesson_image"];
     if (coverURL) {
-        [self.coverImageView sd_setImageWithURL:coverURL
-                                placeholderImage:placeholderImage
-                                         options:SDWebImageRetryFailed];
+        [PLVHCDemoUtils setImageView:self.coverImageView url:coverURL placeholderImage:placeholderImage options:SDWebImageRetryFailed];
     } else {
         self.coverImageView.image = placeholderImage;
     }

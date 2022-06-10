@@ -46,6 +46,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL isOnlyAudio;
 /// 直播频道信息
 @property (nonatomic, strong) PLVChannelInfoModel *channelInfo;
+/// 回放视频信息
+@property (nonatomic, strong) PLVPlaybackVideoInfoModel *playbackVideoInfo;
 /// 菜单信息，只读属性
 @property (nonatomic, strong, readonly) PLVLiveVideoChannelMenuInfo *menuInfo;
 /// 用户对象，只读属性
@@ -121,6 +123,9 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) NSTimeInterval liveDuration;
 /// 当前直播是否正在进行 （该值只对讲师身份有效）
 @property (nonatomic, assign) BOOL liveStatusIsLiving;
+/// 后台是否开启了美颜功能
+@property (nonatomic, assign) BOOL appBeautyEnabled;
+
 
 /// 设置 roomUser
 - (void)setupRoomUser:(PLVRoomUser *)roomUser;

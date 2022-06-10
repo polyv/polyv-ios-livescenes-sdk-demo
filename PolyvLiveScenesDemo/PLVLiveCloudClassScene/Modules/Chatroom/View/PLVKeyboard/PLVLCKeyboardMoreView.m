@@ -8,6 +8,8 @@
 
 #import "PLVLCKeyboardMoreView.h"
 #import "PLVLCUtils.h"
+#import <SDWebImage/UIButton+WebCache.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSString *kMoreViewCellIdentifier = @"kMoreViewCellIdentifier";
 static NSInteger kItemCountPerSection = 1;
@@ -23,7 +25,6 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     PLVLCKeyboardMoreButtonTypeOpenCamera,
     PLVLCKeyboardMoreButtonTypeOpenBulletin,
     PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay,
-    PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord
 };
 
 @interface PLVLCMoreCollectionViewCell : UICollectionViewCell
@@ -45,7 +46,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         self.moreBtn.frame = CGRectMake(0.0, 0.0, kCellButtonWidth, kCellButtonHeight);
         self.moreBtn.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [self.moreBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        
+        self.moreBtn.imageView.contentMode = UIViewContentModeScaleAspectFit;;
         self.moreBtn.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
          
         [self.contentView addSubview:self.moreBtn];
@@ -88,17 +89,18 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             [self.moreBtn setTitle:@"屏蔽特效" forState:UIControlStateNormal];
             [self.moreBtn setTitle:@"展示特效" forState:UIControlStateSelected];
             break;
-        case PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord:
-            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_lottery_normal"] forState:UIControlStateNormal];
-            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_lottery_newMessage"] forState:UIControlStateSelected];
-            [self.moreBtn setTitle:@"消息" forState:UIControlStateNormal];
-            [self.moreBtn setTitle:@"消息" forState:UIControlStateSelected];
         default:
             break;
     }
     
-    [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - self.moreBtn.imageView.frame.size.width, - self.moreBtn.imageView.frame.size.height - kCellImageLabelMargin / 2.0f, 0)];
-    [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(- self.moreBtn.titleLabel.intrinsicContentSize.height - kCellImageLabelMargin / 2.0f, 0, 0, - self.moreBtn.titleLabel.intrinsicContentSize.width)];
+    if (type == PLVLCKeyboardMoreButtonTypeUnknow) {
+        CGFloat imageWidth = 48;
+        [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - imageWidth, - imageWidth- kCellImageLabelMargin / 2.0f, 0)];
+        [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(3.5, (kCellButtonWidth - imageWidth)/2, self.moreBtn.titleLabel.intrinsicContentSize.height + kCellImageLabelMargin, (kCellButtonWidth - imageWidth)/2)];
+    } else {
+        [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - self.moreBtn.imageView.frame.size.width, - self.moreBtn.imageView.frame.size.height - kCellImageLabelMargin / 2.0f, 0)];
+        [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(- self.moreBtn.titleLabel.intrinsicContentSize.height - kCellImageLabelMargin / 2.0f, 0, 0, - self.moreBtn.titleLabel.intrinsicContentSize.width)];
+    }
 }
 
 @end
@@ -107,6 +109,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UICollectionViewFlowLayout *flowLayout;
+@property (nonatomic, strong) NSArray *dynamicDataArray;
 
 @end
 
@@ -118,8 +121,6 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     self = [super initWithFrame:frame];
     if (self) {
         _sendImageEnable = YES;
-        _hideLotteryWinRecord = YES;
-        _isNewLotteryMessage = NO;
         _hideRewardDisplaySwitch = YES;
         
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1.0];
@@ -146,7 +147,31 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     return self;
 }
 
-#pragma mark - Getter & Setter
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    CGRect rect = CGRectMake(0, 0, self.frame.size.width, 24 + kCellButtonHeight + 24);
+    self.collectionView.frame = rect;
+}
+
+#pragma mark - [ Public Method ]
+
+- (void)updateChatButtonDataArray:(NSArray *)dataArray {
+    NSMutableArray *showDataArray = [NSMutableArray array];
+    for (NSInteger index = 0; index < dataArray.count; index++) {
+        NSDictionary *dict = dataArray[index];
+        if ([PLVFdUtil checkDictionaryUseable:dict]) {
+            BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
+            if (isShow) {
+                [showDataArray addObject:dict];
+            }
+        }
+    }
+    
+    _dynamicDataArray = showDataArray;
+    [self.collectionView reloadData];
+}
+
+#pragma mark - Getterr & Setter
 
 - (void)setSendImageEnable:(BOOL)sendImageEnable {
     if (_sendImageEnable == sendImageEnable) {
@@ -164,27 +189,22 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     [self.collectionView reloadData];
 }
 
-- (void)setHideLotteryWinRecord:(BOOL)hideLotteryWinRecord {
-    if (_hideLotteryWinRecord == hideLotteryWinRecord) {
-        return;
-    }
-    _hideLotteryWinRecord = hideLotteryWinRecord;
-    [self.collectionView reloadData];
-}
-
-- (void)setIsNewLotteryMessage:(BOOL)isNewLotteryMessage {
-    if (_isNewLotteryMessage == isNewLotteryMessage) {
-        return;
-    }
-    _isNewLotteryMessage = isNewLotteryMessage;
-    [self.collectionView reloadData];
+- (NSInteger)getNativeAddButtonCount {
+    NSInteger buttonCount = 0;
+    buttonCount += (self.sendImageEnable ? 3 : 1);
+    buttonCount += (!self.hiddenBulletin ? 1 : 0);
+    buttonCount += (!self.hideRewardDisplaySwitch ? 1 : 0);
+    
+    return buttonCount;
 }
 
 - (void)setHideRewardDisplaySwitch:(BOOL)hideRewardDisplaySwitch {
     if (_hideRewardDisplaySwitch == hideRewardDisplaySwitch) {
         return;
     }
-    _hideRewardDisplaySwitch = hideRewardDisplaySwitch;
+    // 暂时隐藏屏蔽特效按钮
+    _hideRewardDisplaySwitch = YES;
+//    _hideRewardDisplaySwitch = hideRewardDisplaySwitch;
 }
 
 #pragma mark - UICollectionView DataSource
@@ -194,19 +214,8 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 }
 
 - (NSInteger)collectionView:(UICollectionView*)collectionView numberOfItemsInSection:(NSInteger)section {
-    NSUInteger count = 6;
-    if (!self.sendImageEnable) {
-        count -= 2;
-    }
-    if (self.hiddenBulletin) {
-        count--;
-    }
-    if (self.hideRewardDisplaySwitch) {
-        count--;
-    }
-    if (self.hideLotteryWinRecord) {
-        count--;
-    }
+    NSUInteger count = [self getNativeAddButtonCount];
+    count += self.dynamicDataArray.count;
     return count;
 }
 
@@ -215,44 +224,50 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
                                                                                      forIndexPath:indexPath];
 
     PLVLCKeyboardMoreButtonType type = [self typeOfIndex:indexPath.item];
-    if (type == PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord) {
-        cell.moreBtn.selected = self.isNewLotteryMessage;
-    }
-    
-    [cell.moreBtn addTarget:self action:@selector(moreBtnAction:) forControlEvents:UIControlEventTouchUpInside];
+    cell.moreBtn.tag = indexPath.item;
     cell.type = type;
-    cell.moreBtn.tag = (NSInteger)cell.type;
+    if (type == PLVLCKeyboardMoreButtonTypeUnknow) {
+        [self updateMoreButton:cell.moreBtn];
+    }
+    [cell.moreBtn addTarget:self action:@selector(moreBtnAction:) forControlEvents:UIControlEventTouchUpInside];
     
     return cell;
 }
 
 #pragma mark - Action
 - (void)moreBtnAction:(UIButton *)button {
-    if (button.tag == 0) {
+    PLVLCKeyboardMoreButtonType type = [self typeOfIndex:button.tag];
+    if (type == PLVLCKeyboardMoreButtonTypeOnlyTeacher) {
         button.selected = !button.selected;
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_onlyTeacher:on:)]) {
             [self.delegate keyboardMoreView_onlyTeacher:self on:button.selected];
         }
-    } else if (button.tag == 1) {
-        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openAlbum:)]) {
-            [self.delegate keyboardMoreView_openAlbum:self];
-        }
-    } else if (button.tag == 2) {
+    } else if (type == PLVLCKeyboardMoreButtonTypeOpenCamera) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openCamera:)]) {
             [self.delegate keyboardMoreView_openCamera:self];
         }
-    } else if (button.tag == 3) {
+    } else if (type == PLVLCKeyboardMoreButtonTypeOpenAlbum) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openAlbum:)]) {
+            [self.delegate keyboardMoreView_openAlbum:self];
+        }
+    } else if (type == PLVLCKeyboardMoreButtonTypeOpenBulletin) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openBulletin:)]) {
             [self.delegate keyboardMoreView_openBulletin:self];
         }
-    } else if (button.tag == 4) {
+    } else if (type == PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_switchRewardDisplay:on:)]) {
             [self.delegate keyboardMoreView_switchRewardDisplay:self on:button.selected];
             button.selected = !button.selected;
         }
-    } else if (button.tag == 5) {
-        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openLotteryRecord:)]) {
-            [self.delegate keyboardMoreView_openLotteryRecord:self];
+    } else if (type == PLVLCKeyboardMoreButtonTypeUnknow) {
+        NSInteger defaultCount = [self getNativeAddButtonCount];
+        if (button.tag < defaultCount + self.dynamicDataArray.count) {
+            NSInteger index = button.tag - defaultCount;
+            NSDictionary *dict = self.dynamicDataArray[index];
+            NSString *eventName = PLV_SafeStringForDictKey(dict, @"event");
+            if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openInteractApp:eventName:)]) {
+                [self.delegate keyboardMoreView_openInteractApp:self eventName:eventName];
+            }
         }
     }
 }
@@ -263,6 +278,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     if (index == 0) {
         return PLVLCKeyboardMoreButtonTypeOnlyTeacher;
     }
+    
     if (self.sendImageEnable) {
         if (index == 1) {
             return PLVLCKeyboardMoreButtonTypeOpenAlbum;
@@ -272,20 +288,32 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             return PLVLCKeyboardMoreButtonTypeOpenBulletin;
         } else if (index == 4 && !self.hideRewardDisplaySwitch) {
             return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
-        } else if (index == 5 && !self.hideLotteryWinRecord) {
-            return PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord;
         }
     } else {
         if (index == 1 && !self.hiddenBulletin) {
             return PLVLCKeyboardMoreButtonTypeOpenBulletin;
         } else if (index == 2 && !self.hideRewardDisplaySwitch) {
             return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
-        } else if (index == 3 && !self.hideLotteryWinRecord) {
-            return PLVLCKeyboardMoreButtonTypeOpenLotteryWinRecord;
         }
     }
-    
     return PLVLCKeyboardMoreButtonTypeUnknow;
+}
+
+- (void)updateMoreButton:(UIButton *)button {
+    NSInteger defaultCount = [self getNativeAddButtonCount];
+    if (button.tag < defaultCount + self.dynamicDataArray.count) {
+        NSInteger index = button.tag - defaultCount;
+        NSDictionary *dict = self.dynamicDataArray[index];
+        NSString *imageURLString = PLV_SafeStringForDictKey(dict, @"icon");
+        NSString *buttonTitle = PLV_SafeStringForDictKey(dict, @"title");
+        if ([PLVFdUtil checkStringUseable:imageURLString]) {
+            NSURL *imageURL = [NSURL URLWithString:imageURLString];
+            [button sd_setImageWithURL:imageURL forState:UIControlStateNormal];
+            [button sd_setImageWithURL:imageURL forState:UIControlStateSelected];
+        }
+        [button setTitle:buttonTitle forState:UIControlStateNormal];
+        [button setTitle:buttonTitle forState:UIControlStateSelected];
+    }
 }
 
 @end

@@ -10,9 +10,9 @@
 #import "PLVChatTextView.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVEmoticonManager.h"
+#import "PLVLCUtils.h"
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLCLandscapeQuoteCell ()
 
@@ -180,9 +180,7 @@
     self.quoteImageView.hidden = !quoteImageURL;
     if (quoteImageURL) {
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
-        [self.quoteImageView sd_setImageWithURL:quoteImageURL
-                               placeholderImage:placeHolderImage
-                                        options:SDWebImageRetryFailed];
+        [PLVLCUtils setImageView:self.quoteImageView url:quoteImageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
     }
 }
 

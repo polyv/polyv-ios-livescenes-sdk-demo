@@ -36,6 +36,10 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
 }
 
 - (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth {
+    return [self initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth backgroundColor:nil];
+}
+
+- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth backgroundColor:(UIColor *)backgroundColor {
     self = [super init];
     if (self) {
         self.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
@@ -46,6 +50,10 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
         [self addSubview:self.gestureView];
         [self addSubview:self.contentView];
         [self.contentView addSubview:self.effectView];
+        
+        if (backgroundColor) {
+            self.gestureView.backgroundColor = backgroundColor;
+        }
     }
     return self;
 }

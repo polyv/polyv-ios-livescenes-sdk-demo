@@ -78,7 +78,7 @@ PLVLCKeyboardMoreViewDelegate
     [super layoutSubviews];
     if (self.toolState == PLVLCKeyboardToolStateMoreboard) {
         CGFloat boardHeight = self.moreboardHeight;
-        self.moreboard.frame = CGRectMake(0, kScreenHeight-boardHeight, self.bounds.size.width, boardHeight);
+        self.moreboard.frame = CGRectMake(0, CGRectGetMaxY(self.moreboard.frame) - boardHeight, self.bounds.size.width, boardHeight);
     }
 }
 
@@ -184,19 +184,6 @@ PLVLCKeyboardMoreViewDelegate
     }
     _enableSendImage = enableSendImage;
     self.moreboard.sendImageEnable = enableSendImage;
-}
-
-- (void)setHideLotteryWinRecord:(BOOL)hideLotteryWinRecord {
-    if (_hideLotteryWinRecord == hideLotteryWinRecord) {
-        return;
-    }
-    _hideLotteryWinRecord = hideLotteryWinRecord;
-    self.moreboard.hideLotteryWinRecord = hideLotteryWinRecord;
-}
-
-- (void)setIsNewLotteryMessage:(BOOL)isNewLotteryMessage {
-    _isNewLotteryMessage = isNewLotteryMessage;
-    self.moreboard.isNewLotteryMessage = isNewLotteryMessage;
 }
 
 - (void)setEnableReward:(BOOL)enableReward {
@@ -316,7 +303,6 @@ PLVLCKeyboardMoreViewDelegate
         _enableSendImage = YES;
         _disableOtherButtonsInTeacherMode = NO;
         _enablePointReward = NO;
-        _hideLotteryWinRecord = YES;
         _enableReward = NO;
         [self setupUI];
         
@@ -351,6 +337,10 @@ PLVLCKeyboardMoreViewDelegate
     
     self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
     self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
+}
+
+- (void)updateChatButtonDataArray:(NSArray *)dataArray {
+    [self.moreboard updateChatButtonDataArray:dataArray];
 }
 
 - (void)changeFrameForNewOriginY:(CGFloat)originY {
@@ -614,10 +604,10 @@ PLVLCKeyboardMoreViewDelegate
     }
 }
 
-- (void)keyboardMoreView_openLotteryRecord:(PLVLCKeyboardMoreView *)moreView {
+- (void)keyboardMoreView_openInteractApp:(PLVLCKeyboardMoreView *)moreView eventName:(NSString *)eventName {
     [self tapAction:nil];
-    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_openLotteryRecord:)]) {
-        [self.delegate keyboardToolView_openLotteryRecord:self];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_openInteractApp:eventName:)]) {
+        [self.delegate keyboardToolView_openInteractApp:self eventName:eventName];
     }
 }
 

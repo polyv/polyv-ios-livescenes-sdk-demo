@@ -276,6 +276,11 @@ PLVAdvertViewDelegate
     [self resumePlay];
 }
 
+- (void)changeFileId:(NSString *)fileId {
+    [self.livePlaybackPlayer changeLivePlaybackFileId:fileId];
+    [self resumePlay];
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setup{
     self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(timerEvent:) userInfo:nil repeats:YES];
@@ -691,7 +696,18 @@ PLVAdvertViewDelegate
 - (void)plvLivePlayer:(PLVLivePlayer *)livePlayer showWarmUpImage:(BOOL)show warmUpImageURLString:(NSString *)warmUpImageURLString{
     if (show) {
         self.warmUpImageView.hidden = NO;
-        [self.warmUpImageView sd_setImageWithURL:[NSURL URLWithString:warmUpImageURLString] placeholderImage:nil options:SDWebImageRetryFailed];
+        if ([warmUpImageURLString containsString:@".gif"]) {
+            [[SDWebImageDownloader sharedDownloader]downloadImageWithURL:[NSURL URLWithString:warmUpImageURLString] options:SDWebImageDownloaderUseNSURLCache progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
+                if (finished) {
+                    UIImage *imageData = [UIImage imageWithData:data];
+                    [self.warmUpImageView setImage:imageData];
+                } else {
+                    self.warmUpImageView.image = nil;
+                }
+            }];
+        } else {
+            [self.warmUpImageView sd_setImageWithURL:[NSURL URLWithString:warmUpImageURLString] placeholderImage:nil options:SDWebImageRetryFailed];
+        }
         NSString *warmUpImageHREF = self.channelInfo.warmUpImageHREF;
         if ([PLVFdUtil checkStringUseable:warmUpImageHREF]) {
             self.warmUpImageView.userInteractionEnabled = YES;
@@ -790,6 +806,14 @@ PLVAdvertViewDelegate
     [self setupPlayerLogoImage];
     if ([self.delegate respondsToSelector:@selector(playerPresenter:channelInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self channelInfoDidUpdated:channelInfo];
+    }
+}
+
+/// 直播回放播放器 ‘回放视频信息’ 发生改变
+- (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)playbackVideoInfo {
+    [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo = playbackVideoInfo;
+    if ([self.delegate respondsToSelector:@selector(playerPresenter:playbackVideoInfoDidUpdated:)]) {
+        [self.delegate playerPresenter:self playbackVideoInfoDidUpdated:playbackVideoInfo];
     }
 }
 

@@ -8,10 +8,9 @@
 
 #import "PLVLCImageEmotionMessageCell.h"
 #import "PLVPhotoBrowser.h"
+#import "PLVLCUtils.h"
 #import <PLVLiveScenesSDK/PLVImageEmotionMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
-#import <SDWebImage/UIImageView+WebCache.h>
-
 
 @interface PLVLCImageEmotionMessageCell ()
 
@@ -79,9 +78,7 @@
     NSURL *imageURL = [PLVLCImageEmotionMessageCell imageURLWithMessage:message];
     UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
     if (imageURL) {
-        [self.chatImageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+        [PLVLCUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
     } else {
         [self.chatImageView setImage:placeHolderImage];
     }

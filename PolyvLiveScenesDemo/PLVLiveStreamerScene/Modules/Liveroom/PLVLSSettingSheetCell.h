@@ -17,10 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 设置 cell 视图
 /// 选项文本列表只在第一次设置生效，之后无法更新
-/// @param title 左侧标题文本
 /// @param optionsArray 选项文本列表
 /// @param selectedIndex 选中索引
-- (void)setTitle:(NSString *)title optionsArray:(NSArray <NSString *> *)optionsArray selectedIndex:(NSInteger)selectedIndex;
+- (void)setOptionsArray:(NSArray <NSString *> *)optionsArray selectedIndex:(NSInteger)selectedIndex;
 
 /// 返回 cell 高度
 + (CGFloat)cellHeight;

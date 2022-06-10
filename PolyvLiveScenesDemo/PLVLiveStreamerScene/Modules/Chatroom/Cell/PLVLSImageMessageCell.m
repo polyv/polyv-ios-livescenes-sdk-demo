@@ -21,7 +21,6 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSImageMessageCell ()
 
@@ -321,7 +320,7 @@
     NSURL *imageURL = [PLVLSImageMessageCell imageURLWithMessage:message];
     UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
     if (imageURL) {
-        [self.chatImageView sd_setImageWithURL:imageURL placeholderImage:placeHolderImage];
+        [PLVLSUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeHolderImage];
     } else if (message.image) {
         [self.chatImageView setImage:message.image];
     } else {

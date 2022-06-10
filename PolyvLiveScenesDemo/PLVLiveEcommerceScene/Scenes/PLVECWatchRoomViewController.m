@@ -353,7 +353,7 @@ PLVPopoverViewDelegate
     for (PLVLiveVideoChannelMenu *menu in menuInfo.channelMenus) {
         if ([menu.menuType isEqualToString:@"desc"]) {
             [self.liveDetailPageView addLiveInfoCardView:menu.content];
-        } else if ([menu.menuType isEqualToString:@"buy"] && roomData.videoType == PLVChannelVideoType_Live) {
+        } else if ([menu.menuType isEqualToString:@"buy"]) {
             [self.homePageView showShoppingCart:YES];
         }
     }

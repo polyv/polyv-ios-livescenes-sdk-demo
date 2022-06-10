@@ -8,7 +8,6 @@
 
 #import "PLVCommodityPushView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import "PLVECUtils.h"
 
 @interface PLVCommodityPushView ()
 
@@ -98,12 +97,12 @@
         [self addSubview:self.priceLabel];
         
         self.closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [self.closeButton setImage:[PLVECUtils imageForWatchResource:@"plv_commodity_close_btn"] forState:UIControlStateNormal];
+        [self.closeButton setImage:[self imageForCommodityResource:@"plv_commodity_close_btn"] forState:UIControlStateNormal];
         [self.closeButton addTarget:self action:@selector(closeButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:self.closeButton];
         
         self.jumpButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [self.jumpButton setImage:[PLVECUtils imageForWatchResource:@"plv_commodity_jump_btn"] forState:UIControlStateNormal];
+        [self.jumpButton setImage:[self imageForCommodityResource:@"plv_commodity_jump_btn"] forState:UIControlStateNormal];
         [self.jumpButton setImage:[self imageForCommodityResource:@"plv_commodity_jump_btn_disabled"] forState:UIControlStateDisabled];
         [self.jumpButton addTarget:self action:@selector(jumpButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:self.jumpButton];

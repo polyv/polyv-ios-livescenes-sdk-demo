@@ -479,6 +479,30 @@ PLVChannelClassManagerDelegate
     return user;
 }
 
+#pragma mark 美颜管理
+
+- (void)initBeauty {
+    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        [self.rtcStreamerManager initBeauty];
+    }
+}
+
+/// 开启或关闭 美颜处理
+/// @param enabled 开启或停止 (YES:开启；NO:关闭)
+- (void)enableBeautyProcess:(BOOL)enabled {
+    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        [self.rtcStreamerManager enableBeautyProcess:enabled];
+    }
+}
+
+/// 获取美颜管理器
+- (PLVBeautyManager *)shareBeautyManager {
+    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        return [self.rtcStreamerManager shareBeautyManager];
+    }
+    return nil;
+}
+
 #pragma mark Setter
 - (void)setMicDefaultOpen:(BOOL)micDefaultOpen{
     self.rtcStreamerManager.micDefaultOpen = micDefaultOpen;
@@ -2310,6 +2334,22 @@ PLVChannelClassManagerDelegate
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager localVoiceValue:(CGFloat)localVoiceValue receivedLocalAudibleVoice:(BOOL)voiceAudible {
     [self callbackForLocalUserVoiceValue:localVoiceValue receivedLocalAudibleVoice:voiceAudible];
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager beautyDidInitWithResult:(int)result {
+    /// 美颜初始化回调
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvStreamerPresenter:beautyDidInitWithResult:)]) {
+        [self.delegate plvStreamerPresenter:self beautyDidInitWithResult:result];
+    }
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager beautyProcessDidOccurError:(NSError *)error {
+    /// 美颜错误回调处理
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvStreamerPresenter:beautyProcessDidOccurError:)]) {
+        [self.delegate plvStreamerPresenter:self beautyProcessDidOccurError:error];
+    }
 }
 
 #pragma mark PLVChannelClassManagerDelegate

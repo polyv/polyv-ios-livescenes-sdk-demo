@@ -22,7 +22,6 @@
 // SDK
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVSAImageMessageCell ()
 
@@ -218,7 +217,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
         self.imageLoadState = PLVChatMsgStateImageLoading;
         
         __weak typeof(self) weakSelf = self;
-        [self.chatImageView sd_setImageWithURL:imageURL placeholderImage:placeHolderImage completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
+        [PLVSAUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeHolderImage completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
             weakSelf.imageLoadState = image ? PLVChatMsgStateImageLoadSuccess : PLVChatMsgStateImageLoadFail;
         }];
     } else if (message.image) {

@@ -12,7 +12,6 @@
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
 #import <PLVLiveScenesSDK/PLVImageMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @implementation PLVLCMessageCell
 
@@ -79,9 +78,8 @@
     NSURL *avatarURL = [PLVLCMessageCell avatarImageURLWithUser:model.user];
     UIImage *placeholderImage = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_default_avatar"];
     if (avatarURL) {
-        [self.avatarImageView sd_setImageWithURL:avatarURL
-                                placeholderImage:placeholderImage
-                                         options:SDWebImageRetryFailed];
+        [PLVLCUtils setImageView:self.avatarImageView url:avatarURL  placeholderImage:placeholderImage
+                         options:SDWebImageRetryFailed];
     } else {
         self.avatarImageView.image = placeholderImage;
     }

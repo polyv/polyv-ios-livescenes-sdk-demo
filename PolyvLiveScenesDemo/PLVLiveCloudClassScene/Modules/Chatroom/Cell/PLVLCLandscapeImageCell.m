@@ -8,9 +8,9 @@
 
 #import "PLVLCLandscapeImageCell.h"
 #import "PLVPhotoBrowser.h"
+#import "PLVLCUtils.h"
 #import <PLVLiveScenesSDK/PLVImageMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLCLandscapeImageCell ()
 
@@ -125,9 +125,7 @@
     NSURL *imageURL = [PLVLCLandscapeImageCell imageURLWithMessage:message];
     UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
     if (imageURL) {
-        [self.chatImageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+        [PLVLCUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
     } else if (message.image) {
         [self.chatImageView setImage:message.image];
     } else {

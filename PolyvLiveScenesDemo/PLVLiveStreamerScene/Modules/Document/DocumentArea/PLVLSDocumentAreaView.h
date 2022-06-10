@@ -62,6 +62,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 恢复上一场未结束直播的文档数据
 - (void)synchronizeDocumentData;
 
+/// 显示、隐藏 控制条视图
+/// @param show YES: 显示 NO：隐藏
+- (void)documentToolViewShow:(BOOL)show;
+
 @end
 
 NS_ASSUME_NONNULL_END

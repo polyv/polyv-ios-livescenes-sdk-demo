@@ -59,8 +59,8 @@
     UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
     UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
     UIMenuController *menuController = [UIMenuController sharedMenuController];
-    // 是否含有严禁词
-    if (self.model.isProhibitMsg) {
+    // 是否含有严禁词 || 提醒消息时
+    if (self.model.isProhibitMsg || self.model.isRemindMsg) {
         [menuController setMenuItems:@[copyMenuItem]];
     } else {
         [menuController setMenuItems:@[copyMenuItem, replyMenuItem]];
@@ -79,14 +79,16 @@
 }
 
 - (void)longPressAction:(id)sender {
-    [self becomeFirstResponder];
-
-    [self setMenuItem];
-    
-    UIMenuController *menuController = [UIMenuController sharedMenuController];
-    CGRect rect = CGRectMake(0, 0, 105, 42);
-    [menuController setTargetRect:rect inView:self];
-    [menuController setMenuVisible:YES animated:YES];
+    UIGestureRecognizer *gesture = sender;
+    if (gesture.state == UIGestureRecognizerStateBegan) {
+        [self becomeFirstResponder];
+        [self setMenuItem];
+        
+        UIMenuController *menuController = [UIMenuController sharedMenuController];
+        CGRect rect = CGRectMake(0, 0, 105, 42);
+        [menuController setTargetRect:rect inView:self];
+        [menuController setMenuVisible:YES animated:YES];
+    }
 }
 
 @end

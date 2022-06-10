@@ -15,7 +15,6 @@ static float kOptionButtonMaxWidth = 78.0;
 
 @interface PLVLSSettingSheetCell ()
 
-@property (nonatomic, strong) UILabel *titleLabel; // 左侧标题控件
 @property (nonatomic, strong) NSArray <UIButton *> *optionsButton; // 选项按钮数组，只初始化一次
 @property (nonatomic, strong) UIView *selectedView; // 选中选项底下蓝色圆点
 
@@ -33,7 +32,6 @@ static float kOptionButtonMaxWidth = 78.0;
         self.backgroundColor = [UIColor clearColor];
         self.contentView.backgroundColor = [UIColor clearColor];
         
-        [self.contentView addSubview:self.titleLabel];
         self.selectedIndex = -1;
     }
     return self;
@@ -42,15 +40,13 @@ static float kOptionButtonMaxWidth = 78.0;
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    self.titleLabel.frame = CGRectMake(0, 0, 55, 30);
-    
-    CGFloat originX = 55;
+    CGFloat originX = 0;
     CGFloat buttonWidth = kOptionButtonMaxWidth;
     CGFloat leftWidth = self.contentView.bounds.size.width - originX;
     if (leftWidth < [self.optionsButton count] * kOptionButtonMaxWidth) {
         buttonWidth = floor(leftWidth / self.optionsButton.count);
     }
-    CGFloat buttonHeight = self.titleLabel.bounds.size.height;
+    CGFloat buttonHeight = 30;
     for (int i = 0; i < [self.optionsButton count]; i++) {
         CGFloat buttonOriginX = originX + i * buttonWidth;
         UIButton *button = self.optionsButton[i];
@@ -63,15 +59,6 @@ static float kOptionButtonMaxWidth = 78.0;
 }
 
 #pragma mark - Getter
-
-- (UILabel *)titleLabel {
-    if (!_titleLabel) {
-        _titleLabel = [[UILabel alloc] init];
-        _titleLabel.font = [UIFont systemFontOfSize:12];
-        _titleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
-    }
-    return _titleLabel;
-}
 
 - (UIView *)selectedView {
     if (!_selectedView) {
@@ -111,11 +98,7 @@ static float kOptionButtonMaxWidth = 78.0;
 
 #pragma mark - Public
 
-- (void)setTitle:(NSString *)title optionsArray:(NSArray <NSString *> *)optionsArray selectedIndex:(NSInteger)selectedIndex {
-    if (!title || ![title isKindOfClass:[NSString class]]) {
-        title = @"";
-    }
-    self.titleLabel.text = title;
+- (void)setOptionsArray:(NSArray <NSString *> *)optionsArray selectedIndex:(NSInteger)selectedIndex {
     [self updateOptions:optionsArray selectedIndex:selectedIndex];
 }
 

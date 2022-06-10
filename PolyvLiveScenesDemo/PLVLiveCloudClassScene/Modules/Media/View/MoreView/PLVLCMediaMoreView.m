@@ -18,6 +18,8 @@
 
 #pragma mark 数据
 @property (nonatomic, strong) NSMutableArray <PLVLCMediaMoreModel *> * dataArray;
+@property (nonatomic, strong) NSMutableArray <PLVLCMediaMoreModel *> * optionsDataArray;
+@property (nonatomic, strong) NSMutableArray <PLVLCMediaMoreModel *> * switchesDataArray;
 
 #pragma mark UI
 /// view hierarchy
@@ -27,6 +29,7 @@
 /// └── (UITableView) tableView
 @property (nonatomic, strong) UIView * shdowBackgroundView;
 @property (nonatomic, strong) UITableView * tableView;
+@property (nonatomic, strong) PLVLCMediaMoreCell *danmuCell;
 
 @end
 
@@ -36,6 +39,8 @@
 - (instancetype)initWithFrame:(CGRect)frame{
     if (self = [super initWithFrame:frame]) {
         [self setupUI];
+        self.optionsDataArray = [[NSMutableArray alloc]init];
+        self.switchesDataArray = [[NSMutableArray alloc]init];
     }
     return self;
 }
@@ -62,7 +67,7 @@
             // iPad且非分屏时，布局为屏幕一半
             CGFloat topPadding = viewHeight / 2 - 56.0 * self.dataArray.count / 2;
             self.shdowBackgroundView.frame = CGRectMake(viewWidth / 2, 0, viewWidth / 2, viewHeight);
-            self.tableView.frame = CGRectMake(viewWidth / 2, topPadding, viewWidth / 2, viewHeight);
+            self.tableView.frame = self.shdowBackgroundView.frame;
         }else{
             self.shdowBackgroundView.frame = self.superview.bounds;
             self.tableView.frame = self.superview.bounds;
@@ -88,6 +93,15 @@
 - (void)refreshTableViewWithDataArray:(NSArray <PLVLCMediaMoreModel *> *)dataArray{
     if ([PLVFdUtil checkArrayUseable:dataArray]) {
         self.dataArray = [dataArray mutableCopy];
+        [self.switchesDataArray removeAllObjects];
+        [self.optionsDataArray removeAllObjects];
+        for (int i = 0;i < [dataArray count]; i++) {
+            if (dataArray[i].mediaMoreModelMode == PLVLCMediaMoreModelMode_Switch) {
+                [self.switchesDataArray addObject:dataArray[i]];
+            } else {
+                [self.optionsDataArray addObject:dataArray[i]];
+            }
+        }
     }else{
         NSLog(@"PLVLCMediaMoreView - refreshTableViewWithDataArray failed, dataArray illegal:%@",dataArray);
     }
@@ -150,6 +164,11 @@
     }
 }
 
+- (void)openDanmuButton:(BOOL)open {
+    if (self.danmuCell) {
+        [self.danmuCell openDanmuButton:open];
+    }
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
@@ -213,34 +232,44 @@
 #pragma mark - [ Delegate ]
 #pragma mark UITableViewDataSource
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section{
-    return self.dataArray.count;
+    return [PLVFdUtil checkArrayUseable:self.switchesDataArray] ? self.optionsDataArray.count + 1 : self.optionsDataArray.count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
     static NSString * cellId = @"PLVLCMediaMoreCellId";
     
     PLVLCMediaMoreModel * model;
-    if (indexPath.row < self.dataArray.count) {
-        model = self.dataArray[indexPath.row];
-    }else{
-        NSLog(@"PLVLCMediaMoreView - get model failed, indexPath illegal:%@",indexPath);
-    }
-    
     PLVLCMediaMoreCell * cell = [tableView dequeueReusableCellWithIdentifier:cellId];
     if (!cell) {
         cell = [[PLVLCMediaMoreCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellId];
         cell.selectionStyle = UITableViewCellSelectionStyleNone;
         cell.delegate = self;
     }
-    [cell setModel:model];
     
+    if (indexPath.row == 0 && [PLVFdUtil checkArrayUseable:self.switchesDataArray]) {
+        [cell setSwitchesDataArray:self.switchesDataArray];
+        for (int i = 0; i < self.switchesDataArray.count; i++) {
+            if ([self.switchesDataArray[i].optionTitle isEqualToString:@"弹幕"]) {
+                self.danmuCell = cell;
+            }
+        }
+    } else {
+        NSInteger currentRow = [PLVFdUtil checkArrayUseable:self.switchesDataArray] ? (indexPath.row - 1) : indexPath.row;
+        if (currentRow < self.optionsDataArray.count) {
+            model = self.optionsDataArray[currentRow];
+        }else{
+            NSLog(@"PLVLCMediaMoreView - get model failed, indexPath illegal:%@",indexPath);
+        }
+        [cell setModel:model];
+    }
     return cell;
 }
 
 #pragma mark UITableViewDelegate
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    return fullScreen ? 88.0 : 56.0;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    return fullScreen || isPad ? 88.0 : 56.0;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{

@@ -32,11 +32,11 @@
 
 NSString *PLVLCChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNotification";
 
-NSString *PLVLCChatroomOpenLotteryRecordNotification = @"PLVLCChatroomOpenLotteryRecordNotification";
+NSString *PLVLCChatroomOpenInteractAppNotification = @"PLVLCChatroomOpenInteractAppNotification";
 
 NSString *PLVLCChatroomOpenRewardViewNotification = @"PLVLCChatroomOpenRewardViewNotification";
 
-NSString *PLVInteractLotteryWinRecordMessageNewCallbackNotification = @"PLVInteractLotteryWinRecordMessageNewCallbackNotification";
+NSString *PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
 
 @interface PLVLCChatViewController ()<
 PLVLCKeyboardToolViewDelegate,
@@ -243,7 +243,7 @@ UITableViewDataSource
                                                  name:PLVLCChatroomFunctionGotNotification
                                                object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self
-                                             selector:@selector(lotteryWinRecordCallback:) name:PLVInteractLotteryWinRecordMessageNewCallbackNotification
+                                             selector:@selector(interactUpdateChatButtonCallback:) name:PLVInteractUpdateChatButtonCallbackNotification
                                                object:nil];
 }
 
@@ -255,7 +255,7 @@ UITableViewDataSource
                                                     name:PLVLCChatroomFunctionGotNotification
                                                   object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self
-                                                    name:PLVInteractLotteryWinRecordMessageNewCallbackNotification
+                                                    name:PLVInteractUpdateChatButtonCallbackNotification
                                                   object:nil];
 }
 
@@ -270,10 +270,10 @@ UITableViewDataSource
     self.likeButtonView.hidden = [PLVRoomDataManager sharedManager].roomData.sendLikeDisable;
 }
 
-- (void)lotteryWinRecordCallback:(NSNotification *)notification {
+- (void)interactUpdateChatButtonCallback:(NSNotification *)notification {
     NSDictionary *dict = notification.userInfo;
-    self.keyboardToolView.hideLotteryWinRecord = ![dict[@"isShow"] boolValue];
-    self.keyboardToolView.isNewLotteryMessage = [dict[@"hasNew"] boolValue];
+    NSArray *buttonDataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.keyboardToolView updateChatButtonDataArray:buttonDataArray];
 }
 
 #pragma mark - Public Method
@@ -708,9 +708,10 @@ UITableViewDataSource
     [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenBulletinNotification object:nil];
 }
 
-
-- (void)keyboardToolView_openLotteryRecord:(PLVLCKeyboardToolView *)toolView {
-    [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenLotteryRecordNotification object:nil];
+- (void)keyboardToolView_openInteractApp:(PLVLCKeyboardToolView *)moreView eventName:(NSString *)eventName {
+    if ([PLVFdUtil checkStringUseable:eventName]) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenInteractAppNotification object:eventName];
+    }
 }
 
 - (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView {

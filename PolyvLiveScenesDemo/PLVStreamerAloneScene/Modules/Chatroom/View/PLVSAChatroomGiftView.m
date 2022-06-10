@@ -11,9 +11,6 @@
 // 工具
 #import "PLVSAUtils.h"
 
-// 框架
-#import <SDWebImage/UIImageView+WebCache.h>
-
 @interface PLVSAChatroomGiftView ()
 
 // UI
@@ -74,9 +71,7 @@
     // 设置礼物图片
     self.giftImgView.hidden = !giftImageUrl;
     if (giftImageUrl) {
-        [self.giftImgView sd_setImageWithURL:[NSURL URLWithString:giftImageUrl]
-                              placeholderImage:nil
-                                       options:SDWebImageRetryFailed];
+        [PLVSAUtils setImageView:self.giftImgView url:[NSURL URLWithString:giftImageUrl] placeholderImage:nil options:SDWebImageRetryFailed];
     }
     
     __weak typeof(self) weakSelf = self;

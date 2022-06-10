@@ -22,7 +22,6 @@
 #import "PLVRoomDataManager.h"
 
 // 框架
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSALinkMicUserInfoSheet()
@@ -120,8 +119,7 @@
     BOOL isTeacher = self.viewerType == PLVRoomUserTypeTeacher;
     NSString *imageName = specialType ? @"plvsa_member_teacher_avatar" : @"plvsa_member_student_avatar";
     UIImage *placeholder = [PLVSAUtils imageForMemberResource:imageName];
-    [self.headerImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarPic]
-                            placeholderImage:placeholder];
+    [PLVSAUtils setImageView:self.headerImageView url:[NSURL URLWithString:user.avatarPic] placeholderImage:placeholder];
     if (specialType) {
         self.actorLabel.text = user.actor;
     }

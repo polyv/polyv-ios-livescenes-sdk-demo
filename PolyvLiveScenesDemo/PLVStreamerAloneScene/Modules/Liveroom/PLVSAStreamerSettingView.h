@@ -35,6 +35,10 @@
 /// 旋转屏幕
 - (void)changeDeviceOrientation:(UIDeviceOrientation)orientation;
 
+/// 当前是否显示 美颜弹层，可在此方法内部设置内部UI的显示与隐藏
+/// @param show YES:显示 NO:隐藏
+- (void)showBeautySheet:(BOOL)show;
+
 @end
 
 @protocol PLVSAStreamerSettingViewDelegate <NSObject>
@@ -57,6 +61,10 @@
 - (void)streamerSettingViewMirrorButtonClickWithMirror:(BOOL)mirror;
 /// 清晰度切换
 - (void)streamerSettingViewBitRateButtonClickWithResolutionType:(PLVResolutionType)type;
+/// 显示美颜按钮
+- (void)streamerSettingViewDidClickBeautyButton:(PLVSAStreamerSettingView *)streamerSettingView;
+/// 设备方向发送改变
+- (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView;
 
 @end
 

@@ -11,7 +11,6 @@
 #import "PLVRoomDataManager.h"
 #import "PLVChatUser.h"
 #import "PLVLSUtils.h"
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import "PLVLinkMicOnlineUser.h"
@@ -419,8 +418,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     BOOL specialType = [PLVRoomUser isSpecialIdentityWithUserType:user.userType];
     NSString *imageName = specialType ? @"plvls_member_teacher_avatar" : @"plvls_member_student_avatar";
     UIImage *placeholder = [PLVLSUtils imageForMemberResource:imageName];
-    [self.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl]
-                            placeholderImage:placeholder];
+    [PLVLSUtils setImageView:self.avatarImageView url:[NSURL URLWithString:user.avatarUrl] placeholderImage:placeholder];
     
     // 配置头衔标志
     self.actorBgView.hidden = !specialType;

@@ -8,8 +8,8 @@
 
 #import "PLVLSEmojiPopupView.h"
 #import "PLVEmoticonManager.h"
+#import "PLVLSUtils.h"
 
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat PLVLSEmojiPopupViewArrowRoundRadius = 4.f;//箭头的圆角
@@ -87,9 +87,7 @@ static CGFloat PLVLSEmojiPopupViewSizeWidth = 80;//长按弹出层视图宽
 }
 
 - (void)setImageEmotion:(PLVImageEmotion *)imageEmotion {
-    [self.imageView sd_setImageWithURL:[NSURL URLWithString:imageEmotion.url]
-                      placeholderImage:nil
-                               options:SDWebImageRetryFailed];
+    [PLVLSUtils setImageView:self.imageView url:[NSURL URLWithString:imageEmotion.url] placeholderImage:nil options:SDWebImageRetryFailed];
 }
 
 #pragma mark - Private

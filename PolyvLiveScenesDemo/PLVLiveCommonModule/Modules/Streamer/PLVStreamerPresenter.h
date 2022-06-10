@@ -463,6 +463,18 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param targetIndex 下标值
 - (PLVLinkMicWaitUser *)getWaitUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex;
 
+#pragma mark 美颜管理
+
+/// 初始化美颜功能，初始化结果由代理回调给出
+- (void)initBeauty;
+
+/// 开启或关闭 美颜处理
+/// @param enabled 开启或停止 (YES:开启；NO:关闭)
+- (void)enableBeautyProcess:(BOOL)enabled;
+
+/// 获取美颜管理器
+- (PLVBeautyManager *)shareBeautyManager;
+
 @end
 
 
@@ -695,6 +707,18 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param presenter 推流管理器
 /// @param inProgress 是否正在处理 (YES:处理中 NO:不在处理中)
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter operationInProgress:(BOOL)inProgress;
+
+#pragma mark 美颜状态事件
+
+/// 美颜初始化回调
+/// @param presenter 推流管理器
+/// @param result 0：初始化成功，其他错误详见错误回调
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter beautyDidInitWithResult:(int)result;
+
+/// 美颜处理错误回调
+/// @param presenter 推流管理器
+/// @param error 错误对象
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter beautyProcessDidOccurError:(NSError *)error;
 
 @end
 

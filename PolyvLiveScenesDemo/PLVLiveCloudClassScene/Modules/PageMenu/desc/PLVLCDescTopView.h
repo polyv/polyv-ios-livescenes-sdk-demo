@@ -17,7 +17,8 @@ typedef NS_ENUM(NSInteger, PLVLCLiveStatus) {
     PLVLCLiveStatusLiving,     // 直播中
     PLVLCLiveStatusEnd,        // 直播已结束
     PLVLCLiveStatusStop,       // 直播暂停
-    PLVLCLiveStatusPlayback    // 回放中
+    PLVLCLiveStatusPlayback,    // 回放中
+    PLVLCLiveStatusCached       // 已缓存
 };
 
 NS_ASSUME_NONNULL_BEGIN

@@ -11,7 +11,6 @@
 #import "PLVPhotoBrowser.h"
 #import "PLVLSUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSImageEmotionMessageCell ()
 
@@ -163,9 +162,7 @@
     }
     self.prohibitImageTipLabel.hidden = YES;
     if (imageURL) {
-        [self.chatImageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+        [PLVLSUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
     } else {
         [self.chatImageView setImage:placeHolderImage];
     }

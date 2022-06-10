@@ -15,7 +15,10 @@
 
 static NSString *const EnterTips = @"点击输入直播标题";
 
-@interface PLVSAStreamerSettingView ()<UITextViewDelegate, PLVSABitRateSheetDelegate>
+@interface PLVSAStreamerSettingView ()<
+UITextViewDelegate,
+PLVSABitRateSheetDelegate
+>
 
 #pragma mark UI
 /// view hierarchy
@@ -27,7 +30,7 @@ static NSString *const EnterTips = @"点击输入直播标题";
 /// ├── (UIButton) startButton
 /// └── (UIButton) backButtton
 /// 返回
-@property (nonatomic, strong) UIButton *backButtton;
+@property (nonatomic, strong) UIButton *backButton;
 /// 开始直播
 @property (nonatomic, strong) UIButton *startButton;
 /// 开始直播按钮渐变色
@@ -56,6 +59,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
 /// 文本滚动视图（为了兼容手机端横屏标题太长时，显示不美观的问题）
 @property (nonatomic, strong) UIScrollView *scrollView;
+/// 美颜开关
+@property (nonatomic, strong) UIButton *beautyButton;
 
 #pragma mark 数据
 @property (nonatomic, assign) CGFloat configViewHeight;
@@ -99,9 +104,9 @@ static NSString *const EnterTips = @"点击输入直播标题";
 #pragma mark - Notifications
 - (void)addObserver {
     [[NSNotificationCenter defaultCenter] addObserver:self
-                                                 selector:@selector(keyboardWillShow:)
-                                                     name:UIKeyboardWillShowNotification
-                                                   object:nil];
+                                             selector:@selector(keyboardWillShow:)
+                                                 name:UIKeyboardWillShowNotification
+                                               object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(keyboardWillHide:)
                                                  name:UIKeyboardWillHideNotification
@@ -115,8 +120,11 @@ static NSString *const EnterTips = @"点击输入直播标题";
 #pragma mark - [ Private Method ]
 
 - (void)setupUI {
-    [self addSubview:self.backButtton];
+    [self addSubview:self.backButton];
     [self addSubview:self.startButton];
+    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        [self addSubview:self.beautyButton];
+    }
     
     [self addSubview:self.maskView];
     [self.maskView addSubview:self.limitLable];
@@ -143,13 +151,15 @@ static NSString *const EnterTips = @"点击输入直播标题";
     CGFloat originY = [PLVSAUtils sharedUtils].areaInsets.top;
     CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
-
+    
     CGFloat backButttonTop = originY + 9;
     CGFloat startButtonBottom = bottom + (isLandscape ? 16 : 45);
-    CGFloat startButtonWidth = 328;
-    CGFloat configViewWidth = startButtonWidth;
+    CGFloat startButtonWidth = [PLVRoomDataManager sharedManager].roomData.appBeautyEnabled ? 206 : 320;
+    CGFloat beautyButtonWidth = [PLVRoomDataManager sharedManager].roomData.appBeautyEnabled ? 114 : 0;
+    CGFloat configViewWidth = startButtonWidth + 8 + beautyButtonWidth;
     CGFloat channelNameLableLeft = 28;
     CGFloat lineViewLeft = 24;
+    
     if (isPad) {
         backButttonTop = originY + 20;
         startButtonBottom = bottom + 100;
@@ -164,14 +174,26 @@ static NSString *const EnterTips = @"点击输入直播标题";
     self.configViewHeight += lableHeight - self.channelNameLableHeight;
     self.channelNameLableHeight = lableHeight;
     
-    self.backButtton.frame = CGRectMake(originX + 24, backButttonTop, 36, 36);
+    self.backButton.frame = CGRectMake(originX + 24, backButttonTop, 36, 36);
     self.maskView.frame = self.bounds;
     /// 初始化时默认收起输入框
     [self takeBackTextView];
+    
+    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        /// 美颜按钮
+        CGFloat beautyX = (CGRectGetWidth(self.bounds) - startButtonWidth - beautyButtonWidth - 8) / 2;
+        self.beautyButton.frame = CGRectMake(beautyX, self.bounds.size.height - startButtonBottom - 50, beautyButtonWidth, 50);
         
-    /// 开始直播按钮
-    self.startButton.frame = CGRectMake((CGRectGetWidth(self.bounds) - startButtonWidth) / 2.0, self.bounds.size.height - startButtonBottom - 50, startButtonWidth, 50);
-    self.gradientLayer.frame = self.startButton.bounds;
+        /// 开始直播按钮
+        self.startButton.frame = CGRectMake(CGRectGetMaxX(self.beautyButton.frame) + 8, self.beautyButton.frame.origin.y, startButtonWidth, 50);
+        self.gradientLayer.frame = self.startButton.bounds;
+    }
+    else {
+        /// 开始直播按钮
+        CGFloat startX = (CGRectGetWidth(self.bounds) - startButtonWidth) / 2;
+        self.startButton.frame = CGRectMake(startX, self.bounds.size.height - startButtonBottom - 50, startButtonWidth, 50);
+        self.gradientLayer.frame = self.startButton.bounds;
+    }
     
     /// 设置控件
     CGFloat configViewHeight = isLandscape && !isPad ? 195 : self.configViewHeight;
@@ -186,7 +208,7 @@ static NSString *const EnterTips = @"点击输入直播标题";
     
     /// 分割线
     self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.scrollView) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
-
+    
     /// 底部按钮
     CGSize buttonSize = CGSizeMake(32, 58);
     CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
@@ -196,7 +218,7 @@ static NSString *const EnterTips = @"点击输入直播标题";
     self.mirrorButton.frame = CGRectMake(UIViewGetRight(self.cameraReverseButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
     self.bitRateButton.frame = CGRectMake(UIViewGetRight(self.mirrorButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
     self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width + orientationButtonOffsetWidth, buttonSize.height);
-
+    
 }
 
 /// 初始化默认清晰度
@@ -237,7 +259,7 @@ static NSString *const EnterTips = @"点击输入直播标题";
     button.imageView.contentMode = UIViewContentModeScaleAspectFit;
     button.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
     [button setTitleColor:PLV_UIColorFromRGBA(@"#F0F1F5",0.6) forState:UIControlStateNormal];
-
+    
     [button setTitle:title forState:UIControlStateNormal];
     [button setImage: [PLVSAUtils imageForLiveroomResource:normalImageString] forState:UIControlStateNormal];
     [button setImage:[PLVSAUtils imageForLiveroomResource:selectedImageString] forState:UIControlStateSelected];
@@ -245,7 +267,7 @@ static NSString *const EnterTips = @"点击输入直播标题";
     button.imageEdgeInsets = UIEdgeInsetsMake(0,2,25,2);
     button.titleEdgeInsets = UIEdgeInsetsMake(38,-28,0,0);
     [button.titleLabel setTextAlignment:NSTextAlignmentCenter];
-
+    
     return button;
 }
 
@@ -295,14 +317,14 @@ static NSString *const EnterTips = @"点击输入直播标题";
 
 #pragma mark Getter & Setter
 
-- (UIButton *)backButtton {
-    if (!_backButtton) {
-        _backButtton = [UIButton buttonWithType:UIButtonTypeCustom];
+- (UIButton *)backButton {
+    if (!_backButton) {
+        _backButton = [UIButton buttonWithType:UIButtonTypeCustom];
         UIImage *image = [PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_back"];
-        [_backButtton setImage:image forState:UIControlStateNormal];
-        [_backButtton addTarget:self action:@selector(backButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        [_backButton setImage:image forState:UIControlStateNormal];
+        [_backButton addTarget:self action:@selector(backButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
-    return _backButtton;
+    return _backButton;
 }
 
 - (UIButton *)startButton {
@@ -461,6 +483,23 @@ static NSString *const EnterTips = @"点击输入直播标题";
     return _bitRateSheet;
 }
 
+- (UIButton *)beautyButton {
+    if (!_beautyButton) {
+        _beautyButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_beautyButton setImage:[PLVSAUtils imageForBeautyResource:@"plvsa_beauty_setter"] forState:UIControlStateNormal];
+        [_beautyButton setTitle:@"美颜" forState:UIControlStateNormal];
+        [_beautyButton setTitleColor:[PLVColorUtil colorFromHexString:@"#0382FF"] forState:UIControlStateNormal];
+        _beautyButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];
+        _beautyButton.backgroundColor = [UIColor whiteColor];
+        _beautyButton.layer.masksToBounds = YES;
+        _beautyButton.layer.cornerRadius = 25;
+        [_beautyButton setImageEdgeInsets:UIEdgeInsetsMake(0, -8, 0, 0)];
+        [_beautyButton setTitleEdgeInsets:UIEdgeInsetsMake(0, 8, 0, 0)];
+        [_beautyButton addTarget:self action:@selector(beautyButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _beautyButton;
+}
+
 #pragma mark - [ Event ]
 
 #pragma mark Action
@@ -484,8 +523,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
 - (void)cameraReverseAction:(UIButton *)sender {
     sender.userInteractionEnabled = NO; //控制翻转按钮点击间隔，防止短时间内重复点击
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-         sender.userInteractionEnabled = YES;
-     });
+        sender.userInteractionEnabled = YES;
+    });
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewCameraReverseButtonClick)]) {
         [self.delegate streamerSettingViewCameraReverseButtonClick];
     }
@@ -495,8 +534,8 @@ static NSString *const EnterTips = @"点击输入直播标题";
     sender.selected = !sender.selected;
     sender.userInteractionEnabled = NO; //控制镜像按钮点击间隔，防止短时间内重复点击
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-         sender.userInteractionEnabled = YES;
-     });
+        sender.userInteractionEnabled = YES;
+    });
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewMirrorButtonClickWithMirror:)]) {
         [self.delegate streamerSettingViewMirrorButtonClickWithMirror:sender.selected];
     }
@@ -523,6 +562,13 @@ static NSString *const EnterTips = @"点击输入直播标题";
     [self endEditing:NO];
 }
 
+- (void)beautyButtonAction:(UIButton *)sender {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickBeautyButton:)]) {
+        [self.delegate streamerSettingViewDidClickBeautyButton:self];
+    }
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark <UITextViewDelegate>
@@ -535,7 +581,7 @@ static NSString *const EnterTips = @"点击输入直播标题";
     if(range.length + range.location > textView.text.length) {
         return NO;
     }
-
+    
     NSString *toBeString = [textView.text stringByReplacingCharactersInRange:range withString:text];
     double newLength = [self calculateTextLengthWithString:toBeString];
     if (newLength <= TEXT_MAX_LENGTH) {
@@ -553,7 +599,7 @@ static NSString *const EnterTips = @"点击输入直播标题";
     CGFloat lableHeight = [self.channelNameLable sizeThatFits:CGSizeMake(self.channelNameLable.frame.size.width, MAXFLOAT)].height;
     self.configViewHeight += lableHeight - self.channelNameLableHeight;
     self.channelNameLableHeight = lableHeight;
-
+    
     CGRect rect = self.channelNameTextView.frame;
     CGFloat offsetHeight = textViewHeight - rect.size.height;
     self.channelNameTextView.frame = CGRectMake(rect.origin.x, rect.origin.y - offsetHeight, rect.size.width, textViewHeight);
@@ -582,7 +628,6 @@ static NSString *const EnterTips = @"点击输入直播标题";
     }
     
 }
-
 
 #pragma mark - [ Event ]
 #pragma mark Notification
@@ -627,6 +672,20 @@ static NSString *const EnterTips = @"点击输入直播标题";
     self.canAutorotate = NO;
     // 缓存设备方向
     [[PLVSAUtils sharedUtils] setupDeviceOrientation:orientation];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerSettingViewDidChangeDeviceOrientation:)]) {
+        [self.delegate streamerSettingViewDidChangeDeviceOrientation:self];
+    }
+}
+
+- (void)showBeautySheet:(BOOL)show {
+    [self showConfigView:!show];
+    self.backButton.hidden = show;
+    if (show) {
+        self.maskView.hidden = YES; // show == NO时，showConfigView内部会处理
+    }
+    self.beautyButton.hidden = show;
+    self.startButton.hidden = show;
 }
 
 @end

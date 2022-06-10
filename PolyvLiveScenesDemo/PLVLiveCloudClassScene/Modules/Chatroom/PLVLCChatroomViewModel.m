@@ -169,7 +169,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     __weak typeof(self) weakSelf = self;
     [PLVGiveRewardPresenter requestRewardSettingCompletion:^(BOOL rewardEnable, NSString *payWay, NSArray *modelArray, NSString *pointUnit) {
         weakSelf.enableReward = rewardEnable;
-        weakSelf.hideRewardDisplay = !rewardEnable;
+        //暂时 关闭动态特效
+        weakSelf.hideRewardDisplay = YES;
+//        weakSelf.hideRewardDisplay = !rewardEnable;
         [weakSelf notifyDelegatesLoadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
     } failure:^(NSString *error) {
         

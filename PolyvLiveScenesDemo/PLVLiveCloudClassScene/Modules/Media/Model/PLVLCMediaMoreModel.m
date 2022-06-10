@@ -12,11 +12,21 @@
 
 @interface PLVLCMediaMoreModel ()
 
+///  选项当前的模式
+@property (nonatomic, assign) PLVLCMediaMoreModelMode mediaMoreModelMode;
+
 /// 具体选项标题数组
 @property (nonatomic, strong) NSArray <NSString *> * optionItemsArray;
 
 /// 当前选中的选项名
 @property (nonatomic, copy) NSString * currentSelectedItemString;
+
+/// 功能开关未选中图片
+@property (nonatomic, strong) UIImage * switchNormalImage;
+
+/// 功能开关选中图片
+@property (nonatomic, strong) UIImage * switchSelectedImage;
+
 
 @end
 
@@ -24,7 +34,7 @@
 
 #pragma mark - [ Public Methods ]
 - (NSInteger)selectedIndex{
-    if (_selectedIndex >= self.optionItemsArray.count) {
+    if (_selectedIndex >= self.optionItemsArray.count && self.mediaMoreModelMode == PLVLCMediaMoreModelMode_Options) {
         NSLog(@"PLVLCMediaMoreModel - selectedIndex illegal:%ld, when optionItemsArray.count:%ld",_selectedIndex,self.optionItemsArray.count);
         return (self.optionItemsArray.count - 1);
     }else{
@@ -59,7 +69,29 @@
         NSLog(@"PLVLCMediaMoreModel - modelWithOptionTitle failed, set optionItemsArray failed, optionItemsArray:%@",optionItemsArray);
         return nil;
     }
+    model.mediaMoreModelMode = PLVLCMediaMoreModelMode_Options;
     model.selectedIndex = selectedIndex;
+    return model;
+}
+
++ (instancetype)modelWithSwitchTitle:(NSString *)switchTitle normalImage:(UIImage *)normalImage selectedImage:(UIImage *)selectedImage selected:(BOOL)selected{
+    PLVLCMediaMoreModel * model = [[PLVLCMediaMoreModel alloc] init];
+    if ([PLVFdUtil checkStringUseable:switchTitle]) {
+        model.optionTitle = switchTitle;
+    } else {
+        NSLog(@"PLVLCMediaMoreModel - modelWithSwitchTitle failed, set optionTitle failed, optionTitle:%@",switchTitle);
+        return nil;
+    }
+    
+    if (normalImage && [normalImage isKindOfClass:UIImage.class]) {
+        model.switchNormalImage = normalImage;
+    }
+    
+    if (selectedImage && [selectedImage isKindOfClass:UIImage.class]) {
+        model.switchSelectedImage = selectedImage;
+    }
+    model.mediaMoreModelMode = PLVLCMediaMoreModelMode_Switch;
+    model.selectedIndex = selected ? 1 : 0;
     return model;
 }
 

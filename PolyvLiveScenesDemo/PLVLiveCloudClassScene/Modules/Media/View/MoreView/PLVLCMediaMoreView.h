@@ -46,6 +46,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)switchShowStatusWithAnimation;
 
+- (void)openDanmuButton:(BOOL)open;
+
 - (PLVLCMediaMoreModel * _Nullable)getMoreModelAtIndex:(NSInteger)index;
 
 @end

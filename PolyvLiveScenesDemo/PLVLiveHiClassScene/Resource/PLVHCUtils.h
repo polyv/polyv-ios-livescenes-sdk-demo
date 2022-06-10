@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 #import "PLVHCHiClassToast.h"
 #import <UIKit/UIKit.h>
+#import <SDWebImage/UIImageView+WebCache.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -103,6 +104,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取PLVHCLinkMic.bundle的图片资源
 /// @param imageName 图片资源名称
 + (UIImage *)imageForLinkMicResource:(NSString *)imageName;
+
++ (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder;
+
++ (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder options:(SDWebImageOptions)options;
+
++ (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder completed:(nullable SDExternalCompletionBlock)completedBlock;
+
++ (void)setImageView:(UIImageView *)imageView
+                 url:(nullable NSURL *)url
+    placeholderImage:(nullable UIImage *)placeholder
+             options:(SDWebImageOptions)options
+            progress:(nullable SDWebImageDownloaderProgressBlock)progressBlock
+           completed:(nullable SDExternalCompletionBlock)completedBlock;
 
 /// 获取PLVHCLiveroom.bundle路径
 + (NSBundle *)bundlerForLiveroom;

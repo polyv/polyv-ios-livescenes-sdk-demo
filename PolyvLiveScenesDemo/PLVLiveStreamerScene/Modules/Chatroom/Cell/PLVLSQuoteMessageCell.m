@@ -23,7 +23,6 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSQuoteMessageCell ()
 
@@ -156,7 +155,7 @@
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        
+        _textView.selectable = NO;
         UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction)];
         [_textView addGestureRecognizer:tapGesture];
     }
@@ -235,9 +234,7 @@
     self.quoteImageView.hidden = !quoteImageURL;
     if (quoteImageURL) {
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
-        [self.quoteImageView sd_setImageWithURL:quoteImageURL
-                               placeholderImage:placeHolderImage
-                                        options:SDWebImageRetryFailed];
+        [PLVLSUtils setImageView:self.quoteImageView url:quoteImageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
     }
     
     // 严禁词提示

@@ -10,7 +10,6 @@
 #import "PLVLSEmojiPopupView.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLSUtils.h"
-#import <SDWebImage/UIImageView+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kDefaultEmojiMaxRow = 4;//默认表情行数
@@ -544,9 +543,7 @@ static CGFloat kLSEmojiToolHeight = 40; //切换表情工具栏高度
 }
 - (void)setImageEmotion:(PLVImageEmotion *)imageEmotion {
     _imageEmotion = imageEmotion;
-    [self.imageView sd_setImageWithURL:[NSURL URLWithString:imageEmotion.url]
-                      placeholderImage:nil
-                               options:SDWebImageRetryFailed];
+    [PLVLSUtils setImageView:self.imageView url:[NSURL URLWithString:imageEmotion.url] placeholderImage:nil options:SDWebImageRetryFailed];
     self.titleLabel.text = imageEmotion.title;
 }
 

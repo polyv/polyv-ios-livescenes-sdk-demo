@@ -20,6 +20,7 @@
 #import "PLVSAStreamerFinishView.h"
 #import "PLVSAFinishStreamerSheet.h"
 #import "PLVBroadcastExtensionLauncher.h"
+#import "PLVSABeautySheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -27,6 +28,7 @@
 #import "PLVSAChatroomViewModel.h"
 #import "PLVMemberPresenter.h"
 #import "PLVStreamerPresenter.h"
+#import "PLVSABeautyViewModel.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -47,7 +49,8 @@ PLVSALinkMicAreaViewDelegate,
 PLVSocketManagerProtocol,
 PLVStreamerPresenterDelegate,
 PLVMemberPresenterDelegate,
-PLVSAStreamerHomeViewDelegate
+PLVSAStreamerHomeViewDelegate,
+PLVSABeautySheetDelegate
 >
 
 #pragma mark 模块
@@ -93,6 +96,7 @@ PLVSAStreamerHomeViewDelegate
 @property (nonatomic, strong) PLVSACountDownView *countDownView; // 准备开播的倒计时页
 @property (nonatomic, strong) PLVSAStreamerHomeView *homeView; // 开播中的推流页
 @property (nonatomic, strong) PLVSAStreamerFinishView *finishView; // 结束开播的结束页
+@property (nonatomic, strong) PLVSABeautySheet *beautySheet; // 美颜设置弹层
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -176,6 +180,7 @@ PLVSAStreamerHomeViewDelegate
 - (void)logout {
     [self socketLogout];
     [PLVRoomLoginClient logout];
+    [self.streamerPresenter enableBeautyProcess:NO]; // 关闭美颜管理器
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerViewControllerLogout:)]) {
         [self.delegate streamerViewControllerLogout:self];
@@ -275,6 +280,14 @@ PLVSAStreamerHomeViewDelegate
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
 }
 
+- (PLVSABeautySheet *)beautySheet {
+    if (!_beautySheet) {
+        _beautySheet = [[PLVSABeautySheet alloc] initWithSheetHeight:190 sheetLandscapeWidth:301];
+        _beautySheet.delegate = self;
+    }
+    return _beautySheet;
+}
+
 #pragma mark Initialize
 
 - (void)setupUI {
@@ -304,6 +317,9 @@ PLVSAStreamerHomeViewDelegate
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
     [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_Tile];
+    
+    // 初始化美颜
+    [self.streamerPresenter initBeauty];
     
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
 }
@@ -374,6 +390,8 @@ PLVSAStreamerHomeViewDelegate
                     [weakSelf.streamerPresenter startLocalMicCameraPreviewByDefault];
                     
                     [weakSelf tryResumeClass];
+                    // 开启RTC图像数据回调给美颜处理
+                    [weakSelf.streamerPresenter enableBeautyProcess:[PLVSABeautyViewModel sharedViewModel].beautyIsOpen];
                 }
             }];
         }
@@ -554,6 +572,22 @@ PLVSAStreamerHomeViewDelegate
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.settingView changeDeviceOrientation:orientation];
         });
+    }
+}
+
+#pragma mark 美颜
+- (void)showBeautySheet:(BOOL)show {
+    if (![PLVSABeautyViewModel sharedViewModel].beautyIsReady) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"美颜未准备就绪，请退出重新登录"];
+        return;
+    }
+    
+    if (show) {
+        [self.beautySheet showInView:self.view];
+    } else {
+        if (_beautySheet) {
+            [self.beautySheet dismiss];
+        }
     }
 }
 
@@ -846,6 +880,23 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter beautyDidInitWithResult:(int)result {
+    if (result == 0) {
+        // 配置美颜
+        PLVBeautyManager *beautyManager = [self.streamerPresenter shareBeautyManager];
+        [[PLVSABeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
+    } else {
+        [PLVSAUtils showToastInHomeVCWithMessage:[NSString stringWithFormat:@"美颜初始化失败 %d 请重进直播间", result]];
+    }
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter beautyProcessDidOccurError:(NSError *)error {
+    if (error) {
+        NSString *errorDes = error.userInfo[NSLocalizedDescriptionKey];
+        [PLVSAUtils showToastInHomeVCWithMessage:errorDes];
+    }
+}
+
 #pragma mark PLVSALinkMicAreaViewDelegate
 
 - (PLVLinkMicOnlineUser *)localUserInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
@@ -916,6 +967,18 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 - (void)streamerSettingViewBitRateButtonClickWithResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+}
+
+- (void)streamerSettingViewDidClickBeautyButton:(PLVSAStreamerSettingView *)streamerSettingView {
+    if (self.streamerPresenter.currentCameraOpen) {
+        [self showBeautySheet:YES];
+    } else {
+        [PLVSAUtils showToastWithMessage:@"请开启摄像头后使用" inView:self.view];
+    }
+}
+
+- (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView {
+    [self.beautySheet deviceOrientationDidChange];
 }
 
 #pragma mark PLVSAStreamerHomeViewProtocol
@@ -1031,6 +1094,28 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+}
+
+- (void)streamerHomeViewDidTapBeautyButton:(PLVSAStreamerHomeView *)homeView {
+    if (self.streamerPresenter.currentCameraOpen) {
+        [self showBeautySheet:YES];
+    } else {
+        [PLVSAUtils showToastWithMessage:@"请开启摄像头后使用" inView:self.view];
+    }
+}
+
+#pragma mark PLVSABeautySheetDelegate
+- (void)beautySheet:(PLVSABeautySheet *)beautySheet didChangeOn:(BOOL)on {
+    [self.streamerPresenter enableBeautyProcess:on];
+}
+
+- (void)beautySheet:(PLVSABeautySheet *)beautySheet didChangeShow:(BOOL)show {
+    if (_settingView) { // 需要先判断是否已初始化
+        [self.settingView showBeautySheet:show];
+    }
+    if (_homeView) { // 需要先判断是否已初始化
+        [self.homeView showBeautySheet:show];
+    }
 }
 
 @end

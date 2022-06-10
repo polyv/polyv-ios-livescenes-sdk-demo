@@ -58,6 +58,7 @@ UITextViewDelegate
 @property (nonatomic, assign) CGFloat emojiboardHeight; // emojiBoard 高度
 @property (nonatomic, assign) CGFloat keyboardHeight; // keyboard 高度
 @property (nonatomic, assign) BOOL remindMsg; // 是否为提醒消息
+@property (nonatomic, assign) BOOL selectedEmojiboard; // 是否选择了表情键盘
 
 @property (nonatomic, strong) PLVChatModel *replyModel;
 
@@ -80,7 +81,6 @@ UITextViewDelegate
         self.emojiboardHeight = 209.0 + self.bottomHeight;
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardDidHideNotification object:nil];
         
         // 提前初始化 sendMsgView，避免弹出时才初始化导致卡顿
         [self bgView];
@@ -121,6 +121,7 @@ UITextViewDelegate
             [weakSelf dismiss];
         };
         _toolView.didTapEmojiButton = ^(BOOL selected) {
+            weakSelf.selectedEmojiboard = selected;
             [weakSelf changeKeyboard:selected];
         };
     }
@@ -331,6 +332,7 @@ UITextViewDelegate
         }
         
         self.keyboardHeight = 0;
+        self.selectedEmojiboard = NO;
     }];
 }
 
@@ -412,10 +414,6 @@ UITextViewDelegate
     [self showKeyboard];
 }
 
-- (void)keyboardWillHide:(NSNotification *)notification {
-    [self removeFromWindow];
-}
-
 - (void)showKeyboard {
     [UIView animateWithDuration:0.3 animations:^{
         self.toolView.frame = CGRectMake(0, PLVScreenHeight - self.toolViewHeight - self.keyboardHeight + self.bottomHeight , PLVScreenWidth, self.toolViewHeight);
@@ -475,6 +473,10 @@ UITextViewDelegate
 - (void)textViewDidEndEditing:(UITextView *)textView {
     if (self.toolView.textView.attributedText.length == 0) {
         [self.toolView.textView endEdit];
+    }
+    
+    if (!self.selectedEmojiboard) {
+        [self removeFromWindow];
     }
 }
 

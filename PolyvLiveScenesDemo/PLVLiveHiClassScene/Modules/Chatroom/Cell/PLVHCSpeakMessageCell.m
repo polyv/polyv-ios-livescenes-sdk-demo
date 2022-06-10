@@ -23,7 +23,6 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVHCSpeakMessageCell ()<
 UITextViewDelegate>
@@ -474,7 +473,7 @@ static CGFloat kCellTopMargin = 10;
     
     NSURL *imageURL = [NSURL URLWithString:user.avatarUrl];
     if (imageURL) {
-        [self.headerImageView sd_setImageWithURL:imageURL placeholderImage:placeHolderImage];
+        [PLVHCUtils setImageView:self.headerImageView url:imageURL placeholderImage:placeHolderImage];
     } else {
         [self.headerImageView setImage:placeHolderImage];
     }

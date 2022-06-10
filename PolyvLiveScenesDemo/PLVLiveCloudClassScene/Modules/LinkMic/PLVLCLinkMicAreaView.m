@@ -265,11 +265,13 @@ PLVLCLinkMicWindowsViewDelegate
         // Bar 处于显示 ‘请求中...’，点击表示希望取消申请连麦
         [PLVFdUtil showAlertWithTitle:@"确认取消申请连麦吗？" message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"取消申请连麦" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
             [weakSelf.presenter cancelRequestJoinLinkMic];
+            [[PLVWLogReporterManager sharedManager] reportWithEvent:@"waitingUserDidCancelLinkMic" modul:@"link" information:nil];
         }];
     }else if (status == PLVLCLinkMicControlBarStatus_Joined){
         // Bar 处于已连麦，点击表示希望取消申请连麦
         [PLVFdUtil showAlertWithTitle:@"确认挂断连麦吗？" message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"挂断" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
             [weakSelf.presenter leaveLinkMic];
+            [[PLVWLogReporterManager sharedManager] reportWithEvent:@"joinedUserDidCloseLinkMic" modul:@"link" information:nil];
         }];
     }
 }

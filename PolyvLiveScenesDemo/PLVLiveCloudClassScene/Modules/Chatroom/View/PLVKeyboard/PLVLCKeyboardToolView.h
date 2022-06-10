@@ -49,8 +49,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)keyboardToolView_openCamera:(PLVLCKeyboardToolView *)toolView;
 /// 打开公告
 - (void)keyboardToolView_readBulletin:(PLVLCKeyboardToolView *)toolView;
-/// 打开中奖列表
-- (void)keyboardToolView_openLotteryRecord:(PLVLCKeyboardToolView *)toolView;
+/// 打开互动应用模块
+- (void)keyboardToolView_openInteractApp:(PLVLCKeyboardToolView *)moreView eventName:(NSString *)eventName;
 /// 打开礼物打赏面板
 - (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView;
 /// 点击【屏蔽特效】或【展示特效】
@@ -67,10 +67,6 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL enableSendImage;
 /// 是否隐藏公告按钮，默认 NO；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hiddenBulletin;
-/// 是否隐藏消息按钮，默认 YES；YES - 隐藏，NO - 显示
-@property (nonatomic, assign) BOOL hideLotteryWinRecord;
-/// 是否有新中奖消息
-@property (nonatomic, assign) BOOL isNewLotteryMessage;
 /// 是否隐藏积分打赏按钮，默认NO；YES - 显示，NO - 隐藏
 @property (nonatomic, assign) BOOL enablePointReward;
 ///键盘的图片表情
@@ -89,6 +85,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 刷新文本和按钮布局，iPad分屏尺寸变动时调用
 - (void)updateTextViewAndButton;
+
+/// 更新按钮数据
+- (void)updateChatButtonDataArray:(NSArray *)dataArray;
 
 /// 完成布局后，修改正常状态下的位置 Y 值时调用
 - (void)changeFrameForNewOriginY:(CGFloat)originY;

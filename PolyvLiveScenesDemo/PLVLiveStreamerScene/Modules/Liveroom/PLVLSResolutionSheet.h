@@ -1,5 +1,5 @@
 //
-//  PLVLSSettingSheet.h
+//  PLVLSResolutionSheet.h
 //  PLVLiveStreamerDemo
 //
 //  Created by MissYasiky on 2021/3/5.
@@ -11,21 +11,19 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol PLVLSSettingSheetProtocol <NSObject>
-
-- (void)settingSheet_didTapLogoutButton;
+@protocol PLVLSResolutionSheetDelegate <NSObject>
 
 - (void)settingSheet_didChangeResolution:(PLVResolutionType)resolution;
 
 @end
 
-/// 设置弹层
-@interface PLVLSSettingSheet : PLVLSSideSheet
+/// 清晰度弹层
+@interface PLVLSResolutionSheet : PLVLSSideSheet
 
 /// 当前 清晰度
 @property (nonatomic, assign) PLVResolutionType resolution;
 
-@property (nonatomic, weak) id<PLVLSSettingSheetProtocol> delegate;
+@property (nonatomic, weak) id<PLVLSResolutionSheetDelegate> delegate;
 
 @end
 

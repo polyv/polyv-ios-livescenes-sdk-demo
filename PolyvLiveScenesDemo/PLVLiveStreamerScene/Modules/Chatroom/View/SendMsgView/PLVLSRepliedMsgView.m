@@ -10,7 +10,6 @@
 #import "PLVChatModel.h"
 #import "PLVLSUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
 
 @interface PLVLSRepliedMsgView ()
 
@@ -101,9 +100,7 @@
         NSURL *imageURL = [PLVLSRepliedMsgView imageURLWithMessageImageUrl:imageMsg.imageUrl];
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
         if (imageURL) {
-            [self.imageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+            [PLVLSUtils setImageView:self.imageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
         } else if (imageMsg.image) {
             [self.imageView setImage:imageMsg.image];
         } else {
@@ -116,9 +113,7 @@
         NSURL *imageURL = [PLVLSRepliedMsgView imageURLWithMessageImageUrl:imageMsg.imageUrl];
         UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
         if (imageURL) {
-            [self.imageView sd_setImageWithURL:imageURL
-                              placeholderImage:placeHolderImage
-                                       options:SDWebImageRetryFailed];
+            [PLVLSUtils setImageView:self.imageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
         } else {
             [self.imageView setImage:placeHolderImage];
         }

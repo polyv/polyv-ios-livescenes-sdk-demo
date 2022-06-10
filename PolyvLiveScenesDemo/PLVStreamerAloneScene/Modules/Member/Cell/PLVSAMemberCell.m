@@ -9,8 +9,7 @@
 #import "PLVSAMemberCell.h"
 #import "PLVChatUser.h"
 #import "PLVRoomDataManager.h"
-#import "PLVSAUtils.h"
-#import <SDWebImage/UIImageView+WebCache.h>
+#import "PLVSAUtils.h">
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSAMemberCell ()
@@ -106,8 +105,7 @@
     // 配置头像
     NSString *imageName = [self imageNameWithUserType:user.userType];
     UIImage *placeholder = [PLVSAUtils imageForMemberResource:imageName];
-    [self.avatarImageView sd_setImageWithURL:[NSURL URLWithString:user.avatarUrl]
-                            placeholderImage:placeholder];
+    [PLVSAUtils setImageView:self.avatarImageView url:[NSURL URLWithString:user.avatarUrl] placeholderImage:placeholder];
     
     // 配置禁言标志
     self.bannedImageView.hidden = !(user.banned && !specialType);

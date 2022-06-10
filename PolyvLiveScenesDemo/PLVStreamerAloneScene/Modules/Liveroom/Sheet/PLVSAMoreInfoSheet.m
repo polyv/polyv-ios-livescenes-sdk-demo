@@ -28,6 +28,7 @@
 @property (nonatomic, strong) UIButton *flashButton; // 闪光灯
 @property (nonatomic, strong) UIButton *cameraBitRateButton; // 摄像头清晰度
 @property (nonatomic, strong) UIButton *closeRoomButton; // 全体禁言
+@property (nonatomic, strong) UIButton *beautyButton; // 美颜
 
 // 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType userType;
@@ -50,10 +51,12 @@
         [self.contentView addSubview:self.flashButton];
         [self.contentView addSubview:self.cameraBitRateButton];
         [self.contentView addSubview:self.closeRoomButton];
+        if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+            [self.contentView addSubview:self.beautyButton];
+        }
     }
     return self;
 }
-
 
 #pragma mark - [ Override ]
 
@@ -69,6 +72,11 @@
                                                                    self.microphoneButton,
                                                                    self.cameraReverseButton,
                                                                    self.mirrorButton]];
+    
+    // 美颜按钮
+    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        [buttonArray addObject:self.beautyButton];
+    }
     
     // 屏幕共享
     self.screenShareButton.hidden = ![self canScreenShare];
@@ -284,6 +292,19 @@
 
 - (PLVRoomUserType)userType{
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+}
+
+- (UIButton *)beautyButton {
+    if (!_beautyButton) {
+        _beautyButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _beautyButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _beautyButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_beautyButton setTitle:@"美颜" forState:UIControlStateNormal];
+        [_beautyButton setImage:[PLVSAUtils imageForBeautyResource:@"plvsa_beauty_more"] forState:UIControlStateNormal];
+        [_beautyButton setImage:[PLVSAUtils imageForBeautyResource:@"plvsa_beauty_more"] forState:UIControlStateSelected];
+        [_beautyButton addTarget:self action:@selector(beautyButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _beautyButton;
 }
 
 #pragma mark setButtonFrame
@@ -524,4 +545,11 @@
     }
 }
 
+- (void)beautyButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapBeautyButton:)]) {
+        [self.delegate moreInfoSheetDidTapBeautyButton:self];
+    }
+}
 @end

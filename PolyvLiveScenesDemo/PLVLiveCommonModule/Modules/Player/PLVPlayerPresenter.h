@@ -175,6 +175,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param vid 回放视频id
 - (void)changeVid:(NSString *)vid;
 
+/// 切换暂存视频
+/// @param fileId 暂存视频fileId
+- (void)changeFileId:(NSString *)fileId;
+
 @end
 
 @protocol PLVPlayerPresenterDelegate <NSObject>
@@ -211,6 +215,11 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param playerPresenter 播放器管理器
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo;
+
+/// 播放器 ‘回放视频信息’ 发生改变
+///
+/// @param playerPresenter 播放器管理器
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo;
 
 #pragma mark 直播相关
 /// 直播 ‘流状态’ 更新
