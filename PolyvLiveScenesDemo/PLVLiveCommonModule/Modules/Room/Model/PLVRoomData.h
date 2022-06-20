@@ -66,6 +66,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 #pragma mark 直播回放独有属性
 /// 回放视频 vid，点播系统生成的回放id，用于大部分回放相关接口请求
 @property (nonatomic, copy) NSString *vid;
+/// 回放视频场次id，用于聊天室回放时请求当场直播的聊天消息
+@property (nonatomic, copy) NSString *playbackSessionId;
 /// 回放视频 videoId，直播系统生成的回放id，主要用于章节数据的获取
 @property (nonatomic, copy) NSString *videoId;
 /// 是否是点播列表

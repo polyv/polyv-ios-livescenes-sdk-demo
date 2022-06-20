@@ -17,6 +17,7 @@
 #import "PLVLCSectionViewController.h"
 #import "PLVLCBuyViewController.h"
 #import "PLVRoomDataManager.h"
+#import "PLVLCChatroomPlaybackViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 
 PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
@@ -65,6 +66,8 @@ PLVRoomDataManagerProtocol
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
+@property (nonatomic, weak) PLVLCChatroomPlaybackViewModel *playbackViewModel;
+
 @end
 
 @implementation PLVLCLivePageMenuAreaView
@@ -105,6 +108,11 @@ PLVRoomDataManagerProtocol
     if (self.productVctrl) {
         [self.productVctrl updateUserInfo];
     }
+}
+
+- (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel {
+    self.playbackViewModel = playbackViewModel;
+    [self.chatVctrl updatePlaybackViewModel:self.playbackViewModel];
 }
 
 #pragma mark - Private Method
@@ -161,6 +169,7 @@ PLVRoomDataManagerProtocol
     } else if (menuType == PLVLCLivePageMenuTypeChat) {
         PLVLCChatViewController *vctrl = [[PLVLCChatViewController alloc] initWithLiveRoom:self.liveRoom];
         self.chatVctrl = vctrl;
+        [self.chatVctrl updatePlaybackViewModel:self.playbackViewModel];
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeQuiz) {
         PLVLCQuizViewController *vctrl = [[PLVLCQuizViewController alloc] init];

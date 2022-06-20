@@ -10,6 +10,7 @@
 
 #import "PLVLCUtils.h"
 #import "PLVLCLiveRoomLandscapeInputView.h"
+#import "PLVRoomDataManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -304,7 +305,6 @@
 - (UILabel *)guideChatLabel{
     if (!_guideChatLabel) {
         _guideChatLabel = [[UILabel alloc] init];
-        _guideChatLabel.text = @"跟大家聊点什么吧～";
         _guideChatLabel.textAlignment = NSTextAlignmentCenter;
         _guideChatLabel.textColor = [UIColor whiteColor];
         _guideChatLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
@@ -312,9 +312,17 @@
         _guideChatLabel.layer.cornerRadius = 18.0;
         _guideChatLabel.clipsToBounds = YES;
         _guideChatLabel.userInteractionEnabled = YES;
-
-        UITapGestureRecognizer * guideChatLabelTapGR = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(guideChatLabelTapGestureAction:)];
-        [_guideChatLabel addGestureRecognizer:guideChatLabelTapGR];
+        
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        BOOL playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
+        if (playbackEnable) {
+            _guideChatLabel.text = @"聊天室暂时关闭";
+        } else {
+            _guideChatLabel.text = @"跟大家聊点什么吧～";
+            UITapGestureRecognizer * guideChatLabelTapGR = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(guideChatLabelTapGestureAction:)];
+            [_guideChatLabel addGestureRecognizer:guideChatLabelTapGR];
+        }
+        
     }
     return _guideChatLabel;
 }

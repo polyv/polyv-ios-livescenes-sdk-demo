@@ -12,6 +12,7 @@
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatroomViewModel.h"
+#import "PLVLCChatroomPlaybackViewModel.h"
 #import "PLVPopoverView.h"
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
 #import "PLVLivePictureInPictureRestoreManager.h"
@@ -42,7 +43,8 @@ PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
 PLVCommodityPushViewDelegate,
 PLVCommodityDetailViewControllerDelegate,
-PLVPopoverViewDelegate
+PLVPopoverViewDelegate,
+PLVLCChatroomPlaybackDelegate
 >
 
 #pragma mark 数据
@@ -61,6 +63,7 @@ PLVPopoverViewDelegate
 #pragma mark 模块
 @property (nonatomic, strong) NSTimer * countdownTimer;
 @property (nonatomic, assign) NSTimeInterval countdownTime;
+@property (nonatomic, strong) PLVLCChatroomPlaybackViewModel *playbackViewModel;
 
 #pragma mark UI
 /// view hierarchy
@@ -200,6 +203,14 @@ PLVPopoverViewDelegate
                 [weakSelf.mediaAreaView changeFileId:deleteFileId];
             }
         }];
+        
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        if (roomData.menuInfo.chatInputDisable && roomData.playbackSessionId && roomData.videoType == PLVChannelVideoType_Playback) {
+            self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+            self.playbackViewModel.delegate = self;
+            [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
+            [self.chatLandscapeView updatePlaybackViewModel:self.playbackViewModel];
+        }
     }
 }
 
@@ -600,6 +611,17 @@ PLVPopoverViewDelegate
 
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    
+    BOOL playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
+    if (playbackEnable && !self.playbackViewModel) {
+        [self.playbackViewModel clear];
+        
+        self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+        self.playbackViewModel.delegate = self;
+        [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
+        [self.chatLandscapeView updatePlaybackViewModel:self.playbackViewModel];
+    }
+    
     self.liveRoomSkinView.danmuButtonShow = !roomData.channelInfo.closeDanmuEnable;
     [self.menuAreaView updateLiveUserInfo];
     [self.popoverView.interactView updateUserInfo];
@@ -615,6 +637,18 @@ PLVPopoverViewDelegate
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount{
     [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:watchCount];
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
+}
+
+- (void)roomDataManager_didVidChanged:(NSString *)vid {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
+        [self.playbackViewModel clear];
+        
+        self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+        self.playbackViewModel.delegate = self;
+        [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
+        [self.chatLandscapeView updatePlaybackViewModel:self.playbackViewModel];
+    }
 }
 
 #pragma mark PLVSocketManagerProtocol
@@ -725,6 +759,16 @@ PLVPopoverViewDelegate
         PLVRewardGoodsModel *model = [PLVRewardGoodsModel modelWithSocketObject:modelDict];
         [self.rewardDisplayManager addGoodsShowWithModel:model goodsNum:num personName:unick];
     }
+}
+
+#pragma mark PLVLCChatroomPlaybackDelegate
+
+- (NSTimeInterval)currentPlaybackTimeForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    return self.mediaAreaView.currentPlayTime;
+}
+
+- (void)didReceiveDanmu:(NSString * )content chatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    [self.mediaAreaView insertDanmu:content];
 }
 
 #pragma mark PLVLCMediaAreaViewDelegate
@@ -858,7 +902,12 @@ PLVPopoverViewDelegate
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString{
+    [self.playbackViewModel updateDuration:durationTime];
     [self.liveRoomSkinView setProgressWithCachedProgress:cachedProgress playedProgress:playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:currentTimeString durationString:durationString];
+}
+
+- (void)plvLCMediaAreaViewDidSeekSuccess:(PLVLCMediaAreaView *)mediaAreaView {
+    [self.playbackViewModel playbakTimeChanged];
 }
 
 // 文档、白板页码变化的回调

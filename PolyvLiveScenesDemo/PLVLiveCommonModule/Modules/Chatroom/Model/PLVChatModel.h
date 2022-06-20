@@ -44,14 +44,6 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 /// @note message类型为图片消息时，imageId不为空，否则为 nil
 @property (nonatomic, copy) NSString *imageId;
 
-/// 判断当前消息是否为：严禁词、违禁图片 消息
-/// @note YES: 含有严禁词、违禁图片的消息；NO: 不含严禁词、违禁图片的消息
-- (BOOL)isProhibitMsg;
-
-/// 判断当前消息是否为：提醒消息
-/// @note YES: 提醒消息；NO: 非提醒消息
-- (BOOL)isRemindMsg;
-
 /// 获取 message 属性的 msgId
 /// 如果为文本消息、引用消息、图片消息、打赏消息，msgId 不为空，否则为 nil
 - (NSString *)msgId;
@@ -63,6 +55,18 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 /// 获取message 属性的 time，当前消息发送的时间戳
 /// 如果为文本消息、引用消息、图片消息，time不为0，否则为0
 - (NSTimeInterval)time;
+
+- (NSTimeInterval)playbackTime;
+
+/// 判断当前消息是否为：严禁词、违禁图片 消息
+/// @note YES: 含有严禁词、违禁图片的消息；NO: 不含严禁词、违禁图片的消息
+- (BOOL)isProhibitMsg;
+
+/// 判断当前消息是否为：提醒消息
+/// @note YES: 提醒消息；NO: 非提醒消息
+- (BOOL)isRemindMsg;
+
++ (PLVChatModel *)chatModelFromPlaybackMessage:(PLVPlaybackMessage *)playbackMessage;
 
 @end
 

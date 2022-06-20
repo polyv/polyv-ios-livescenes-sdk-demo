@@ -10,7 +10,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVLCChatroomPlaybackViewModel;
+
 @interface PLVLCChatLandscapeView : UIView
+
+- (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
 @end
 

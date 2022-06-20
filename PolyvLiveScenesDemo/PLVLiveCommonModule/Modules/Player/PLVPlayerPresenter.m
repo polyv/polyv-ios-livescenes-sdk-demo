@@ -558,8 +558,11 @@ PLVAdvertViewDelegate
                 if (playbackList.totalItems > 1 && [playbackList.contents count] > 1) {
                     for (int i = 0; i < playbackList.totalItems; i++) {
                         if ([[PLVRoomDataManager sharedManager].roomData.vid isEqualToString:playbackList.contents[i].videoPoolId]) {
-                            [PLVRoomDataManager sharedManager].roomData.vid = (i == (playbackList.totalItems - 1)) ? playbackList.contents.firstObject.videoPoolId: playbackList.contents[i + 1].videoPoolId;
-                            [PLVRoomDataManager sharedManager].roomData.videoId = (i == (playbackList.totalItems - 1)) ? playbackList.contents.firstObject.videoId: playbackList.contents[i + 1].videoId;
+                            PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+                            PLVPlaybackVideoModel *videoModel = (i == (playbackList.totalItems - 1)) ? playbackList.contents.firstObject: playbackList.contents[i + 1];
+                            roomData.vid = videoModel.videoPoolId;
+                            roomData.videoId = videoModel.videoId;
+                            roomData.playbackSessionId = videoModel.channelSessionId;
                             break;
                         }
                     }
@@ -787,7 +790,8 @@ PLVAdvertViewDelegate
         message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
     }
     
-    if ([self.delegate respondsToSelector:@selector(playerPresenter:loadPlayerFailureWithMessage:)]) {
+    if ([self.delegate respondsToSelector:@selector(playerPresenter:loadPlayerFailureWithMessage:)] &&
+        [PLVFdUtil checkStringUseable:message]) {
         [self.delegate playerPresenter:self loadPlayerFailureWithMessage:message];
     }
 }
@@ -800,8 +804,12 @@ PLVAdvertViewDelegate
 }
 
 /// 直播回放播放器 ‘频道信息’ 发生改变
-- (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
-    [PLVRoomDataManager sharedManager].roomData.channelInfo = channelInfo;
+- (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    roomData.channelInfo = channelInfo;
+    if (!roomData.playbackSessionId) {
+        roomData.playbackSessionId = channelInfo.sessionId;
+    }
     /// 设置播放器LOGO
     [self setupPlayerLogoImage];
     if ([self.delegate respondsToSelector:@selector(playerPresenter:channelInfoDidUpdated:)]) {

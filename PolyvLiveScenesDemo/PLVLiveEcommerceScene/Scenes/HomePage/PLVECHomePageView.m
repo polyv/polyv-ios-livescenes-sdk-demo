@@ -80,6 +80,7 @@ PLVECChatroomViewDelegate
 /// 回放特有属性
 @property (nonatomic, assign) NSTimeInterval duration;                 // 回放视频时长
 @property (nonatomic, assign) NSUInteger curSpeedIndex;                // 回放视频当前播放速率
+@property (nonatomic, assign) NSTimeInterval currentPlaybackTime;      // 回放视频当前播放节点
 
 #pragma mark 模块
 
@@ -150,6 +151,7 @@ PLVECChatroomViewDelegate
         [self addSubview:self.likeButtonView];
         [self addSubview:self.giftButton];
     } else if (self.type == PLVECHomePageType_Playback) {
+        [self addSubview:self.chatroomView];
         [self addSubview:self.playerContolView];
         if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
             [self addSubview:self.playbackListButton];
@@ -170,8 +172,11 @@ PLVECChatroomViewDelegate
 
 - (PLVECChatroomView *)chatroomView {
     if (!_chatroomView) {
-        _chatroomView = [[PLVECChatroomView alloc] init];
-        _chatroomView.delegate = self;
+        if (self.type == PLVECHomePageType_Live ||
+            [PLVRoomDataManager sharedManager].roomData.menuInfo.chatInputDisable) {
+            _chatroomView = [[PLVECChatroomView alloc] init];
+            _chatroomView.delegate = self;
+        }
     }
     return _chatroomView;
 }
@@ -415,9 +420,13 @@ PLVECChatroomViewDelegate
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(CGFloat)duration
+  currentPlaybackTimeInterval:(NSTimeInterval)currentPlaybackTimeInterval
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime {
     self.duration = self.playerContolView.duration = duration;
+    self.currentPlaybackTime = currentPlaybackTimeInterval;
+    [self.chatroomView updateDuration:self.duration];
+    
     if (self.playerContolView.currentTimeLabel.text.length != currentPlaybackTime.length) {
         [self.playerContolView setNeedsLayout];
     }
@@ -510,9 +519,11 @@ PLVECChatroomViewDelegate
         self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
         
     } else if (self.type == PLVECHomePageType_Playback) {
+        // 聊天室布局
+        self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-P_SafeAreaBottomEdgeInsets());
         // 底部控件
-        self.playbackListButton.frame = CGRectMake(15, CGRectGetHeight(self.bounds) - buttonWidth - 15 - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
-        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - buttonWidth - 15, CGRectGetHeight(self.bounds) - buttonWidth - 15 - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+        self.playbackListButton.frame = CGRectMake(15, CGRectGetHeight(self.bounds) - buttonWidth - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - buttonWidth - 15, CGRectGetHeight(self.bounds) - buttonWidth - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
         self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 32, CGRectGetMaxX(self.moreButton.frame), 41);
     }
@@ -690,12 +701,15 @@ PLVECChatroomViewDelegate
     [self updateDowloadProgress:0
                  playedProgress:playerContolView.progressSlider.value
                        duration:self.duration
+    currentPlaybackTimeInterval:interval
             currentPlaybackTime:[PLVFdUtil secondsToString:interval]
                    durationTime:self.playerContolView.totalTimeLabel.text];
     
     if ([self.delegate respondsToSelector:@selector(homePageView:seekToTime:)]) {
         [self.delegate homePageView:self seekToTime:interval];
     }
+    
+    [self.chatroomView playbackTimeChanged];
 }
 
 #pragma mark PLVCommodityPushViewDelegate
@@ -722,6 +736,10 @@ PLVECChatroomViewDelegate
             [self.delegate homePageView_loadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
         });
     }
+}
+
+- (NSTimeInterval)chatroomView_currentPlaybackTime {
+    return self.currentPlaybackTime;
 }
 
 #pragma mark PLVECMoreViewDelegate

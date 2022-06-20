@@ -13,8 +13,10 @@
 #import "PLVECUtils.h"
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
+#import "PLVToast.h"
 #import <MJRefresh/MJRefresh.h>
 #import "PLVRewardDisplayManager.h"
+#import "PLVECChatroomPlaybackViewModel.h"
 
 #define TEXT_MAX_COUNT 200
 
@@ -24,7 +26,9 @@
 UITextViewDelegate,
 UITableViewDelegate,
 UITableViewDataSource,
-PLVECChatroomViewModelProtocol
+PLVRoomDataManagerProtocol,
+PLVECChatroomViewModelProtocol,
+PLVECChatroomPlaybackViewModelDelegate
 >
 
 /// 聊天列表
@@ -50,6 +54,10 @@ PLVECChatroomViewModelProtocol
 @property (nonatomic, strong) UIView *tapView;
 @property (nonatomic, strong) UITextView *textView;
 
+@property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
+
+@property (nonatomic, strong) PLVECChatroomPlaybackViewModel *playbackViewModel;
+
 @end
 
 @implementation PLVECChatroomView
@@ -63,11 +71,22 @@ PLVECChatroomViewModelProtocol
 - (instancetype)init {
     self = [self initWithFrame:CGRectZero];
     if (self) {
-        [[PLVECChatroomViewModel sharedViewModel] setup];
-        [PLVECChatroomViewModel sharedViewModel].delegate = self;
-        
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
+        if (self.videoType == PLVChannelVideoType_Live) {
+            [[PLVECChatroomViewModel sharedViewModel] setup];
+            [PLVECChatroomViewModel sharedViewModel].delegate = self;
+            
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
+        } else {
+            [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+            
+            PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+            BOOL playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
+            if (playbackEnable && roomData.playbackSessionId) {
+                self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+                self.playbackViewModel.delegate = self;
+            }
+        }
         
         self.observingTableView = NO;
         [self observeTableView];
@@ -120,24 +139,26 @@ PLVECChatroomViewModelProtocol
         [self.receiveNewMessageView addGestureRecognizer:gesture];
         [self addSubview:self.receiveNewMessageView];
         
-        self.textAreaView = [[UIView alloc] init];
-        self.textAreaView.layer.cornerRadius = 20.0;
-        self.textAreaView.layer.masksToBounds = YES;
-        self.textAreaView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
-        [self addSubview:self.textAreaView];
-        
-        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(textAreaViewTapAction)];
-        [self.textAreaView addGestureRecognizer:tapGesture];
-        
-        UIImageView *leftImgView = [[UIImageView alloc] initWithFrame:CGRectMake(8, 8, 16, 16)];
-        leftImgView.image = [PLVECUtils imageForWatchResource:@"plv_chat_img"];
-        [self.textAreaView addSubview:leftImgView];
-        
-        UILabel *placeholderLB = [[UILabel alloc] initWithFrame:CGRectMake(30, 9, 130, 14)];
-        placeholderLB.text = @"跟大家聊点什么吧～";
-        placeholderLB.font = [UIFont systemFontOfSize:14];
-        placeholderLB.textColor = [UIColor colorWithWhite:1.0 alpha:0.6];
-        [self.textAreaView addSubview:placeholderLB];
+        if (self.videoType == PLVChannelVideoType_Live) {
+            self.textAreaView = [[UIView alloc] init];
+            self.textAreaView.layer.cornerRadius = 20.0;
+            self.textAreaView.layer.masksToBounds = YES;
+            self.textAreaView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.4];
+            [self addSubview:self.textAreaView];
+            
+            UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(textAreaViewTapAction)];
+            [self.textAreaView addGestureRecognizer:tapGesture];
+            
+            UIImageView *leftImgView = [[UIImageView alloc] initWithFrame:CGRectMake(8, 8, 16, 16)];
+            leftImgView.image = [PLVECUtils imageForWatchResource:@"plv_chat_img"];
+            [self.textAreaView addSubview:leftImgView];
+            
+            UILabel *placeholderLB = [[UILabel alloc] initWithFrame:CGRectMake(30, 9, 130, 14)];
+            placeholderLB.text = @"跟大家聊点什么吧～";
+            placeholderLB.font = [UIFont systemFontOfSize:14];
+            placeholderLB.textColor = [UIColor colorWithWhite:1.0 alpha:0.6];
+            [self.textAreaView addSubview:placeholderLB];
+        }
     }
     return self;
 }
@@ -146,8 +167,9 @@ PLVECChatroomViewModelProtocol
     [super layoutSubviews];
     
     CGFloat tableViewHeight = 156;
-    self.textAreaView.frame = CGRectMake(15, CGRectGetHeight(self.bounds)-15-32, 165, 32);
-    self.tableViewBackgroundView.frame = CGRectMake(15, CGRectGetMinY(self.textAreaView.frame)-tableViewHeight-15, 234, tableViewHeight);
+    CGRect textAreaViewRect= CGRectMake(15, CGRectGetHeight(self.bounds)-15-32, 165, 32);
+    self.textAreaView.frame = textAreaViewRect;
+    self.tableViewBackgroundView.frame = CGRectMake(15, CGRectGetMinY(textAreaViewRect)-tableViewHeight-15, 234, tableViewHeight);
     self.gradientLayer.frame = self.tableViewBackgroundView.bounds;
     self.welcomView.frame = CGRectMake(-258, CGRectGetMinY(self.tableViewBackgroundView.frame)-22-15, 258, 22);
     self.originWelcomViewFrame = self.welcomView.frame;
@@ -216,6 +238,20 @@ PLVECChatroomViewModelProtocol
     return _rewardDisplayView;
 }
 
+- (PLVChannelVideoType)videoType {
+    return [PLVRoomDataManager sharedManager].roomData.videoType;
+}
+
+#pragma mark - Public Method
+
+- (void)updateDuration:(NSTimeInterval)duration {
+    [self.playbackViewModel updateDuration:duration];
+}
+
+- (void)playbackTimeChanged {
+    [self.playbackViewModel playbakTimeChanged];
+}
+
 #pragma mark - Action
 
 - (void)textAreaViewTapAction {
@@ -234,7 +270,11 @@ PLVECChatroomViewModelProtocol
 }
 
 - (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
-    [[PLVECChatroomViewModel sharedViewModel] loadHistory];
+    if (self.videoType == PLVChannelVideoType_Live) {
+        [[PLVECChatroomViewModel sharedViewModel] loadHistory];
+    } else {
+        [self.playbackViewModel loadMoreMessages];
+    }
 }
 
 - (void)readNewMessageAction { // 点击底部未读消息条幅时触发
@@ -290,6 +330,28 @@ PLVECChatroomViewModelProtocol
     }
     
     [self followKeyboardAnimated:notification.userInfo show:NO];
+}
+
+#pragma mark PLVRoomDataManagerProtocol
+
+- (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (self.videoType == PLVChannelVideoType_Playback && !self.playbackViewModel) {
+        [self.playbackViewModel clear];
+        
+        self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+        self.playbackViewModel.delegate = self;
+    }
+}
+
+- (void)roomDataManager_didVidChanged:(NSString *)vid {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
+        [self.playbackViewModel clear];
+        
+        self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+        self.playbackViewModel.delegate = self;
+    }
 }
 
 #pragma mark - PLVECChatroomViewModelProtocol
@@ -352,6 +414,57 @@ PLVECChatroomViewModelProtocol
             [self.delegate chatroomView_loadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
         });
     }
+}
+
+#pragma mark - PLVECChatroomPlaybackViewModelDelegate
+
+- (void)clearMessageForPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
+    [self.tableView reloadData];
+}
+
+- (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
+    NSString *content = success ? @"聊天室重放功能已开启，将会显示历史消息" : @"回放消息正在准备中，可稍等刷新查看";
+    [PLVToast showToastWithMessage:content inView:self afterDelay:5.0];
+}
+
+- (NSTimeInterval)currentPlaybackTimeForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomView_currentPlaybackTime)]) {
+        return [self.delegate chatroomView_currentPlaybackTime];
+    }
+    
+    return 0;
+}
+
+/// 新增聊天消息，UI需检查是否需要显示新消息提示
+- (void)didReceiveNewMessagesForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
+    // 如果距离底部5内都算底部
+    BOOL isBottom = (self.tableView.contentSize.height
+                     - self.tableView.contentOffset.y
+                     - self.tableView.bounds.size.height) <= 5;
+    
+    [self.tableView reloadData];
+    
+    if (isBottom) { // tableview显示在最底部
+        [self.receiveNewMessageView hidden];
+        [self scrollsToBottom];
+    } else {
+        // 显示未读消息提示
+        [self.receiveNewMessageView show];
+    }
+}
+
+/// 刷新聊天消息列表，列表应滚动到底部
+- (void)didMessagesRefreshedForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
+    [self.tableView reloadData];
+    [self.receiveNewMessageView hidden];
+    [self scrollsToBottom];
+}
+
+/// 往上滚动，列表滚动到最顶部
+- (void)didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
+    [self.refresher endRefreshing];
+    [self.tableView reloadData];
 }
 
 #pragma mark 显示欢迎语
@@ -419,20 +532,41 @@ PLVECChatroomViewModelProtocol
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [[PLVECChatroomViewModel sharedViewModel].chatArray count];
+    NSInteger count = 0;
+    if (self.videoType == PLVChannelVideoType_Live) {
+        count = [[[PLVECChatroomViewModel sharedViewModel] chatArray] count];
+    } else {
+        count = [self.playbackViewModel.chatArray count];
+    }
+    return count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    NSInteger count = 0;
+    if (self.videoType == PLVChannelVideoType_Live) {
+        count = [[[PLVECChatroomViewModel sharedViewModel] chatArray] count];
+    } else {
+        count = [self.playbackViewModel.chatArray count];
+    }
+    
+    if (indexPath.row >= count) {
+        return [UITableViewCell new];
+    }
+    
+    PLVChatModel *model = nil;
+    if (self.videoType == PLVChannelVideoType_Live) {
+        model = [[PLVECChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    } else {
+        model = self.playbackViewModel.chatArray[indexPath.row];
+    }
+    
+    
     static NSString *cellIdentify = @"cellIdentify";
     PLVECChatCell *cell = (PLVECChatCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
     if (!cell) {
         cell = [[PLVECChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
     }
-    
-    if ([PLVECChatroomViewModel sharedViewModel].chatArray.count > 0) {
-        PLVChatModel *model = [[PLVECChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
-        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
-    }
+    [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
     
     return cell;
 }
@@ -440,12 +574,23 @@ PLVECChatroomViewModelProtocol
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    
-    if ([PLVECChatroomViewModel sharedViewModel].chatArray.count == 0) {
-        return 0.0f;
+    NSInteger count = 0;
+    if (self.videoType == PLVChannelVideoType_Live) {
+        count = [[[PLVECChatroomViewModel sharedViewModel] chatArray] count];
+    } else {
+        count = [self.playbackViewModel.chatArray count];
     }
-        
-    PLVChatModel *model = [[PLVECChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
+    
+    if (indexPath.row >= count) {
+        return 0;
+    }
+    
+    PLVChatModel *model = nil;
+    if (self.videoType == PLVChannelVideoType_Live) {
+        model = [[PLVECChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    } else {
+        model = self.playbackViewModel.chatArray[indexPath.row];
+    }
     CGFloat cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     return cellHeight;
 }

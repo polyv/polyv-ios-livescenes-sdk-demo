@@ -126,7 +126,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     // 未开启美颜 或 当前选择的不是滤镜 不继续处理
     if (!self.beautyIsOpen ||
         !filterOption ||
-        ![filterOption isKindOfClass:[PLVBFilterOption class]]) {
+        ![filterOption isKindOfClass:NSClassFromString(@"PLVBFilterOption")]) {
         return;
     }
     
@@ -179,7 +179,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 
 - (PLVBFilterOption *)defaultFilterOption {
     if (!_defaultFilterOption) {
-        _defaultFilterOption = [[PLVBFilterOption alloc] init];
+        _defaultFilterOption = [[NSClassFromString(@"PLVBFilterOption") alloc] init];
         _defaultFilterOption.filterName = @"原图";
         _defaultFilterOption.filterSpellName = @"origin";
         _defaultFilterOption.filterKey = @"";
@@ -199,7 +199,9 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 - (void)initFilterOption {
     
     self.filterOptionArray = [NSMutableArray array];
-    [self.filterOptionArray addObject:self.defaultFilterOption];
+    if (self.defaultFilterOption) {
+        [self.filterOptionArray addObject:self.defaultFilterOption];
+    }
     
     NSArray *array = [self.beautyManager getSupportFilterOptions];
     if ([PLVFdUtil checkArrayUseable:array]) {

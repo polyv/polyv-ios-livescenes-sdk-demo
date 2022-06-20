@@ -11,6 +11,7 @@
 #import "PLVECPlaybackListCell.h"
 #import "PLVECPlaybackListView.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
+#import <MJRefresh/MJRefresh.h>
 
 static NSString * PLVECPlaybackListCellId = @"PLVECPlaybackListCellId";
 
@@ -28,6 +29,7 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, assign, readonly) CGSize cellSize;
 @property (nonatomic, strong, readonly) NSArray <PLVPlaybackVideoModel *> *dataArray;
 @property (nonatomic, assign) NSInteger selectCellIndex;
+@property (nonatomic, assign) NSInteger nextPageNumber;
 
 
 @end
@@ -45,7 +47,6 @@ PLVRoomDataManagerProtocol
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [self loadData];
     [self setupUI];
 }
 
@@ -67,17 +68,22 @@ PLVRoomDataManagerProtocol
     [self.view addGestureRecognizer:tapGestureRecognizer];
 }
 
-
-- (void)loadData{
+- (void)loadDataWithPageNumber:(NSUInteger)pageNumber {
+    [self loadDataWithPageNumber:pageNumber pageSize:10];
+}
+- (void)loadDataWithPageNumber:(NSUInteger)pageNumber pageSize:(NSUInteger)pageSize {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if([self.dataArray count] == roomData.playbackList.totalItems){
-        return;
-    }
     __weak typeof(self) weakSelf = self;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     NSString *listType = roomData.vodList ? @"vod" : @"playback";
-    [PLVLiveVideoAPI requestPlaybackList:roomData.channelId listType:listType page:1 pageSize:roomData.playbackList.totalItems appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
-        if (!error) {
+    [PLVLiveVideoAPI requestPlaybackList:roomData.channelId listType:listType page:pageNumber pageSize:pageSize appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
+        if (!error && playbackList) {
+            if (!playbackList.firstPage) {
+                NSMutableArray<PLVPlaybackVideoModel *> *tempDataArray = [weakSelf.dataArray mutableCopy];
+                [tempDataArray addObjectsFromArray:playbackList.contents];
+                playbackList.contents = tempDataArray;
+            }
+            weakSelf.playbackListView.collectionView.mj_footer.hidden = playbackList.lastPage;
             [PLVRoomDataManager sharedManager].roomData.playbackList = playbackList;
         }
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -96,6 +102,24 @@ PLVRoomDataManagerProtocol
         _playbackListView = [[PLVECPlaybackListView alloc] initWithFrame:frame];
         _playbackListView.dataSource = self;
         _playbackListView.delegate = self;
+        
+        __weak typeof(self) weakSelf = self;
+        MJRefreshNormalHeader *mjHeader = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
+            [weakSelf loadDataWithPageNumber:0 pageSize:weakSelf.nextPageNumber];
+            [weakSelf.playbackListView.collectionView.mj_header endRefreshing];
+        }];
+        mjHeader.lastUpdatedTimeLabel.hidden = YES;
+        mjHeader.stateLabel.hidden = YES;
+        [mjHeader.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
+        _playbackListView.collectionView.mj_header = mjHeader;
+        
+        MJRefreshAutoNormalFooter *mjFooter = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+            [weakSelf loadDataWithPageNumber:weakSelf.nextPageNumber];
+            [weakSelf.playbackListView.collectionView.mj_footer endRefreshing];
+        }];
+        mjFooter.stateLabel.hidden = YES;
+        [mjFooter.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
+        _playbackListView.collectionView.mj_footer = mjFooter;
     }
     return _playbackListView;
 }
@@ -119,6 +143,10 @@ PLVRoomDataManagerProtocol
 - (NSArray<PLVPlaybackVideoModel *> *)dataArray{
     NSArray *dataArray = [PLVRoomDataManager sharedManager].roomData.playbackList.contents;
     return dataArray;
+}
+
+- (NSInteger)nextPageNumber {
+    return [PLVRoomDataManager sharedManager].roomData.playbackList.nextPageNumber;
 }
 
 #pragma mark - Action
@@ -167,8 +195,11 @@ PLVRoomDataManagerProtocol
     
     _selectCellIndex = index;
     
-    [PLVRoomDataManager sharedManager].roomData.vid = self.dataArray[index].videoPoolId;
-    [PLVRoomDataManager sharedManager].roomData.videoId = self.dataArray[index].videoId;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVPlaybackVideoModel *videoModel = self.dataArray[index];
+    roomData.videoId = videoModel.videoId;
+    roomData.vid = videoModel.videoPoolId;
+    roomData.playbackSessionId = videoModel.channelSessionId;
 }
 
 #pragma mark PLVRoomDataManagerProtocol

@@ -93,6 +93,7 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(NSTimeInterval)duration
+  currentPlaybackTimeInterval:(NSTimeInterval)currentPlaybackTimeInterval
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime;
 

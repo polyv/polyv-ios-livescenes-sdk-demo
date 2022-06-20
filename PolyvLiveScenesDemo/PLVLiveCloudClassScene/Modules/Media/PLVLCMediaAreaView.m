@@ -20,6 +20,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVRoomDataManager.h"
 #import "PLVPlayerPresenter.h"
+#import "PLVLCChatroomPlaybackViewModel.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -365,6 +366,11 @@ PLVRoomDataManagerProtocol
 
 - (void)seekLivePlaybackToTime:(NSTimeInterval)time {
     [self.playerPresenter seekLivePlaybackToTime:time];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewDidSeekSuccess:)]) {
+        [self.delegate plvLCMediaAreaViewDidSeekSuccess:self];
+    }
 }
 
 - (BOOL)isPptView:(UIView *)view {
@@ -1055,6 +1061,11 @@ PLVRoomDataManagerProtocol
     // 拖动进度条后，同步当前进度时间
     [self playerPresenter:self.playerPresenter downloadProgress:0 playedProgress:currentSliderProgress playedTimeString:[PLVFdUtil secondsToString:currentTime] durationTimeString:[PLVFdUtil secondsToString:self.playerPresenter.duration]];
     [self.playerPresenter seekLivePlaybackToTime:currentTime];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewDidSeekSuccess:)]) {
+        [self.delegate plvLCMediaAreaViewDidSeekSuccess:self];
+    }
 }
 
 - (void)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView didChangePageWithType:(PLVChangePPTPageType)type {

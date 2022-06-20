@@ -10,6 +10,7 @@
 #import "PLVLCKeyboardToolView.h"
 #import "PLVLCNewMessageView.h"
 #import "PLVLCWelcomeView.h"
+#import "PLVLCPlaybackNotifyView.h"
 #import "PLVLCNotifyMarqueeView.h"
 #import "PLVLCSpeakMessageCell.h"
 #import "PLVLCImageMessageCell.h"
@@ -22,6 +23,7 @@
 #import "PLVRewardDisplayManager.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatroomViewModel.h"
+#import "PLVLCChatroomPlaybackViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
@@ -43,6 +45,7 @@ PLVLCKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
+PLVLCChatroomPlaybackViewModelDelegate,
 UINavigationControllerDelegate,
 UIImagePickerControllerDelegate,
 UITableViewDelegate,
@@ -64,10 +67,16 @@ UITableViewDataSource
 @property (nonatomic, strong) PLVLCKeyboardToolView *keyboardToolView;
 /// 聊天室顶部欢迎横幅
 @property (nonatomic, strong) PLVLCWelcomeView *welcomeView;
+/// 聊天室顶部回放功能横幅
+@property (nonatomic, strong) PLVLCPlaybackNotifyView *playbackNotifyView;
 /// 聊天室顶部公告横幅
 @property (nonatomic, strong) PLVLCNotifyMarqueeView *notifyMarqueeView;
 /// 打赏成功提示条幅
 @property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager;
+
+@property (nonatomic, assign) BOOL playbackEnable;
+
+@property (nonatomic, weak) PLVLCChatroomPlaybackViewModel *playbackViewModel;
 
 @end
 
@@ -83,6 +92,7 @@ UITableViewDataSource
     [self.view addSubview:self.welcomeView];
     [self.view addSubview:self.notifyMarqueeView];
     [self.view addSubview:self.receiveNewMessageView];
+    [self.view addSubview:self.playbackNotifyView];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -122,7 +132,8 @@ UITableViewDataSource
         [self.keyboardToolView addAtView:self.view frame:inputRect];
         self.receiveNewMessageView.frame = CGRectMake(0, inputRect.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
         self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
-                
+        self.playbackNotifyView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), 40);
+        
         [self arrangeTopMarqueeViewFrame];
         
         self.hasLayoutSubView = YES;
@@ -174,6 +185,9 @@ UITableViewDataSource
         _keyboardToolView = [[PLVLCKeyboardToolView alloc] init];
         _keyboardToolView.delegate = self;
         _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live);
+        if (self.playbackEnable) {
+            [_keyboardToolView changePlaceholderText:@"聊天室暂时关闭"];
+        }
     }
     return _keyboardToolView;
 }
@@ -205,6 +219,13 @@ UITableViewDataSource
     return _welcomeView;
 }
 
+- (PLVLCPlaybackNotifyView *)playbackNotifyView {
+    if (!_playbackNotifyView) {
+        _playbackNotifyView = [[PLVLCPlaybackNotifyView alloc] init];
+    }
+    return _playbackNotifyView;
+}
+
 - (PLVLCNotifyMarqueeView *)notifyMarqueeView {
     if (!_notifyMarqueeView) {
         _notifyMarqueeView = [[PLVLCNotifyMarqueeView alloc] init];
@@ -223,7 +244,11 @@ UITableViewDataSource
 #pragma mark - Action
 
 - (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
-    [[PLVLCChatroomViewModel sharedViewModel] loadHistory];
+    if (self.playbackEnable) {
+        [self.playbackViewModel loadMoreMessages];
+    } else {
+        [[PLVLCChatroomViewModel sharedViewModel] loadHistory];
+    }
 }
 
 - (void)readNewMessageAction { // 点击底部未读消息条幅时触发
@@ -291,7 +316,11 @@ UITableViewDataSource
         // 增加NSNotification监听
         [self addObserver];
         
-        [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        self.playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
+        if (!self.playbackEnable) {
+            [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        }
     }
     return self;
 }
@@ -299,6 +328,11 @@ UITableViewDataSource
 - (void)resumeLikeButtonViewLayout {
     [self.view insertSubview:self.likeButtonView belowSubview:self.receiveNewMessageView];
     [self refreshLikeButtonViewFrame];
+}
+
+- (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel {
+    self.playbackViewModel = playbackViewModel;
+    [self.playbackViewModel addUIDelegate:self delegateQueue:dispatch_get_main_queue()];
 }
 
 #pragma mark - Private Method
@@ -465,6 +499,47 @@ UITableViewDataSource
     }
 }
 
+#pragma mark - PLVLCChatroomPlaybackViewModelDelegate
+
+- (void)clearMessageForPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    [self.tableView reloadData];
+}
+
+- (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    NSString *content = success ? @"聊天室重放功能已开启，将会显示历史消息" : @"回放消息正在准备中，可稍等刷新查看";
+    [self.playbackNotifyView showNotifyhMessage:content];
+}
+
+- (void)didReceiveNewMessagesForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    // 如果距离底部5内都算底部
+    BOOL isBottom = (self.tableView.contentSize.height
+                     - self.tableView.contentOffset.y
+                     - self.tableView.bounds.size.height) <= 5;
+    
+    [self.tableView reloadData];
+    
+    if (isBottom) { // tableview显示在最底部
+        [self clearNewMessageCount];
+        [self scrollsToBottom:YES];
+    } else {
+        // 统计未读消息数
+        [self addNewMessageCount];
+    }
+}
+
+/// 刷新聊天消息列表，列表应滚动到底部
+- (void)didMessagesRefreshedForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    [self.tableView reloadData];
+    [self clearNewMessageCount];
+    [self scrollsToBottom:YES];
+}
+
+/// 往上滚动，列表滚动到最顶部
+- (void)didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    [self.refresher endRefreshing];
+    [self.tableView reloadData];
+}
+
 #pragma mark - UITableView DataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -472,16 +547,34 @@ UITableViewDataSource
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
+    NSInteger count = 0;
+    if (self.playbackEnable) {
+        count = [self.playbackViewModel.chatArray count];
+    } else {
+        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
+    }
+    return count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
+    NSInteger count = 0;
+    if (self.playbackEnable) {
+        count = [self.playbackViewModel.chatArray count];
+    } else {
+        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
+    }
+    
+    if (indexPath.row >= count) {
         return [UITableViewCell new];
     }
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    PLVChatModel *model = nil;
+    if (self.playbackEnable) {
+        model = self.playbackViewModel.chatArray[indexPath.row];
+    } else {
+        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    }
     
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
         static NSString *speakMessageCellIdentify = @"PLVLCSpeakMessageCell";
@@ -536,13 +629,26 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row >= [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count]) {
+    NSInteger count = 0;
+    if (self.playbackEnable) {
+        count = [self.playbackViewModel.chatArray count];
+    } else {
+        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
+    }
+    
+    if (indexPath.row >= count) {
         return 0;
     }
     
     CGFloat cellHeight = 44.0;
     
-    PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
+    PLVChatModel *model = nil;
+    if (self.playbackEnable) {
+        model = self.playbackViewModel.chatArray[indexPath.row];
+    } else {
+        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    }
+    
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
         cellHeight = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCImageMessageCell isModelValid:model]) {
@@ -574,12 +680,11 @@ UITableViewDataSource
 #pragma mark - PLVLCKeyboardToolView Delegate
 
 - (BOOL)keyboardToolView_shouldInteract:(PLVLCKeyboardToolView *)toolView {
-    return YES;
+    return !self.playbackEnable;
 }
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show {
     NSLog(@"keyboardToolView - popBoard %@", show ? @"YES" : @"NO");
-  
 }
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text {

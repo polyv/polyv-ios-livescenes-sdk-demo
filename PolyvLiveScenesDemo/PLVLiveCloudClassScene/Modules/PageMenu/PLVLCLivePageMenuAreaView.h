@@ -12,6 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class playbackViewModel;
+
 typedef NS_ENUM(NSInteger, PLVLCLivePageMenuType) {
     PLVLCLivePageMenuTypeUnknown = -1,  // 未知
     PLVLCLivePageMenuTypeDesc = 0,      // 直播介绍
@@ -45,6 +47,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
 /// 直播用户信息发生改变时调用
 - (void)updateLiveUserInfo;
+
+- (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
 @end
 

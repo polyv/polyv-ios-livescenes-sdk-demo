@@ -18,6 +18,8 @@ static NSInteger PLVLCKeyboardMaxTextLength = 200;
 
 @property (nonatomic, strong, readonly) NSAttributedString *emptyContent;
 
+- (void)changePlaceholderText:(NSString *)text;
+
 - (void)setupWithFrame:(CGRect)frame;
 
 - (void)startEdit;

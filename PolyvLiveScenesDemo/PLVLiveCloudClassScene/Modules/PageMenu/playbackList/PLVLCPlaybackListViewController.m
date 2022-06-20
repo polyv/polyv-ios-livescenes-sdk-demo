@@ -14,10 +14,10 @@
 
 @interface PLVLCPlaybackListViewController () <UITableViewDelegate,UITableViewDataSource,PLVRoomDataManagerProtocol>
 
-@property (nonatomic, strong) NSArray<PLVPlaybackVideoModel *> *playbackVideos;
-@property (nonatomic, strong) PLVPlaybackListModel *playbackList;
+@property (nonatomic, strong) NSMutableArray<PLVPlaybackVideoModel *> *playbackVideos;
 @property (nonatomic, assign) NSInteger currentPlayIndex;
 @property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, assign) NSInteger nextPageNumber;
 
 @end
 
@@ -29,17 +29,12 @@
     self = [super init];
     if (self) {
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-        
-        _playbackList = playbackList;
-        _playbackVideos = [playbackList.contents copy];
+        _playbackVideos = [playbackList.contents mutableCopy];
+        _nextPageNumber = playbackList.nextPageNumber;
         self.view = self.tableView;//解决滑不到底部的问题
+        self.tableView.mj_footer.hidden = playbackList.lastPage;
     }
     return self;
-}
-
-- (void)viewDidLoad {
-    [super viewDidLoad];
-    [self requestData];
 }
 
 #pragma mark - Getter & Setter
@@ -56,7 +51,7 @@
         
         __weak typeof(self) weakSelf = self;
         MJRefreshNormalHeader *mjHeader = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
-            [weakSelf requestData];
+            [weakSelf requestDataWithPageNumber:0 pageSize:weakSelf.nextPageNumber * 10];
             [weakSelf.tableView.mj_header endRefreshing];
         }];
         mjHeader.lastUpdatedTimeLabel.hidden = YES;
@@ -64,6 +59,14 @@
         [mjHeader.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
         
         _tableView.mj_header = mjHeader;
+        
+        MJRefreshAutoNormalFooter *mjFooter = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+            [weakSelf requestDataWithPageNumber:weakSelf.nextPageNumber];
+            [weakSelf.tableView.mj_footer endRefreshing];
+        }];
+        mjFooter.stateLabel.hidden = YES;
+        [mjFooter.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
+        _tableView.mj_footer = mjFooter;
         [_tableView registerClass:[PLVLCPlaybackListViewCell class] forCellReuseIdentifier:@"PLVLCPlaybackListViewCell"];
     }
     return _tableView;
@@ -76,16 +79,29 @@
 
 #pragma mark - Private Method
 
-- (void)requestData {
+- (void)requestDataWithPageNumber:(NSUInteger)pageNumber{
+    [self requestDataWithPageNumber:pageNumber pageSize:10];
+}
+
+- (void)requestDataWithPageNumber:(NSUInteger)pageNumber pageSize:(NSUInteger)pageSize {
     __weak typeof(self) weakSelf = self;
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     NSString *listType = roomData.vodList ? @"vod" : @"playback";
-    [PLVLiveVideoAPI requestPlaybackList:roomData.channelId listType:listType page:1 pageSize:roomData.playbackList.totalItems appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
-        weakSelf.playbackVideos =  playbackList.contents;
-         weakSelf.playbackList = playbackList;
-        if (!error) {
+    [PLVLiveVideoAPI requestPlaybackList:roomData.channelId listType:listType page:pageNumber pageSize:pageSize appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
+        if (!error && playbackList) {
+            if (playbackList.firstPage) {
+                [weakSelf.playbackVideos removeAllObjects];
+            }
+            [weakSelf.playbackVideos addObjectsFromArray:playbackList.contents];
+            weakSelf.tableView.mj_footer.hidden = playbackList.lastPage;
+            weakSelf.nextPageNumber = playbackList.nextPageNumber;
+            playbackList.contents = weakSelf.playbackVideos;
             [PLVRoomDataManager sharedManager].roomData.playbackList = playbackList;
+        } else {
+            if (pageNumber == 0) {
+                [weakSelf.playbackVideos setArray:playbackList.contents];
+            }
         }
         dispatch_async(dispatch_get_main_queue(), ^{
             [weakSelf.tableView reloadData];
@@ -97,8 +113,11 @@
 - (void)selectPlaybackListAtIndexPath:(NSInteger)index {
     if (![self.playbackVideos[self.currentPlayIndex].videoPoolId isEqualToString: self.playbackVideos[index].videoPoolId]) {
         self.currentPlayIndex = index;
-        [PLVRoomDataManager sharedManager].roomData.videoId = self.playbackVideos[index].videoId;
-        [PLVRoomDataManager sharedManager].roomData.vid = self.playbackVideos[index].videoPoolId;
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        PLVPlaybackVideoModel *videoModel = self.playbackVideos[index];
+        roomData.videoId = videoModel.videoId;
+        roomData.vid = videoModel.videoPoolId;
+        roomData.playbackSessionId = videoModel.channelSessionId;
     }
 }
 
@@ -135,14 +154,13 @@
 #pragma mark - PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didVidChanged:(NSString *)vid {
-    for (int i = 0; i < self.playbackList.totalItems; i++) {
-        if (![self.playbackVideos count]) {
-            break;
-        }
-        if ([vid isEqualToString:self.playbackVideos[i].videoPoolId]) {
-            [self.tableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0] animated:NO scrollPosition:UITableViewScrollPositionNone];
-            self.currentPlayIndex = i;
-            break;
+    if ([self.playbackVideos count]) {
+        for (int i = 0; i < self.playbackVideos.count; i++) {
+            if ([vid isEqualToString:self.playbackVideos[i].videoPoolId]) {
+                [self.tableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:i inSection:0] animated:NO scrollPosition:UITableViewScrollPositionNone];
+                self.currentPlayIndex = i;
+                break;
+            }
         }
     }
 }

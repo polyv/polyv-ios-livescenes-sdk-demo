@@ -597,8 +597,13 @@ PLVPlayerPresenterDelegate
 
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter downloadProgress:(CGFloat)downloadProgress playedProgress:(CGFloat)playedProgress playedTimeString:(NSString *)playedTimeString durationTimeString:(NSString *)durationTimeString {
     if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(updateDowloadProgress:playedProgress:duration:currentPlaybackTime:durationTime:)]) {
-        [self.delegate updateDowloadProgress:downloadProgress playedProgress:playedProgress duration:playerPresenter.duration currentPlaybackTime:playedTimeString durationTime:durationTimeString];
+        [self.delegate respondsToSelector:@selector(updateDowloadProgress:playedProgress:duration:currentPlaybackTimeInterval:currentPlaybackTime:durationTime:)]) {
+        [self.delegate updateDowloadProgress:downloadProgress
+                              playedProgress:playedProgress
+                                    duration:playerPresenter.duration
+                 currentPlaybackTimeInterval:self.playerPresenter.currentPlaybackTime
+                         currentPlaybackTime:playedTimeString
+                                durationTime:durationTimeString];
     }
 }
 

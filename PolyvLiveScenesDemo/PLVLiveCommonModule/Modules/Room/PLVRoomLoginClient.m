@@ -143,6 +143,7 @@
                             roomData.recordFile = recordFile;
                             roomData.sectionEnable = enable;
                             roomData.sectionList = sectionList;
+                            roomData.playbackSessionId = recordFile.channelSessionId;
                             
                             // 使用roomUserHandler配置用户对象
                             PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:apiChannelType];
@@ -172,8 +173,10 @@
                     PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登陆校验失败)", __FUNCTION__, error);
                 }];
             } else {
-                NSString *videoPoolId = playbackList.contents.firstObject.videoPoolId;
-                NSString *videoId = playbackList.contents.firstObject.videoId;
+                PLVPlaybackVideoModel *videoModel = playbackList.contents.firstObject;
+                NSString *videoPoolId = videoModel.videoPoolId;
+                NSString *videoId = videoModel.videoId;
+                NSString *playbackSessionId = videoModel.channelSessionId;
                 [self playbackLoginWithChannelType:channelType channelId:channelId vid:videoPoolId userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {
                     roomData.vodList = vodList;
                     roomData.vid = videoPoolId;
@@ -181,11 +184,13 @@
                     roomData.playbackList = playbackList;
                     roomData.sectionEnable = enable;
                     roomData.sectionList = sectionList;
+                    roomData.playbackSessionId = playbackSessionId;
                     
                     // 使用roomUserHandler配置用户对象
                     if (roomUserHandler) {
                         roomUserHandler(roomData.roomUser);
                     }
+                    [roomData setupRoomUser:roomData.roomUser];
                     
                     !completion ?: completion(roomData.customParam);
                     
@@ -205,6 +210,7 @@
             if (roomUserHandler) {
                 roomUserHandler(roomData.roomUser);
             }
+            [roomData setupRoomUser:roomData.roomUser];
             
             !completion ?: completion(roomData.customParam);
             
@@ -257,6 +263,7 @@
             if (roomUserHandler) {
                 roomUserHandler(roomData.roomUser);
             }
+            [roomData setupRoomUser:roomData.roomUser];
             
             !completion ?: completion(roomData.customParam);
             
@@ -299,6 +306,7 @@
                     roomData.recordFile = recordFile;
                     roomData.sectionEnable = NO;
                     roomData.sectionList = @[];
+                    roomData.playbackSessionId = recordFile.channelSessionId;
                     
                     // 使用roomUserHandler配置用户对象
                     PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:offlineInfoChannelType];
@@ -618,7 +626,7 @@
                             PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel liveRecord failed with【直播暂存不可为空】", __FUNCTION__);
                         }
                     } else {
-                        [PLVLiveVideoAPI requestPlaybackList:channelId listType:listType page:1 pageSize:1 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
+                        [PLVLiveVideoAPI requestPlaybackList:channelId listType:listType page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
                             if (playbackList) {
                                 if (![PLVFdUtil checkArrayUseable:playbackList.contents] ||
                                     ![PLVFdUtil checkStringUseable:playbackList.contents.firstObject.videoId]) {
@@ -641,7 +649,7 @@
                         }];
                     }
                 } else {
-                    [PLVLiveVideoAPI requestPlaybackList:channelId listType:listType page:1 pageSize:1 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
+                    [PLVLiveVideoAPI requestPlaybackList:channelId listType:listType page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
                         if (playbackList) {
                             if (![PLVFdUtil checkArrayUseable:playbackList.contents] ||
                                 ![PLVFdUtil checkStringUseable:playbackList.contents.firstObject.videoId]) {

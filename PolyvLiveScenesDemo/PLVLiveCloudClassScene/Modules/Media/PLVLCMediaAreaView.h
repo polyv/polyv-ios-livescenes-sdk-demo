@@ -111,7 +111,6 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) PLVLCRetryPlayView *retryPlayView;
 
-
 #pragma mark - [ 方法 ]
 /// 显示或隐藏弹幕
 - (void)showDanmu:(BOOL)show;
@@ -243,6 +242,10 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// 回放场景
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;
+
+/// 回放场景
+/// seek成功回调
+- (void)plvLCMediaAreaViewDidSeekSuccess:(PLVLCMediaAreaView *)mediaAreaView;
 
 /// 文档、白板页码变化的回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pageStatusChangeWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber totalPage:(NSUInteger)totalPage pptStep:(NSUInteger)step maxNextNumber:(NSUInteger)maxNextNumber;

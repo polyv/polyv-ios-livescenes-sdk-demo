@@ -80,6 +80,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 初始化方法，也可使用 init 初始化，将使用默认模式
 - (instancetype)initWithMode:(PLVLCKeyboardToolMode)mode;
 
+/// 改变输入框提示文本，默认是“我也来聊几句”
+- (void)changePlaceholderText:(NSString *)text;
+
 /// 加载视图，调用该方代替 'addSubview:'
 - (void)addAtView:(UIView *)parentView frame:(CGRect)rect;
 

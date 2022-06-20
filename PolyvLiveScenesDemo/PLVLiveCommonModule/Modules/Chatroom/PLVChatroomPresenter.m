@@ -321,6 +321,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
     
     PLVImageEmotionMessage *message = [[PLVImageEmotionMessage alloc] init];
+    message.time = [PLVFdUtil curTimeInterval];
     message.imageId = imageId;
     message.imageUrl = imageUrl;
     message.sendState = PLVImageEmotionMessageSendStateReady;
@@ -664,6 +665,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
     
     NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
     NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(dict, @"content");
     NSString *imageUrl = PLV_SafeStringForDictKey(contentDict, @"uploadImgUrl");
     NSString *imageId = PLV_SafeStringForDictKey(contentDict, @"id");
@@ -672,6 +674,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     CGFloat height = PLV_SafeFloatForDictKey(sizeDict, @"height");
     
     PLVImageEmotionMessage *message = [[PLVImageEmotionMessage alloc] init];
+    message.time = time;
     message.msgId = msgId;
     message.imageId = imageId;
     message.imageUrl = imageUrl;

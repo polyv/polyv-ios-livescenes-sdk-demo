@@ -485,9 +485,10 @@ PLVPopoverViewDelegate
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(NSTimeInterval)duration
+  currentPlaybackTimeInterval:(NSTimeInterval)currentPlaybackTimeInterval
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime {
-    [self.homePageView updateDowloadProgress:dowloadProgress playedProgress:playedProgress duration:duration currentPlaybackTime:currentPlaybackTime durationTime:durationTime];
+    [self.homePageView updateDowloadProgress:dowloadProgress playedProgress:playedProgress duration:duration currentPlaybackTimeInterval:currentPlaybackTimeInterval currentPlaybackTime:currentPlaybackTime durationTime:durationTime];
 }
 
 - (void)playerController:(PLVECPlayerViewController *)playerController noDelayLiveStartUpdate:(BOOL)noDelayLiveStart {

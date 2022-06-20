@@ -15,6 +15,7 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 @interface PLVLCKeyboardTextView ()
 
 @property (nonatomic, assign) BOOL isInPlaceholder;
+@property (nonatomic, copy) NSString *placeholderText;
 @property (nonatomic, strong) NSDictionary *plvAttributes;
 @property (nonatomic, strong) NSAttributedString *emptyContent;
 
@@ -27,6 +28,7 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 - (instancetype)init {
     self = [super init];
     if (self) {
+        self.placeholderText = @"我也来聊几句";
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1];
         self.returnKeyType = UIReturnKeySend;
         self.scrollEnabled = YES;
@@ -53,6 +55,11 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
     self.textContainerInset = oldTextContainerInset;
 }
 
+- (void)changePlaceholderText:(NSString *)text {
+    self.placeholderText = text;
+    [self endEdit];
+}
+
 - (UIColor *)editingTextColor {
     return [UIColor whiteColor];
 }
@@ -67,16 +74,13 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 }
 
 - (void)endEdit {
-    if (self.attributedText.length > 0) {
-        return;
-    }
     self.isInPlaceholder = YES;
-    self.attributedText = [self placeholderText];
+    self.attributedText = [self placeholderAttributedString];
 }
 
 - (void)clearText {
     self.isInPlaceholder = YES;
-    self.attributedText = [self placeholderText];
+    self.attributedText = [self placeholderAttributedString];
 }
 
 - (NSString *)plvTextForRange:(NSRange)range {
@@ -132,9 +136,9 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 
 #pragma mark - Private Method
 
-- (NSAttributedString *)placeholderText {
+- (NSAttributedString *)placeholderAttributedString {
     NSDictionary *placeholderrAttribute = [self placeholderrAttribute];
-    NSMutableAttributedString *placeholderString = [[NSMutableAttributedString alloc] initWithString:@"我也来聊几句" attributes:placeholderrAttribute];
+    NSMutableAttributedString *placeholderString = [[NSMutableAttributedString alloc] initWithString:self.placeholderText attributes:placeholderrAttribute];
     return placeholderString;
 }
 

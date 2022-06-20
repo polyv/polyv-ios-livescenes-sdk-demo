@@ -313,6 +313,10 @@ PLVLCKeyboardMoreViewDelegate
     return self;
 }
 
+- (void)changePlaceholderText:(NSString *)text {
+    [self.textView changePlaceholderText:text];
+}
+
 - (void)addAtView:(UIView *)parentView frame:(CGRect)rect {
     self.normalSuperView = parentView;
     [self.normalSuperView addSubview:self];

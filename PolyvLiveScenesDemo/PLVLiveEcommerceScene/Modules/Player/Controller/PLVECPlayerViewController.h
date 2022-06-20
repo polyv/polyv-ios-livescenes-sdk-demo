@@ -44,6 +44,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(NSTimeInterval)duration
+  currentPlaybackTimeInterval:(NSTimeInterval)currentPlaybackTimeInterval
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime;
 

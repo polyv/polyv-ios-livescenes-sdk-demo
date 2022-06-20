@@ -66,6 +66,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 判断是否是特殊用户（非普通观众、带有头衔的用户）
 - (BOOL)isUserSpecial;
 
++ (PLVChatUser *)chatUserFromPlaybackMsgUser:(PLVPlaybackMsgUser *)playbackMsgUser;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -96,4 +96,16 @@
     }
 }
 
++ (PLVChatUser *)chatUserFromPlaybackMsgUser:(PLVPlaybackMsgUser *)playbackMsgUser {
+    PLVChatUser *chatUser = [[PLVChatUser alloc] init];
+    chatUser.userId = playbackMsgUser.userId;
+    chatUser.userName = playbackMsgUser.userName;
+    chatUser.avatarUrl = playbackMsgUser.avatarUrl;
+    chatUser.actor = playbackMsgUser.actor;
+    chatUser.role = playbackMsgUser.role;
+    chatUser.userType = [PLVRoomUser userTypeWithUserTypeString:chatUser.role];
+    chatUser.specialIdentity = [PLVRoomUser isSpecialIdentityWithUserType:chatUser.userType];
+    return chatUser;
+}
+
 @end

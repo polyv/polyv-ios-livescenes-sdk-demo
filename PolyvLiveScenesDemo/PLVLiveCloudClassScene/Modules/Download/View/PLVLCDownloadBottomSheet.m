@@ -73,16 +73,22 @@
     if (taskInfo) {
         if (taskInfo.state == PLVDownloadStateSuccess) {
             // 已下载
-            self.progressView.downloadProgress = 1;
+            self.progressView.progressStyle = PLVLCProgressStyleDownloaded;
         }
         else if (taskInfo.state == PLVDownloadStateFailed ||
-                 taskInfo.state == PLVDownloadStateStopped ||
                  taskInfo.state == PLVDownloadStateDefault) {
             // 立即下载
-            self.progressView.downloadProgress = -1;
+            self.progressView.progressStyle = PLVLCProgressStyleDownload;
         }
         else {
-            // 下载中
+            if (taskInfo.state == PLVDownloadStateStopped) {
+                // 已暂停
+                self.progressView.progressStyle = PLVLCProgressStyleDownloadStop;
+            }else {
+                // 下载中
+                self.progressView.progressStyle = PLVLCProgressStyleDownloading;
+            }
+            
             self.progressView.downloadProgress = taskInfo.progress;
             
             __weak typeof(self) weakSelf = self;
@@ -96,7 +102,7 @@
         }
     } else {
         // 立即下载
-        self.progressView.downloadProgress = -1;
+        self.progressView.progressStyle = PLVLCProgressStyleDownload;
     }
 }
 

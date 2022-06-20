@@ -11,6 +11,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVLCChatroomPlaybackViewModel;
+
 extern NSString *PLVLCChatroomOpenBulletinNotification;
 
 extern NSString *PLVLCChatroomOpenInteractAppNotification;
@@ -28,6 +30,8 @@ extern NSString *PLVLCChatroomOpenRewardViewNotification;
 - (instancetype)initWithLiveRoom:(UIViewController *)liveRoom;
 
 - (void)resumeLikeButtonViewLayout;
+
+- (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
 @end
 
