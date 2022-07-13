@@ -290,7 +290,7 @@ PLVPopoverViewDelegate
 - (PLVPopoverView *)popoverView {
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
     if (!_popoverView && videoType == PLVChannelVideoType_Live) {
-        _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeEC];
+        _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeEC liveRoom:videoType == PLVChannelVideoType_Live];
         _popoverView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         _popoverView.delegate = self;
     }

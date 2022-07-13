@@ -43,6 +43,7 @@ NSString *PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateC
 @interface PLVLCChatViewController ()<
 PLVLCKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
+PLVLCCardPushButtonViewDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
 PLVLCChatroomPlaybackViewModelDelegate,
@@ -89,6 +90,7 @@ UITableViewDataSource
     
     [self.view addSubview:self.tableView];
     [self.view addSubview:self.likeButtonView];
+    [self.view addSubview:self.cardPushButtonView];
     [self.view addSubview:self.welcomeView];
     [self.view addSubview:self.notifyMarqueeView];
     [self.view addSubview:self.receiveNewMessageView];
@@ -121,6 +123,7 @@ UITableViewDataSource
         
         if (![self currentIsFullScreen]) {
             [self refreshLikeButtonViewFrame];
+            [self refreshCardPushButtonViewFrame];
         }
     }
 }
@@ -141,6 +144,7 @@ UITableViewDataSource
         [self scrollsToBottom:NO];
         
         [self refreshLikeButtonViewFrame];
+        [self refreshCardPushButtonViewFrame];
     }
 }
 
@@ -149,6 +153,16 @@ UITableViewDataSource
     CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
     CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
     self.likeButtonView.frame = CGRectMake(self.view.bounds.size.width - PLVLCLikeButtonViewWidth - rightPadding, inputRect.origin.y - 17 - PLVLCLikeButtonViewHeight, PLVLCLikeButtonViewWidth, PLVLCLikeButtonViewHeight);
+}
+
+- (void)refreshCardPushButtonViewFrame{
+    CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+    CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
+    CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
+    CGFloat originX = self.view.bounds.size.width - PLVLCCardPushButtonViewWidth - rightPadding;
+    CGFloat originY = (!_likeButtonView || self.likeButtonView.hidden) ? (inputRect.origin.y - 17 - PLVLCCardPushButtonViewHeight) : CGRectGetMinY(self.likeButtonView.frame) - 10 - PLVLCCardPushButtonViewHeight;
+
+    self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVLCCardPushButtonViewWidth, PLVLCCardPushButtonViewHeight);
 }
 
 #pragma mark - Getter & Setter
@@ -210,6 +224,14 @@ UITableViewDataSource
         _likeButtonView.delegate = self;
     }
     return _likeButtonView;
+}
+
+- (PLVLCCardPushButtonView *)cardPushButtonView {
+    if (!_cardPushButtonView) {
+        _cardPushButtonView = [[PLVLCCardPushButtonView alloc] init];
+        _cardPushButtonView.delegate = self;
+    }
+    return _cardPushButtonView;
 }
 
 - (PLVLCWelcomeView *)welcomeView {
@@ -330,9 +352,18 @@ UITableViewDataSource
     [self refreshLikeButtonViewFrame];
 }
 
+- (void)resumeCardPushButtonViewLayout {
+    [self.view insertSubview:self.cardPushButtonView belowSubview:self.receiveNewMessageView];
+    [self refreshCardPushButtonViewFrame];
+}
+
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel {
     self.playbackViewModel = playbackViewModel;
     [self.playbackViewModel addUIDelegate:self delegateQueue:dispatch_get_main_queue()];
+}
+
+- (void)leaveLiveRoom {
+    [self.cardPushButtonView leaveLiveRoom];
 }
 
 #pragma mark - Private Method
@@ -827,6 +858,14 @@ UITableViewDataSource
 
 - (void)didTapLikeButton:(PLVLCLikeButtonView *)likeButtonView {
     [[PLVLCChatroomViewModel sharedViewModel] sendLike];
+}
+
+#pragma mark - PLVLCCardPushButtonViewDelegate
+
+- (void)cardPushButtonView:(PLVLCCardPushButtonView *)pushButtonView needOpenInteract:(NSDictionary *)dict {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:needOpenInteract:)]) {
+        [self.delegate plvLCChatViewController:self needOpenInteract:dict];
+    }
 }
 
 #pragma mark - UIImagePickerControllerDelegate

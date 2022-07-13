@@ -17,6 +17,7 @@ PLVProductWebViewBridgeDelegate>
 
 /// UI
 @property (nonatomic, strong) WKWebView *webView;
+@property (nonatomic, strong) UIView *contentBackgroudView;
 
 /// 数据
 @property (nonatomic, strong) PLVProductWebViewBridge *webViewBridge;
@@ -31,13 +32,19 @@ PLVProductWebViewBridgeDelegate>
     [super viewDidLoad];
     
     [self setupUI];
-    [self setupData];
+    [self loadWebView];
 }
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
-    self.webView.frame = self.view.bounds;
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (fullScreen) {
+        self.webView.frame = CGRectMake(self.contentBackgroudView.bounds.size.width * 0.6, 0, self.contentBackgroudView.bounds.size.width * 0.4, self.contentBackgroudView.bounds.size.height);
+    } else {
+        self.contentBackgroudView.frame = self.view.bounds;
+        self.webView.frame = self.contentBackgroudView.bounds;
+    }
 }
 
 #pragma mark - [ Public Method ]
@@ -47,9 +54,16 @@ PLVProductWebViewBridgeDelegate>
     [self.webViewBridge updateNativeAppParamsInfo:userInfo];
 }
 
+- (void)rollbackProductPageContentView {
+    [self.contentBackgroudView removeFromSuperview];
+    [self.view addSubview:self.contentBackgroudView];
+    self.contentBackgroudView.frame = self.view.bounds;
+    self.contentBackgroudView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+}
+
 #pragma mark - [ Private Method ]
 
-- (void)setupData {
+- (void)loadWebView {
     self.webViewBridge = [[PLVProductWebViewBridge alloc] initBridgeWithWebView:self.webView webViewDelegate:self];
     self.webViewBridge.delegate = self;
     NSURL *interactURL = [NSURL URLWithString:PLVLiveConstantsProductListHTML];
@@ -58,8 +72,9 @@ PLVProductWebViewBridgeDelegate>
 }
 
 - (void)setupUI {
-    self.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#141518"];
-    [self.view addSubview:self.webView];
+    [self.view addSubview:self.contentBackgroudView];
+    [self.contentBackgroudView addSubview:self.webView];
+    self.contentBackgroudView.frame = self.view.bounds;
 }
 
 - (NSDictionary *)getUserInfo {
@@ -99,8 +114,20 @@ PLVProductWebViewBridgeDelegate>
         _webView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
         _webView.opaque = NO;
         _webView.scrollView.bounces = NO;
+        if (@available(iOS 11.0,*)) {
+            [_webView.scrollView setContentInsetAdjustmentBehavior:UIScrollViewContentInsetAdjustmentNever];
+        }
     }
     return _webView;
+}
+
+- (UIView *)contentBackgroudView {
+    if (!_contentBackgroudView) {
+        _contentBackgroudView = [[UIView alloc] init];
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction)];
+        [_contentBackgroudView addGestureRecognizer:tap];
+    }
+    return _contentBackgroudView;
 }
 
 #pragma mark - [ Delegate ]
@@ -130,6 +157,12 @@ PLVProductWebViewBridgeDelegate>
             [self.delegate plvLCClickProductInViewController:self linkURL:linkURL];
         }
     }
+}
+
+#pragma mark - Action
+
+- (void)tapAction {
+    [self rollbackProductPageContentView];
 }
 
 @end

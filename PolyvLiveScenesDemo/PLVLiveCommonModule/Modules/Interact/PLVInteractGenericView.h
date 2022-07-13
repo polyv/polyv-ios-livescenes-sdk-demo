@@ -10,12 +10,26 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVInteractGenericView;
+
+@protocol PLVInteractGenericViewDelegate <NSObject>
+
+/// 收到需要打开推送卡片链接的回调
+/// @param interactView 互动视图
+/// @param url 加载 webview 的链接
+/// @param insideLoad 收否当前页面内部加载 （YES本页面加载，NO页面加载）
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView loadWebViewURL:(NSURL *)url insideLoad:(BOOL)insideLoad;
+
+@end
+
 /// 互动视图
 ///
 /// @note 支持 ’答题卡、公告、抽奖、问卷、签到‘；
 ///       依赖于Socket模块正常运作，若互动视图异常，请先确认Socket已正确连接；
 ///       添加至相应视图中，并调用加载方法即可;
 @interface PLVInteractGenericView : UIView
+
+@property (nonatomic, weak) id<PLVInteractGenericViewDelegate> delegate;
 
 /// 此时是否不允许转屏 (默认NO；接收到不同互动消息时，此值将根据业务要求，相应地变化)
 @property (nonatomic, assign, readonly) BOOL forbidRotateNow;
@@ -25,6 +39,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 互动视图需要最顶层，才能保证接收到最新互动时，可完整地被用户查看
 ///      (YES:每次互动出现时，自动移至同级最顶层;  NO:每次互动出现时，不做层级上的变动；默认为YES)
 @property (nonatomic, assign) BOOL keepInteractViewTop;
+
+/// 创建 互动视图
+/// @param liveRoom 是否是直播的房间
+- (instancetype)initWithLiveRoom:(BOOL)liveRoom;
 
 #pragma mark - 页面加载
 
@@ -45,6 +63,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 打开公告
 - (void)openLastBulletin;
+
+/// 推送卡片
+- (void)openNewPushCardWithDict:(NSDictionary *)dict;
 
 /// 打开互动应用弹窗
 /// @param eventName 事件名称，由 JS 传递过来。

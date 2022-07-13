@@ -39,6 +39,8 @@
 
 @property (nonatomic, assign) PLVCommodityPushViewType type;
 
+@property (nonatomic, assign) BOOL needShow; // 是否需要显示
+
 @end
 
 @implementation PLVCommodityPushView
@@ -53,6 +55,7 @@
         //self.layer.cornerRadius = 10.f;
         //self.layer.masksToBounds = YES;
         self.type = type;
+        self.needShow = NO;
         
         UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction)];
         [self addGestureRecognizer:tapGesture];
@@ -102,7 +105,11 @@
         [self addSubview:self.closeButton];
         
         self.jumpButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [self.jumpButton setImage:[self imageForCommodityResource:@"plv_commodity_jump_btn"] forState:UIControlStateNormal];
+        if (type == PLVCommodityPushViewTypeLC) {
+            [self.jumpButton setImage:[self imageForCommodityResource:@"plv_commodity_jump_normal_btn"] forState:UIControlStateNormal];
+        } else {
+            [self.jumpButton setImage:[self imageForCommodityResource:@"plv_commodity_jump_btn"] forState:UIControlStateNormal];
+        }
         [self.jumpButton setImage:[self imageForCommodityResource:@"plv_commodity_jump_btn_disabled"] forState:UIControlStateDisabled];
         [self.jumpButton addTarget:self action:@selector(jumpButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:self.jumpButton];
@@ -123,8 +130,10 @@
     self.nameLabel.frame = CGRectMake(positionX, positionY, CGRectGetWidth(self.bounds)-positionX-22, 20);
     
     positionY = CGRectGetMaxY(self.nameLabel.frame) + 4;
-    self.firstTagLabel.frame = CGRectMake(positionX, positionY, CGRectGetWidth(self.firstTagLabel.bounds) + 8, 16);
-    self.secondTagLabel.frame = CGRectMake((self.firstTagLabel.isHidden ? positionX : CGRectGetMaxX(self.firstTagLabel.frame)+4), positionY, CGRectGetWidth(self.secondTagLabel.bounds) + 8, 16);
+    CGSize firstLabelSize = [self.firstTagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+    self.firstTagLabel.frame = CGRectMake(positionX, positionY, firstLabelSize.width + 8, 16);
+    CGSize secondLabelSize = [self.secondTagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+    self.secondTagLabel.frame = CGRectMake((self.firstTagLabel.isHidden ? positionX : CGRectGetMaxX(self.firstTagLabel.frame)+4), positionY, secondLabelSize.width + 8, 16);
     
     positionY = (self.firstTagLabel.isHidden && self.secondTagLabel.isHidden) ? positionY : positionY + 16 + 4;
     self.productDescLabel.frame = CGRectMake(positionX, positionY, CGRectGetWidth(self.nameLabel.frame), 18);
@@ -171,6 +180,7 @@
         weakSelf.frame = weakSelf.initialFrame;
     } completion:^(BOOL finished) {
         [weakSelf removeFromSuperview];
+        weakSelf.needShow = NO;
     }];
 }
 
@@ -265,6 +275,7 @@
         return;
     }
     
+    self.needShow = YES;
     // 实际价格显示逻辑
     NSString *realPriceStr;
     if ([model.productType isEqualToString:@"finance"]) {
@@ -359,10 +370,25 @@
 #pragma mark - Public
 
 - (void)showOnView:(UIView *)superView initialFrame:(CGRect)initialFrame {
+    if (!self.needShow) {
+        return;
+    }
+    
     self.initialFrame = initialFrame;
     self.frame = initialFrame;
     [superView addSubview:self];
-    CGFloat endX = self.type == PLVCommodityPushViewTypeLC ? 8 : 16;
+
+    CGFloat endX = 0.0;
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    if (fullScreen) {
+        [superView sendSubviewToBack:self];
+    }
+    if (self.type == PLVCommodityPushViewTypeLC) {
+        endX = fullScreen ? (P_SafeAreaLeftEdgeInsets() + (isPad ? 30 : 16)) : 8;
+    } else {
+        endX = 16;
+    }
     
     __weak typeof(self) weakSelf = self;
     [UIView animateWithDuration:0.33 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{

@@ -87,6 +87,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pointUnit 打赏数据单位
 - (void)chatroomManager_loadRewardEnable:(BOOL)enable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray * _Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
 
+/// 收到卡片推送消息后的回调
+/// @param start 是否开启卡片推送(YES 开启 NO 取消)
+/// @param pushDict 卡片推送的信息
+- (void)chatroomManager_startCardPush:(BOOL)start pushInfo:(NSDictionary *)pushDict;
+
 @end
 
 /*

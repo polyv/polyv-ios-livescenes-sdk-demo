@@ -10,6 +10,7 @@
 
 #import "PLVLCUtils.h"
 #import "PLVLCLiveRoomLandscapeInputView.h"
+#import "PLVCommodityPushView.h"
 #import "PLVRoomDataManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -21,7 +22,9 @@
 @property (nonatomic, strong) UIButton * danmuButton;
 @property (nonatomic, strong) UILabel * guideChatLabel;
 @property (nonatomic, strong) UIView * likeButtonBackgroudView;
+@property (nonatomic, strong) UIView * cardPushBackgroudView;
 @property (nonatomic, strong) UIButton *rewardButton;
+@property (nonatomic, strong) UIButton *commodityButton;
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
 
 @end
@@ -104,10 +107,7 @@
         [self refreshFloatViewShowButtonFrame];
         [self refreshDanmuButtonFrame];
         [self refreshGuideChatLabelFrame];
-        
-        CGFloat likeButtonWidth = 46.0;
-        self.likeButtonBackgroudView.frame = CGRectMake(viewWidth - rightSafePadding - 10 - likeButtonWidth, self.playButton.center.y - likeButtonWidth / 2.0f, likeButtonWidth, likeButtonWidth);
-        self.rewardButton.frame = CGRectMake(CGRectGetMinX(self.likeButtonBackgroudView.frame) - 30 - likeButtonWidth, CGRectGetMinY(self.likeButtonBackgroudView.frame), likeButtonWidth, likeButtonWidth);
+        [self refreshBottomButtonsFrame];
         
         CGFloat timeLabelWidth = [self getLabelTextWidth:self.currentTimeLabel];
         self.currentTimeLabel.frame = CGRectMake(CGRectGetMinX(self.playButton.frame), CGRectGetMinY(self.playButton.frame) - 14 - backButtonSize.height, timeLabelWidth, backButtonSize.height);
@@ -132,8 +132,11 @@
     }
 }
 
-
 #pragma mark - [ Public Methods ]
+- (void)hiddenLiveRoomPlayerSkinView {
+    [self controlsSwitchShowStatusWithAnimation:NO];
+}
+
 - (void)displayLikeButtonView:(UIView *)likeButtonView{
     if (likeButtonView && [likeButtonView isKindOfClass:UIView.class]) {
         [self.likeButtonBackgroudView addSubview:likeButtonView];
@@ -144,6 +147,20 @@
     }
 }
 
+- (void)displayCardPushButtonView:(UIView *)cardPushButtonView {
+    if (cardPushButtonView && [cardPushButtonView isKindOfClass:UIView.class]) {
+        [self.cardPushBackgroudView addSubview:cardPushButtonView];
+        cardPushButtonView.frame = self.cardPushBackgroudView.bounds;
+        cardPushButtonView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }else{
+        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayCardPushButtonView failed, view illegal %@", cardPushButtonView);
+    }
+}
+
+- (void)showCommodityButton:(BOOL)show {
+    self.commodityButton.hidden = !show;
+    [self refreshBottomButtonsFrame];
+}
 
 #pragma mark - [ Private Methods ]
 - (UIImage *)getLiveRoomImageWithName:(NSString *)imageName{
@@ -258,12 +275,38 @@
     self.danmuButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
 }
 
+- (void)refreshBottomButtonsFrame {
+    CGFloat rightSafePadding = 0;
+    if (@available(iOS 11.0, *)) {
+        rightSafePadding = self.safeAreaInsets.right;
+    }
+    // iPad适配
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        rightSafePadding = 20.0;
+    }
+    
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat likeButtonWidth = 36.0;
+    CGFloat buttonOriginX = viewWidth - rightSafePadding - 10 - likeButtonWidth;
+    CGFloat buttonOriginY = self.playButton.center.y - likeButtonWidth / 2.0f;
+
+    self.likeButtonBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
+    UIView *likeButtonView = self.likeButtonBackgroudView.subviews.firstObject;
+    buttonOriginX = (likeButtonView && !likeButtonView.isHidden) ? CGRectGetMinX(self.likeButtonBackgroudView.frame) - 20 - likeButtonWidth : buttonOriginX;
+    self.rewardButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
+    buttonOriginX = (self.rewardButton.isHidden || !self.rewardButton.superview) ? buttonOriginX : CGRectGetMinX(self.rewardButton.frame) - likeButtonWidth - 20;
+    self.commodityButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
+    buttonOriginX = self.commodityButton.isHidden ? buttonOriginX : CGRectGetMinX(self.commodityButton.frame) - likeButtonWidth - 20;
+    buttonOriginX = MIN(buttonOriginX, viewWidth - rightSafePadding - 50 - likeButtonWidth);
+    self.cardPushBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
+}
+
 - (void)refreshGuideChatLabelFrame {
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
     CGFloat bottomPadding = 28.0;
 
-    CGFloat guideChatLabelWidth = 0.3572 * viewWidth;
+    CGFloat guideChatLabelWidth = 0.23 * viewWidth;
     CGFloat guideChatLabelHeight = 36.0;
 
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
@@ -334,6 +377,13 @@
     return _likeButtonBackgroudView;
 }
 
+- (UIView *)cardPushBackgroudView{
+    if (!_cardPushBackgroudView) {
+        _cardPushBackgroudView = [[UIView alloc] init];
+    }
+    return _cardPushBackgroudView;
+}
+
 - (UIButton *)rewardButton {
     if (!_rewardButton) {
         _rewardButton = [[UIButton alloc]init];
@@ -342,6 +392,15 @@
         [_rewardButton addTarget:self action:@selector(rewardButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _rewardButton;
+}
+
+- (UIButton *)commodityButton {
+    if (!_commodityButton) {
+        _commodityButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_commodityButton setImage: [PLVLCUtils imageForLiveRoomResource:@"plv_liveroom_commodity"] forState:UIControlStateNormal];
+        [_commodityButton addTarget:self action:@selector(commodityButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _commodityButton;
 }
 
 - (PLVLCLiveRoomLandscapeInputView *)landscapeInputView{
@@ -367,8 +426,10 @@
     [self addSubview:self.danmuButton];
     [self addSubview:self.guideChatLabel];
     [self addSubview:self.likeButtonBackgroudView];
+    [self addSubview:self.cardPushBackgroudView];
     [self addSubview:self.landscapeInputView];
-    
+    [self addSubview:self.commodityButton];
+
     // 注意：懒加载过程中已增加判断，若场景不匹配，将创建失败并返回nil
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 视频类型为 直播
         /// 顶部UI
@@ -431,6 +492,8 @@
                 continue;
             } else if ([subview isKindOfClass:PLVLCMediaCountdownTimeView.class]) {
                 continue;
+            } else if ([subview isKindOfClass:PLVCommodityPushView.class]) {
+                continue;
             }
             subview.alpha = alpha;
         }
@@ -488,6 +551,11 @@
     }
 }
 
+- (void)commodityButtonAction:(UIButton *)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:)]) {
+        [self.delegate plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:self];
+    }
+}
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVLCLiveRoomLandscapeInputViewDelegate

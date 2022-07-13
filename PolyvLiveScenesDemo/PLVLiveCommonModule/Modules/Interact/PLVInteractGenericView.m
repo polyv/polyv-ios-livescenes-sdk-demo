@@ -26,6 +26,7 @@ PLVInteractWebViewBridgeDelegate>
 @property (nonatomic, strong) PLVInteractWebViewBridge *webViewBridge;
 @property (nonatomic, assign) BOOL webviewLoadFinish; //webview 是否已加载完成
 @property (nonatomic, assign) BOOL webviewLoadFaid; //webview 是否加载失败
+@property (nonatomic, assign) BOOL isLiveRoom; //是否是直播的房间
 
 @end
 
@@ -37,8 +38,9 @@ PLVInteractWebViewBridgeDelegate>
     PLV_LOG_INFO(PLVConsoleLogModuleTypeInteract, @"%s",__FUNCTION__);
 }
 
-- (instancetype)initWithFrame:(CGRect)frame{
-    if (self = [super initWithFrame:frame]) {
+- (instancetype)initWithLiveRoom:(BOOL)liveRoom {
+    if (self = [super init]) {
+        self.isLiveRoom = liveRoom;
         [self setupData];
         [self setupUI];
     }
@@ -49,7 +51,8 @@ PLVInteractWebViewBridgeDelegate>
 
 - (void)loadOnlineInteract{
     [self.webView stopLoading];
-    NSURL *interactURL = [NSURL URLWithString:PLVLiveConstantsInteractNewWebViewURL];
+    NSString *urlSting = [NSString stringWithFormat:@"%@?livePlayBack=%@", PLVLiveConstantsInteractNewWebViewURL, @(!self.isLiveRoom)];
+    NSURL *interactURL = [NSURL URLWithString:urlSting];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
     [self.webView loadRequest:request];
     [self layoutSelfView];
@@ -68,6 +71,13 @@ PLVInteractWebViewBridgeDelegate>
 
 - (void)openLastBulletin {
     [self.webViewBridge callWebViewEvent:@{@"event" : @"SHOW_BULLETIN"}];
+}
+
+- (void)openNewPushCardWithDict:(NSDictionary *)dict {
+    if ([PLVFdUtil checkDictionaryUseable:dict]) {
+        [self.webViewBridge callWebViewEvent:@{@"event" : @"SHOW_PUSH_CARD",
+                                               @"data" : dict}];
+    }
 }
 
 - (void)openInteractAppWithEventName:(NSString *)eventName {
@@ -265,6 +275,25 @@ PLVInteractWebViewBridgeDelegate>
 
 - (void)plvInteractWebViewBridgeLockPortraitScreen:(PLVInteractWebViewBridge *)webViewBridge {
     [self updateForbidRotateNow:YES];
+}
+
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge callAppEvent:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    NSString *event = PLV_SafeStringForDictKey(dict, @"event");
+    if ([event isEqualToString:@"openLink"]) { // 打开卡片推送链接
+        NSDictionary *valueDcit = PLV_SafeDictionaryForDictKey(dict, @"value");
+        NSString *type = PLV_SafeStringForDictKey(valueDcit, @"type");
+        NSString *urlString = PLV_SafeStringForDictKey(valueDcit, @"url");
+        BOOL insideLoad = [type isEqualToString:@"inside"];
+        if ([PLVFdUtil checkStringUseable:urlString]) {
+            NSURL *url = [NSURL URLWithString:urlString];
+            plv_dispatch_main_async_safe(^{
+                if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:loadWebViewURL:insideLoad:)]) {
+                    [self.delegate plvInteractGenericView:self loadWebViewURL:url insideLoad:insideLoad];
+                }
+            })
+        }
+    }
 }
 
 - (NSDictionary *)getAPPInfoInInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge {

@@ -49,6 +49,7 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
 PLVLCTuwenDelegate,
 PLVLCBuyViewControllerDelegate,
 PLVLCSectionViewControllerDelegate,
+PLVLCChatViewControllerDelegate,
 PLVRoomDataManagerProtocol
 >
 
@@ -67,6 +68,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, weak) UIViewController *liveRoom;
 
 @property (nonatomic, weak) PLVLCChatroomPlaybackViewModel *playbackViewModel;
+
+@property (nonatomic, assign) BOOL showCommodityMenu;
 
 @end
 
@@ -113,6 +116,48 @@ PLVRoomDataManagerProtocol
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel {
     self.playbackViewModel = playbackViewModel;
     [self.chatVctrl updatePlaybackViewModel:self.playbackViewModel];
+}
+
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict {
+    [self.chatVctrl.cardPushButtonView startCardPush:start cardPushInfo:dict];
+}
+
+- (void)displayProductPageToExternalView:(UIView *)externalView {
+    if (self.productVctrl) {
+        if (!self.productVctrl.isViewLoaded) {
+            [self.productVctrl viewDidLoad];
+        }
+        [self displaySubview:self.productVctrl.contentBackgroudView toSuperview:externalView];
+        [self.productVctrl viewWillLayoutSubviews];
+    }
+}
+
+- (void)rollbackProductPageContentView {
+    [self.productVctrl rollbackProductPageContentView];
+}
+
+- (void)leaveLiveRoom {
+    if (self.chatVctrl) {
+        [self.chatVctrl leaveLiveRoom];
+    }
+}
+
+- (BOOL)showCommodityMenu {
+    PLVLiveVideoChannelMenuInfo *channelMenuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if (![PLVFdUtil checkArrayUseable:channelMenuInfo.channelMenus]) {
+        return NO;
+    }
+    
+    __block BOOL commodityMenu = NO;
+    [channelMenuInfo.channelMenus enumerateObjectsUsingBlock:^(PLVLiveVideoChannelMenu * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        PLVLCLivePageMenuType menuType = PLVLCMenuTypeWithMenuTypeString(obj.menuType);
+        if (menuType == PLVLCLivePageMenuTypeBuy) {
+            commodityMenu = YES;
+            *stop = YES;
+        }
+    }];
+    
+    return commodityMenu;
 }
 
 #pragma mark - Private Method
@@ -168,6 +213,7 @@ PLVRoomDataManagerProtocol
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeChat) {
         PLVLCChatViewController *vctrl = [[PLVLCChatViewController alloc] initWithLiveRoom:self.liveRoom];
+        vctrl.delegate = self;
         self.chatVctrl = vctrl;
         [self.chatVctrl updatePlaybackViewModel:self.playbackViewModel];
         return vctrl;
@@ -199,6 +245,14 @@ PLVRoomDataManagerProtocol
     }
     
     return nil;
+}
+
+- (void)displaySubview:(UIView *)subview toSuperview:(UIView *)superview {
+    if (subview.superview != superview) {
+        [superview addSubview:subview];
+        subview.frame = superview.bounds;
+        subview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }
 }
 
 #pragma mark - PLVRoomDataManagerProtocol
@@ -234,6 +288,14 @@ PLVRoomDataManagerProtocol
 - (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductLinkURL:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self clickProductLinkURL:linkURL];
+    }
+}
+
+#pragma mark - PLVLCChatViewControllerDelegate
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC needOpenInteract:(NSDictionary *)dict {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:needOpenInteract:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self needOpenInteract:dict];
     }
 }
 

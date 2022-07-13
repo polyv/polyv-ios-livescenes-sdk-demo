@@ -38,7 +38,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// 礼物打赏按钮，用于外部读取礼物打赏开关后控制是否显示该按钮
 @property (nonatomic, strong, readonly) UIButton *rewardButton;
 
+/// 商品库按钮，用于外部控制是否显示该按钮
+@property (nonatomic, strong, readonly) UIButton *commodityButton;
+
+- (void)hiddenLiveRoomPlayerSkinView;
+
 - (void)displayLikeButtonView:(UIView *)likeButtonView;
+
+- (void)displayCardPushButtonView:(UIView *)cardPushButtonView;
+
+/// 是否显示打开商品库的按钮
+/// @param show YES显示 NO 不显示
+- (void)showCommodityButton:(BOOL)show;
 
 @end
 
@@ -51,6 +62,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaSendChatContent:(NSString *)chatContent;
 
 - (void)plvLCLiveRoomPlayerSkinViewRewardButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
+
+/// 打开商品库按钮点击的回调
+/// @param liveRoomPlayerSkinView 横屏 直播间播放器皮肤视图
+- (void)plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
 
 @end
 

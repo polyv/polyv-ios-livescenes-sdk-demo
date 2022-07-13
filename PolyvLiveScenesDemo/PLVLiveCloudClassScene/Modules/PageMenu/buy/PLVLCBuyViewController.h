@@ -24,11 +24,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 边看边买 商品列表 页面
 @interface PLVLCBuyViewController : UIViewController
 
+@property (nonatomic, strong, readonly) UIView *contentBackgroudView;
+
 @property (nonatomic, weak) id<PLVLCBuyViewControllerDelegate> delegate;
 
 /// 更新用户信息
 /// 在用户的信息改变后进行通知
 - (void)updateUserInfo;
+
+- (void)rollbackProductPageContentView;
 
 @end
 

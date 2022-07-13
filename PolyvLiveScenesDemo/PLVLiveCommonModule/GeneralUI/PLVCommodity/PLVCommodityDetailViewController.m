@@ -7,6 +7,7 @@
 //
 
 #import "PLVCommodityDetailViewController.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <WebKit/WebKit.h>
 
 @interface PLVCommodityDetailViewController ()
@@ -31,8 +32,14 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor whiteColor];
-    
-    UIBarButtonItem *barButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"返回" style:UIBarButtonItemStylePlain target:self action:@selector(backAction)];
+    [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationPortrait];
+
+    UIButton *leftButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    leftButton.frame = CGRectMake(0, 0, 44, 44);
+    [leftButton setImage:[self imageForCommodityResource:@"plv_commodity_webview_leftBack_btn"] forState:UIControlStateNormal];
+    [leftButton addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
+    leftButton.imageEdgeInsets = UIEdgeInsetsMake(0, -40, 0, 0);
+    UIBarButtonItem *barButtonItem =[[UIBarButtonItem alloc] initWithCustomView:leftButton];
     self.navigationItem.leftBarButtonItems = @[barButtonItem];
     
     [self.view addSubview:self.webView];
@@ -47,14 +54,12 @@
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-
-    [self.navigationController setNavigationBarHidden:NO animated:YES];
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
-
-    [self.navigationController setNavigationBarHidden:YES animated:YES];
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
 }
 
 #pragma mark - Getter
@@ -64,6 +69,14 @@
         _webView = [[WKWebView alloc] init];
     }
     return _webView;
+}
+
+#pragma mark - Utils
+
+- (UIImage *)imageForCommodityResource:(NSString *)imageName {
+    NSBundle *bundle = [NSBundle bundleForClass:[self class]];
+    NSBundle *resourceBundle = [NSBundle bundleWithPath:[bundle pathForResource:@"PLVCommodity" ofType:@"bundle"]];
+    return [UIImage imageNamed:imageName inBundle:resourceBundle compatibleWithTraitCollection:nil];
 }
 
 #pragma mark - Action

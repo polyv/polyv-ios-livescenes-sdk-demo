@@ -31,6 +31,8 @@ typedef NS_ENUM(NSUInteger, PLVCommodityPushViewType) {
 
 - (void)showOnView:(UIView *)superView initialFrame:(CGRect)initialFrame;
 
+- (void)hide;
+
 @property (nonatomic, strong) PLVCommodityModel *model;
 
 @property (nonatomic, weak) id<PLVCommodityPushViewDelegate> delegate;

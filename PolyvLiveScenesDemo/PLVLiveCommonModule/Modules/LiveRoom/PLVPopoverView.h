@@ -36,7 +36,7 @@ typedef NS_ENUM(NSUInteger, PLVPopoverViewLiveType) {
 
 @property (nonatomic, weak) id<PLVPopoverViewDelegate> delegate;
 
-- (instancetype)initWithLiveType:(PLVPopoverViewLiveType)liveType;
+- (instancetype)initWithLiveType:(PLVPopoverViewLiveType)liveType liveRoom:(BOOL)liveRoom;
 
 - (void)loadRewardViewDataWithCompletion:(void (^)(void))completion failure:(void (^)(NSString *))failure;
 

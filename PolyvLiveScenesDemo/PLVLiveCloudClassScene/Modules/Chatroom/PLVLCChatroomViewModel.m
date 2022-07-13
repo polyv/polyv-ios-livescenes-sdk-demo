@@ -454,6 +454,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     });
 }
 
+- (void)notifyDelegatesStartCardPush:(BOOL)start pushInfo:(NSDictionary *)pushDict {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_startCardPush:start pushInfo:pushDict];
+    });
+}
+
 - (void)notifyDelegatesLoadImageEmotionSuccess {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_loadImageEmotionSuccess:self.imageEmotionArray];
@@ -606,6 +612,25 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
     [self loadRewardEnable];
 }
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    NSDictionary *jsonDict = PLV_SafeDictionaryForValue(object);
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    
+    if ([event isEqualToString:PLVSocketCardPush_newsPush_key]) {
+        NSString *newsPushEvent = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+        if ([PLVFdUtil checkStringUseable:newsPushEvent]) {
+            BOOL start = [newsPushEvent isEqualToString:@"start"];
+            [self notifyDelegatesStartCardPush:start pushInfo:jsonDict];
+        }
+    }
+}
+
 
 #pragma mark - PLVChatroomPresenterProtocol
 

@@ -38,6 +38,9 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 互动聊天页，退出直播时需要clearResource，切换全屏时需要提取聊天室的点赞Button
 @property (nonatomic, strong) PLVLCChatViewController *chatVctrl;
 
+/// 是否包含边买边看商品库菜单
+@property (nonatomic, assign, readonly) BOOL showCommodityMenu;
+
 /// 初始化方法
 /// @param liveRoom 直播间控制器，传递给互动聊天室用于弹出拍照、相册控制器
 - (instancetype)initWithLiveRoom:(UIViewController *)liveRoom;
@@ -49,6 +52,14 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 - (void)updateLiveUserInfo;
 
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
+
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict;
+
+- (void)displayProductPageToExternalView:(UIView *)externalView;
+
+- (void)rollbackProductPageContentView;
+
+- (void)leaveLiveRoom;
 
 @end
 
@@ -67,6 +78,11 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param linkURL 商品详情的链接url
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL;
+
+/// 在点击卡片领取按钮或者观看领奖倒计时结束后会执行此回调，需要互动视图打开领取入口
+/// @param pageMenuAreaView 菜单视图
+/// @param dict 打开视图需要的参数
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView needOpenInteract:(NSDictionary *)dict;
 
 @end
 NS_ASSUME_NONNULL_END

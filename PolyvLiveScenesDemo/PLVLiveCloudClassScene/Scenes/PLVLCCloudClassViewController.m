@@ -28,6 +28,7 @@
 #import "PLVCommodityPushView.h"
 #import "PLVBaseNavigationController.h"
 #import "PLVCommodityDetailViewController.h"
+#import "PLVCommodityCardDetailView.h"
 #import "PLVLCDownloadListViewController.h"
 
 // 工具
@@ -44,6 +45,7 @@ PLVRoomDataManagerProtocol,
 PLVCommodityPushViewDelegate,
 PLVCommodityDetailViewControllerDelegate,
 PLVPopoverViewDelegate,
+PLVInteractGenericViewDelegate,
 PLVLCChatroomPlaybackDelegate
 >
 
@@ -97,7 +99,8 @@ PLVLCChatroomPlaybackDelegate
 @property (nonatomic, strong) PLVPopoverView *popoverView;              // 浮动区域
 @property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager; // 礼物打赏动画管理器
 @property (nonatomic, strong) UIView *rewardSvgaView;                   // 礼物打赏动画父视图 （仅在横屏下有效）
-@property (nonatomic, strong) PLVCommodityPushView *pushView;           // 商品推送视图 （仅在竖屏下有效）
+@property (nonatomic, strong) PLVCommodityPushView *pushView;           // 商品推送视图
+@property (nonatomic, strong) PLVCommodityCardDetailView *cardDetailView;           // 卡片推送加载视图
 
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
 @property (nonatomic, strong) PLVLCLiveRoomPlayerSkinView * liveRoomSkinView;// 横屏频道皮肤
@@ -225,6 +228,8 @@ PLVLCChatroomPlaybackDelegate
 
 - (void)setupUI {
     self.view.backgroundColor = PLV_UIColorFromRGB(@"#0E141E");
+    self.fullScreenDifferent = YES;
+    self.currentLandscape = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     
     /// 注意：1. 此处不建议将共同拥有的图层，提炼在 if 判断外，来做“代码简化”
     ///         因为此处涉及到添加顺序，而影响图层顺序。放置在 if 内，能更加准确地配置图层顺序，也更清晰地预览图层顺序。
@@ -256,8 +261,10 @@ PLVLCChatroomPlaybackDelegate
         [self.view addSubview:self.menuAreaView];     // 菜单区
         [self.view addSubview:self.chatLandscapeView];// 横屏聊天区
         [self.view addSubview:self.liveRoomSkinView]; // 横屏频道皮肤
-        
+        [self.view addSubview:self.popoverView];      // 浮动区域
+
         /// 配置
+        self.popoverView.frame = self.view.bounds;
         self.liveRoomSkinView.frame = self.view.bounds;
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
@@ -274,7 +281,7 @@ PLVLCChatroomPlaybackDelegate
     showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? showLinkMicAreaView : NO;
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        
+    
     if (isPad) {
         // iPad小分屏1:2时，隐藏连麦列表；非小分屏时，显示连麦列表
         Boolean isSmallScreen = CGRectGetWidth(self.view.bounds) <= PLVScreenWidth / 3;
@@ -303,6 +310,10 @@ PLVLCChatroomPlaybackDelegate
         if (self.fullScreenDifferent) {
             [self.mediaAreaView.skinView synchOtherSkinViewState:self.liveRoomSkinView];
             [self.menuAreaView.chatVctrl resumeLikeButtonViewLayout];
+            [self.menuAreaView.chatVctrl resumeCardPushButtonViewLayout];
+            [self.menuAreaView rollbackProductPageContentView];
+            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, isPad ? 308 : CGRectGetWidth(self.view.frame) - 60, 114)];
+            [self.cardDetailView hiddenCardDetailView];
         }
 
         CGRect mediaAreaViewFrame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetWidth(self.view.bounds) * PPTPlayerViewScale + P_SafeAreaTopEdgeInsets());
@@ -343,6 +354,9 @@ PLVLCChatroomPlaybackDelegate
         if (self.fullScreenDifferent) {
             [self.liveRoomSkinView synchOtherSkinViewState:self.mediaAreaView.skinView];
             [self.liveRoomSkinView displayLikeButtonView:self.menuAreaView.chatVctrl.likeButtonView];
+            [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
+            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 114), 308, 114)];
+            [self.cardDetailView hiddenCardDetailView];
         }
         [self.view insertSubview:self.chatLandscapeView belowSubview:self.liveRoomSkinView];
        
@@ -381,9 +395,11 @@ PLVLCChatroomPlaybackDelegate
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     [self.liveRoomSkinView setTitleLabelWithText:roomData.menuInfo.name];
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
+    [self.liveRoomSkinView showCommodityButton:self.menuAreaView.showCommodityMenu];
 }
 
 - (void)exitCurrentController {
+    [self.menuAreaView leaveLiveRoom];
     [PLVRoomLoginClient logout];
     [[PLVSocketManager sharedManager] logout];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
@@ -515,10 +531,13 @@ PLVLCChatroomPlaybackDelegate
 }
 
 - (PLVPopoverView *)popoverView {
-    if (!_popoverView && self.videoType == PLVChannelVideoType_Live) {
-        _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeLC];
+    if (!_popoverView) {
+        _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeLC liveRoom:self.videoType == PLVChannelVideoType_Live];
         _popoverView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        _popoverView.delegate = self;
+        if (self.videoType == PLVChannelVideoType_Live) {
+            _popoverView.delegate = self;
+        }
+        _popoverView.interactView.delegate = self;
     }
     return _popoverView;
 }
@@ -549,6 +568,13 @@ PLVLCChatroomPlaybackDelegate
         _pushView.delegate = self;
     }
     return _pushView;
+}
+
+- (PLVCommodityCardDetailView *)cardDetailView {
+    if (!_cardDetailView) {
+        _cardDetailView = [[PLVCommodityCardDetailView alloc] init];
+    }
+    return _cardDetailView;
 }
 
 - (PLVChannelType)channelType{
@@ -709,7 +735,9 @@ PLVLCChatroomPlaybackDelegate
     if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin closes or opens the chatroom
         [self closeRoomEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
-        [self productMessageEvent:jsonDict];
+        plv_dispatch_main_async_safe(^{
+            [self productMessageEvent:jsonDict];
+        })
     }
 }
 
@@ -731,11 +759,21 @@ PLVLCChatroomPlaybackDelegate
     if (status == 9) {
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
-        __weak typeof(self)weakSelf = self;
-        plv_dispatch_main_async_safe(^{
-            [weakSelf.pushView setModel:model];
-            [weakSelf.pushView showOnView:weakSelf.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(weakSelf.view.frame), 60, CGRectGetWidth(weakSelf.view.frame) - 40, 114)];
-        })
+        [self.pushView setModel:model];
+        if (self.currentLandscape) {
+            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 144 - 16, 308, 114)];
+        } else {
+            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, CGRectGetWidth(self.view.frame) - 60, 114)];
+        }
+    } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
+        [ _pushView hide];
+    } else if (status == 10) { // 收到 关闭商品列表 消息时进行处理
+        NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
+        NSString *enabledString = PLV_SafeStringForDictKey(contentDict, @"enabled");
+        BOOL enabled = [enabledString isEqualToString:@"N"]?NO:YES;
+        if (!enabled && _pushView) {
+            [ _pushView hide];
+        }
     }
 }
 
@@ -759,6 +797,10 @@ PLVLCChatroomPlaybackDelegate
         PLVRewardGoodsModel *model = [PLVRewardGoodsModel modelWithSocketObject:modelDict];
         [self.rewardDisplayManager addGoodsShowWithModel:model goodsNum:num personName:unick];
     }
+}
+
+- (void)chatroomManager_startCardPush:(BOOL)start pushInfo:(NSDictionary *)pushDict {
+    [self.menuAreaView startCardPush:start cardPushInfo:pushDict];
 }
 
 #pragma mark PLVLCChatroomPlaybackDelegate
@@ -977,6 +1019,12 @@ PLVLCChatroomPlaybackDelegate
     [self.popoverView showRewardView];
 }
 
+- (void)plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
+    [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView];
+    // 加载商品库视图
+    [self.menuAreaView displayProductPageToExternalView:self.view];
+}
+
 #pragma mark PLVLCLinkMicAreaViewDelegate
 /// 连麦Rtc画面窗口 需外部展示 ‘第一画面连麦窗口’
 - (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView{
@@ -1119,6 +1167,10 @@ PLVLCChatroomPlaybackDelegate
     [self plvCommodityPushViewJumpToCommodityDetail:linkURL];
 }
 
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView needOpenInteract:(NSDictionary *)dict {
+    [self.popoverView.interactView openNewPushCardWithDict:dict];
+}
+
 #pragma mark  PLVCommodityPushViewDelegate
 
 - (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL {
@@ -1194,12 +1246,29 @@ PLVLCChatroomPlaybackDelegate
     [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
 }
 
-#pragma mark  PLVPopoverViewDelegate
+#pragma mark PLVPopoverViewDelegate
 
 - (void)popoverViewDidDonatePointWithError:(NSString *)error {
     plv_dispatch_main_async_safe(^{
         [PLVLCUtils showHUDWithTitle:error detail:@"" view:self.view];
     })
+}
+
+#pragma mark PLVInteractGenericViewDelegate
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView loadWebViewURL:(NSURL *)url insideLoad:(BOOL)insideLoad {
+    if (insideLoad) {
+        [self.cardDetailView loadWebviewWithCardURL:url];
+        if (self.currentLandscape) {
+            [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView];
+            [self.cardDetailView showOnView:self.view frame:CGRectMake(self.view.bounds.size.width * 0.6, 0, self.view.bounds.size.width * 0.4, self.view.bounds.size.height)];
+        } else {
+            [self.cardDetailView showOnView:self.view frame:CGRectMake(0, CGRectGetMinY(self.menuAreaView.frame) +  48, self.menuAreaView.bounds.size.width, self.menuAreaView.bounds.size.height - 48)];
+        }
+    } else {
+        self.commodityURL = url;
+        [self jumpToCommodityDetailViewController];
+    }
 }
 
 @end

@@ -20,6 +20,8 @@
 #pragma mark 数据
 /// 直播场景
 @property (nonatomic, assign) PLVPopoverViewLiveType liveType;
+/// 是否是直播房间
+@property (nonatomic, assign) BOOL isLiveRoom;
 /// 礼物打赏场景类型
 @property (nonatomic, assign) PLVRewardViewType rewardType;
 
@@ -28,10 +30,11 @@
 @implementation PLVPopoverView
 
 #pragma mark - init
-- (instancetype)initWithLiveType:(PLVPopoverViewLiveType)liveType {
+- (instancetype)initWithLiveType:(PLVPopoverViewLiveType)liveType liveRoom:(BOOL)liveRoom {
     self = [super init];
     if (self) {
         self.liveType = liveType;
+        self.isLiveRoom = liveRoom;
         self.backgroundColor = [UIColor clearColor];
         [self setupUI];
     }
@@ -141,7 +144,7 @@
 
 - (PLVInteractGenericView *)interactView {
     if (!_interactView) {
-        _interactView = [[PLVInteractGenericView alloc] init];
+        _interactView = [[PLVInteractGenericView alloc] initWithLiveRoom: self.isLiveRoom];
         _interactView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
         [_interactView loadOnlineInteract];
     }

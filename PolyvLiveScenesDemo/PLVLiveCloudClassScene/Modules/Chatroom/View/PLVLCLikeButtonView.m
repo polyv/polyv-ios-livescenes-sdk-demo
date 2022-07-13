@@ -36,8 +36,8 @@
 - (void)layoutSubviews {
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {
-        self.likeButton.frame = CGRectMake(0, 0, 46, 46);
-        self.likeCountLabel.frame = CGRectMake(0, CGRectGetMaxY(self.likeButton.frame) + 10, 46, 16);
+        self.likeButton.frame = CGRectMake(0, 0, 40, 40);
+        self.likeCountLabel.frame = CGRectMake(0, CGRectGetMaxY(self.likeButton.frame) + 10, 40, 16);
         self.likeCountLabel.hidden = NO;
     }else{
         CGFloat viewWidth = CGRectGetWidth(self.bounds);

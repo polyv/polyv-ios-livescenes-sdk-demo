@@ -8,8 +8,8 @@
 
 #import <UIKit/UIKit.h>
 
-#define PLVLCLikeButtonViewWidth (46.0)
-#define PLVLCLikeButtonViewHeight (46.0 + 2.0 + 16.0)
+#define PLVLCLikeButtonViewWidth (40.0)
+#define PLVLCLikeButtonViewHeight (40.0 + 2.0 + 16.0)
 
 NS_ASSUME_NONNULL_BEGIN
 
