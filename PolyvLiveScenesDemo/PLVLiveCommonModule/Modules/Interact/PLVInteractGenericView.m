@@ -196,8 +196,8 @@ PLVInteractWebViewBridgeDelegate>
         @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar]
     };
     NSDictionary *channelInfo = @{
-        @"channelId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId],
-        @"roomId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId]
+        @"channelId" : [NSString stringWithFormat:@"%@", roomData.channelId],
+        @"roomId" : [NSString stringWithFormat:@"%@", roomData.channelId]
     };
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],

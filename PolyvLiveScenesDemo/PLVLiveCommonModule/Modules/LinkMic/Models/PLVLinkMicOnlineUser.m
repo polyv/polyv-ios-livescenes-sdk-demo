@@ -492,7 +492,7 @@
 
     /// 注：
     /// _isRealMainSpeaker 默认值为NO， isRealMainSpeaker 值为NO时不需要更新
-    if (!_updateUserCurrentSpeakerAuthCallbackBefore && isRealMainSpeaker) {
+    if (!_updateUserCurrentSpeakerAuthCallbackBefore && needCallBack) {
         needCallBack = YES;
     }
     
@@ -616,6 +616,15 @@
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.wantOpenScreenShareBlock(weakSelf, openScreenShare);}
+        })
+    }
+}
+
+- (void)wantChangeUserPPTToMain:(BOOL)pptToMain {
+    if (self.wantChangePPTToMainBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantChangePPTToMainBlock(weakSelf, pptToMain);}
         })
     }
 }

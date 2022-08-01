@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (NSTimeInterval)chatroomView_currentPlaybackTime;
 
+/// 聊天室登录达到并发限制时触发
+- (void)chatroomView_didLoginRestrict;
+
 @end
 
 /// 聊天室视图

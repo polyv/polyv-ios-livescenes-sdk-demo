@@ -165,6 +165,8 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     self.menuInfo = menuInfo;
     self.likeCount = menuInfo.likes.unsignedIntegerValue;
     self.watchCount = menuInfo.pageView.unsignedIntegerValue;
+    self.restrictChatEnabled = menuInfo.restrictChatEnabled;
+    self.maxViewerCount = menuInfo.maxViewer.unsignedIntegerValue;
 }
 
 #pragma mark Getter & Setter

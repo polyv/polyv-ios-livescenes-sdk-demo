@@ -31,6 +31,9 @@
     } else if ([messageObject isKindOfClass:[PLVRewardMessage class]]) {
         PLVRewardMessage *message = (PLVRewardMessage *)messageObject;
         msgId = message.msgId;
+    } else if ([messageObject isKindOfClass:[PLVFileMessage class]]) {
+        PLVFileMessage *message = (PLVFileMessage *)messageObject;
+        msgId = message.msgId;
     }
     return msgId;
 }
@@ -65,6 +68,9 @@
     } else if ([messageObject isKindOfClass:[ PLVImageEmotionMessage class]]) {
         PLVImageEmotionMessage *message = ( PLVImageEmotionMessage *)messageObject;
         time = message.time;
+    } else if ([messageObject isKindOfClass:[PLVFileMessage class]]) {
+        PLVFileMessage *message = (PLVFileMessage *)messageObject;
+        time = message.time;
     }
     return time;
 }
@@ -83,6 +89,9 @@
         playbackTime = message.playbackTime;
     } else if ([messageObject isKindOfClass:[ PLVImageEmotionMessage class]]) {
         PLVImageEmotionMessage *message = ( PLVImageEmotionMessage *)messageObject;
+        playbackTime = message.playbackTime;
+    } else if ([messageObject isKindOfClass:[PLVFileMessage class]]) {
+        PLVFileMessage *message = (PLVFileMessage *)messageObject;
         playbackTime = message.playbackTime;
     }
     return playbackTime;
@@ -108,6 +117,9 @@
          source = message.source;
     } else if ([messageObject isKindOfClass:[PLVImageMessage class]]) {
         PLVImageMessage *message = (PLVImageMessage *)messageObject;
+        source = message.source;
+    }  else if ([messageObject isKindOfClass:[PLVFileMessage class]]) {
+        PLVFileMessage *message = (PLVFileMessage *)messageObject;
         source = message.source;
     }
     

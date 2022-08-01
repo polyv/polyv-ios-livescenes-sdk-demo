@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 直播带货场景下 PLVLinkMicOnlineUser 的 rtcview 的容器
 ///
 /// @note 负责承载 PLVLinkMicOnlineUser 的 rtcview；并负责直播带货场景的UI业务；
-///       PLVLCLinkMicCanvasView 应仅负责承载，可通过调用 [addRTCView:] 添加 rtcview；
+///       PLVECLinkMicCanvasView 应仅负责承载，可通过调用 [addRTCView:] 添加 rtcview；
 @interface PLVECLinkMicCanvasView : UIView
 
 #pragma mark - [ 方法 ]

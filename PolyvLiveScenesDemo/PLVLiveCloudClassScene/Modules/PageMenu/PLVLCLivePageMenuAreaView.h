@@ -59,6 +59,12 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
 - (void)rollbackProductPageContentView;
 
+/// 切换聊天室关闭状态
+- (void)changeCloseRoomStatus:(BOOL)closeRoom;
+
+/// 切换聊天室专注模式状态
+- (void)changeFocusMode:(BOOL)focusMode;
+
 - (void)leaveLiveRoom;
 
 @end
@@ -78,6 +84,10 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param linkURL 商品详情的链接url
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL;
+
+/// 关闭商品库视图的回调
+/// @param pageMenuAreaView 菜单视图
+- (void)plvLCLivePageMenuAreaViewCloseProductView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
 
 /// 在点击卡片领取按钮或者观看领奖倒计时结束后会执行此回调，需要互动视图打开领取入口
 /// @param pageMenuAreaView 菜单视图

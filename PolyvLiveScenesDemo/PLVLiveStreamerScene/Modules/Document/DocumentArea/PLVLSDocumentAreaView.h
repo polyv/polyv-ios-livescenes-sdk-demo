@@ -31,6 +31,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param whiteboard YES：显示白板，NO：显示文档
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView didShowWhiteboardOrDocument:(BOOL)whiteboard;
 
+/// 讲师切换摄像头和文档的位置
+/// @param documentAreaView 白板&PPT区域对象
+/// @param pptView 需要同外部交换的 白板&PPT 视图
+/// @param currentDocument 当前是否交换文档
+- (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView pptView:(UIView *)pptView exchangeDocument:(BOOL)currentDocument;
+
+/// 切换文档区域显示的位置，在主视图或者外部显示
+/// @param documentAreaView 白板&PPT区域对象
+/// @param pptView 需要同外部交换的 白板&PPT 视图
+/// @param pptToMain 白板&PPT是否需要显示在主视图
+/// @param needSync 是否需要同步到远端(在本地用户点击切换按钮时则为YES)
+- (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView pptView:(UIView *)pptView changePPTPositionToMain:(BOOL)pptToMain syncRemoteUser:(BOOL)needSync;
+
 @end
 
 @interface PLVLSDocumentAreaView : UIView
@@ -65,6 +78,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 显示、隐藏 控制条视图
 /// @param show YES: 显示 NO：隐藏
 - (void)documentToolViewShow:(BOOL)show;
+
+/// 承载展示外部视图
+///
+/// @param externalView 外部视图
+- (void)displayExternalView:(UIView *)externalView;
 
 @end
 

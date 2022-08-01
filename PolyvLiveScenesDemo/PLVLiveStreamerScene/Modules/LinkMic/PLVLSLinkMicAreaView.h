@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 
 #import "PLVLinkMicOnlineUser.h"
+#import "PLVLSLinkMicWindowsView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -27,6 +28,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 将触发 [plvLSLinkMicAreaViewGetCurrentUserModelArray:] 此代理方法；
 ///       外部需实现此代理方法，以让 连麦窗口列表视图 正确获得当前连麦用户数据
 - (void)reloadLinkMicUserWindows;
+
+/// 更新在线用户到第一画面
+/// @param linkMicUserId 连麦用户id
+/// @param toFirstSite 是否到第一画面
+- (void)updateFirstSiteWindowCellWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite;
+
+/// RTC画面窗口(第一画面连麦窗口)和外部视图交换位置
+///
+/// @note 此方法表示用户希望 第一画面连麦视图与外部视图 externalView交换位置，将触发(plvLSLinkMicAreaView:showFirstSiteWindowCellOnExternal:)此代理方法
+- (void)firstSiteWindowCellExchangeWithExternal:(UIView *)externalView;
+
+/// 回滚外部视图和第一画面窗口到原来的位置
+///
+///@note 此方法表示用户希望 第一画面连麦视图与外部视图 externalView回滚至原本位置，将触发(plvLSLinkMicAreaView:rollbackExternalView:)此代理方法
+- (void)rollbackFirstSiteWindowCellAndExternalView;
 
 @end
 
@@ -54,6 +70,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param targetIndex 目标下标值
 - (PLVLinkMicOnlineUser *)plvLCLinkMicWindowsView:(PLVLSLinkMicAreaView *)linkMicAreaView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex __deprecated_msg("use [plvLSLinkMicAreaView:getUserModelFromOnlineUserArrayWithIndex:] instead.");
 - (PLVLinkMicOnlineUser *)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex;
+
+/// RTC画面窗口 需外部展示 ‘第一画面连麦窗口’
+///
+/// @param linkMicAreaView 连麦区域视图
+/// @param windowCell 第一画面连麦窗口视图 (需外部进行添加展示)
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView showFirstSiteWindowCellOnExternal:(UIView *)windowCell;
+
+/// 恢复外部视图位置
+///
+/// @note 当外部视图需要回归原位时，此回调将被触发；接收到此回调后，可将 externalView 重新布局在原位上
+///
+/// @param linkMicAreaView 连麦区域视图
+/// @param externalView 被添加在连麦区域视图上的外部视图
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView rollbackExternalView:(UIView *)externalView;
 
 @end
 

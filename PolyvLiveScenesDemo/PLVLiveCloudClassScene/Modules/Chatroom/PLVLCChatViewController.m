@@ -17,6 +17,7 @@
 #import "PLVLCImageEmotionMessageCell.h"
 #import "PLVLCQuoteMessageCell.h"
 #import "PLVLCRewardMessageCell.h"
+#import "PLVLCFileMessageCell.h"
 #import "PLVAlbumNavigationController.h"
 #import "PLVGiveRewardPresenter.h"
 #import "PLVRewardGoodsModel.h"
@@ -362,6 +363,15 @@ UITableViewDataSource
     [self.playbackViewModel addUIDelegate:self delegateQueue:dispatch_get_main_queue()];
 }
 
+- (void)changeCloseRoomStatus:(BOOL)closeRoom {
+    [self.keyboardToolView changeCloseRoomStatus:closeRoom];
+}
+
+- (void)changeFocusMode:(BOOL)focusMode {
+    [self.keyboardToolView changeFocusMode:focusMode];
+}
+
+
 - (void)leaveLiveRoom {
     [self.cardPushButtonView leaveLiveRoom];
 }
@@ -647,6 +657,15 @@ UITableViewDataSource
         }
         [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVLCFileMessageCell isModelValid:model]) {
+        static NSString *fileMessageCellIdentify = @"PLVLCFileMessageCell";
+        PLVLCFileMessageCell *cell = (PLVLCFileMessageCell *)[tableView dequeueReusableCellWithIdentifier:fileMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCFileMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:fileMessageCellIdentify];
+        }
+        CGFloat fileMessageCellWidth = self.likeButtonView.frame.origin.x - 8;// 气泡保证不遮挡点赞按钮
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:fileMessageCellWidth];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -690,6 +709,8 @@ UITableViewDataSource
         cellHeight = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCRewardMessageCell isModelValid:model]) {
         cellHeight = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCFileMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else {
         cellHeight = 0;
     }

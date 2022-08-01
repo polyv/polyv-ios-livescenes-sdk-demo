@@ -37,6 +37,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, strong) NSDictionary *userInfo;               // 登录用户信息
 @property (nonatomic, assign) BOOL userInfoHadSeted;                // 已设置登录用户信息
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
+@property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
 @property (nonatomic, assign, readonly) BOOL liveStatusIsLiving; // 当前直播是否正在进行
 
 /// scene 为 PLVDocumentViewSceneCloudClass 或 PLVDocumentViewSceneEcommerce 的数据
@@ -188,6 +189,10 @@ UIGestureRecognizerDelegate
 
 - (BOOL)liveStatusIsLiving {
     return [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving;
+}
+
+- (PLVChannelVideoType)videoType {
+    return [PLVRoomDataManager sharedManager].roomData.videoType;
 }
 
 #pragma mark - Public Method
@@ -424,11 +429,13 @@ UIGestureRecognizerDelegate
             }
         }
 
+        // 讲师也需要监听 "onSliceStart" "onSliceControl" "onSliceDraw" "changeVideoAndPPTPosition" 消息
         if ([subEvent isEqualToString:@"onSliceOpen"] ||
             [subEvent isEqualToString:@"onSliceDraw"] ||
             [subEvent isEqualToString:@"onSliceControl"]) {
-            // 讲师也需要监听 "onSliceStart" "onSliceControl" "onSliceDraw" 消息
             [self receiveOnSliceMessageWithjson:jsonString jsonObject:jsonDict];
+        } else if ([subEvent isEqualToString:@"changeVideoAndPPTPosition"]) {
+            [self receiveChangePPTPositionMessageWithjsonObject:jsonDict];
         }
         
         return;
@@ -462,17 +469,13 @@ UIGestureRecognizerDelegate
 }
 
 - (void)receiveChangePPTPositionMessageWithjsonObject:(NSDictionary *)jsonDict {
-    if (self.scene != PLVDocumentViewSceneCloudClass &&
-        self.scene != PLVDocumentViewSceneEcommerce) { // 目前推流场景不需要用到以下消息监听
-        return;
-    }
-    
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(documentView_changePPTPositionToMain:)]) {
-        BOOL wannaVideoOnMainSite = ((NSNumber *)jsonDict[@"status"]).boolValue;
-        BOOL pptToMain = !wannaVideoOnMainSite;
-        self.mainSpeakerPPTOnMain = pptToMain;
-        [self.delegate documentView_changePPTPositionToMain:pptToMain];
+    if (self.videoType != PLVChannelVideoType_Playback) { // 新增条件判断：非直播回放时，才更新PPT位置
+        if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_changePPTPositionToMain:)]) {
+            BOOL wannaVideoOnMainSite = ((NSNumber *)jsonDict[@"status"]).boolValue;
+            BOOL pptToMain = !wannaVideoOnMainSite;
+            self.mainSpeakerPPTOnMain = pptToMain;
+            [self.delegate documentView_changePPTPositionToMain:pptToMain];
+        }
     }
 }
 
@@ -491,16 +494,17 @@ UIGestureRecognizerDelegate
         self.autoId = autoId;
         self.currPageNum = pageId;
         [self.jsBridge refreshPPTWithJsonObject:jsonDict delay:0];
-    }else{
-        if (self.delegate &&
-            [self.delegate respondsToSelector:@selector(documentView_getRefreshDelayTime)]) {
-            unsigned int delayTime = [self.delegate documentView_getRefreshDelayTime];
-            [self.jsBridge refreshPPTWithJsonObject:jsonDict delay:delayTime];
+    }else {
+        if (self.videoType != PLVChannelVideoType_Playback) { // 新增条件判断：非直播回放时，才更新画笔数据
+            if ([self.delegate respondsToSelector:@selector(documentView_getRefreshDelayTime)]) {
+                unsigned int delayTime = [self.delegate documentView_getRefreshDelayTime];
+                [self.jsBridge refreshPPTWithJsonObject:jsonDict delay:delayTime];
+            }
         }
     }
   
     BOOL inClass = [jsonDict[@"inClass"] boolValue];
-    if (inClass) {
+    if (inClass && self.videoType != PLVChannelVideoType_Playback) { /// 新增条件判断：非直播回放时，才更新PPT位置
         if (self.delegate &&
             [self.delegate respondsToSelector:@selector(documentView_changePPTPositionToMain:)]) {
             // 从 socket 消息通知获取 ‘PPT与播放器的默认位置’

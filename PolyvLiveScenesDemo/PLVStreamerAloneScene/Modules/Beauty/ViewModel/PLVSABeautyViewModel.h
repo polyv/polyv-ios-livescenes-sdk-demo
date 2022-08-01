@@ -81,6 +81,9 @@ typedef NS_ENUM(NSInteger, PLVSABeautyType) {
 /// @param beautyType 美颜类型 
 - (void)selectBeautyType:(PLVSABeautyType)beautyType;
 
+/// 获取缓存选中的滤镜
+- (PLVBFilterOption *)getCacheSelectFilterOption;
+
 @end
 
 NS_ASSUME_NONNULL_END

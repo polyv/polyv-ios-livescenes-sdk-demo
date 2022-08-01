@@ -504,6 +504,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         return [self modelRewardChatDict:dict];
     } else if ([msgType isEqualToString:@"emotion"]) {
         return [self modelEmotionChatDict:dict];
+    } else if ([msgType isEqualToString:@"file"]) {
+        return [self modelFileChatDict:dict];
     }
     return model;
 }
@@ -514,6 +516,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 引用消息 @"quote"
 /// 打赏消息 @"reward"
 /// 图片表情消息 @"emotion"
+/// 文件下载消息 @"file"
 - (NSString *)messageTypeWithHistoryDict:(NSDictionary *)dict {
     NSString *msgSource = PLV_SafeStringForDictKey(dict, @"msgSource");
     NSString *msgType = PLV_SafeStringForDictKey(dict, @"msgType");
@@ -539,6 +542,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     } else if (msgSource &&
                [msgSource isEqualToString:@"reward"]) { // 打赏消息：红包、礼物
         return @"reward";
+    } else if (msgSource &&
+               [msgSource isEqualToString:@"file"]) { // 文件下载消息
+        return @"file";
     }
     return nil;
 }
@@ -588,6 +594,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         message.quoteImageSize = CGSizeMake(width, height);
     } else {
         message.quoteContent = PLV_SafeStringForDictKey(quoteDict, @"content");
+        NSDictionary *fileDict = [PLVDataUtil dictionaryWithJsonString:message.quoteContent];
+        if ([PLVFdUtil checkDictionaryUseable:fileDict]) {
+            message.quoteContent = PLV_SafeStringForDictKey(fileDict, @"name");
+        }
     }
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
@@ -680,6 +690,30 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.imageUrl = imageUrl;
     message.imageSize = CGSizeMake(width, height);
     message.imageUrl = [self imageURLWithImageEmotionMessage:message];
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = user;
+    model.message = message;
+    
+    return model;
+}
+
+- (PLVChatModel *)modelFileChatDict:(NSDictionary *)dict {
+    NSDictionary *userDict = PLV_SafeDictionaryForDictKey(dict, @"user");
+    PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+    
+    NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
+    NSString *content = PLV_SafeStringForDictKey(dict, @"content");
+    NSDictionary *fileDict = [PLVDataUtil dictionaryWithJsonString:content];
+    
+    PLVFileMessage *message = [[PLVFileMessage alloc] init];
+    message.time = time;
+    message.msgId = msgId;
+    if ([PLVFdUtil checkDictionaryUseable:fileDict]) {
+        message.url = PLV_SafeStringForDictKey(fileDict, @"url");
+        message.name = PLV_SafeStringForDictKey(fileDict, @"name");
+    }
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;
@@ -795,6 +829,13 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
 }
 
+- (void)notifyListenerFocusMode:(BOOL)focusMode {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomPresenter_didChangeFocusMode:)]) {
+        [self.delegate chatroomPresenter_didChangeFocusMode:focusMode];
+    }
+}
+
 #pragma mark - 更新 RoomData 属性
 
 - (void)updateOnlineCount:(NSInteger)onlineCount {
@@ -854,6 +895,13 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self rewardMessageEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin close chatroom
         [self closeRoomEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"onSliceID"]) {
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+        NSString *focusSpecialSpeak = PLV_SafeStringForDictKey(data, @"focusSpecialSpeak");
+        BOOL focusMode = [focusSpecialSpeak isEqualToString:@"Y"];
+        if (focusMode) {
+            [self notifyListenerFocusMode:focusMode];
+        }
     }
 }
 
@@ -861,6 +909,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSDictionary *jsonDict = PLV_SafeDictionaryForValue(object);
     if ([event isEqualToString:@"emotion"]) {// someone send a image emotion
        [self imageEmotionMessageEvent:jsonDict];
+   } else if ([event isEqualToString:@"focus"]) {
+       if ([subEvent isEqualToString:@"FOCUS_SPECIAL_SPEAK"]) {
+           [self focusModeEvent:jsonDict];
+       }
    }
 }
 
@@ -875,6 +927,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *userId = PLV_SafeStringForDictKey(user, @"userId");
     if (![self isLoginUser:userId]) {
         [self increaseWatchCount]; // 他人登陆时，观看热度加1
+    } else {
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        if (roomData.restrictChatEnabled && roomData.maxViewerCount > 0 && onlineCount > roomData.maxViewerCount) {
+            if (self.delegate &&
+                [self.delegate respondsToSelector:@selector(chatroomPresenter_didLoginRestrict)]) {
+                [self.delegate chatroomPresenter_didLoginRestrict];
+            }
+        }
     }
 }
 
@@ -917,6 +977,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *content = (NSString *)values.firstObject;
     NSTimeInterval time = PLV_SafeIntegerForDictKey(data, @"time");
     NSString *source = PLV_SafeStringForDictKey(data, @"source");
+    NSString *msgSource = PLV_SafeStringForDictKey(data, @"msgSource");
     if (quote) {
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.msgId = msgId;
@@ -932,7 +993,24 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
             message.quoteImageSize = CGSizeMake(width, height);
         } else {
             message.quoteContent = PLV_SafeStringForDictKey(quote, @"content");
+            NSDictionary *fileDict = [PLVDataUtil dictionaryWithJsonString:message.quoteContent];
+            if ([PLVFdUtil checkDictionaryUseable:fileDict]) {
+                message.quoteContent = PLV_SafeStringForDictKey(fileDict, @"name");
+            }
         }
+        model.message = message;
+        [self cachChatModel:model];
+    } else if ([msgSource isEqualToString:@"file"]) {
+        PLVFileMessage *message = [[PLVFileMessage alloc] init];
+        NSDictionary *fileDict = [PLVDataUtil dictionaryWithJsonString:content];
+        if ([PLVFdUtil checkDictionaryUseable:fileDict]) {
+            message.url = PLV_SafeStringForDictKey(fileDict, @"url");
+            message.name = PLV_SafeStringForDictKey(fileDict, @"name");
+        }
+        
+        message.msgId = msgId;
+        message.time = time;
+        message.source = source;
         model.message = message;
         [self cachChatModel:model];
     } else {
@@ -1145,6 +1223,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self.delegate respondsToSelector:@selector(chatroomPresenter_didChangeCloseRoom:)]) {
         [self.delegate chatroomPresenter_didChangeCloseRoom:closeRoom];
     }
+}
+
+- (void)focusModeEvent:(NSDictionary *)data {
+    NSString *status = PLV_SafeStringForDictKey(data, @"status");
+    BOOL focusMode = [status isEqualToString:@"Y"];
+    [self notifyListenerFocusMode:focusMode];
 }
 
 #pragma mark socket 数据缓冲

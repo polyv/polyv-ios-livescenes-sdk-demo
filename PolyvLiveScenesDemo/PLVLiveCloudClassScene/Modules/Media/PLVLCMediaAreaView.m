@@ -143,6 +143,7 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable; // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView; // 网络糟糕提示视图
+@property (nonatomic, strong) UILabel *memoryPlayTipLabel; // 记忆播放提示
 
 @end
 
@@ -194,6 +195,7 @@ PLVRoomDataManagerProtocol
         self.contentBackgroudView.frame = CGRectMake(0, contentBackgroudViewY, viewWidth, contentBackgroudViewHeight);
         self.networkQualityMiddleLable.frame = CGRectMake(16, viewHeight - 28 - 36, 219, 28);
         self.networkQualityPoorView.frame = CGRectMake(viewWidth - 275 - 4, contentBackgroudViewY + 39, 275, 28);
+        self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.frame) - 44 - 28, 242, 28);
     } else {
         // 横屏
         CGFloat contentBackgroudViewX = self.limitContentViewInSafeArea ? leftpadding : 0;
@@ -201,6 +203,7 @@ PLVRoomDataManagerProtocol
         self.contentBackgroudView.frame = CGRectMake(contentBackgroudViewX, 0, contentBackgroudViewWidth, viewHeight);
         self.networkQualityMiddleLable.frame = CGRectMake(contentBackgroudViewX + 16, viewHeight - 28 - 58, 219, 28);
         self.networkQualityPoorView.frame = CGRectMake(superviewWidth - 275 - 4 - leftpadding, 50, 275, 28);
+        self.memoryPlayTipLabel.frame = CGRectMake(contentBackgroudViewX + 16, CGRectGetMaxY(self.frame) - 92 - 28, 242, 28);
     }
     
     [self.danmuView resetFrame:self.contentBackgroudView.frame];
@@ -482,6 +485,8 @@ PLVRoomDataManagerProtocol
     
     [self addSubview:self.retryPlayView];
     
+    [self addSubview:self.memoryPlayTipLabel];
+    
     /// 网络质量提示
     [self.skinView.superview addSubview:self.networkQualityMiddleLable];
     [self.skinView.superview addSubview:self.networkQualityPoorView];
@@ -725,6 +730,29 @@ PLVRoomDataManagerProtocol
     }
 }
 
+#pragma mark 记忆播放提示
+- (void)showMemoryPlayTipLabelWithTime:(NSTimeInterval)time {
+    NSString *playTimeString = [PLVFdUtil secondsToString2:time];
+    UIFont *font = [UIFont systemFontOfSize:12];
+    NSDictionary *normalAttributes = @{NSFontAttributeName:font,
+                                          NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#FFFFFF")};
+    NSDictionary *timeAttributes = @{NSFontAttributeName:font,
+                                          NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#5C9DFF")};
+    NSString *textString = [NSString stringWithFormat:@"您上次观看至 %@ ，已为您自动续播", playTimeString];
+    NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:textString];
+    [attributedString addAttributes:normalAttributes range:NSMakeRange(0, attributedString.length)];
+    [attributedString addAttributes:timeAttributes range:[textString rangeOfString:playTimeString]];
+    self.memoryPlayTipLabel.attributedText = attributedString;
+    [UIView animateWithDuration:0.5 animations:^{
+        self.memoryPlayTipLabel.alpha = 1.0;
+    } completion:^(BOOL finished) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            weakSelf.memoryPlayTipLabel.alpha = 0;
+        });
+    }];
+}
+
 #pragma mark Getter
 - (CGFloat)topPaddingBelowiOS11{
     /// 仅在 [limitContentViewInSafeArea] 为YES，会使用此值，否则均返回 0
@@ -887,6 +915,18 @@ PLVRoomDataManagerProtocol
         }];
     }
     return _downloadSheet;
+}
+
+- (UILabel *)memoryPlayTipLabel {
+    if (!_memoryPlayTipLabel) {
+        _memoryPlayTipLabel = [[UILabel alloc] init];
+        _memoryPlayTipLabel.layer.masksToBounds = YES;
+        _memoryPlayTipLabel.layer.cornerRadius = 14;
+        _memoryPlayTipLabel.alpha = 0;
+        _memoryPlayTipLabel.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.6);
+        _memoryPlayTipLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _memoryPlayTipLabel;
 }
 
 - (BOOL)inLinkMic{
@@ -1210,6 +1250,11 @@ PLVRoomDataManagerProtocol
 /// 播放器 ‘视频大小’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter videoSizeChange:(CGSize)videoSize{
     self.canvasView.videoSize = videoSize;
+    if (self.videoType == PLVChannelVideoType_Playback) {
+        if (self.currentPlayTime > 0.5) {
+            [self showMemoryPlayTipLabelWithTime:self.currentPlayTime];
+        }
+    }
 }
 
 /// 播放器 ‘SEI信息’ 发生改变

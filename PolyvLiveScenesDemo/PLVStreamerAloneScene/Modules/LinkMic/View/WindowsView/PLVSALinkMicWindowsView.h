@@ -21,6 +21,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 刷新连麦窗口
 - (void)reloadLinkMicUserWindows;
 
+/// 更新在线用户到第一画面
+/// @param linkMicUserId 连麦用户id
+/// @param toFirstSite 是否到第一画面
+- (void)updateFirstSiteCanvasViewWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite;
+
 /// 切换连麦窗口布局和主讲人
 /// @note 切换连麦窗口的布局【仅当 speakerMode为YES时linkMicUserId有效】
 /// @param speakerMode 连麦的布局模式是否为主讲模式
@@ -83,6 +88,12 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param windowsView 连麦窗口列表视图
 - (BOOL)classStartedInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView;
+
+/// 开启 或者 关闭全屏
+/// @param windowsView 连麦窗口列表视图
+/// @param onlineUser 连麦用户信息
+/// @param isFullScreen 是否开启全屏(YES 开启 NO 关闭)
+- (void)linkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen;
 
 @end
 

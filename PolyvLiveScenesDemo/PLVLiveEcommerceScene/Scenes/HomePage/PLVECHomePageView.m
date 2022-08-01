@@ -21,6 +21,7 @@
 #import "PLVECLiveRoomInfoView.h"
 #import "PLVECChatroomView.h"
 #import "PLVECLikeButtonView.h"
+#import "PLVECCardPushButtonView.h"
 #import "PLVECPlayerContolView.h"
 #import "PLVECMoreView.h"
 #import "PLVECSwitchView.h"
@@ -56,7 +57,8 @@ PLVPlayerSwitchViewDelegate,
 PLVECCommodityViewControllerDelegate,
 PLVCommodityPushViewDelegate,
 PLVSocketManagerProtocol,
-PLVECChatroomViewDelegate
+PLVECChatroomViewDelegate,
+PLVECCardPushButtonViewDelegate
 >
 
 #pragma mark 数据
@@ -95,6 +97,7 @@ PLVECChatroomViewDelegate
 @property (nonatomic, strong) PLVECLiveRoomInfoView *liveRoomInfoView; // 直播详情视图
 @property (nonatomic, strong) PLVECChatroomView *chatroomView;         // 聊天室视图
 @property (nonatomic, strong) PLVECLikeButtonView *likeButtonView;     // 点赞视图
+@property (nonatomic, strong) PLVECCardPushButtonView *cardPushButtonView; // 卡片推送挂件
 @property (nonatomic, strong) PLVECPlayerContolView *playerContolView; // 视频播放控制视图
 @property (nonatomic, strong) UIButton *moreButton;                    // 更多按钮
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
@@ -157,6 +160,7 @@ PLVECChatroomViewDelegate
             [self addSubview:self.playbackListButton];
         }
     }
+    [self addSubview:self.cardPushButtonView];
     [self addSubview:self.moreButton];
     [self addSubview:self.shoppingCartButton];
 }
@@ -172,13 +176,24 @@ PLVECChatroomViewDelegate
 
 - (PLVECChatroomView *)chatroomView {
     if (!_chatroomView) {
-        if (self.type == PLVECHomePageType_Live ||
-            [PLVRoomDataManager sharedManager].roomData.menuInfo.chatInputDisable) {
-            _chatroomView = [[PLVECChatroomView alloc] init];
+        _chatroomView = [[PLVECChatroomView alloc] init];
+        if ((self.type == PLVECHomePageType_Live ||
+             [PLVRoomDataManager sharedManager].roomData.menuInfo.chatInputDisable)) {
             _chatroomView.delegate = self;
+        } else {
+            _chatroomView.hidden = YES;
         }
     }
     return _chatroomView;
+}
+
+- (PLVECCardPushButtonView *)cardPushButtonView {
+    if (!_cardPushButtonView) {
+        _cardPushButtonView = [[PLVECCardPushButtonView alloc] init];
+        _cardPushButtonView.delegate = self;
+        _cardPushButtonView.hidden = YES;
+    }
+    return _cardPushButtonView;
 }
 
 - (PLVECLikeButtonView *)likeButtonView {
@@ -356,6 +371,7 @@ PLVECChatroomViewDelegate
         [_likeButtonView invalidTimer];
         [[PLVECChatroomViewModel sharedViewModel] clear];
     }
+    [self.cardPushButtonView leaveLiveRoom];
 }
 
 - (void)showShoppingCart:(BOOL)show {
@@ -514,6 +530,8 @@ PLVECChatroomViewDelegate
         self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         // 点赞按钮
         self.likeButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
+        // 卡片推送挂件
+        self.cardPushButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetHeight(self.frame) * 0.55, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
         // 网络提示
         self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - 219 - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, 219, 28);
         self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
@@ -526,6 +544,8 @@ PLVECChatroomViewDelegate
         self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - buttonWidth - 15, CGRectGetHeight(self.bounds) - buttonWidth - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
         self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 32, CGRectGetMaxX(self.moreButton.frame), 41);
+        // 卡片推送挂件
+        self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, CGRectGetMinY(self.playerContolView.frame)-PLVECLikeButtonViewHeight, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
     }
 }
 
@@ -627,6 +647,10 @@ PLVECChatroomViewDelegate
     if (![jsonDict isKindOfClass:[NSDictionary class]]) {
         return;
     }
+    
+    if ([event isEqualToString:@"newsPush"]) {
+        [self newsPushEvent:jsonDict];
+    }
 }
 
 - (void)bulletinEvent:(NSDictionary *)jsonDict {
@@ -686,6 +710,14 @@ PLVECChatroomViewDelegate
     }
 }
 
+- (void)newsPushEvent:(NSDictionary *)jsonDict {
+    NSString *newsPushEvent = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+    if ([PLVFdUtil checkStringUseable:newsPushEvent]) {
+        BOOL start = [newsPushEvent isEqualToString:@"start"];
+        [self.cardPushButtonView startCardPush:start cardPushInfo:jsonDict];
+    }
+}
+
 #pragma mark PLVPlayerContolViewDelegate
 
 - (void)playerContolView:(PLVECPlayerContolView *)playerContolView switchPause:(BOOL)pause {
@@ -740,6 +772,14 @@ PLVECChatroomViewDelegate
 
 - (NSTimeInterval)chatroomView_currentPlaybackTime {
     return self.currentPlaybackTime;
+}
+
+- (void)chatroomView_didLoginRestrict {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_didLoginRestrict)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate homePageView_didLoginRestrict];
+        });
+    }
 }
 
 #pragma mark PLVECMoreViewDelegate
@@ -883,6 +923,14 @@ PLVECChatroomViewDelegate
     } else if (self.switchViewType == PLVECSwitchViewType_DelayMode) {
         self.curDelayModeIndex = selectedIndex;
         [self switchToNoDelayWatchMode:selectedIndex == 0];
+    }
+}
+
+#pragma mark PLVECCardPushButtonViewDelegate
+
+- (void)cardPushButtonView:(PLVECCardPushButtonView *)pushButtonView needOpenInteract:(NSDictionary *)dict {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:openCardPush:)]) {
+        [self.delegate homePageView:self openCardPush:dict];
     }
 }
 

@@ -142,7 +142,7 @@ PLVLSMoreInfoSheetDelegate
     self.linkMicAreaView.frame = CGRectMake(CGRectGetMaxX(self.documentAreaView.frame) + linkMicAreaViewLeftPadding, CGRectGetMaxY(self.statusAreaView.frame), linkMicAreaViewWidth, ducomentViewHeight);
         
     // 设置聊天室宽高
-    CGFloat chatroomAreaViewWidth = documentAreaViewWidth - 36 - linkMicAreaViewLeftPadding * 2; // 适配小屏输入框无法响应点击事件，chatroomAreaView内部适配聊天宽度
+    CGFloat chatroomAreaViewWidth = documentAreaViewWidth - 32 - linkMicAreaViewLeftPadding * 2; // 适配小屏输入框无法响应点击事件，chatroomAreaView内部适配聊天宽度
     CGFloat chatroomAreaViewHeigh = [UIScreen mainScreen].bounds.size.height * (isPad ? 0.28 : 0.42) + 44;
     
     self.chatroomAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, screenSize.height - PLVLSUtils.safeBottomPad - chatroomAreaViewHeigh, chatroomAreaViewWidth, chatroomAreaViewHeigh);
@@ -742,6 +742,17 @@ PLVLSMoreInfoSheetDelegate
     [self.statusAreaView syncSelectedWhiteboardOrDocument:whiteboard];
 }
 
+- (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView pptView:(UIView *)pptView changePPTPositionToMain:(BOOL)pptToMain syncRemoteUser:(BOOL)needSync {
+    if (pptToMain) {
+        [self.linkMicAreaView rollbackFirstSiteWindowCellAndExternalView];
+    } else {
+        [self.linkMicAreaView firstSiteWindowCellExchangeWithExternal:pptView];
+    }
+    if (needSync) {
+        [self.streamerPresenter.localOnlineUser wantChangeUserPPTToMain:pptToMain];
+    }
+}
+
 #pragma mark - PLVSocketManager Protocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
@@ -872,7 +883,7 @@ PLVLSMoreInfoSheetDelegate
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
            linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
                  authSpeaker:(BOOL)authSpeaker {
-    if ([onlineUser.linkMicUserId isEqualToString:self.streamerPresenter.localOnlineUser.linkMicUserId]) {
+    if (onlineUser.localUser) {
         NSString *message = authSpeaker ? @"已授予主讲权限" : @"已收回主讲权限";
         [PLVLSUtils showToastWithMessage:message inView:self.view];
         [self.documentAreaView updateDocumentSpeakerAuth:authSpeaker];
@@ -881,6 +892,8 @@ PLVLSMoreInfoSheetDelegate
             [self.documentAreaView dismissDocument];
         }
     }
+
+    [self.linkMicAreaView updateFirstSiteWindowCellWithUserId:onlineUser.linkMicUserId toFirstSite:onlineUser.isRealMainSpeaker];
 }
 
 /// ‘是否推流已开始’ 发生变化
@@ -1020,6 +1033,14 @@ PLVLSMoreInfoSheetDelegate
 /// 连麦窗口列表视图 需要根据下标值获取对应用户
 - (PLVLinkMicOnlineUser *)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex{
     return [self.streamerPresenter getOnlineUserModelFromOnlineUserArrayWithIndex:targetIndex];
+}
+
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView showFirstSiteWindowCellOnExternal:(UIView *)windowCell {
+    [self.documentAreaView displayExternalView:windowCell];
+}
+
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView rollbackExternalView:(UIView *)externalView {
+    [self.documentAreaView displayExternalView:externalView];
 }
 
 #pragma mark PLVLSBeautySheetDelegate

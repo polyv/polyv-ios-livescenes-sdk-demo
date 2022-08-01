@@ -47,24 +47,24 @@
     
     CGSize selfSize = self.bounds.size;
     
-    CGFloat toolWidth = 36;
+    CGFloat toolWidth = 32;
     CGFloat colorWidth = 28;
     CGFloat toolItemY = 0;
     CGFloat margin = 8;
     
     if (self.bounds.size.width < 504) {  // iphone小屏适配
         NSInteger subViewCount = self.subviews.count + self.viewColor.subviews.count + 1;
-        CGFloat subViewWidth = toolWidth * 5 + 1 + colorWidth * self.colors.count + 36 + 4;
+        CGFloat subViewWidth = toolWidth * 5 + 1 + colorWidth * self.colors.count + 32 + 4;
         if (self.bounds.size.width < subViewWidth) { // iphone 5s适配
             toolWidth = 32;
             colorWidth = 26;
             toolItemY = (selfSize.height - toolWidth) / 2.0f;
-            subViewWidth = toolWidth * 5 + 1 + colorWidth * self.colors.count + 36 + 4;
+            subViewWidth = toolWidth * 5 + 1 + colorWidth * self.colors.count + 32 + 4;
         }
         margin = (self.bounds.size.width - subViewWidth) / subViewCount;
     }
     
-    self.btnClearAll.frame = CGRectMake(selfSize.width - toolWidth - 36 - 2 * margin, toolItemY, toolWidth, toolWidth);
+    self.btnClearAll.frame = CGRectMake(selfSize.width - toolWidth - 32 - 2 * margin, toolItemY, toolWidth, toolWidth);
     self.btnClear.frame = CGRectMake(UIViewGetLeft(self.btnClearAll) - toolWidth - margin, toolItemY, toolWidth, toolWidth);
     self.btnText.frame = CGRectMake(UIViewGetLeft(self.btnClear) - toolWidth - margin, toolItemY, toolWidth, toolWidth);
     self.btnArrow.frame = CGRectMake(UIViewGetLeft(self.btnText) - toolWidth - margin, toolItemY, toolWidth, toolWidth);
@@ -198,7 +198,7 @@
     if (! _viewBg) {
         _viewBg = [[UIView alloc] init];
         _viewBg.backgroundColor = PLV_UIColorFromRGBA(@"#1B202D", 0.2f);
-        _viewBg.layer.cornerRadius = 18;
+        _viewBg.layer.cornerRadius = 16;
         _viewBg.clipsToBounds = YES;
     }
     return _viewBg;

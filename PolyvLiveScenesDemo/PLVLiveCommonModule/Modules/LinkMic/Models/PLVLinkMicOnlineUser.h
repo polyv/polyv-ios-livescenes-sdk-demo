@@ -62,6 +62,8 @@ typedef void (^PLVLinkMicOnlineUserWantGrantCupBlock)(PLVLinkMicOnlineUser * onl
 typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantAuth);
 /// [事件] 希望开关该用户的屏幕共享 回调Block
 typedef void (^PLVLinkMicOnlineUserWantOpenScreenShareBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantOpen);
+/// [事件] 希望改变该用户PPT是否在主视图 回调Block
+typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantChange);
  
 /// RTC在线用户模型
 ///
@@ -206,6 +208,13 @@ typedef void (^PLVLinkMicOnlineUserWantOpenScreenShareBlock)(PLVLinkMicOnlineUse
 /// @note 由 [wantOpenScreenShare] 方法直接触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantOpenScreenShareBlock wantOpenScreenShareBlock;
+
+/// [事件] 希望改变该用户PPT是否在主视图 回调Block
+///
+/// @note 由 [wantChangeUserPPTToMain] 方法直接触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantChangePPTToMainBlock wantChangePPTToMainBlock;
+
 
 /// 是否为 本地主讲 (即‘第一画面’；可能是本地点击而成为的主讲)
 @property (nonatomic, assign) BOOL isLocalMainSpeaker;
@@ -442,6 +451,14 @@ typedef void (^PLVLinkMicOnlineUserWantOpenScreenShareBlock)(PLVLinkMicOnlineUse
 ///
 /// @param openScreenShare 是否希望开启该用户的屏幕共享 (YES:开启，NO:关闭)
 - (void)wantOpenScreenShare:(BOOL)openScreenShare;
+
+/// 希望切换该用户的PPT位置到主视图
+///
+/// @note 不直接改变该模型内部的任何值；
+///       而是作为通知机制，直接触发 [wantChangePPTToMainBlock]，由Block实现方去执行相关逻辑
+///
+/// @param pptToMain 是否希望切换该用户的PPT位置到主视图 (YES:在主视图，NO:不切换到主视图)
+- (void)wantChangeUserPPTToMain:(BOOL)pptToMain;
 
 #pragma mark 多接收方回调配置
 /// 使用 blockKey 添加一个 ’用户模型 即将销毁‘ 回调Block

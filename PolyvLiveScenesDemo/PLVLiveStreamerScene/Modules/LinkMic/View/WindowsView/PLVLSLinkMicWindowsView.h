@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 
 #import "PLVLinkMicOnlineUser.h"
+#import "PLVLSLinkMicWindowCell.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -24,6 +25,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 将触发 [plvLCLinkMicWindowsViewGetCurrentUserModelArray:] 此代理方法；
 ///       外部需实现此方法，以让 连麦窗口列表视图 正确获得当前连麦用户数据
 - (void)reloadLinkMicUserWindows;
+
+/// 更新在线用户到第一画面
+/// @param linkMicUserId 连麦用户id
+/// @param toFirstSite 是否到第一画面
+- (void)updateFirstSiteWindowCellWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite;
+
+/// RTC画面窗口(第一画面连麦窗口)和外部视图交换位置
+///
+/// @note 此方法表示用户希望 第一画面连麦视图与外部视图 externalView交换位置，将触发(plvLSLinkMicWindowsView:showFirstSiteWindowCellOnExternal:)此代理方法
+- (void)firstSiteWindowCellExchangeWithExternal:(UIView *)externalView;
+
+/// 回滚外部视图和第一画面窗口到原来的位置
+///
+///@note 此方法表示用户希望 第一画面连麦视图与外部视图 externalView回滚至原本位置，将触发(plvLSLinkMicWindowsView:rollbackExternalView:)此代理方法
+- (void)rollbackFirstSiteWindowCellAndExternalView;
 
 @end
 
@@ -50,6 +66,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param targetIndex 目标下标值
 - (PLVLinkMicOnlineUser *)plvLCLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex __deprecated_msg("use [plvLSLinkMicWindowsView:getUserModelFromOnlineUserArrayWithIndex:] instead.");
 - (PLVLinkMicOnlineUser *)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView getUserModelFromOnlineUserArrayWithIndex:(NSInteger)targetIndex;
+
+/// 连麦窗口列表视图 需外部展示 ‘第一画面连麦窗口’
+///
+/// @param windowsView 连麦窗口列表视图
+/// @param windowCell 第一画面连麦窗口视图 (需外部进行添加展示)
+- (void)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView showFirstSiteWindowCellOnExternal:(UIView *)windowCell;
+
+/// 连麦窗口需要回退外部视图
+///
+/// @note 通过此回调，告知外部对象，外部视图将进行位置回退恢复。外部无需关心 windowCell连麦视图 的收尾处理工作，仅需将 externalView外部视图 恢复至正确位置。
+///
+/// @param windowsView 连麦窗口列表视图
+/// @param externalView 正在显示在列表中的外部视图
+- (void)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView rollbackExternalView:(UIView *)externalView;
 
 @end
 NS_ASSUME_NONNULL_END

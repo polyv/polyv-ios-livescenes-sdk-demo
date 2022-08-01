@@ -45,6 +45,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) UIButton * playButton; // 播放器暂停、播放按钮
 @property (nonatomic, strong) PLVLivePictureInPicturePlaceholderView *pictureInPicturePlaceholderView;    // 画中画占位图
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
+@property (nonatomic, strong) UILabel *memoryPlayTipLabel; // 记忆播放提示
 
 #pragma mark 基本数据
 @property (nonatomic, assign) CGRect displayRect; // 播放器区域rect
@@ -83,6 +84,7 @@ PLVPlayerPresenterDelegate
     [self.view addSubview:self.audioAnimalView];
     [self.view addSubview:self.playButton];
     [self.view addSubview:self.pictureInPicturePlaceholderView];
+    [self.view addSubview:self.memoryPlayTipLabel];
     
     [self.playerPresenter setupPlayerWithDisplayView:self.displayView];
     if (!self.marqueeView.superview) {
@@ -120,6 +122,8 @@ PLVPlayerPresenterDelegate
     
     // 设置画中画占位图
     self.pictureInPicturePlaceholderView.frame = self.contentBackgroudView.frame;
+    
+    self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.contentBackgroudView.frame) - 28 - 30, 242, 28);
 }
 
 - (CGRect)getDisplayViewRect {
@@ -248,6 +252,29 @@ PLVPlayerPresenterDelegate
     }
 }
 
+#pragma mark 记忆播放提示
+- (void)showMemoryPlayTipLabelWithTime:(NSTimeInterval)time {
+    NSString *playTimeString = [PLVFdUtil secondsToString2:time];
+    UIFont *font = [UIFont systemFontOfSize:12];
+    NSDictionary *normalAttributes = @{NSFontAttributeName:font,
+                                          NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#FFFFFF")};
+    NSDictionary *timeAttributes = @{NSFontAttributeName:font,
+                                          NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#5C9DFF")};
+    NSString *textString = [NSString stringWithFormat:@"您上次观看至 %@ ，已为您自动续播", playTimeString];
+    NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:textString];
+    [attributedString addAttributes:normalAttributes range:NSMakeRange(0, attributedString.length)];
+    [attributedString addAttributes:timeAttributes range:[textString rangeOfString:playTimeString]];
+    self.memoryPlayTipLabel.attributedText = attributedString;
+    [UIView animateWithDuration:0.5 animations:^{
+        self.memoryPlayTipLabel.alpha = 1.0;
+    } completion:^(BOOL finished) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            weakSelf.memoryPlayTipLabel.alpha = 0;
+        });
+    }];
+}
+
 #pragma mark Getter
 
 - (UIImageView *)backgroundView {
@@ -344,6 +371,18 @@ PLVPlayerPresenterDelegate
         }
     }
     return _watermarkView;
+}
+
+- (UILabel *)memoryPlayTipLabel {
+    if (!_memoryPlayTipLabel) {
+        _memoryPlayTipLabel = [[UILabel alloc] init];
+        _memoryPlayTipLabel.layer.masksToBounds = YES;
+        _memoryPlayTipLabel.layer.cornerRadius = 14;
+        _memoryPlayTipLabel.alpha = 0;
+        _memoryPlayTipLabel.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.6);
+        _memoryPlayTipLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _memoryPlayTipLabel;
 }
 
 - (PLVRoomData *)roomData {
@@ -562,6 +601,9 @@ PLVPlayerPresenterDelegate
     self.contentBackgroudView.frame = self.displayRect;
     self.watermarkView.frame = self.contentBackgroudView.frame;
     self.pictureInPicturePlaceholderView.frame = self.displayRect;
+    if (self.playerPresenter.currentPlaybackTime > 0.5) {
+        [self showMemoryPlayTipLabelWithTime:self.playerPresenter.currentPlaybackTime];
+    }
 }
 
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter streamStateUpdate:(PLVChannelLiveStreamState)newestStreamState streamStateDidChanged:(BOOL)streamStateDidChanged{

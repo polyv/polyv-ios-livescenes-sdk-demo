@@ -83,19 +83,20 @@ PLVLSChatroomViewModelProtocol
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat normalPadding = isPad ? 12 : 8;
+    CGFloat btnWidth = 32;
 
     CGFloat areaViewWidth = [UIScreen mainScreen].bounds.size.width * 0.34; // 支持小屏后，聊天室区域保持宽度34%不变
     CGFloat areaViewHeight = self.bounds.size.height;
-    self.chatroomListView.frame = CGRectMake(normalPadding, 0, areaViewWidth - normalPadding, areaViewHeight - 36 - 8 * 2);
+    self.chatroomListView.frame = CGRectMake(normalPadding, 0, areaViewWidth - normalPadding, areaViewHeight - btnWidth - 8 * 2);
     
     BOOL remindEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.remindEnabled;
-    CGFloat leftWidth = 36 * (remindEnabled ? 2 : 1);
-    self.leftToolView.frame = CGRectMake(normalPadding, areaViewHeight - normalPadding - 36, leftWidth, 36);
-    self.hideListViewButton.frame = CGRectMake(0, 0, 36, 36);
+    CGFloat leftWidth = btnWidth * (remindEnabled ? 2 : 1);
+    self.leftToolView.frame = CGRectMake(normalPadding, areaViewHeight - normalPadding - btnWidth, leftWidth, btnWidth);
+    self.hideListViewButton.frame = CGRectMake(0, 0, btnWidth, btnWidth);
     if (remindEnabled) {
         self.remindButton.hidden = NO;
-        self.remindButton.frame = CGRectMake(36, 0, 36, 36);
-        self.remindBadgeView.frame = CGRectMake(36 - 6 * 2, 6, 6, 6);
+        self.remindButton.frame = CGRectMake(btnWidth, 0, btnWidth, btnWidth);
+        self.remindBadgeView.frame = CGRectMake(btnWidth - 6 * 2, 6, 6, 6);
     } else {
         self.remindButton.hidden = YES;
         self.remindButton.frame = CGRectZero;
@@ -104,9 +105,9 @@ PLVLSChatroomViewModelProtocol
     
     //根据频道是否是音频模式而导致布局不同
     if ([PLVRoomDataManager sharedManager].roomData.isOnlyAudio) {
-        self.toolbarView.frame = CGRectMake(CGRectGetMaxX(self.leftToolView.frame) + 12, CGRectGetMinY(self.leftToolView.frame), 180, 36);
+        self.toolbarView.frame = CGRectMake(CGRectGetMaxX(self.leftToolView.frame) + 12, CGRectGetMinY(self.leftToolView.frame), 180, btnWidth);
     } else {
-        self.toolbarView.frame = CGRectMake(CGRectGetMaxX(self.leftToolView.frame) + 12, CGRectGetMinY(self.leftToolView.frame), 252, 36);
+        self.toolbarView.frame = CGRectMake(CGRectGetMaxX(self.leftToolView.frame) + 12, CGRectGetMinY(self.leftToolView.frame), 252, btnWidth);
     }
     self.receiveNewMessageView.frame = CGRectMake(0, self.chatroomListView.frame.size.height - 28, 86, 28);
 }
@@ -229,7 +230,7 @@ PLVLSChatroomViewModelProtocol
     if (!_leftToolView) {
         _leftToolView = [[UIView alloc] init];
         _leftToolView.backgroundColor = [PLVColorUtil colorFromHexString:@"#1B202D" alpha:0.4];
-        _leftToolView.layer.cornerRadius = 18;
+        _leftToolView.layer.cornerRadius = 16;
     }
     return _leftToolView;
 }

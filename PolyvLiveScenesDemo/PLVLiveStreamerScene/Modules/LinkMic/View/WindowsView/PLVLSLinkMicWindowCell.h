@@ -17,6 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark 方法
 - (void)setModel:(PLVLinkMicOnlineUser *)userModel;
 
+/// 切换至 显示默认内容视图
+- (void)switchToShowRtcContentView:(UIView *)rtcCanvasView;
+
+/// 切换至 显示外部内容视图
+- (void)switchToShowExternalContentView:(UIView *)externalContentView;
+
 @end
 
 NS_ASSUME_NONNULL_END

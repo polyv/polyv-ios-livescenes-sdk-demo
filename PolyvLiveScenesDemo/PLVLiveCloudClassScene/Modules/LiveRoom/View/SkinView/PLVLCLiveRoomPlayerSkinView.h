@@ -32,6 +32,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 弹幕开关按钮是否显示，默认为 NO，只有后台开启了弹幕功能才显示弹幕开关按钮
 @property (nonatomic, assign) BOOL danmuButtonShow;
 
+/// 是否需要显示皮肤控件，当通过外部控件 调用 hiddenLiveRoomPlayerSkinView 关闭皮肤时内部会记录此皮肤当前显示状态
+@property (nonatomic, assign) BOOL needShowSkin;
+
 /// 弹幕开关按钮，用于外部读取弹幕开关状态
 @property (nonatomic, strong, readonly) UIButton * danmuButton;
 
@@ -41,7 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 商品库按钮，用于外部控制是否显示该按钮
 @property (nonatomic, strong, readonly) UIButton *commodityButton;
 
-- (void)hiddenLiveRoomPlayerSkinView;
+/// 隐藏和显示 直播间播放器皮肤视图 控件
+/// @param isHidden YES 隐藏控件，NO显示控件
+- (void)hiddenLiveRoomPlayerSkinView:(BOOL)isHidden;
 
 - (void)displayLikeButtonView:(UIView *)likeButtonView;
 
@@ -50,6 +55,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否显示打开商品库的按钮
 /// @param show YES显示 NO 不显示
 - (void)showCommodityButton:(BOOL)show;
+
+/// 切换聊天室关闭状态，开启/禁用输入框
+///  @param closeRoom YES关闭 NO 不关闭
+- (void)changeCloseRoomStatus:(BOOL)closeRoom;
+
+/// 切换聊天室专注模式开启/关闭状态，开启/禁用输入框
+///  @param focusMode YES开启 NO 不关闭
+- (void)changeFocusModeStatus:(BOOL)focusMode;
 
 @end
 

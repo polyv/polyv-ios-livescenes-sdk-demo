@@ -24,6 +24,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 刷新连麦窗口
 - (void)reloadLinkMicUserWindows;
 
+/// 更新在线用户到第一画面
+/// @param linkMicUserId 连麦用户id
+/// @param toFirstSite 是否到第一画面
+- (void)updateFirstSiteCanvasViewWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite;
+
 /// 退出直播时调用
 - (void)clear;
 

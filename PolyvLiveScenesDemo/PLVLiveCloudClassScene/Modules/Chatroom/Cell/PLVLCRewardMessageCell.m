@@ -9,6 +9,7 @@
 #import "PLVLCRewardMessageCell.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
+#import <SDWebImage/SDWebImageDownloader.h>
 #import "PLVChatTextView.h"
 
 @interface PLVLCRewardMessageCell()

@@ -51,4 +51,10 @@
 /// 礼物打赏特效开关按钮是否隐藏，默认 YES；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hideRewardDisplaySwitch;
 
+/// 切换聊天室关闭状态
+- (void)changeCloseRoomStatus:(BOOL)closeRoom;
+
+/// 切换聊天室专注模式状态
+- (void)changeFocusModeStatus:(BOOL)focusMode;
+
 @end

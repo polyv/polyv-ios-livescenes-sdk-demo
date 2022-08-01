@@ -42,7 +42,7 @@ PLVSALinkMicWindowCellDelegate
 @property (nonatomic, assign) PLVSALinkMicLayoutMode linkMicLayoutMode; //当前连麦布局模式 (默认为平铺模式)
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, copy) NSString *currentSpeakerLinkMicUserId; //当前显示主讲用户的连麦id[布局模式切换时缓存此id]
-@property (nonatomic, strong) NSIndexPath *showingSpeakerIndexPath; // 主讲显示的画面数据对应本应在collectionView的下标 (仅在讲师角色 PLVSALinkMicLayoutModeSpeaker下有效)
+@property (nonatomic, assign) NSInteger currentSpeakerUserIndex; // 当前主讲用户在数据中的下标
 @property (nonatomic, copy) NSString *fullScreenUserId; // 全屏用户的Id
 @property (nonatomic, assign) BOOL delayDisplayToast; // 是否需要延迟显示toast
 
@@ -99,6 +99,9 @@ PLVSALinkMicWindowCellDelegate
     if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) {
         [self updateSpeakerViewForLinkMicUserId:self.currentSpeakerLinkMicUserId];
     }
+    
+    [self setupFirstSiteCanvasViewWithUserId:self.currentSpeakerLinkMicUserId];
+
     [self.collectionView reloadData];
     if (self.viewerType == PLVRoomUserTypeTeacher) {
         __weak typeof(self) weakSelf = self;
@@ -106,6 +109,26 @@ PLVSALinkMicWindowCellDelegate
             [weakSelf showGuideView];
         });
     }
+}
+
+- (void)updateFirstSiteCanvasViewWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite {
+    if (![PLVFdUtil checkStringUseable:linkMicUserId]) {
+        return;
+    }
+    
+    if (!toFirstSite) {
+        if ([self.currentSpeakerLinkMicUserId isEqualToString:linkMicUserId]) {
+            linkMicUserId = nil;
+        } else {
+            return;
+        }
+    }
+    
+    [self setupFirstSiteCanvasViewWithUserId:linkMicUserId];
+    if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) {
+        [self updateSpeakerViewForLinkMicUserId:self.currentSpeakerLinkMicUserId];
+    }
+    [self.collectionView reloadData];
 }
 
 - (void)switchLinkMicWindowsLayoutSpeakerMode:(BOOL)speakerMode linkMicWindowMainSpeaker:(NSString * _Nullable)linkMicUserId {
@@ -131,18 +154,39 @@ PLVSALinkMicWindowCellDelegate
 
 /// 根据连麦列表视图下标 获取在线用户model [经过业务逻辑处理 与 dataArray 数据并不对应]
 - (PLVLinkMicOnlineUser *)onlineUserWithIndex:(NSInteger)targetIndex {
-    if (self.linkMicUserCount == 1 && targetIndex == 0 &&
-        [self isLocalUserPreviewView]) {
+    if (self.linkMicUserCount == 1 && targetIndex == 0 && [self isLocalUserPreviewView]) {
         return self.localOnlineUser;
     }
-    
-    if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker &&
-        self.showingSpeakerIndexPath &&
-        targetIndex >= self.showingSpeakerIndexPath.row) {
-        targetIndex ++;
-    }
-    
+    targetIndex = [self indexWithTargetIndex:targetIndex isRealIndex:YES];
     return [self readUserModelFromDataArray:targetIndex];
+}
+
+/// 通过目标 targetIndex 转换为需要使用的下标
+/// isReal YES 将cell的下标 转换为在dataArray 数据中对应需要显示的坐标；
+/// isReal NO 将dataArray 数据中对应的下标转换为cell的下标
+- (NSInteger)indexWithTargetIndex:(NSInteger)targetIndex isRealIndex:(BOOL)isReal {
+    if (self.currentSpeakerUserIndex > -1) {
+        if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) {
+            if (targetIndex >= self.currentSpeakerUserIndex && self.linkMicUserCount != 1) {
+                isReal ? targetIndex++ : targetIndex--;
+            }
+        } else {
+            if (isReal) {
+                if (targetIndex == 0) {
+                    targetIndex = self.currentSpeakerUserIndex;
+                } else if (targetIndex <= self.currentSpeakerUserIndex){
+                    targetIndex-- ;
+                }
+            } else {
+                if (targetIndex == self.currentSpeakerUserIndex) {
+                    targetIndex = 0;
+                } else if (targetIndex < self.currentSpeakerUserIndex){
+                    targetIndex++;
+                }
+            }
+        }
+    }
+    return targetIndex;
 }
 
 /// 从 dataArray 的对应 targetIndex 获取在线用户
@@ -164,6 +208,23 @@ PLVSALinkMicWindowCellDelegate
         }];
     }
     return targetUserIndex;
+}
+
+- (NSInteger)findCellIndexWithMainSpeakerUser{
+    NSInteger targetUserIndex = -1;
+    if ([self.delegate respondsToSelector:@selector(onlineUserIndexInLinkMicWindowsView:filterBlock:)]) {
+        targetUserIndex = [self.delegate onlineUserIndexInLinkMicWindowsView:self filterBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
+            return enumerateUser.isRealMainSpeaker;
+        }];
+    }
+    return targetUserIndex;
+}
+
+- (PLVSALinkMicWindowCell *)getWindowCellWithIndex:(NSInteger)cellIndex{
+    PLVSALinkMicWindowCell * cell;
+    if (cellIndex >= 0) { cell = (PLVSALinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:cellIndex inSection:0]]; }
+    if (!cell) { NSLog(@"PLVLCLinkMicWindowsView - cell find failed"); }
+    return cell;
 }
 
 - (BOOL)isLocalUserPreviewView {
@@ -218,12 +279,12 @@ PLVSALinkMicWindowCellDelegate
         linkMicUserId = self.currentSpeakerLinkMicUserId;
     }
     
-    self.showingSpeakerIndexPath = nil;
+    self.currentSpeakerUserIndex = -1;
     NSInteger indexRow = [self findCellIndexWithUserId:linkMicUserId];
     PLVLinkMicOnlineUser *firstSiteOnlineUser = [self onlineUserWithIndex:indexRow];
     if (firstSiteOnlineUser) {
         self.currentSpeakerLinkMicUserId = linkMicUserId;
-        self.showingSpeakerIndexPath = [NSIndexPath indexPathForRow:indexRow inSection:0];
+        self.currentSpeakerUserIndex = indexRow;
         [self setupLinkMicCanvasViewWithOnlineUser:firstSiteOnlineUser];
         [self setupWillDeallocBlockWithOnlineUser:firstSiteOnlineUser];
         [self.speakerView showSpeakerViewWithUserModel:firstSiteOnlineUser delegate:self];
@@ -254,7 +315,6 @@ PLVSALinkMicWindowCellDelegate
 
 - (void)cleanSpeakerView {
     [self.speakerView hideSpeakerView];
-    self.showingSpeakerIndexPath = nil;
 }
 
 - (BOOL)showSpeakerPlaceholderView {
@@ -343,20 +403,19 @@ PLVSALinkMicWindowCellDelegate
 }
 
 - (void)fullScreenViewOnlineUser:(PLVLinkMicOnlineUser *)onlineUser didFullScreen:(BOOL)fullScreen {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowsView:onlineUser:isFullScreen:)]) {
+        [self.delegate linkMicWindowsView:self onlineUser:onlineUser isFullScreen:fullScreen];
+    }
+    
     PLVSALinkMicWindowCell *collectionViewCell;
     NSInteger indexRow = [self findCellIndexWithUserId:onlineUser.userId];
     if (indexRow > -1) {
         // 主讲模式下，indexPath 会有改变
-        if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker &&
-            indexRow == self.showingSpeakerIndexPath.row) {
+        if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker && [self.currentSpeakerLinkMicUserId isEqualToString:onlineUser.userId] && self.linkMicUserCount != 1) {
             collectionViewCell = self.speakerView.linkMicWindowCell;
         } else {
-            if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker &&
-                indexRow > self.showingSpeakerIndexPath.row) {
-                indexRow --;
-            }
-            NSIndexPath *indexPath = [NSIndexPath indexPathForRow:indexRow inSection:0];
-            collectionViewCell = (PLVSALinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:indexPath];
+            indexRow = [self indexWithTargetIndex:indexRow isRealIndex:NO];
+            collectionViewCell = [self getWindowCellWithIndex:indexRow];
         }
     }
 
@@ -387,6 +446,18 @@ PLVSALinkMicWindowCellDelegate
     
     // 全屏时需要隐藏状态栏
     [[UIApplication sharedApplication] setStatusBarHidden:fullScreen];
+}
+
+// 设置第一画面相关数据
+- (void)setupFirstSiteCanvasViewWithUserId:(NSString *)linkMicUserId {
+    NSInteger linkMicUserIndex = [self findCellIndexWithUserId:linkMicUserId];
+    PLVLinkMicOnlineUser *firstSiteUserModel;
+    if (![PLVFdUtil checkStringUseable:linkMicUserId] || linkMicUserIndex < 0) {
+        linkMicUserIndex = [self findCellIndexWithMainSpeakerUser];
+    }
+    firstSiteUserModel = [self readUserModelFromDataArray:linkMicUserIndex];
+    self.currentSpeakerLinkMicUserId = firstSiteUserModel.linkMicUserId;
+    self.currentSpeakerUserIndex = linkMicUserIndex;
 }
 
 #pragma mark Initialize
@@ -434,6 +505,9 @@ PLVSALinkMicWindowCellDelegate
         _collectionView.delegate = self;
         _collectionView.showsVerticalScrollIndicator = NO;
         _collectionView.showsHorizontalScrollIndicator = NO;
+        if (@available(iOS 11.0, *)) {
+            _collectionView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+        }
         
         [_collectionView registerClass:[PLVSALinkMicWindowCell class] forCellWithReuseIdentifier:kCellIdentifier];
     }
@@ -608,8 +682,12 @@ PLVSALinkMicWindowCellDelegate
     }
 
     NSIndexPath *indexPath = [self.collectionView indexPathForCell:collectionViewCell];
-    PLVLinkMicOnlineUser *onlineUser = [self onlineUserWithIndex:indexPath.row];
-    if (!indexPath || !onlineUser || onlineUser.localUser) {
+    PLVLinkMicOnlineUser *onlineUser = indexPath ? [self onlineUserWithIndex:indexPath.row] : nil;
+    if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker && !onlineUser && [collectionViewCell isEqual:self.speakerView.linkMicWindowCell]) {
+        onlineUser = [self readUserModelFromDataArray:self.currentSpeakerUserIndex];
+    }
+    
+    if (!onlineUser || onlineUser.localUser) {
         return;
     }
     

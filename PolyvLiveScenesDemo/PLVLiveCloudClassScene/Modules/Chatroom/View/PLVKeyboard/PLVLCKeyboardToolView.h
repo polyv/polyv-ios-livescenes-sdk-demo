@@ -86,6 +86,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 加载视图，调用该方代替 'addSubview:'
 - (void)addAtView:(UIView *)parentView frame:(CGRect)rect;
 
+/// 切换聊天室关闭状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能
+- (void)changeCloseRoomStatus:(BOOL)closeRoom;
+
+/// 切换聊天室专注模式状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能，启用只看讲师功能
+- (void)changeFocusMode:(BOOL)focusMode;
+
 /// 刷新文本和按钮布局，iPad分屏尺寸变动时调用
 - (void)updateTextViewAndButton;
 

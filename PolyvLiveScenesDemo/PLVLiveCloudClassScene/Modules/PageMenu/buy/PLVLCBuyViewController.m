@@ -35,6 +35,13 @@ PLVProductWebViewBridgeDelegate>
     [self loadWebView];
 }
 
+// 规避左右页面切换时webview布局异常问题
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    
+    [self.webView layoutSubviews];
+}
+
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
@@ -85,8 +92,8 @@ PLVProductWebViewBridgeDelegate>
         @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar]
     };
     NSDictionary *channelInfo = @{
-        @"channelId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId],
-        @"roomId" : [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].roomId]
+        @"channelId" : [NSString stringWithFormat:@"%@", roomData.channelId],
+        @"roomId" : [NSString stringWithFormat:@"%@", roomData.channelId]
     };
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
@@ -98,7 +105,7 @@ PLVProductWebViewBridgeDelegate>
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
     [mutableDict addEntriesFromDictionary:sessionDict];
-
+    
     return mutableDict;
 }
 
@@ -163,6 +170,9 @@ PLVProductWebViewBridgeDelegate>
 
 - (void)tapAction {
     [self rollbackProductPageContentView];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCCloseProductViewInViewController:)]) {
+        [self.delegate plvLCCloseProductViewInViewController:self];
+    }
 }
 
 @end

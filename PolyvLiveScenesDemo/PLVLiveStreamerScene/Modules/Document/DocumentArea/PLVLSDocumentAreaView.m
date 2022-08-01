@@ -36,6 +36,7 @@ UIGestureRecognizerDelegate
 
 /// UI
 @property (nonatomic, strong) UIActivityIndicatorView *viewLoading; // webView加载
+@property (nonatomic, strong) UIView *contentBackgroundView;   // 内容背景视图 负责承载PPT 功能模块视图 和 连麦视图
 @property (nonatomic, strong) PLVDocumentView *pptView;             // PPT 功能模块视图
 @property (nonatomic, strong) PLVLSDocumentNumView *pageNum;        // 页码
 @property (nonatomic, strong) PLVLSDocumentToolView *toolView;      // 控制条视图
@@ -50,6 +51,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign) NSInteger lastAutoId;                 // 直播中断前的文档autoId
 @property (nonatomic, assign) NSInteger lastPageId;                 // 直播中断前的文档pageId
+@property (nonatomic, assign) BOOL isMainSpeaker;                 // 本地用户是否是主讲人
 
 @end
 
@@ -64,7 +66,8 @@ UIGestureRecognizerDelegate
         self.layer.cornerRadius = 8;
         self.clipsToBounds = YES;
         
-        [self addSubview:self.pptView];
+        [self addSubview:self.contentBackgroundView];
+        [self displayExternalView:self.pptView];
         [self addSubview:self.docPlaceholder];
         [self addSubview:self.waitLivePlaceholderView];
         [self addSubview:self.brushView];
@@ -74,6 +77,7 @@ UIGestureRecognizerDelegate
         [self startLoading];
         
         if (self.viewerType == PLVRoomUserTypeGuest) {
+            self.toolView.hidden = YES;
             [self showWaitLivePlaceholderView:YES];
             [self.toolView showBtnBrush:NO];
             [self.toolView showBtnAddPage:NO];
@@ -87,7 +91,7 @@ UIGestureRecognizerDelegate
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    self.pptView.frame = self.bounds;
+    self.contentBackgroundView.frame = self.bounds;
     self.docPlaceholder.frame = self.bounds;
     self.waitLivePlaceholderView.frame = self.bounds;
     
@@ -111,12 +115,12 @@ UIGestureRecognizerDelegate
     
     CGFloat maxBrushWidth = bgSize.width - leftPad - rightPad;
     CGFloat brushWidth = MIN(maxBrushWidth, 504);
-    CGFloat brushHeight = 36;
+    CGFloat brushHeight = 32;
     self.brushView.frame = CGRectMake(bgSize.width - brushWidth - rightPad,
                                       bgSize.height - brushHeight - bottomPad,
                                       brushWidth, brushHeight);
     
-    CGFloat toolViewWidth = 36;
+    CGFloat toolViewWidth = 32;
     CGFloat toolViewHeight = bgSize.height - CGRectGetMaxY(self.pageNum.frame) - 12 - bottomPad;
     self.toolView.frame = CGRectMake(bgSize.width - toolViewWidth - rightPad,
                                          CGRectGetMaxY(self.pageNum.frame) + 12,
@@ -132,6 +136,13 @@ UIGestureRecognizerDelegate
 }
 
 #pragma mark - Getter
+
+- (UIView *)contentBackgroundView {
+    if (!_contentBackgroundView) {
+        _contentBackgroundView = [[UIView alloc] init];
+    }
+    return _contentBackgroundView;
+}
 
 - (PLVDocumentView *)pptView {
     if (! _pptView) {
@@ -280,12 +291,17 @@ UIGestureRecognizerDelegate
         [self.toolView setFullScreenButtonSelected:NO];
         [self.pageNum setCurrentPage:0 totalPage:0];
         [self showWaitLivePlaceholderView:YES];
+        [self documentView_changePPTPositionToMain:YES];
     }
 }
 
 - (void)updateDocumentSpeakerAuth:(BOOL)auth {
+    _isMainSpeaker = auth;
     [self.toolView showBtnNexth:auth];
     [self.toolView showBtnPrevious:auth];
+    if (auth) {
+        [self documentView_changePPTPositionToMain:self.pptView.mainSpeakerPPTOnMain];
+    }
 }
 
 - (NSDictionary *)getCurrentDocumentInfoDict {
@@ -309,6 +325,19 @@ UIGestureRecognizerDelegate
 - (void)documentToolViewShow:(BOOL)show {
     self.toolView.hidden = show;
 }
+
+- (void)displayExternalView:(UIView *)externalView {
+    if (externalView && [externalView isKindOfClass:UIView.class]) {
+        [self updateControlsWithExternalView:externalView];
+        [self removeSubview:self.contentBackgroundView];
+        externalView.frame = self.contentBackgroundView.bounds;
+        externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+        [self.contentBackgroundView insertSubview:externalView atIndex:0];
+    }else{
+        NSLog(@"PLVLSDocumentAreaView - displayExternalView failed, externalView:%@",externalView);
+    }
+}
+
 #pragma mark - [ Private Methods ]
 
 // 开启webview loading
@@ -328,6 +357,51 @@ UIGestureRecognizerDelegate
     _viewLoading = nil;
 }
 
+- (void)updateControlsWithExternalView:(UIView *)externalView {
+    if ([externalView isKindOfClass:PLVDocumentView.class]) {
+        self.pageNum.alpha = 1;
+        if ([self canManageDocuments]) {
+            // 有管理文档的权限
+            [self.toolView showBtnNexth:YES];
+            [self.toolView showBtnPrevious:YES];
+        }
+        if (self.viewerType == PLVRoomUserTypeTeacher) {
+            // 嘉宾暂无画笔权限
+            [self.toolView showBtnAddPage:YES];
+            [self.toolView showBtnBrush:YES];
+        }
+    } else {
+        self.brushView.hidden = YES;
+        self.pageNum.alpha = 0;
+        [self.toolView showBtnNexth:NO];
+        [self.toolView showBtnPrevious:NO];
+        [self.toolView showBtnBrush:NO];
+        [self.toolView showBtnAddPage:NO];
+        [self.toolView setBrushSelected:NO];
+        [self.pptView setPaintStatus:NO];
+    }
+}
+
+- (BOOL)canManageDocuments {
+    if (self.viewerType == PLVRoomUserTypeTeacher || (self.viewerType == PLVRoomUserTypeGuest && self.isMainSpeaker)) {
+        return YES;
+    }
+    
+    return NO;
+}
+
+- (void)removeSubview:(UIView *)superview{
+    for (UIView * subview in superview.subviews) { [subview removeFromSuperview]; }
+}
+
+#pragma mark Callback
+
+- (void)callbackForChangePPTPositionToMain:(BOOL)pptToMain syncRemoteUser:(BOOL)needSync {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(documentAreaView:pptView:changePPTPositionToMain:syncRemoteUser:)]) {
+        [self.delegate documentAreaView:self pptView:self.pptView changePPTPositionToMain:pptToMain syncRemoteUser:needSync];
+    }
+}
+
 #pragma mark - PLVStreamerPPTView Delegate
 
 - (void)documentView_webViewDidFinishLoading {
@@ -341,10 +415,16 @@ UIGestureRecognizerDelegate
     [PLVLSUtils showToastInHomeVCWithMessage:@"PPT 加载失败"];
 }
 
+- (void)documentView_changePPTPositionToMain:(BOOL)pptToMain {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.toolView setChangeButtonSelected:!pptToMain];
+        [self callbackForChangePPTPositionToMain:pptToMain syncRemoteUser:NO];
+    });
+}
+
 - (void)documentView_inputWithText:(NSString *)inputText textColor:(NSString *)textColor {
     [self.inputView presentWithText:inputText textColor:textColor inViewController:[PLVLSUtils sharedUtils].homeVC];
 }
-
 
 - (void)documentView_changeWithAutoId:(NSUInteger)autoId imageUrls:(NSArray *)imageUrls fileName:(NSString *)fileName {
     if ([PLVFdUtil checkStringUseable:fileName]) {
@@ -418,6 +498,10 @@ UIGestureRecognizerDelegate
     if (self.pptView.autoId == 0) {
         self.currWhiteboardNum = self.pptView.currPageNum;
     }
+}
+
+- (void)controlToolsView:(PLVLSDocumentToolView *)controlToolsView changePPTPositionToMain:(BOOL)pptToMain {
+    [self callbackForChangePPTPositionToMain:pptToMain syncRemoteUser:YES];
 }
 
 #pragma mark - PLVSBrushView Delegate

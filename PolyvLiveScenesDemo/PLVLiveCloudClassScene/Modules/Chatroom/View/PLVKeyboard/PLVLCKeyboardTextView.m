@@ -51,7 +51,7 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
     }
     
     UIEdgeInsets oldTextContainerInset = self.textContainerInset;
-    oldTextContainerInset.right = 24.0;
+    oldTextContainerInset.right = 12.0;
     self.textContainerInset = oldTextContainerInset;
 }
 

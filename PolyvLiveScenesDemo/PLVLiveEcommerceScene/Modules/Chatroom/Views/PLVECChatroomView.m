@@ -50,6 +50,7 @@ PLVECChatroomPlaybackViewModelDelegate
 @property (nonatomic, assign) BOOL observingTableView;
 
 @property (nonatomic, strong) UIView *textAreaView;
+@property (nonatomic, strong) UILabel *placeholderLB;
 
 @property (nonatomic, strong) UIView *tapView;
 @property (nonatomic, strong) UITextView *textView;
@@ -78,6 +79,8 @@ PLVECChatroomPlaybackViewModelDelegate
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
         } else {
+            [[PLVECChatroomViewModel sharedViewModel] setup];
+
             [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
             
             PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
@@ -153,11 +156,11 @@ PLVECChatroomPlaybackViewModelDelegate
             leftImgView.image = [PLVECUtils imageForWatchResource:@"plv_chat_img"];
             [self.textAreaView addSubview:leftImgView];
             
-            UILabel *placeholderLB = [[UILabel alloc] initWithFrame:CGRectMake(30, 9, 130, 14)];
-            placeholderLB.text = @"跟大家聊点什么吧～";
-            placeholderLB.font = [UIFont systemFontOfSize:14];
-            placeholderLB.textColor = [UIColor colorWithWhite:1.0 alpha:0.6];
-            [self.textAreaView addSubview:placeholderLB];
+            self.placeholderLB= [[UILabel alloc] initWithFrame:CGRectMake(30, 9, 130, 14)];
+            self.placeholderLB.text = @"跟大家聊点什么吧～";
+            self.placeholderLB.font = [UIFont systemFontOfSize:14];
+            self.placeholderLB.textColor = [UIColor colorWithWhite:1.0 alpha:0.6];
+            [self.textAreaView addSubview:self.placeholderLB];
         }
     }
     return self;
@@ -414,6 +417,40 @@ PLVECChatroomPlaybackViewModelDelegate
             [self.delegate chatroomView_loadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];
         });
     }
+}
+
+- (void)chatroomManager_didLoginRestrict {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomView_didLoginRestrict)]) {
+        [self.delegate chatroomView_didLoginRestrict];
+    }
+}
+
+- (void)chatroomManager_closeRoom:(BOOL)closeRoom {
+    if (self.videoType != PLVChannelVideoType_Live) {
+        return;
+    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.placeholderLB.text = closeRoom ? @"聊天室已关闭" : @"跟大家聊点什么吧～";
+        for (UIGestureRecognizer *gestureRecognizer in self.textAreaView.gestureRecognizers) {
+            gestureRecognizer.enabled = !closeRoom;
+            [self tapViewAction];
+        }
+    });
+}
+
+- (void)chatroomManager_focusMode:(BOOL)focusMode {
+    if (self.videoType != PLVChannelVideoType_Live) {
+        return;
+    }
+    [PLVECChatroomViewModel sharedViewModel].onlyTeacher = focusMode;
+    [self.tableView reloadData];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.placeholderLB.text = focusMode ? @"聊天室专注模式已开启" : @"跟大家聊点什么吧～";
+        for (UIGestureRecognizer *gestureRecognizer in self.textAreaView.gestureRecognizers) {
+            gestureRecognizer.enabled = !focusMode;
+            [self tapViewAction];
+        }
+    });
 }
 
 #pragma mark - PLVECChatroomPlaybackViewModelDelegate

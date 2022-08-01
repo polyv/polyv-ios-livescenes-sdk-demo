@@ -14,8 +14,8 @@
 /// 工具类
 #import "PLVLSUtils.h"
 
-static CGFloat kToolbarWidth = 36.0;
-static CGFloat kToolbarHeight = 36.0;
+static CGFloat kToolbarWidth = 32.0;
+static CGFloat kToolbarHeight = 32.0;
 
 @interface PLVLSChatroomToolbar ()
 
@@ -67,7 +67,7 @@ static CGFloat kToolbarHeight = 36.0;
     self.foldButton.frame = CGRectMake(0, 0, kToolbarWidth, kToolbarHeight);
     
     CGFloat originY = CGRectGetMaxX(self.foldButton.frame);
-    self.buttonsContainer.frame = CGRectMake(originY, 0, self.bounds.size.width - originY, 36);
+    self.buttonsContainer.frame = CGRectMake(originY, 0, self.bounds.size.width - originY, 32);
     self.microphoneButton.frame = CGRectMake(5, 0, kToolbarWidth, kToolbarHeight);
     if ([PLVRoomDataManager sharedManager].roomData.isOnlyAudio) {
         originY = CGRectGetMaxX(self.microphoneButton.frame) + 5;
@@ -87,7 +87,7 @@ static CGFloat kToolbarHeight = 36.0;
     if (!_bgView) {
         _bgView = [[UIView alloc] init];
         _bgView.backgroundColor = [UIColor colorWithRed:0x1b/255.0 green:0x20/255.0 blue:0x2d/255.0 alpha:0.4];
-        _bgView.layer.cornerRadius = 18;
+        _bgView.layer.cornerRadius = 16;
         _bgView.layer.masksToBounds = YES;
     }
     return _bgView;
@@ -245,7 +245,7 @@ static CGFloat kToolbarHeight = 36.0;
     self.foldButton.selected = !hide;
     
     if (hide) {
-        self.bgView.frame = CGRectMake(0, 0, 36, 36);
+        self.bgView.frame = CGRectMake(0, 0, 32, 32);
     } else {
         self.bgView.frame = self.bounds;
     }

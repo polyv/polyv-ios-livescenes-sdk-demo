@@ -10,9 +10,12 @@
 
 #import "PLVRoomDataManager.h"
 #import <SDWebImage/UIImageView+WebCache.h>
+#import <SDWebImage/SDWebImageDownloader.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVPlayerLogoView.h"
+
+static NSString * const kUserDefaultPlaybackLastTimeInfo = @"UserDefaultPlaybackLastTimeInfo";
 
 @interface PLVPlayerPresenterBackgroundView : UIView /// 仅 PLVPlayerPresenter 内部使用的背景视图类
 
@@ -36,6 +39,7 @@ PLVAdvertViewDelegate
 @property (nonatomic, assign) BOOL currentNoDelayLiveStart;
 @property (nonatomic, assign) PLVLivePlayerQuickLiveNetworkQuality networkQuality;
 @property (nonatomic, assign) NSInteger networkQualityRepeatCount;
+@property (nonatomic, assign) BOOL currentLivePlaybackChangingVid;
 
 #pragma mark UI
 /// view hierarchy
@@ -272,6 +276,7 @@ PLVAdvertViewDelegate
 }
 
 - (void)changeVid:(NSString *)vid {
+    self.currentLivePlaybackChangingVid = YES;
     [self.livePlaybackPlayer changeLivePlaybackVodId:vid];
     [self resumePlay];
 }
@@ -368,6 +373,44 @@ PLVAdvertViewDelegate
 
 - (void)setupPlayerLogoImage {
     [self.backgroundView addSubview:self.logoView];
+}
+
+- (void)savePlaybackLastTime {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *viewerId = roomData.roomUser.viewerId;
+    NSMutableDictionary *infoDict = [[[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackLastTimeInfo] mutableCopy];
+    NSMutableDictionary *lastTimeDict = [infoDict[viewerId] mutableCopy];
+    if (!infoDict) {
+        infoDict = [NSMutableDictionary dictionary];
+    }
+    if (!lastTimeDict) {
+        lastTimeDict = [NSMutableDictionary dictionary];
+    }
+    if (roomData.recordEnable && [PLVFdUtil checkStringUseable:roomData.recordFile.fileId]) {
+        [lastTimeDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:roomData.recordFile.fileId];
+    } else if ([PLVFdUtil checkStringUseable:roomData.vid]) {
+        [lastTimeDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:roomData.vid];
+    }
+    if ([PLVFdUtil checkStringUseable:viewerId]) {
+        [infoDict setObject:lastTimeDict forKey:viewerId];
+    }
+    [[NSUserDefaults standardUserDefaults] setObject:infoDict forKey:kUserDefaultPlaybackLastTimeInfo];
+}
+
+- (void)seekLivePlaybackToLastTime {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *viewerId = roomData.roomUser.viewerId;
+    NSMutableDictionary *infoDict = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackLastTimeInfo];
+    NSMutableDictionary *lastTimeDict = infoDict[viewerId];
+    NSTimeInterval lastTime = 0;
+    if (roomData.recordEnable && [PLVFdUtil checkStringUseable:roomData.recordFile.fileId]) {
+        lastTime = [lastTimeDict[roomData.recordFile.fileId] doubleValue];
+    } else if ([PLVFdUtil checkStringUseable:roomData.vid]) {
+        lastTime = [lastTimeDict[roomData.vid] doubleValue];
+    }
+    if (lastTime != 0 && (self.livePlaybackPlayer.duration - lastTime) > 1) {
+        [self seekLivePlaybackToTime:lastTime];
+    }
 }
 
 #pragma mark Getter
@@ -499,11 +542,16 @@ PLVAdvertViewDelegate
 - (void)plvPlayer:(PLVPlayer *)player playerIsPreparedToPlay:(PLVPlayerMainSubType)mainSubType{
     [self.activityView stopAnimating];
     [self timerEvent:nil];
+    self.currentLivePlaybackChangingVid = NO;
     
     if (self.keepShowAdvert && self.channelInfo.advertType != PLVChannelAdvertType_None) {
         self.keepShowAdvert = NO;
         [self showTitleAdvert];
         return;
+    }
+    
+    if (self.currentVideoType == PLVChannelVideoType_Playback) {
+        [self seekLivePlaybackToLastTime];
     }
 
     if ([self.delegate respondsToSelector:@selector(playerPresenter:videoSizeChange:)]) {
@@ -801,6 +849,9 @@ PLVAdvertViewDelegate
     if ([self.delegate respondsToSelector:@selector(playerPresenter:downloadProgress:playedProgress:playedTimeString:durationTimeString:)]) {
         [self.delegate playerPresenter:self downloadProgress:downloadProgress playedProgress:playedProgress playedTimeString:playedTimeString durationTimeString:durationTimeString];
     }
+    if (!self.currentLivePlaybackChangingVid) {
+        [self savePlaybackLastTime];
+    }
 }
 
 /// 直播回放播放器 ‘频道信息’ 发生改变
@@ -834,6 +885,12 @@ PLVAdvertViewDelegate
         if (!self.keepShowAdvert) {
             [self.advertView destroyTitleAdvert];
             [self resumePlay];
+            if (self.currentVideoType == PLVChannelVideoType_Playback) {
+                [self seekLivePlaybackToLastTime];
+                if ([self.delegate respondsToSelector:@selector(playerPresenter:videoSizeChange:)]) {
+                    [self.delegate playerPresenter:self videoSizeChange:self.livePlaybackPlayer.naturalSize];
+                }
+            }
         }
     }
 }

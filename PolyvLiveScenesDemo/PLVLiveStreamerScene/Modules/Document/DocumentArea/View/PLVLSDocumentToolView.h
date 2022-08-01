@@ -38,6 +38,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param isNextPage  YES：下一页，NO：上一页
 - (void)controlToolsView:(PLVLSDocumentToolView *)controlToolsView turnNextPage:(BOOL)isNextPage;
 
+/// 交换文档PPT位置到主画面
+///
+/// @param controlToolsView 控制条对象
+/// @param pptToMain 是否改变文档PPT位置到主画面(YES: 文档位于主画面 NO 文档不在主画面)默认为YES
+- (void)controlToolsView:(PLVLSDocumentToolView *)controlToolsView changePPTPositionToMain:(BOOL)pptToMain;
+
 @end
 
 @interface PLVLSDocumentToolView : UIView
@@ -57,6 +63,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 设置全屏按钮选中
 /// @param isSelected YES: 选中，NO：不选中
 - (void)setFullScreenButtonSelected:(BOOL)isSelected;
+
+/// 设置交换按钮选中
+/// @param isSelected YES: 选中，NO：不选中
+- (void)setChangeButtonSelected:(BOOL)isSelected;
 
 /// 更新页码
 ///

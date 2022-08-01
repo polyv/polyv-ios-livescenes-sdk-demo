@@ -50,7 +50,8 @@ PLVSocketManagerProtocol,
 PLVStreamerPresenterDelegate,
 PLVMemberPresenterDelegate,
 PLVSAStreamerHomeViewDelegate,
-PLVSABeautySheetDelegate
+PLVSABeautySheetDelegate,
+UIGestureRecognizerDelegate
 >
 
 #pragma mark 模块
@@ -97,12 +98,17 @@ PLVSABeautySheetDelegate
 @property (nonatomic, strong) PLVSAStreamerHomeView *homeView; // 开播中的推流页
 @property (nonatomic, strong) PLVSAStreamerFinishView *finishView; // 结束开播的结束页
 @property (nonatomic, strong) PLVSABeautySheet *beautySheet; // 美颜设置弹层
+@property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign, readonly) NSString * channelId; // 当前频道号
 @property (nonatomic, assign) NSTimeInterval showMicTipsTimeInterval; // 显示'请打开麦克风提示'时的时间戳
+@property (nonatomic, assign) CGFloat currentCameraZoomRatio;   // 当前摄像头的变焦倍数
+@property (nonatomic, assign) CGFloat maxCameraZoomRatio;   // 当前摄像头允许的最大变焦倍数
+@property (nonatomic, assign) BOOL localUserScreenShareOpen; // 本地用户是否开启了屏幕共享
+@property (nonatomic, assign) BOOL otherUserFullScreen; // 非本地用户开启了全屏
 
 @end
 
@@ -216,6 +222,25 @@ PLVSABeautySheetDelegate
     }];
 }
 
+/// 缩放手势
+- (void)pinchGesture:(UIPinchGestureRecognizer *)recognizer {
+    if (self.localUserScreenShareOpen ||
+        self.otherUserFullScreen) {
+        return;
+    }
+    switch (recognizer.state) {
+        case UIGestureRecognizerStateBegan:
+        case UIGestureRecognizerStateChanged: {
+            CGFloat zoomRatio = self.currentCameraZoomRatio * recognizer.scale;
+            if (zoomRatio >= 1.0 && zoomRatio <= self.maxCameraZoomRatio){
+                [self.streamerPresenter setCameraZoomRatio:zoomRatio];
+            }
+        } break;
+        default:
+            break;
+    }
+}
+
 #pragma mark Getter & Setter
 
 - (PLVSALinkMicAreaView *)linkMicAreaView {
@@ -288,12 +313,21 @@ PLVSABeautySheetDelegate
     return _beautySheet;
 }
 
+- (UIPinchGestureRecognizer *)pinchGesture {
+    if (!_pinchGesture) {
+        _pinchGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchGesture:)];
+        _pinchGesture.delegate = self;
+    }
+    return _pinchGesture;
+}
+
 #pragma mark Initialize
 
 - (void)setupUI {
     [self.view addSubview:self.linkMicAreaView];
     [self.view addSubview:self.shadowMaskView];
     [self.view addSubview:self.settingView];
+    [self.view addGestureRecognizer:self.pinchGesture];
 }
 
 - (void)setupModule {
@@ -742,6 +776,7 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
         return;
     }
     
+    [self.linkMicAreaView updateFirstSiteCanvasViewWithUserId:onlineUser.linkMicUserId toFirstSite:onlineUser.isRealMainSpeaker];
     NSString *message = nil;
     if (onlineUser.localUser) {
         if (authSpeaker) {
@@ -820,15 +855,18 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (self.viewState == PLVSAStreamerViewStateSteaming) {
         [PLVSAUtils showToastWithMessage:(currentCameraShouldShow ? @"已开启摄像头" : @"已关闭摄像头") inView:self.view];
     }
+    self.maxCameraZoomRatio = [self.streamerPresenter getMaxCameraZoomRatio];
 }
 
 /// 本地用户的 ’摄像头前后置状态值‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
  localUserCameraFrontChanged:(BOOL)currentCameraFront {
+    self.maxCameraZoomRatio = [self.streamerPresenter getMaxCameraZoomRatio];
 }
 
 /// 本地用户的 ’屏幕共享开关状态‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserScreenShareOpenChanged:(BOOL)currentScreenShareOpen {
+    self.localUserScreenShareOpen = currentScreenShareOpen;
     if (self.streamerPresenter.localOnlineUser.isRealMainSpeaker ||
         self.streamerPresenter.localOnlineUser.userType == PLVSocketUserTypeTeacher) {
         NSString *message = currentScreenShareOpen ? @"其他人现在可以看到你的屏幕" : @"共享已结束";
@@ -933,7 +971,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 }
 
 - (void)linkMicAreaView:(PLVSALinkMicAreaView *)areaView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen {
-
+    self.otherUserFullScreen = isFullScreen && !onlineUser.localUser;
 }
 
 #pragma mark PLVSAStreamerSettingViewDelegate
@@ -1116,6 +1154,16 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (_homeView) { // 需要先判断是否已初始化
         [self.homeView showBeautySheet:show];
     }
+}
+
+#pragma mark - UIGestureRecognizerDelegate
+- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
+    if ([gestureRecognizer isKindOfClass:[UIPinchGestureRecognizer class]] &&
+        !self.localUserScreenShareOpen &&
+        !self.otherUserFullScreen) {
+        self.currentCameraZoomRatio = [self.streamerPresenter getCameraZoomRatio];
+    }
+    return YES;
 }
 
 @end

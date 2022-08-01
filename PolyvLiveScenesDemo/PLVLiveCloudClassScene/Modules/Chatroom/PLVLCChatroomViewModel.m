@@ -47,10 +47,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 #pragma mark 数据数组
 
+/// 是否为专注模式
+@property (nonatomic, assign) BOOL focusMode;
 /// 公聊全部消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *publicChatArray;
 /// 公聊【只看教师与我】消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *partOfPublicChatArray;
+/// 公聊【只看教师】消息数组，用于响应专注模式
+@property (nonatomic, strong) NSMutableArray <PLVChatModel *> *partOfSpecialIdentityPublicChatArray;
 /// 私聊消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *privateChatArray;
 
@@ -105,6 +109,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     // 初始化消息数组，预设初始容量
     self.publicChatArray = [NSMutableArray arrayWithCapacity:500];
     self.partOfPublicChatArray = [NSMutableArray arrayWithCapacity:100];
+    self.partOfSpecialIdentityPublicChatArray = [NSMutableArray arrayWithCapacity:100];
     self.privateChatArray = [NSMutableArray arrayWithCapacity:20];
     
     // 初始化聊天室Presenter并设置delegate
@@ -162,6 +167,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self removeAllPublicChatModels];
     
     self.onlyTeacher = NO;
+    self.focusMode = NO;
 }
 
 #pragma mark - 加载打赏开关
@@ -274,7 +280,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (NSMutableArray <PLVChatModel *> *)chatArray {
     if (self.onlyTeacher) {
-        return self.partOfPublicChatArray;
+        if (self.focusMode) {
+            return self.partOfSpecialIdentityPublicChatArray;
+        } else {
+            return self.partOfPublicChatArray;
+        }
     } else {
         return self.publicChatArray;
     }
@@ -302,6 +312,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
             [self.publicChatArray addObject:model];
             if (model.user.specialIdentity) {
                 [self.partOfPublicChatArray addObject:model];
+                [self.partOfSpecialIdentityPublicChatArray addObject:model];
             }
         }
     }
@@ -323,6 +334,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         if (modelMsgId && [modelMsgId isEqualToString:msgId]) {
             [self.publicChatArray removeObject:model];
             [self.partOfPublicChatArray removeObject:model];
+            [self.partOfSpecialIdentityPublicChatArray removeObject:model];
             break;
         }
     }
@@ -336,6 +348,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     [self.publicChatArray removeAllObjects];
     [self.partOfPublicChatArray removeAllObjects];
+    [self.partOfSpecialIdentityPublicChatArray removeAllObjects];
     dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyDelegatesDidMessageDeleted];
@@ -348,7 +361,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         if ([model isKindOfClass:[PLVChatModel class]]) {
             [self.publicChatArray insertObject:model atIndex:0];
             PLVChatUser *user = model.user;
-            if (user.specialIdentity || [self isLoginUser:user.userId]) {
+            if (user.specialIdentity) {
+                [self.partOfPublicChatArray insertObject:model atIndex:0];
+                [self.partOfSpecialIdentityPublicChatArray insertObject:model atIndex:0];
+            } else if ([self isLoginUser:user.userId]) {
                 [self.partOfPublicChatArray insertObject:model atIndex:0];
             }
         }
@@ -469,6 +485,24 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)notifyDelegatesLoadImageEmotionFailure {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_loadImageEmotionFailure];
+    });
+}
+
+- (void)notifyDelegatesDidLoginRestrict {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_didLoginRestrict];
+    });
+}
+
+- (void)notifyDelegatesCloseRoom:(BOOL)closeRoom {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_closeRoom:closeRoom];
+    });
+}
+
+- (void)notifyDelegatesFocusMode:(BOOL)focusMode {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_focusMode:focusMode];
     });
 }
 
@@ -666,6 +700,19 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_loadImageEmotionsFailure {
     [self notifyDelegatesLoadImageEmotionFailure];
+}
+
+- (void)chatroomPresenter_didLoginRestrict {
+    [self notifyDelegatesDidLoginRestrict];
+}
+
+- (void)chatroomPresenter_didChangeCloseRoom:(BOOL)closeRoom {
+    [self notifyDelegatesCloseRoom:closeRoom];
+}
+
+- (void)chatroomPresenter_didChangeFocusMode:(BOOL)focusMode {
+    self.focusMode = focusMode;
+    [self notifyDelegatesFocusMode:focusMode];
 }
 
 #pragma mark - Utils

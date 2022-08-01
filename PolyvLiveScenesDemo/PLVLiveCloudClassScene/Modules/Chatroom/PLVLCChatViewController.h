@@ -45,6 +45,12 @@ extern NSString *PLVLCChatroomOpenRewardViewNotification;
 
 - (void)resumeCardPushButtonViewLayout;
 
+/// 切换聊天室关闭状态
+- (void)changeCloseRoomStatus:(BOOL)closeRoom;
+
+/// 切换聊天室专注模式状态
+- (void)changeFocusMode:(BOOL)focusMode;
+
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
 - (void)leaveLiveRoom;

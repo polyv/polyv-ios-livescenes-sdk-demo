@@ -383,6 +383,16 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param openScreenShare 开启或关闭 屏幕共享 (YES:开启；NO:关闭)
 - (void)openLocalUserScreenShare:(BOOL)openScreenShare API_AVAILABLE(ios(11.0));
 
+/// 设置摄像头的变焦倍数
+/// @param zoomRatio zoomRatio 变焦
+- (void)setCameraZoomRatio:(CGFloat)zoomRatio;
+
+/// 获取摄像头的变焦倍数
+- (CGFloat)getCameraZoomRatio;
+
+/// 获取摄像头的最大变焦倍数
+- (CGFloat)getMaxCameraZoomRatio;
+
 #pragma mark 连麦事件管理
 /// 开启或关闭 ”视频连麦“
 ///

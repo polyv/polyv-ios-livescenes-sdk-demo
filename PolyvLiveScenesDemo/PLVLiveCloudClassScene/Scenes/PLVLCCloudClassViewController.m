@@ -228,7 +228,7 @@ PLVLCChatroomPlaybackDelegate
 
 - (void)setupUI {
     self.view.backgroundColor = PLV_UIColorFromRGB(@"#0E141E");
-    self.fullScreenDifferent = YES;
+    self.fullScreenDifferent = YES; //初始化默认值为YES。用于[updateUI]方法中，需要判断该字段的UI更新默认都执行一次
     self.currentLandscape = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     
     /// 注意：1. 此处不建议将共同拥有的图层，提炼在 if 判断外，来做“代码简化”
@@ -573,6 +573,12 @@ PLVLCChatroomPlaybackDelegate
 - (PLVCommodityCardDetailView *)cardDetailView {
     if (!_cardDetailView) {
         _cardDetailView = [[PLVCommodityCardDetailView alloc] init];
+        __weak typeof(self) weakSelf = self;
+        _cardDetailView.tapActionBlock = ^{
+            if (weakSelf.currentLandscape) {
+                [weakSelf.liveRoomSkinView hiddenLiveRoomPlayerSkinView:!weakSelf.liveRoomSkinView.needShowSkin];
+            }
+        };
     }
     return _cardDetailView;
 }
@@ -732,9 +738,7 @@ PLVLCChatroomPlaybackDelegate
         return;
     }
     
-    if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin closes or opens the chatroom
-        [self closeRoomEvent:jsonDict];
-    } else if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
+    if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
         plv_dispatch_main_async_safe(^{
             [self productMessageEvent:jsonDict];
         })
@@ -742,16 +746,6 @@ PLVLCChatroomPlaybackDelegate
 }
 
 #pragma mark socket 数据解析
-
-/// 讲师关闭、打开聊天室
-- (void)closeRoomEvent:(NSDictionary *)jsonDict {
-    NSDictionary *value = PLV_SafeDictionaryForDictKey(jsonDict, @"value");
-    BOOL closeRoom = PLV_SafeBoolForDictKey(value, @"closed");
-    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
-    plv_dispatch_main_async_safe(^{
-        [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
-    })
-}
 
 /// 推送商品
 - (void)productMessageEvent:(NSDictionary *)jsonDict {
@@ -799,8 +793,38 @@ PLVLCChatroomPlaybackDelegate
     }
 }
 
+- (void)chatroomManager_didLoginRestrict{
+    __weak typeof(self)weakSelf = self;
+    plv_dispatch_main_async_safe(^{
+        [PLVLCUtils showHUDWithTitle:nil detail:@"直播间太过火爆了，请稍后再来(2050407)"  view:self.view afterDelay:3.0];
+    })
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
+    });
+}
+
 - (void)chatroomManager_startCardPush:(BOOL)start pushInfo:(NSDictionary *)pushDict {
     [self.menuAreaView startCardPush:start cardPushInfo:pushDict];
+}
+
+- (void)chatroomManager_closeRoom:(BOOL)closeRoom {
+    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
+    plv_dispatch_main_async_safe(^{
+        [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
+        [self.liveRoomSkinView changeCloseRoomStatus:closeRoom];
+        [self.menuAreaView changeCloseRoomStatus:closeRoom];
+    })
+}
+
+- (void)chatroomManager_focusMode:(BOOL)focusMode {
+    NSString *string = focusMode ? @"聊天室专注模式已开启" : @"聊天室专注模式已关闭";
+    plv_dispatch_main_async_safe(^{
+        [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
+        [self.liveRoomSkinView changeFocusModeStatus:focusMode];
+        [self.menuAreaView changeFocusMode:focusMode];
+        [self.chatLandscapeView updateChatTableView];
+    })
+
 }
 
 #pragma mark PLVLCChatroomPlaybackDelegate
@@ -1020,7 +1044,7 @@ PLVLCChatroomPlaybackDelegate
 }
 
 - (void)plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
-    [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView];
+    [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:YES];
     // 加载商品库视图
     [self.menuAreaView displayProductPageToExternalView:self.view];
 }
@@ -1167,6 +1191,12 @@ PLVLCChatroomPlaybackDelegate
     [self plvCommodityPushViewJumpToCommodityDetail:linkURL];
 }
 
+- (void)plvLCLivePageMenuAreaViewCloseProductView {
+    if (self.currentLandscape) {
+        [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:!self.liveRoomSkinView.needShowSkin];
+    }
+}
+
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView needOpenInteract:(NSDictionary *)dict {
     [self.popoverView.interactView openNewPushCardWithDict:dict];
 }
@@ -1260,7 +1290,7 @@ PLVLCChatroomPlaybackDelegate
     if (insideLoad) {
         [self.cardDetailView loadWebviewWithCardURL:url];
         if (self.currentLandscape) {
-            [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView];
+            [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:YES];
             [self.cardDetailView showOnView:self.view frame:CGRectMake(self.view.bounds.size.width * 0.6, 0, self.view.bounds.size.width * 0.4, self.view.bounds.size.height)];
         } else {
             [self.cardDetailView showOnView:self.view frame:CGRectMake(0, CGRectGetMinY(self.menuAreaView.frame) +  48, self.menuAreaView.bounds.size.width, self.menuAreaView.bounds.size.height - 48)];

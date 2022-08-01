@@ -31,18 +31,19 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 ///  webView加载失败回调
 - (void)documentView_webViewLoadFailWithError:(NSError *)error;
 
+/// PPT视图 PPT位置需切换
+/// @note 直播时，收到此回调，表示讲师开播的默认PPT位置，或表示讲师发出切换PPT位置的指令；
+///       回放时，将复现讲师对PPT的位置操作，收到此回调时，外部应根据 pptToMain 值相应切换PPT视图位置。
+///       推流开播时，收到此回调时，外部应根据 pptToMain 值相应切换PPT视图位置。
+/// @param pptToMain PPT是否需要切换至主窗口 (YES:PPT需要切至主窗口 NO:PPT需要切至小窗，视频需要切至主窗口)
+- (void)documentView_changePPTPositionToMain:(BOOL)pptToMain;
+
 #pragma mark 观看场景回调
 
 /// 获取刷新PPT的延迟时间
 /// @note 不同情况下，PPT的刷新延迟时间不一，需向外部获知当前合适的延迟时间
 /// @return unsigned int 返回刷新延迟时间 (单位:毫秒)
 - (unsigned int)documentView_getRefreshDelayTime;
-
-/// PPT视图 PPT位置需切换
-/// @note 直播时，收到此回调，表示讲师开播的默认PPT位置，或表示讲师发出切换PPT位置的指令；
-///       回放时，将复现讲师对PPT的位置操作，收到此回调时，外部应根据 pptToMain 值相应切换PPT视图位置。
-/// @param pptToMain PPT是否需要切换至主窗口 (YES:PPT需要切至主窗口 NO:PPT需要切至小窗，视频需要切至主窗口)
-- (void)documentView_changePPTPositionToMain:(BOOL)pptToMain;
 
 /// [回放时] PPT视图需要获取视频播放器的当前播放时间点
 /// @return NSTimeInterval 当前播放时间点 (单位:毫秒)

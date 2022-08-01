@@ -30,6 +30,7 @@
 
 static NSString *kBeautyOptionDictKey = @"kPLVSABeautyOptionDictKey";
 static NSString *kBeautyFilterOptionDictKey = @"kPLVSABeautyFilterOptionDictKey";
+static NSString *kBeautyFilterSelectKey = @"kPLVSABeautyFilterSelectKey";
 static NSString *kBeautyOpenKey = @"kPLVSABeautyopenKey";
 static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 
@@ -122,6 +123,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 - (void)selectBeautyFilterOption:(PLVBFilterOption *)filterOption {
     // 缓存当前选择的滤镜
     self.currentFilterOption = filterOption;
+    [self saveBeautyFilterSelect:filterOption];
     
     // 未开启美颜 或 当前选择的不是滤镜 不继续处理
     if (!self.beautyIsOpen ||
@@ -154,6 +156,20 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 - (BOOL)isSelectedOriginFilter {
     BOOL isSelectedOriginFilter = (self.beautyType == PLVSABeautyTypeFilter) && (self.currentFilterOption &&![PLVFdUtil checkStringUseable:self.currentFilterOption.filterKey]);
     return isSelectedOriginFilter;
+}
+
+- (PLVBFilterOption *)getCacheSelectFilterOption {
+    NSString *spellName = [self getSelectedBeautyFilterSpellName];
+    if (![PLVFdUtil checkStringUseable:spellName] ||
+        !self.filterOptionArray) {
+        return nil;
+    }
+    for (PLVBFilterOption *filter in self.filterOptionArray) {
+        if ([filter.filterSpellName isEqualToString:spellName]) {
+            return filter;
+        }
+    }
+    return nil;
 }
 
 #pragma mark - [ Private Method ]
@@ -219,6 +235,12 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
             plv_dict_set(self.beautyFilterOptionDict, key, value);
         }];
     }
+    
+    PLVBFilterOption *cacheFilter = [self getCacheSelectFilterOption];
+    if (cacheFilter) {
+        [self selectBeautyFilterOption:cacheFilter];
+    }
+    
     [self saveBeautyFilterOptionDict];
 }
 
@@ -258,6 +280,22 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
+- (void)saveBeautyFilterSelect:(PLVBFilterOption *)filter {
+    if ([PLVFdUtil checkStringUseable:filter.filterSpellName]) {
+        [[NSUserDefaults standardUserDefaults] setObject:filter.filterSpellName forKey:kBeautyFilterSelectKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+}
+
+- (NSString *)getSelectedBeautyFilterSpellName {
+    return [[NSUserDefaults standardUserDefaults] objectForKey:kBeautyFilterSelectKey];
+}
+
+- (void)removeBeautyFilterSelect {
+    [[NSUserDefaults standardUserDefaults] removeObjectForKey:kBeautyFilterSelectKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
 - (void)saveBeautyOpenStatus:(BOOL)open {
     [[NSUserDefaults standardUserDefaults] setObject:open ? @"1" : @"2" forKey:kBeautyOpenKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
@@ -274,6 +312,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 - (void)resetBeauty {
     [self removeBeautyOptionDict];
     [self removeBeautyFilterOptionDict];
+    [self removeBeautyFilterSelect];
     [self initBeautyOption];
     [self initFilterOption];
 }

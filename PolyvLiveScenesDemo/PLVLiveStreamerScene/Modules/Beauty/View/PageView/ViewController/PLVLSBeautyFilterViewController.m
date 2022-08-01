@@ -41,7 +41,20 @@ static CGFloat kItemHeight = 72; // item高度
     self.view.backgroundColor = [UIColor clearColor];
     [self.view addSubview:self.collectionView];
     [self.collectionView reloadData];
-    self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
+    
+    PLVBFilterOption *cacheFilter = [[PLVLSBeautyViewModel sharedViewModel] getCacheSelectFilterOption];
+    if (!cacheFilter || !self.dataArray) {
+        self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
+    }else {
+        for (NSInteger i = 0; i < self.dataArray.count; i++) {
+            PLVLSBeautyCellModel *model = self.dataArray[i];
+            if ([model.filerOption.filterSpellName isEqualToString:cacheFilter.filterSpellName]) {
+                self.selectedIndexPath = [NSIndexPath indexPathForRow:i inSection:0];
+                break;
+            }
+        }
+    }
+    
     [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     [self didSelectItemAtIndexPath:self.selectedIndexPath];
 }

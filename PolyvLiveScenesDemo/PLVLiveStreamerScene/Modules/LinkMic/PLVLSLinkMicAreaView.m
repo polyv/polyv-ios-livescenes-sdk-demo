@@ -8,7 +8,6 @@
 
 #import "PLVLSLinkMicAreaView.h"
 
-#import "PLVLSLinkMicWindowsView.h"
 
 @interface PLVLSLinkMicAreaView ()<PLVLSLinkMicWindowsViewDelegate>
 
@@ -19,8 +18,8 @@
 /// view hierarchy
 ///
 /// (UIView) superview
-///  └── (PLVLCLinkMicAreaView) self (lowest)
-///       └── (PLVLCLinkMicWindowsView) windowsView
+///  └── (PLVLSLinkMicAreaView) self (lowest)
+///       └── (PLVLSLinkMicWindowsView) windowsView
 @property (nonatomic, strong) PLVLSLinkMicWindowsView * windowsView;          // 连麦窗口列表视图 (负责展示 多个连麦成员RTC画面窗口，该视图支持左右滑动浏览)
 
 @end
@@ -44,8 +43,23 @@
     self.windowsView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds));
 }
 
+#pragma mark - [ Public Methods ]
+
 - (void)reloadLinkMicUserWindows{
     [self.windowsView reloadLinkMicUserWindows];
+}
+
+- (void)updateFirstSiteWindowCellWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite {
+    [self.windowsView updateFirstSiteWindowCellWithUserId:linkMicUserId toFirstSite:toFirstSite];
+    
+}
+
+- (void)firstSiteWindowCellExchangeWithExternal:(UIView *)externalView {
+    [self.windowsView firstSiteWindowCellExchangeWithExternal:externalView];
+}
+
+- (void)rollbackFirstSiteWindowCellAndExternalView {
+    [self.windowsView rollbackFirstSiteWindowCellAndExternalView];
 }
 
 #pragma mark - [ Private Methods ]
@@ -93,5 +107,17 @@
     }
 }
 
+- (void)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView showFirstSiteWindowCellOnExternal:(UIView *)windowCell {
+    if ([self.delegate respondsToSelector:@selector(plvLSLinkMicAreaView:showFirstSiteWindowCellOnExternal:)]) {
+        [self.delegate plvLSLinkMicAreaView:self showFirstSiteWindowCellOnExternal:windowCell];
+    }
+}
+
+/// 连麦窗口需要回退外部视图
+- (void)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView rollbackExternalView:(UIView *)externalView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicAreaView:rollbackExternalView:)]) {
+        [self.delegate plvLSLinkMicAreaView:self rollbackExternalView:externalView];
+    }
+}
 
 @end

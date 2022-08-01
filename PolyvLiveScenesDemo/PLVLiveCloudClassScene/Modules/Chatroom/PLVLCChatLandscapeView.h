@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
+- (void)updateChatTableView;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -8,6 +8,7 @@
 
 #import "PLVGiveRewardGoodsButton.h"
 #import <SDWebImage/UIImageView+WebCache.h>
+#import <SDWebImage/SDWebImageDownloader.h>
 
 @interface PLVGiveRewardGoodsButton ()
 

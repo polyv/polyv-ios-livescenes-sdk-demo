@@ -9,7 +9,6 @@
 #import "PLVLCDownloadViewModel.h"
 #import "PLVLCCloudClassViewController.h"
 #import "PLVRoomDataManager.h"
-#import "PLVBugReporter.h"
 #import "PLVRoomLoginClient.h"
 
 @interface PLVLCDownloadViewModel ()
@@ -205,9 +204,6 @@
             //push方式的处理，新观看页push进来
             [weakSelf.viewProxy.navigationController pushViewController:cloudClassVC animated:YES];
             
-            PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-            [PLVBugReporter setUserIdentifier:roomUser.viewerId];
-            
             //push方式的处理，kill掉下载列表页
             NSMutableArray *vcArray = [NSMutableArray arrayWithArray:cloudClassVC.navigationController.viewControllers];
             [vcArray removeObjectAtIndex:vcArray.count - 2];
@@ -217,8 +213,6 @@
             
         }else {
             // model方式的处理，连续dismiss 掉下载页、观看页，然后present新的观看页
-            PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-            [PLVBugReporter setUserIdentifier:roomUser.viewerId];
             
             UIViewController *ingvc = self.viewProxy.navigationController.presentingViewController;
             [self.viewProxy.navigationController dismissViewControllerAnimated:NO completion:^{

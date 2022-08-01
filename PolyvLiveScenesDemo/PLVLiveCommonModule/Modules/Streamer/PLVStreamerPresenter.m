@@ -339,6 +339,33 @@ PLVChannelClassManagerDelegate
     [self.rtcStreamerManager switchLocalUserStreamSourceType:streamSourceType];
 }
 
+- (void)changeUserPPTPositionToMain:(BOOL)pptToMain {
+    if (!self.classStarted) {
+        return;
+    }
+    
+    if (self.viewerType == PLVRoomUserTypeTeacher || (self.viewerType == PLVRoomUserTypeGuest && self.localOnlineUser.isRealMainSpeaker)) {
+        NSMutableDictionary *messageDict = [NSMutableDictionary dictionary];
+        plv_dict_set(messageDict, @"EVENT", PLVSocketLinkMicEventType_changeVideoAndPPTPosition_key);
+        plv_dict_set(messageDict, @"roomId", self.channelId);
+        plv_dict_set(messageDict, @"sessionId", self.sessionId);
+        plv_dict_set(messageDict, @"status", pptToMain ? @(0) : @(1));
+        [[PLVSocketManager sharedManager] emitMessage:messageDict];
+    }
+}
+
+- (void)setCameraZoomRatio:(CGFloat)zoomRatio {
+    [self.rtcStreamerManager setCameraZoomRatio:zoomRatio];
+}
+
+- (CGFloat)getCameraZoomRatio {
+    return [self.rtcStreamerManager getCameraZoomRatio];
+}
+
+- (CGFloat)getMaxCameraZoomRatio {
+    return [self.rtcStreamerManager getMaxCameraZoomRatio];
+}
+
 #pragma mark 连麦事件管理
 /// 开启或关闭 ”视频连麦“
 - (void)openVideoLinkMic:(BOOL)open emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock{
@@ -946,7 +973,11 @@ PLVChannelClassManagerDelegate
                 mixUser.inputType = onlineUser.currentCameraOpen ? PLVRTCStreamerMixUserInputType_AudioVideo : PLVRTCStreamerMixUserInputType_Audio;
                 mixUser.streamType = PLVRTCStreamerMixUserStreamType_Camera;
             }
-            [mixUserList addObject:mixUser];
+            if (onlineUser.isRealMainSpeaker) {
+                [mixUserList insertObject:mixUser atIndex:0];
+            } else {
+                [mixUserList addObject:mixUser];
+            }
         }else{
             continue;
         }
@@ -1059,44 +1090,30 @@ PLVChannelClassManagerDelegate
     if (self.arraySafeQueue) {
         __weak typeof(self) weakSelf = self;
         dispatch_async(self.arraySafeQueue, ^{
+            PLVLinkMicOnlineUser *currentRealMainSpeakerUser =  weakSelf.realMainSpeakerUser; // 当前主讲用户
+            PLVLinkMicOnlineUser *nextRealMainSpeakerUser; // 下一个将要设置主讲权限的用户
             for (int i = 0; i < weakSelf.onlineUserArray.count; i++) {
                 PLVLinkMicOnlineUser *onlineUser = weakSelf.onlineUserArray[i];
                 if ([onlineUser.linkMicUserId isEqualToString:linkMicUserId]) {
-                    if (auth) {
-                        weakSelf.realMainSpeakerUser = onlineUser;
-                    } else if ([weakSelf.realMainSpeakerUser.linkMicUserId isEqualToString:linkMicUserId]) {
-                        weakSelf.realMainSpeakerUser = nil;
-                    }
-                    
-                    [onlineUser updateUserCurrentSpeakerAuth:auth];
-                    if (!onlineUser.localUser) {
-                        [weakSelf callbackForLinkMicUser:onlineUser authSpeaker:auth];
-                    }
+                    nextRealMainSpeakerUser = onlineUser;
                     break;
                 }
             }
+
+            // 转移授权时取消上个主讲用户授权
+            if (auth && currentRealMainSpeakerUser) {
+                [currentRealMainSpeakerUser updateUserCurrentSpeakerAuth:NO];
+            }
+
+            [nextRealMainSpeakerUser updateUserCurrentSpeakerAuth:auth];
+            [weakSelf updateMixUserList];
         });
-    }
-}
-
-- (void)authRemoteGuestSpeaker:(PLVLinkMicOnlineUser *)onlineUser auth:(BOOL)auth {
-    /// 主讲授权时 如果有已授权的主讲 需要先取消授权 然后授权新的嘉宾 主讲权限
-    if (auth) {
-        [self cancelAllGuestSpeakerAuth];
-    }
-    
-    if ([PLVFdUtil checkStringUseable:onlineUser.userId]) {
-        [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:onlineUser.userId type:PLVSocketPermissionTypeSpeaker status:auth];
-
-        /// 主讲权限的的同时需要 设置第一画面
-        [self emitSocketMessge_authFirstSiteUserId:onlineUser.userId auth:auth];
     }
 }
 
 - (void)cancelAllGuestSpeakerAuth {
     if (self.realMainSpeakerUser &&
         [PLVFdUtil checkStringUseable:self.realMainSpeakerUser.userId]) {
-        self.realMainSpeakerUser = nil;
         [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:self.realMainSpeakerUser.userId type:PLVSocketPermissionTypeSpeaker status:NO];
         self.realMainSpeakerUser = nil;
     }
@@ -1142,6 +1159,14 @@ PLVChannelClassManagerDelegate
             if (@available(iOS 11.0, *)) {
                 [weakSelf openLocalUserScreenShare:wantOpen];
             }
+        };
+        
+        localOnlineUser.wantChangePPTToMainBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL wantChange) {
+            [weakSelf changeUserPPTPositionToMain:wantChange];
+        };
+        
+        localOnlineUser.wantAuthSpeakerBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL wantAuth) {
+            [weakSelf authLinkMicOnlineUser:onlineUser speakerAuth:wantAuth];
         };
         
         /// 监听 本地用户 状态变化Block
@@ -1398,10 +1423,11 @@ PLVChannelClassManagerDelegate
         return includeTargetLinkMicUser;
     }
     
+    // 读取当前主位置用户
+//     NSString * master = PLV_SafeStringForDictKey(dataDictionary, @"master");
     // 读取当前主讲人
-    NSString * master = dataDictionary[@"master"];
-    master = self.channelId;
-    
+    NSString * speaker = PLV_SafeStringForDictKey(dataDictionary, @"speaker");
+
     // 删除用户
     NSArray * currentOnlineUserArray = [self.onlineUserMuArray copy];
     for (PLVLinkMicOnlineUser * exsitUser in currentOnlineUserArray) {
@@ -1431,7 +1457,7 @@ PLVChannelClassManagerDelegate
         
         addToOnlineArray = [self tryAddLinkMicWaitUser:userInfo];
         if (addToOnlineArray) {
-            [self addLinkMicOnlineUser:userInfo mainSpeakerUserId:master];
+            [self addLinkMicOnlineUser:userInfo mainSpeakerUserId:speaker];
         }
         
         if (!includeTargetLinkMicUser) {
@@ -1444,7 +1470,7 @@ PLVChannelClassManagerDelegate
     return includeTargetLinkMicUser;
 }
 
-- (void)addLinkMicOnlineUser:(NSDictionary *)userInfo mainSpeakerUserId:(NSString *)master{
+- (void)addLinkMicOnlineUser:(NSDictionary *)userInfo mainSpeakerUserId:(NSString *)speaker{
     if ([PLVFdUtil checkDictionaryUseable:userInfo]) {
         PLVLinkMicOnlineUser * onlineUser = [PLVLinkMicOnlineUser modelWithDictionary:userInfo];
         
@@ -1463,8 +1489,13 @@ PLVChannelClassManagerDelegate
         };
 
         onlineUser.wantAuthSpeakerBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL wantAuth) {
-            [weakSelf authRemoteGuestSpeaker:onlineUser auth:wantAuth];
+            [weakSelf authLinkMicOnlineUser:onlineUser speakerAuth:wantAuth];
         };
+        
+        /// 监听 远端用户 状态变化Block
+        [onlineUser addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            [weakSelf callbackForLinkMicUser:onlineUser authSpeaker:onlineUser.isRealMainSpeaker];
+        } blockKey:self];
         
         // 若是未上麦嘉宾，则不作添加
         if (onlineUser.userType == PLVSocketUserTypeGuest &&
@@ -1483,7 +1514,7 @@ PLVChannelClassManagerDelegate
         }
         
         // 设置主讲人标记
-        if ([master isEqualToString:onlineUser.linkMicUserId]) {
+        if ([speaker isEqualToString:onlineUser.linkMicUserId]) {
             [onlineUser updateUserCurrentSpeakerAuth:YES];
         }
         
@@ -1530,6 +1561,10 @@ PLVChannelClassManagerDelegate
     }else{
         return -2;
     }
+}
+
+- (void)authLinkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser speakerAuth:(BOOL)auth {
+    [self emitSocketMessge_authOnlineUserId:onlineUser.userId speakerAuth:auth];
 }
 
 #pragma mark LinkMic WaitUser Manage
@@ -1768,6 +1803,14 @@ PLVChannelClassManagerDelegate
     }
 }
 
+- (void)handleSocket_LOGOUT:(NSDictionary *)jsonDict{
+    NSString *userId = PLV_SafeStringForDictKey(jsonDict, @"userId");
+    /// 主讲用户退出登录时 需要将主讲权限授予讲师
+    if ([userId isEqualToString:self.realMainSpeakerUser.userId]) {
+        [self emitSocketMessge_authOnlineUserId:self.teacherUser.userId speakerAuth:YES];
+    }
+}
+
 - (void)handleSocket_MUTE_USER_MICRO:(NSDictionary *)jsonDict{
     BOOL mute = ((NSNumber *)jsonDict[@"mute"]).boolValue;
     if (![PLVFdUtil checkStringUseable:jsonDict[@"userId"]]) { /// 全体静音处理
@@ -1813,6 +1856,15 @@ PLVChannelClassManagerDelegate
             [weakSelf removeLinkMicOnlineUser:linkMicUserId];
         }
     }];
+}
+
+- (void)emitSocketMessge_authOnlineUserId:(NSString *)userId speakerAuth:(BOOL)auth {
+    if ([PLVFdUtil checkStringUseable:userId]) {
+        [[PLVSocketManager sharedManager] emitPermissionMessageWithUserId:userId type:PLVSocketPermissionTypeSpeaker status:auth];
+
+        /// 主讲权限的的同时需要 设置第一画面
+        [self emitSocketMessge_authFirstSiteUserId:userId auth:auth];
+    }
 }
 
 - (void)emitSocketMessge_authFirstSiteUserId:(NSString *)userId auth:(BOOL)auth {
@@ -1907,6 +1959,16 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)callbackForLinkMicUser:(PLVLinkMicOnlineUser *)linkMicOnlineUser authSpeaker:(BOOL)authSpeaker{
+    if (linkMicOnlineUser.userType == PLVSocketUserTypeTeacher) {
+        return;
+    }
+    
+    if (authSpeaker) {
+        _realMainSpeakerUser = linkMicOnlineUser;
+    } else if ([self.realMainSpeakerUser.userId isEqualToString:linkMicOnlineUser.userId]) {
+        _realMainSpeakerUser = nil;
+    }
+    
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:linkMicOnlineUser:authSpeaker:)]) {
             [self.delegate plvStreamerPresenter:self linkMicOnlineUser:linkMicOnlineUser authSpeaker:authSpeaker];
@@ -2139,6 +2201,16 @@ PLVChannelClassManagerDelegate
     return _channelClassManager;
 }
 
+- (PLVLinkMicOnlineUser *)realMainSpeakerUser {
+    if (!_realMainSpeakerUser) {
+        NSInteger targetUserIndex = [self findOnlineUserModelIndexWithFiltrateBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
+            return enumerateUser.isRealMainSpeaker;
+        }];
+        _realMainSpeakerUser = [self getOnlineUserModelFromOnlineUserArrayWithIndex:targetUserIndex];
+    }
+    return _realMainSpeakerUser;
+}
+
 - (PLVLinkMicOnlineUser *)teacherUser {
     if (!_teacherUser) {
         NSInteger targetUserIndex = [self findOnlineUserModelIndexWithFiltrateBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
@@ -2190,6 +2262,10 @@ PLVChannelClassManagerDelegate
         [self handleSocket_TEACHER_SET_PERMISSION:jsonDict];
     } else if ([subEvent containsString:@"LOGIN"]){ // 登录
 
+    } else if ([subEvent isEqualToString:@"LOGOUT"]) { // 有用户登出
+        if (self.viewerType == PLVRoomUserTypeTeacher) {
+            [self handleSocket_LOGOUT:jsonDict];
+        }
     } else if ([subEvent containsString:@"finishClass"]){ // 下课事件
         if (self.viewerType == PLVRoomUserTypeGuest) {
             self.classStarted = NO;

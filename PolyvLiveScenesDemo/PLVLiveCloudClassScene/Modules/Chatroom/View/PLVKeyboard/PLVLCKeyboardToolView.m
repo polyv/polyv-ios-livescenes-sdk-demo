@@ -12,6 +12,7 @@
 #import "PLVLCKeyboardMoreView.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
@@ -21,7 +22,8 @@ static CGFloat kMaxTextViewHeight = 120.0;
 @interface PLVLCKeyboardToolView ()<
 UITextViewDelegate,
 PLVLCEmojiSelectViewDelegate,
-PLVLCKeyboardMoreViewDelegate
+PLVLCKeyboardMoreViewDelegate,
+PLVSocketManagerProtocol
 >
 /// 不同的 mode，决定不同的 UI
 @property (nonatomic, assign) PLVLCKeyboardToolMode mode;
@@ -66,7 +68,10 @@ PLVLCKeyboardMoreViewDelegate
 
 @end
 
-@implementation PLVLCKeyboardToolView
+@implementation PLVLCKeyboardToolView {
+    /// PLVSocketManager回调的执行队列
+    dispatch_queue_t socketDelegateQueue;
+}
 
 #pragma mark - Life Cycle
 
@@ -309,6 +314,10 @@ PLVLCKeyboardMoreViewDelegate
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidHide:) name:UIKeyboardDidHideNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onDeviceOrientationDidChange) name:UIDeviceOrientationDidChangeNotification object:nil];
+        
+        // 监听socket消息
+        socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
+        [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
     }
     return self;
 }
@@ -503,6 +512,34 @@ PLVLCKeyboardMoreViewDelegate
     } else {
         return YES;
     }
+}
+
+/// 切换聊天室关闭状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能
+- (void)changeCloseRoomStatus:(BOOL)closeRoom {
+    NSString *placeholderText = closeRoom ? @"聊天室已关闭":@"我也来聊几句";
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.textView setEditable:!closeRoom];
+        [self changePlaceholderText:placeholderText];
+        self.emojiButton.enabled = !closeRoom;
+        if (self.mode == PLVLCKeyboardToolModeDefault) {
+            [self.moreboard changeCloseRoomStatus:closeRoom];
+        }
+        [self setToolState:PLVLCKeyboardToolStateNormal];
+    });
+}
+
+/// 切换聊天室专注模式状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能，启用只看讲师功能
+- (void)changeFocusMode:(BOOL)focusMode {
+    NSString *placeholderText = focusMode ? @"当前为专注模式，无法发言":@"我也来聊几句";
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.textView setEditable:!focusMode];
+        [self changePlaceholderText:placeholderText];
+        self.emojiButton.enabled = !focusMode;
+        if (self.mode == PLVLCKeyboardToolModeDefault) {
+            [self.moreboard changeFocusModeStatus:focusMode];
+        }
+        [self setToolState:PLVLCKeyboardToolStateNormal];
+    });
 }
 
 #pragma mark - NSNotification

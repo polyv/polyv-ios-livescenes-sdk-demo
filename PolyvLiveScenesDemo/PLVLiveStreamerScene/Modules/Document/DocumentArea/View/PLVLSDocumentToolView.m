@@ -18,6 +18,7 @@
 @property (nonatomic, strong) UIButton *btnFullScreen;  // 全屏
 @property (nonatomic, strong) UIButton *btnNext;        // 下一页
 @property (nonatomic, strong) UIButton *btnPrevious;    // 上一页
+@property (nonatomic, strong) UIButton *changeButton;   // 交换
 
 @end
 
@@ -35,8 +36,8 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    CGFloat btnWidth = 36;
-    CGFloat maginTop = 12;
+    CGFloat btnWidth = 32;
+    CGFloat maginTop = 8;
     
     CGFloat relativeY = UIViewGetHeight(self);
     self.btnBrush.frame = CGRectMake(0, relativeY - btnWidth, btnWidth, btnWidth);
@@ -47,7 +48,10 @@
     relativeY = (!self.btnAddPage.hidden && self.btnAddPage.alpha == 1) ? (UIViewGetTop(self.btnAddPage) - maginTop) : relativeY;
     self.btnFullScreen.frame = CGRectMake(0, relativeY - btnWidth, btnWidth, btnWidth);
     
-    relativeY = (self.btnFullScreen.hidden ? relativeY : (UIViewGetTop(self.btnFullScreen) - maginTop));
+    relativeY = (!self.btnFullScreen.hidden && self.btnFullScreen.alpha == 1) ? (UIViewGetTop(self.btnFullScreen) - maginTop) : relativeY;
+    self.changeButton.frame = CGRectMake(0, relativeY - btnWidth, btnWidth, btnWidth);
+    
+    relativeY = (self.changeButton.hidden ? relativeY : (UIViewGetTop(self.changeButton) - maginTop));
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat btnNextTop = isPad ? (UIViewGetHeight(self) / 2 - btnWidth) : (relativeY - btnWidth);
     self.btnNext.frame = CGRectMake(0, btnNextTop, btnWidth, btnWidth);
@@ -84,13 +88,19 @@
     self.btnFullScreen.selected = isSelected;
 }
 
+- (void)setChangeButtonSelected:(BOOL)isSelected {
+    self.changeButton.selected = isSelected;
+}
+
 - (void)showBtnBrush:(BOOL)show{
     self.btnBrush.hidden = !show;
+    [self setNeedsLayout];
     [self layoutIfNeeded];
 }
 
 - (void)showBtnAddPage:(BOOL)show{
     self.btnAddPage.hidden = !show;
+    [self setNeedsLayout];
     [self layoutIfNeeded];
 }
 
@@ -117,6 +127,7 @@
     [self addSubview:self.btnFullScreen];
     [self addSubview:self.btnNext];
     [self addSubview:self.btnPrevious];
+    [self addSubview:self.changeButton];
 }
 
 // 加载图片
@@ -195,6 +206,18 @@
     return _btnPrevious;
 }
 
+- (UIButton *)changeButton {
+    if (!_changeButton) {
+        _changeButton = [[UIButton alloc] init];
+        [_changeButton setImage:[self getImageWithName:@"plvls_ppt_btn_switch"]
+                        forState:UIControlStateNormal];
+        [_changeButton setImage:[self getImageWithName:@"plvls_ppt_btn_switch"]
+                        forState:UIControlStateSelected];
+        [_changeButton addTarget:self action:@selector(changeButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _changeButton;
+}
+
 #pragma mark - [ Event ]
 #pragma mark Action
 
@@ -229,6 +252,13 @@
     BOOL isNext = button == self.btnNext;
     if (self.delegate && [self.delegate respondsToSelector:@selector(controlToolsView:turnNextPage:)]) {
         [self.delegate controlToolsView:self turnNextPage:isNext];
+    }
+}
+
+- (void)changeButtonAction:(UIButton *)button {
+    button.selected = !button.selected;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(controlToolsView:changePPTPositionToMain:)]) {
+        [self.delegate controlToolsView:self changePPTPositionToMain:!button.selected];
     }
 }
 

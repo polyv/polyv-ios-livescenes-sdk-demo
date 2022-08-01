@@ -19,6 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param linkURL 商品链接url
 - (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL;
 
+/// 关闭商品库弹窗页面的回调
+- (void)plvLCCloseProductViewInViewController:(PLVLCBuyViewController *)viewController;
+
 @end
 
 /// 边看边买 商品列表 页面

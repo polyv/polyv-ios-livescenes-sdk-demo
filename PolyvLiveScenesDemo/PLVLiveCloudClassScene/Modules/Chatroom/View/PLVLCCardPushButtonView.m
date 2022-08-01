@@ -50,13 +50,18 @@
 
 - (void)layoutSubviews {
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    CGSize popupViewSize = [self.popupView.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+    CGFloat popupViewWidth = popupViewSize.width + 16 + (fullScreen ? 0 : 10);
+    CGFloat popupViewHeight = 34;
     if (!fullScreen) { // 竖屏
         self.cardPushButton.frame = CGRectMake(0, self.countdownLabel.isHidden ? 12 : 0, PLVLCCardPushButtonViewWidth, PLVLCCardPushButtonViewWidth);
+        self.popupView.frame = CGRectMake(- popupViewWidth - 7, CGRectGetMinY(self.cardPushButton.frame), popupViewWidth, popupViewHeight);
     }else{ // 横屏
         CGFloat viewWidth = CGRectGetWidth(self.bounds);
         self.cardPushButton.frame = CGRectMake(0, 0, viewWidth, viewWidth);
+        self.popupView.frame = CGRectMake((CGRectGetWidth(self.frame) - popupViewWidth)/2, - popupViewHeight - 3, popupViewWidth, popupViewHeight);
     }
-    [self updatePopupViewLayout];
+    [self.popupView setPopupViewDirection:fullScreen ? PLVLCCardPushPopupDirectionTop : PLVLCCardPushPopupDirectionLeft];
     self.countdownLabel.frame = CGRectMake(-3, CGRectGetMaxY(self.cardPushButton.frame) + 2, PLVLCCardPushButtonViewWidth + 6, 12);
 }
 
@@ -132,7 +137,6 @@
             self.hidden = NO;
             self.canOpenCard = NO;
             self.countdownLabel.hidden = NO;
-            [self setNeedsLayout];
             __weak typeof(self) weakSelf = self;
             [self startCountdownWithLocalWatchTime:localWatchTime endCallback:^{
                 [weakSelf countdownEndCallback];
@@ -147,8 +151,9 @@
         // 提示弹窗
         NSString *countdownMsg = PLV_SafeStringForDictKey(cardDict, @"countdownMsg");
         [self.popupView setPopupViewTitle:countdownMsg];
-        [self updatePopupViewLayout];
         [self showPopupTitleView];
+        
+        [self setNeedsLayout];
     }
 }
 
@@ -199,24 +204,13 @@
 }
 
 - (void)showPopupTitleView {
-    self.popupView.hidden = NO;
-    __weak typeof(self) weakSelf = self;
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        weakSelf.popupView.hidden = YES;
-    });
-}
-
-- (void)updatePopupViewLayout {
-    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    CGSize popupViewSize = [self.popupView.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
-    CGFloat popupViewWidth = popupViewSize.width + 16 + (fullScreen ? 0 : 10);
-    CGFloat popupViewHeight = 34;
-    if (!fullScreen) { // 竖屏
-        self.popupView.frame = CGRectMake(- popupViewWidth - 7, CGRectGetMinY(self.cardPushButton.frame), popupViewWidth, popupViewHeight);
-    }else{ // 横屏
-        self.popupView.frame = CGRectMake((CGRectGetWidth(self.frame) - popupViewWidth)/2, - popupViewHeight - 3, popupViewWidth, popupViewHeight);
+    if (self.popupView.hidden) {
+        self.popupView.hidden = NO;
+        __weak typeof(self) weakSelf = self;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            weakSelf.popupView.hidden = YES;
+        });
     }
-    [self.popupView setPopupViewDirection:fullScreen ? PLVLCCardPushPopupDirectionTop : PLVLCCardPushPopupDirectionLeft];
 }
 
 #pragma mark - Getter & Setter

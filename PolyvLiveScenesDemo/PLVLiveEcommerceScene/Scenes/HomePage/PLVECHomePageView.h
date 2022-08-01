@@ -42,6 +42,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 打开礼物打赏面板
 - (void)homePageViewOpenRewardView:(PLVECHomePageView *)homePageView;
 
+/// 打开卡片推送
+- (void)homePageView:(PLVECHomePageView *)homePageView openCardPush:(NSDictionary *)cardInfo;
+
 /// 按下暂停、播放按钮
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPause:(BOOL)pause;
 
@@ -63,6 +66,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param modelArray 打赏数据模型数组
 /// @param pointUnit 打赏单位
 - (void)homePageView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
+
+/// 聊天室人数达到并发限制
+- (void)homePageView_didLoginRestrict;
 
 @end
 

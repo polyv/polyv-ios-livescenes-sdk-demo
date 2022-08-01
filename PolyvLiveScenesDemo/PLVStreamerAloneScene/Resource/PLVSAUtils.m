@@ -78,7 +78,9 @@
           confirmActionTitle:(NSString *)confirmActionTitle
           confirmActionBlock:(void(^)(void))confirmActionBlock {
     PLVSAStreamAlertController *alert = [PLVSAStreamAlertController alertControllerWithTitle:nil Message:message cancelActionTitle:cancelActionTitle cancelHandler:cancelActionBlock confirmActionTitle:confirmActionTitle confirmHandler:confirmActionBlock];
-    [[PLVSAUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[PLVSAUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    });
 }
 
 + (void)showAlertWithTitle:(NSString *)title
@@ -87,7 +89,9 @@
         confirmActionTitle:(NSString *)confirmActionTitle
         confirmActionBlock:(void(^)(void))confirmActionBlock {
     PLVSAStreamAlertController *alert = [PLVSAStreamAlertController alertControllerWithTitle:title Message:nil cancelActionTitle:cancelActionTitle cancelHandler:cancelActionBlock confirmActionTitle:confirmActionTitle confirmHandler:confirmActionBlock];
-    [[PLVSAUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[PLVSAUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    });
 }
 
 + (void)showAlertWithTitle:(NSString *)title
@@ -97,8 +101,9 @@
         confirmActionTitle:(NSString *)confirmActionTitle
         confirmActionBlock:(void(^)(void))confirmActionBlock {
     PLVSAStreamAlertController *alert = [PLVSAStreamAlertController alertControllerWithTitle:title Message:message cancelActionTitle:cancelActionTitle cancelHandler:cancelActionBlock confirmActionTitle:confirmActionTitle confirmHandler:confirmActionBlock];
-    
-    [[PLVSAUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[PLVSAUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    });
 }
 
 + (UIImage *)imageForLiveroomResource:(NSString *)imageName {

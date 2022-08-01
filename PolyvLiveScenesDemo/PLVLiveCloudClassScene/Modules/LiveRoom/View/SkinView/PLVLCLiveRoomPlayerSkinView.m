@@ -133,8 +133,11 @@
 }
 
 #pragma mark - [ Public Methods ]
-- (void)hiddenLiveRoomPlayerSkinView {
-    [self controlsSwitchShowStatusWithAnimation:NO];
+- (void)hiddenLiveRoomPlayerSkinView:(BOOL)isHidden {
+    if (isHidden) {
+        self.needShowSkin = self.skinShow;
+    }
+    [self controlsSwitchShowStatusWithAnimation:!isHidden];
 }
 
 - (void)displayLikeButtonView:(UIView *)likeButtonView{
@@ -320,7 +323,22 @@
         CGFloat guideChatLabelOriginX = MAX(middleOriginX,danmuButtonMaxOriginX);
         self.guideChatLabel.frame = CGRectMake(guideChatLabelOriginX, viewHeight - (bottomPadding - 6) - guideChatLabelHeight, guideChatLabelWidth, guideChatLabelHeight);
     }
+}
 
+/// 切换聊天室关闭状态，开启/禁用输入框
+- (void)changeCloseRoomStatus:(BOOL)closeRoom {
+    NSString *guideChatLabelText = closeRoom ? @"聊天室已关闭":@"跟大家聊点什么吧～";
+    [self.guideChatLabel setText:guideChatLabelText];
+    self.guideChatLabel.userInteractionEnabled = !closeRoom;
+    [self.landscapeInputView showInputView:NO];
+}
+
+/// 切换聊天室专注模式状态，开启/禁用输入框
+- (void)changeFocusModeStatus:(BOOL)focusMode{
+    NSString *guideChatLabelText = focusMode ? @"当前为专注模式，无法发言":@"跟大家聊点什么吧～";
+    [self.guideChatLabel setText:guideChatLabelText];
+    self.guideChatLabel.userInteractionEnabled = !focusMode;
+    [self.landscapeInputView showInputView:NO];
 }
 
 #pragma mark Private Getter
@@ -365,7 +383,6 @@
             UITapGestureRecognizer * guideChatLabelTapGR = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(guideChatLabelTapGestureAction:)];
             [_guideChatLabel addGestureRecognizer:guideChatLabelTapGR];
         }
-        
     }
     return _guideChatLabel;
 }

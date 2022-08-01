@@ -130,6 +130,7 @@
 
 - (void)tapAction {
     [self hiddenCardDetailView];
+    self.tapActionBlock ? self.tapActionBlock() : nil;
 }
 
 - (void)closeButtonAction:(UIButton *)sender {

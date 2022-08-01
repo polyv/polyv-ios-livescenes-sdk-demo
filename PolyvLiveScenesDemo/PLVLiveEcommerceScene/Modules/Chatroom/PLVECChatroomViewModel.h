@@ -56,6 +56,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pointUnit 打赏单位
 - (void)chatroomManager_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
 
+/// 聊天室登录达到并发限制时触发
+- (void)chatroomManager_didLoginRestrict;
+
+/// 聊天室是否开启关闭时触发
+/// @param closeRoom 是否关闭聊天室，YES-关闭，NO-开启
+- (void)chatroomManager_closeRoom:(BOOL)closeRoom;
+
+/// 聊天室专注模式是否开启关闭时触发
+/// @param focusMode 是否关闭聊天室，YES-关闭，NO-开启
+- (void)chatroomManager_focusMode:(BOOL)focusMode;
+
 @end
 
 /*
@@ -71,7 +82,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 聊天室common层presenter，一个scene层只能初始化一个presenter对象
 @property (nonatomic, strong, readonly) PLVChatroomPresenter *presenter;
 
-/// 全部消息数组
+/// 是否打开【只看讲师】开关
+@property (nonatomic, assign) BOOL onlyTeacher;
+
+/// 公聊消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 
 /// 礼物打赏开关

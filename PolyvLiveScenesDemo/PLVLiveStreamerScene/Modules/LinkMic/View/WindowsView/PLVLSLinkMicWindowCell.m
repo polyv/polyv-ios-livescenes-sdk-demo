@@ -121,7 +121,6 @@
     userModel.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
     };
-    [self contentBackgroudViewAddView:userModel.canvasView];
 
     /// 音量
     [self setMicButtonNormalImageWithVolume:userModel.currentVolume];
@@ -159,6 +158,24 @@
     }
     
     [self setNeedsLayout];
+}
+
+/// 切换至 显示默认内容视图
+- (void)switchToShowRtcContentView:(UIView *)rtcCanvasView{
+    // 移除 contentBackgroudView 上的外部视图
+    [self removeSubview:self.contentBackgroudView];
+    // contentBackgroudView 移至 contentView 的最底层
+    [self.contentView sendSubviewToBack:self.contentBackgroudView];
+    // contentBackgroudView 承载 rtcCanvasView
+    [self contentBackgroudViewAddView:rtcCanvasView];
+}
+
+/// 切换至 显示外部内容视图
+- (void)switchToShowExternalContentView:(UIView *)externalContentView{
+    // contentBackgroudView 移至 contentView 的最顶层
+    [self.contentView bringSubviewToFront:self.contentBackgroudView];
+    // contentBackgroudView 承载外部未知具体类型的视图
+    [self contentBackgroudViewAddView:externalContentView];
 }
 
 #pragma mark - [ Private Methods ]

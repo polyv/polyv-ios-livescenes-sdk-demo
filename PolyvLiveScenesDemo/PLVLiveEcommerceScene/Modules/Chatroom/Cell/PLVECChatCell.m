@@ -38,6 +38,10 @@
 
 @property (nonatomic, strong) PLVPhotoBrowser *photoBrowser;
 
+@property (nonatomic, strong) UIView *tapGestureView;
+
+@property (nonatomic, strong) UIImageView *fileImageView;
+
 @end
 
 @implementation PLVECChatCell
@@ -52,6 +56,8 @@
         [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.chatLabel];
         [self.contentView addSubview:self.chatImageView];
+        [self.contentView addSubview:self.fileImageView];
+        [self.contentView addSubview:self.tapGestureView];
     }
     return self;
 }
@@ -63,12 +69,30 @@
     
     CGFloat originX = 8.0;
     CGFloat originY = 4.0;
+    CGFloat fileImageWidth = 32;
+    CGFloat fileImageHeight = 38;
+    BOOL isFileMessage = self.model.message && [self.model.message isKindOfClass:[PLVFileMessage class]];
     
     // 设置内容文本frame
-    CGFloat labelWidth = self.cellWidth - originX * 2;
+    CGFloat labelWidth = isFileMessage ? (self.cellWidth - fileImageWidth - originX * 3) : (self.cellWidth - originX * 2);
     CGRect chatLabelRect = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading context:nil];
-    self.chatLabel.frame = CGRectMake(originX, originY, chatLabelRect.size.width, chatLabelRect.size.height);
-    originY += chatLabelRect.size.height + 4;
+    CGFloat chatLabelHeight = ceil(chatLabelRect.size.height) + 8; // 修复可能出现文字显示不全的情况
+    CGFloat textViewRealWidth = chatLabelRect.size.width;
+    // 设置文件下载图标frame
+    if (isFileMessage) {
+        if (chatLabelHeight < fileImageHeight) {
+            self.chatLabel.frame = CGRectMake(originX, (fileImageHeight - chatLabelHeight) / 2 + originY * 2, chatLabelRect.size.width, chatLabelHeight);
+            self.fileImageView.frame = CGRectMake(originX * 2 + chatLabelRect.size.width, originY * 2, fileImageWidth, fileImageHeight);
+        } else {
+            self.chatLabel.frame = CGRectMake(originX, originY , chatLabelRect.size.width, chatLabelHeight);
+            self.fileImageView.frame = CGRectMake(originX * 2 + chatLabelRect.size.width,  (chatLabelHeight - fileImageHeight) / 2 + originY , fileImageWidth, fileImageHeight);
+        }
+        originY += MAX(chatLabelRect.size.height,fileImageHeight) + 12;
+        textViewRealWidth += fileImageWidth + originX;
+    } else {
+        self.chatLabel.frame = CGRectMake(originX, 0, chatLabelRect.size.width, chatLabelHeight);
+        originY += chatLabelHeight + 4;
+    }
     
     // 设置图片frame，如果有的话
     CGSize imageViewSize = CGSizeZero;
@@ -80,8 +104,13 @@
         originY += imageViewSize.height + 4;
     }
     
-    CGFloat bubbleWidth = MIN((MAX(imageViewSize.width, chatLabelRect.size.width) + originX * 2), self.cellWidth);
+    CGFloat bubbleWidth = MIN((MAX(imageViewSize.width, textViewRealWidth) + originX * 2), self.cellWidth);
     self.bubbleView.frame = CGRectMake(0, 0, bubbleWidth, originY);
+    
+    // 设置文件下载手势视图
+    if (isFileMessage) {
+        self.tapGestureView.frame = CGRectMake(0, 0, bubbleWidth, originY);
+    }
 }
 
 #pragma mark - Getter
@@ -121,6 +150,29 @@
     return _chatImageView;
 }
 
+- (UIImageView *)fileImageView {
+    if (!_fileImageView) {
+        _fileImageView = [[UIImageView alloc] init];
+        _fileImageView.layer.masksToBounds = YES;
+        _fileImageView.userInteractionEnabled = NO;
+        _fileImageView.hidden = YES;
+        _fileImageView.contentMode = UIViewContentModeScaleAspectFill;
+    }
+    return _fileImageView;
+}
+
+- (UIView *)tapGestureView {
+    if (!_tapGestureView) {
+        _tapGestureView = [[UIView alloc] init];
+        _tapGestureView.backgroundColor = [UIColor clearColor];
+        _tapGestureView.userInteractionEnabled = YES;
+        _tapGestureView.hidden = YES;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureViewAction)];
+        [_tapGestureView addGestureRecognizer:tap];
+    }
+    return _tapGestureView;
+}
+
 #pragma mark - Action
 
 - (void)tapGestureAction {
@@ -136,6 +188,8 @@
         self.chatImageView.hidden = YES;
         self.chatLabel.text = @"";
         self.bubbleView.hidden = YES;
+        self.tapGestureView.hidden = YES;
+        self.fileImageView.hidden = YES;
         return;
     }
     
@@ -150,6 +204,15 @@
         UIImage *placeholderImage = [PLVECUtils imageForWatchResource:@"plv_chatroom_thumbnail_imag"];
         [PLVECUtils setImageView:self.chatImageView url:imageURL placeholderImage:placeholderImage options:SDWebImageRetryFailed];
     }
+    
+    UIImage *fileImage = [PLVECChatCell fileImageWithMessage:model.message];
+    self.tapGestureView.hidden = !fileImage;
+    self.fileImageView.hidden = !fileImage;
+    if (fileImage) {
+        [self.fileImageView setImage:fileImage];
+    }
+    self.chatLabel.numberOfLines = !fileImage ? 0 : 3;
+    self.chatLabel.lineBreakMode = !fileImage ? NSLineBreakByTruncatingTail : NSLineBreakByTruncatingMiddle;
     
     // 设置 "昵称：文本（如果有的话）"
     NSAttributedString *chatLabelString = [PLVECChatCell chatLabelAttributedStringWithModel:model];
@@ -261,7 +324,8 @@
     if (!message &&
         ![message isKindOfClass:[PLVCustomMessage class]] &&
         ![message isKindOfClass:[PLVSpeakMessage class]] &&
-        ![message isKindOfClass:[PLVQuoteMessage class]]) {
+        ![message isKindOfClass:[PLVQuoteMessage class]] &&
+        ![message isKindOfClass:[PLVFileMessage class]]) {
         return nil;
     }
     
@@ -304,6 +368,9 @@
         } else if([message isKindOfClass:[PLVQuoteMessage class]]){
             PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)message;
             content = quoteMessage.content;
+        } else if ([message isKindOfClass:[PLVFileMessage class]]) {
+            PLVFileMessage *fileMessage = (PLVFileMessage *)message;
+            content = fileMessage.name;
         }
         
         if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
@@ -342,6 +409,24 @@
     return nil;
 }
 
+/// 获取文件类型图标
++ (UIImage *)fileImageWithMessage:(id)message {
+    if ([message isKindOfClass:[PLVFileMessage class]]) {
+        PLVFileMessage *fileMessage = (PLVFileMessage *)message;
+        NSString *fileUrl = fileMessage.url;
+        
+        if (![PLVFdUtil checkStringUseable:fileUrl]) {
+            return nil;
+        }
+        
+        NSString *fileType = [[[fileUrl pathExtension] lowercaseString] substringToIndex:3];
+        NSString *fileImageString = [NSString stringWithFormat:@"plvec_chatroom_file_%@_icon",fileType];
+        
+        return [PLVECUtils imageForWatchResource:fileImageString];
+    }
+    return nil;
+}
+
 #pragma mark - 高度、尺寸计算
 
 /// 计算图片显示宽高
@@ -368,14 +453,27 @@
     
     CGFloat originX = 8.0;
     CGFloat bubbleHeight = 4.0;
+    CGFloat fileImageWidth = 32;
+    CGFloat fileImageHeight = 38;
     
     // 内容文本高度
     NSAttributedString *chatLabelString = [PLVECChatCell chatLabelAttributedStringWithModel:model];
     CGRect chatLabelRect = CGRectZero;
     if (chatLabelString) {
-        CGFloat labelWidth = cellWidth - originX * 2;
-        chatLabelRect = [chatLabelString boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading context:nil];
-        bubbleHeight += chatLabelRect.size.height + 4;
+        BOOL isFileMessage = model.message && [model.message isKindOfClass:[PLVFileMessage class]];
+        CGFloat labelWidth = isFileMessage ? (cellWidth - fileImageWidth - originX * 3) : (cellWidth - originX * 2);
+        CGFloat chatLabelHeight;
+        if (isFileMessage) {
+            UILabel *label = [[UILabel alloc]init];
+            label.numberOfLines = 3;
+            label.attributedText = chatLabelString;
+            chatLabelRect = [label.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading context:nil];;
+        } else {
+            chatLabelRect = [chatLabelString boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading context:nil];
+        }
+        chatLabelHeight = ceil(chatLabelRect.size.height) + 12;
+        
+        bubbleHeight += isFileMessage ? (MAX(chatLabelHeight, fileImageHeight + 12)) : (chatLabelHeight);
     }
     
     // 聊天图片高度
@@ -394,6 +492,18 @@
     return bubbleHeight + 4;
 }
 
+#pragma mark - Action
+
+- (void)tapGestureViewAction {
+    if ([self.model.message isKindOfClass:[PLVFileMessage class]]) {
+        PLVFileMessage *fileMessage = (PLVFileMessage *)self.model.message;
+        NSString *url = fileMessage.url;
+        if ([PLVFdUtil checkStringUseable:url]) {
+            [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+        }
+    }
+}
+
 #pragma mark - Utils
 
 /// 判断model是否为有效类型
@@ -409,7 +519,8 @@
          ![message isKindOfClass:[PLVQuoteMessage class]] &&
          ![message isKindOfClass:[PLVImageMessage class]] &&
          ![message isKindOfClass:[PLVImageEmotionMessage class]] &&
-         ![message isKindOfClass:[PLVCustomMessage class]])) {
+         ![message isKindOfClass:[PLVCustomMessage class]] &&
+         ![message isKindOfClass:[PLVFileMessage class]])) {
         return NO;
     }
     

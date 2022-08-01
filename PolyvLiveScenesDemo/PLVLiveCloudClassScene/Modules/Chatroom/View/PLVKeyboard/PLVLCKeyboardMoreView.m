@@ -110,6 +110,8 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 @property (nonatomic, strong) UICollectionView *collectionView;
 @property (nonatomic, strong) UICollectionViewFlowLayout *flowLayout;
 @property (nonatomic, strong) NSArray *dynamicDataArray;
+@property (nonatomic, assign) BOOL closeRoom;
+@property (nonatomic, assign) BOOL focusMode;
 
 @end
 
@@ -171,6 +173,19 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     [self.collectionView reloadData];
 }
 
+- (void)changeCloseRoomStatus:(BOOL)closeRoom {
+    self.closeRoom = closeRoom;
+    [self.collectionView reloadData];
+}
+
+- (void)changeFocusModeStatus:(BOOL)focusMode {
+    self.focusMode = focusMode;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_onlyTeacher:on:)]) {
+        [self.delegate keyboardMoreView_onlyTeacher:self on:focusMode];
+    }
+    [self changeCloseRoomStatus:focusMode];
+}
+
 #pragma mark - Getterr & Setter
 
 - (void)setSendImageEnable:(BOOL)sendImageEnable {
@@ -228,6 +243,10 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     cell.type = type;
     if (type == PLVLCKeyboardMoreButtonTypeUnknow) {
         [self updateMoreButton:cell.moreBtn];
+    } else if (type == PLVLCKeyboardMoreButtonTypeOpenCamera || type == PLVLCKeyboardMoreButtonTypeOpenAlbum) {
+        cell.moreBtn.enabled = !self.closeRoom;
+    } else if (type == PLVLCKeyboardMoreButtonTypeOnlyTeacher) {
+        cell.moreBtn.enabled = !self.focusMode;
     }
     [cell.moreBtn addTarget:self action:@selector(moreBtnAction:) forControlEvents:UIControlEventTouchUpInside];
     

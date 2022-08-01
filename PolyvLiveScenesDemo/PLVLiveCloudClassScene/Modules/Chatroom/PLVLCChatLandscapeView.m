@@ -15,6 +15,7 @@
 #import "PLVLCLandscapeImageCell.h"
 #import "PLVLCLandscapeImageEmotionCell.h"
 #import "PLVLCLandscapeQuoteCell.h"
+#import "PLVLCLandscapeFileCell.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
@@ -240,6 +241,10 @@ UITableViewDataSource
     [self.playbackViewModel addUIDelegate:self delegateQueue:dispatch_get_main_queue()];
 }
 
+- (void)updateChatTableView {
+    [self.tableView reloadData];
+}
+
 #pragma mark - Private Method
 
 - (void)scrollsToBottom:(BOOL)animated {
@@ -410,6 +415,14 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } if ([PLVLCLandscapeFileCell isModelValid:model]) {
+        static NSString *filekMessageCellIdentify = @"PLVLCLandscapeFileCell";
+        PLVLCLandscapeFileCell *cell = (PLVLCLandscapeFileCell *)[tableView dequeueReusableCellWithIdentifier:filekMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLandscapeFileCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:filekMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -452,6 +465,8 @@ UITableViewDataSource
         cellHeight = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeQuoteCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCLandscapeFileCell isModelValid:model]) {
+        cellHeight = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else {
         cellHeight = 0;
     }

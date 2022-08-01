@@ -76,6 +76,14 @@ NS_ASSUME_NONNULL_BEGIN
 ///                               NO：关闭，只允许特殊身份（譬如讲师）发言
 - (void)chatroomPresenter_didChangeCloseRoom:(BOOL) closeRoom;
 
+/// 聊天室登录达到并发限制
+- (void)chatroomPresenter_didLoginRestrict;
+
+/// 聊天室专注模式开启、关闭
+/// @param focusMode 聊天室专注当前状态，YES：只允许特殊身份（譬如讲师）发言；
+///                               NO：关闭，允许全体人员发言
+- (void)chatroomPresenter_didChangeFocusMode:(BOOL)focusMode;
+
 @end
 
 /*

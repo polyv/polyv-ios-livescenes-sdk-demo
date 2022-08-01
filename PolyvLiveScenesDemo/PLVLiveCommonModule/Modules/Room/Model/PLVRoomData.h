@@ -56,6 +56,10 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, strong, readonly) PLVViewLogCustomParam *customParam;
 /// 频道连麦人数，设置为不使用连麦时为0
 @property (nonatomic, assign) NSUInteger interactNumLimit;
+/// 是否并发限制以聊天室在线人数为准
+@property (nonatomic, assign) BOOL restrictChatEnabled;
+/// 最大同时在线人数
+@property (nonatomic, assign) NSUInteger maxViewerCount;
 
 #pragma mark 直播独有属性
 /// 直播状态

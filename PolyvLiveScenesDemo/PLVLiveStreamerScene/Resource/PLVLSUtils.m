@@ -69,7 +69,9 @@ static float _safeTopPad = 0;
            cancelActionTitle:(NSString *)cancelActionTitle
            cancelActionBlock:(void(^)(void))cancelActionBlock {
     PLVAlertViewController *alert = [PLVAlertViewController alertControllerWithMessage:message cancelActionTitle:cancelActionTitle cancelHandler:cancelActionBlock confirmActionTitle:nil confirmHandler:nil];
-    [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    });
 }
 
 + (void)showAlertWithMessage:(NSString *)message
@@ -78,7 +80,9 @@ static float _safeTopPad = 0;
           confirmActionTitle:(NSString *)confirmActionTitle
           confirmActionBlock:(void(^)(void))confirmActionBlock {
     PLVAlertViewController *alert = [PLVAlertViewController alertControllerWithMessage:message cancelActionTitle:cancelActionTitle cancelHandler:cancelActionBlock confirmActionTitle:confirmActionTitle confirmHandler:confirmActionBlock];
-    [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    });
 }
 
 + (void)showAlertWithTitle:(NSString *)title
@@ -88,7 +92,9 @@ static float _safeTopPad = 0;
         confirmActionTitle:(NSString * _Nullable)confirmActionTitle
         confirmActionBlock:(void(^ _Nullable)(void))confirmActionBlock {
     PLVAlertViewController *alert = [PLVAlertViewController alertControllerWithTitle:title message:message cancelActionTitle:cancelActionTitle cancelHandler:cancelActionBlock confirmActionTitle:confirmActionTitle confirmHandler:confirmActionBlock];
-    [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[PLVLSUtils sharedUtils].homeVC presentViewController:alert animated:NO completion:nil];
+    });
 }
 
 + (UIImage *)imageForStatusResource:(NSString *)imageName {

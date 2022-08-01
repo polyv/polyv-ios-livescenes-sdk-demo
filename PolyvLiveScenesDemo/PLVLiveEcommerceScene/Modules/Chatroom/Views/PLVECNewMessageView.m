@@ -7,7 +7,7 @@
 //
 
 #import "PLVECNewMessageView.h"
-#import "PLVLCUtils.h"
+#import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVECNewMessageView ()

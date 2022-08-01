@@ -31,13 +31,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 #pragma mark 数据数组
 
 /// 公聊全部消息数组
-@property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray;
+@property (nonatomic, strong) NSMutableArray <PLVChatModel *> *publicChatArray;
+/// 公聊【只看教师】消息数组
+@property (nonatomic, strong) NSMutableArray <PLVChatModel *> *partOfPublicChatArray;
 
 @end
 
 @implementation PLVECChatroomViewModel {
     /// 操作数组的信号量，防止多线程读写数组
-    dispatch_semaphore_t _chatArrayLock;
+    dispatch_semaphore_t _publicChatArrayLock;
     dispatch_semaphore_t _loginArrayLock;
     
     /// PLVSocketManager回调的执行队列
@@ -65,11 +67,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)setup {
     // 初始化信号量
-    _chatArrayLock = dispatch_semaphore_create(1);
+    _publicChatArrayLock = dispatch_semaphore_create(1);
     _loginArrayLock = dispatch_semaphore_create(1);
     
     // 初始化消息数组，预设初始容量
-    self.chatArray = [[NSMutableArray alloc] initWithCapacity:500];
+    self.publicChatArray = [NSMutableArray arrayWithCapacity:500];
+    self.partOfPublicChatArray = [NSMutableArray arrayWithCapacity:100];
     
     // 初始化聊天室Presenter并设置delegate
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10 childRoomAllow:YES];
@@ -97,6 +100,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self.loginTimer invalidate];
     self.loginTimer = nil;
     [self removeAllPublicChatModels];
+    
+    self.onlyTeacher = NO;
 }
 
 #pragma mark - 加载消息
@@ -141,27 +146,38 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 #pragma mark - 消息数组
 
+- (NSMutableArray <PLVChatModel *> *)chatArray {
+    if (self.onlyTeacher) {
+        return self.partOfPublicChatArray;
+    } else {
+        return self.publicChatArray;
+    }
+}
+
 /// 本地发送公聊消息时
 - (void)addPublicChatModel:(PLVChatModel *)model {
     if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
         return;
     }
-    dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
-    [self.chatArray addObject:model];
-    dispatch_semaphore_signal(_chatArrayLock);
+    dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+    [self.publicChatArray addObject:model];
+    dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyListenerDidSendMessage];
 }
 
 /// 接收到socket的公聊消息时
 - (void)addPublicChatModels:(NSArray <PLVChatModel *> *)modelArray {
-    dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
-            [self.chatArray addObject:model];
+            [self.publicChatArray addObject:model];
+            if (model.user.specialIdentity) {
+                [self.partOfPublicChatArray addObject:model];
+            }
         }
     }
-    dispatch_semaphore_signal(_chatArrayLock);
+    dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyListenerDidReceiveMessages];
 }
@@ -171,39 +187,45 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if (!msgId || ![msgId isKindOfClass:[NSString class]] || msgId.length == 0) {
         return;
     }
-    dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     NSArray *tempChatArray = [self.chatArray copy];
     for (PLVChatModel *model in tempChatArray) {
         NSString *modelMsgId = [model msgId];
         if (modelMsgId && [modelMsgId isEqualToString:msgId]) {
-            [self.chatArray removeObject:model];
+            [self.publicChatArray removeObject:model];
+            [self.partOfPublicChatArray removeObject:model];
             break;
         }
     }
-    dispatch_semaphore_signal(_chatArrayLock);
+    dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyListenerDidMessageDeleted];
 }
 
 /// 接收到socket删除所有公聊消息的通知时、调用销毁接口时
 - (void)removeAllPublicChatModels {
-    dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
-    [self.chatArray removeAllObjects];
-    dispatch_semaphore_signal(_chatArrayLock);
+    dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+    [self.publicChatArray removeAllObjects];
+    [self.partOfPublicChatArray removeAllObjects];
+    dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyListenerDidMessageDeleted];
 }
 
 /// 历史聊天记录接口返回消息数组时
 - (void)insertChatModels:(NSArray <PLVChatModel *> *)modelArray noMore:(BOOL)noMore {
-    dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
-            [self.chatArray insertObject:model atIndex:0];
+            [self.publicChatArray insertObject:model atIndex:0];
+            PLVChatUser *user = model.user;
+            if (user.specialIdentity) {
+                [self.partOfPublicChatArray insertObject:model atIndex:0];
+            }
         }
     }
-    BOOL first = ([self.chatArray count] <= [modelArray count]);
-    dispatch_semaphore_signal(_chatArrayLock);
+    BOOL first = ([self.publicChatArray count] <= [modelArray count]);
+    dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyListenerLoadHistorySuccess:noMore firstTime:first];
 }
@@ -254,6 +276,30 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_rewardSuccess:)]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate chatroomManager_rewardSuccess:modelDict];
+        });
+    }
+}
+
+- (void)notifyListenerDidLoginRestrict {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_didLoginRestrict)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_didLoginRestrict];
+        });
+    }
+}
+
+- (void)notifyListenerCloseRoom:(BOOL)closeRoom {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_closeRoom:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_closeRoom:closeRoom];
+        });
+    }
+}
+
+- (void)notifyListenerFocusMode:(BOOL)focusMode {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomManager_focusMode:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomManager_focusMode:focusMode];
         });
     }
 }
@@ -415,6 +461,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_didAllMessageDeleted {
     [self removeAllPublicChatModels];
+}
+
+- (void)chatroomPresenter_didLoginRestrict {
+    [self notifyListenerDidLoginRestrict];
+}
+
+- (void)chatroomPresenter_didChangeCloseRoom:(BOOL)closeRoom {
+    [self notifyListenerCloseRoom:closeRoom];
+}
+
+- (void)chatroomPresenter_didChangeFocusMode:(BOOL)focusMode {
+    [self notifyListenerFocusMode:focusMode];
 }
 
 #pragma mark - Utils

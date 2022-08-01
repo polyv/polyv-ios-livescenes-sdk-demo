@@ -23,6 +23,7 @@
 #import "PLVECHomePageView.h"
 #import "PLVECLiveDetailPageView.h"
 #import "PLVECWatchRoomScrollView.h"
+#import "PLVCommodityCardDetailView.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -31,7 +32,7 @@
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
-NSString *PLVLEChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNotification";
+NSString *PLVLEChatroomOpenBulletinNotification = @"PLVLEChatroomOpenBulletinNotification";
 
 @interface PLVECWatchRoomViewController ()<
 PLVSocketManagerProtocol,
@@ -43,7 +44,8 @@ UIScrollViewDelegate,
 PLVECLinkMicAreaViewDelegate,
 PLVLivePictureInPictureRestoreDelegate,
 PLVCommodityDetailViewControllerDelegate,
-PLVPopoverViewDelegate
+PLVPopoverViewDelegate,
+PLVInteractGenericViewDelegate
 >
 
 #pragma mark 数据
@@ -61,6 +63,7 @@ PLVPopoverViewDelegate
 @property (nonatomic, strong) PLVECHomePageView *homePageView;
 @property (nonatomic, strong) PLVECLiveDetailPageView * liveDetailPageView;
 @property (nonatomic, strong) UIButton * closeButton;
+@property (nonatomic, strong) PLVCommodityCardDetailView *cardDetailView;           // 卡片推送加载视图
 
 @end
 
@@ -207,6 +210,10 @@ PLVPopoverViewDelegate
         
         self.liveDetailPageView.frame = CGRectMake(0, 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
+       
+        /// 互动
+        [self.view addSubview:self.popoverView];
+        self.popoverView.frame = self.view.bounds;
         
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
     }
@@ -250,6 +257,29 @@ PLVPopoverViewDelegate
     }
 }
 
+- (void)openCommodityDetailViewControllerWithURL:(NSURL *)commodityURL {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
+        if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+            [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view]; // 打开应用内悬浮窗
+        }
+    }
+    
+    // 跳转商品详情页
+    self.commodityDetailVC = [[PLVCommodityDetailViewController alloc] initWithCommodityURL:commodityURL];
+    self.commodityDetailVC.delegate = self;
+    if (self.navigationController) {
+        self.navigationController.navigationBarHidden = NO;
+        [self.navigationController pushViewController:self.commodityDetailVC animated:YES];
+    } else {
+        [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
+        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.commodityDetailVC];
+        nav.navigationBarHidden = NO;
+        nav.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewController:nav animated:YES completion:nil];
+    }
+}
+
 #pragma mark Getter
 - (PLVECWatchRoomScrollView *)scrollView{
     if (!_scrollView) {
@@ -289,10 +319,13 @@ PLVPopoverViewDelegate
 
 - (PLVPopoverView *)popoverView {
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if (!_popoverView && videoType == PLVChannelVideoType_Live) {
+    if (!_popoverView) {
         _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeEC liveRoom:videoType == PLVChannelVideoType_Live];
         _popoverView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-        _popoverView.delegate = self;
+        _popoverView.interactView.delegate = self;
+        if (videoType == PLVChannelVideoType_Live) {
+            _popoverView.delegate = self;
+        }
     }
     return _popoverView;
 }
@@ -312,6 +345,13 @@ PLVPopoverViewDelegate
         _linkMicAreaView.delegate = self;
     }
     return _linkMicAreaView;
+}
+
+- (PLVCommodityCardDetailView *)cardDetailView {
+    if (!_cardDetailView) {
+        _cardDetailView = [[PLVCommodityCardDetailView alloc] init];
+    }
+    return _cardDetailView;
 }
 
 #pragma mark - [ Event ]
@@ -624,27 +664,7 @@ PLVPopoverViewDelegate
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView openCommodityDetail:(NSURL *)commodityURL {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
-        
-        if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-            [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view]; // 打开应用内悬浮窗
-        }
-    }
-    
-    // 跳转商品详情页
-    self.commodityDetailVC = [[PLVCommodityDetailViewController alloc] initWithCommodityURL:commodityURL];
-    self.commodityDetailVC.delegate = self;
-    if (self.navigationController) {
-        self.navigationController.navigationBarHidden = NO;
-        [self.navigationController pushViewController:self.commodityDetailVC animated:YES];
-    } else {
-        [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
-        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.commodityDetailVC];
-        nav.navigationBarHidden = NO;
-        nav.modalPresentationStyle = UIModalPresentationFullScreen;
-        [self presentViewController:nav animated:YES completion:nil];
-    }
+    [self openCommodityDetailViewControllerWithURL:commodityURL];
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPause:(BOOL)pause {
@@ -681,8 +701,22 @@ PLVPopoverViewDelegate
     [self.playerVC switchToNoDelayWatchMode:noDelayWatchMode];
 }
 
+- (void)homePageView_didLoginRestrict {
+    __weak typeof(self) weakSelf = self;
+    plv_dispatch_main_async_safe(^{
+        [PLVECUtils showHUDWithTitle:nil detail:@"直播间太过火爆了，请稍后再来(2050407)" view:self.view afterDelay:3.0];
+    })
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
+    });
+}
+
 - (void)homePageViewOpenRewardView:(PLVECHomePageView *)homePageView {
     [self.popoverView showRewardView];
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView openCardPush:(NSDictionary *)cardInfo {
+    [self.popoverView.interactView openNewPushCardWithDict:cardInfo];
 }
 
 - (void)homePageViewClickPictureInPicture:(PLVECHomePageView *)homePageView {
@@ -720,6 +754,17 @@ PLVPopoverViewDelegate
     plv_dispatch_main_async_safe(^{
         [PLVECUtils showHUDWithTitle:error detail:@"" view:self.view];
     })
+}
+
+#pragma mark PLVInteractGenericViewDelegate
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView loadWebViewURL:(NSURL *)url insideLoad:(BOOL)insideLoad {
+    if (insideLoad) {
+        [self.cardDetailView loadWebviewWithCardURL:url];
+        [self.cardDetailView showOnView:self.view frame:CGRectMake(0, CGRectGetHeight(self.view.bounds) * 0.3, self.view.bounds.size.width, self.view.bounds.size.height * 0.7)];
+    } else {
+        [self openCommodityDetailViewControllerWithURL:url];
+    }
 }
 
 @end

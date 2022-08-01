@@ -160,6 +160,18 @@ PLVRoomDataManagerProtocol
     return commodityMenu;
 }
 
+- (void)changeCloseRoomStatus:(BOOL)closeRoom {
+    if (self.chatVctrl) {
+        [self.chatVctrl changeCloseRoomStatus:closeRoom];
+    }
+}
+
+- (void)changeFocusMode:(BOOL)focusMode {
+    if (self.chatVctrl) {
+        [self.chatVctrl changeFocusMode:focusMode];
+    }
+}
+
 #pragma mark - Private Method
 
 - (void)updateChannelMenuInfo {
@@ -288,6 +300,12 @@ PLVRoomDataManagerProtocol
 - (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductLinkURL:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self clickProductLinkURL:linkURL];
+    }
+}
+
+- (void)plvLCCloseProductViewInViewController:(PLVLCBuyViewController *)viewController {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaViewCloseProductView:)]) {
+        [self.delegate plvLCLivePageMenuAreaViewCloseProductView:self];
     }
 }
 

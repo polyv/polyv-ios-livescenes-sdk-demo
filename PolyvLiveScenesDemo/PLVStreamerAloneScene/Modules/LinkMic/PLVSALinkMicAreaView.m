@@ -59,6 +59,10 @@ PLVSALinkMicWindowsViewDelegate
     [self.windowsView reloadLinkMicUserWindows];
 }
 
+- (void)updateFirstSiteCanvasViewWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite {
+    [self.windowsView updateFirstSiteCanvasViewWithUserId:linkMicUserId toFirstSite:toFirstSite];
+}
+
 - (void)clear {
     [self.windowsView removeFromSuperview];
 }
