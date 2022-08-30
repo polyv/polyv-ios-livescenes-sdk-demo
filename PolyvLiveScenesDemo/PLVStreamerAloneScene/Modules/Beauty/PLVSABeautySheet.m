@@ -16,14 +16,14 @@
 #import "PLVSABeautyContentView.h"
 #import "PLVSABeautyFilterTitleView.h"
 // 模块
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSABeautySheet()<
 PLVSABeautyTitleViewDelegate,
 PLVSABeautySliderViewDelegate,
-PLVSABeautyViewModelDelegate,
+PLVBeautyViewModelDelegate,
 PLVSABeautySwitchDelegate
 >
 
@@ -55,7 +55,7 @@ PLVSABeautySwitchDelegate
 - (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth{
     self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth backgroundColor:[UIColor clearColor]];
     if (self) {
-        [PLVSABeautyViewModel sharedViewModel].delegate = self;
+        [PLVBeautyViewModel sharedViewModel].delegate = self;
         [self setupUI];
     }
     return self;
@@ -124,7 +124,7 @@ PLVSABeautySwitchDelegate
 }
 
 - (void)showInView:(UIView *)parentView {
-    self.sliderView.hidden = ![PLVSABeautyViewModel sharedViewModel].beautyIsOpen;
+    self.sliderView.hidden = ![PLVBeautyViewModel sharedViewModel].beautyIsOpen;
     self.beautySwitch.hidden = NO;
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(beautySheet:didChangeShow:)]) {
@@ -149,7 +149,7 @@ PLVSABeautySwitchDelegate
     if (!_sliderView) {
         _sliderView = [[PLVSABeautySliderView alloc] init];
         _sliderView.delegate = self;
-        _sliderView.hidden = ![PLVSABeautyViewModel sharedViewModel].beautyIsOpen;
+        _sliderView.hidden = ![PLVBeautyViewModel sharedViewModel].beautyIsOpen;
     }
     return _sliderView;
 }
@@ -157,7 +157,7 @@ PLVSABeautySwitchDelegate
 - (PLVSABeautySwitch *)beautySwitch {
     if (!_beautySwitch) {
         _beautySwitch = [[PLVSABeautySwitch alloc] init];
-        _beautySwitch.on = [PLVSABeautyViewModel sharedViewModel].beautyIsOpen;
+        _beautySwitch.on = [PLVBeautyViewModel sharedViewModel].beautyIsOpen;
         _beautySwitch.delegate = self;
     }
     return _beautySwitch;
@@ -247,7 +247,7 @@ PLVSABeautySwitchDelegate
     [PLVSAUtils showAlertWithTitle:@"确定重置吗" Message:@"重置后所有美颜参数将恢复默认值" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
         [PLVSAUtils showToastInHomeVCWithMessage:@"重置成功"];
         
-        [[PLVSABeautyViewModel sharedViewModel] resetBeautyOptionIntensity];
+        [[PLVBeautyViewModel sharedViewModel] resetBeautyOptionIntensity];
         [weakSelf.beautyContentView resetBeauty];
     }];
     
@@ -255,18 +255,18 @@ PLVSABeautySwitchDelegate
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVSABeautyTitleViewDelegate
-- (void)beautyTitleView:(PLVSABeautyTitleView *)beautyTitleView didTapButton:(PLVSABeautyType)type {
-    [[PLVSABeautyViewModel sharedViewModel] selectBeautyType:type];
+- (void)beautyTitleView:(PLVSABeautyTitleView *)beautyTitleView didTapButton:(PLVBeautyType)type {
+    [[PLVBeautyViewModel sharedViewModel] selectBeautyType:type];
     [self.beautyContentView selectContentViewWithType:type];
 }
 
 #pragma mark PLVSABeautySliderViewDelegate
 - (void)beautySliderView:(PLVSABeautySliderView *)beautySliderView didChangedValue:(CGFloat)value {
-    [[PLVSABeautyViewModel sharedViewModel] updateBeautyOptionWithIntensity:value];
+    [[PLVBeautyViewModel sharedViewModel] updateBeautyOptionWithIntensity:value];
 }
 
-#pragma mark PLVSABeautyViewModelDelegate
-- (void)beautyViewModel:(PLVSABeautyViewModel *)beautyViewModel didChangeIntensity:(CGFloat)intensity defaultIntensity:(CGFloat)defaultIntensity {
+#pragma mark PLVBeautyViewModelDelegate
+- (void)beautyViewModel:(PLVBeautyViewModel *)beautyViewModel didChangeIntensity:(CGFloat)intensity defaultIntensity:(CGFloat)defaultIntensity {
     if (intensity == -1) {
         self.sliderView.hidden = YES;
     } else {
@@ -277,7 +277,7 @@ PLVSABeautySwitchDelegate
     [self layoutIfNeeded];
 }
 
-- (void)beautyViewModel:(PLVSABeautyViewModel *)beautyViewModel didChangeFilterName:(NSString *)filterName {
+- (void)beautyViewModel:(PLVBeautyViewModel *)beautyViewModel didChangeFilterName:(NSString *)filterName {
     [self.filterTitleView showAtView:self title:filterName];
 }
 
@@ -288,13 +288,13 @@ PLVSABeautySwitchDelegate
         [self.delegate beautySheet:self didChangeOn:on];
     }
     
-    if (on && ![PLVSABeautyViewModel sharedViewModel].isSelectedOriginFilter) {
+    if (on && ![PLVBeautyViewModel sharedViewModel].isSelectedOriginFilter) {
         self.sliderView.hidden = NO; // 美颜开启 并且 不是选中原图滤镜 时显示强度进度条
     } else {
         self.sliderView.hidden = YES;
     }
     
-    [[PLVSABeautyViewModel sharedViewModel] beautyOpen:on];
+    [[PLVBeautyViewModel sharedViewModel] beautyOpen:on];
     [self beautyOpen:on];
     [self.beautyContentView beautyOpen:on];
     

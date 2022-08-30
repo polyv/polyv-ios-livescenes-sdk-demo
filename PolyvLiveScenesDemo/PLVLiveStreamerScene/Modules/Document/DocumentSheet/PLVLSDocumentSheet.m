@@ -259,7 +259,9 @@ UIDocumentPickerDelegate
     NSSet<NSString *> *supperFileExtensions = [[NSSet alloc] initWithObjects:
         @"pdf", @"jpg", @"jpeg", @"png", @"doc", @"docx", @"ppt", @"pptx", @"xls", @"xlsx", nil
     ];
-    return [supperFileExtensions containsObject:fileExtension];
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"self contains [cd] %@", fileExtension];
+    NSSet *sets = [[NSSet alloc] initWithSet:[supperFileExtensions filteredSetUsingPredicate:predicate]];
+    return (sets && sets.count > 0);
 }
 
 /// 判断选中文档的大小是否超过 500M

@@ -11,6 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// 互动应用 答题卡
+DEPRECATED_MSG_ATTRIBUTE("已废弃，请使用PLVInteractGenericView")
 @interface PLVInteractAnswer : PLVInteractBaseApp
 
 @end

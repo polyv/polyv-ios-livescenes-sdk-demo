@@ -7,14 +7,14 @@
 // 美颜详细内容视图
 
 #import <UIKit/UIKit.h>
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 @interface PLVSABeautyContentView : UIView
 
 /// 选中美颜类型
 /// @param type 美颜类型
-- (void)selectContentViewWithType:(PLVSABeautyType)type;
+- (void)selectContentViewWithType:(PLVBeautyType)type;
 
 /// 开启/关闭 美颜
 /// @param open YES:开启 NO:关闭

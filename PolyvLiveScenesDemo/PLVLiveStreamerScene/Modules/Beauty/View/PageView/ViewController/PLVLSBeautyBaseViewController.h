@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVLSBeautyCellModel.h"
-#import "PLVLSBEAutyViewModel.h"
+#import "PLVBEAutyViewModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前选中下标
 @property (nonatomic, strong) NSIndexPath *selectedIndexPath;
 /// 当前美颜类型
-@property (nonatomic, assign) PLVLSBeautyType beautyType;
+@property (nonatomic, assign) PLVBeautyType beautyType;
 
 /// 设置数据源
 - (void)setupDataArray;

@@ -40,8 +40,8 @@ UIGestureRecognizerDelegate
 @property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
 @property (nonatomic, assign, readonly) BOOL liveStatusIsLiving; // 当前直播是否正在进行
 
-/// scene 为 PLVDocumentViewSceneCloudClass 或 PLVDocumentViewSceneEcommerce 的数据
-@property (nonatomic, assign) BOOL mainSpeakerPPTOnMain;            // 观看场景中 主讲的PPT当前是否在主屏
+/// scene 为 PLVDocumentViewSceneCloudClass 、 PLVDocumentViewSceneEcommerce 、PLVDocumentViewSceneStreamer 的数据
+@property (nonatomic, assign) BOOL mainSpeakerPPTOnMain;            // 场景中 主讲的PPT当前是否在主屏
 
 /// scene 为 PLVDocumentViewSceneStreamer 的数据
 @property (nonatomic, assign) NSInteger autoId;                     // ppt id, 0是白板
@@ -70,6 +70,7 @@ UIGestureRecognizerDelegate
         [[PLVSocketManager sharedManager] addDelegate:self
                                         delegateQueue:dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT)];
         
+        self.mainSpeakerPPTOnMain = YES;
         if (self.scene == PLVDocumentViewSceneStreamer) {
             PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
             self.userInfo = @{@"nick":(roomUser.viewerName ?: @""),
@@ -85,11 +86,10 @@ UIGestureRecognizerDelegate
             [self.jsBridge registerPPTStatusChangeFunction];
             [self.jsBridge registerPPTInputFunction];
             [self.jsBridge registerPPTThumbnailFunction];
+            [self.jsBridge registerWhiteboardPPTZoomChangeFunction];
         } else if (self.scene == PLVDocumentViewSceneCloudClass ||
                    self.scene == PLVDocumentViewSceneEcommerce) {
             // 观看场景的 userInfo 需登录完 sockt 后获取
-            
-            self.mainSpeakerPPTOnMain = YES;
             
             [self.jsBridge registerPPTPrepareFunction];
             [self.jsBridge registerSocketEventFunction];
@@ -153,9 +153,8 @@ UIGestureRecognizerDelegate
             _webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
         }
         
-        /// 推流场景且讲师角色下，开启userInteractionEnabled；其他场景均设为NO，不允许交互。
-        if (self.scene == PLVDocumentViewSceneStreamer &&
-            self.viewerType == PLVRoomUserTypeTeacher) {
+        /// 推流场景 讲师角色或者嘉宾为主讲时开启userInteractionEnabled；其他场景均设为NO，不允许交互。
+        if (self.scene == PLVDocumentViewSceneStreamer && self.viewerType == PLVRoomUserTypeTeacher) {
             _webView.userInteractionEnabled = YES;
         } else {
             _webView.userInteractionEnabled = NO;
@@ -214,6 +213,12 @@ UIGestureRecognizerDelegate
     NSString *chatApiDomain = [PLVLiveVideoConfig sharedInstance].chatApiDomain;
     if ([PLVFdUtil checkStringUseable:chatApiDomain]) {
         urlString = [urlString stringByAppendingFormat:@"%@domainName=%@", (hasParam ? @"&" : @"?"), chatApiDomain];
+        hasParam = YES;
+    }
+    
+    PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
+    if (liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt) {
+        urlString = [urlString stringByAppendingFormat:@"%@security=1", (hasParam ? @"&" : @"?")];
     }
     
     NSURL *URL = [NSURL URLWithString:urlString];
@@ -289,6 +294,17 @@ UIGestureRecognizerDelegate
 }
 
 #pragma mark 推流专用方法
+
+- (void)setDocumentUserInteractionEnabled:(BOOL)enabled {
+    if (self.scene != PLVDocumentViewSceneStreamer) {
+        return;
+    }
+    if (self.viewerType != PLVRoomUserTypeGuest) {
+        return;
+    }
+    
+    self.webView.userInteractionEnabled = enabled;
+}
 
 - (void)setPaintStatus:(BOOL)open {
     if (self.scene != PLVDocumentViewSceneStreamer) {
@@ -374,6 +390,14 @@ UIGestureRecognizerDelegate
     self.totalPageNum += 1;
     self.currPageNum = self.totalPageNum - 1;
     [self switchPPT];
+}
+
+- (void)resetWhiteboardPPTZoomRatio {
+    if (self.scene != PLVDocumentViewSceneStreamer) {
+        return;
+    }
+    
+    [self.jsBridge resetWhiteboardPPTZoomRatio];
 }
 
 #pragma mark - Private Method
@@ -537,6 +561,9 @@ UIGestureRecognizerDelegate
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     webView.backgroundColor = [UIColor clearColor];
+    // 禁止长按 复制
+    [webView evaluateJavaScript:@"document.documentElement.style.webkitUserSelect='none';" completionHandler:nil];
+    [webView evaluateJavaScript:@"document.documentElement.style.webkitTouchCallout='none';" completionHandler:nil];
     self.webviewLoadFinish = YES;
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_webViewDidFinishLoading)]) {
@@ -666,6 +693,12 @@ UIGestureRecognizerDelegate
     /// 使用一次后注销，防止重复调用PPTThumbnail
     if ([PLVFdUtil checkStringUseable:fileName]) {
         [self.jsBridge removePPTThumbnailFunction];
+    }
+}
+
+- (void)jsbridge_updateWhiteboardPPTZoomRatio:(NSInteger)zoomRatio {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_whiteboardPPTZoomChangeRatio:)]) {
+        [self.delegate documentView_whiteboardPPTZoomChangeRatio:zoomRatio];
     }
 }
 

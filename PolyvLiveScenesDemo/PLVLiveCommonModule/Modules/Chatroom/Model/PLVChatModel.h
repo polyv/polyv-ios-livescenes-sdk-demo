@@ -56,6 +56,7 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 /// 如果为文本消息、引用消息、图片消息，time不为0，否则为0
 - (NSTimeInterval)time;
 
+/// 聊天重放时，该消息对应的视频时间节点
 - (NSTimeInterval)playbackTime;
 
 /// 判断当前消息是否为：严禁词、违禁图片 消息

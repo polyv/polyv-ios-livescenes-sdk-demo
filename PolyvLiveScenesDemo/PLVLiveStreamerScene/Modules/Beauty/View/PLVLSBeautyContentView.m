@@ -15,7 +15,7 @@
 #import "PLVLSBeautyFilterViewController.h"
 #import "PLVLSBeautyFaceViewController.h"
 // 模块
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 @interface PLVLSBeautyContentView()
 
@@ -43,7 +43,7 @@
 
 #pragma mark - [ Public Method ]
 
-- (void)selectContentViewWithType:(PLVLSBeautyType)type {
+- (void)selectContentViewWithType:(PLVBeautyType)type {
     if (self.childArray.count > type) {
         PLVLSBeautyBaseViewController *viewController = (PLVLSBeautyBaseViewController *)self.childArray[type];
         [viewController showContentView];
@@ -75,13 +75,13 @@
 - (NSArray<UIViewController *> *)childArray {
     if (!_childArray) {
         PLVLSBeautyWhitenViewController *whiteVC = [[PLVLSBeautyWhitenViewController alloc] init];
-        whiteVC.beautyType = PLVLSBeautyTypeWhiten;
+        whiteVC.beautyType = PLVBeautyTypeWhiten;
         
         PLVLSBeautyFilterViewController *filterVC = [[PLVLSBeautyFilterViewController alloc] init];
-        filterVC.beautyType = PLVLSBeautyTypeFilter;
+        filterVC.beautyType = PLVBeautyTypeFilter;
         
         PLVLSBeautyFaceViewController *faceVC = [[PLVLSBeautyFaceViewController alloc] init];
-        faceVC.beautyType = PLVLSBeautyTypeFace;
+        faceVC.beautyType = PLVBeautyTypeFace;
         
         _childArray = [NSArray arrayWithObjects:whiteVC, filterVC, faceVC, nil];
     }

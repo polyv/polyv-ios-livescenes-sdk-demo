@@ -82,9 +82,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// 聊天室common层presenter，一个scene层只能初始化一个presenter对象
 @property (nonatomic, strong, readonly) PLVChatroomPresenter *presenter;
 
-/// 是否打开【只看讲师】开关
-@property (nonatomic, assign) BOOL onlyTeacher;
-
 /// 公聊消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 

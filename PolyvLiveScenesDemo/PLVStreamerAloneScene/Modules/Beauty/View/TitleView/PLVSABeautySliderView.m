@@ -7,12 +7,11 @@
 //
 
 #import "PLVSABeautySliderView.h"
+#import <PLVFoundationSDK/PLVColorUtil.h>
 // 工具
 #import "PLVSAUtils.h"
 // UI
 #import "PLVSASliderView.h"
-// 模块
-#import "PLVSABeautyViewModel.h"
 
 @interface PLVSABeautySliderView() <
 PLVSASliderViewDelegate

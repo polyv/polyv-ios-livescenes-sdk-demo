@@ -21,6 +21,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pointUnit 打赏单位
 - (void)chatroomView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
 
+/// 聊天重放功能开启时定时触发，获取当前回放视频播放节点
 - (NSTimeInterval)chatroomView_currentPlaybackTime;
 
 /// 聊天室登录达到并发限制时触发
@@ -33,8 +34,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVECChatroomViewDelegate> delegate;
 
+/// 用于聊天重放时，更新聊天回放viewModel的视频时长
 - (void)updateDuration:(NSTimeInterval)duration;
 
+/// 用于聊天重放时，回放视频被seek时通知聊天回放viewModel
 - (void)playbackTimeChanged;
 
 @end

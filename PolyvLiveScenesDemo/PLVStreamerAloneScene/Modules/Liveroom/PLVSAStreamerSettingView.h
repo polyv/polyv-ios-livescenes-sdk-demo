@@ -39,6 +39,9 @@
 /// @param show YES:显示 NO:隐藏
 - (void)showBeautySheet:(BOOL)show;
 
+/// 同步当前开播流比例
+- (void)synchPushStreamScale:(PLVBLinkMicStreamScale)streamScale;
+
 @end
 
 @protocol PLVSAStreamerSettingViewDelegate <NSObject>
@@ -65,6 +68,8 @@
 - (void)streamerSettingViewDidClickBeautyButton:(PLVSAStreamerSettingView *)streamerSettingView;
 /// 设备方向发送改变
 - (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView;
+/// 开播流比例改变
+- (void)streamerSettingViewStreamScaleButtonClickWithStreamScale:(PLVBLinkMicStreamScale)streamScale;;
 
 @end
 

@@ -58,6 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param onlineCount 连麦人数
 - (void)updateUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount onlineCount:(NSInteger)onlineCount;
 
+/// 更新本地用户主讲权限
+/// @param auth 本地用户是否授权主讲
+- (void)updateLocalUserSpeakerAuth:(BOOL)auth;
 
 @end
 

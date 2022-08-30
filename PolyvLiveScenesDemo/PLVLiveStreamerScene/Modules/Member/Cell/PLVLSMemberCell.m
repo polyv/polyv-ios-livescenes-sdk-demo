@@ -382,6 +382,10 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 }
 
 - (void)authSpeakerButtonAction {
+    self.authSpeakerButton.userInteractionEnabled = NO; // 授权按钮点击间隔，防止短时间内重复点击
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self.authSpeakerButton.userInteractionEnabled = YES;
+    });
     self.authSpeakerButton.selected = !self.authSpeakerButton.isSelected;
     if (self.user.onlineUser) {
         [self.user.onlineUser wantAuthUserSpeaker:self.authSpeakerButton.isSelected];
@@ -442,15 +446,15 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     __weak typeof(self) weakSelf = self;
     [self.editView setDidTapBanButton:^(BOOL banned) {
         if (weakSelf.delegate &&
-            [weakSelf.delegate respondsToSelector:@selector(memberCell_didTapBan:withUer:)]) {
-            [weakSelf.delegate memberCell_didTapBan:banned withUer:weakSelf.user];
+            [weakSelf.delegate respondsToSelector:@selector(memberCell_didTapBan:withUser:)]) {
+            [weakSelf.delegate memberCell_didTapBan:banned withUser:weakSelf.user];
         }
         [weakSelf endLeftDrag:@(YES)];
     }];
     [self.editView setDidTapKickButton:^{
         if (weakSelf.delegate &&
-            [weakSelf.delegate respondsToSelector:@selector(memberCell_didTapKickWithUer:)]) {
-            [weakSelf.delegate memberCell_didTapKickWithUer:weakSelf.user];
+            [weakSelf.delegate respondsToSelector:@selector(memberCell_didTapKickWithUser:)]) {
+            [weakSelf.delegate memberCell_didTapKickWithUser:weakSelf.user];
         }
         [weakSelf endLeftDrag:@(YES)];
     }];
@@ -527,7 +531,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 - (void)refreshAuthControlButtonsState {
     self.authSpeakerButton.hidden = YES;
     if (self.user.onlineUser) {
-        BOOL showSpeakerAuthButton = self.canManagerSpeakerAuth && self.user.onlineUser.userType == PLVRoomUserTypeGuest;
+        BOOL showSpeakerAuthButton = [self hasManageSpeakerAuth] && self.user.onlineUser.userType == PLVRoomUserTypeGuest;
         self.authSpeakerButton.hidden = !showSpeakerAuthButton;
         self.authSpeakerButton.selected = self.user.onlineUser.isRealMainSpeaker;
         [self.user.onlineUser addCurrentSpeakerAuthChangedBlock:self.currentSpeakerAuthChangedBlock blockKey:self];
@@ -672,10 +676,22 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     }
 }
 
-/// 讲师可以管理主讲授权操作
-- (BOOL)canManagerSpeakerAuth {
+// 是否有管理主讲的权限
+- (BOOL)hasManageSpeakerAuth {
     PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
-    return userType == PLVRoomUserTypeTeacher;
+    if (userType == PLVRoomUserTypeTeacher ||
+        userType == PLVRoomUserTypeAssistant ||
+        userType == PLVRoomUserTypeManager) {
+        return YES;
+    }
+    // 当开启了嘉宾移交权限功能，嘉宾用户拥有主讲权限时可以进行授权操作
+    PLVRoomUserType guestTranAuthEnabled = [PLVRoomDataManager sharedManager].roomData.guestTranAuthEnabled;
+    BOOL isRealMainSpeaker = [self.delegate localUserIsRealMainSpeakerInCell:self];
+    if (guestTranAuthEnabled && userType == PLVRoomUserTypeGuest && isRealMainSpeaker) {
+        return YES;
+    }
+    
+    return NO;
 }
 
 - (void)checkMediaGrantedCompletion:(void (^)(void))completion  {

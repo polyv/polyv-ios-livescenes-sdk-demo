@@ -39,6 +39,7 @@
 
 // Data
 @property (nonatomic, weak) PLVLinkMicOnlineUser *user;
+@property (nonatomic, weak) PLVLinkMicOnlineUser *localUser;
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType; // 本地用户类型
 
 @end
@@ -87,11 +88,14 @@
         
     NSMutableArray *buttonArray = [NSMutableArray arrayWithCapacity:6];
     if (self.viewerType == PLVRoomUserTypeGuest) {
+        if (!self.authSpeakerButton.isHidden) {
+            [buttonArray addObject:self.authSpeakerButton];
+        }
         [buttonArray addObject:self.fullScreenButton];
     } else if(self.viewerType == PLVRoomUserTypeTeacher) {
         [buttonArray addObjectsFromArray:@[self.cameraButton,
                                            self.micphoneButton]];
-        if (specialType) {
+        if (!self.authSpeakerButton.isHidden) {
             [buttonArray addObject:self.authSpeakerButton];
         }
         
@@ -108,13 +112,14 @@
 
 #pragma mark - [ Public Method ]
 
-- (void)updateLinkMicUserInfoWithUser:(PLVLinkMicOnlineUser *)user{
-    if (!user || ![user isKindOfClass:[PLVLinkMicOnlineUser class]]) {
+- (void)updateLinkMicUserInfoWithUser:(PLVLinkMicOnlineUser *)user localUser:(PLVLinkMicOnlineUser *)localUser {
+    if (!user || ![user isKindOfClass:[PLVLinkMicOnlineUser class]] ||
+        !localUser || ![localUser isKindOfClass:[PLVLinkMicOnlineUser class]] ) {
         return;
     }
     
     self.user = user;
-
+    self.localUser = localUser;
     BOOL specialType = [self isSpecialIdentityWithUserType:user.userType];
     BOOL isTeacher = self.viewerType == PLVRoomUserTypeTeacher;
     NSString *imageName = specialType ? @"plvsa_member_teacher_avatar" : @"plvsa_member_student_avatar";
@@ -127,7 +132,7 @@
     self.actorLabel.hidden = !specialType && user.actor;
     self.cameraButton.hidden = !isTeacher;
     self.micphoneButton.hidden = !isTeacher;
-    self.authSpeakerButton.hidden = !isTeacher;
+    self.authSpeakerButton.hidden = !(self.hasManageSpeakerAuth && user.userType == PLVRoomUserTypeGuest);
     self.stopLinkMicButton.hidden = specialType || !isTeacher;
     
     NSString *colorHexString = [self actorBgColorHexStringWithUserType:user.userType];
@@ -141,7 +146,10 @@
     [self refreshButtonState];
     // 添加信息变动回调监听
     [self addUserInfoChangedBlock:user];
-    
+    if (self.viewerType == PLVRoomUserTypeGuest) {
+        [self addLocalUserInfoChangedBlock:localUser];
+    }
+
     // 刷新UI
     [self setNeedsLayout];
     [self layoutIfNeeded];
@@ -237,7 +245,8 @@
         _authSpeakerButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         _authSpeakerButton.titleLabel.numberOfLines = 0;
         _authSpeakerButton.titleLabel.textAlignment = NSTextAlignmentCenter;
-        [_authSpeakerButton setTitle:@"授予主讲权限" forState:UIControlStateNormal];
+        NSString *buttonTitle = self.viewerType == PLVRoomUserTypeTeacher ? @"授予主讲权限" : @"移交主讲权限";
+        [_authSpeakerButton setTitle:buttonTitle forState:UIControlStateNormal];
         [_authSpeakerButton setTitle:@"移除主讲权限" forState:UIControlStateSelected];
         [_authSpeakerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_authspeaker"] forState:UIControlStateNormal];
         [_authSpeakerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_authspeaker"] forState:UIControlStateSelected];
@@ -372,6 +381,25 @@
     }
     return colorHexString;
 }
+
+// 是否有管理主讲的权限
+- (BOOL)hasManageSpeakerAuth {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    if (userType == PLVRoomUserTypeTeacher ||
+        userType == PLVRoomUserTypeAssistant ||
+        userType == PLVRoomUserTypeManager) {
+        return YES;
+    }
+    
+    // 当开启了嘉宾移交权限功能，嘉宾用户拥有主讲权限时可以进行授权操作
+    PLVRoomUserType guestTranAuthEnabled = [PLVRoomDataManager sharedManager].roomData.guestTranAuthEnabled;
+    if (guestTranAuthEnabled && userType == PLVRoomUserTypeGuest && self.localUser.isRealMainSpeaker) {
+        return YES;
+    }
+    
+    return NO;
+}
+
 #pragma mark Data
 
 - (void)refreshButtonState {
@@ -397,12 +425,25 @@
     } blockKey:self];
     
     [user addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-        weakSelf.authSpeakerButton.selected = onlineUser.isRealMainSpeaker;
+        plv_dispatch_main_async_safe(^{
+            weakSelf.authSpeakerButton.selected = onlineUser.isRealMainSpeaker;
+        })
     } blockKey:self];
     
     [user addWillDeallocBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         plv_dispatch_main_async_safe(^{
             [weakSelf dismiss];
+        })
+    } blockKey:self];
+}
+
+- (void)addLocalUserInfoChangedBlock:(PLVLinkMicOnlineUser *)user {
+    __weak typeof(self) weakSelf = self;
+    [user addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        plv_dispatch_main_async_safe(^{
+            weakSelf.authSpeakerButton.hidden = !(weakSelf.hasManageSpeakerAuth && weakSelf.user.userType == PLVRoomUserTypeGuest);
+            weakSelf.authSpeakerButton.selected = onlineUser.isRealMainSpeaker;
+            [weakSelf layoutSubviews];
         })
     } blockKey:self];
 }

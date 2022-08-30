@@ -51,6 +51,7 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 直播用户信息发生改变时调用
 - (void)updateLiveUserInfo;
 
+/// 通过菜单视图，更新聊天回放viewModel到聊天室视图
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
 - (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict;
@@ -58,12 +59,6 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 - (void)displayProductPageToExternalView:(UIView *)externalView;
 
 - (void)rollbackProductPageContentView;
-
-/// 切换聊天室关闭状态
-- (void)changeCloseRoomStatus:(BOOL)closeRoom;
-
-/// 切换聊天室专注模式状态
-- (void)changeFocusMode:(BOOL)focusMode;
 
 - (void)leaveLiveRoom;
 

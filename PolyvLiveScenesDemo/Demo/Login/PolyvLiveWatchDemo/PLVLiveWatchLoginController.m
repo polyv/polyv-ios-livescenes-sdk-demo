@@ -365,11 +365,6 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 //        roomUser.viewerAvatar = @"用户头像";
     } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
         [hud hideAnimated:YES];
-        if([PLVRoomDataManager sharedManager].roomData.channelType == PLVChannelTypePPT && weakSelf.vodListSwitch.isOn)
-        {
-            [weakSelf showHud:@"三分屏场景暂不支持使用点播列表播放" detail:nil];
-            return;
-        }
         [weakSelf saveParamsToFile];
         
         if (successHandler) {

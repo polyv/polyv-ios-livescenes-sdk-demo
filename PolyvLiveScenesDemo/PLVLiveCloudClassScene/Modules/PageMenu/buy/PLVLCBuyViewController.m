@@ -73,7 +73,14 @@ PLVProductWebViewBridgeDelegate>
 - (void)loadWebView {
     self.webViewBridge = [[PLVProductWebViewBridge alloc] initBridgeWithWebView:self.webView webViewDelegate:self];
     self.webViewBridge.delegate = self;
-    NSURL *interactURL = [NSURL URLWithString:PLVLiveConstantsProductListHTML];
+    
+    NSString *urlString = PLVLiveConstantsProductListHTML;
+    PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
+    if (liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt) {
+        urlString = [urlString stringByAppendingString:@"?security=1"];
+    }
+    NSURL *interactURL = [NSURL URLWithString:urlString];
+    
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
     [self.webView loadRequest:request];
 }

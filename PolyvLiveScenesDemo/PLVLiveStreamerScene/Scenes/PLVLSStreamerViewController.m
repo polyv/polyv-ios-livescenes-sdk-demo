@@ -30,7 +30,7 @@
 #import "PLVLSChatroomViewModel.h"
 #import "PLVStreamerPresenter.h"
 #import "PLVMemberPresenter.h"
-#import "PLVLSBeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -368,7 +368,7 @@ PLVLSMoreInfoSheetDelegate
     [[PLVDocumentConvertManager sharedManager] clear]; // 清空文档转码轮询队列
     [self.memberPresenter stop]; // 成员列表数据停止自动更新
     [self.streamerPresenter enableBeautyProcess:NO]; // 关闭美颜管理器
-    [[PLVLSBeautyViewModel sharedViewModel] clear]; // 美颜资源释放、状态位清零
+    [[PLVBeautyViewModel sharedViewModel] clear]; // 美颜资源释放、状态位清零
     
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)((self.streamerPresenter.classStarted ? 0.5 : 0) * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [[PLVSocketManager sharedManager] logout];
@@ -393,7 +393,7 @@ PLVLSMoreInfoSheetDelegate
                     [weakSelf tryResumeClass];
                     
                     // 开启RTC图像数据回调给美颜处理
-                    [weakSelf.streamerPresenter enableBeautyProcess:[PLVLSBeautyViewModel sharedViewModel].beautyIsOpen];
+                    [weakSelf.streamerPresenter enableBeautyProcess:[PLVBeautyViewModel sharedViewModel].beautyIsOpen];
                 }
             }];
         }
@@ -529,7 +529,7 @@ PLVLSMoreInfoSheetDelegate
 
 #pragma mark 美颜
 - (void)showBeautySheet:(BOOL)show {
-    if (![PLVLSBeautyViewModel sharedViewModel].beautyIsReady) {
+    if (![PLVBeautyViewModel sharedViewModel].beautyIsReady) {
         [PLVLSUtils showToastInHomeVCWithMessage:@"美颜未准备就绪，请退出重新登录"];
         return;
     }
@@ -885,9 +885,14 @@ PLVLSMoreInfoSheetDelegate
                  authSpeaker:(BOOL)authSpeaker {
     if (onlineUser.localUser) {
         NSString *message = authSpeaker ? @"已授予主讲权限" : @"已收回主讲权限";
+        message = onlineUser.isGuestTransferPermission ? @"已移交主讲权限" : message;
         [PLVLSUtils showToastWithMessage:message inView:self.view];
+        [onlineUser updateUserIsGuestTransferPermission:NO];
         [self.documentAreaView updateDocumentSpeakerAuth:authSpeaker];
+        /// 本地嘉宾用户获得主讲权限后，也会获得画笔功能权限
+        [self.documentAreaView updateDocumentBrushAuth:authSpeaker];
         [self.statusAreaView updateDocumentSpeakerAuth:authSpeaker];
+        [self.memberSheet updateLocalUserSpeakerAuth:authSpeaker];
         if (!authSpeaker) {
             [self.documentAreaView dismissDocument];
         }
@@ -1007,7 +1012,7 @@ PLVLSMoreInfoSheetDelegate
     if (result == 0) {
         // 配置美颜
         PLVBeautyManager *beautyManager = [self.streamerPresenter shareBeautyManager];
-        [[PLVLSBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
+        [[PLVBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
     } else {
         [PLVLSUtils showToastInHomeVCWithMessage:[NSString stringWithFormat:@"美颜初始化失败 %d 请重进直播间", result]];
     }

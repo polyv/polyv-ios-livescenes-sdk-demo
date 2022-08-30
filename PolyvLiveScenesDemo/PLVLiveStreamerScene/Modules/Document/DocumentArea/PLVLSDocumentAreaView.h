@@ -69,6 +69,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param auth 是否授权(YES授权，NO取消授权)
 - (void)updateDocumentSpeakerAuth:(BOOL)auth;
 
+/// 本地用户 获得 画笔权限
+/// @param auth 是否授权(YES授权，NO取消授权)
+- (void)updateDocumentBrushAuth:(BOOL)auth;
+
 /// 获取当前文档信息
 - (NSDictionary *)getCurrentDocumentInfoDict;
 
@@ -83,6 +87,10 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param externalView 外部视图
 - (void)displayExternalView:(UIView *)externalView;
+
+@end
+
+@interface PLVLSDocumentAreaSwitchContentView : UIView
 
 @end
 

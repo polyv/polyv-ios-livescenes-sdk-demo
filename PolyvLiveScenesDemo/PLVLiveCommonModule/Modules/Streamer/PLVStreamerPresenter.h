@@ -122,6 +122,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// 预览类型
 @property (nonatomic, assign) PLVStreamerPresenterPreviewType previewType;
 
+/// 本地视频预览画面填充模式
+///
+/// @note 填充或适应（画面可能会有黑边），默认值：{@link PLVBRTCVideoViewFillMode_Fill}
+@property (nonatomic, assign) PLVBRTCVideoViewFillMode localPreviewViewFillMode;
+
 #pragma mark 状态
 /// 当前 麦克风摄像头 是否已授权限
 @property (nonatomic, assign, readonly) BOOL micCameraGranted;

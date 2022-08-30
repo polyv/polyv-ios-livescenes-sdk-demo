@@ -67,6 +67,14 @@ PLVAdvertViewDelegate
 
 #pragma mark 数据
 @property (nonatomic, readonly) PLVChannelInfoModel *channelInfo;
+@property (nonatomic, copy) NSString * channelId;
+@property (nonatomic, copy) NSString * vodId;
+@property (nonatomic, copy) NSString * fileId;
+@property (nonatomic, assign) BOOL vodList;
+@property (nonatomic, assign) BOOL recordEnable;
+@property (nonatomic, assign) PLVLiveRecordFileModel * recordFile; /// 当前直播间的暂存数据
+@property (nonatomic, weak, readonly) PLVRoomData * currentExternalRoomData; /// 当前直播间数据 (指外部的，即不一定与播放器的频道号匹配)
+@property (nonatomic, weak, readonly) PLVViewLogCustomParam * currentExternalCustomParam; /// 当前统计自定义参数 (只允许读取外部配置的)
 
 @end
 
@@ -82,13 +90,24 @@ PLVAdvertViewDelegate
     if (_advertView) {
         [_advertView destroyTitleAdvert];
     }
-
+    
+    [self.backgroundView removeFromSuperview]; /// 需单独作移除操作以保证释放
     NSLog(@"%s",__FUNCTION__);
 }
 
 
 #pragma mark - [ Public Methods ]
 #pragma mark Getter
+- (PLVChannelInfoModel *)currentChannelInfo{
+    if (self.currentVideoType == PLVChannelVideoType_Live) {
+        return self.livePlayer.channelInfo;
+    } else if (self.currentVideoType == PLVChannelVideoType_Playback){
+        return self.livePlaybackPlayer.channelInfo;
+    } else {
+        return nil;
+    }
+}
+
 - (NSInteger)lineNum{
     return self.livePlayer.channelInfo.lineNum;
 }
@@ -117,6 +136,10 @@ PLVAdvertViewDelegate
     return self.advertView.startAdvertIsPlaying;
 }
 
+- (BOOL)channelMatchExternal{
+    return [self.channelId isEqualToString:self.currentExternalRoomData.channelId];
+}
+
 - (BOOL)channelInLive{
     BOOL channelInLive = (self.currentStreamState == PLVChannelLiveStreamState_Live);
     return channelInLive;
@@ -127,11 +150,31 @@ PLVAdvertViewDelegate
 }
 
 - (BOOL)channelWatchNoDelay{
-    return [PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay;
+    if (self.channelMatchExternal) {
+        return self.currentExternalRoomData.menuInfo.watchNoDelay;
+    } else {
+        /// 当前PlayerPresenter的频道号，与外部频道号不一致
+        /// 此时不允许执行观看无延迟，因此[channelWatchNoDelay]该值无意义，而恒为NO
+        return NO;
+    }
+}
+
+- (BOOL)currentPlayerWatchNoDelay{
+    return self.livePlayer.channelWatchNoDelay;
 }
 
 - (BOOL)channelWatchQuickLive{
-    return [PLVRoomDataManager sharedManager].roomData.menuInfo.quickLiveEnabled;
+    if (self.channelMatchExternal) {
+        return self.currentExternalRoomData.menuInfo.quickLiveEnabled;
+    } else {
+        /// 当前PlayerPresenter的频道号，与外部频道号不一致
+        /// 此时不允许执行观看快直播，因此[channelWatchQuickLive]该值无意义，而恒为NO
+        return NO;
+    }
+}
+
+- (BOOL)currentPlayerWatchQuickLive{
+    return self.livePlayer.channelWatchQuickLive;
 }
 
 - (BOOL)noDelayWatchMode {
@@ -166,9 +209,40 @@ PLVAdvertViewDelegate
 
 #pragma mark 通用
 - (instancetype)initWithVideoType:(PLVChannelVideoType)videoType{
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return [self initWithVideoType:videoType channelId:roomData.channelId vodId:roomData.vid vodList:roomData.vodList recordFile:roomData.recordFile recordEnable:roomData.recordEnable];
+}
+
+- (instancetype)initWithVideoType:(PLVChannelVideoType)videoType channelId:(NSString *)channelId vodId:(NSString *)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel *)recordFile recordEnable:(BOOL)recordEnable {
+    if (videoType != PLVChannelVideoType_Live && videoType != PLVChannelVideoType_Playback) {
+        NSLog(@"PLVPlayerPresenter - initWithVideoType failed (videoType:%lu)",videoType);
+        return nil;
+    }
+    
+    if (![PLVFdUtil checkStringUseable:channelId]) {
+        NSLog(@"PLVPlayerPresenter - initWithVideoType failed (channelId:%@)",channelId);
+        return nil;
+    }
+    
+    if (videoType == PLVChannelVideoType_Playback) {
+        if (recordEnable && !recordFile) {
+            NSLog( @"PLVPlayerPresenter - initWithVideoType failed (recordFile is nil)");
+            return nil;
+        } else if (!recordEnable && ![PLVFdUtil checkStringUseable:vodId]) {
+            NSLog(@"PLVPlayerPresenter - initWithVideoType failed (vodId:%@)",vodId);
+            return nil;
+        }
+    }
+    
     self = [super init];
     if (self) {
         self.currentVideoType = videoType;
+        self.channelId = channelId;
+        self.vodId = vodId;
+        self.vodList = vodList;
+        self.recordFile = recordFile;
+        self.fileId = recordFile.fileId;
+        self.recordEnable = recordEnable;
         self.keepShowAdvert = YES;
         [self setup];
         [self setupPlayer];
@@ -293,32 +367,31 @@ PLVAdvertViewDelegate
 }
 
 - (void)setupPlayer{
-    PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;
     NSString * userIdForAccount = [PLVLiveVideoConfig sharedInstance].userId;
     if (self.currentVideoType == PLVChannelVideoType_Live) { /// 直播
-        self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId];
+        self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId];
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.pictureInPictureDelegate = self;
-        self.livePlayer.channelWatchNoDelay = roomData.menuInfo.watchNoDelay;
-        self.livePlayer.channelWatchQuickLive = roomData.menuInfo.quickLiveEnabled;
+        self.livePlayer.channelWatchNoDelay = self.channelWatchNoDelay;
+        self.livePlayer.channelWatchQuickLive = self.channelWatchQuickLive;
         [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
         
         self.livePlayer.videoToolBox = NO;
         self.livePlayer.chaseFrame = NO;
-        self.livePlayer.customParam = roomData.customParam;
+        self.livePlayer.customParam = self.currentExternalCustomParam;
     }else if (self.currentVideoType == PLVChannelVideoType_Playback){ /// 回放
-        if (roomData.recordEnable && ![PLVFdUtil checkStringUseable:roomData.vid]) {
-            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId recordFile:roomData.recordFile];
+        if (self.recordEnable) {
+            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId recordFile:self.recordFile];
         } else {
-            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:roomData.channelId vodId:roomData.vid vodList:roomData.vodList];
+            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId vodId:self.vodId vodList:self.vodList];
         }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
 
         self.livePlaybackPlayer.videoToolBox = NO;
-        self.livePlaybackPlayer.customParam = roomData.customParam;
+        self.livePlaybackPlayer.customParam = self.currentExternalCustomParam;
     }
 }
 
@@ -376,8 +449,7 @@ PLVAdvertViewDelegate
 }
 
 - (void)savePlaybackLastTime {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    NSString *viewerId = roomData.roomUser.viewerId;
+    NSString *viewerId = self.currentExternalRoomData.roomUser.viewerId;
     NSMutableDictionary *infoDict = [[[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackLastTimeInfo] mutableCopy];
     NSMutableDictionary *lastTimeDict = [infoDict[viewerId] mutableCopy];
     if (!infoDict) {
@@ -386,10 +458,10 @@ PLVAdvertViewDelegate
     if (!lastTimeDict) {
         lastTimeDict = [NSMutableDictionary dictionary];
     }
-    if (roomData.recordEnable && [PLVFdUtil checkStringUseable:roomData.recordFile.fileId]) {
-        [lastTimeDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:roomData.recordFile.fileId];
-    } else if ([PLVFdUtil checkStringUseable:roomData.vid]) {
-        [lastTimeDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:roomData.vid];
+    if (self.recordEnable && [PLVFdUtil checkStringUseable:self.fileId]) {
+        [lastTimeDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:self.fileId];
+    } else if ([PLVFdUtil checkStringUseable:self.vodId]) {
+        [lastTimeDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:self.vodId];
     }
     if ([PLVFdUtil checkStringUseable:viewerId]) {
         [infoDict setObject:lastTimeDict forKey:viewerId];
@@ -398,15 +470,14 @@ PLVAdvertViewDelegate
 }
 
 - (void)seekLivePlaybackToLastTime {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    NSString *viewerId = roomData.roomUser.viewerId;
+    NSString *viewerId = self.currentExternalRoomData.roomUser.viewerId;
     NSMutableDictionary *infoDict = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackLastTimeInfo];
     NSMutableDictionary *lastTimeDict = infoDict[viewerId];
     NSTimeInterval lastTime = 0;
-    if (roomData.recordEnable && [PLVFdUtil checkStringUseable:roomData.recordFile.fileId]) {
-        lastTime = [lastTimeDict[roomData.recordFile.fileId] doubleValue];
-    } else if ([PLVFdUtil checkStringUseable:roomData.vid]) {
-        lastTime = [lastTimeDict[roomData.vid] doubleValue];
+    if (self.recordEnable && [PLVFdUtil checkStringUseable:self.fileId]) {
+        lastTime = [lastTimeDict[self.fileId] doubleValue];
+    } else if ([PLVFdUtil checkStringUseable:self.vodId]) {
+        lastTime = [lastTimeDict[self.vodId] doubleValue];
     }
     if (lastTime != 0 && (self.livePlaybackPlayer.duration - lastTime) > 1) {
         [self seekLivePlaybackToTime:lastTime];
@@ -414,6 +485,14 @@ PLVAdvertViewDelegate
 }
 
 #pragma mark Getter
+- (PLVRoomData *)currentExternalRoomData {
+    return [PLVRoomDataManager sharedManager].roomData;
+}
+
+- (PLVViewLogCustomParam *)currentExternalCustomParam {
+    return self.currentExternalRoomData.customParam;
+}
+
 - (PLVPlayerPresenterBackgroundView *)backgroundView{
     if (!_backgroundView) {
         _backgroundView = [[PLVPlayerPresenterBackgroundView alloc] init];
@@ -497,7 +576,7 @@ PLVAdvertViewDelegate
 }
 
 - (PLVChannelInfoModel *)channelInfo {
-    return [PLVRoomDataManager sharedManager].roomData.channelInfo;
+    return self.currentExternalRoomData.channelInfo;
 }
 
 #pragma mark - [ Action ]
@@ -602,7 +681,7 @@ PLVAdvertViewDelegate
                 [self.delegate playerPresenter:self downloadProgress:0 playedProgress:1 playedTimeString:self.livePlaybackPlayer.playedTimeString durationTimeString:self.livePlaybackPlayer.durationTimeString];
                 
                 ///回放列表播放结束自动播放下一回放
-                PLVPlaybackListModel *playbackList = [PLVRoomDataManager sharedManager].roomData.playbackList;
+                PLVPlaybackListModel *playbackList = self.channelMatchExternal ? self.currentExternalRoomData.playbackList : nil;
                 if (playbackList.totalItems > 1 && [playbackList.contents count] > 1) {
                     for (int i = 0; i < playbackList.totalItems; i++) {
                         if ([[PLVRoomDataManager sharedManager].roomData.vid isEqualToString:playbackList.contents[i].videoPoolId]) {
@@ -713,7 +792,7 @@ PLVAdvertViewDelegate
 
 /// 直播播放器 ‘频道信息’ 发生改变
 - (void)plvLivePlayer:(PLVLivePlayer *)livePlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
-    [PLVRoomDataManager sharedManager].roomData.channelInfo = channelInfo;
+    [PLVRoomDataManager sharedManager].roomData.playerChannelInfo = channelInfo;
     if ([self.delegate respondsToSelector:@selector(playerPresenter:channelInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self channelInfoDidUpdated:channelInfo];
     }
@@ -759,7 +838,7 @@ PLVAdvertViewDelegate
         } else {
             [self.warmUpImageView sd_setImageWithURL:[NSURL URLWithString:warmUpImageURLString] placeholderImage:nil options:SDWebImageRetryFailed];
         }
-        NSString *warmUpImageHREF = self.channelInfo.warmUpImageHREF;
+        NSString *warmUpImageHREF = self.currentChannelInfo.warmUpImageHREF;
         if ([PLVFdUtil checkStringUseable:warmUpImageHREF]) {
             self.warmUpImageView.userInteractionEnabled = YES;
         }
@@ -857,7 +936,7 @@ PLVAdvertViewDelegate
 /// 直播回放播放器 ‘频道信息’ 发生改变
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    roomData.channelInfo = channelInfo;
+    roomData.playerChannelInfo = channelInfo;
     if (!roomData.playbackSessionId) {
         roomData.playbackSessionId = channelInfo.sessionId;
     }
@@ -871,6 +950,9 @@ PLVAdvertViewDelegate
 /// 直播回放播放器 ‘回放视频信息’ 发生改变
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)playbackVideoInfo {
     [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo = playbackVideoInfo;
+    self.vodId = playbackVideoInfo.vid;
+    self.recordEnable = ![PLVFdUtil checkStringUseable:playbackVideoInfo.videoPoolId];
+    self.fileId = playbackVideoInfo.fileId;
     if ([self.delegate respondsToSelector:@selector(playerPresenter:playbackVideoInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self playbackVideoInfoDidUpdated:playbackVideoInfo];
     }

@@ -67,8 +67,8 @@
     self.liveEndImageView.frame = CGRectMake((CGRectGetWidth(self.bounds) - 100) / 2, top + liveEndImageViewTop, 100, 84);
     self.liveEndLable.frame = CGRectMake((CGRectGetWidth(self.bounds) - 120) / 2, UIViewGetBottom(self.liveEndImageView) + 6, 120, 33);
     self.dividingLineView.frame = CGRectMake((CGRectGetWidth(self.bounds) - 2) / 2, UIViewGetBottom(self.liveEndLable) + liveTimeLineTop, 2, 52);
-    self.liveDetailTimeLable.frame = CGRectMake(UIViewGetLeft(self.dividingLineView) - 30 - 100, UIViewGetBottom(self.liveEndLable) + liveTimeLableTop, 100, 22);
-    self.liveDurationTimeLable.frame = CGRectMake(UIViewGetRight(self.dividingLineView) + 56, UIViewGetTop(self.liveDetailTimeLable), 50, 22);
+    self.liveDetailTimeLable.frame = CGRectMake(UIViewGetLeft(self.dividingLineView) - 20 - 150, UIViewGetBottom(self.liveEndLable) + liveTimeLableTop, 150, 22);
+    self.liveDurationTimeLable.frame = CGRectMake(UIViewGetRight(self.dividingLineView) + 56, UIViewGetTop(self.liveDetailTimeLable), 80, 22);
     
     self.detailTimeTitleLable.frame = CGRectMake(CGRectGetMidX(self.liveDetailTimeLable.frame) - 56 / 2, UIViewGetBottom(self.liveDetailTimeLable) + 8, 56, 20);
     self.durationTimeTitleLable.frame = CGRectMake(CGRectGetMidX(self.liveDurationTimeLable.frame) - 56 / 2, UIViewGetBottom(self.liveDetailTimeLable) + 8, 56, 20);
@@ -142,7 +142,7 @@
 - (UILabel *)liveDetailTimeLable {
     if (!_liveDetailTimeLable) {
         _liveDetailTimeLable = [[UILabel alloc] init];
-        _liveDetailTimeLable.text = @"12:00～14:30";
+        _liveDetailTimeLable.text = @"00:00:00～00:00:00";
         _liveDetailTimeLable.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:16];
         [_liveDetailTimeLable setTextColor:PLV_UIColorFromRGB(@"#F0F1F5")];
         _liveDetailTimeLable.textAlignment = NSTextAlignmentCenter;
@@ -153,7 +153,7 @@
 - (UILabel *)liveDurationTimeLable {
     if (!_liveDurationTimeLable) {
         _liveDurationTimeLable = [[UILabel alloc] init];
-        _liveDurationTimeLable.text = @"02:30";
+        _liveDurationTimeLable.text = @"00:00:00";
         _liveDurationTimeLable.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:16];
         [_liveDurationTimeLable setTextColor:PLV_UIColorFromRGB(@"#F0F1F5")];
         _liveDurationTimeLable.textAlignment = NSTextAlignmentCenter;
@@ -184,7 +184,7 @@
 
 - (void)setDuration:(NSTimeInterval)duration {
      _duration = duration;
-    NSString *durTimeString = [NSString stringWithFormat:@"%02ld:%02ld", lround(floor(duration)) / 3600,lround(floor(duration / 60)) % 60];
+    NSString *durTimeString = [NSString stringWithFormat:@"%02ld:%02ld:%02ld", lround(floor(duration)) / 3600, lround(floor(duration / 60)) % 60, lround(floor(duration)) % 60];
     self.liveDurationTimeLable.text = durTimeString;
 }
 
@@ -192,7 +192,7 @@
     _startTime = startTime;
     NSTimeInterval endTime = _startTime + _duration;
     NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
-    formatter.dateFormat = @"HH:mm";
+    formatter.dateFormat = @"HH:mm:ss";
     NSDate *startTimeDate = [NSDate dateWithTimeIntervalSince1970:startTime];
     NSDate *endTimeDate = [NSDate dateWithTimeIntervalSince1970:endTime];
     NSString *startTimeString = [formatter stringFromDate:startTimeDate];

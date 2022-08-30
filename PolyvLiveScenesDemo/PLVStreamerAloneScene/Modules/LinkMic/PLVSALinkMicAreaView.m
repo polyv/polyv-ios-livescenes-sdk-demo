@@ -87,8 +87,9 @@ PLVSALinkMicWindowsViewDelegate
         }
     }
     
-    if ((auth && speakerUser) ||
-        (!auth && onlineUser.currentScreenShareOpen)) {
+    PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    if (viewerType == PLVRoomUserTypeTeacher &&
+        ((auth && speakerUser) || (!auth && onlineUser.currentScreenShareOpen))) {
         NSString *titlePrefix = auth ? @"确定授予ta" : @"确定移除ta的";
         NSString *message = auth ? @"当前已有主讲人，确定后将替换为新的主讲人" : @"移除后主讲人的屏幕共享将会自动结束";
         NSString *alertTitle = [NSString stringWithFormat:@"%@主讲权限吗？", titlePrefix];
@@ -183,7 +184,7 @@ PLVSALinkMicWindowsViewDelegate
     CGFloat sheetLandscapeWidth = maxWH * widthScale;
     
     PLVSALinkMicUserInfoSheet *linkMicUserSheet = [[PLVSALinkMicUserInfoSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
-    [linkMicUserSheet updateLinkMicUserInfoWithUser:onlineUser];
+    [linkMicUserSheet updateLinkMicUserInfoWithUser:onlineUser localUser:[self.delegate localUserInLinkMicAreaView:self]];
     __weak typeof(self)weakSelf = self;
     [linkMicUserSheet setFullScreenButtonClickBlock:^(PLVLinkMicOnlineUser * _Nonnull user) {
         [weakSelf.windowsView fullScreenLinkMicUser:user];

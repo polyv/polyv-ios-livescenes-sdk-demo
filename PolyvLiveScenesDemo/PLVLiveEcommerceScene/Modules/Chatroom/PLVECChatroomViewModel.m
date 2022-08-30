@@ -27,6 +27,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, assign) BOOL isMyselfLogin;
 /// 礼物打赏开关
 @property (nonatomic, assign) BOOL enableReward;
+/// 是否打开【只看讲师】开关
+@property (nonatomic, assign) BOOL onlyTeacher;
 
 #pragma mark 数据数组
 
@@ -468,11 +470,16 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)chatroomPresenter_didChangeCloseRoom:(BOOL)closeRoom {
-    [self notifyListenerCloseRoom:closeRoom];
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+        [self notifyListenerCloseRoom:closeRoom];
+    }
 }
 
 - (void)chatroomPresenter_didChangeFocusMode:(BOOL)focusMode {
-    [self notifyListenerFocusMode:focusMode];
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+        self.onlyTeacher = focusMode;
+        [self notifyListenerFocusMode:focusMode];
+    }
 }
 
 #pragma mark - Utils

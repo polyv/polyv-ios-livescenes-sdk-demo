@@ -44,6 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pptToMain 是否改变文档PPT位置到主画面(YES: 文档位于主画面 NO 文档不在主画面)默认为YES
 - (void)controlToolsView:(PLVLSDocumentToolView *)controlToolsView changePPTPositionToMain:(BOOL)pptToMain;
 
+///  重置白板缩放比例回调
+///
+/// @param controlToolsView 控制条对象
+- (void)controlToolsViewDidResetZoom:(PLVLSDocumentToolView *)controlToolsView;
+
 @end
 
 @interface PLVLSDocumentToolView : UIView
@@ -111,6 +116,13 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param show YES:显示，NO:隐藏
 - (void)showBtnPrevious:(BOOL)show;
+
+/// 显示/隐藏 重置缩放按钮
+///
+/// @note 默认隐藏；隐藏后，其他业务逻辑也无法触发显示
+///
+/// @param show YES:显示，NO:隐藏
+- (void)showBtnResetZoom:(BOOL)show;
 
 @end
 

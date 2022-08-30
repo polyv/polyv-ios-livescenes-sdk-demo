@@ -13,7 +13,7 @@
 #import "PLVSABeautyCollectionViewCell.h"
 // 模块
 #import "PLVSABeautyCellModel.h"
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 @interface PLVSABeautyWhitenViewController () <
 UICollectionViewDataSource,
@@ -41,7 +41,7 @@ static int kItemLineNum = 3; // 每行item数
     // 默认选中第一个
     self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
     [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
-    [[PLVSABeautyViewModel sharedViewModel] selectBeautyOption:PLVBBeautyOption_BeautySmooth];
+    [[PLVBeautyViewModel sharedViewModel] selectBeautyOption:PLVBBeautyOption_BeautySmooth];
 }
 
 - (void)viewDidLayoutSubviews {
@@ -60,7 +60,7 @@ static int kItemLineNum = 3; // 每行item数
 
 - (void)showContentView {
     [super showContentView];
-    if ([PLVSABeautyViewModel sharedViewModel].beautyIsOpen) {
+    if ([PLVBeautyViewModel sharedViewModel].beautyIsOpen) {
         [self didSelectItemAtIndexPath:self.selectedIndexPath];
     } else {
         [self.collectionView reloadData];
@@ -99,7 +99,7 @@ static int kItemLineNum = 3; // 每行item数
 
 #pragma mark didSelectItem
 - (void)didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    if ([PLVSABeautyViewModel sharedViewModel].beautyIsOpen &&
+    if ([PLVBeautyViewModel sharedViewModel].beautyIsOpen &&
         self.dataArray.count > indexPath.row) {
         self.selectedIndexPath = indexPath;
         
@@ -107,7 +107,7 @@ static int kItemLineNum = 3; // 每行item数
         for (PLVSABeautyCellModel *tempModel in self.dataArray) {
             [tempModel updateSelected:model == tempModel];
         }
-        [[PLVSABeautyViewModel sharedViewModel] selectBeautyOption:model.beautyOption];
+        [[PLVBeautyViewModel sharedViewModel] selectBeautyOption:model.beautyOption];
     }
 }
 
@@ -126,8 +126,8 @@ static int kItemLineNum = 3; // 每行item数
     PLVSABeautyCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:PLVSABeautyCollectionViewCell.cellID forIndexPath:indexPath];
     if (self.dataArray.count > indexPath.row) {
         PLVSABeautyCellModel *model = self.dataArray[indexPath.row];
-        [cell updateCellModel:model beautyOpen:[PLVSABeautyViewModel sharedViewModel].beautyIsOpen];
-        cell.userInteractionEnabled = [PLVSABeautyViewModel sharedViewModel].beautyIsOpen;
+        [cell updateCellModel:model beautyOpen:[PLVBeautyViewModel sharedViewModel].beautyIsOpen];
+        cell.userInteractionEnabled = [PLVBeautyViewModel sharedViewModel].beautyIsOpen;
     }
     return cell;
 }

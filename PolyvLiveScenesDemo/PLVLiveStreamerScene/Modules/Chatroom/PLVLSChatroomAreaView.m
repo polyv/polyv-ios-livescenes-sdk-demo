@@ -112,6 +112,28 @@ PLVLSChatroomViewModelProtocol
     self.receiveNewMessageView.frame = CGRectMake(0, self.chatroomListView.frame.size.height - 28, 86, 28);
 }
 
+#pragma mark - [ Override ]
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    // 1.判断当前控件能否接收事件
+    if (self.userInteractionEnabled == NO || self.hidden == YES || self.alpha <= 0.01) {return nil;}
+    // 2. 判断点在不在当前控件
+    if ([self pointInside:point withEvent:event] == NO) {return nil;}
+    
+    // 3.从后往前遍历自己的子控件
+    NSInteger subViewCoutn = self.subviews.count;
+    for (NSInteger i = subViewCoutn - 1; i >= 0; i--) {
+        UIView *childView = self.subviews[i];
+        CGPoint childP = [self convertPoint:point toView:childView];
+        UIView *fitView = [childView hitTest:childP withEvent:event];
+        if (fitView) {
+            return fitView;
+        }
+    }
+
+    return nil;
+}
+
 #pragma mark - Public Method
 
 - (void)microphoneButtonOpen:(BOOL)open{

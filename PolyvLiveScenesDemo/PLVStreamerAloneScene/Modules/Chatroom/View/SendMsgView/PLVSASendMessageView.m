@@ -23,31 +23,10 @@
 
 // SDK
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <PLVImagePickerController/PLVImagePickerController.h>
+#import "PLVImagePickerViewController.h"
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
-
-@interface PLVImagePickerController (PLVSAOverwrite)
-@end
-
-@implementation PLVImagePickerController (PLVSAOverwrite)
-
-- (void)setColumnNumber:(NSInteger)columnNumber {
-    if (columnNumber <= 2) {
-        columnNumber = 2;
-    } else if (columnNumber >= 8) {
-        columnNumber = 8;
-    }
-
-    [self setValue:@(columnNumber) forKey:@"_columnNumber"];
-    
-    PLVAlbumPickerController *albumPickerVc = [self.childViewControllers firstObject];
-    albumPickerVc.columnNumber = columnNumber;
-    [PLVImageManager manager].columnNumber = columnNumber;
-}
-
-@end
 
 /// 设置允许自定义键盘的隐藏延迟时间
 static NSInteger kSetCustomKeyboardHideDelayTime = 0.5;
@@ -61,7 +40,7 @@ UITextViewDelegate
 @property (nonatomic, strong) PLVSARepliedMsgView *repliedMsgView; // 被回复消息视图
 @property (nonatomic, strong) PLVSASendMessageToolView *toolView;
 @property (nonatomic, strong) PLVSAEmojiSelectView *emojiboard;
-@property (nonatomic, strong) PLVImagePickerController *imagePicker;
+@property (nonatomic, strong) PLVImagePickerViewController *imagePicker;
 @property (nonatomic, strong) UIView *tempInputView; // 使用局部变量代替属性会在 iOS 9.3.1 上产生内存问题
 
 // 数据
@@ -286,70 +265,10 @@ UITextViewDelegate
     return _emojiboard;
 }
 
-- (PLVImagePickerController *)imagePicker {
+- (PLVImagePickerViewController *)imagePicker {
     if (!_imagePicker) {
         NSInteger columnNumber = [PLVSAUtils sharedUtils].isLandscape ? 8 : 4;
-        _imagePicker = [[PLVImagePickerController alloc] initWithMaxImagesCount:1 columnNumber:columnNumber delegate:nil];
-        _imagePicker.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-        _imagePicker.showSelectBtn = YES;
-        _imagePicker.allowTakeVideo = NO;
-        _imagePicker.allowPickingVideo = NO;
-        _imagePicker.allowTakePicture = NO;
-        _imagePicker.allowPickingOriginalPhoto = NO;
-        _imagePicker.showPhotoCannotSelectLayer = YES;
-        _imagePicker.cannotSelectLayerColor = [UIColor colorWithWhite:1.0 alpha:0.6];
-        
-        _imagePicker.iconThemeColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
-        _imagePicker.oKButtonTitleColorNormal = UIColor.whiteColor;
-        _imagePicker.naviTitleColor = [UIColor colorWithWhite:0.6 alpha:1];
-        _imagePicker.naviTitleFont = [UIFont systemFontOfSize:14.0];
-        _imagePicker.barItemTextColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
-        _imagePicker.barItemTextFont = [UIFont systemFontOfSize:14.0];
-        _imagePicker.naviBgColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-        
-        [_imagePicker setPhotoPickerPageUIConfigBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
-            divideLine.hidden = YES;
-            collectionView.showsHorizontalScrollIndicator = NO;
-            collectionView.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-            bottomToolBar.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-            bottomToolBar.layer.shadowColor = [UIColor colorWithRed:10/255.0 green:10/255.0 blue:17/255.0 alpha:1.0].CGColor;
-            bottomToolBar.layer.shadowOffset = CGSizeMake(0,-1);
-            bottomToolBar.layer.shadowOpacity = 1;
-            bottomToolBar.layer.shadowRadius = 0;
-
-            UIResponder *nextResponder = [collectionView nextResponder];
-            if ([nextResponder isKindOfClass:UIView.class]) {
-                [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
-            }
-        }];
-
-        [_imagePicker setPhotoPickerPageDidLayoutSubviewsBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
-            previewButton.hidden = YES;
-
-            doneButton.layer.cornerRadius = 14.0;
-            doneButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
-            doneButton.frame = CGRectMake(CGRectGetMinX(doneButton.frame)-74.0/2, (CGRectGetHeight(doneButton.bounds)-28.0)/2, 74.0, 28.0);
-        }];
-
-        [_imagePicker setPhotoPickerPageDidRefreshStateBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
-            numberLabel.hidden = YES;
-            numberImageView.hidden = YES;
-        }];
-
-        [_imagePicker setAlbumCellDidLayoutSubviewsBlock:^(PLVAlbumCell *cell, UIImageView *posterImageView, UILabel *titleLabel) {
-            titleLabel.textColor = UIColor.lightGrayColor;
-            [(UITableViewCell *)cell setBackgroundColor:UIColor.clearColor];
-            [(UITableViewCell *)cell setSelectionStyle:UITableViewCellSelectionStyleNone];
-            UIResponder *nextResponder = [(UITableViewCell *)cell nextResponder];
-            if ([nextResponder isKindOfClass:UIView.class]) {
-                [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
-            }
-            nextResponder = nextResponder.nextResponder;
-            if ([nextResponder isKindOfClass:UIView.class]) {
-                [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
-            }
-        }];
-
+        _imagePicker = [[PLVImagePickerViewController alloc] initWithColumnNumber:columnNumber];
         __weak typeof(self)weakSelf = self;
         [_imagePicker setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
             if ([photos isKindOfClass:NSArray.class]) {

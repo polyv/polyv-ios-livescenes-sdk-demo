@@ -31,7 +31,7 @@
 #import <MJRefresh/MJRefresh.h>
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVAuthorizationManager.h>
-#import <PLVImagePickerController/PLVImagePickerController.h>
+#import "PLVImagePickerViewController.h"
 
 NSString *PLVLCChatroomOpenBulletinNotification = @"PLVLCChatroomOpenBulletinNotification";
 
@@ -75,9 +75,9 @@ UITableViewDataSource
 @property (nonatomic, strong) PLVLCNotifyMarqueeView *notifyMarqueeView;
 /// 打赏成功提示条幅
 @property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager;
-
+/// 聊天室是否处于聊天回放状态，默认为NO
 @property (nonatomic, assign) BOOL playbackEnable;
-
+/// 弱引用首页持有的聊天回放viewModel
 @property (nonatomic, weak) PLVLCChatroomPlaybackViewModel *playbackViewModel;
 
 @end
@@ -200,7 +200,7 @@ UITableViewDataSource
         _keyboardToolView = [[PLVLCKeyboardToolView alloc] init];
         _keyboardToolView.delegate = self;
         _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live);
-        if (self.playbackEnable) {
+        if (self.playbackEnable) { //聊天重放时不支持发言
             [_keyboardToolView changePlaceholderText:@"聊天室暂时关闭"];
         }
     }
@@ -363,15 +363,6 @@ UITableViewDataSource
     [self.playbackViewModel addUIDelegate:self delegateQueue:dispatch_get_main_queue()];
 }
 
-- (void)changeCloseRoomStatus:(BOOL)closeRoom {
-    [self.keyboardToolView changeCloseRoomStatus:closeRoom];
-}
-
-- (void)changeFocusMode:(BOOL)focusMode {
-    [self.keyboardToolView changeFocusMode:focusMode];
-}
-
-
 - (void)leaveLiveRoom {
     [self.cardPushButtonView leaveLiveRoom];
 }
@@ -419,6 +410,28 @@ UITableViewDataSource
 
 - (BOOL)currentIsFullScreen {
     return [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+}
+
+// 数据源数目
+- (NSInteger)dataCount {
+    NSInteger count = 0;
+    if (self.playbackEnable) {
+        count = [self.playbackViewModel.chatArray count];
+    } else {
+        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
+    }
+    return count;
+}
+
+// 根据indexPath得到数据模型
+- (PLVChatModel *)modelAtIndexPath:(NSIndexPath *)indexPath {
+    PLVChatModel *model = nil;
+    if (self.playbackEnable) {
+        model = self.playbackViewModel.chatArray[indexPath.row];
+    } else {
+        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    }
+    return model;
 }
 
 #pragma mark - PLVRoomDataManagerProtocol
@@ -540,6 +553,14 @@ UITableViewDataSource
     }
 }
 
+- (void)chatroomManager_closeRoom:(BOOL)closeRoom {
+    [self.keyboardToolView changeCloseRoomStatus:closeRoom];
+}
+
+- (void)chatroomManager_focusMode:(BOOL)focusMode {
+    [self.keyboardToolView changeFocusMode:focusMode];
+}
+
 #pragma mark - PLVLCChatroomPlaybackViewModelDelegate
 
 - (void)clearMessageForPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
@@ -568,14 +589,12 @@ UITableViewDataSource
     }
 }
 
-/// 刷新聊天消息列表，列表应滚动到底部
 - (void)didMessagesRefreshedForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
     [self.tableView reloadData];
     [self clearNewMessageCount];
     [self scrollsToBottom:YES];
 }
 
-/// 往上滚动，列表滚动到最顶部
 - (void)didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
     [self.refresher endRefreshing];
     [self.tableView reloadData];
@@ -588,34 +607,16 @@ UITableViewDataSource
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    NSInteger count = 0;
-    if (self.playbackEnable) {
-        count = [self.playbackViewModel.chatArray count];
-    } else {
-        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
-    }
-    return count;
+    return [self dataCount];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSInteger count = 0;
-    if (self.playbackEnable) {
-        count = [self.playbackViewModel.chatArray count];
-    } else {
-        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
-    }
-    
-    if (indexPath.row >= count) {
+    if (indexPath.row >= [self dataCount]) {
         return [UITableViewCell new];
     }
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    PLVChatModel *model = nil;
-    if (self.playbackEnable) {
-        model = self.playbackViewModel.chatArray[indexPath.row];
-    } else {
-        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
-    }
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
         static NSString *speakMessageCellIdentify = @"PLVLCSpeakMessageCell";
@@ -679,26 +680,13 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSInteger count = 0;
-    if (self.playbackEnable) {
-        count = [self.playbackViewModel.chatArray count];
-    } else {
-        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
-    }
-    
-    if (indexPath.row >= count) {
+    if (indexPath.row >= [self dataCount]) {
         return 0;
     }
     
     CGFloat cellHeight = 44.0;
     
-    PLVChatModel *model = nil;
-    if (self.playbackEnable) {
-        model = self.playbackViewModel.chatArray[indexPath.row];
-    } else {
-        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
-    }
-    
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
         cellHeight = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCImageMessageCell isModelValid:model]) {
@@ -732,7 +720,7 @@ UITableViewDataSource
 #pragma mark - PLVLCKeyboardToolView Delegate
 
 - (BOOL)keyboardToolView_shouldInteract:(PLVLCKeyboardToolView *)toolView {
-    return !self.playbackEnable;
+    return !self.playbackEnable; //聊天回放时，不支持发言以及打赏、送礼等互动
 }
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show {
@@ -763,66 +751,7 @@ UITableViewDataSource
 }
 
 - (void)keyboardToolView_openAlbum:(PLVLCKeyboardToolView *)toolView {
-    PLVImagePickerController *vctrl = [[PLVImagePickerController alloc]
-                                       initWithMaxImagesCount:1 columnNumber:4 delegate:nil];;
-    vctrl.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-    vctrl.showSelectBtn = YES;
-    vctrl.allowTakeVideo = NO;
-    vctrl.allowPickingVideo = NO;
-    vctrl.allowTakePicture = NO;
-    vctrl.allowPickingOriginalPhoto = NO;
-    vctrl.showPhotoCannotSelectLayer = YES;
-    vctrl.cannotSelectLayerColor = [UIColor colorWithWhite:1.0 alpha:0.6];
-    
-    vctrl.iconThemeColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
-    vctrl.oKButtonTitleColorNormal = UIColor.whiteColor;
-    vctrl.naviTitleColor = [UIColor colorWithWhite:0.6 alpha:1];
-    vctrl.naviTitleFont = [UIFont systemFontOfSize:14.0];
-    vctrl.barItemTextColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
-    vctrl.barItemTextFont = [UIFont systemFontOfSize:14.0];
-    vctrl.naviBgColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-    
-    [vctrl setPhotoPickerPageUIConfigBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
-        divideLine.hidden = YES;
-        collectionView.showsHorizontalScrollIndicator = NO;
-        collectionView.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-        bottomToolBar.backgroundColor = [PLVColorUtil colorFromHexString:@"#1A1B1F"];
-        bottomToolBar.layer.shadowColor = [UIColor colorWithRed:10/255.0 green:10/255.0 blue:17/255.0 alpha:1.0].CGColor;
-        bottomToolBar.layer.shadowOffset = CGSizeMake(0,-1);
-        bottomToolBar.layer.shadowOpacity = 1;
-        bottomToolBar.layer.shadowRadius = 0;
-
-        UIResponder *nextResponder = [collectionView nextResponder];
-        if ([nextResponder isKindOfClass:UIView.class]) {
-            [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
-        }
-    }];
-    [vctrl setPhotoPickerPageDidLayoutSubviewsBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
-        previewButton.hidden = YES;
-
-        doneButton.layer.cornerRadius = 14.0;
-        doneButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#366BEE"];
-        doneButton.frame = CGRectMake(CGRectGetMinX(doneButton.frame)-74.0/2, (CGRectGetHeight(doneButton.bounds)-28.0)/2, 74.0, 28.0);
-    }];
-
-    [vctrl setPhotoPickerPageDidRefreshStateBlock:^(UICollectionView *collectionView, UIView *bottomToolBar, UIButton *previewButton, UIButton *originalPhotoButton, UILabel *originalPhotoLabel, UIButton *doneButton, UIImageView *numberImageView, UILabel *numberLabel, UIView *divideLine) {
-        numberLabel.hidden = YES;
-        numberImageView.hidden = YES;
-    }];
-
-    [vctrl setAlbumCellDidLayoutSubviewsBlock:^(PLVAlbumCell *cell, UIImageView *posterImageView, UILabel *titleLabel) {
-        titleLabel.textColor = UIColor.lightGrayColor;
-        [(UITableViewCell *)cell setBackgroundColor:UIColor.clearColor];
-        [(UITableViewCell *)cell setSelectionStyle:UITableViewCellSelectionStyleNone];
-        UIResponder *nextResponder = [(UITableViewCell *)cell nextResponder];
-        if ([nextResponder isKindOfClass:UIView.class]) {
-            [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
-        }
-        nextResponder = nextResponder.nextResponder;
-        if ([nextResponder isKindOfClass:UIView.class]) {
-            [(UIView *)nextResponder setBackgroundColor:[PLVColorUtil colorFromHexString:@"#1A1B1F"]];
-        }
-    }];
+    PLVImagePickerViewController *vctrl = [[PLVImagePickerViewController alloc] initWithColumnNumber:4];
 
     [vctrl setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
         if ([photos isKindOfClass:NSArray.class]) {

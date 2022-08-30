@@ -51,8 +51,14 @@ PLVInteractWebViewBridgeDelegate>
 
 - (void)loadOnlineInteract{
     [self.webView stopLoading];
-    NSString *urlSting = [NSString stringWithFormat:@"%@?livePlayBack=%@", PLVLiveConstantsInteractNewWebViewURL, @(!self.isLiveRoom)];
-    NSURL *interactURL = [NSURL URLWithString:urlSting];
+    
+    NSString *urlString = [NSString stringWithFormat:@"%@?livePlayBack=%@", PLVLiveConstantsInteractNewWebViewURL, @(!self.isLiveRoom)];
+    PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
+    if (liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt) {
+        urlString = [urlString stringByAppendingString:@"&security=1"];
+    }
+    NSURL *interactURL = [NSURL URLWithString:urlString];
+    
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
     [self.webView loadRequest:request];
     [self layoutSelfView];

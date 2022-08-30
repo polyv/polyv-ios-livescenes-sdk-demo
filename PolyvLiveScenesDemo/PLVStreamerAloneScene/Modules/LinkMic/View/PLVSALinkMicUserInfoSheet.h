@@ -20,7 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 展示连麦用户信息弹窗
 /// @param user 连麦用户信息
-- (void)updateLinkMicUserInfoWithUser:(PLVLinkMicOnlineUser *)user;
+/// @param localUser 本地用户信息
+- (void)updateLinkMicUserInfoWithUser:(PLVLinkMicOnlineUser *)user localUser:(PLVLinkMicOnlineUser *)localUser;
 
 @end
 

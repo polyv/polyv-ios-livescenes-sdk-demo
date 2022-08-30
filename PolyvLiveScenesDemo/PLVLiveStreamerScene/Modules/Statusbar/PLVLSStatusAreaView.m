@@ -44,6 +44,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 @property (nonatomic, assign) BOOL hasNewMemberState;
 @property (nonatomic, assign, getter=isSpeaker) BOOL speaker; // 是否为主讲
 @property (nonatomic, assign, getter=isGuest) BOOL guest; // 是否为嘉宾
+@property (nonatomic, assign, getter=isTeacher) BOOL teacher; // 是否为讲师
 @property (nonatomic, assign) BOOL whiteboardSelected; // 白板是否已选中
 
 @end
@@ -212,6 +213,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     if (!_timeLabel) {
         _timeLabel = [[UILabel alloc] init];
         _timeLabel.font = [UIFont systemFontOfSize:12];
+        _timeLabel.adjustsFontSizeToFitWidth = YES;
         _timeLabel.textColor = [UIColor colorWithRed:0xff/255.0 green:0x63/255.0 blue:0x63/255.0 alpha:1];
         _timeLabel.text = @"00:00:00";
         _timeLabel.hidden = YES;
@@ -484,6 +486,11 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     return userType == PLVRoomUserTypeGuest;
 }
 
+- (BOOL)isTeacher {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return userType == PLVRoomUserTypeTeacher;
+}
+
 #pragma mark - Action
 
 - (void)channelInfoButtonAction {
@@ -586,8 +593,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 
 - (void)syncSelectedWhiteboardOrDocument:(BOOL)whiteboard {
     self.whiteboardSelected = whiteboard;
-    if (self.isGuest &&
-        self.speaker) {
+    if ((self.isGuest && self.speaker) || self.isTeacher) {
         self.whiteboardButton.selected = whiteboard;
         self.documentButton.selected = !whiteboard;
     }
@@ -627,7 +633,6 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         self.whiteboardButton.selected = NO;
         self.documentButton.selected = NO;
     }
-    
 }
 
 @end

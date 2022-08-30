@@ -53,7 +53,7 @@
 
 #pragma mark - [ Public Method ]
 
-- (void)selectTitleButtonWithType:(PLVLSBeautyType)type {
+- (void)selectTitleButtonWithType:(PLVBeautyType)type {
     [self resetAllButtonSelected];
     for (UIButton *button in self.beautyButtonArray) {
         button.selected = button.tag == type;
@@ -66,7 +66,7 @@
 - (PLVLSBeautyTitleButton *)whitenButton {
     if (!_whitenButton) {
         _whitenButton = [[PLVLSBeautyTitleButton alloc] init];
-        _whitenButton.tag = PLVLSBeautyTypeWhiten;
+        _whitenButton.tag = PLVBeautyTypeWhiten;
         [_whitenButton setTitle:@"美颜" forState:UIControlStateNormal];
         _whitenButton.selected = YES;
         [_whitenButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
@@ -77,7 +77,7 @@
 - (PLVLSBeautyTitleButton *)filterButton {
     if (!_filterButton) {
         _filterButton = [[PLVLSBeautyTitleButton alloc] init];
-        _filterButton.tag = PLVLSBeautyTypeFilter;
+        _filterButton.tag = PLVBeautyTypeFilter;
         [_filterButton setTitle:@"滤镜" forState:UIControlStateNormal];
         [_filterButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -87,7 +87,7 @@
 - (PLVLSBeautyTitleButton *)faceButton {
     if (!_faceButton) {
         _faceButton = [[PLVLSBeautyTitleButton alloc] init];
-        _faceButton.tag = PLVLSBeautyTypeFace;
+        _faceButton.tag = PLVBeautyTypeFace;
         [_faceButton setTitle:@"脸部细节" forState:UIControlStateNormal];
         [_faceButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }

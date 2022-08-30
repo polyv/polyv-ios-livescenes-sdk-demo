@@ -162,6 +162,19 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param fileId 暂存视频fileId
 - (void)changeFileId:(NSString *)fileId;
 
+/// 指定数据 进行播放器切换
+///
+/// @note PLVLCMediaAreaView 对象创建时，内部同时创建播放器。此时”频道号、直播回放Id"默认以 PLVRoomDataManager 中的配置为准；
+///       而该方法则用于 切换 播放器的 ”频道号、直播回放Id“
+///       该方法，暂时仅支持同视频类型的切换 (即:“直播”视频类型下，调用该方法，则默认仍是切至”直播“；而”视频类型videoType”在 PLVRoomDataManager 初始化期间已定下）
+///
+/// @param channelId 频道号Id（必传）
+/// @param vodId 直播回放Id (PLVChannelVideoType_Live 时传值无效，PLVChannelVideoType_Playback 时且 recordEnable 为 YES 时传值无效；PLVChannelVideoType_Playback 时且 recordEnable 为 NO 时必传)
+/// @param vodList 是否是“点播列表”视频 (PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时且 recordEnable 为 NO 时必传)
+/// @param recordFile 暂存视频模型（PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时且 recordEnable 为 YES 时必传）
+/// @param recordEnable 是否是“暂存”视频可用 (PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时必传
+- (void)changePlayertoChannelId:(NSString * _Nonnull)channelId vodId:(NSString * _Nullable)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel * _Nullable)recordFile recordEnable:(BOOL)recordEnable;
+
 @end
 
 @protocol PLVLCMediaAreaViewDelegate <NSObject>

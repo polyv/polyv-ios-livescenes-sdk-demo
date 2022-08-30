@@ -36,7 +36,8 @@ UIGestureRecognizerDelegate
 
 /// UI
 @property (nonatomic, strong) UIActivityIndicatorView *viewLoading; // webView加载
-@property (nonatomic, strong) UIView *contentBackgroundView;   // 内容背景视图 负责承载PPT 功能模块视图 和 连麦视图
+@property (nonatomic, strong) UIView *contentBackgroundView;   // 内容背景视图 负责承载移交视图 和 连麦视图
+@property (nonatomic, strong) PLVLSDocumentAreaSwitchContentView *switchContentView;   // 与外部视图 交换的视图 负责承载PPT 功能模块视图、占位图等
 @property (nonatomic, strong) PLVDocumentView *pptView;             // PPT 功能模块视图
 @property (nonatomic, strong) PLVLSDocumentNumView *pageNum;        // 页码
 @property (nonatomic, strong) PLVLSDocumentToolView *toolView;      // 控制条视图
@@ -45,6 +46,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, strong) UIImageView *docPlaceholder;          // 文档缺省图
 @property (nonatomic, strong) PLVLSDocumentWaitLiveView *waitLivePlaceholderView; // ‘直播未开始’占位视图 适用于‘非讲师角色’
 @property (nonatomic, strong) PLVLSDocumentSheet *docSheet;         // 文档弹出层
+@property (nonatomic, strong) UILabel *zoomRatioLabel;         // 缩放比例
 
 /// 数据
 @property (nonatomic, assign) NSInteger currWhiteboardNum;          // 白板当前页码
@@ -52,6 +54,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, assign) NSInteger lastAutoId;                 // 直播中断前的文档autoId
 @property (nonatomic, assign) NSInteger lastPageId;                 // 直播中断前的文档pageId
 @property (nonatomic, assign) BOOL isMainSpeaker;                 // 本地用户是否是主讲人
+@property (nonatomic, assign) NSInteger zoomRatio;                  // 当前白板的缩放比例
 
 @end
 
@@ -65,19 +68,21 @@ UIGestureRecognizerDelegate
         self.backgroundColor = PLV_UIColorFromRGB(@"#313540");
         self.layer.cornerRadius = 8;
         self.clipsToBounds = YES;
+        self.zoomRatio = 100; // 缩放比例默认100
         
         [self addSubview:self.contentBackgroundView];
-        [self displayExternalView:self.pptView];
-        [self addSubview:self.docPlaceholder];
-        [self addSubview:self.waitLivePlaceholderView];
+        [self displayExternalView:self.switchContentView];
+        [self.switchContentView addSubview:self.pptView];
+        [self.switchContentView addSubview:self.docPlaceholder];
+        [self.switchContentView addSubview:self.waitLivePlaceholderView];
         [self addSubview:self.brushView];
         [self addSubview:self.toolView];
         [self addSubview:self.pageNum];
+        [self addSubview:self.zoomRatioLabel];
         
         [self startLoading];
         
         if (self.viewerType == PLVRoomUserTypeGuest) {
-            self.toolView.hidden = YES;
             [self showWaitLivePlaceholderView:YES];
             [self.toolView showBtnBrush:NO];
             [self.toolView showBtnAddPage:NO];
@@ -92,8 +97,12 @@ UIGestureRecognizerDelegate
     [super layoutSubviews];
     
     self.contentBackgroundView.frame = self.bounds;
-    self.docPlaceholder.frame = self.bounds;
-    self.waitLivePlaceholderView.frame = self.bounds;
+    if (self.switchContentView.superview == self.contentBackgroundView) {
+        self.switchContentView.frame = self.contentBackgroundView.bounds;
+    }
+    self.pptView.frame = self.switchContentView.bounds;
+    self.docPlaceholder.frame = self.switchContentView.bounds;
+    self.waitLivePlaceholderView.frame = self.switchContentView.bounds;
     
     CGSize bgSize = self.bounds.size;
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width == self.bounds.size.width;
@@ -126,6 +135,8 @@ UIGestureRecognizerDelegate
                                          CGRectGetMaxY(self.pageNum.frame) + 12,
                                          toolViewWidth, toolViewHeight);
     
+    self.zoomRatioLabel.frame = CGRectMake(CGRectGetWidth(self.bounds)/2 - 11, 16, 58, 22);
+    
     if (self.viewLoading && self.viewLoading.isAnimating) {
         self.viewLoading.center = CGPointMake(bgSize.width / 2.0, bgSize.height / 2.0);
     }
@@ -144,13 +155,21 @@ UIGestureRecognizerDelegate
     return _contentBackgroundView;
 }
 
+- (PLVLSDocumentAreaSwitchContentView *)switchContentView {
+    if (!_switchContentView) {
+        _switchContentView = [[PLVLSDocumentAreaSwitchContentView alloc] init];
+    }
+    return _switchContentView;
+}
+
 - (PLVDocumentView *)pptView {
     if (! _pptView) {
         _pptView = [[PLVDocumentView alloc] initWithScene:PLVDocumentViewSceneStreamer];
         _pptView.delegate = self;
         // hasPageBtn = 0 参数表示不显示底部翻页按钮与页码
         // whiteBackColor=#313540 用于修改白板背景色
-        [_pptView loadRequestWitParamString:@"version=1&hasPageBtn=0&whiteBackColor=#313540"];
+        // hasScrollForPPT = true 支持白板或ppt缩放
+        [_pptView loadRequestWitParamString:@"version=1&hasScrollForPPT=true&hasPageBtn=0&whiteBackColor=#313540"];
     }
     return _pptView;
 }
@@ -218,6 +237,20 @@ UIGestureRecognizerDelegate
     return _waitLivePlaceholderView;
 }
 
+- (UILabel *)zoomRatioLabel{
+    if (!_zoomRatioLabel) {
+        _zoomRatioLabel = [[UILabel alloc] init];
+        _zoomRatioLabel.font = [UIFont systemFontOfSize:12];
+        _zoomRatioLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
+        _zoomRatioLabel.layer.cornerRadius = 11.0f;
+        _zoomRatioLabel.layer.masksToBounds = YES;
+        _zoomRatioLabel.backgroundColor = [PLVColorUtil colorFromHexString:@"#1B202D" alpha:0.4];
+        _zoomRatioLabel.textAlignment = NSTextAlignmentCenter;
+        _zoomRatioLabel.hidden = YES;
+    }
+    return _zoomRatioLabel;
+}
+
 - (PLVRoomUserType)viewerType{
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
 }
@@ -230,8 +263,9 @@ UIGestureRecognizerDelegate
     }
     
     self.docPlaceholder.hidden = YES;
-    
+    self.zoomRatioLabel.hidden = self.zoomRatio == 100;
     [self.toolView setBrushStyle:YES];
+    [self.toolView showBtnResetZoom:self.zoomRatio != 100];
     [self.pageNum setCurrentPage:self.currWhiteboardNum totalPage:self.currWhiteboardNum];
     [self.toolView setPageNum:self.currWhiteboardNum totalNum:self.currWhiteboardNum];
     [self.pptView changePPTWithAutoId:0 pageNumber:self.currWhiteboardNum];
@@ -246,13 +280,12 @@ UIGestureRecognizerDelegate
             return; // 此时不打开文档窗
         } else {                                                 // 未选择过文档
             // 关闭画笔
-            self.brushView.hidden = YES;
+            [self brushToolViewOpen:NO];
             [self.toolView setBrushSelected:NO];
-            if (self.delegate && [self.delegate respondsToSelector:@selector(documentAreaView:openBrush:)]) {
-                [self.delegate documentAreaView:self openBrush:NO];
-            }
             
             self.docPlaceholder.hidden = NO;
+            self.zoomRatioLabel.hidden = YES;
+            [self.toolView showBtnResetZoom:NO];
             [self.pageNum setCurrentPage:0 totalPage:0];
             [self.toolView setPageNum:0 totalNum:0];
         }
@@ -277,7 +310,6 @@ UIGestureRecognizerDelegate
     }
     
     if (self.viewerType == PLVRoomUserTypeGuest) {
-        self.toolView.hidden = NO;
         [self showWaitLivePlaceholderView:NO];
         [self.pageNum setCurrentPage:self.pptView.currPageNum + 1 totalPage:self.pptView.totalPageNum];
     }
@@ -287,7 +319,6 @@ UIGestureRecognizerDelegate
     self.pptView.startClass = NO;
     
     if (self.viewerType == PLVRoomUserTypeGuest) {
-        self.toolView.hidden = YES;
         [self.toolView setFullScreenButtonSelected:NO];
         [self.pageNum setCurrentPage:0 totalPage:0];
         [self showWaitLivePlaceholderView:YES];
@@ -299,8 +330,21 @@ UIGestureRecognizerDelegate
     _isMainSpeaker = auth;
     [self.toolView showBtnNexth:auth];
     [self.toolView showBtnPrevious:auth];
-    if (auth) {
+    [self.toolView showBtnAddPage:auth];
+    [self.pptView setDocumentUserInteractionEnabled:auth];
+    
+    /// 本地是否需要同步远端的主副屏位置
+    BOOL localNeedSync = (self.pptView.mainSpeakerPPTOnMain != [self.switchContentView.superview isEqual:self.contentBackgroundView]);
+    if (auth && localNeedSync) {
         [self documentView_changePPTPositionToMain:self.pptView.mainSpeakerPPTOnMain];
+    }
+}
+
+- (void)updateDocumentBrushAuth:(BOOL)auth {
+    [self.toolView showBtnBrush:auth];
+    if (!auth) {
+        [self brushToolViewOpen:NO];
+        [self.toolView setBrushSelected:NO];
     }
 }
 
@@ -334,7 +378,7 @@ UIGestureRecognizerDelegate
         externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [self.contentBackgroundView insertSubview:externalView atIndex:0];
     }else{
-        NSLog(@"PLVLSDocumentAreaView - displayExternalView failed, externalView:%@",externalView);
+        NSLog(@"PLVLSDocumentAreaView - displayExternalView failed, externalView:%@", externalView);
     }
 }
 
@@ -358,15 +402,12 @@ UIGestureRecognizerDelegate
 }
 
 - (void)updateControlsWithExternalView:(UIView *)externalView {
-    if ([externalView isKindOfClass:PLVDocumentView.class]) {
+    if ([externalView isKindOfClass:PLVLSDocumentAreaSwitchContentView.class]) {
         self.pageNum.alpha = 1;
         if ([self canManageDocuments]) {
             // 有管理文档的权限
             [self.toolView showBtnNexth:YES];
             [self.toolView showBtnPrevious:YES];
-        }
-        if (self.viewerType == PLVRoomUserTypeTeacher) {
-            // 嘉宾暂无画笔权限
             [self.toolView showBtnAddPage:YES];
             [self.toolView showBtnBrush:YES];
         }
@@ -379,6 +420,16 @@ UIGestureRecognizerDelegate
         [self.toolView showBtnAddPage:NO];
         [self.toolView setBrushSelected:NO];
         [self.pptView setPaintStatus:NO];
+    }
+}
+
+// 开启、关闭 画笔工具栏
+- (void)brushToolViewOpen:(BOOL)isOpen {
+    self.brushView.hidden = !isOpen;
+    [self.pptView setPaintStatus:isOpen];
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(documentAreaView:openBrush:)]) {
+        [self.delegate documentAreaView:self openBrush:isOpen];
     }
 }
 
@@ -398,7 +449,7 @@ UIGestureRecognizerDelegate
 
 - (void)callbackForChangePPTPositionToMain:(BOOL)pptToMain syncRemoteUser:(BOOL)needSync {
     if (self.delegate && [self.delegate respondsToSelector:@selector(documentAreaView:pptView:changePPTPositionToMain:syncRemoteUser:)]) {
-        [self.delegate documentAreaView:self pptView:self.pptView changePPTPositionToMain:pptToMain syncRemoteUser:needSync];
+        [self.delegate documentAreaView:self pptView:self.switchContentView changePPTPositionToMain:pptToMain syncRemoteUser:needSync];
     }
 }
 
@@ -450,6 +501,12 @@ UIGestureRecognizerDelegate
         [self.pageNum setCurrentPage:pageNumber + 1 totalPage:totalPage];
     }
     
+    if (self.viewerType == PLVRoomUserTypeTeacher ||
+        (self.viewerType == PLVRoomUserTypeGuest && self.isMainSpeaker)) {
+        [self.toolView showBtnAddPage:!autoId];
+        [self.toolView setBrushStyle:!autoId];
+    }
+    
     [self.toolView setPageNum:pageNumber + 1 totalNum:totalPage];
     [self.docSheet selectDocumentWithAutoId:autoId pageIndex:pageNumber];
     
@@ -464,6 +521,15 @@ UIGestureRecognizerDelegate
     self.lastPageId = pageNumber;
 }
 
+- (void)documentView_whiteboardPPTZoomChangeRatio:(NSInteger)zoomRatio {
+    if (zoomRatio > 0 && _zoomRatio != zoomRatio) {
+        _zoomRatio = zoomRatio;
+        self.zoomRatioLabel.text = [NSString stringWithFormat:@"%ld%%", zoomRatio];
+        self.zoomRatioLabel.hidden = zoomRatio == 100;
+        [self.toolView showBtnResetZoom:zoomRatio != 100];
+    }
+}
+
 #pragma mark - PLVSControlToolsView Delegate
 
 - (BOOL)controlToolsView:(PLVLSDocumentToolView *)controlToolsView openBrush:(BOOL)isOpen {
@@ -472,12 +538,7 @@ UIGestureRecognizerDelegate
         return NO;
     }
     
-    self.brushView.hidden = !isOpen;
-    [self.pptView setPaintStatus:isOpen];
-    
-    if (self.delegate && [self.delegate respondsToSelector:@selector(documentAreaView:openBrush:)]) {
-        [self.delegate documentAreaView:self openBrush:isOpen];
-    }
+    [self brushToolViewOpen:isOpen];
     
     return YES;
 }
@@ -502,6 +563,10 @@ UIGestureRecognizerDelegate
 
 - (void)controlToolsView:(PLVLSDocumentToolView *)controlToolsView changePPTPositionToMain:(BOOL)pptToMain {
     [self callbackForChangePPTPositionToMain:pptToMain syncRemoteUser:YES];
+}
+
+- (void)controlToolsViewDidResetZoom:(PLVLSDocumentToolView *)controlToolsView {
+    [self.pptView resetWhiteboardPPTZoomRatio];
 }
 
 #pragma mark - PLVSBrushView Delegate
@@ -536,6 +601,18 @@ UIGestureRecognizerDelegate
     self.docPlaceholder.hidden = YES;
     
     [self.pptView changePPTWithAutoId:autoId pageNumber:pageIndex];
+}
+
+@end
+
+@implementation PLVLSDocumentAreaSwitchContentView
+
+- (void)layoutSubviews {
+    [self.subviews enumerateObjectsUsingBlock:^(__kindof UIView * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (obj && [obj isKindOfClass:UIView.class]) {
+            obj.frame = self.bounds;
+        }
+    }];
 }
 
 @end

@@ -47,7 +47,11 @@
     // 如需启用IPV6，解开注释，启用IPV6之后，将自动选择IP，取消HttpDNS
 //    [PLVLiveVideoConfig sharedInstance].enableIPV6 = YES;
     
-    
+    // 接口sha256签名、接口防重放、接口响应加密开关
+    [PLVLiveVideoConfig sharedInstance].enableResponseEncrypt = [[NSUserDefaults standardUserDefaults] boolForKey:@"response_encrypt"];
+    [PLVLiveVideoConfig sharedInstance].enableSignatureNonce = [[NSUserDefaults standardUserDefaults] boolForKey:@"signature_nonce"];
+    [PLVLiveVideoConfig sharedInstance].enableSha256 = [[NSUserDefaults standardUserDefaults] boolForKey:@"sha256"];
+
     PLVEnteranceViewController *vctrl = [[PLVEnteranceViewController alloc] init];
     self.window = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
     self.window.rootViewController = vctrl;

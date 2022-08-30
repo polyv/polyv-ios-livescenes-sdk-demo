@@ -345,6 +345,7 @@
 - (UIButton *)bulletinButton{
     if (!_bulletinButton && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _bulletinButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_bulletinButton.imageView setContentMode:UIViewContentModeScaleAspectFill];
         [_bulletinButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_bulletin"] forState:UIControlStateNormal];
         [_bulletinButton addTarget:self action:@selector(bulletinButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }

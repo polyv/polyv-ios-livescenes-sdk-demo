@@ -13,7 +13,7 @@
 #import "PLVLSBeautyFilterCollectionViewCell.h"
 // 模块
 #import "PLVLSBeautyCellModel.h"
-#import "PLVLSBeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 @interface PLVLSBeautyFilterViewController () <
 UICollectionViewDataSource,
@@ -42,7 +42,7 @@ static CGFloat kItemHeight = 72; // item高度
     [self.view addSubview:self.collectionView];
     [self.collectionView reloadData];
     
-    PLVBFilterOption *cacheFilter = [[PLVLSBeautyViewModel sharedViewModel] getCacheSelectFilterOption];
+    PLVBFilterOption *cacheFilter = [[PLVBeautyViewModel sharedViewModel] getCacheSelectFilterOption];
     if (!cacheFilter || !self.dataArray) {
         self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
     }else {
@@ -67,8 +67,8 @@ static CGFloat kItemHeight = 72; // item高度
 #pragma mark - [ Override ]
 - (void)setupDataArray {
     [super setupDataArray];
-    NSMutableArray *tempArrayM = [NSMutableArray arrayWithCapacity:[PLVLSBeautyViewModel sharedViewModel].filterOptionArray.count];
-    for (PLVBFilterOption *option in [PLVLSBeautyViewModel sharedViewModel].filterOptionArray) {
+    NSMutableArray *tempArrayM = [NSMutableArray arrayWithCapacity:[PLVBeautyViewModel sharedViewModel].filterOptionArray.count];
+    for (PLVBFilterOption *option in [PLVBeautyViewModel sharedViewModel].filterOptionArray) {
         PLVLSBeautyCellModel *model = [[PLVLSBeautyCellModel alloc] initWithTitle:option.filterName imageName:[NSString stringWithFormat:@"plvls_beauty_filter_%@", option.filterSpellName] beautyOption:-1 selected:NO filterOption:option];
         [tempArrayM addObject:model];
     }
@@ -77,7 +77,7 @@ static CGFloat kItemHeight = 72; // item高度
 
 - (void)showContentView {
     [super showContentView];
-    if ([PLVLSBeautyViewModel sharedViewModel].beautyIsOpen) {
+    if ([PLVBeautyViewModel sharedViewModel].beautyIsOpen) {
         [self didSelectItemAtIndexPath:self.selectedIndexPath];
     } else {
         [self.collectionView reloadData];
@@ -121,7 +121,7 @@ static CGFloat kItemHeight = 72; // item高度
 
 #pragma mark didSelectItem
 - (void)didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    if ([PLVLSBeautyViewModel sharedViewModel].beautyIsOpen &&
+    if ([PLVBeautyViewModel sharedViewModel].beautyIsOpen &&
         self.dataArray.count > indexPath.row) {
         self.selectedIndexPath = indexPath;
         
@@ -129,7 +129,7 @@ static CGFloat kItemHeight = 72; // item高度
         for (PLVLSBeautyCellModel *tempModel in self.dataArray) {
             [tempModel updateSelected:model == tempModel];
         }
-        [[PLVLSBeautyViewModel sharedViewModel] selectBeautyFilterOption:model.filerOption];
+        [[PLVBeautyViewModel sharedViewModel] selectBeautyFilterOption:model.filerOption];
     }
 }
 
@@ -147,8 +147,8 @@ static CGFloat kItemHeight = 72; // item高度
     PLVLSBeautyFilterCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:PLVLSBeautyFilterCollectionViewCell.cellID forIndexPath:indexPath];
     if (self.dataArray.count > indexPath.row) {
         PLVLSBeautyCellModel *model = self.dataArray[indexPath.row];
-        [cell updateCellModel:model beautyOpen:[PLVLSBeautyViewModel sharedViewModel].beautyIsOpen];
-        cell.userInteractionEnabled = [PLVLSBeautyViewModel sharedViewModel].beautyIsOpen;
+        [cell updateCellModel:model beautyOpen:[PLVBeautyViewModel sharedViewModel].beautyIsOpen];
+        cell.userInteractionEnabled = [PLVBeautyViewModel sharedViewModel].beautyIsOpen;
     }
     return cell;
 }

@@ -65,7 +65,7 @@ PLVLCChatroomPlaybackDelegate
 #pragma mark 模块
 @property (nonatomic, strong) NSTimer * countdownTimer;
 @property (nonatomic, assign) NSTimeInterval countdownTime;
-@property (nonatomic, strong) PLVLCChatroomPlaybackViewModel *playbackViewModel;
+@property (nonatomic, strong) PLVLCChatroomPlaybackViewModel *playbackViewModel; // 聊天重放viewModel
 
 #pragma mark UI
 /// view hierarchy
@@ -207,14 +207,26 @@ PLVLCChatroomPlaybackDelegate
             }
         }];
         
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        if (roomData.menuInfo.chatInputDisable && roomData.playbackSessionId && roomData.videoType == PLVChannelVideoType_Playback) {
-            self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
-            self.playbackViewModel.delegate = self;
-            [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
-            [self.chatLandscapeView updatePlaybackViewModel:self.playbackViewModel];
+        if ([self enableChatroomPlaybackViewModel]) {
+            [self setupChatroomPlaybackViewModel];
         }
     }
+}
+
+/// 是否支持开启聊天重放：当前处于回放场景、后端接口返回chatInputDisable为YES、已获取到当场回放的场次id
+- (BOOL)enableChatroomPlaybackViewModel {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId;
+}
+
+/// 创建聊天室回放viewModel并更新到相关子视图
+- (void)setupChatroomPlaybackViewModel {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+    self.playbackViewModel.delegate = self;
+    
+    [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
+    [self.chatLandscapeView updatePlaybackViewModel:self.playbackViewModel];
 }
 
 - (void)releaseCurrenrController {
@@ -642,18 +654,13 @@ PLVLCChatroomPlaybackDelegate
 #pragma mark PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    
-    BOOL playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
-    if (playbackEnable && !self.playbackViewModel) {
-        [self.playbackViewModel clear];
-        
-        self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
-        self.playbackViewModel.delegate = self;
-        [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
-        [self.chatLandscapeView updatePlaybackViewModel:self.playbackViewModel];
+    if ([self enableChatroomPlaybackViewModel]) {
+        if (!self.playbackViewModel) { // 填入vid登陆的回放场景，需要在登陆后通过播放器返回场次id
+            [self setupChatroomPlaybackViewModel];
+        }
     }
     
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     self.liveRoomSkinView.danmuButtonShow = !roomData.channelInfo.closeDanmuEnable;
     [self.menuAreaView updateLiveUserInfo];
     [self.popoverView.interactView updateUserInfo];
@@ -671,15 +678,13 @@ PLVLCChatroomPlaybackDelegate
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
 }
 
+/// vid更新，回放场景中，自动播放回放列表的下一个回放视频时触发
 - (void)roomDataManager_didVidChanged:(NSString *)vid {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
-        [self.playbackViewModel clear];
-        
-        self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
-        self.playbackViewModel.delegate = self;
-        [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
-        [self.chatLandscapeView updatePlaybackViewModel:self.playbackViewModel];
+    // 清理上一场的数据
+    [self.playbackViewModel clear];
+    
+    if ([self enableChatroomPlaybackViewModel]) { // 创建新的聊天重放viewModel
+        [self setupChatroomPlaybackViewModel];
     }
 }
 
@@ -812,7 +817,6 @@ PLVLCChatroomPlaybackDelegate
     plv_dispatch_main_async_safe(^{
         [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
         [self.liveRoomSkinView changeCloseRoomStatus:closeRoom];
-        [self.menuAreaView changeCloseRoomStatus:closeRoom];
     })
 }
 
@@ -821,7 +825,6 @@ PLVLCChatroomPlaybackDelegate
     plv_dispatch_main_async_safe(^{
         [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
         [self.liveRoomSkinView changeFocusModeStatus:focusMode];
-        [self.menuAreaView changeFocusMode:focusMode];
         [self.chatLandscapeView updateChatTableView];
     })
 

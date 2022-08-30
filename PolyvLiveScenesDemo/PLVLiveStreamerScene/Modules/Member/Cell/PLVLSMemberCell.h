@@ -18,13 +18,15 @@ extern NSString *PLVLSMemberCellNotification;
 
 - (void)memberCell_didEditing:(BOOL)editing;
 
-- (void)memberCell_didTapBan:(BOOL)banned withUer:(PLVChatUser *)user;
+- (void)memberCell_didTapBan:(BOOL)banned withUser:(PLVChatUser *)user;
 
-- (void)memberCell_didTapKickWithUer:(PLVChatUser *)user;
+- (void)memberCell_didTapKickWithUser:(PLVChatUser *)user;
 
 - (void)memberCell_didTapCameraSwitch;
 
 - (BOOL)allowLinkMicInCell:(PLVLSMemberCell *)cell;
+
+- (BOOL)localUserIsRealMainSpeakerInCell:(PLVLSMemberCell *)cell;
 
 @end
 

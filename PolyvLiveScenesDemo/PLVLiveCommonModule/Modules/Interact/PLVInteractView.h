@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 支持 ’答题卡、公告、抽奖、问卷、签到‘；
 ///       依赖于Socket模块正常运作，若互动视图异常，请先确认Socket已正确连接；
 ///       添加至相应视图中，并调用加载方法即可;
+DEPRECATED_MSG_ATTRIBUTE("已废弃，请使用PLVInteractGenericView")
 @interface PLVInteractView : UIView
 
 /// 此时是否不允许转屏 (默认NO；接收到不同互动消息时，此值将根据业务要求，相应地变化)

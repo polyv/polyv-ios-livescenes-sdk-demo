@@ -14,6 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVLCChatLandscapeView : UIView
 
+/// 主页创建/更新回放viewModel之后，通知横屏聊天室
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
 - (void)updateChatTableView;

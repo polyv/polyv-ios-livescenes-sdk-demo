@@ -186,4 +186,24 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     return NO;
 }
 
+- (PLVBLinkMicStreamScale)streamScale {
+    if (self.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        return _streamScale;
+    }
+    return PLVBLinkMicStreamScale16_9;
+}
+
+- (void)setAppWebStartResolutionRatio:(NSString *)appWebStartResolutionRatio {
+    _appWebStartResolutionRatio = appWebStartResolutionRatio;
+    if (![PLVFdUtil checkStringUseable:appWebStartResolutionRatio]) {
+        return;
+    }
+    
+    if ([appWebStartResolutionRatio isEqualToString:@"16:9"]) {
+        _streamScale = PLVBLinkMicStreamScale16_9;
+    } else if ([appWebStartResolutionRatio isEqualToString:@"4:3"]) {
+        _streamScale = PLVBLinkMicStreamScale4_3;
+    }
+}
+
 @end

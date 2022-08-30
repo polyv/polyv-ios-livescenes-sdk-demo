@@ -7,14 +7,14 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "PLVLSBeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVLSBeautyTitleView;
 @protocol PLVLSBeautyTitleViewDelegate <NSObject>
 
-- (void)beautyTitleView:(PLVLSBeautyTitleView *)beautyTitleView didTapButton:(PLVLSBeautyType)type;
+- (void)beautyTitleView:(PLVLSBeautyTitleView *)beautyTitleView didTapButton:(PLVBeautyType)type;
 
 @end
 
@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 选择标题
 /// @param type 标题类型
-- (void)selectTitleButtonWithType:(PLVLSBeautyType)type;
+- (void)selectTitleButtonWithType:(PLVBeautyType)type;
 
 @end
 

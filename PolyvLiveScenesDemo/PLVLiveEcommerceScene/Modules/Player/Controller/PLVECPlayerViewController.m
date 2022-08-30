@@ -643,7 +643,7 @@ PLVPlayerPresenterDelegate
         [self.delegate updateDowloadProgress:downloadProgress
                               playedProgress:playedProgress
                                     duration:playerPresenter.duration
-                 currentPlaybackTimeInterval:self.playerPresenter.currentPlaybackTime
+                 currentPlaybackTimeInterval:playerPresenter.currentPlaybackTime
                          currentPlaybackTime:playedTimeString
                                 durationTime:durationTimeString];
     }
@@ -683,6 +683,9 @@ PLVPlayerPresenterDelegate
 
 /// 播放器 ‘频道信息’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
+    /// 同步 频道信息
+    [PLVRoomDataManager sharedManager].roomData.channelInfo = channelInfo;
+    
     /// 设置 跑马灯
     [self setupMarquee:self.roomData.channelInfo customNick:self.roomData.roomUser.viewerName];
     if (self.roomData.videoType == PLVChannelVideoType_Playback) {

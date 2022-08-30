@@ -9,28 +9,33 @@
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
-//弹幕定时器时间间隔，单位'秒'
-static NSInteger kDanmuIntervalTime = 1.0;
+// 弹幕定时器时间间隔，单位'秒'
+static NSInteger kDanmuIntervalTime = 1;
+// 弹幕数组最大值
+static NSInteger kDanmuMaxCount = 100;
+// 公聊消息数组最大值
+static NSInteger kChatArrayMaxCount = 500;
 
 @interface PLVLCChatroomPlaybackViewModel ()<
 PLVChatroomPlaybackPresenterDelegate
 >
 
+#pragma mark 外部可读属性
+
 /// 频道号
 @property (nonatomic, copy) NSString *channelId;
-/// 回放场次id
+/// 当场回放的场次id
 @property (nonatomic, copy) NSString *sessionId;
-/// 回放视频总时长，单位秒
-@property (nonatomic, assign) NSTimeInterval duration;
-/// 当前视频播放时间戳，单位秒
-@property (nonatomic, assign) NSTimeInterval currentPlaybackTime;
-/// 聊天室common层presenter，一个scene层只能初始化一个presenter对象
+/// 聊天回放common层presenter
 @property (nonatomic, strong) PLVChatroomPlaybackPresenter *presenter;
-/// 公聊消息数组
+/// 公聊消息数组，私聊无聊天回放
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray;
-/// 上报需插入弹幕的文本，间隔1秒触发一次
+
+#pragma mark 内部属性
+
+/// 上报需插入弹幕的文本，间隔 kDanmuIntervalTime 触发一次
 @property (nonatomic, strong) NSTimer *danmuTimer;
-/// 暂未上报的弹幕文本数组
+/// 暂未上报的弹幕文本数组，数组最大容量kDanmuMaxCount
 @property (nonatomic, strong) NSMutableArray <NSString *> *danmuArray;
 
 @end
@@ -66,22 +71,20 @@ PLVChatroomPlaybackPresenterDelegate
         multicastQueue = dispatch_queue_create("com.PLVLiveScenesDemo.PLVLCChatroomPlaybackViewModel", DISPATCH_QUEUE_CONCURRENT);
         multicastDelegate = (PLVMulticastDelegate <PLVLCChatroomPlaybackViewModelDelegate> *)[[PLVMulticastDelegate alloc] init];
         
+        // 初始化公聊消息信号量、公聊消息数组
         _chatArrayLock = dispatch_semaphore_create(1);
-        self.chatArray = [NSMutableArray arrayWithCapacity:500];
+        self.chatArray = [NSMutableArray arrayWithCapacity:kChatArrayMaxCount];
         
-        // 初始化弹幕上报计时器，弹幕文本数组
+        // 初始化弹幕信号量、弹幕上报计时器、弹幕数组
         _danmuArrayLock = dispatch_semaphore_create(1);
-        self.danmuArray = [[NSMutableArray alloc] initWithCapacity:100];
+        self.danmuArray = [[NSMutableArray alloc] initWithCapacity:kDanmuMaxCount];
         [self createTimer];
     }
     return self;
 }
 
 - (void)updateDuration:(NSTimeInterval)duration {
-    if (duration > 0 && duration != self.duration) {
-        self.duration = duration;
-        [self.presenter updateDuration:self.duration];
-    }
+    [self.presenter updateDuration:duration];
 }
 
 - (void)playbakTimeChanged {
@@ -93,12 +96,13 @@ PLVChatroomPlaybackPresenterDelegate
         PLVChatModel *chatModel = self.chatArray[0];
         [self.presenter loadMoreMessageBefore:chatModel.playbackTime];
     } else {
-        [self.presenter loadMoreMessageBefore:self.currentPlaybackTime];
+        [self.presenter loadMoreMessageBefore:0];
     }
 }
 
 - (void)clear {
     [self replaceAllChatModels:@[]];
+    [self removeAllDanmus];
     [self notifyDelegatesDidClearMessages];
 }
 
@@ -122,7 +126,7 @@ PLVChatroomPlaybackPresenterDelegate
     _danmuTimer = nil;
 }
 
-#pragma mark - Multicase
+#pragma mark Multicase
 
 - (void)addUIDelegate:(id<PLVLCChatroomPlaybackViewModelDelegate>)delegate delegateQueue:(dispatch_queue_t)delegateQueue {
     dispatch_barrier_async(multicastQueue, ^{
@@ -174,16 +178,24 @@ PLVChatroomPlaybackPresenterDelegate
 
 #pragma mark 聊天消息数组
 
+/// 插入数据到消息数组的头部，此时不会限制数组的总量，因为如果限制总量，裁剪的都是消息数组的头部的消息
+/// 其实不管头部还是尾部，都会使用'-rearrangeChatModels:'方法进行排序、去重
 - (void)insertChatModels:(NSArray <PLVChatModel *> *)modelArray {
-    if ([PLVFdUtil checkArrayUseable:modelArray]) {
-        NSInteger count = [modelArray count] + [self.chatArray count];
-        NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:count];
-        [muArray addObjectsFromArray:modelArray];
-        [muArray addObjectsFromArray:[self.chatArray copy]];
-        [self replaceAllChatModels:[muArray copy]];
+    if (![PLVFdUtil checkArrayUseable:modelArray]) {
+        return;
     }
+    
+    NSInteger count = [modelArray count] + [self.chatArray count];
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:count];
+    [muArray addObjectsFromArray:modelArray];
+    [muArray addObjectsFromArray:[self.chatArray copy]];
+    
+    NSArray *arrangeArray = [self rearrangeChatModels:[muArray copy]];
+    [self replaceAllChatModels:arrangeArray];
 }
 
+/// 插入消息到数组的尾部，此时会对数组的总量进行限制
+/// 其实不管头部还是尾部，都会使用'-rearrangeChatModels:'方法进行排序、去重
 - (void)addChatModels:(NSArray <PLVChatModel *> *)modelArray {
     if (![PLVFdUtil checkArrayUseable:modelArray]) {
         return;
@@ -195,13 +207,14 @@ PLVChatroomPlaybackPresenterDelegate
     [muArray addObjectsFromArray:[self.chatArray copy]];
     
     NSArray *arrangeArray = [self rearrangeChatModels:[muArray copy]];
-    if ([arrangeArray count] >= 500) {
-        arrangeArray = [arrangeArray subarrayWithRange:NSMakeRange([arrangeArray count] - 500, 500)];
+    if ([arrangeArray count] >= kChatArrayMaxCount) {
+        arrangeArray = [arrangeArray subarrayWithRange:NSMakeRange([arrangeArray count] - kChatArrayMaxCount, kChatArrayMaxCount)];
     }
     
     [self replaceAllChatModels:arrangeArray];
 }
 
+/// 全量替换消息数组的数据
 - (void)replaceAllChatModels:(NSArray <PLVChatModel *> *)modelArray {
     NSArray *arrangeArray = [self rearrangeChatModels:modelArray];
     
@@ -234,7 +247,7 @@ PLVChatroomPlaybackPresenterDelegate
     }
     
     dispatch_semaphore_wait(_danmuArrayLock, DISPATCH_TIME_FOREVER);
-    if ([self.danmuArray count] >= 100) {
+    if ([self.danmuArray count] >= kDanmuMaxCount) {
         [self.danmuArray removeAllObjects];
     }
     dispatch_semaphore_signal(_danmuArrayLock);

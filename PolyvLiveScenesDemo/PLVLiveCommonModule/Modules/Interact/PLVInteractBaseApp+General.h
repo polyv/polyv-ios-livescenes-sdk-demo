@@ -10,6 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+DEPRECATED_MSG_ATTRIBUTE("已废弃")
 @interface PLVInteractBaseApp (General)
 
 - (void)triviaCardAckHandleNoRetry:(NSArray *)ackResArray event:(NSString *)event;

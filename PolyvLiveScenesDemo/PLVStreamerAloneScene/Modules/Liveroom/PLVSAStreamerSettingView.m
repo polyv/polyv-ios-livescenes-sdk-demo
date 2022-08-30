@@ -47,6 +47,8 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, strong) UIButton *bitRateButton;
 /// 横竖屏切换
 @property (nonatomic, strong) UIButton *orientationButton;
+/// 开播画面比例
+@property (nonatomic, strong) UIButton *streamScaleButton;
 /// 直播名称
 @property (nonatomic, strong) UILabel *channelNameLable;
 /// 输入框蒙层（负责承载频道名称输入框和频道名称剩余可输入的字符数）
@@ -69,6 +71,8 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, assign) PLVResolutionType resolutionType;
 /// 当前控制器是否可以进行屏幕旋转
 @property (nonatomic, assign) BOOL canAutorotate;
+/// 当前是否显示推流画面比例
+@property (nonatomic, assign, readonly) BOOL showStreamScale;
 
 @end
 
@@ -143,6 +147,7 @@ PLVSABitRateSheetDelegate
     [self.configView addSubview:self.mirrorButton];
     [self.configView addSubview:self.bitRateButton];
     [self.configView addSubview:self.orientationButton];
+    [self.configView addSubview:self.streamScaleButton];
 }
 
 - (void)updateUI {
@@ -155,6 +160,7 @@ PLVSABitRateSheetDelegate
     CGFloat backButttonTop = originY + 9;
     CGFloat startButtonBottom = bottom + (isLandscape ? 16 : 45);
     CGFloat startButtonWidth = [PLVRoomDataManager sharedManager].roomData.appBeautyEnabled ? 206 : 320;
+    startButtonWidth += (self.showStreamScale ? 75 : 0);
     CGFloat beautyButtonWidth = [PLVRoomDataManager sharedManager].roomData.appBeautyEnabled ? 114 : 0;
     CGFloat configViewWidth = startButtonWidth + 8 + beautyButtonWidth;
     CGFloat channelNameLableLeft = 28;
@@ -210,15 +216,16 @@ PLVSABitRateSheetDelegate
     self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.scrollView) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
     
     /// 底部按钮
+    NSInteger configButtonCount = self.showStreamScale ? 5 : 4;
     CGSize buttonSize = CGSizeMake(32, 58);
     CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
-    CGFloat orientationButtonOffsetWidth = 15.0;
-    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * 4 + orientationButtonOffsetWidth)) / 5;
+    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * configButtonCount)) / (configButtonCount + 1) ;
     self.cameraReverseButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
     self.mirrorButton.frame = CGRectMake(UIViewGetRight(self.cameraReverseButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
     self.bitRateButton.frame = CGRectMake(UIViewGetRight(self.mirrorButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width + orientationButtonOffsetWidth, buttonSize.height);
-    
+    self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.streamScaleButton.hidden = !self.showStreamScale;
+    self.streamScaleButton.frame = CGRectMake(UIViewGetRight(self.orientationButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
 }
 
 /// 初始化默认清晰度
@@ -315,6 +322,17 @@ PLVSABitRateSheetDelegate
     self.maskView.hidden = show;
 }
 
+#pragma mark Callback
+
+- (void)callbackPushStreamScaleChanged:(PLVBLinkMicStreamScale)streamScale {
+    [PLVRoomDataManager sharedManager].roomData.streamScale = streamScale;
+    if ([PLVSAUtils sharedUtils].isLandscape) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewStreamScaleButtonClickWithStreamScale:)]) {
+            [self.delegate streamerSettingViewStreamScaleButtonClickWithStreamScale:streamScale];
+        }
+    }
+}
+
 #pragma mark Getter & Setter
 
 - (UIButton *)backButton {
@@ -403,9 +421,20 @@ PLVSABitRateSheetDelegate
     if (!_orientationButton) {
         _orientationButton = [self buttonWithTitle:@"横竖屏" NormalImageString:@"plvsa_liveroom_btn_orientation" selectedImageString:@"plvsa_liveroom_btn_orientation"];
         [_orientationButton addTarget:self action:@selector(orientationAction:) forControlEvents:UIControlEventTouchUpInside];
-        _orientationButton.imageEdgeInsets = UIEdgeInsetsMake(0,10,25,10);
+        _orientationButton.titleEdgeInsets = UIEdgeInsetsMake(_orientationButton.imageView.frame.size.height + 14, - 67, 0, -38);
+
     }
     return _orientationButton;
+}
+
+- (UIButton *)streamScaleButton {
+    if (!_streamScaleButton) {
+        _streamScaleButton = [self buttonWithTitle:@"开播比例" NormalImageString:@"plvsa_liveroom_btn_streamscale_16_9" selectedImageString:@"plvsa_liveroom_btn_streamscale_4_3"];
+        [_streamScaleButton addTarget:self action:@selector(streamScaleAction:) forControlEvents:UIControlEventTouchUpInside];
+        _streamScaleButton.titleEdgeInsets = UIEdgeInsetsMake(_streamScaleButton.imageView.frame.size.height + 14, - 68, 0, -40);
+        _streamScaleButton.hidden = YES;
+    }
+    return _streamScaleButton;
 }
 
 - (UILabel *)channelNameLable {
@@ -500,6 +529,15 @@ PLVSABitRateSheetDelegate
     return _beautyButton;
 }
 
+- (BOOL)showStreamScale {
+    if ([PLVSAUtils sharedUtils].isLandscape &&
+        [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher &&
+        [PLVRoomDataManager sharedManager].roomData.appWebStartResolutionRatioEnabled) {
+        return YES;
+    }
+    return NO;
+}
+
 #pragma mark - [ Event ]
 
 #pragma mark Action
@@ -551,6 +589,11 @@ PLVSABitRateSheetDelegate
     [self changeDeviceOrientation:orientation];
 }
 
+- (void)streamScaleAction:(UIButton *)sender {
+    sender.selected = !sender.selected;
+    PLVBLinkMicStreamScale streamScale = sender.selected ? PLVBLinkMicStreamScale4_3 : PLVBLinkMicStreamScale16_9;
+    [self callbackPushStreamScaleChanged:streamScale];
+}
 
 - (void)startEditingAction:(UITapGestureRecognizer *)tap {
     double newLength = [self calculateTextLengthWithString:self.channelNameTextView.text];
@@ -626,7 +669,6 @@ PLVSABitRateSheetDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewBitRateButtonClickWithResolutionType:)]) {
         [self.delegate streamerSettingViewBitRateButtonClickWithResolutionType:bitRate];
     }
-    
 }
 
 #pragma mark - [ Event ]
@@ -686,6 +728,16 @@ PLVSABitRateSheetDelegate
     }
     self.beautyButton.hidden = show;
     self.startButton.hidden = show;
+}
+
+/// 当前开播流比例
+- (void)synchPushStreamScale:(PLVBLinkMicStreamScale)streamScale {
+    if (streamScale == PLVBLinkMicStreamScale16_9) {
+        self.streamScaleButton.selected = NO;
+    } else if (streamScale == PLVBLinkMicStreamScale4_3) {
+        self.streamScaleButton.selected = YES;
+    }
+    [self callbackPushStreamScaleChanged:streamScale];
 }
 
 @end

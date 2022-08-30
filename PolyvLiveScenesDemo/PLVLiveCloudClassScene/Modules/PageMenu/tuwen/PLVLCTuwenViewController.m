@@ -48,7 +48,12 @@ PLVSocketManagerProtocol
     socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
     
-    [self.jsBridge loadWebView:PLVLiveConstantsLiveFrontPictureTextURL inView:self.view];
+    NSString *urlString = PLVLiveConstantsLiveFrontPictureTextURL;
+    PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
+    if (liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt) {
+        urlString = [urlString stringByAppendingString:@"?security=1"];
+    }
+    [self.jsBridge loadWebView:urlString inView:self.view];
     
     if (@available(iOS 11.0, *)) {
         self.jsBridge.webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;

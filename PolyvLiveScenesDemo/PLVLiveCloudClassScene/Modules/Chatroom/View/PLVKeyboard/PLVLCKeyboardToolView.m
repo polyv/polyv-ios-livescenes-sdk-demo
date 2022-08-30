@@ -12,7 +12,6 @@
 #import "PLVLCKeyboardMoreView.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
-#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
@@ -22,8 +21,7 @@ static CGFloat kMaxTextViewHeight = 120.0;
 @interface PLVLCKeyboardToolView ()<
 UITextViewDelegate,
 PLVLCEmojiSelectViewDelegate,
-PLVLCKeyboardMoreViewDelegate,
-PLVSocketManagerProtocol
+PLVLCKeyboardMoreViewDelegate
 >
 /// 不同的 mode，决定不同的 UI
 @property (nonatomic, assign) PLVLCKeyboardToolMode mode;
@@ -68,10 +66,7 @@ PLVSocketManagerProtocol
 
 @end
 
-@implementation PLVLCKeyboardToolView {
-    /// PLVSocketManager回调的执行队列
-    dispatch_queue_t socketDelegateQueue;
-}
+@implementation PLVLCKeyboardToolView
 
 #pragma mark - Life Cycle
 
@@ -314,10 +309,6 @@ PLVSocketManagerProtocol
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidHide:) name:UIKeyboardDidHideNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onDeviceOrientationDidChange) name:UIDeviceOrientationDidChangeNotification object:nil];
-        
-        // 监听socket消息
-        socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
-        [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
     }
     return self;
 }

@@ -43,9 +43,9 @@ UITableViewDataSource
 @property (nonatomic, strong) CAGradientLayer *gradientLayer;
 
 @property (nonatomic, assign) BOOL observingTableView;
-
+/// 聊天室是否处于聊天回放状态，默认为NO
 @property (nonatomic, assign) BOOL playbackEnable;
-
+/// 弱引用首页持有的聊天回放viewModel
 @property (nonatomic, weak) PLVLCChatroomPlaybackViewModel *playbackViewModel;
 
 @end
@@ -266,6 +266,28 @@ UITableViewDataSource
     [self.receiveNewMessageView hidden];
 }
 
+// 数据源数目
+- (NSInteger)dataCount {
+    NSInteger count = 0;
+    if (self.playbackEnable) {
+        count = [self.playbackViewModel.chatArray count];
+    } else {
+        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
+    }
+    return count;
+}
+
+// 根据indexPath得到数据模型
+- (PLVChatModel *)modelAtIndexPath:(NSIndexPath *)indexPath {
+    PLVChatModel *model = nil;
+    if (self.playbackEnable) {
+        model = self.playbackViewModel.chatArray[indexPath.row];
+    } else {
+        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    }
+    return model;
+}
+
 #pragma mark - PLVLCChatroomViewModelProtocol
 
 - (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
@@ -335,14 +357,12 @@ UITableViewDataSource
     }
 }
 
-/// 刷新聊天消息列表，列表应滚动到底部
 - (void)didMessagesRefreshedForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
     [self.tableView reloadData];
     [self clearNewMessageCount];
     [self scrollsToBottom:YES];
 }
 
-/// 往上滚动，列表滚动到最顶部
 - (void)didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
     [self.refresher endRefreshing];
     [self.tableView reloadData];
@@ -355,33 +375,16 @@ UITableViewDataSource
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    NSInteger count = 0;
-    if (self.playbackEnable) {
-        count = [self.playbackViewModel.chatArray count];
-    } else {
-        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
-    }
-    return count;
+    return [self dataCount];
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {    NSInteger count = 0;
-    if (self.playbackEnable) {
-        count = [self.playbackViewModel.chatArray count];
-    } else {
-        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
-    }
-    
-    if (indexPath.row >= count) {
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (indexPath.row >= [self dataCount]) {
         return [UITableViewCell new];
     }
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    PLVChatModel *model = nil;
-    if (self.playbackEnable) {
-        model = self.playbackViewModel.chatArray[indexPath.row];
-    } else {
-        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
-    }
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
     if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
         static NSString *speakMessageCellIdentify = @"PLVLCLandscapeSpeakCell";
@@ -436,26 +439,13 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSInteger count = 0;
-    if (self.playbackEnable) {
-        count = [self.playbackViewModel.chatArray count];
-    } else {
-        count = [[[PLVLCChatroomViewModel sharedViewModel] chatArray] count];
-    }
-    
-    if (indexPath.row >= count) {
+    if (indexPath.row >= [self dataCount]) {
         return 0;
     }
     
     CGFloat cellHeight = 44.0;
     
-    PLVChatModel *model = nil;
-    if (self.playbackEnable) {
-        model = self.playbackViewModel.chatArray[indexPath.row];
-    } else {
-        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
-    }
-    
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];

@@ -437,9 +437,9 @@ PLVSALinkMicWindowCellDelegate
         self.fullScreenCell.delegate = self;
         self.fullScreenCell.frame = self.bounds;
         [[PLVSAUtils sharedUtils].homeVC.view addSubview:self.fullScreenCell.contentView];
+        [self.fullScreenCell setUserModel:onlineUser hideCanvasViewWhenCameraClose:NO];
         [self.fullScreenCell setNeedsLayout];
         [self.fullScreenCell layoutIfNeeded];
-        [self.fullScreenCell setUserModel:onlineUser hideCanvasViewWhenCameraClose:NO];
         self.fullScreenUserId = onlineUser.linkMicUserId;
         [self showToastWithFullScreen:YES reset:NO];
     }
@@ -687,7 +687,7 @@ PLVSALinkMicWindowCellDelegate
         onlineUser = [self readUserModelFromDataArray:self.currentSpeakerUserIndex];
     }
     
-    if (!onlineUser || onlineUser.localUser) {
+    if (!onlineUser || (onlineUser.localUser && onlineUser.userType == PLVSocketUserTypeTeacher)) {
         return;
     }
     

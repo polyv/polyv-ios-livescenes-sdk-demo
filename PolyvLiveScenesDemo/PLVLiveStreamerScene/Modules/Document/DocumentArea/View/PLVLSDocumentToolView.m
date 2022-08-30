@@ -13,12 +13,13 @@
 
 @interface PLVLSDocumentToolView ()
 
-@property (nonatomic, strong) UIButton *btnBrush;       // 开关
+@property (nonatomic, strong) UIButton *btnBrush;       // 画笔开关
 @property (nonatomic, strong) UIButton *btnAddPage;     // 添加PPT
 @property (nonatomic, strong) UIButton *btnFullScreen;  // 全屏
 @property (nonatomic, strong) UIButton *btnNext;        // 下一页
 @property (nonatomic, strong) UIButton *btnPrevious;    // 上一页
 @property (nonatomic, strong) UIButton *changeButton;   // 交换
+@property (nonatomic, strong) UIButton *btnResetZoom;    // 重置缩放
 
 @end
 
@@ -56,6 +57,9 @@
     CGFloat btnNextTop = isPad ? (UIViewGetHeight(self) / 2 - btnWidth) : (relativeY - btnWidth);
     self.btnNext.frame = CGRectMake(0, btnNextTop, btnWidth, btnWidth);
     self.btnPrevious.frame = CGRectMake(0, UIViewGetTop(self.btnNext) - btnWidth - maginTop, btnWidth, btnWidth);
+    
+    relativeY = (self.btnPrevious.isHidden || self.btnPrevious.alpha == 0)  ? relativeY : CGRectGetMinY(self.btnPrevious.frame) - maginTop;
+    self.btnResetZoom.frame = CGRectMake(0, relativeY - btnWidth, btnWidth, btnWidth);
 }
 
 #pragma mark - [ Public Methods ]
@@ -119,6 +123,12 @@
     [self layoutIfNeeded];
 }
 
+- (void)showBtnResetZoom:(BOOL)show {
+    self.btnResetZoom.hidden = !show;
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+}
+
 #pragma mark - [ Private Methods ]
 
 - (void)setupUI {
@@ -128,6 +138,7 @@
     [self addSubview:self.btnNext];
     [self addSubview:self.btnPrevious];
     [self addSubview:self.changeButton];
+    [self addSubview:self.btnResetZoom];
 }
 
 // 加载图片
@@ -218,6 +229,17 @@
     return _changeButton;
 }
 
+- (UIButton *)btnResetZoom {
+    if (! _btnResetZoom) {
+        _btnResetZoom = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_btnResetZoom setImage:[self getImageWithName:@"plvls_ppt_btn_whiteboard_reset_normal"] forState:UIControlStateNormal];
+        [_btnResetZoom addTarget:self action:@selector(whiteboardResetZoomAction:) forControlEvents:UIControlEventTouchUpInside];
+        _btnResetZoom.hidden = YES;
+    }
+    
+    return _btnResetZoom;
+}
+
 #pragma mark - [ Event ]
 #pragma mark Action
 
@@ -259,6 +281,12 @@
     button.selected = !button.selected;
     if (self.delegate && [self.delegate respondsToSelector:@selector(controlToolsView:changePPTPositionToMain:)]) {
         [self.delegate controlToolsView:self changePPTPositionToMain:!button.selected];
+    }
+}
+
+- (void)whiteboardResetZoomAction:(UIButton *)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(controlToolsViewDidResetZoom:)]) {
+        [self.delegate controlToolsViewDidResetZoom:self];
     }
 }
 

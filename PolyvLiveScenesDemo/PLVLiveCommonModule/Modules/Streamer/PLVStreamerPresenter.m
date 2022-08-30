@@ -30,9 +30,10 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, assign) BOOL micCameraGranted;
 @property (nonatomic, assign) BOOL localVideoPreviewSameAsRemoteWatch;
 @property (nonatomic, assign) BOOL roomAllMicMute; // 当前是否‘房间全体静音’
+@property (nonatomic, assign) BOOL currentNetworkConnected; // 当前网络是否连接
+@property (nonatomic, assign) BOOL needLocalGuestAutoLinkMic; // 断网重连是否需要重新上麦
 
 #pragma mark 数据
-@property (nonatomic, copy) NSString * linkMicUserId;
 @property (nonatomic, strong) NSMutableArray <PLVLinkMicWaitUser *> * waitUserMuArray;
 @property (nonatomic, strong) NSMutableArray <PLVLinkMicOnlineUser *> * onlineUserMuArray;
 @property (nonatomic, weak) PLVLinkMicOnlineUser * realMainSpeakerUser;  // 注意: 弱引用
@@ -45,6 +46,7 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, strong) NSMutableDictionary <NSString *, NSDictionary*> * prerecordUserMediaStatusDict; // 用于提前记录用户媒体状态的字典
 
 #pragma mark 外部数据封装
+@property (nonatomic, copy, readonly) NSString * linkMicUserId;
 @property (nonatomic, copy, readonly) NSString * stream;
 @property (nonatomic, copy, readonly) NSString * currentStream;
 @property (nonatomic, copy, readonly) NSString * rtmpUrl;
@@ -134,7 +136,7 @@ PLVChannelClassManagerDelegate
                     PLVBRTCVideoViewCanvasModel * model = [[PLVBRTCVideoViewCanvasModel alloc]init];
                     model.userRTCId = weakSelf.linkMicUserId;
                     model.renderCanvasView = canvasView;
-                    model.rtcVideoVideoFillMode = PLVBRTCVideoViewFillMode_Fill;
+                    model.rtcVideoVideoFillMode = weakSelf.localPreviewViewFillMode;
                     [weakSelf.rtcStreamerManager setupLocalPreviewWithCanvasModel:model];
                     if (setupCompletion) { setupCompletion(YES); }
                 }else{
@@ -650,6 +652,7 @@ PLVChannelClassManagerDelegate
     self.arraySafeQueue = dispatch_queue_create("PLVStreamerPresenterArraySafeQueue", DISPATCH_QUEUE_SERIAL);
     self.requestLinkMicOnlineListSafeQueue = dispatch_queue_create("PLVStreamerPresenterRequestLinkMicOnlineListSafeQueue", DISPATCH_QUEUE_SERIAL);
     self.prerecordUserMediaStatusDict = [[NSMutableDictionary alloc] init];
+    self.localPreviewViewFillMode = PLVBRTCVideoViewFillMode_Fill;
 
     /// 创建 获取连麦在线用户列表 定时器
     self.linkMicTimer = [NSTimer scheduledTimerWithTimeInterval:5.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(linkMicTimerEvent:) userInfo:nil repeats:YES];
@@ -1133,6 +1136,21 @@ PLVChannelClassManagerDelegate
     });
 }
 
+- (void)updateGuestAutoLinkMicWithNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality {
+    BOOL networkConnected = !(networkQuality == PLVBLinkMicNetworkQualityDown || networkQuality == PLVBLinkMicNetworkQualityUnknown);
+    if (self.currentNetworkConnected != networkConnected && networkConnected) {
+        // 网络连接状态恢复至已可用
+        BOOL isUserTypeGuest = (self.viewerType == PLVRoomUserTypeGuest);
+        BOOL isAutoLinkMic = !self.channelGuestManualJoinLinkMic;
+        BOOL streamStateLive = (self.currentStreamState == PLVChannelLiveStreamState_Live);
+        BOOL guestAllowedLinkMic = [self checkGuestJoinedLinkMic:self.localOnlineUser.linkMicUserId];
+        if (isUserTypeGuest && isAutoLinkMic && streamStateLive && guestAllowedLinkMic) {
+            self.needLocalGuestAutoLinkMic = YES;
+        }
+    }
+    self.currentNetworkConnected = networkConnected;
+}
+
 #pragma mark LinkMic OnlineUser Manage
 - (PLVLinkMicOnlineUser *)createLocalOnlineUser{
     PLVLinkMicOnlineUser * localOnlineUser;
@@ -1184,6 +1202,10 @@ PLVChannelClassManagerDelegate
         
         [localOnlineUser addCameraTorchOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             [weakSelf callbackForLocalUserCameraTorchOpenChanged];
+        } blockKey:self];
+    
+        [localOnlineUser addCurrentStatusVoiceChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            [weakSelf callbackForLocalUserStatusVoiceChanged];
         } blockKey:self];
         
         [localOnlineUser addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
@@ -1564,6 +1586,7 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)authLinkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser speakerAuth:(BOOL)auth {
+    [self.localOnlineUser updateUserIsGuestTransferPermission:(self.viewerType == PLVRoomUserTypeGuest)];
     [self emitSocketMessge_authOnlineUserId:onlineUser.userId speakerAuth:auth];
 }
 
@@ -1902,6 +1925,16 @@ PLVChannelClassManagerDelegate
     })
 }
 
+- (void)callbackForLocalUserStatusVoiceChanged {
+    if (self.viewerType != PLVRoomUserTypeGuest || !self.localOnlineUser.localUser) {
+        return;
+    }
+    
+    if (!self.localOnlineUser.currentStatusVoice) {
+        [self.localOnlineUser updateUserCurrentSpeakerAuth:NO];
+    }
+}
+
 - (void)callbackForLocalUserScreenShareOpenChanged {
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:localUserScreenShareOpenChanged:)]) {
@@ -2123,18 +2156,7 @@ PLVChannelClassManagerDelegate
 
 #pragma mark Getter
 - (NSString *)linkMicUserId{
-    if (!_linkMicUserId) {
-        if (self.viewerType == PLVRoomUserTypeTeacher) { // 若是讲师，则linkMicId为channelId
-            _linkMicUserId = self.channelId;
-        }else if (self.viewerType == PLVRoomUserTypeGuest){ // 若是嘉宾，则linkMicId为聊天室Id
-            _linkMicUserId = self.userId;
-        }else{
-            NSInteger timeInterval = (NSInteger)[[NSDate date] timeIntervalSince1970];
-            _linkMicUserId = @(timeInterval).stringValue;
-            PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"create linkMicUserId failed, will use timeInterval");
-        }
-    }
-    return _linkMicUserId;
+    return [PLVSocketManager sharedManager].linkMicId;;
 }
 
 - (NSString *)rtcType{
@@ -2250,6 +2272,13 @@ PLVChannelClassManagerDelegate
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVSocketManagerProtocol
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
+    if (self.needLocalGuestAutoLinkMic) {
+        self.needLocalGuestAutoLinkMic = NO;
+        [self emitLocalGuestJoinResponse:nil];
+    }
+}
+
 /// socket 接收到 "message" 事件
 - (void)socketMananger_didReceiveMessage:(NSString *)subEvent
                                     json:(NSString *)jsonString
@@ -2328,6 +2357,7 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager networkQualityDidChanged:(PLVBLinkMicNetworkQuality)networkQuality{
+    [self updateGuestAutoLinkMicWithNetworkQuality:networkQuality];
     [self callbackForNetworkQualityDidChanged];
 }
 
@@ -2346,6 +2376,10 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
+    if (reconnectingThisTimeDuration == 0) {
+        // 断网重连后 更新混流配置
+        [self updateMixUserList];
+    }
     [self callbackForCurrentReconnectingThisTimeDuration];
 }
 

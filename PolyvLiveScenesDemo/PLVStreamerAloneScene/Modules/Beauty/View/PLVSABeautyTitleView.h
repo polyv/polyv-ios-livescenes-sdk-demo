@@ -7,14 +7,14 @@
 // 美颜类型标题视图
 
 #import <UIKit/UIKit.h>
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVSABeautyTitleView;
 @protocol PLVSABeautyTitleViewDelegate <NSObject>
 /// 点击 美颜类型按钮 时回调
-- (void)beautyTitleView:(PLVSABeautyTitleView *)beautyTitleView didTapButton:(PLVSABeautyType)type;
+- (void)beautyTitleView:(PLVSABeautyTitleView *)beautyTitleView didTapButton:(PLVBeautyType)type;
 
 @end
 
@@ -24,7 +24,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 选择标题
 /// @param type 标题类型
-- (void)selectTitleButtonWithType:(PLVSABeautyType)type;
+- (void)selectTitleButtonWithType:(PLVBeautyType)type;
 
 @end
 

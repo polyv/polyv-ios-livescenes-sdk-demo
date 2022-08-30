@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol PLVECChatroomPlaybackViewModelDelegate;
 
+/// 直播带货场景聊天重放viewModel
 @interface PLVECChatroomPlaybackViewModel : NSObject
 
 #pragma mark 可配置属性
@@ -23,43 +24,53 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 频道号
 @property (nonatomic, copy, readonly) NSString *channelId;
-/// 回放场次id
+/// 当场回放场次id
 @property (nonatomic, copy, readonly) NSString *sessionId;
-/// 聊天室common层presenter，一个scene层只能初始化一个presenter对象
+/// 聊天重放common层presenter
 @property (nonatomic, strong, readonly) PLVChatroomPlaybackPresenter *presenter;
 /// 公聊消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 
 #pragma mark 方法
 
+/// 初始化方法
+/// @param channelId 频道号
+/// @param sessionId 当场回放的场次id
 - (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId;
 
+/// 获取/更新回放视频时长
 - (void)updateDuration:(NSTimeInterval)duration;
 
+/// 回放视频发生seek
 - (void)playbakTimeChanged;
 
+/// 下拉加载更多历史消息
 - (void)loadMoreMessages;
 
+/// 清理聊天消息数组以及弹幕数组，并触发回调'-clearMessageForPlaybackViewModel:'
 - (void)clear;
 
 @end
 
 @protocol PLVECChatroomPlaybackViewModelDelegate <NSObject>
 
+/// 调用clear方法触发
 - (void)clearMessageForPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
 
+/// 首次获取回放数据的分段信息后触发
+/// @param success YES-已获取到回放数据分段信息 NO-获取数据失败或获取到的数据为空
 - (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
 
 /// 每0.2秒触发一次，用来定时获取当前视频播放时间
 - (NSTimeInterval)currentPlaybackTimeForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
 
-/// 新增聊天消息，UI需检查是否需要显示新消息提示
+/// 随着回放时间进度的推移，出现新的聊天消息时触发
 - (void)didReceiveNewMessagesForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
 
-/// 刷新聊天消息列表，列表应滚动到底部
+/// 回放视频被seek时触发，此时内存中的聊天数组会被清空
 - (void)didMessagesRefreshedForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
 
-/// 往上滚动，列表滚动到最顶部
+/// 下拉加载更多消息时触发，或者在回放视频被seek，自动加载历史消息时触发
 - (void)didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
 
 @end

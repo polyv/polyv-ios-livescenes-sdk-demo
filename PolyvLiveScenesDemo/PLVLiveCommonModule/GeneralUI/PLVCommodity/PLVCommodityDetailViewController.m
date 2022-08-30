@@ -10,7 +10,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <WebKit/WebKit.h>
 
-@interface PLVCommodityDetailViewController ()
+@interface PLVCommodityDetailViewController ()<WKNavigationDelegate>
 
 @property (nonatomic, strong) WKWebView *webView;
 @property (nonatomic, strong) NSURL *commodityURL;
@@ -67,6 +67,7 @@
 - (WKWebView *)webView {
     if (!_webView) {
         _webView = [[WKWebView alloc] init];
+        _webView.navigationDelegate = self;
     }
     return _webView;
 }
@@ -100,6 +101,25 @@
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:self.commodityURL
                                                            cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
     [self.webView loadRequest:request];
+}
+
+#pragma mark - [ Delegate ]
+#pragma mark WKNavigationDelegate
+
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    NSURL *url = navigationAction.request.URL;
+    NSString *scheme = url.scheme;
+    if (navigationAction.targetFrame == nil) {
+        [[UIApplication sharedApplication] openURL:navigationAction.request.URL];
+        decisionHandler(WKNavigationActionPolicyAllow);
+    } else {
+        if (![scheme isEqualToString:@"https"] && ![scheme isEqualToString:@"http"] && ![scheme isEqualToString:@"about"]) {
+            [[UIApplication sharedApplication] openURL:url];
+            decisionHandler(WKNavigationActionPolicyCancel);
+        } else {
+            decisionHandler(WKNavigationActionPolicyAllow);
+        }
+    }
 }
 
 @end

@@ -1,39 +1,39 @@
 //
-//  PLVLSBeautyViewModel.h
+//  PLVBeautyViewModel.h
 //  PolyvLiveScenesDemo
 //
-//  Created by JTom on 2022/4/13.
+//  Created by juno on 2022/8/12.
 //  Copyright © 2022 PLV. All rights reserved.
-// 美颜管理viewModel
+//  美颜 viewmodel
 
+#import <Foundation/Foundation.h>
 #import <Foundation/Foundation.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
-
-typedef NS_ENUM(NSInteger, PLVLSBeautyType) {
-    PLVLSBeautyTypeWhiten,
-    PLVLSBeautyTypeFilter,
-    PLVLSBeautyTypeFace
+typedef NS_ENUM(NSInteger, PLVBeautyType) {
+    PLVBeautyTypeWhiten, // 美白
+    PLVBeautyTypeFilter, // 滤镜
+    PLVBeautyTypeFace // 脸部细节
 };
 
-@class PLVLSBeautyViewModel;
-@protocol PLVLSBeautyViewModelDelegate <NSObject>
+@class PLVBeautyViewModel;
+@protocol PLVBeautyViewModelDelegate <NSObject>
 
 /// 切换 美颜、滤镜类型 时触发
 /// @param intensity 当前强度
 /// @param defaultIntensity 默认强度
-- (void)beautyViewModel:(PLVLSBeautyViewModel *)beautyViewModel didChangeIntensity:(CGFloat)intensity defaultIntensity:(CGFloat) defaultIntensity;
+- (void)beautyViewModel:(PLVBeautyViewModel *)beautyViewModel didChangeIntensity:(CGFloat)intensity defaultIntensity:(CGFloat) defaultIntensity;
 
 /// 切换 滤镜类型 时触发
-- (void)beautyViewModel:(PLVLSBeautyViewModel *)beautyViewModel didChangeFilterName:(NSString *)filterName;
+- (void)beautyViewModel:(PLVBeautyViewModel *)beautyViewModel didChangeFilterName:(NSString *)filterName;
 
 @end
 
-@interface PLVLSBeautyViewModel : NSObject
+@interface PLVBeautyViewModel : NSObject
 
 /// 代理
-@property (nonatomic, weak) id<PLVLSBeautyViewModelDelegate> delegate;
+@property (nonatomic, weak) id<PLVBeautyViewModelDelegate> delegate;
 /// 当前 美颜是否已就绪
 @property (nonatomic, assign, readonly) BOOL beautyIsReady;
 /// 当前 美颜是否开启
@@ -43,7 +43,7 @@ typedef NS_ENUM(NSInteger, PLVLSBeautyType) {
 /// 滤镜模型
 @property (nonatomic, strong, readonly) NSMutableArray<PLVBFilterOption *> *filterOptionArray;
 /// 当前选择了什么美颜类型
-@property (nonatomic, assign, readonly) PLVLSBeautyType beautyType;
+@property (nonatomic, assign, readonly) PLVBeautyType beautyType;
 
 /// 单例方法
 + (instancetype)sharedViewModel;
@@ -78,8 +78,8 @@ typedef NS_ENUM(NSInteger, PLVLSBeautyType) {
 - (void)selectBeautyFilterOption:(PLVBFilterOption *)filterOption;
 
 /// 切换美颜类型分类
-/// @param beautyType 美颜类型 
-- (void)selectBeautyType:(PLVLSBeautyType)beautyType;
+/// @param beautyType 美颜类型
+- (void)selectBeautyType:(PLVBeautyType)beautyType;
 
 /// 获取缓存选中的滤镜
 - (PLVBFilterOption *)getCacheSelectFilterOption;

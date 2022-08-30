@@ -20,7 +20,6 @@
 #import "PLVEmoticonManager.h"
 #import "PLVRoomDataManager.h"
 #import "PLVPlayerPresenter.h"
-#import "PLVLCChatroomPlaybackViewModel.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -391,6 +390,32 @@ PLVRoomDataManagerProtocol
 
 - (void)changeFileId:(NSString *)fileId {
     [self.playerPresenter changeFileId:fileId];
+}
+
+- (void)changePlayertoChannelId:(NSString * _Nonnull)channelId vodId:(NSString * _Nullable)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel * _Nullable)recordFile recordEnable:(BOOL)recordEnable {
+    if (![PLVFdUtil checkStringUseable:channelId]) {
+        NSLog(@"PLVLCMediaAreaView - changePlayerToChannel:vodId: failed, channelId:%@",channelId);
+        return;
+    }
+    
+    if (self.videoType == PLVChannelVideoType_Playback) {
+        if (recordEnable && !recordFile) {
+            NSLog(@"PLVLCMediaAreaView - changePlayerToChannel:recordFile: failed, recordFile is nil");
+            return;
+        } else if (!recordEnable && ![PLVFdUtil checkStringUseable:vodId]) {
+            NSLog(@"PLVLCMediaAreaView - changePlayerToChannel:vodId: failed, vodId:%@",vodId);
+            return;
+        }
+    }
+    
+    if (!self.playerPresenter) { return; }
+    
+    [self.playerPresenter cleanPlayer];
+    self.playerPresenter = nil;
+    
+    self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:self.videoType channelId:channelId vodId:vodId vodList:vodList recordFile:recordFile recordEnable:recordEnable];
+    self.playerPresenter.delegate = self;
+    [self.playerPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview];
 }
 
 #pragma mark 网络质量
@@ -1264,6 +1289,9 @@ PLVRoomDataManagerProtocol
 
 /// 播放器 ‘频道信息’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo{
+    /// 同步 频道信息
+    [PLVRoomDataManager sharedManager].roomData.channelInfo = channelInfo;
+    
     /// 设置 跑马灯
     PLVRoomData *roomData = self.roomData;
     [self setupMarquee:roomData.channelInfo customNick:roomData.roomUser.viewerName];

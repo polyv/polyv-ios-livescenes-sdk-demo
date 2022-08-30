@@ -1,16 +1,16 @@
 //
-//  PLVSABeautyViewModel.m
+//  PLVBeautyViewModel.m
 //  PolyvLiveScenesDemo
 //
-//  Created by JTom on 2022/4/13.
+//  Created by juno on 2022/8/12.
 //  Copyright © 2022 PLV. All rights reserved.
 //
 
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
-@interface PLVSABeautyViewModel()
+@interface PLVBeautyViewModel()
 
-@property (nonatomic, weak)PLVBeautyManager *beautyManager; // 美颜管理对象，弱引用
+@property (nonatomic, weak) PLVBeautyManager *beautyManager; // 美颜管理对象，弱引用
 
 @property (nonatomic, strong) NSMutableArray<PLVBFilterOption *> *filterOptionArray; // 滤镜数组
 @property (nonatomic, strong) NSMutableDictionary<NSString *, NSNumber *> *beautyOptionDict; // 美颜特效字典，记录每一个特效的强度
@@ -20,7 +20,7 @@
 @property (nonatomic, assign) PLVBBeautyOption currentBeautyOption; // 当前美颜类型
 @property (nonatomic, strong) PLVBFilterOption *currentFilterOption; // 当前滤镜类型
 @property (nonatomic, strong) PLVBFilterOption *defaultFilterOption; // 默认滤镜类型
-@property (nonatomic, assign) PLVSABeautyType beautyType; // 当前选择了什么美颜类型
+@property (nonatomic, assign) PLVBeautyType beautyType; // 当前选择了什么美颜类型
 
 @property (nonatomic, assign) BOOL beautyIsReady; // 当前 美颜是否已就绪
 @property (nonatomic, assign) BOOL beautyIsOpen; // 当前 美颜是否开启
@@ -28,21 +28,21 @@
 
 @end
 
-static NSString *kBeautyOptionDictKey = @"kPLVSABeautyOptionDictKey";
-static NSString *kBeautyFilterOptionDictKey = @"kPLVSABeautyFilterOptionDictKey";
-static NSString *kBeautyFilterSelectKey = @"kPLVSABeautyFilterSelectKey";
-static NSString *kBeautyOpenKey = @"kPLVSABeautyopenKey";
+static NSString *kBeautyOptionDictKey = @"kPLVBeautyOptionDictKey";
+static NSString *kBeautyFilterOptionDictKey = @"kPLVBeautyFilterOptionDictKey";
+static NSString *kBeautyFilterSelectKey = @"kPLVBeautyFilterSelectKey";
+static NSString *kBeautyOpenKey = @"kPLVBeautyopenKey";
 static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 
-@implementation PLVSABeautyViewModel
+@implementation PLVBeautyViewModel
 
 #pragma mark - [ Public Method ]
 
 + (instancetype)sharedViewModel {
     static dispatch_once_t onceToken;
-    static PLVSABeautyViewModel *viewModel = nil;
+    static PLVBeautyViewModel *viewModel = nil;
     dispatch_once(&onceToken, ^{
-        viewModel = [[PLVSABeautyViewModel alloc] init];
+        viewModel = [[PLVBeautyViewModel alloc] init];
     });
     return viewModel;
 }
@@ -72,8 +72,8 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 }
 
 - (void)updateBeautyOptionWithIntensity:(CGFloat)intensity {
-    if ((self.beautyType == PLVSABeautyTypeWhiten ||
-        self.beautyType == PLVSABeautyTypeFace) &&
+    if ((self.beautyType == PLVBeautyTypeWhiten ||
+        self.beautyType == PLVBeautyTypeFace) &&
         self.currentBeautyOption != -1) { // 特效模式
         [self.beautyManager updateBeautyOption:self.currentBeautyOption withIntensity:intensity];
         plv_dict_set(self.beautyOptionDict, [NSString stringWithFormat:@"%zd", self.currentBeautyOption], @(intensity));
@@ -99,7 +99,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
         // 滤镜模式
         CGFloat intensity = -1;
         [self.beautyManager setFilterOption:self.defaultFilterOption withIntensity:intensity];
-        if (self.beautyType == PLVSABeautyTypeFilter) {
+        if (self.beautyType == PLVBeautyTypeFilter) {
             [self notifyListenerDidChangeIntensity:intensity defaultIntensity:intensity];
         }
     
@@ -111,7 +111,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     self.currentBeautyOption = option;
     // 未开启美颜 或 当前选择的是滤镜 不继续处理
     if (!self.beautyIsOpen ||
-        self.beautyType == PLVSABeautyTypeFilter) {
+        self.beautyType == PLVBeautyTypeFilter) {
         return;
     }
     
@@ -141,7 +141,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     
     [self.beautyManager setFilterOption:filterOption withIntensity:intensity];
     
-    if (self.beautyType != PLVSABeautyTypeFilter) { // 当前没有选中滤镜模式，静默设置滤镜
+    if (self.beautyType != PLVBeautyTypeFilter) { // 当前没有选中滤镜模式，静默设置滤镜
         return;
     }
     
@@ -149,12 +149,12 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     [self notifyListenerDidChangeFilterName];
 }
 
-- (void)selectBeautyType:(PLVSABeautyType)beautyType {
+- (void)selectBeautyType:(PLVBeautyType)beautyType {
     self.beautyType = beautyType;
 }
 
 - (BOOL)isSelectedOriginFilter {
-    BOOL isSelectedOriginFilter = (self.beautyType == PLVSABeautyTypeFilter) && (self.currentFilterOption &&![PLVFdUtil checkStringUseable:self.currentFilterOption.filterKey]);
+    BOOL isSelectedOriginFilter = (self.beautyType == PLVBeautyTypeFilter) && (self.currentFilterOption &&![PLVFdUtil checkStringUseable:self.currentFilterOption.filterKey]);
     return isSelectedOriginFilter;
 }
 
@@ -336,6 +336,5 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
         })
     }
 }
-
 
 @end

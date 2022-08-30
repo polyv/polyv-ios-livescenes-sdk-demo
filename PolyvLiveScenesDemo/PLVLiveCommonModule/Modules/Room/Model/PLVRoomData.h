@@ -44,8 +44,12 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL playing;
 /// 是否是仅音频开播模式 【适用于手机开播场景】
 @property (nonatomic, assign) BOOL isOnlyAudio;
-/// 直播频道信息
+/// 嘉宾是否有移交主讲的权限 【适用于手机开播场景】
+@property (nonatomic, assign) BOOL guestTranAuthEnabled;
+/// 当前直播间的频道信息
 @property (nonatomic, strong) PLVChannelInfoModel *channelInfo;
+/// 当前播放器的频道信息 (因播放器具备‘独立运作’的特性，因此 [playerChannelInfo] 与 [channelInfo] 可能对应的频道号不一致)
+@property (nonatomic, strong) PLVChannelInfoModel *playerChannelInfo;
 /// 回放视频信息
 @property (nonatomic, strong) PLVPlaybackVideoInfoModel *playbackVideoInfo;
 /// 菜单信息，只读属性
@@ -131,6 +135,12 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL liveStatusIsLiving;
 /// 后台是否开启了美颜功能
 @property (nonatomic, assign) BOOL appBeautyEnabled;
+/// 后台开启 APP纯视频横屏开播 默认比例(16:9 , 4:3)
+@property (nonatomic, copy) NSString *appWebStartResolutionRatio;
+/// 后台是否开启 APP纯视频横屏开播可调比例功能
+@property (nonatomic, assign) BOOL appWebStartResolutionRatioEnabled;
+/// 当前推流宽高比（仅适用于纯视频横屏开播）
+@property (nonatomic, assign) PLVBLinkMicStreamScale streamScale;
 
 
 /// 设置 roomUser

@@ -85,6 +85,10 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
                                    pptStep:(NSUInteger)step
                                   maxNextNumber:(NSUInteger)maxNextNumber;
 
+/// 白板或PPT尺寸缩放比例改变时的回调
+/// @param zoomRatio 缩放比例
+- (void)documentView_whiteboardPPTZoomChangeRatio:(NSInteger)zoomRatio;
+
 /// app在直播过程中如果异常退出，可继续上次的直播，但需要获取上次直播文档
 /// @param autoId 文档autoId
 /// @param pageNumber 文档当前页码
@@ -104,13 +108,12 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 @property (nonatomic, assign, readonly) NSInteger totalPageNum;               // 总页码
 @property (nonatomic, assign, readonly) NSUInteger pptStep;                   // 当前文档所处于动画步数
 
-/// scene 为 PLVDocumentViewSceneStreamer 的数据
-@property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;            // 观看场景中 主讲的PPT当前是否在主屏
+/// scene 为PLVDocumentViewSceneCloudClass、 PLVDocumentViewSceneStreamer 的数据
+@property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;            // 当前场景中 主讲的PPT当前是否在主屏
 
 // TODO: 下面值待推流功能集成合并代码后，再处理
 // 距离上课时间点的已过时长（单位秒；包含退后台时间）
 @property (nonatomic, assign) NSTimeInterval liveDurationAfterStart;
-
 
 /// 是否开始上课
 /// NO: 在接受到'sendSocketEvent' js事件时，不发送画笔'onSliceDraw'事件
@@ -173,6 +176,12 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 
 #pragma mark - 推流专用方法(scene == PLVDocumentViewSceneStreamer 时方生效）
 
+/// 设置文档的用户交互启用
+/// @note 讲师默认启用，嘉宾默认禁用，只有嘉宾角色才需要开启或者关闭用户交互手势
+///
+/// @param enabled  是否启用 YES 启用，NO禁用
+- (void)setDocumentUserInteractionEnabled:(BOOL)enabled;
+
 /// 设置画板是否处于可绘制状态
 /// @param open  打开或关闭画板
 - (void)setPaintStatus:(BOOL)open;
@@ -209,6 +218,9 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 
 /// 新增白板方法
 - (void)addWhiteboard;
+
+/// 重置 白板或PPT 缩放比例为 100%
+- (void)resetWhiteboardPPTZoomRatio;
 
 @end
 

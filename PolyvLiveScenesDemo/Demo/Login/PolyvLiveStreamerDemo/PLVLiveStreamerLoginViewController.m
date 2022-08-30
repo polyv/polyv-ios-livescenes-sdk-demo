@@ -11,6 +11,7 @@
 #import "PLVLiveScenesPrivacyViewController.h"
 #import "PLVLSStreamerViewController.h"
 #import "PLVSAStreamerViewController.h"
+#import "PLVAlertViewController.h"
 
 #import "PLVLoginTextField.h"
 #import "PLVRoomLoginClient.h"
@@ -407,27 +408,48 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 
 - (void)loginButtonClickAction {
     __weak typeof(self) weakSelf = self;
-    [self loginStreamerRoomWithCompletionHandler:^{
-        // 记住密码
-        if (self.rememberPasswordButton.selected) {
-            NSArray *userInfoArray = @[@(YES), self.tfChannelId.text, self.tfPassword.text, self.tfNickName.text];
-            [[NSUserDefaults standardUserDefaults] setObject:userInfoArray forKey:kUserDefaultUserInfo];
+    [self mediaAudioGrantedCompletion:^{
+        [weakSelf loginStreamerRoomWithCompletionHandler:^{
+            // 记住密码
+            if (weakSelf.rememberPasswordButton.selected) {
+                NSArray *userInfoArray = @[@(YES), weakSelf.tfChannelId.text, weakSelf.tfPassword.text, weakSelf.tfNickName.text];
+                [[NSUserDefaults standardUserDefaults] setObject:userInfoArray forKey:kUserDefaultUserInfo];
+            } else {
+                [[NSUserDefaults standardUserDefaults] removeObjectForKey:kUserDefaultUserInfo];
+            }
+            [[NSUserDefaults standardUserDefaults] synchronize];
+
+            PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+            [PLVBugReporter setUserIdentifier:roomData.roomUser.viewerId];
+
+            if (roomData.channelType == PLVChannelTypePPT) {
+                PLVLSStreamerViewController *vctrl = [[PLVLSStreamerViewController alloc] init];
+                vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
+                [weakSelf presentViewController:vctrl animated:YES completion:nil];
+            } else if (roomData.channelType == PLVChannelTypeAlone) {
+                PLVSAStreamerViewController *vctrl = [[PLVSAStreamerViewController alloc] init];
+                vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
+                [weakSelf presentViewController:vctrl animated:YES completion:nil];
+            }
+        }];
+    }];
+}
+
+- (void)mediaAudioGrantedCompletion:(void (^)(void))handler {
+    // 判断麦克风权限
+    __weak typeof(self) weakSelf = self;
+    PLVAuthorizationType type = PLVAuthorizationTypeMediaAudio;
+    [PLVAuthorizationManager requestAuthorizationWithType:type completion:^(BOOL granted) {
+        if (granted) {
+            handler ? handler() : nil;
         } else {
-            [[NSUserDefaults standardUserDefaults] removeObjectForKey:kUserDefaultUserInfo];
-        }
-        [[NSUserDefaults standardUserDefaults] synchronize];
-
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        [PLVBugReporter setUserIdentifier:roomData.roomUser.viewerId];
-
-        if (roomData.channelType == PLVChannelTypePPT) {
-            PLVLSStreamerViewController *vctrl = [[PLVLSStreamerViewController alloc] init];
-            vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
-            [weakSelf presentViewController:vctrl animated:YES completion:nil];
-        } else if (roomData.channelType == PLVChannelTypeAlone) {
-            PLVSAStreamerViewController *vctrl = [[PLVSAStreamerViewController alloc] init];
-            vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
-            [weakSelf presentViewController:vctrl animated:YES completion:nil];
+            PLVAlertViewController *alert = [PLVAlertViewController alertControllerWithTitle:@"麦克风权限被禁止" message:@"请在“设置-隐私-麦克风”中允许POLYV开播访问您的麦克风" cancelActionTitle:@"取消" cancelHandler:nil confirmActionTitle:@"前往设置" confirmHandler:^{
+                NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                    [[UIApplication sharedApplication] openURL:url];
+                }
+            }];
+            [weakSelf presentViewController:alert animated:NO completion:nil];
         }
     }];
 }

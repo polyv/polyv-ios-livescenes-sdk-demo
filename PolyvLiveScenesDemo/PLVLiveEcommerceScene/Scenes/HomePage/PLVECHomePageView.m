@@ -177,8 +177,8 @@ PLVECCardPushButtonViewDelegate
 - (PLVECChatroomView *)chatroomView {
     if (!_chatroomView) {
         _chatroomView = [[PLVECChatroomView alloc] init];
-        if ((self.type == PLVECHomePageType_Live ||
-             [PLVRoomDataManager sharedManager].roomData.menuInfo.chatInputDisable)) {
+        if (self.type == PLVECHomePageType_Live ||
+            [PLVRoomDataManager sharedManager].roomData.menuInfo.chatInputDisable) { // 直播一定会显示聊天室，回放只有chatInputDisable为YES时会显示聊天室
             _chatroomView.delegate = self;
         } else {
             _chatroomView.hidden = YES;

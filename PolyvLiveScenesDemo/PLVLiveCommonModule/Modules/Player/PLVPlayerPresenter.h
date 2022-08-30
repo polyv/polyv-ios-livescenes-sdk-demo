@@ -33,8 +33,14 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) id <PLVPlayerPresenterDelegate> delegate;
 
 #pragma mark 数据
+/// 当前播放器的频道号
+@property (nonatomic, copy, readonly) NSString * channelId;
+
 /// 当前播放器的类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType currentVideoType;
+
+/// 当前最新“频道信息”对象（当前“当前播放器的频道号 channelId”的“频道信息”）
+@property (nonatomic, assign, readonly, nullable) PLVChannelInfoModel * currentChannelInfo;
 
 /// 当前直播的 可选线路数量 (暂时仅直播支持)
 @property (nonatomic, assign, readonly) NSInteger lineNum;
@@ -67,6 +73,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *videoId;
 
 #pragma mark 状态
+/// 当前“播放器的频道号”是否与“外部频道号”一致
+@property (nonatomic, assign, readonly) BOOL channelMatchExternal;
+
 /// 当前频道的 ‘直播流状态’
 ///
 /// @note 此属性也可通过 [PLVRoomDataManager sharedManager].roomData.liveState 进行访问
@@ -75,11 +84,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// 该频道是否 ‘直播中’ (以 ‘直播流状态’ 作为依据)
 @property (nonatomic, assign, readonly) BOOL channelInLive;
 
-/// 该频道是否观看 ‘无延迟直播’
+/// 该频道是否配置为观看 ‘无延迟直播’ (以 后台配置数据 作为依据；当 [channelMatchExternal] 为NO时，此值无意义，而恒为NO)
 @property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
 
-/// 该频道是否观看 ‘快直播’
+/// 播放器当前是否加载 ‘无延迟直播’（以 当前直播播放器是否加载无延迟 作为依据；）
+@property (nonatomic, assign, readonly) BOOL currentPlayerWatchNoDelay;
+
+/// 该频道是否观看 ‘快直播’( 以 后台配置数据 作为依据；当 [channelMatchExternal] 为NO时，此值无意义，而恒为NO)
 @property (nonatomic, assign, readonly) BOOL channelWatchQuickLive;
+
+/// 播放器当前是否加载 ‘快直播’（以 当前直播播放器是否加载快直播 作为依据；）
+@property (nonatomic, assign, readonly) BOOL currentPlayerWatchQuickLive;
 
 /// 当前是否为无延迟观看模式（包括无延迟直播和快直播）
 @property (nonatomic, assign, readonly) BOOL noDelayWatchMode;
@@ -112,8 +127,24 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark 通用
 /// 创建 播放器
 ///
+/// @note 默认以 PLVRoomDataManager 中 roomData 的数据进行播放器初始化
+///
 /// @param videoType 视频类型
 - (instancetype)initWithVideoType:(PLVChannelVideoType)videoType;
+
+/// 通过指定数据 创建 播放器
+///
+/// @note 该方法不会读取 PLVRoomDataManager 中 roomData 的数据
+///       对于不同的 videoType视频类型，参数传入要求不同；
+///
+/// @param videoType 视频类型（必传）
+/// @param channelId 频道号Id（必传）
+/// @param vodId 直播回放Id (PLVChannelVideoType_Live 时传值无效，PLVChannelVideoType_Playback 时且 recordEnable 为 YES 时传值无效；PLVChannelVideoType_Playback 时且 recordEnable 为 NO 时必传)
+/// @param vodList 是否是“点播列表”视频 (PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时且 recordEnable 为 NO 时必传)
+/// @param recordFile 暂存视频模型（PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时且 recordEnable 为 YES 时必传）
+/// @param recordEnable 是否是“暂存”视频可用 (PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时必传)
+
+- (instancetype)initWithVideoType:(PLVChannelVideoType)videoType channelId:(NSString * _Nonnull)channelId vodId:(NSString * _Nullable)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel * _Nullable)recordFile recordEnable:(BOOL)recordEnable;
 
 /// 设置 承载播放器画面 的父视图
 ///
@@ -214,6 +245,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 播放器 ‘频道信息’ 发生改变
 ///
 /// @param playerPresenter 播放器管理器
+/// @param channelInfo 当前最新 ’频道信息‘ 对象
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo;
 
 /// 播放器 ‘回放视频信息’ 发生改变

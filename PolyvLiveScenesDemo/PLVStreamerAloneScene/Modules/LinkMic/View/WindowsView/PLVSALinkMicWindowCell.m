@@ -35,6 +35,7 @@
 @property (nonatomic, strong) UILabel *nickNameLabel; // 昵称文本框 (负责展示 用户昵称)
 @property (nonatomic, strong) UIButton *micButton; // 麦克风按钮 (负责展示 不同状态下的麦克风图标)
 @property (nonatomic, strong) UILabel *linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
+@property (nonatomic, strong) UIImageView *speakerImageView;       // 主讲权限图片视图 (负责展示 主讲状态)
 @property (nonatomic, strong) UIButton *closeFullScreenButton; // 关闭全屏 按钮
 @property (nonatomic, strong) UIImageView *screenSharingImageView; // 屏幕共享时 背景图
 @property (nonatomic, strong) UILabel *screenSharingLabel; // 屏幕共享时 文本框
@@ -70,6 +71,8 @@
     self.contentBackgroudView.frame = self.contentView.bounds;
     self.micButton.frame = CGRectMake(leftPadding, contentViewHeight - 14 - bottomPadding, 14, 14);
     self.linkMicStatusLabel.frame = CGRectMake(statusLabelLeftPadding, statusLabelTopPadding, 41, 16);
+    CGFloat speakerImageViewLeft = self.linkMicStatusLabel.isHidden ? statusLabelLeftPadding : CGRectGetMaxX(self.linkMicStatusLabel.frame) + 8;
+    self.speakerImageView.frame = CGRectMake(speakerImageViewLeft, statusLabelTopPadding, 16, 16);
     self.screenSharingImageView.frame = CGRectMake((contentViewWidth - 44)/2, (contentViewHeight - 44)/2 - 20, 44, 44);
     self.screenSharingLabel.frame = CGRectMake((contentViewWidth - 100)/2, CGRectGetMaxY(self.screenSharingImageView.frame) + 4, 100, 18);
     
@@ -156,6 +159,19 @@
         [self.contentBackgroudView addSubview:aOnlineUser.canvasView];
     }
     
+    // 主讲权限更新
+    if (aOnlineUser.userType == PLVSocketUserTypeGuest) {
+        self.speakerImageView.hidden = hide || !aOnlineUser.isRealMainSpeaker;
+        [aOnlineUser addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if ([onlineUser.linkMicUserId isEqualToString:weakSelf.onlineUser.linkMicUserId]) {
+                weakSelf.speakerImageView.hidden = !onlineUser.isRealMainSpeaker;
+                [weakSelf layoutSubviews];
+            }
+        } blockKey:self];
+    } else {
+        self.speakerImageView.hidden = YES;
+    }
+    
     // 屏幕共享事件的响应、更新
     [self updateScreenShareViewWithOnlineUser:aOnlineUser];
     [aOnlineUser addScreenShareOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
@@ -175,6 +191,7 @@
     [self.contentView addSubview:self.micButton];
     [self.contentView addSubview:self.nickNameLabel];
     [self.contentView addSubview:self.linkMicStatusLabel];
+    [self.contentView addSubview:self.speakerImageView];
     [self.contentView addSubview:self.closeFullScreenButton];
     [self.contentView addSubview:self.screenSharingImageView];
     [self.contentView addSubview:self.screenSharingLabel];
@@ -311,6 +328,15 @@
         _linkMicStatusLabel.hidden = YES;
     }
     return _linkMicStatusLabel;
+}
+
+- (UIImageView *)speakerImageView{
+    if (!_speakerImageView) {
+        _speakerImageView = [[UIImageView alloc]init];
+        _speakerImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_speakerauth_icon"];
+        _speakerImageView.hidden = YES;
+    }
+    return _speakerImageView;
 }
 
 - (UIImageView *)screenSharingImageView{

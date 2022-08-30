@@ -28,7 +28,7 @@
 #import "PLVSAChatroomViewModel.h"
 #import "PLVMemberPresenter.h"
 #import "PLVStreamerPresenter.h"
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -109,6 +109,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, assign) CGFloat maxCameraZoomRatio;   // 当前摄像头允许的最大变焦倍数
 @property (nonatomic, assign) BOOL localUserScreenShareOpen; // 本地用户是否开启了屏幕共享
 @property (nonatomic, assign) BOOL otherUserFullScreen; // 非本地用户开启了全屏
+@property (nonatomic, assign, readonly) PLVBLinkMicStreamScale streamScale; // 当前直播流比例
 
 @end
 
@@ -321,6 +322,10 @@ UIGestureRecognizerDelegate
     return _pinchGesture;
 }
 
+- (PLVBLinkMicStreamScale)streamScale {
+    return [PLVRoomDataManager sharedManager].roomData.streamScale;
+}
+
 #pragma mark Initialize
 
 - (void)setupUI {
@@ -340,6 +345,7 @@ UIGestureRecognizerDelegate
     self.streamerPresenter = [[PLVStreamerPresenter alloc] init];
     self.streamerPresenter.delegate = self;
     self.streamerPresenter.preRenderContainer = self.linkMicAreaView;
+    self.streamerPresenter.localPreviewViewFillMode = PLVBRTCVideoViewFillMode_Fit;
     
     // 设置麦克风、摄像头默认配置
     self.streamerPresenter.micDefaultOpen = YES;
@@ -355,7 +361,23 @@ UIGestureRecognizerDelegate
     // 初始化美颜
     [self.streamerPresenter initBeauty];
     
+    // 设置直播流比例
+    if (self.viewerType == PLVRoomUserTypeTeacher) {
+        [self setupLiveroomStreamScale];
+    }
+    
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
+}
+
+/// 设置直播间 流比例
+- (void)setupLiveroomStreamScale {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVBLinkMicStreamScale streamScale = roomData.streamScale;
+    PLVBLinkMicStreamScale localStreamScale = [self getCurrentChannelLocalStreamScale];
+    if (localStreamScale > -1 && roomData.appWebStartResolutionRatioEnabled) {
+        streamScale = localStreamScale;
+    }
+    [self.settingView synchPushStreamScale:streamScale];
 }
 
 - (void)getEdgeInset {
@@ -425,7 +447,7 @@ UIGestureRecognizerDelegate
                     
                     [weakSelf tryResumeClass];
                     // 开启RTC图像数据回调给美颜处理
-                    [weakSelf.streamerPresenter enableBeautyProcess:[PLVSABeautyViewModel sharedViewModel].beautyIsOpen];
+                    [weakSelf.streamerPresenter enableBeautyProcess:[PLVBeautyViewModel sharedViewModel].beautyIsOpen];
                 }
             }];
         }
@@ -557,13 +579,29 @@ UIGestureRecognizerDelegate
     if (![PLVFdUtil checkDictionaryUseable:dict]) {
         dict = [NSMutableDictionary dictionary];
     }
-    /// 保存屏幕方向和开播时间
+    /// 保存屏幕方向、开播时间、推流比例
     if ([PLVFdUtil checkStringUseable:self.channelId]) {
         UIDeviceOrientation orientation = [PLVSAUtils sharedUtils].deviceOrientation;
         NSInteger timeInterval = (NSInteger)[[NSDate date] timeIntervalSince1970];
         dict[self.channelId] = @{@"orientation" : @(orientation),
-                                 @"startTime" : @(timeInterval)};
+                                 @"startTime" : @(timeInterval),
+                                 @"streamScale" :@(self.streamScale)
+        };
         [[NSUserDefaults standardUserDefaults] setObject:dict forKey:kPLVSAUserDefaultsUserStreamInfo];
+    }
+}
+
+/// 存储频道开播信息
+- (void)saveChannelStreamScaleInfo {
+    NSMutableDictionary *dict = [[[NSUserDefaults standardUserDefaults] objectForKey:kPLVSAUserDefaultsUserStreamInfo] mutableCopy];
+    if (![PLVFdUtil checkDictionaryUseable:dict]) {
+        dict = [NSMutableDictionary dictionary];
+    }
+    /// 保存推流比例
+    if ([PLVFdUtil checkStringUseable:self.channelId]) {
+        dict[self.channelId] = @{@"streamScale" :@(self.streamScale)};
+        [[NSUserDefaults standardUserDefaults] setObject:dict forKey:kPLVSAUserDefaultsUserStreamInfo];
+        [[NSUserDefaults standardUserDefaults] synchronize];
     }
 }
 
@@ -576,6 +614,18 @@ UIGestureRecognizerDelegate
         return userDict;
     }
     return nil;
+}
+
+/// 读取频道开播画面比例信息
+- (PLVBLinkMicStreamScale)getCurrentChannelLocalStreamScale{
+    NSDictionary *userDict = [self getCurrentChannelStoringStreamInfo];
+    if ([PLVFdUtil checkDictionaryUseable:userDict] &&
+        [userDict.allKeys containsObject:@"streamScale"]) {
+        PLVBLinkMicStreamScale localStreamScale = MIN([userDict[@"streamScale"] integerValue], PLVBLinkMicStreamScale4_3);
+        return localStreamScale;
+    }
+    
+    return -1;
 }
 
 /// 清理过期频道开播信息
@@ -611,7 +661,7 @@ UIGestureRecognizerDelegate
 
 #pragma mark 美颜
 - (void)showBeautySheet:(BOOL)show {
-    if (![PLVSABeautyViewModel sharedViewModel].beautyIsReady) {
+    if (![PLVBeautyViewModel sharedViewModel].beautyIsReady) {
         [PLVSAUtils showToastInHomeVCWithMessage:@"美颜未准备就绪，请退出重新登录"];
         return;
     }
@@ -771,14 +821,21 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
            linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
                  authSpeaker:(BOOL)authSpeaker {
-    if (onlineUser.userType == PLVSocketUserTypeTeacher) {
+    if (onlineUser && onlineUser.userType == PLVSocketUserTypeTeacher) {
         /// 讲师主讲权限变更不需要提醒
         return;
     }
     
     [self.linkMicAreaView updateFirstSiteCanvasViewWithUserId:onlineUser.linkMicUserId toFirstSite:onlineUser.isRealMainSpeaker];
     NSString *message = nil;
-    if (onlineUser.localUser) {
+    if (onlineUser.isGuestTransferPermission) {
+        if (self.streamerPresenter.localOnlineUser.currentScreenShareOpen) {
+            message = @"你已移除主讲权限，屏幕共享已结束";
+            [self.streamerPresenter.localOnlineUser wantOpenScreenShare:NO];
+        } else {
+            message = @"已移交主讲权限";
+        }
+    } else if (onlineUser.localUser) {
         if (authSpeaker) {
            message = @"你已被授予主讲权限";
         } else if (self.streamerPresenter.localOnlineUser.currentScreenShareOpen) {
@@ -789,12 +846,13 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
         }
     } else {
         if (authSpeaker) {
-           message = [NSString stringWithFormat:@"%@ 成为主讲人", onlineUser.nickname];
+            message = [NSString stringWithFormat:@"%@ 成为主讲人", onlineUser.nickname];
         } else {
             message = [NSString stringWithFormat:@"%@ 的主讲权限已被移除", onlineUser.nickname];
         }
     }
     [PLVSAUtils showToastWithMessage:message inView:self.view];
+    [onlineUser updateUserIsGuestTransferPermission:NO];
 }
 
 /// ‘是否上课已开始’ 发生变化
@@ -922,7 +980,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (result == 0) {
         // 配置美颜
         PLVBeautyManager *beautyManager = [self.streamerPresenter shareBeautyManager];
-        [[PLVSABeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
+        [[PLVBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
     } else {
         [PLVSAUtils showToastInHomeVCWithMessage:[NSString stringWithFormat:@"美颜初始化失败 %d 请重进直播间", result]];
     }
@@ -982,8 +1040,8 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerSettingViewStartButtonClickWithResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
-    PLVBLinkMicStreamScale streamScale =[PLVSAUtils sharedUtils].isLandscape? PLVBLinkMicStreamScale16_9:PLVBLinkMicStreamScale9_16;
-    [self.streamerPresenter setupStreamScale:streamScale];
+    PLVBLinkMicStreamScale currentStreamScale =[PLVSAUtils sharedUtils].isLandscape ? self.streamScale : PLVBLinkMicStreamScale9_16;
+    [self.streamerPresenter setupStreamScale:currentStreamScale];
     [self.streamerPresenter setupStreamQuality:streamQuality];
     if (self.viewerType == PLVRoomUserTypeGuest) {
         [self.streamerPresenter joinRTCChannel];
@@ -1017,6 +1075,15 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView {
     [self.beautySheet deviceOrientationDidChange];
+    PLVBLinkMicStreamScale currentStreamScale =[PLVSAUtils sharedUtils].isLandscape ? self.streamScale : PLVBLinkMicStreamScale9_16;
+    [self.streamerPresenter setupStreamScale:currentStreamScale];
+}
+
+- (void)streamerSettingViewStreamScaleButtonClickWithStreamScale:(PLVBLinkMicStreamScale)streamScale {
+    if ([PLVSAUtils sharedUtils].isLandscape) {
+        [self saveChannelStreamScaleInfo];
+    }
+    [self.streamerPresenter setupStreamScale:streamScale];
 }
 
 #pragma mark PLVSAStreamerHomeViewProtocol

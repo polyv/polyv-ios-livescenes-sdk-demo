@@ -112,7 +112,7 @@
     self.screenShareButton.selected = selectedState;
     self.cameraButton.enabled = !selectedState;
     self.cameraReverseButton.enabled = !selectedState;
-    self.mirrorButton.enabled = !selectedState;
+    self.mirrorButton.enabled = !selectedState && self.currentCameraOpen && self.currentCameraFront;
 }
 
 #pragma mark 当前用户配置

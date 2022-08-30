@@ -303,6 +303,10 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 主讲将会拥有第一画面、上传打开课件、翻页PPT、画笔权限
 @property (nonatomic, assign, readonly) BOOL isRealMainSpeaker;
 
+/// 是否为 嘉宾移交主讲权限
+/// 主讲权限可通过主讲和嘉宾授权，嘉宾授权时需要区分
+@property (nonatomic, assign, readonly) BOOL isGuestTransferPermission;
+
 /// 用户的 屏幕共享 当前是否开启
 @property (nonatomic, assign, readonly) BOOL currentScreenShareOpen;
 
@@ -387,6 +391,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 ///
 /// @note 若最终 用户当前主讲权限 有所改变，则将触发 [currentSpeakerAuthChangedBlock]；
 - (void)updateUserCurrentSpeakerAuth:(BOOL)isRealMainSpeaker;
+
+/// 更新用户的 ‘是否是嘉宾移交的权限’
+- (void)updateUserIsGuestTransferPermission:(BOOL)isGuestTransferPermission;
 
 /// 更新用户的 ‘屏幕共享状态’
 ///
@@ -515,6 +522,17 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @param strongBlock ’闪光灯开关状态‘ 改变Block (强引用)
 /// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
 - (void)addCameraTorchOpenChangedBlock:(PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey;
+
+/// 使用 blockKey 添加一个 ’当前是否上麦状态‘ 改变Block
+///
+/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
+///           否则，建议直接使用属性声明中的 [currentStatusVoiceChangedBlock]，将更加便捷；
+///       (2) 具体回调规则，与 [currentStatusVoiceChangedBlock] 相同无异；
+///       (3) 无需考虑 ‘什么时机去释放、去解除绑定’，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
+///
+/// @param strongBlock ’当前是否上麦状态‘ 改变Block (强引用)
+/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
+- (void)addCurrentStatusVoiceChangedBlock:(PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock)strongBlock blockKey:(id)weakBlockKey;
 
 /// 使用 blockKey 添加一个 ’当前主讲权限‘ 改变Block
 ///

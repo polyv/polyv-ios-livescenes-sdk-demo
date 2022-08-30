@@ -12,7 +12,7 @@
 // UI
 #import "PLVLSSliderView.h"
 // 模块
-#import "PLVLSBeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 @interface PLVLSBeautySliderView()<
 PLVLSSliderViewDelegate

@@ -10,7 +10,7 @@
 #import "PLVChatUser.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
-//定时器触发回调时间间隔，单位'秒'
+// 定时器触发回调时间间隔，单位'秒'
 static NSInteger kIntervalTime = 0.2;
 
 @interface PLVChatroomPlaybackPresenter ()<
@@ -55,14 +55,12 @@ PLVPlaybackMessageManagerDelegate
         
         // 创建定时器
         [self createTimer];
-        
-//        self.eachLoadingHistoryCount = 20;
     }
     return self;
 }
 
 - (void)updateDuration:(NSTimeInterval)duration {
-    if (duration > 0 && duration != self.duration) {
+    if (duration > 0 && duration != self.duration) { // 注意这里self.duration单位是毫秒
         self.duration = duration * 1000;
     }
 }
@@ -144,13 +142,13 @@ PLVPlaybackMessageManagerDelegate
         NSTimeInterval lastPlaybackTime = self.currentPlaybackTime;
         if (self.duration > 0 &&
             playbackTime < lastPlaybackTime &&
-            fabs(lastPlaybackTime - self.duration) < 500 && playbackTime < 500) {
+            fabs(lastPlaybackTime - self.duration) < 500 && playbackTime < 500) { // 此时可假设视频播放结束后重新从头播放
             [self playbakTimeChanged];
             return;
         }
         
         self.currentPlaybackTime = playbackTime;
-        if (self.currentPlaybackTime <= lastPlaybackTime) {
+        if (self.currentPlaybackTime <= lastPlaybackTime) { // 视频播放时间出现后推时不予处理
             return;
         }
         
@@ -187,7 +185,7 @@ PLVPlaybackMessageManagerDelegate
         if ([playbackMessags count] > 0) {
             NSArray <PLVChatModel *>*chatModelArray = [self chatModelArrayFromPlaybackMessageArray:playbackMessags];
             [self.delegate didLoadMoreChatModels:chatModelArray chatroomPlaybackPresenter:self];
-        } else {
+        } else { // 空数据也要触发回调，否则下拉控件不会停止旋转动画
             [self.delegate didLoadMoreChatModels:@[] chatroomPlaybackPresenter:self];
         }
     }

@@ -13,7 +13,7 @@
 #import "PLVSABeautyFilterCollectionViewCell.h"
 // 模块
 #import "PLVSABeautyCellModel.h"
-#import "PLVSABeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 @interface PLVSABeautyFilterViewController () <
 UICollectionViewDataSource,
@@ -39,7 +39,7 @@ static int kItemLineNum = 3; // 每行item数
     [self.view addSubview:self.collectionView];
     [self.collectionView reloadData];
     
-    PLVBFilterOption *cacheFilter = [[PLVSABeautyViewModel sharedViewModel] getCacheSelectFilterOption];
+    PLVBFilterOption *cacheFilter = [[PLVBeautyViewModel sharedViewModel] getCacheSelectFilterOption];
     if (!cacheFilter || !self.dataArray) {
         self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
     }else {
@@ -64,8 +64,8 @@ static int kItemLineNum = 3; // 每行item数
 #pragma mark - [ Override ]
 - (void)setupDataArray {
     [super setupDataArray];
-    NSMutableArray *tempArrayM = [NSMutableArray arrayWithCapacity:[PLVSABeautyViewModel sharedViewModel].filterOptionArray.count];
-    for (PLVBFilterOption *option in [PLVSABeautyViewModel sharedViewModel].filterOptionArray) {
+    NSMutableArray *tempArrayM = [NSMutableArray arrayWithCapacity:[PLVBeautyViewModel sharedViewModel].filterOptionArray.count];
+    for (PLVBFilterOption *option in [PLVBeautyViewModel sharedViewModel].filterOptionArray) {
         PLVSABeautyCellModel *model = [[PLVSABeautyCellModel alloc] initWithTitle:option.filterName imageName:[NSString stringWithFormat:@"plvsa_beauty_filter_%@", option.filterSpellName] beautyOption:-1 selected:NO filterOption:option];
         [tempArrayM addObject:model];
     }
@@ -74,7 +74,7 @@ static int kItemLineNum = 3; // 每行item数
 
 - (void)showContentView {
     [super showContentView];
-    if ([PLVSABeautyViewModel sharedViewModel].beautyIsOpen) {
+    if ([PLVBeautyViewModel sharedViewModel].beautyIsOpen) {
         [self didSelectItemAtIndexPath:self.selectedIndexPath];
     } else {
         [self.collectionView reloadData];
@@ -118,7 +118,7 @@ static int kItemLineNum = 3; // 每行item数
 
 #pragma mark didSelectItem
 - (void)didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    if ([PLVSABeautyViewModel sharedViewModel].beautyIsOpen &&
+    if ([PLVBeautyViewModel sharedViewModel].beautyIsOpen &&
         self.dataArray.count > indexPath.row) {
         self.selectedIndexPath = indexPath;
         
@@ -126,7 +126,7 @@ static int kItemLineNum = 3; // 每行item数
         for (PLVSABeautyCellModel *tempModel in self.dataArray) {
             [tempModel updateSelected:model == tempModel];
         }
-        [[PLVSABeautyViewModel sharedViewModel] selectBeautyFilterOption:model.filerOption];
+        [[PLVBeautyViewModel sharedViewModel] selectBeautyFilterOption:model.filerOption];
     }
 }
 
@@ -144,8 +144,8 @@ static int kItemLineNum = 3; // 每行item数
     PLVSABeautyFilterCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:PLVSABeautyFilterCollectionViewCell.cellID forIndexPath:indexPath];
     if (self.dataArray.count > indexPath.row) {
         PLVSABeautyCellModel *model = self.dataArray[indexPath.row];
-        [cell updateCellModel:model beautyOpen:[PLVSABeautyViewModel sharedViewModel].beautyIsOpen];
-        cell.userInteractionEnabled = [PLVSABeautyViewModel sharedViewModel].beautyIsOpen;
+        [cell updateCellModel:model beautyOpen:[PLVBeautyViewModel sharedViewModel].beautyIsOpen];
+        cell.userInteractionEnabled = [PLVBeautyViewModel sharedViewModel].beautyIsOpen;
     }
     return cell;
 }

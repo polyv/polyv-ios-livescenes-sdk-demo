@@ -11,6 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// 互动应用 公告
+DEPRECATED_MSG_ATTRIBUTE("已废弃，请使用PLVInteractGenericView")
 @interface PLVInteractBulletin : PLVInteractBaseApp
 
 - (void)openLastBulletin;

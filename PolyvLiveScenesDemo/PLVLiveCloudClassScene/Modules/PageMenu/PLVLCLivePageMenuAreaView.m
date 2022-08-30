@@ -160,18 +160,6 @@ PLVRoomDataManagerProtocol
     return commodityMenu;
 }
 
-- (void)changeCloseRoomStatus:(BOOL)closeRoom {
-    if (self.chatVctrl) {
-        [self.chatVctrl changeCloseRoomStatus:closeRoom];
-    }
-}
-
-- (void)changeFocusMode:(BOOL)focusMode {
-    if (self.chatVctrl) {
-        [self.chatVctrl changeFocusMode:focusMode];
-    }
-}
-
 #pragma mark - Private Method
 
 - (void)updateChannelMenuInfo {

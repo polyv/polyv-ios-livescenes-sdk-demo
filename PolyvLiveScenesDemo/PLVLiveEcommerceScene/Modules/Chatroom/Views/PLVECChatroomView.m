@@ -54,10 +54,12 @@ PLVECChatroomPlaybackViewModelDelegate
 
 @property (nonatomic, strong) UIView *tapView;
 @property (nonatomic, strong) UITextView *textView;
-
-@property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
-
+/// 聊天室是否处于聊天回放状态，默认为NO
+@property (nonatomic, assign) BOOL playbackEnable;
+/// 聊天重放viewModel
 @property (nonatomic, strong) PLVECChatroomPlaybackViewModel *playbackViewModel;
+/// 当前视频类型
+@property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
 
 @end
 
@@ -72,20 +74,20 @@ PLVECChatroomPlaybackViewModelDelegate
 - (instancetype)init {
     self = [self initWithFrame:CGRectZero];
     if (self) {
-        if (self.videoType == PLVChannelVideoType_Live) {
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        self.playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
+        
+        if (self.videoType == PLVChannelVideoType_Live) { // 直播一定会显示聊天室
             [[PLVECChatroomViewModel sharedViewModel] setup];
             [PLVECChatroomViewModel sharedViewModel].delegate = self;
             
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
-        } else {
+        } else { // 回放时只有chatInputDisable为YES时会显示聊天室
             [[PLVECChatroomViewModel sharedViewModel] setup];
-
             [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
             
-            PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-            BOOL playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
-            if (playbackEnable && roomData.playbackSessionId) {
+            if (self.playbackEnable && roomData.playbackSessionId) {
                 self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
                 self.playbackViewModel.delegate = self;
             }
@@ -142,7 +144,7 @@ PLVECChatroomPlaybackViewModelDelegate
         [self.receiveNewMessageView addGestureRecognizer:gesture];
         [self addSubview:self.receiveNewMessageView];
         
-        if (self.videoType == PLVChannelVideoType_Live) {
+        if (self.videoType == PLVChannelVideoType_Live) { // 聊天重放时聊天室不允许发消息
             self.textAreaView = [[UIView alloc] init];
             self.textAreaView.layer.cornerRadius = 20.0;
             self.textAreaView.layer.masksToBounds = YES;
@@ -255,6 +257,30 @@ PLVECChatroomPlaybackViewModelDelegate
     [self.playbackViewModel playbakTimeChanged];
 }
 
+#pragma mark - Private Method
+
+// 数据源数目
+- (NSInteger)dataCount {
+    NSInteger count = 0;
+    if (self.playbackEnable) {
+        count = [self.playbackViewModel.chatArray count];
+    } else {
+        count = [[[PLVECChatroomViewModel sharedViewModel] chatArray] count];
+    }
+    return count;
+}
+
+// 根据indexPath得到数据模型
+- (PLVChatModel *)modelAtIndexPath:(NSIndexPath *)indexPath {
+    PLVChatModel *model = nil;
+    if (self.playbackEnable) {
+        model = self.playbackViewModel.chatArray[indexPath.row];
+    } else {
+        model = [[PLVECChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+    }
+    return model;
+}
+
 #pragma mark - Action
 
 - (void)textAreaViewTapAction {
@@ -273,10 +299,10 @@ PLVECChatroomPlaybackViewModelDelegate
 }
 
 - (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
-    if (self.videoType == PLVChannelVideoType_Live) {
-        [[PLVECChatroomViewModel sharedViewModel] loadHistory];
-    } else {
+    if (self.playbackEnable) {
         [self.playbackViewModel loadMoreMessages];
+    } else {
+        [[PLVECChatroomViewModel sharedViewModel] loadHistory];
     }
 }
 
@@ -339,19 +365,21 @@ PLVECChatroomPlaybackViewModelDelegate
 
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (self.videoType == PLVChannelVideoType_Playback && !self.playbackViewModel) {
-        [self.playbackViewModel clear];
-        
-        self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
-        self.playbackViewModel.delegate = self;
+    if (self.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
+        if (!self.playbackViewModel) { // 填入vid登陆的回放场景，需要在登陆后通过播放器返回场次id
+            self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+            self.playbackViewModel.delegate = self;
+        }
     }
 }
 
+/// vid更新，回放场景中，自动播放回放列表的下一个回放视频时触发
 - (void)roomDataManager_didVidChanged:(NSString *)vid {
+    // 清理上一场的数据
+    [self.playbackViewModel clear];
+    
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
-        [self.playbackViewModel clear];
-        
+    if (self.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
         self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
         self.playbackViewModel.delegate = self;
     }
@@ -426,9 +454,6 @@ PLVECChatroomPlaybackViewModelDelegate
 }
 
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom {
-    if (self.videoType != PLVChannelVideoType_Live) {
-        return;
-    }
     dispatch_async(dispatch_get_main_queue(), ^{
         self.placeholderLB.text = closeRoom ? @"聊天室已关闭" : @"跟大家聊点什么吧～";
         for (UIGestureRecognizer *gestureRecognizer in self.textAreaView.gestureRecognizers) {
@@ -439,10 +464,6 @@ PLVECChatroomPlaybackViewModelDelegate
 }
 
 - (void)chatroomManager_focusMode:(BOOL)focusMode {
-    if (self.videoType != PLVChannelVideoType_Live) {
-        return;
-    }
-    [PLVECChatroomViewModel sharedViewModel].onlyTeacher = focusMode;
     [self.tableView reloadData];
     dispatch_async(dispatch_get_main_queue(), ^{
         self.placeholderLB.text = focusMode ? @"聊天室专注模式已开启" : @"跟大家聊点什么吧～";
@@ -473,7 +494,6 @@ PLVECChatroomPlaybackViewModelDelegate
     return 0;
 }
 
-/// 新增聊天消息，UI需检查是否需要显示新消息提示
 - (void)didReceiveNewMessagesForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
     // 如果距离底部5内都算底部
     BOOL isBottom = (self.tableView.contentSize.height
@@ -491,14 +511,12 @@ PLVECChatroomPlaybackViewModelDelegate
     }
 }
 
-/// 刷新聊天消息列表，列表应滚动到底部
 - (void)didMessagesRefreshedForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
     [self.tableView reloadData];
     [self.receiveNewMessageView hidden];
     [self scrollsToBottom];
 }
 
-/// 往上滚动，列表滚动到最顶部
 - (void)didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
     [self.refresher endRefreshing];
     [self.tableView reloadData];
@@ -569,34 +587,15 @@ PLVECChatroomPlaybackViewModelDelegate
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    NSInteger count = 0;
-    if (self.videoType == PLVChannelVideoType_Live) {
-        count = [[[PLVECChatroomViewModel sharedViewModel] chatArray] count];
-    } else {
-        count = [self.playbackViewModel.chatArray count];
-    }
-    return count;
+    return [self dataCount];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSInteger count = 0;
-    if (self.videoType == PLVChannelVideoType_Live) {
-        count = [[[PLVECChatroomViewModel sharedViewModel] chatArray] count];
-    } else {
-        count = [self.playbackViewModel.chatArray count];
-    }
-    
-    if (indexPath.row >= count) {
+    if (indexPath.row >= [self dataCount]) {
         return [UITableViewCell new];
     }
     
-    PLVChatModel *model = nil;
-    if (self.videoType == PLVChannelVideoType_Live) {
-        model = [[PLVECChatroomViewModel sharedViewModel] chatArray][indexPath.row];
-    } else {
-        model = self.playbackViewModel.chatArray[indexPath.row];
-    }
-    
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
     static NSString *cellIdentify = @"cellIdentify";
     PLVECChatCell *cell = (PLVECChatCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -611,23 +610,11 @@ PLVECChatroomPlaybackViewModelDelegate
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSInteger count = 0;
-    if (self.videoType == PLVChannelVideoType_Live) {
-        count = [[[PLVECChatroomViewModel sharedViewModel] chatArray] count];
-    } else {
-        count = [self.playbackViewModel.chatArray count];
-    }
-    
-    if (indexPath.row >= count) {
+    if (indexPath.row >= [self dataCount]) {
         return 0;
     }
     
-    PLVChatModel *model = nil;
-    if (self.videoType == PLVChannelVideoType_Live) {
-        model = [[PLVECChatroomViewModel sharedViewModel] chatArray][indexPath.row];
-    } else {
-        model = self.playbackViewModel.chatArray[indexPath.row];
-    }
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
     CGFloat cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     return cellHeight;
 }

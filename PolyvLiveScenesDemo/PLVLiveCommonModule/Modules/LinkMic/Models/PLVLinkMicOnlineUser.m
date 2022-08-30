@@ -18,6 +18,7 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraShouldShowChangedBlock> * cameraShouldShowChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraFrontChangedBlock> * cameraFrontChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCameraTorchOpenChangedBlock> * cameraTorchOpenChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock> * currentStatusVoiceChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock> * currentSpeakerAuthChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserScreenShareOpenChangedBlock> * currentScreenShareOpenChanged_MultiReceiverMap;
 
@@ -119,6 +120,13 @@
         _cameraTorchOpenChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
     }
     return _cameraTorchOpenChanged_MultiReceiverMap;
+}
+
+- (NSMapTable<id,PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock> *)currentStatusVoiceChanged_MultiReceiverMap{
+    if (!_currentStatusVoiceChanged_MultiReceiverMap) {
+        _currentStatusVoiceChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
+    }
+    return _currentStatusVoiceChanged_MultiReceiverMap;
 }
 
 - (NSMapTable<id,PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock> *)currentSpeakerAuthChanged_MultiReceiverMap{
@@ -485,6 +493,18 @@
             if (weakSelf) { weakSelf.currentStatusVoiceChangedBlock(weakSelf); }
         })
     }
+    
+    if (needCallBack && _currentStatusVoiceChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentStatusVoiceCallbackBefore = YES;
+        NSEnumerator * enumerator = [_currentStatusVoiceChanged_MultiReceiverMap objectEnumerator];
+        PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock block;
+        __weak typeof(self) weakSelf = self;
+        while ((block = [enumerator nextObject])) {
+            plv_dispatch_main_async_safe(^{
+                if (weakSelf) { block(weakSelf); }
+            })
+        }
+    }
 }
 
 - (void)updateUserCurrentSpeakerAuth:(BOOL)isRealMainSpeaker {
@@ -516,6 +536,10 @@
             })
         }
     }
+}
+
+- (void)updateUserIsGuestTransferPermission:(BOOL)isGuestTransferPermission {
+    _isGuestTransferPermission = isGuestTransferPermission;
 }
 
 - (void)updateUserCurrentScreenShareOpen:(BOOL)screenShareOpen {
@@ -708,6 +732,22 @@
         return;
     }
     [self.cameraTorchOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
+}
+
+- (void)addCurrentStatusVoiceChangedBlock:(PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock)strongBlock blockKey:(id)weakBlockKey{
+    if (!strongBlock) {
+        NSLog(@"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，strongBlock illegal");
+        return;
+    }
+    if (!weakBlockKey) {
+        NSLog(@"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        return;
+    }
+    if (self.currentStatusVoiceChanged_MultiReceiverMap.count > 20) {
+        NSLog(@"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，block registration limit has been reached");
+        return;
+    }
+    [self.currentStatusVoiceChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
 }
 
 - (void)addCurrentSpeakerAuthChangedBlock:(PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey{

@@ -7,12 +7,12 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "PLVLSBeautyViewModel.h"
+#import "PLVBeautyViewModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 @interface PLVLSBeautyContentView : UIView
 
-- (void)selectContentViewWithType:(PLVLSBeautyType)type;
+- (void)selectContentViewWithType:(PLVBeautyType)type;
 
 /// 开启/关闭 美颜
 /// @param open YES:开启 NO:关闭

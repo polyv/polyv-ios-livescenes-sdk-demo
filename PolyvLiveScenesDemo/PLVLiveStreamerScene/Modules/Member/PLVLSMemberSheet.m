@@ -44,6 +44,8 @@ UITableViewDataSource
 @property (nonatomic, assign) BOOL tableViewEditing; // 列表是否处于左滑中状态
 @property (nonatomic, assign) BOOL delayReload; // 是否在左滑时遇到列表刷新通知
 @property (nonatomic, assign) BOOL showLeftDragAnimation; // 显示左滑动画
+@property (nonatomic, assign) BOOL isRealMainSpeaker; // 本地用户是否是主讲
+
 @end
 
 @implementation PLVLSMemberSheet
@@ -108,6 +110,10 @@ UITableViewDataSource
     [self updateUI];
 }
 
+- (void)updateLocalUserSpeakerAuth:(BOOL)auth {
+    self.isRealMainSpeaker = auth;
+    [self.tableView reloadData];
+}
 
 #pragma mark - [Private Method ]
 
@@ -263,7 +269,7 @@ UITableViewDataSource
     }
 }
 
-- (void)memberCell_didTapBan:(BOOL)banned withUer:(PLVChatUser *)user {
+- (void)memberCell_didTapBan:(BOOL)banned withUser:(PLVChatUser *)user {
     BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:banned bannedUserId:user.userId];
     if (success) {
         if (self.delegate &&
@@ -273,7 +279,7 @@ UITableViewDataSource
     }
 }
 
-- (void)memberCell_didTapKickWithUer:(PLVChatUser *)user {
+- (void)memberCell_didTapKickWithUser:(PLVChatUser *)user {
     BOOL success = [[PLVChatroomManager sharedManager] sendKickMessageWithUserId:user.userId];
     if (success) {
         if (self.delegate &&
@@ -287,6 +293,10 @@ UITableViewDataSource
     NSInteger maxLinkMicCount = [PLVRoomDataManager sharedManager].roomData.interactNumLimit;
     BOOL allowLinkmic = self.onlineCount <= maxLinkMicCount;
     return allowLinkmic;
+}
+
+- (BOOL)localUserIsRealMainSpeakerInCell:(PLVLSMemberCell *)cell {
+    return self.isRealMainSpeaker;
 }
 
 #pragma mark UITableViewDataSource
