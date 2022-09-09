@@ -41,7 +41,6 @@ PLVLCMediaMoreViewDelegate,
 PLVLCMediaPlayerCanvasViewDelegate,
 PLVDocumentViewDelegate,
 PLVPlayerPresenterDelegate,
-PLVLCRetryPlayViewDelegate,
 PLVRoomDataManagerProtocol
 >
 
@@ -138,7 +137,6 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
-@property (nonatomic, strong) PLVLCRetryPlayView *retryPlayView; // 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable; // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView; // 网络糟糕提示视图
@@ -228,7 +226,6 @@ PLVRoomDataManagerProtocol
         [self.moreView layoutIfNeeded];
     }
 
-    self.retryPlayView.frame = self.frame;
     self.watermarkView.frame = self.contentBackgroudView.frame;
 }
 
@@ -508,8 +505,6 @@ PLVRoomDataManagerProtocol
     
     [self addSubview:self.skinView];
     
-    [self addSubview:self.retryPlayView];
-    
     [self addSubview:self.memoryPlayTipLabel];
     
     /// 网络质量提示
@@ -744,7 +739,6 @@ PLVRoomDataManagerProtocol
     dispatch_async(dispatch_get_main_queue(), ^{
         // 设置跑马灯
         [weakSelf.marqueeView setPLVMarqueeModel:model];
-        [weakSelf.marqueeView start];
     });
 }
 
@@ -854,16 +848,6 @@ PLVRoomDataManagerProtocol
         [_pptView loadRequestWitParamString:nil];
     }
     return _pptView;
-}
-
-- (PLVLCRetryPlayView *)retryPlayView {
-    if (!_retryPlayView) {
-        _retryPlayView = [[PLVLCRetryPlayView alloc]init];
-        _retryPlayView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.1);
-        _retryPlayView.hidden = YES;
-        _retryPlayView.delegate = self;
-    }
-    return _retryPlayView;
 }
 
 - (PLVWatermarkView *)watermarkView {
@@ -1102,6 +1086,10 @@ PLVRoomDataManagerProtocol
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.logoImageView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
+    }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.defaultPageView.refreshButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+        return YES;
+    }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.defaultPageView.switchLineButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+        return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.advertView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
     }else{
@@ -1269,7 +1257,9 @@ PLVRoomDataManagerProtocol
 
 /// 播放器 发生错误
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter loadPlayerFailureWithMessage:(NSString *)errorMessage{
-    [PLVLCUtils showHUDWithTitle:@"" detail:errorMessage view:[PLVFdUtil getCurrentViewController].view];
+    if (self.playerPresenter.audioMode) {
+        [self.canvasView setPlayCanvasButtonShow:NO];
+    }
 }
 
 /// 播放器 ‘视频大小’ 发生改变
@@ -1325,6 +1315,23 @@ PLVRoomDataManagerProtocol
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playbackVideoInfoDidUpdated:)]) {
         [self.delegate plvLCMediaAreaView:self playbackVideoInfoDidUpdated:videoInfo];
+    }
+}
+
+- (void)playerPresenterWannaSwitchLine:(PLVPlayerPresenter *)playerPresenter {
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (fullScreen) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewWannaLiveRoomSkinViewShowMoreView:)]) {
+            [self.delegate plvLCMediaAreaViewWannaLiveRoomSkinViewShowMoreView:self];
+        }
+    } else {
+        [self plvLCBasePlayerSkinViewMoreButtonClicked:self.skinView];
+    }
+}
+
+- (void)playerPresenterResumePlaying:(PLVPlayerPresenter *)playerPresenter {
+    if (self.playerPresenter.audioMode) {
+        [self.canvasView setPlayCanvasButtonShow:YES];
     }
 }
 
@@ -1415,6 +1422,14 @@ PLVRoomDataManagerProtocol
     }
 }
 
+/// 播放器 广告‘正在播放状态’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter advertViewPlayingStateDidChanged:(BOOL)playing {
+    [self refreshPictureInPictureButtonShow:!playing];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:advertViewPlayingDidChange:)]) {
+        [self.delegate plvLCMediaAreaView:self advertViewPlayingDidChange:playing];
+    }
+}
+
 // 非直播相关
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter downloadProgress:(CGFloat)downloadProgress playedProgress:(CGFloat)playedProgress playedTimeString:(NSString *)playedTimeString durationTimeString:(NSString *)durationTimeString{
     [self.skinView setProgressWithCachedProgress:downloadProgress playedProgress:playedProgress durationTime:playerPresenter.duration currentTimeString:playedTimeString durationString:durationTimeString];
@@ -1426,7 +1441,7 @@ PLVRoomDataManagerProtocol
 
 // 回放视频播放中断
 - (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter {
-    self.retryPlayView.hidden = NO;
+
 }
 
 /// 画中画即将开启
@@ -1492,13 +1507,6 @@ PLVRoomDataManagerProtocol
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureDidStop:)]) {
         [self.delegate plvLCMediaAreaViewPictureInPictureDidStop:self];
     }
-}
-
-#pragma mark PLVLCRetryPlayViewDelegate
-/// 重试按钮被点击
-- (void)plvLCRetryPlayViewReplayButtonClicked {
-    self.retryPlayView.hidden = YES;
-    [self.playerPresenter resumePlay];
 }
 
 #pragma mark PLVRoomDataManagerProtocol

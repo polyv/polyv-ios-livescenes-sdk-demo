@@ -936,6 +936,12 @@ PLVLCChatroomPlaybackDelegate
     }
 }
 
+- (void)plvLCMediaAreaViewWannaLiveRoomSkinViewShowMoreView:(PLVLCMediaAreaView *)mediaAreaView {
+    if (self.liveRoomSkinView) {
+        [self.mediaAreaView plvLCBasePlayerSkinViewMoreButtonClicked:self.liveRoomSkinView];
+    }
+}
+
 /// 媒体区域视图询问是否有 外部视图 处理此次触摸事件
 - (BOOL)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView askHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
@@ -1001,6 +1007,11 @@ PLVLCChatroomPlaybackDelegate
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveWannaPlay:(BOOL)wannaPlay {
     [self noDelayLiveWannaPlay:wannaPlay];
     [self.linkMicAreaView pauseWatchNoDelay:!wannaPlay];
+}
+
+/// 广告‘正在播放状态’ 发生改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView advertViewPlayingDidChange:(BOOL)playing {
+    [self.liveRoomSkinView refreshPictureInPictureButtonShow:!playing];
 }
 
 -(void)plvLCMediaAreaViewClickDownloadListButton:(PLVLCMediaAreaView *)mediaAreaView {

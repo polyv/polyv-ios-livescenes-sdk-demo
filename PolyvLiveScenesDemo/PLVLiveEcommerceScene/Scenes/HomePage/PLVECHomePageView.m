@@ -378,6 +378,19 @@ PLVECCardPushButtonViewDelegate
     self.shoppingCartButton.hidden = !show;
 }
 
+- (void)showMoreView {
+    if (self.type == PLVECHomePageType_Live) {
+        if (self.isPlaying) {
+            [self.moreView reloadData];
+        } else {
+            [self.moreView removeMoreViewItems];
+        }
+        self.moreView.hidden = NO;
+    } else if (self.type == PLVECHomePageType_Playback) {
+        [self updateSwitchView:PLVECSwitchViewType_Speed];
+    }
+}
+
 - (void)updateChannelInfo:(NSString *)publisher coverImage:(NSString *)coverImage {
     self.liveRoomInfoView.publisherLB.text = publisher;
     [PLVFdUtil setImageWithURL:[NSURL URLWithString:coverImage]
@@ -506,7 +519,7 @@ PLVECCardPushButtonViewDelegate
 
 - (void)updateDelayModeSwitchViewHiddenState {
     BOOL hidden = self.audioMode ||
-    (![PLVRoomDataManager sharedManager].roomData.menuInfo.quickLiveEnabled &&
+    (![PLVRoomDataManager sharedManager].roomData.menuInfo.watchQuickLive &&
     ![PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay);
     if (hidden == self.hiddenDelayModeSwitch) {
         return;
@@ -561,16 +574,7 @@ PLVECCardPushButtonViewDelegate
 #pragma mark - Action
 
 - (void)moreButtonAction:(id)sender {
-    if (self.type == PLVECHomePageType_Live) {
-        if (self.isPlaying) {
-            [self.moreView reloadData];
-        } else {
-            [self.moreView removeMoreViewItems];
-        }
-        self.moreView.hidden = NO;
-    } else if (self.type == PLVECHomePageType_Playback) {
-        [self updateSwitchView:PLVECSwitchViewType_Speed];
-    }
+    [self showMoreView];
 }
 
 - (void)giftButtonAction:(id)sender {

@@ -10,6 +10,7 @@
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVAdvertView.h"
+#import "PLVDefaultPageView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -31,6 +32,9 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark 可配置项
 /// delegate
 @property (nonatomic, weak) id <PLVPlayerPresenterDelegate> delegate;
+
+/// 视频加载缓慢时缺省页显示时间，默认15秒
+@property (nonatomic, assign) NSInteger defaultPageShowDuration;
 
 #pragma mark 数据
 /// 当前播放器的频道号
@@ -119,6 +123,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// LOGO视图（当前频道存在播放器LOGO时显示）
 @property (nonatomic, readonly) UIImageView *logoImageView;
+
+/// 缺省页视图（当前频道播放器报错时显示）
+@property (nonatomic, readonly) PLVDefaultPageView *defaultPageView;
 
 /// 广告视图（当前频道存在片头广告或暂停广告时显示）
 @property (nonatomic, readonly) PLVAdvertView *advertView;
@@ -253,6 +260,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param playerPresenter 播放器管理器
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo;
 
+/// 播放器 切换线路
+///
+/// @param playerPresenter 播放器管理器
+- (void)playerPresenterWannaSwitchLine:(PLVPlayerPresenter *)playerPresenter;
+
+/// 播放器 正在刷新
+///
+/// @param playerPresenter 播放器管理器
+- (void)playerPresenterResumePlaying:(PLVPlayerPresenter *)playerPresenter;
+
 #pragma mark 直播相关
 /// 直播 ‘流状态’ 更新
 ///
@@ -292,6 +309,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param playerPresenter 播放器管理器
 /// @param netWorkQuality 当前网络质量
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter quickLiveNetworkQuality:(PLVLivePlayerQuickLiveNetworkQuality)netWorkQuality;
+
+/// 播放器 广告‘正在播放状态’ 发生改变
+///
+/// @param playerPresenter 播放器管理器
+/// @param playing 是否正在播放
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter advertViewPlayingStateDidChanged:(BOOL)playing;
 
 #pragma mark 非直播相关
 /// 直播回放播放器 定时返回当前播放进度

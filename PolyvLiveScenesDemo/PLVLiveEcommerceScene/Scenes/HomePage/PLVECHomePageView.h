@@ -82,6 +82,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 - (void)showShoppingCart:(BOOL)show;
 
+- (void)showMoreView;
+
 - (void)updateChannelInfo:(NSString *)publisher coverImage:(NSString *)coverImage;
 
 - (void)updateRoomInfoCount:(NSUInteger)roomInfoCount;

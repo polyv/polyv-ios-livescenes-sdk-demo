@@ -38,6 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)playerController:(PLVECPlayerViewController *)playerController
  quickLiveNetworkQuality:(PLVECLivePlayerQuickLiveNetworkQuality)netWorkQuality;
 
+- (void)playerControllerWannaSwitchLine:(PLVECPlayerViewController *)playerController;
 #pragma mark 回放的回调
 
 /// 更新回放进度

@@ -227,6 +227,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 媒体区域的 皮肤视图 出现/隐藏回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangedSkinShowStatus:(BOOL)skinShow forSkinView:(PLVLCBasePlayerSkinView *)skinView;
 
+/// 媒体区域希望横屏皮肤显示更多视图
+- (void)plvLCMediaAreaViewWannaLiveRoomSkinViewShowMoreView:(PLVLCMediaAreaView *)mediaAreaView;
+
 /// 媒体区域视图询问是否有 外部视图 处理此次触摸事件
 ///
 /// @note 并非任何触摸事件，都将回调此方法，因为有些触摸事件是点击 皮肤视图skinView 上的有效控件的。
@@ -252,6 +255,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// [无延迟直播] 无延迟直播 ‘播放或暂停’
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveWannaPlay:(BOOL)wannaPlay;
+
+///  广告‘正在播放状态’ 发生改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView advertViewPlayingDidChange:(BOOL)playing;
 
 /// 回放场景
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString;

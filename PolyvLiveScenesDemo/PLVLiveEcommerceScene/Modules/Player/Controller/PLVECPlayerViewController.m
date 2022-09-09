@@ -229,7 +229,6 @@ PLVPlayerPresenterDelegate
     dispatch_async(dispatch_get_main_queue(), ^{
         // 设置跑马灯
         [weakSelf.marqueeView setPLVMarqueeModel:model];
-        [weakSelf.marqueeView start];
     });
 }
 
@@ -297,7 +296,6 @@ PLVPlayerPresenterDelegate
     if (!_contentBackgroudView) {
         _contentBackgroudView = [[UIView alloc]init];
         _contentBackgroudView.backgroundColor = [UIColor blackColor];
-        _contentBackgroudView.hidden = !(self.roomData.videoType == PLVChannelVideoType_Playback);
     }
     return _contentBackgroudView;
 }
@@ -439,7 +437,7 @@ PLVPlayerPresenterDelegate
 #pragma mark - Public
 
 - (void)play {
-    if (self.playerPresenter.noDelayWatchMode) {
+    if (self.playerPresenter.noDelayWatchMode && !self.playerPresenter.quickLiveWatching) {
         self.playing = YES;
         self.playButton.hidden = YES;
         if (self.delegate &&
@@ -452,7 +450,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)pause {
-    if (self.playerPresenter.noDelayWatchMode) {
+    if (self.playerPresenter.noDelayWatchMode && !self.playerPresenter.quickLiveWatching) {
         self.playing = NO;
         self.playButton.hidden = NO;
         if (self.delegate &&
@@ -460,7 +458,9 @@ PLVPlayerPresenterDelegate
             [self.delegate playerController:self noDelayLiveWannaPlay:self.playing];
         }
     } else if ([self.playerPresenter pausePlay]) {
-        self.playButton.hidden = NO;
+        if (self.playerPresenter.defaultPageView.hidden) {
+            self.playButton.hidden = NO;
+        }
     }
 }
 
@@ -581,11 +581,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter loadPlayerFailureWithMessage:(NSString *)errorMessage{
-    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
-    hud.mode = PLVProgressHUDModeText;
-    [hud.label setText:@"播放器加载失败"];
-    hud.detailsLabel.text = errorMessage;
-    [hud hideAnimated:YES afterDelay:2];
+    
 }
 
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter videoSizeChange:(CGSize)videoSize{
@@ -608,9 +604,8 @@ PLVPlayerPresenterDelegate
 
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter streamStateUpdate:(PLVChannelLiveStreamState)newestStreamState streamStateDidChanged:(BOOL)streamStateDidChanged{
     PLVChannelInfoModel *channelInfo = self.roomData.channelInfo;
-    if (newestStreamState == PLVChannelLiveStreamState_Unknown ||
-        (newestStreamState == PLVChannelLiveStreamState_End &&
-         channelInfo.warmUpType == PLVChannelWarmUpType_None)) {
+    if (newestStreamState == PLVChannelLiveStreamState_End &&
+         channelInfo.warmUpType == PLVChannelWarmUpType_None) {
         self.contentBackgroudView.hidden = YES;
         self.displayRect = self.backgroundView.frame;
         self.contentBackgroudView.frame = self.displayRect;
@@ -656,7 +651,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter {
-    self.playButton.hidden = NO;
+
 }
 
 /// 直播播放器 需获知外部 ‘当前是否已暂停无延迟观看’
@@ -678,6 +673,12 @@ PLVPlayerPresenterDelegate
         if ([self.delegate respondsToSelector:@selector(playerController:noDelayLiveStartUpdate:)]) {
             [self.delegate playerController:self noDelayLiveStartUpdate:noDelayLiveStart];
         }
+    }
+}
+
+- (void)playerPresenterWannaSwitchLine:(PLVPlayerPresenter *)playerPresenter {
+    if (self.delegate &&[self.delegate respondsToSelector:@selector(playerControllerWannaSwitchLine:)]) {
+        [self.delegate playerControllerWannaSwitchLine:self];
     }
 }
 

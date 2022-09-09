@@ -513,10 +513,13 @@ UIGestureRecognizerDelegate
         
     if (self.scene == PLVDocumentViewSceneStreamer) {
         NSDictionary * dataDict = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
-        NSInteger autoId = PLV_SafeIntegerForDictKey(dataDict, @"autoId");
-        NSInteger pageId = PLV_SafeIntegerForDictKey(dataDict, @"pageId");
-        self.autoId = autoId;
-        self.currPageNum = pageId;
+        NSString *eventType = PLV_SafeStringForDictKey(dataDict, @"type");
+        if (![eventType isEqualToString:@"changeVideoAndPPTPosition"]) { // 切换主副屏时，消息体内未返回autoId与pageId字段，此事件下，不需要更新
+            NSInteger autoId = PLV_SafeIntegerForDictKey(dataDict, @"autoId");
+            NSInteger pageId = PLV_SafeIntegerForDictKey(dataDict, @"pageId");
+            self.autoId = autoId;
+            self.currPageNum = pageId;
+        }
         [self.jsBridge refreshPPTWithJsonObject:jsonDict delay:0];
     }else {
         if (self.videoType != PLVChannelVideoType_Playback) { // 新增条件判断：非直播回放时，才更新画笔数据

@@ -177,6 +177,10 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
     self.splashImageView.hidden = YES;
 }
 
+- (void)setPlayCanvasButtonShow:(BOOL)show {
+    self.playCanvasButton.hidden = !show;
+}
+
 - (void)setPictureInPicturePlaceholderShow:(BOOL)show {
     self.pictureInPicturePlaceholderView.hidden = !show;
 }

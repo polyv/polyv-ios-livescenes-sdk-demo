@@ -34,6 +34,7 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, assign) BOOL needLocalGuestAutoLinkMic; // 断网重连是否需要重新上麦
 
 #pragma mark 数据
+@property (nonatomic, copy) NSString * linkMicUserId;
 @property (nonatomic, strong) NSMutableArray <PLVLinkMicWaitUser *> * waitUserMuArray;
 @property (nonatomic, strong) NSMutableArray <PLVLinkMicOnlineUser *> * onlineUserMuArray;
 @property (nonatomic, weak) PLVLinkMicOnlineUser * realMainSpeakerUser;  // 注意: 弱引用
@@ -46,7 +47,6 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, strong) NSMutableDictionary <NSString *, NSDictionary*> * prerecordUserMediaStatusDict; // 用于提前记录用户媒体状态的字典
 
 #pragma mark 外部数据封装
-@property (nonatomic, copy, readonly) NSString * linkMicUserId;
 @property (nonatomic, copy, readonly) NSString * stream;
 @property (nonatomic, copy, readonly) NSString * currentStream;
 @property (nonatomic, copy, readonly) NSString * rtmpUrl;
@@ -2156,7 +2156,18 @@ PLVChannelClassManagerDelegate
 
 #pragma mark Getter
 - (NSString *)linkMicUserId{
-    return [PLVSocketManager sharedManager].linkMicId;;
+    if (!_linkMicUserId) {
+        if (self.viewerType == PLVRoomUserTypeTeacher) { // 若是讲师，则linkMicId为channelId
+            _linkMicUserId = self.channelId;
+        }else if (self.viewerType == PLVRoomUserTypeGuest){ // 若是嘉宾，则linkMicId为聊天室Id
+            _linkMicUserId = self.userId;
+        }else{
+            NSInteger timeInterval = (NSInteger)[[NSDate date] timeIntervalSince1970];
+            _linkMicUserId = @(timeInterval).stringValue;
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"create linkMicUserId failed, will use timeInterval");
+        }
+    }
+    return _linkMicUserId;
 }
 
 - (NSString *)rtcType{

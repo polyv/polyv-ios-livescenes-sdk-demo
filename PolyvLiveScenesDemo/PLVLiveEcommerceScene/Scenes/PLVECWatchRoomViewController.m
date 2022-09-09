@@ -522,6 +522,14 @@ PLVInteractGenericViewDelegate
     [self.homePageView updateNoDelayWatchMode:noDelayWatchMode];
 }
 
+- (void)playerControllerWannaSwitchLine:(PLVECPlayerViewController *)playerController {
+    [UIView animateWithDuration:0.5 animations:^{
+            self.scrollView.contentOffset = CGPointMake(CGRectGetMinX(self.homePageView.frame), 0);
+        } completion:^(BOOL finished) {
+            [self.homePageView showMoreView];
+        }];
+}
+
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(NSTimeInterval)duration

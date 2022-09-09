@@ -53,6 +53,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaPlayerCanvasViewType) {
 /// 隐藏音频观看占位图
 - (void)hideSplashImageView;
 
+/// 隐藏播放画面按钮
+- (void)setPlayCanvasButtonShow:(BOOL)show;
+
 /// 画中画占位视图的隐藏/显示
 /// @param show 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)setPictureInPicturePlaceholderShow:(BOOL)show;

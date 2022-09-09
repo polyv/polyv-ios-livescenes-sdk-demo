@@ -135,7 +135,6 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
                                                avatarUrl:roomUser.viewerAvatar
                                               extraParam:extraParam
                                                    actor:roomUser.actor
-                                                 rtcType:roomData.menuInfo.rtcType
                                                 userType:userType];
 }
 
