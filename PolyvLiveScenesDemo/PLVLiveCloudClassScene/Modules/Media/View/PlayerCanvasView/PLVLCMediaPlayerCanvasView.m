@@ -202,6 +202,10 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 }
 
 - (void)refreshplayerSuperviewFrame{
+    if(CGRectEqualToRect(self.bounds, CGRectZero)) {
+        return;
+    }
+    
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
     

@@ -29,6 +29,7 @@
 @property (nonatomic, strong) UIButton *cameraBitRateButton; // 摄像头清晰度
 @property (nonatomic, strong) UIButton *closeRoomButton; // 全体禁言
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜
+@property (nonatomic, strong) UIButton *shareButton; // 分享
 
 // 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType userType;
@@ -53,6 +54,9 @@
         [self.contentView addSubview:self.closeRoomButton];
         if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
             [self.contentView addSubview:self.beautyButton];
+        }
+        if ([self canShareLiveroom]) {
+            [self.contentView addSubview:self.shareButton];
         }
     }
     return self;
@@ -90,6 +94,10 @@
     self.closeRoomButton.hidden = ![self canManagerCloseRoom];
     if ([self canManagerCloseRoom]) {
         [buttonArray addObject:self.closeRoomButton];
+    }
+    
+    if ([self canShareLiveroom]) {
+        [buttonArray addObject:self.shareButton];
     }
     
     [self setButtonFrameWithArray:buttonArray];
@@ -277,10 +285,11 @@
         _closeRoomButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _closeRoomButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         _closeRoomButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _closeRoomButton.titleLabel.textAlignment = NSTextAlignmentCenter;
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
         BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
-        NSString *normalTitle = isPad && !isLandscape ? @"开启全体禁言" : @"开启全\n体禁言";
-        NSString *selectedTitle = isPad && !isLandscape ? @"取消全体禁言" : @"取消全\n体禁言";
+        NSString *normalTitle = isPad && !isLandscape ? @"开启全体禁言" : @"开启全体\n禁言";
+        NSString *selectedTitle = isPad && !isLandscape ? @"取消全体禁言" : @"取消全体\n禁言";
         [_closeRoomButton setTitle:normalTitle forState:UIControlStateNormal];
         [_closeRoomButton setTitle:selectedTitle forState:UIControlStateSelected];
         [_closeRoomButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_allmicphoneClose"] forState:UIControlStateNormal];
@@ -307,6 +316,19 @@
     return _beautyButton;
 }
 
+- (UIButton *)shareButton {
+    if (!_shareButton) {
+        _shareButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _shareButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _shareButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_shareButton setTitle:@"分享" forState:UIControlStateNormal];
+        [_shareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_share"] forState:UIControlStateNormal];
+        [_shareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_share"] forState:UIControlStateSelected];
+        [_shareButton addTarget:self action:@selector(shareButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _shareButton;
+}
+
 #pragma mark setButtonFrame
 
 - (CGFloat)getMaxButtonWidthWithArray:(NSArray *)buttonArray {
@@ -331,7 +353,9 @@
     CGFloat buttonY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : titleLabelMaxY + 10;
     CGFloat buttonImageHeight = 28;
     CGFloat buttonWidth = [self getMaxButtonWidthWithArray:buttonArray];
-    CGFloat buttonHeight = buttonImageHeight + 12 +14;
+    CGFloat defaultButtonHeight = buttonImageHeight + 12 +14;
+    CGFloat buttonHeight = defaultButtonHeight;
+    CGFloat rowMaxHeight = defaultButtonHeight; // 上面一行的最大高度
     CGFloat padding = 0;
     if (isLandscape) {
         padding = (self.sheetLandscapeWidth - buttonX * 2 - buttonWidth * 3) / 2;
@@ -356,13 +380,14 @@
         NSAttributedString *attr = [[NSAttributedString alloc] initWithString:button.titleLabel.text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12]}];
         CGSize titleSize = [attr boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
         buttonWidth = MAX(titleSize.width, buttonWidth);
-        buttonHeight = MAX(titleSize.height + buttonImageHeight + 12, buttonHeight);
-        
+        buttonHeight = MAX(titleSize.height + buttonImageHeight + 12, defaultButtonHeight);
+        rowMaxHeight = MAX(buttonHeight, rowMaxHeight);
         // 换行
         if (isLandscape) {
-            if (i == 3 || i == 6) {
+            if (i == 3 || i == 6 || i == 9) {
                 buttonX = isLandscape ? 38 : 21.5;;
-                buttonY += buttonHeight + margin;
+                buttonY += rowMaxHeight + margin;
+                rowMaxHeight = defaultButtonHeight;
             }
         } else {
             if (!isPad && i == 5) {
@@ -465,6 +490,11 @@
     return NO;
 }
 
+- (BOOL)canShareLiveroom {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return (userType == PLVRoomUserTypeTeacher || userType == PLVRoomUserTypeGuest);
+}
+
 #pragma mark - Event
 
 #pragma mark Action
@@ -552,4 +582,13 @@
         [self.delegate moreInfoSheetDidTapBeautyButton:self];
     }
 }
+
+- (void)shareButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapShareButton:)]) {
+        [self.delegate moreInfoSheetDidTapShareButton:self];
+    }
+}
+
 @end

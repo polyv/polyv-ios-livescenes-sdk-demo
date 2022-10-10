@@ -22,6 +22,7 @@
 #import "PLVLSLinkMicAreaView.h"
 #import "PLVLSBeautySheet.h"
 #import "PLVLSMoreInfoSheet.h"
+#import "PLVShareLiveSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -48,7 +49,8 @@ PLVLSLinkMicAreaViewDelegate,
 PLVStreamerPresenterDelegate,
 PLVMemberPresenterDelegate,
 PLVLSBeautySheetDelegate,
-PLVLSMoreInfoSheetDelegate
+PLVLSMoreInfoSheetDelegate,
+PLVShareLiveSheetDelegate
 >
 
 #pragma mark 功能
@@ -69,6 +71,7 @@ PLVLSMoreInfoSheetDelegate
 @property (nonatomic, strong) PLVLSCountDownView *coutBackView; // 开始上课时的倒数蒙层
 @property (nonatomic, strong) PLVLSBeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVLSMoreInfoSheet *moreInfoSheet; // 更多弹层
+@property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -347,6 +350,14 @@ PLVLSMoreInfoSheetDelegate
     return _moreInfoSheet;
 }
 
+- (PLVShareLiveSheet *)shareLiveSheet {
+    if (!_shareLiveSheet) {
+        _shareLiveSheet = [[PLVShareLiveSheet alloc] initWithType:PLVShareLiveSheetSceneTypeLS];
+        _shareLiveSheet.delegate = self;
+    }
+    return _shareLiveSheet;
+}
+
 #pragma mark - Private
 
 - (void)documentFullscreen:(BOOL)fullscreen {
@@ -387,7 +398,9 @@ PLVLSMoreInfoSheetDelegate
         if (prepareSuccess) {
             [weakSelf.streamerPresenter setupLocalPreviewWithCanvaView:nil setupCompletion:^(BOOL setupResult) {
                 if (setupResult) {
-                    [weakSelf.streamerPresenter startLocalMicCameraPreviewByDefault];
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(700 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                        [weakSelf.streamerPresenter startLocalMicCameraPreviewByDefault];
+                    });
                     
                     /// 确认是否需要‘恢复直播’
                     [weakSelf tryResumeClass];
@@ -1077,11 +1090,26 @@ PLVLSMoreInfoSheetDelegate
     [self.settingSheet showInView:self.view];
 }
 
+- (void)moreInfoSheetDidTapShareButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.shareLiveSheet showInView:self.view];
+}
+
 - (void)moreInfoSheetDidTapLogoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
     [PLVLSUtils showAlertWithMessage:@"确认结束直播吗？" cancelActionTitle:@"按错了" cancelActionBlock:nil  confirmActionTitle:@"确定" confirmActionBlock:^{
         [self logout];
         [self dismissViewControllerAnimated:YES completion:nil];
     }];
+}
+
+#pragma mark PLVShareLiveSheetDelegate
+
+- (void)shareLiveSheetCopyLinkFinished {
+    [PLVLSUtils showToastWithMessage:@"复制成功" inView:self.view];
+}
+
+- (void)shareLiveSheetFinishSavingPictureWithSucceed:(BOOL)succeed {
+    NSString *message = succeed ? @"图片已保存到相册" : @"保存失败";
+    [PLVLSUtils showToastWithMessage:message inView:self.view];
 }
 
 @end

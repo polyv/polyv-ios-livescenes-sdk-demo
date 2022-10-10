@@ -16,6 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidTapResolutionButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheetDidTapShareButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
 - (void)moreInfoSheetDidTapLogoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
 @end

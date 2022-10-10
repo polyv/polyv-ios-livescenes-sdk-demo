@@ -41,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 美颜 按钮 触发回调
 - (void)moreInfoSheetDidTapBeautyButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 分享 按钮 触发回调
+- (void)moreInfoSheetDidTapShareButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层

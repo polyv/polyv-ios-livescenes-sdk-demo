@@ -95,7 +95,9 @@ UITableViewDataSource
         return;
     }
     
-    [self.tableView reloadData];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(300 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        [self.tableView reloadData];
+    });
     
     if (self.receiveNewMessageView.frame.origin.y == 0) {
         CGFloat originY = self.bounds.size.height - 25;

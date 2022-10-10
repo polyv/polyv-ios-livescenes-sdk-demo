@@ -987,9 +987,6 @@ PLVDefaultPageViewDelegate
 
 -(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
     [PLVRoomDataManager sharedManager].roomData.playing = playing;
-    if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
-        [self.delegate playerPresenter:self playerPlayingStateDidChanged:playing];
-    }
 }
 
 #pragma mark PLVLivePlaybackPlayerDelegate

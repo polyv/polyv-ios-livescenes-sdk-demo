@@ -7,6 +7,7 @@
 //
 
 #import "PLVDownloadPresenter.h"
+#import "PLVRoomDataManager.h"
 
 @interface PLVDownloadPresenter ()
 
@@ -21,6 +22,15 @@
     if (self) {
     }
     return self;
+}
+
+#pragma mark - [ Public Method ]
+- (void)login {
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    
+    [PLVDownloadManager shareManager].viewerId = roomUser.viewerId;
+    [PLVDownloadManager shareManager].viewerName = roomUser.viewerName;
+    [PLVDownloadManager shareManager].viewerAvatar = roomUser.viewerAvatar;
 }
 
 #pragma mark - [ Private Method ]

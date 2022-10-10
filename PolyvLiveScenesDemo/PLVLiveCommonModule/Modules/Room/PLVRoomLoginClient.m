@@ -160,7 +160,7 @@
                                             sectionList = list;
                                         }];
                                     }
-                                    [PLVLiveVideoAPI getLiveRecordTypeWithChannelId:channelId fileId:recordFile.fileId appId:appId appSecret:appSecret completion:^(PLVChannelType apiChannelType) {
+                                    [PLVLiveVideoAPI liveStatus2:channelId appId:appId appSecret:appSecret completion:^(PLVChannelType apiChannelType, PLVChannelLiveStreamState liveState) {
                                         if ((apiChannelType & channelType) <= 0) {
                                             !failure ?: failure(@"频道类型出错");
                                             PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get liveRecord channel failed with with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
@@ -337,89 +337,23 @@
         return;
     }
     
+    PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
+    
     if (![PLVFdUtil checkStringUseable:vid] && ![PLVFdUtil checkStringUseable:fileId]) {
+        if (networkStatus == PLVNotReachable) {
+            !failure ?: failure(@"当前无网络！");
+            return;
+        }
         // 如果没有指定vid和fileId，则按照原来的回放登录逻辑
         [self loginPlaybackRoomWithChannelType:channelType channelId:channelId vodList:vodList vid:vid userId:userId appId:appId appSecret:appSecret roomUser:roomUserHandler completion:completion failure:failure];
     }
     else if ([PLVFdUtil checkStringUseable:vid]) {
         // 如果指定vid，则播放指定vid视频
-        [self playbackLoginWithChannelType:channelType channelId:channelId vid:vid userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {
-            roomData.vid = vid;
-            roomData.vodList = vodList;
-            
-            // 使用roomUserHandler配置用户对象
-            if (roomUserHandler) {
-                roomUserHandler(roomData.roomUser);
-            }
-            [roomData setupRoomUser:roomData.roomUser];
-            
-            !completion ?: completion(roomData.customParam);
-            
-        } failure:^(NSString *errorMessage) {
-            !failure ?: failure(errorMessage);
-        }];
+        [self requestPlaybackCacheVideoWithChannelType:channelType vid:vid vodList:vodList channelId:channelId userId:userId appId:appId appSecret:appSecret roomUser:roomUserHandler completion:completion failure:failure];
     }
     else if ([PLVFdUtil checkStringUseable:fileId]) {
         // 如果指定fileId，则播放指定暂存fileId视频
-        [PLVPlaybackCacheManager recordPlaybackVideoInfoModelWithFileId:fileId channelId:channelId completion:^(PLVPlaybackVideoInfoModel * _Nonnull model, NSError * _Nonnull error) {
-            if (error) {
-                !failure ?: failure(error.description);
-            }
-            PLVLiveRecordFileModel *recordFile = [[PLVLiveRecordFileModel alloc]init];
-            recordFile.fileId = model.fileId;
-            if ([model isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]]) {
-                // 本地数据
-                PLVPlaybackLocalVideoInfoModel *localModel = (PLVPlaybackLocalVideoInfoModel *)model;
-                recordFile.mp4 =  localModel.localVideoPath;
-            }else {
-                recordFile.mp4 =  model.fileUrl;
-            }
-            recordFile.channelSessionId = model.channelSessionId;
-            recordFile.duration = model.duration;
-            recordFile.originSessionId = model.originSessionId;
-            
-            [PLVLiveVideoAPI verifyLivePermissionWithChannelId:channelId.integerValue userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
-                [PLVLiveVideoConfig setPrivateDomainWithData:data];
-                PLVChannelType offlineInfoChannelType = [model.liveType isEqualToString:@"ppt"] ? PLVChannelTypePPT : PLVChannelTypeAlone;
-                if ((offlineInfoChannelType & channelType) <= 0) {
-                    !failure ?: failure(@"频道类型出错");
-                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get liveRecord channel failed with with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, offlineInfoChannelType, channelType);
-                }else {
-                    // 初始化直播间数据
-                    PLVRoomData *roomData = [[PLVRoomData alloc] init];
-                    roomData.videoType = PLVChannelVideoType_Playback;
-                    roomData.channelType = offlineInfoChannelType;
-                    roomData.channelId = channelId;
-                    roomData.recordEnable = YES;
-                    roomData.recordFile = recordFile;
-                    roomData.sectionEnable = NO;
-                    roomData.sectionList = @[];
-                    roomData.playbackSessionId = recordFile.channelSessionId;
-                    
-                    // 使用roomUserHandler配置用户对象
-                    PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:offlineInfoChannelType];
-                    if (roomUserHandler) {
-                        roomUserHandler(roomUser);
-                    }
-                    [roomData setupRoomUser:roomUser];
-                    
-                    // 登陆SDK,一定要第一时间调用这个方法，否则会导致API接口参数为空
-                    [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
-                    // 注册日志管理器
-                    [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];
-                    
-                    // 将当前的roomData配置到PLVRoomDataManager进行管理
-                    [[PLVRoomDataManager sharedManager] configRoomData:roomData];
-                    
-                    [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
-                        !completion ?: completion(roomData.customParam);
-                    }];
-                }
-            } failure:^(NSError * _Nonnull error) {
-                !failure ?: failure(@"登陆校验失败");
-                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登陆校验失败)", __FUNCTION__, error);
-            }];
-        }];
+        [self requestPlaybackCacheRecordWithChannelType:channelType fileId:fileId channelId:channelId userId:userId appId:appId appSecret:appSecret roomUser:roomUserHandler completion:completion failure:failure];
     }
 }
 
@@ -699,7 +633,7 @@
     }
     [PLVLiveVideoAPI verifyVodPermissionWithChannelId:channelId.integerValue vid:vid userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
         [PLVLiveVideoConfig setPrivateDomainWithData:data];
-        [PLVLiveVideoAPI getVodType:vid completion:^(PLVChannelType apiChannelType) {
+        [PLVLiveVideoAPI liveStatus2:channelId appId:appId appSecret:appSecret completion:^(PLVChannelType apiChannelType, PLVChannelLiveStreamState liveState) {
             if ((apiChannelType & channelType) <= 0) {
                 !failure ?: failure(@"频道类型出错");
                 PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get vod channel failed with with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
@@ -733,6 +667,160 @@
     } failure:^(NSError * _Nonnull error) {
         !failure ?: failure(@"登陆校验失败");
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登陆校验失败)", __FUNCTION__, error);
+    }];
+}
+
+/// 请求缓存/在线的回放vid视频
++ (void)requestPlaybackCacheVideoWithChannelType:(PLVChannelType)channelType
+                                             vid:(NSString *)vid
+                                         vodList:(BOOL)vodList
+                                       channelId:(NSString *)channelId
+                                          userId:(NSString *)userId
+                                           appId:(NSString *)appId
+                                       appSecret:(NSString *)appSecret
+                                        roomUser:(void(^ _Nullable)(PLVRoomUser *roomUser))roomUserHandler
+                                      completion:(void (^)(PLVViewLogCustomParam *customParam))completion
+                                         failure:(void (^)(NSString *errorMessage))failure {
+    NSString *listType = vodList ? @"vod" : nil;
+    [PLVPlaybackCacheManager playbackVideoInfoModelWithVid:vid channelId:channelId listType:listType completion:^(PLVPlaybackVideoInfoModel * _Nonnull model, NSError * _Nonnull error) {
+        if (error) {
+            !failure ?: failure(error.description);
+            return;
+        }
+        
+        PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
+        if (networkStatus != PLVNotReachable) {
+            [PLVLiveVideoAPI verifyVodPermissionWithChannelId:channelId.integerValue vid:vid userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
+                [PLVLiveVideoConfig setPrivateDomainWithData:data];
+            } failure:^(NSError * _Nonnull error) {
+                !failure ?: failure(@"登陆校验失败");
+                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登陆校验失败)", __FUNCTION__, error);
+            }];
+        }
+        
+        PLVChannelType offlineInfoChannelType = [model.liveType isEqualToString:@"ppt"] ? PLVChannelTypePPT : PLVChannelTypeAlone;
+        if ((offlineInfoChannelType & channelType) <= 0) {
+            !failure ?: failure(@"频道类型出错");
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get vod channel failed with with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, offlineInfoChannelType, channelType);
+        } else {
+            // 初始化直播间数据
+            PLVRoomData *roomData = [[PLVRoomData alloc] init];
+            roomData.videoType = PLVChannelVideoType_Playback;
+            roomData.channelType = offlineInfoChannelType;
+            roomData.channelId = channelId;
+            roomData.vid = vid;
+            roomData.vodList = vodList;
+            
+            // 使用roomUserHandler配置用户对象
+            PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:offlineInfoChannelType];
+            if (roomUserHandler) {
+                roomUserHandler(roomData.roomUser);
+            }
+            [roomData setupRoomUser:roomUser];
+            
+            // 登陆SDK,一定要第一时间调用这个方法，否则会导致API接口参数为空
+            [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
+            // 注册日志管理器
+            [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId vId:vid];
+            
+            // 将当前的roomData配置到PLVRoomDataManager进行管理
+            [[PLVRoomDataManager sharedManager] configRoomData:roomData];
+            
+            if (networkStatus != PLVNotReachable) {
+                [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                    !completion ?: completion(roomData.customParam);
+                }];
+            }else {
+                roomData.noNetWorkOfflineIntroductionEnabled = YES;
+                plv_dispatch_main_async_safe(^{
+                    !completion ?: completion(roomData.customParam);
+                })
+            }
+        }
+    }];
+}
+
+/// 请求缓存/在线的回放暂存fileId视频
++ (void)requestPlaybackCacheRecordWithChannelType:(PLVChannelType)channelType
+                                           fileId:(NSString *)fileId
+                                        channelId:(NSString *)channelId
+                                           userId:(NSString *)userId
+                                      appId:(NSString *)appId
+                                        appSecret:(NSString *)appSecret
+                                         roomUser:(void(^ _Nullable)(PLVRoomUser *roomUser))roomUserHandler
+                                       completion:(void (^)(PLVViewLogCustomParam *customParam))completion
+                                          failure:(void (^)(NSString *errorMessage))failure {
+    [PLVPlaybackCacheManager recordPlaybackVideoInfoModelWithFileId:fileId channelId:channelId completion:^(PLVPlaybackVideoInfoModel * _Nonnull model, NSError * _Nonnull error) {
+        if (error) {
+            !failure ?: failure(error.description);
+            return;
+        }
+        PLVLiveRecordFileModel *recordFile = [[PLVLiveRecordFileModel alloc]init];
+        recordFile.fileId = model.fileId;
+        if ([model isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]]) {
+            // 本地数据
+            PLVPlaybackLocalVideoInfoModel *localModel = (PLVPlaybackLocalVideoInfoModel *)model;
+            recordFile.mp4 =  localModel.localVideoPath;
+        }else {
+            recordFile.mp4 =  model.fileUrl;
+        }
+        recordFile.channelSessionId = model.channelSessionId;
+        recordFile.duration = model.duration;
+        recordFile.originSessionId = model.originSessionId;
+        
+        PLVNetworkStatus networkStatus = [PLVReachability reachabilityForInternetConnection].currentReachabilityStatus;
+        if (networkStatus != PLVNotReachable) {
+            [PLVLiveVideoAPI verifyLivePermissionWithChannelId:channelId.integerValue userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
+                [PLVLiveVideoConfig setPrivateDomainWithData:data];
+                
+            } failure:^(NSError * _Nonnull error) {
+                !failure ?: failure(@"登陆校验失败");
+                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登陆校验失败)", __FUNCTION__, error);
+            }];
+        }
+        
+        PLVChannelType offlineInfoChannelType = [model.liveType isEqualToString:@"ppt"] ? PLVChannelTypePPT : PLVChannelTypeAlone;
+        if ((offlineInfoChannelType & channelType) <= 0) {
+            !failure ?: failure(@"频道类型出错");
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get liveRecord channel failed with with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, offlineInfoChannelType, channelType);
+        }else {
+            // 初始化直播间数据
+            PLVRoomData *roomData = [[PLVRoomData alloc] init];
+            roomData.videoType = PLVChannelVideoType_Playback;
+            roomData.channelType = offlineInfoChannelType;
+            roomData.channelId = channelId;
+            roomData.recordEnable = YES;
+            roomData.recordFile = recordFile;
+            roomData.sectionEnable = NO;
+            roomData.sectionList = @[];
+            roomData.playbackSessionId = recordFile.channelSessionId;
+            
+            // 使用roomUserHandler配置用户对象
+            PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:offlineInfoChannelType];
+            if (roomUserHandler) {
+                roomUserHandler(roomUser);
+            }
+            [roomData setupRoomUser:roomUser];
+            
+            // 登陆SDK,一定要第一时间调用这个方法，否则会导致API接口参数为空
+            [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
+            // 注册日志管理器
+            [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];
+            
+            // 将当前的roomData配置到PLVRoomDataManager进行管理
+            [[PLVRoomDataManager sharedManager] configRoomData:roomData];
+            
+            if (networkStatus != PLVNotReachable) {
+                [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                    !completion ?: completion(roomData.customParam);
+                }];
+            }else {
+                roomData.noNetWorkOfflineIntroductionEnabled = YES;
+                plv_dispatch_main_async_safe(^{
+                    !completion ?: completion(roomData.customParam);
+                })
+            }
+        }
     }];
 }
     

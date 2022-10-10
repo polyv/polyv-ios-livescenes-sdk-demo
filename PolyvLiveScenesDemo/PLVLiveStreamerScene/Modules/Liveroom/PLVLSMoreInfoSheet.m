@@ -19,6 +19,7 @@
 @property (nonatomic, strong) UIView *titleSplitLine; // 标题底部分割线
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜按钮
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
+@property (nonatomic, strong) UIButton *shareButton; // 分享按钮
 @property (nonatomic, strong) UIView *buttonSplitLine; // 退出登陆按钮顶部分割线
 @property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登陆按钮背后的文本
 @property (nonatomic, strong) UIButton *logoutButton; // 退出登陆按钮
@@ -38,6 +39,9 @@
         [self.contentView addSubview:self.titleSplitLine];
         if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
             [self.contentView addSubview:self.beautyButton];
+        }
+        if ([self canShareLiveroom]) {
+            [self.contentView addSubview:self.shareButton];
         }
         [self.contentView addSubview:self.resolutionButton];
         [self.contentView addSubview:self.buttonSplitLine];
@@ -76,6 +80,9 @@
         [self setButtonInsets:self.resolutionButton];
     }
     
+    self.shareButton.frame = CGRectMake(CGRectGetMaxX(self.resolutionButton.frame) + 28, CGRectGetMaxY(self.titleSplitLine.frame) + 24, 48, 53);
+    [self setButtonInsets:self.shareButton];
+
     self.buttonSplitLine.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight - 1, self.sheetWidth - originX * 2, 1);
     self.logoutButtonLabel.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
     self.logoutButton.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
@@ -91,6 +98,12 @@
 }
 
 #pragma mark - [ Private Method ]
+
+- (BOOL)canShareLiveroom {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return (userType == PLVRoomUserTypeTeacher || userType == PLVRoomUserTypeGuest);
+}
+
 #pragma mark Getter
 - (UILabel *)sheetTitleLabel {
     if (!_sheetTitleLabel) {
@@ -124,6 +137,16 @@
         [_resolutionButton addTarget:self action:@selector(resolutionButtonAction) forControlEvents:UIControlEventTouchUpInside];
         }
     return _resolutionButton;
+}
+
+- (UIButton *)shareButton {
+    if (!_shareButton) {
+        _shareButton = [self buttonWithTitle:@"分享" NormalImageString:@"plvls_liveroom_share_btn" selectedImageString:@"plvls_liveroom_share_btn"];
+        [_shareButton setImage: [PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_share_btn"] forState:UIControlStateNormal];
+        [_shareButton setImage:[PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_share_btn"] forState:UIControlStateSelected];
+        [_shareButton addTarget:self action:@selector(shareButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        }
+    return _shareButton;
 }
 
 - (UIView *)buttonSplitLine {
@@ -218,6 +241,15 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapResolutionButton:)]) {
         [self.delegate moreInfoSheetDidTapResolutionButton:self];
+    }
+}
+
+- (void)shareButtonAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapShareButton:)]) {
+        [self.delegate moreInfoSheetDidTapShareButton:self];
     }
 }
 

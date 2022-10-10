@@ -20,9 +20,6 @@
 @property (nonatomic, copy) NSMutableArray <PLVDownloadPlaybackTaskInfo *> *downloadedArray;
 
 @property (nonatomic, assign) BOOL pushingWatchViewController; // 是否正在跳转观看页
-@property (nonatomic, copy) NSString *viewerId;
-@property (nonatomic, copy) NSString *viewerName;
-@property (nonatomic, copy) NSString *viewerAvatar;
 
 @end
 
@@ -53,6 +50,7 @@
 - (void)setup {
     // 初始化成员模块
     self.presenter = [[PLVDownloadPresenter alloc] init];
+    [self.presenter login];
 }
 
 - (void)setupDownloadViewerId:(NSString *)viewerId {
@@ -99,10 +97,6 @@
     if (listDataType == PLVLCDownloadListDataTypeDownloaded &&
         !self.pushingWatchViewController) {
         self.pushingWatchViewController = YES;
-        // 保存原来的用户信息
-        self.viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
-        self.viewerName = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerName;
-        self.viewerAvatar = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerAvatar;
         
         // 先执行释放观看页逻辑
         if (self.exitViewControllerFromDownlaodListBlock) {
@@ -121,14 +115,7 @@
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             // 然后执行从登录页进入新的观看页
             PLVDownloadPlaybackTaskInfo *taskInfo = [weakSelf downloadModelAtIndex:index withType:listDataType];
-
-            if ([taskInfo.listType isEqualToString:@"record"]) {
-                // 观看指定暂存视频
-                [weakSelf loginRequestWithOfflineVid:@"" orRecordFileId:taskInfo.fileId channelId:taskInfo.channelId];
-            }else {
-                // 观看指定回放视频
-                [weakSelf loginRequestWithOfflineVid:taskInfo.vid orRecordFileId:@"" channelId:taskInfo.channelId];
-            }
+            [weakSelf loginRequestWithTaskInfo:taskInfo];
         });
     }
 }
@@ -191,10 +178,8 @@
 #pragma mark - [ Private Method ]
 
 #pragma mark 登录进入云课堂观看页
-/// 从离线缓存列表进入登录
-/// @param vid 观看指定回放视频(同时指定优先观看vid)
-/// @param recordFileId 观看指定暂存视频
-- (void)loginRequestWithOfflineVid:(NSString *)vid orRecordFileId:(NSString *)recordFileId channelId:(NSString * _Nullable)channelId {
+/// 从离线缓存列表登录
+- (void)loginRequestWithTaskInfo:(PLVDownloadPlaybackTaskInfo *)taskInfo {
     __weak typeof(self) weakSelf = self;
     void(^successBlock)(void) = ^() { // 登录成功页面跳转回调
         PLVLCCloudClassViewController * cloudClassVC = [[PLVLCCloudClassViewController alloc] init];
@@ -227,25 +212,27 @@
         }
     };
     
-    [self loginOfflineCloudClassPlaybackRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone channelId:channelId vid:vid recordFileId:recordFileId successHandler:successBlock];
+    [self loginOfflineCloudClassPlaybackRoomWithTaskInfo:taskInfo successHandler:successBlock];
 }
 
 /// 云课堂场景-离线缓存直播回放
-/// @param channelType 频道类型
-/// @param vid 观看指定回放视频(同时指定优先观看vid)
-/// @param fileId 观看指定暂存视频
-- (void)loginOfflineCloudClassPlaybackRoomWithChannelType:(PLVChannelType)channelType
-                                                channelId:(NSString * _Nullable)channelId
-                                                      vid:(NSString * _Nullable)vid
-                                             recordFileId:(NSString * _Nullable)fileId
-                                           successHandler:(void (^)(void))successHandler {
+- (void)loginOfflineCloudClassPlaybackRoomWithTaskInfo:(PLVDownloadPlaybackTaskInfo *)taskInfo
+                                        successHandler:(void (^)(void))successHandler {
     PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
     [hud.label setText:@"登录中..."];
     
+    NSString *vid = @"";
+    NSString *fileId = @"";
+    if ([taskInfo.listType isEqualToString:@"record"]) {
+        fileId = taskInfo.fileId;
+    }else {
+        vid = taskInfo.vid;
+    }
+    
     __weak typeof(self) weakSelf = self;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
-    [PLVRoomLoginClient loginOfflinePlaybackRoomWithChannelType:channelType
-                                                      channelId:channelId
+    [PLVRoomLoginClient loginOfflinePlaybackRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone
+                                                      channelId:taskInfo.channelId
                                                         vodList:NO
                                                             vid:vid
                                                    recordFileId:fileId
@@ -254,9 +241,9 @@
                                                       appSecret:liveConfig.appSecret
                                                        roomUser:^(PLVRoomUser * _Nonnull roomUser) {
         // 用回原来的用户信息
-        roomUser.viewerId = self.viewerId;
-        roomUser.viewerName = self.viewerName;
-        roomUser.viewerAvatar = self.viewerAvatar;
+        roomUser.viewerId = taskInfo.viewerId;
+        roomUser.viewerName = taskInfo.viewerName;
+        roomUser.viewerAvatar = taskInfo.viewerAvatar;
     } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
         [hud hideAnimated:YES];
         if (successHandler) {

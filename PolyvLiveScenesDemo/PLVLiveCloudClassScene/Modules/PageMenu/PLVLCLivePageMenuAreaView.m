@@ -16,6 +16,7 @@
 #import "PLVLCPlaybackListViewController.h"
 #import "PLVLCSectionViewController.h"
 #import "PLVLCBuyViewController.h"
+#import "PLVLCNoNetworkDescViewController.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
@@ -56,6 +57,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCPageController *pageController;
 /// 直播介绍页，直播状态更改时需改变其 UI 文本
 @property (nonatomic, strong) PLVLCDescViewController *descVctrl;
+/// 无网络播放离线缓存视频时的直播介绍页
+@property (nonatomic, strong) PLVLCNoNetworkDescViewController *noNetworkDescVctrl;
 /// 提问咨询页
 @property (nonatomic, strong) PLVLCQuizViewController *quizVctrl;
 /// 回放列表
@@ -96,7 +99,9 @@ PLVRoomDataManagerProtocol
         [self addSubview:self.pageController.view];
         
         PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;
-        if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
+        if (roomData.menuInfo || roomData.noNetWorkOfflineIntroductionEnabled) {
+            [self roomDataManager_didMenuInfoChanged:roomData.menuInfo];
+        }
     }
     return self;
 }
@@ -165,39 +170,49 @@ PLVRoomDataManagerProtocol
 - (void)updateChannelMenuInfo {
     PLVLiveVideoChannelMenuInfo *channelMenuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
     
-    if (channelMenuInfo.channelMenus == nil ||
-        ![channelMenuInfo.channelMenus isKindOfClass:[NSArray class]] ||
-        [channelMenuInfo.channelMenus count] == 0 ) {
-        return;
+    NSMutableArray *titleArray = [[NSMutableArray alloc] initWithCapacity:1];
+    NSMutableArray *ctrlArray = [[NSMutableArray alloc] initWithCapacity:1];
+    
+    if ([PLVRoomDataManager sharedManager].roomData.noNetWorkOfflineIntroductionEnabled) {
+        // 即没有网络，又播放离线缓存视频的情况，展示无网络直播介绍
+        PLVLCNoNetworkDescViewController *vctrl = [[PLVLCNoNetworkDescViewController alloc]init];
+        self.noNetworkDescVctrl = vctrl;
+        [titleArray addObject:@"直播介绍"];
+        [ctrlArray addObject:vctrl];
     }
-    
-    NSInteger menuCount = channelMenuInfo.channelMenus.count;
-    NSMutableArray *titleArray = [[NSMutableArray alloc] initWithCapacity:menuCount];
-    NSMutableArray *ctrlArray = [[NSMutableArray alloc] initWithCapacity:menuCount];
-    
-    for (int i = 0; i < menuCount; i++) {
-        PLVLiveVideoChannelMenu *menu = channelMenuInfo.channelMenus[i];
-        UIViewController *vctrl = [self controllerWithMenu:menu];
-        if (!vctrl) {
-            continue;
+    else {
+        if (channelMenuInfo.channelMenus == nil ||
+            ![channelMenuInfo.channelMenus isKindOfClass:[NSArray class]] ||
+            [channelMenuInfo.channelMenus count] == 0 ) {
+            return;
         }
-        [titleArray addObject:menu.name];
-        [ctrlArray addObject:vctrl];
-    }
-    
-    if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
-        PLVLCPlaybackListViewController *vctrl = [[PLVLCPlaybackListViewController alloc] initWithPlaybackList:[PLVRoomDataManager sharedManager].roomData.playbackList];
-        self.playbackListVctrl = vctrl;
-        [titleArray addObject:@"往期"];
-        [ctrlArray addObject:vctrl];
-    }
-    
-    if ([PLVRoomDataManager sharedManager].roomData.sectionEnable) {
-        PLVLCSectionViewController *vctrl = [[PLVLCSectionViewController alloc] initWithSectionList:[PLVRoomDataManager sharedManager].roomData.sectionList];
-        self.sectionVctrl = vctrl;
-        self.sectionVctrl.delegate = self;
-        [titleArray addObject:@"章节"];
-        [ctrlArray addObject:vctrl];
+        
+        NSInteger menuCount = channelMenuInfo.channelMenus.count;
+        
+        for (int i = 0; i < menuCount; i++) {
+            PLVLiveVideoChannelMenu *menu = channelMenuInfo.channelMenus[i];
+            UIViewController *vctrl = [self controllerWithMenu:menu];
+            if (!vctrl) {
+                continue;
+            }
+            [titleArray addObject:menu.name];
+            [ctrlArray addObject:vctrl];
+        }
+        
+        if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
+            PLVLCPlaybackListViewController *vctrl = [[PLVLCPlaybackListViewController alloc] initWithPlaybackList:[PLVRoomDataManager sharedManager].roomData.playbackList];
+            self.playbackListVctrl = vctrl;
+            [titleArray addObject:@"往期"];
+            [ctrlArray addObject:vctrl];
+        }
+        
+        if ([PLVRoomDataManager sharedManager].roomData.sectionEnable) {
+            PLVLCSectionViewController *vctrl = [[PLVLCSectionViewController alloc] initWithSectionList:[PLVRoomDataManager sharedManager].roomData.sectionList];
+            self.sectionVctrl = vctrl;
+            self.sectionVctrl.delegate = self;
+            [titleArray addObject:@"章节"];
+            [ctrlArray addObject:vctrl];
+        }
     }
 
     [self.pageController setTitles:[titleArray copy] controllers:[ctrlArray copy]];

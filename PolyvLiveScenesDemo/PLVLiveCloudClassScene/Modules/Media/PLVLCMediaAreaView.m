@@ -1044,6 +1044,10 @@ PLVRoomDataManagerProtocol
 }
 
 - (void)plvLCBasePlayerSkinViewPlayButtonClicked:(PLVLCBasePlayerSkinView *)skinView wannaPlay:(BOOL)wannaPlay{
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        return; // 开启画中画的时候不响应皮肤播放按钮
+    }
+    
     if (self.noDelayLiveWatching) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
             [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:wannaPlay];

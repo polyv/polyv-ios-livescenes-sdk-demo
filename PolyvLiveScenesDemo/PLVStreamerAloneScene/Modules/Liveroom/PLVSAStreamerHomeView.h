@@ -62,6 +62,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 美颜 按钮触发回调
 - (void)streamerHomeViewDidTapBeautyButton:(PLVSAStreamerHomeView *)homeView;
 
+/// 点击 分享 按钮触发回调
+- (void)streamerHomeViewDidTapShareButton:(PLVSAStreamerHomeView *)homeView;
 
 @end
 

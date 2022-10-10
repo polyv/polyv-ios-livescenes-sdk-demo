@@ -711,9 +711,9 @@ PLVSABitRateSheetDelegate
 - (void)changeDeviceOrientation:(UIDeviceOrientation)orientation {
     self.canAutorotate = YES;
     [PLVFdUtil changeDeviceOrientation:orientation];
-    self.canAutorotate = NO;
     // 缓存设备方向
     [[PLVSAUtils sharedUtils] setupDeviceOrientation:orientation];
+    self.canAutorotate = NO;
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerSettingViewDidChangeDeviceOrientation:)]) {
         [self.delegate streamerSettingViewDidChangeDeviceOrientation:self];

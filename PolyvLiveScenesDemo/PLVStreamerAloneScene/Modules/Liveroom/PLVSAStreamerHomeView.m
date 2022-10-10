@@ -679,6 +679,13 @@ PLVSALinkMicTipViewDelegate
     }
 }
 
+- (void)moreInfoSheetDidTapShareButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapShareButton:)]) {
+        [self.delegate streamerHomeViewDidTapShareButton:self];
+    }
+}
+
 #pragma mark PLVSABitRateSheetDelegate
 
 - (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet bitRateButtonClickWithBitRate:(PLVResolutionType)bitRate {

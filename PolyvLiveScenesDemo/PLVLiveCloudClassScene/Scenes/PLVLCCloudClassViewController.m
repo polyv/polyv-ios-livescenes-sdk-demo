@@ -398,6 +398,9 @@ PLVLCChatroomPlaybackDelegate
         [self.view insertSubview:self.mediaAreaView.marqueeView aboveSubview:self.liveRoomSkinView]; /// 保证高于 liveRoomSkinView 即可
         [self.view insertSubview:self.mediaAreaView.retryPlayView aboveSubview:self.liveRoomSkinView]; /// 保证高于 liveRoomSkinView 即可
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView
+       
+        [self.liveRoomSkinView setNeedsLayout];
+        [self.popoverView setNeedsLayout];
     }
     
     self.fullScreenDifferent = NO;

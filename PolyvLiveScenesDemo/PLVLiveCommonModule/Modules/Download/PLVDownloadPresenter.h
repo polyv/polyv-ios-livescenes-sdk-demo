@@ -13,6 +13,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVDownloadPresenter : NSObject
 
+/// 账号属性配置
+- (void)login;
+
 /// 配置用户Id（不同用户的下载文件将分开存放管理；不配置该值，下载模块将无法使用；重复配置该Id，将切换数据库及下载文件路径）
 - (void)setupDownloadViewerId:(NSString *)viewerId;
 

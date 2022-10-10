@@ -121,6 +121,10 @@ static float _safeTopPad = 0;
     return [self imageFromBundle:@"PLVLSBeauty" imageName:imageName];
 }
 
++ (UIImage *)imageForLiveroomResource:(NSString *)imageName {
+    return [self imageFromBundle:@"PLVLSLiveroom" imageName:imageName];
+}
+
 + (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url {
     [self setImageView:imageView url:url placeholderImage:nil options:0 progress:nil completed:nil];
 }

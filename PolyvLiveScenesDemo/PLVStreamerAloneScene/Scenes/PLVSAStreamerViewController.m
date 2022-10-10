@@ -21,6 +21,7 @@
 #import "PLVSAFinishStreamerSheet.h"
 #import "PLVBroadcastExtensionLauncher.h"
 #import "PLVSABeautySheet.h"
+#import "PLVShareLiveSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -51,7 +52,8 @@ PLVStreamerPresenterDelegate,
 PLVMemberPresenterDelegate,
 PLVSAStreamerHomeViewDelegate,
 PLVSABeautySheetDelegate,
-UIGestureRecognizerDelegate
+UIGestureRecognizerDelegate,
+PLVShareLiveSheetDelegate
 >
 
 #pragma mark 模块
@@ -98,6 +100,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, strong) PLVSAStreamerHomeView *homeView; // 开播中的推流页
 @property (nonatomic, strong) PLVSAStreamerFinishView *finishView; // 结束开播的结束页
 @property (nonatomic, strong) PLVSABeautySheet *beautySheet; // 美颜设置弹层
+@property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
 
 #pragma mark 数据
@@ -165,7 +168,11 @@ UIGestureRecognizerDelegate
     if (self.streamerPresenter.classStarted) { // 开播后 返回开播前设置好的屏幕方向
         return [PLVSAUtils sharedUtils].interfaceOrientationMask;
     } else { // 未开播 允许所有方向
-        return UIInterfaceOrientationMaskAll;
+        if (_settingView.canAutorotate) {
+            return UIInterfaceOrientationMaskAll;
+        } else {
+            return [PLVSAUtils sharedUtils].interfaceOrientationMask;
+        }
     }
 }
 
@@ -312,6 +319,14 @@ UIGestureRecognizerDelegate
         _beautySheet.delegate = self;
     }
     return _beautySheet;
+}
+
+- (PLVShareLiveSheet *)shareLiveSheet {
+    if (!_shareLiveSheet) {
+        _shareLiveSheet = [[PLVShareLiveSheet alloc] initWithType:PLVShareLiveSheetSceneTypeSA];
+        _shareLiveSheet.delegate = self;
+    }
+    return _shareLiveSheet;
 }
 
 - (UIPinchGestureRecognizer *)pinchGesture {
@@ -1075,7 +1090,8 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView {
     [self.beautySheet deviceOrientationDidChange];
-    PLVBLinkMicStreamScale currentStreamScale =[PLVSAUtils sharedUtils].isLandscape ? self.streamScale : PLVBLinkMicStreamScale9_16;
+    BOOL isLandscape = ([PLVSAUtils sharedUtils].deviceOrientation != UIDeviceOrientationPortrait);
+    PLVBLinkMicStreamScale currentStreamScale = isLandscape ? self.streamScale : PLVBLinkMicStreamScale9_16;
     [self.streamerPresenter setupStreamScale:currentStreamScale];
 }
 
@@ -1209,6 +1225,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
 }
 
+- (void)streamerHomeViewDidTapShareButton:(PLVSAStreamerHomeView *)homeView {
+    [self.shareLiveSheet showInView:self.view];
+}
+
 #pragma mark PLVSABeautySheetDelegate
 - (void)beautySheet:(PLVSABeautySheet *)beautySheet didChangeOn:(BOOL)on {
     [self.streamerPresenter enableBeautyProcess:on];
@@ -1231,6 +1251,17 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         self.currentCameraZoomRatio = [self.streamerPresenter getCameraZoomRatio];
     }
     return YES;
+}
+
+#pragma mark PLVShareLiveSheetDelegate
+
+- (void)shareLiveSheetCopyLinkFinished {
+    [PLVSAUtils showToastWithMessage:@"复制成功" inView:self.view];
+}
+
+- (void)shareLiveSheetFinishSavingPictureWithSucceed:(BOOL)succeed {
+    NSString *message = succeed ? @"图片已保存到相册" : @"保存失败";
+    [PLVSAUtils showToastWithMessage:message inView:self.view];
 }
 
 @end

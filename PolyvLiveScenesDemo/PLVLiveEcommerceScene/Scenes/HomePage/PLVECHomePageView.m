@@ -230,6 +230,7 @@ PLVECCardPushButtonViewDelegate
         _giftButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_giftButton setImage:[PLVECUtils imageForWatchResource:@"plv_gift_btn"] forState:UIControlStateNormal];
         [_giftButton addTarget:self action:@selector(giftButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _giftButton.hidden = YES;
     }
     return _giftButton;
 }
@@ -540,7 +541,7 @@ PLVECCardPushButtonViewDelegate
         // 底部按钮
         self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
         self.giftButton.frame = self.moreButton.hidden ? self.moreButton.frame : CGRectMake(CGRectGetMinX(self.moreButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
-        self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
+        self.shoppingCartButton.frame = self.giftButton.hidden ? self.giftButton.frame : CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         // 点赞按钮
         self.likeButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
         // 卡片推送挂件
@@ -767,6 +768,8 @@ PLVECCardPushButtonViewDelegate
 #pragma mark PLVECChatroomViewDelegate
 
 - (void)chatroomView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit {
+    self.giftButton.hidden = !rewardEnable;
+    [self updateUIFrame];
     if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_loadRewardEnable:payWay:rewardModelArray:pointUnit:)]) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate homePageView_loadRewardEnable:rewardEnable payWay:payWay rewardModelArray:modelArray pointUnit:pointUnit];

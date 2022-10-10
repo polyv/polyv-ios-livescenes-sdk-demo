@@ -90,6 +90,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL sectionEnable;
 /// 章节列表
 @property (nonatomic, strong) NSArray<PLVLivePlaybackSectionModel *> *sectionList;
+/// 无网络且播放离线缓存情况下是否展示直播介绍页面
+@property (nonatomic, assign) BOOL noNetWorkOfflineIntroductionEnabled;
 
 #pragma mark 聊天室独有属性
 

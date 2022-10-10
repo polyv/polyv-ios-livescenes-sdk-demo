@@ -91,6 +91,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIImage *)imageForBeautyResource:(NSString *)imageName;
 
++ (UIImage *)imageForLiveroomResource:(NSString *)imageName;
+
 + (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url;
 
 + (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder;

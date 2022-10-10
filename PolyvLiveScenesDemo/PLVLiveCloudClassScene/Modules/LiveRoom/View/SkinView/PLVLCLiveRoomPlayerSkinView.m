@@ -415,6 +415,7 @@
 - (UIButton *)commodityButton {
     if (!_commodityButton) {
         _commodityButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _commodityButton.hidden = YES;
         [_commodityButton setImage: [PLVLCUtils imageForLiveRoomResource:@"plv_liveroom_commodity"] forState:UIControlStateNormal];
         [_commodityButton addTarget:self action:@selector(commodityButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
