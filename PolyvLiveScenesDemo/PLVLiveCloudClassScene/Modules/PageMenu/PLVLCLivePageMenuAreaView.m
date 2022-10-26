@@ -170,8 +170,8 @@ PLVRoomDataManagerProtocol
 - (void)updateChannelMenuInfo {
     PLVLiveVideoChannelMenuInfo *channelMenuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
     
-    NSMutableArray *titleArray = [[NSMutableArray alloc] initWithCapacity:1];
-    NSMutableArray *ctrlArray = [[NSMutableArray alloc] initWithCapacity:1];
+    NSMutableArray *titleArray = [[NSMutableArray alloc] init];
+    NSMutableArray *ctrlArray = [[NSMutableArray alloc] init];
     
     if ([PLVRoomDataManager sharedManager].roomData.noNetWorkOfflineIntroductionEnabled) {
         // 即没有网络，又播放离线缓存视频的情况，展示无网络直播介绍

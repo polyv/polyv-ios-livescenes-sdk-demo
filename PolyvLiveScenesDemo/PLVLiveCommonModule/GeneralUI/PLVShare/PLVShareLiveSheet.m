@@ -427,15 +427,15 @@ typedef NS_ENUM(NSInteger, PLVShareLiveButtonType) {
     if ([PLVFdUtil checkStringUseable:self.posterModel.watchUrl]) {
         UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
         pasteboard.string = self.posterModel.watchUrl;
-        if (self.delegate && [self.delegate respondsToSelector:@selector(shareLiveSheetCopyLinkFinished)]) {
-            [self.delegate shareLiveSheetCopyLinkFinished];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(shareLiveSheetCopyLinkFinished:)]) {
+            [self.delegate shareLiveSheetCopyLinkFinished:self];
         }
     }
 }
 
-- (void)savedPhotoImage:(UIImage*)image didFinishSavingWithError: (NSError *)error contextInfo: (void *)contextInfo {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(shareLiveSheetFinishSavingPictureWithSucceed:)]) {
-        [self.delegate shareLiveSheetFinishSavingPictureWithSucceed:!error];
+- (void)savedPhotoImage:(UIImage*)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(shareLiveSheet:savePictureSuccess:)]) {
+        [self.delegate shareLiveSheet:self savePictureSuccess:!error];
     }
 }
 

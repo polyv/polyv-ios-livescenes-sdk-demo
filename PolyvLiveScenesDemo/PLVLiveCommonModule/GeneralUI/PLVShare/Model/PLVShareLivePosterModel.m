@@ -13,6 +13,31 @@
 
 @interface PLVShareLivePosterModel ()
 
+/// 邀请海报主题风格
+@property (nonatomic, assign) NSInteger invitePosterTheme;
+/// 头像
+@property (nonatomic, copy) NSString *avatar;
+/// 名称
+@property (nonatomic, copy) NSString *nickname;
+/// 频道名称
+@property (nonatomic, copy) NSString *name;
+/// 海报封面图
+@property (nonatomic, copy) NSString *inviteCoverImage;
+/// 主持人姓名
+@property (nonatomic, copy) NSString *publisher;
+/// 开始时间
+@property (nonatomic, copy) NSString *startTime;
+/// 观看域名
+@property (nonatomic, copy) NSString *watchDomain;
+/// 频道号
+@property (nonatomic, copy) NSString *channelId;
+/// 观看地址
+@property (nonatomic, copy) NSString *watchUrl;
+/// 定制用户类型
+@property (nonatomic, copy) NSString *customUserType;
+/// 页脚文案
+@property (nonatomic, copy) NSString *footerText;
+/// 海报地址
 @property (nonatomic, copy) NSString *posterURLString;
 
 @end
@@ -23,8 +48,6 @@
     self = [super init];
     if (self) {
         self.invitePosterTheme = PLV_SafeIntegerForDictKey(dictionary, @"invitePosterTheme");
-        self.avatar = PLV_SafeStringForDictKey(dictionary, @"avatar");
-        self.nickname = PLV_SafeStringForDictKey(dictionary, @"nickname");
         self.name = PLV_SafeStringForDictKey(dictionary, @"name");
         self.inviteCoverImage = PLV_SafeStringForDictKey(dictionary, @"inviteCoverImage");
         self.publisher = PLV_SafeStringForDictKey(dictionary, @"publisher");

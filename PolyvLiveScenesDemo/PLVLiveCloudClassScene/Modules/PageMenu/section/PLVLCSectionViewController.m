@@ -74,7 +74,8 @@ PLVRoomDataManagerProtocol
 - (void)requestData {
     __weak typeof(self) weakSelf = self;
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:roomData.channelId videoId:roomData.videoId completion:^(NSArray * _Nonnull sectionList, NSError * _Nonnull error) {
+    PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
+    [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:roomData.channelId videoId:roomData.videoId appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(NSArray * _Nonnull sectionList, NSError * _Nonnull error) {
         if (!error) {
             weakSelf.sections = [sectionList copy];
             [PLVRoomDataManager sharedManager].roomData.sectionList = sectionList;

@@ -156,7 +156,7 @@
                                 [PLVLiveVideoAPI verifyLivePermissionWithChannelId:channelId.integerValue userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
                                     [PLVLiveVideoConfig setPrivateDomainWithData:data];
                                     if (sectionEnabled && [PLVFdUtil checkStringUseable:recordFile.fileId]) {
-                                        [PLVLiveVideoAPI requestLiveRecordSectionListWithChannelId:channelId fileId:recordFile.fileId completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nullable error) {
+                                        [PLVLiveVideoAPI requestLiveRecordSectionListWithChannelId:channelId fileId:recordFile.fileId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nullable error) {
                                             sectionList = list;
                                         }];
                                     }
@@ -212,7 +212,7 @@
                                 PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放视频不可为空】", __FUNCTION__);
                             } else {
                                 if (sectionEnabled) {
-                                    [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:channelId videoId:videoId completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nonnull error) {
+                                    [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:channelId videoId:videoId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nonnull error) {
                                         sectionList = list;
                                     }];
                                 }
@@ -247,7 +247,7 @@
                             PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放视频不可为空】", __FUNCTION__);
                         } else {
                             if (sectionEnabled) {
-                                [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:channelId videoId:videoId completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nonnull error) {
+                                [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:channelId videoId:videoId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nonnull error) {
                                     sectionList = list;
                                 }];
                             }

@@ -217,9 +217,13 @@ UIGestureRecognizerDelegate
     }
     
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
-    if (liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt) {
-        urlString = [urlString stringByAppendingFormat:@"%@security=1", (hasParam ? @"&" : @"?")];
-    }
+    BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
+    urlString = [urlString stringByAppendingFormat:@"%@security=%d&resourceAuth=%d&secureApi=%d", (hasParam ? @"&" : @"?"), (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
+    
+    // 避免拼接参数中含有特殊字符#被编码导致请求拼接异常
+    NSString *charactersToEscape = @"#";
+    NSCharacterSet *allowedCharacters = [[NSCharacterSet characterSetWithCharactersInString:charactersToEscape] invertedSet];
+    urlString = [urlString stringByAddingPercentEncodingWithAllowedCharacters:allowedCharacters];
     
     NSURL *URL = [NSURL URLWithString:urlString];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:URL];

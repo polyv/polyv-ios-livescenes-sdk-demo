@@ -142,8 +142,6 @@
 - (UIButton *)shareButton {
     if (!_shareButton) {
         _shareButton = [self buttonWithTitle:@"分享" NormalImageString:@"plvls_liveroom_share_btn" selectedImageString:@"plvls_liveroom_share_btn"];
-        [_shareButton setImage: [PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_share_btn"] forState:UIControlStateNormal];
-        [_shareButton setImage:[PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_share_btn"] forState:UIControlStateSelected];
         [_shareButton addTarget:self action:@selector(shareButtonAction) forControlEvents:UIControlEventTouchUpInside];
         }
     return _shareButton;
@@ -197,8 +195,8 @@
     [button setTitleColor:PLV_UIColorFromRGBA(@"#F0F1F5",0.6) forState:UIControlStateNormal];
     
     [button setTitle:title forState:UIControlStateNormal];
-    [button setImage: [PLVLSUtils imageForBeautyResource:normalImageString] forState:UIControlStateNormal];
-    [button setImage:[PLVLSUtils imageForBeautyResource:selectedImageString] forState:UIControlStateSelected];
+    [button setImage: [PLVLSUtils imageForLiveroomResource:normalImageString] forState:UIControlStateNormal];
+    [button setImage:[PLVLSUtils imageForLiveroomResource:selectedImageString] forState:UIControlStateSelected];
     
     return button;
 }

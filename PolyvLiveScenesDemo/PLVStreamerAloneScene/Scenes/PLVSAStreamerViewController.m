@@ -1255,12 +1255,12 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 #pragma mark PLVShareLiveSheetDelegate
 
-- (void)shareLiveSheetCopyLinkFinished {
+- (void)shareLiveSheetCopyLinkFinished:(PLVShareLiveSheet *)shareLiveSheet {
     [PLVSAUtils showToastWithMessage:@"复制成功" inView:self.view];
 }
 
-- (void)shareLiveSheetFinishSavingPictureWithSucceed:(BOOL)succeed {
-    NSString *message = succeed ? @"图片已保存到相册" : @"保存失败";
+- (void)shareLiveSheet:(PLVShareLiveSheet *)shareLiveSheet savePictureSuccess:(BOOL)success {
+    NSString *message = success ? @"图片已保存到相册" : @"保存失败";
     [PLVSAUtils showToastWithMessage:message inView:self.view];
 }
 

@@ -18,13 +18,18 @@ typedef NS_ENUM(NSUInteger, PLVShareLiveSheetSceneType) {
     PLVShareLiveSheetSceneTypeSA = 1
 };
 
+@class PLVShareLiveSheet;
+
 @protocol PLVShareLiveSheetDelegate <NSObject>
 
-- (void)shareLiveSheetCopyLinkFinished;
+/// 复制观看链接完成的回调
+/// @param shareLiveSheet 直播分享sheet
+- (void)shareLiveSheetCopyLinkFinished:(PLVShareLiveSheet *)shareLiveSheet;
 
 /// 保存图片结束的回调
-/// @param succeed 保存图片是否成功 YES 成功 NO 失败
-- (void)shareLiveSheetFinishSavingPictureWithSucceed:(BOOL)succeed;
+/// @param shareLiveSheet 直播分享sheet
+/// @param success 保存图片是否成功 YES 成功 NO 失败
+- (void)shareLiveSheet:(PLVShareLiveSheet *)shareLiveSheet savePictureSuccess:(BOOL)success;
 
 @end
 

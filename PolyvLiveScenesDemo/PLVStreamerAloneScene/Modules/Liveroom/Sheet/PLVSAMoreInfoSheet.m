@@ -309,8 +309,8 @@
         _beautyButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _beautyButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_beautyButton setTitle:@"美颜" forState:UIControlStateNormal];
-        [_beautyButton setImage:[PLVSAUtils imageForBeautyResource:@"plvsa_beauty_more"] forState:UIControlStateNormal];
-        [_beautyButton setImage:[PLVSAUtils imageForBeautyResource:@"plvsa_beauty_more"] forState:UIControlStateSelected];
+        [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_more"] forState:UIControlStateNormal];
+        [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_more"] forState:UIControlStateSelected];
         [_beautyButton addTarget:self action:@selector(beautyButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _beautyButton;

@@ -515,7 +515,7 @@ PLVSABitRateSheetDelegate
 - (UIButton *)beautyButton {
     if (!_beautyButton) {
         _beautyButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_beautyButton setImage:[PLVSAUtils imageForBeautyResource:@"plvsa_beauty_setter"] forState:UIControlStateNormal];
+        [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_setter"] forState:UIControlStateNormal];
         [_beautyButton setTitle:@"美颜" forState:UIControlStateNormal];
         [_beautyButton setTitleColor:[PLVColorUtil colorFromHexString:@"#0382FF"] forState:UIControlStateNormal];
         _beautyButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];

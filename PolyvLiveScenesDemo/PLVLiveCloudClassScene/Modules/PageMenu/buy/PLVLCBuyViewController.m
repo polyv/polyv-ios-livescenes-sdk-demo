@@ -76,9 +76,8 @@ PLVProductWebViewBridgeDelegate>
     
     NSString *urlString = PLVLiveConstantsProductListHTML;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
-    if (liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt) {
-        urlString = [urlString stringByAppendingString:@"?security=1"];
-    }
+    BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
+    urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
     NSURL *interactURL = [NSURL URLWithString:urlString];
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
