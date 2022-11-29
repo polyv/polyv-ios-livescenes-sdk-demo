@@ -143,6 +143,10 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL appWebStartResolutionRatioEnabled;
 /// 当前推流宽高比（仅适用于纯视频横屏开播）
 @property (nonatomic, assign) PLVBLinkMicStreamScale streamScale;
+/// 支持默认横屏开播，YES默认横屏开播，NO不开启（仅适用于纯视频开播）
+@property (nonatomic, assign) BOOL appDefaultLandScapeEnabled;
+/// 支持默认开启后置摄像头，YES默认开启后置摄像头，NO不开启（仅适用于纯视频开播）
+@property (nonatomic, assign) BOOL appDefaultPureViewEnabled;
 
 
 /// 设置 roomUser

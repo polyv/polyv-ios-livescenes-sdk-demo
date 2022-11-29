@@ -17,6 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 ///       直播回放:三分屏直播回放(有PPT)、普通直播的直播回放
 @interface PLVLCCloudClassViewController : UIViewController
 
+/// 是否在iPad上显示全屏按钮
+///
+/// @note NO-在iPad上竖屏时不显示全屏按钮，YES-显示
+///       当项目未适配分屏时，建议设置为YES
+@property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -57,6 +57,12 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///       此时开发者需根据对 AreaView 的布局，告知顶部安全距离 (若无状态栏遮挡，则此值应该为0)；
 @property (nonatomic, assign) CGFloat topPaddingBelowiOS11;
 
+/// 是否在iPad上显示全屏按钮
+///
+/// @note NO-在iPad上竖屏时不显示全屏按钮，YES-显示
+///       当项目未适配分屏时，建议设置为YES
+@property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
+
 #pragma mark 状态
 /// 当前播放时间
 @property (nonatomic, assign, readonly) NSTimeInterval currentPlayTime;

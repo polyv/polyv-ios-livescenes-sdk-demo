@@ -325,13 +325,18 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         NSDictionary *dict = self.dynamicDataArray[index];
         NSString *imageURLString = PLV_SafeStringForDictKey(dict, @"icon");
         NSString *buttonTitle = PLV_SafeStringForDictKey(dict, @"title");
-        if ([PLVFdUtil checkStringUseable:imageURLString]) {
-            NSURL *imageURL = [NSURL URLWithString:imageURLString];
-            [button sd_setImageWithURL:imageURL forState:UIControlStateNormal];
-            [button sd_setImageWithURL:imageURL forState:UIControlStateSelected];
-        }
         [button setTitle:buttonTitle forState:UIControlStateNormal];
         [button setTitle:buttonTitle forState:UIControlStateSelected];
+        if ([PLVFdUtil checkStringUseable:imageURLString]) {
+            NSURL *imageURL = [NSURL URLWithString:imageURLString];
+            [button sd_setImageWithURL:imageURL forState:UIControlStateSelected];
+            [button sd_setImageWithURL:imageURL forState:UIControlStateNormal completed:^(UIImage * _Nullable image, NSError * _Nullable error, SDImageCacheType cacheType, NSURL * _Nullable imageURL) {
+                if (button.imageView.frame.size.width > 0 && button.titleLabel.frame.size.height == 0) {
+                    CGFloat imageWidth = button.imageView.frame.size.width;
+                    [button setTitleEdgeInsets:UIEdgeInsetsMake(0, - imageWidth * 3, - imageWidth - kCellImageLabelMargin / 2.0f, 0)];
+                }
+            }];
+        }
     }
 }
 

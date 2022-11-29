@@ -7,8 +7,11 @@
 //
 
 #import "PLVSAMemberPopup.h"
-#import "PLVChatUser.h"
+// 工具
 #import "PLVSAUtils.h"
+// 模块
+#import "PLVRoomDataManager.h"
+#import "PLVChatUser.h"
 
 static NSInteger kButtonTagConst = 100;
 
@@ -98,7 +101,12 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     // 配置需要显示的按钮类型
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:4];
     if (linkMicing) {
-        [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonCamera), @(PLVSAMemberPopupButtonMicrophone)]];
+        if ([PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Video) {
+            [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonCamera), @(PLVSAMemberPopupButtonMicrophone)]];
+        } else {
+            [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonMicrophone)]];
+        }
+        
     }
     
     if (self.chatUser.userType == PLVRoomUserTypeGuest) {

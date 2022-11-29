@@ -93,14 +93,14 @@
         }
         [buttonArray addObject:self.fullScreenButton];
     } else if(self.viewerType == PLVRoomUserTypeTeacher) {
-        [buttonArray addObjectsFromArray:@[self.cameraButton,
-                                           self.micphoneButton]];
+        if (!self.cameraButton.isHidden) {
+            [buttonArray addObject:self.cameraButton];
+        }
+        [buttonArray addObjectsFromArray:@[self.micphoneButton]];
         if (!self.authSpeakerButton.isHidden) {
             [buttonArray addObject:self.authSpeakerButton];
         }
-        
         [buttonArray addObject:self.fullScreenButton];
-
         if (!specialType) {
             [buttonArray addObject:self.stopLinkMicButton];
         }
@@ -130,7 +130,7 @@
     }
     
     self.actorLabel.hidden = !specialType && user.actor;
-    self.cameraButton.hidden = !isTeacher;
+    self.cameraButton.hidden = !isTeacher || ([PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video);
     self.micphoneButton.hidden = !isTeacher;
     self.authSpeakerButton.hidden = !(self.hasManageSpeakerAuth && user.userType == PLVRoomUserTypeGuest);
     self.stopLinkMicButton.hidden = specialType || !isTeacher;

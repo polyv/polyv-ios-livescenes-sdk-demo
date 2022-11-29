@@ -95,6 +95,7 @@
         
         [self refreshTitleLabelFrameInSmallScreen];
         [self refreshPlayTimesLabelFrame];
+        [self refreshProgressViewFrame];
 
         // 底部UI
         CGFloat bottomShadowLayerHeight = 90.0;
@@ -129,6 +130,8 @@
         CGFloat documentToolHeight = 36;
         CGFloat documentToolPadding = 12;
         self.documentToolView.frame = CGRectMake((viewWidth - documentToolViewWidht) / 2, CGRectGetMinY(self.guideChatLabel.frame) - documentToolHeight - documentToolPadding, documentToolViewWidht , documentToolHeight);
+        // 自动隐藏皮肤
+        [self autoHideSkinView];
     }
 }
 
@@ -483,6 +486,10 @@
     self.playTimesLabel.frame = CGRectMake(CGRectGetMaxX(self.titleLabel.frame) + 16, CGRectGetMinY(self.titleLabel.frame), playTimesLabelFitSize.width, 20.0);
 }
 
+- (void)refreshProgressViewFrame {
+    self.progressView.frame = CGRectMake(self.frame.size.width / 2 - 73.5, self.frame.size.height / 2 -16, 147, 32);
+}
+
 - (void)showFloatViewShowButtonTipsLabelAnimation:(BOOL)showTips{
     // 横屏不需要显示提示，仅重写覆盖即可
 }
@@ -513,11 +520,17 @@
                 continue;
             } else if ([subview isKindOfClass:PLVCommodityPushView.class]) {
                 continue;
+            } else if ([subview isKindOfClass:PLVLCMediaProgressView.class]) {
+                continue;
             }
             subview.alpha = alpha;
         }
     };
-    [UIView animateWithDuration:0.3 animations:animationBlock];
+    [UIView animateWithDuration:0.3 animations:animationBlock completion:^(BOOL finished) {
+        if (finished) {
+            [self autoHideSkinView];
+        }
+    }];
 }
 
 #pragma mark Father Getter

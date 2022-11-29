@@ -606,6 +606,12 @@ PLVLCChatroomPlaybackDelegate
     return [PLVRoomDataManager sharedManager].roomData.videoType;
 }
 
+#pragma mark Setter
+
+- (void)setFullScreenButtonShowOnIpad:(BOOL)fullScreenButtonShowOnIpad {
+    _fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
+    self.mediaAreaView.fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
+}
 
 #pragma mark - [ Event ]
 #pragma mark Notification

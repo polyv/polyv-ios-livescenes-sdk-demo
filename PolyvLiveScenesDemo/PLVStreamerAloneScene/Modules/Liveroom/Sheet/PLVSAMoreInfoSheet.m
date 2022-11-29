@@ -204,7 +204,7 @@
         [_microphoneButton setTitle:@"麦克风" forState:UIControlStateSelected];
         [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
         [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
-        [_microphoneButton addTarget:self action:@selector(micphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        [_microphoneButton addTarget:self action:@selector(microphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _microphoneButton;
 }
@@ -506,7 +506,7 @@
     }
 }
 
-- (void)micphoneButtonAction {
+- (void)microphoneButtonAction {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeMicOpen:)]) {
         [self.delegate moreInfoSheet:self didChangeMicOpen:!self.microphoneButton.selected];

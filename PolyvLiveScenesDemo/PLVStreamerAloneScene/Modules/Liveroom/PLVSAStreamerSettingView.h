@@ -26,10 +26,10 @@
  */
 - (void)cameraAuthorizationGranted:(BOOL)prepareSuccess;
 
-/// 是否禁用镜像按钮
+/// 是否启用镜像按钮
 - (void)enableMirrorButton:(BOOL)enable;
 
-/// 是否禁用横竖屏按钮
+/// 是否启用横竖屏按钮
 - (void)enableOrientationButton:(BOOL)enable;
 
 /// 旋转屏幕

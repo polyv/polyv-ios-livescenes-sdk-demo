@@ -422,7 +422,6 @@ PLVSABitRateSheetDelegate
         _orientationButton = [self buttonWithTitle:@"横竖屏" NormalImageString:@"plvsa_liveroom_btn_orientation" selectedImageString:@"plvsa_liveroom_btn_orientation"];
         [_orientationButton addTarget:self action:@selector(orientationAction:) forControlEvents:UIControlEventTouchUpInside];
         _orientationButton.titleEdgeInsets = UIEdgeInsetsMake(_orientationButton.imageView.frame.size.height + 14, - 67, 0, -38);
-
     }
     return _orientationButton;
 }
@@ -709,6 +708,7 @@ PLVSABitRateSheetDelegate
 }
 
 - (void)changeDeviceOrientation:(UIDeviceOrientation)orientation {
+    self.orientationButton.selected = (orientation != UIDeviceOrientationPortrait);
     self.canAutorotate = YES;
     [PLVFdUtil changeDeviceOrientation:orientation];
     // 缓存设备方向

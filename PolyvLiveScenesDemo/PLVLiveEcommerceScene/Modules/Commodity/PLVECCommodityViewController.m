@@ -81,9 +81,8 @@ UIGestureRecognizerDelegate
 - (PLVECCommodityView *)commodityView {
     if (! _commodityView) {
         
-        CGFloat height = 410 + P_SafeAreaBottomEdgeInsets();
-        CGRect frame = CGRectMake(0, CGRectGetHeight(self.view.bounds)-height- P_SafeAreaTopEdgeInsets(),
-                                              CGRectGetWidth(self.view.bounds), height);
+        CGFloat height = 410;
+        CGRect frame = CGRectMake(0, CGRectGetHeight(self.view.bounds)-height, CGRectGetWidth(self.view.bounds), height);
         
         _commodityView = [[PLVECCommodityView alloc] initWithFrame:frame];
         _commodityView.dataSource = self;

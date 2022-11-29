@@ -59,6 +59,7 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, assign) BOOL networkQualityPoorViewShowed;   // 网络糟糕提示视图是否显示过
 @property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay; //只读，是否暂停无延迟直播
 
+
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
 @property (nonatomic, strong) PLVDocumentView * pptView;                 // PPT 功能模块
@@ -1009,12 +1010,19 @@ PLVRoomDataManagerProtocol
     }
 }
 
+#pragma mark Setter
+
+- (void)setFullScreenButtonShowOnIpad:(BOOL)fullScreenButtonShowOnIpad {
+    _fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
+    [self.skinView setFullScreenButtonShowOnIpad:fullScreenButtonShowOnIpad];
+}
+
 #pragma mark - [ Delegate ]
 #pragma mark PLVLCBasePlayerSkinViewDelegate
 - (void)plvLCBasePlayerSkinViewBackButtonClicked:(PLVLCBasePlayerSkinView *)skinView currentFullScreen:(BOOL)currentFullScreen{
     Boolean isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    if (currentFullScreen && !isPad) {
-        // 非iPad的全屏下，返回竖屏
+    if (currentFullScreen && !(isPad && !self.fullScreenButtonShowOnIpad)) {
+        // 非iPad或显示全屏按钮的iPad的全屏下，返回竖屏
         [PLVFdUtil changeDeviceOrientationToPortrait];
     }else{
         __weak typeof(self) weakSelf = self;
@@ -1048,6 +1056,10 @@ PLVRoomDataManagerProtocol
         return; // 开启画中画的时候不响应皮肤播放按钮
     }
     
+    if (!self.channelInLive && self.videoType == PLVChannelVideoType_Live) {
+        return; //暂无直播时，不响应双击播放事件
+    }
+    
     if (self.noDelayLiveWatching) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
             [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:wannaPlay];
@@ -1058,6 +1070,14 @@ PLVRoomDataManagerProtocol
         }else{
             [self.playerPresenter pausePlay];
         }
+    }
+}
+
+- (void)plvLCBasePlayerSkinViewProgressViewPaned:(PLVLCBasePlayerSkinView *)skinView scrubTime:(NSTimeInterval)scrubTime {
+    if (self.videoType == PLVChannelVideoType_Playback) {
+        // 拖动进度条后，同步当前进度时间
+        [self playerPresenter:self.playerPresenter downloadProgress:0 playedProgress:scrubTime / self.playerPresenter.duration playedTimeString:[PLVFdUtil secondsToString:scrubTime] durationTimeString:[PLVFdUtil secondsToString:self.playerPresenter.duration]];
+        [self.playerPresenter seekLivePlaybackToTime:scrubTime];
     }
 }
 
@@ -1428,7 +1448,9 @@ PLVRoomDataManagerProtocol
 
 /// 播放器 广告‘正在播放状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter advertViewPlayingStateDidChanged:(BOOL)playing {
-    [self refreshPictureInPictureButtonShow:!playing];
+    if (self.videoType == PLVChannelVideoType_Live) {
+        [self refreshPictureInPictureButtonShow:!playing];
+    }
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:advertViewPlayingDidChange:)]) {
         [self.delegate plvLCMediaAreaView:self advertViewPlayingDidChange:playing];
     }

@@ -75,6 +75,8 @@
     if (liveStatus == PLVLCLiveStatusEnd &&
         self.topView.status == PLVLCLiveStatusWaiting) {
         liveStatus = PLVLCLiveStatusWaiting;
+    } else if (liveStatus == PLVLCLiveStatusEnd && self.topView.status == PLVLCLiveStatusUnStart) {
+        liveStatus = PLVLCLiveStatusUnStart;
     }
     self.topView.status = liveStatus;
 }

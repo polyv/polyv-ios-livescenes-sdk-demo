@@ -24,6 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击更多按钮回调
 - (void)toolbarAreaViewDidTapMoreButton:(PLVSAToolbarAreaView *)toolbarAreaView;
 
+/// 点击视频连麦按钮
+- (void)toolbarAreaViewDidTapVideoLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected;
+
+/// 点击语音连麦按钮
+- (void)toolbarAreaViewDidTapAudioLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected;
+
 @end
 
 @interface PLVSAToolbarAreaView : UIView

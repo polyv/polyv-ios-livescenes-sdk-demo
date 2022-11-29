@@ -830,6 +830,8 @@ PLVChannelClassManagerDelegate
         getTokenModel.userType = @"audience";
     }else if(self.viewerType == PLVRoomUserTypeTeacher){
         getTokenModel.userType = @"teacher";
+    }else if(self.viewerType == PLVRoomUserTypeGuest){
+        getTokenModel.userType = @"guest";
     }
     __weak typeof(self) weakSelf = self;
     [self callbackForOperationInProgress:YES];
@@ -968,11 +970,12 @@ PLVChannelClassManagerDelegate
         if ([PLVFdUtil checkStringUseable:onlineUser.linkMicUserId]) {
             PLVRTCStreamerMixUser * mixUser = [[PLVRTCStreamerMixUser alloc] init];
             mixUser.userRTCId = onlineUser.linkMicUserId;
-            mixUser.renderMode = PLVRTCStreamerMixUserRenderMode_Fill;
             if (onlineUser.currentScreenShareOpen) {
+                mixUser.renderMode = PLVRTCStreamerMixUserRenderMode_FitBlackBase;
                 mixUser.inputType = PLVRTCStreamerMixUserInputType_AudioVideo;
                 mixUser.streamType = PLVRTCStreamerMixUserStreamType_Screen;
             } else {
+                mixUser.renderMode = PLVRTCStreamerMixUserRenderMode_Fill;
                 mixUser.inputType = onlineUser.currentCameraOpen ? PLVRTCStreamerMixUserInputType_AudioVideo : PLVRTCStreamerMixUserInputType_Audio;
                 mixUser.streamType = PLVRTCStreamerMixUserStreamType_Camera;
             }

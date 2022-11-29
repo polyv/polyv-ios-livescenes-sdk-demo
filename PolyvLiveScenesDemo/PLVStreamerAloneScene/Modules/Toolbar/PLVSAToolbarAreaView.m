@@ -14,6 +14,7 @@
 
 /// UI
 #import "PLVSASendMessageView.h"
+#import "PLVSALinkMicMenuPopup.h"
 
 /// 模块
 #import "PLVSAChatroomViewModel.h"
@@ -44,6 +45,7 @@
 @property (nonatomic, strong) UIButton *moreButton; // 更多弹层按钮
 
 @property (nonatomic, strong) PLVSASendMessageView *sendMessageView; // 输入文字、图片、emoji标签视图
+@property (nonatomic, strong) PLVSALinkMicMenuPopup *linkMicMenu;
 
 @end
 
@@ -54,7 +56,7 @@
     self = [super init];
     if (self) {
         self.backgroundColor = [UIColor clearColor];
-
+        
         [self addSubview:self.chatButton];
         [self addSubview:self.layoutSwitchButton];
         [self addSubview:self.linkMicButton];
@@ -88,7 +90,7 @@
     self.chatButton.imageEdgeInsets = UIEdgeInsetsMake(0, 8.5, 0, 0);
     
     self.chatButton.titleEdgeInsets = UIEdgeInsetsMake(0, 15, 0, 0);
-
+    
     self.moreButton.frame = CGRectMake(self.bounds.size.width - 36 - marginLeft, 8, 36, 36);
     
     self.memberButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 12 - 36, 8, 36, 36);
@@ -198,10 +200,35 @@
     return _sendMessageView;
 }
 
-#pragma mark Setter
-
-#pragma mark Data Mode
-#pragma mark Net Request
+- (PLVSALinkMicMenuPopup *)linkMicMenu {
+    if (!_linkMicMenu) {
+        CGFloat centerX = self.frame.origin.x + self.linkMicButton.frame.origin.x + self.linkMicButton.frame.size.width / 2.0; // 作为连麦选择弹层中心位置
+        CGFloat originY = self.frame.origin.y - 96;
+        CGRect rect = CGRectMake(centerX - 106 / 2.0, originY, 106, 96);
+        CGRect buttonRect = [self convertRect:self.linkMicButton.frame toView:self.superview];
+        _linkMicMenu = [[PLVSALinkMicMenuPopup alloc] initWithMenuFrame:rect buttonFrame:buttonRect];
+        
+        __weak typeof(self) weakSelf = self;
+        _linkMicMenu.dismissHandler = ^{
+            weakSelf.linkMicButton.enabled = YES;
+        };
+        
+        _linkMicMenu.videoLinkMicButtonHandler = ^{
+            if (weakSelf.delegate &&
+                [weakSelf.delegate respondsToSelector:@selector(toolbarAreaViewDidTapVideoLinkMicButton:linkMicButtonSelected:)]) {
+                [weakSelf.delegate toolbarAreaViewDidTapVideoLinkMicButton:weakSelf linkMicButtonSelected:weakSelf.linkMicButton.selected];
+            }
+        };
+        
+        _linkMicMenu.audioLinkMicButtonHandler = ^{
+            if (weakSelf.delegate &&
+                [weakSelf.delegate respondsToSelector:@selector(toolbarAreaViewDidTapAudioLinkMicButton:linkMicButtonSelected:)]) {
+                [weakSelf.delegate toolbarAreaViewDidTapAudioLinkMicButton:weakSelf linkMicButtonSelected:weakSelf.linkMicButton.selected];
+            }
+        };
+    }
+    return _linkMicMenu;
+}
 
 #pragma mark - Event
 
@@ -223,10 +250,14 @@
 }
 
 - (void)linkMicButtonAction {
-    self.linkMicButton.enabled = NO;
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapLinkMicButton:linkMicButtonSelected:)]) {
-        [self.delegate toolbarAreaViewDidTapLinkMicButton:self linkMicButtonSelected:self.linkMicButton.selected];
+    if (self.linkMicButton.selected) {
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapLinkMicButton:linkMicButtonSelected:)]) {
+            [self.delegate toolbarAreaViewDidTapLinkMicButton:self linkMicButtonSelected:self.linkMicButton.selected];
+        }
+    } else {
+        self.linkMicButton.enabled = NO;
+        [self.linkMicMenu showAtView:self.superview];
     }
 }
 

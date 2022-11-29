@@ -63,7 +63,7 @@
 }
 
 - (void)initUI {
-    self.rewardBgViewH = 304 + ([self isiPhoneXSeries] ? 34 : 0);
+    self.rewardBgViewH = 304 + ([PLVFdUtil isiPhoneXSeries] ? 34 : 0);
     
     [self addSubview:self.bgView];
     [self addSubview:self.rewardBgView];
@@ -99,7 +99,7 @@
     if (fullScreen) {
         /// 横屏
         CGFloat x = 0;
-        if ([self isiPhoneXSeries]) {
+        if ([PLVFdUtil isiPhoneXSeries]) {
             x = self.safeAreaInsets.left;
         }
         self.headerView.frame = CGRectMake(x, 0, SCREEN_WIDTH - x, 50);
@@ -115,7 +115,7 @@
         self.prizeBgScrollView.frame = CGRectMake(0, 0, SCREEN_WIDTH, 196);
         self.pageControl.hidden = NO;
         self.pageControl.frame = CGRectMake(0, CGRectGetMaxY(self.prizeBgScrollView.frame), SCREEN_WIDTH, 16);
-        CGFloat footerViewH = 39 + ([self isiPhoneXSeries] ? 34 : 0);
+        CGFloat footerViewH = 39 + ([PLVFdUtil isiPhoneXSeries] ? 34 : 0);
         self.footerView.frame = CGRectMake(0, CGRectGetMaxY(self.prizeBgView.frame), SCREEN_WIDTH, footerViewH);
     }
     [self setupCornerRadius];
@@ -143,13 +143,13 @@
         numButtonHeight = 28;
         numButtonPadding = 8;
     } else {
-        footerViewH = 39 + ([self isiPhoneXSeries] ? 34 : 0);
+        footerViewH = 39 + ([PLVFdUtil isiPhoneXSeries] ? 34 : 0);
         numButtonWidth = 36;
         numButtonHeight = 24;
         numButtonPadding = 4;
     }
 
-    CGFloat y = [self isiPhoneXSeries] ? 12 : (footerViewH - numButtonHeight) / 2;
+    CGFloat y = [PLVFdUtil isiPhoneXSeries] ? 12 : (footerViewH - numButtonHeight) / 2;
     NSArray * numArray = @[@"1",@"5",@"10",@"66",@"88",@"666"];
     for (int i = 0; i < numArray.count; i ++) {
         NSString * numString = numArray[i];
@@ -170,11 +170,11 @@
     }
     CGFloat totalWidth = 19 + (numButtonWidth + numButtonPadding) * numArray.count;
     self.numButtonScrollView.contentSize = CGSizeMake(totalWidth, footerViewH);
-    CGFloat sendButtonY = [self isiPhoneXSeries] ? 6 : (footerViewH - 32) / 2;
+    CGFloat sendButtonY = [PLVFdUtil isiPhoneXSeries] ? 6 : (footerViewH - 32) / 2;
     CGFloat sendButtonWidth = [self isFullScreen] ? 64 : 54;
     CGFloat sendButtonX;
     if (isFullScreen) {
-        sendButtonX = CGRectGetWidth(self.footerView.frame) - (16 + sendButtonWidth) - ([self isiPhoneXSeries] ? 30 : 0);
+        sendButtonX = CGRectGetWidth(self.footerView.frame) - (16 + sendButtonWidth) - ([PLVFdUtil isiPhoneXSeries] ? 30 : 0);
     } else {
         sendButtonX = CGRectGetWidth(self.footerView.frame) - (16 + sendButtonWidth);
     }
@@ -498,13 +498,6 @@
 }
 
 #pragma mark - util
-- (BOOL)isiPhoneXSeries{
-    BOOL isPhoneX = NO;
-    if (PLV_iOSVERSION_Available_11_0) {
-        isPhoneX = [[UIApplication sharedApplication] delegate].window.safeAreaInsets.bottom > 0.0;
-    }
-    return isPhoneX;
-}
 
 - (BOOL)isFullScreen{
     return SCREEN_WIDTH > SCREEN_HEIGHT;

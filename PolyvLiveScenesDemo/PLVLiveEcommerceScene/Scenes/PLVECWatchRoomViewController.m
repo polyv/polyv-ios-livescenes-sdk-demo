@@ -373,7 +373,10 @@ PLVInteractGenericViewDelegate
 }
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
-    [self.homePageView updateRoomInfoCount:onlineCount];
+    // 在回放时 显示观看次数 不需要更新在线人数
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+        [self.homePageView updateRoomInfoCount:onlineCount];
+    }
 }
 
 - (void)roomDataManager_didLikeCountChanged:(NSUInteger)likeCount {

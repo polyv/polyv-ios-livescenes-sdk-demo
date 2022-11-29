@@ -33,7 +33,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type;
 
 /// 点击 连麦 按钮回调
-- (void)streamerHomeViewDidTapLinkMicButton:(PLVSAStreamerHomeView *)homeView linkMicButtonSelected:(BOOL)selected;
+- (void)streamerHomeViewDidTapLinkMicButton:(PLVSAStreamerHomeView *)homeView linkMicButtonSelected:(BOOL)selected videoLinkMic:(BOOL)videoLinkMic;
 
 /// 点击 人员 按钮回调
 - (void)streamerHomeViewDidMemberSheetDismiss:(PLVSAStreamerHomeView *)homeView;
@@ -64,6 +64,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 点击 分享 按钮触发回调
 - (void)streamerHomeViewDidTapShareButton:(PLVSAStreamerHomeView *)homeView;
+
+/// 获取当前频道连麦媒体类型
+- (PLVChannelLinkMicMediaType)streamerHomeViewCurrentChannelLinkMicMediaType:(PLVSAStreamerHomeView *)homeView;
 
 @end
 

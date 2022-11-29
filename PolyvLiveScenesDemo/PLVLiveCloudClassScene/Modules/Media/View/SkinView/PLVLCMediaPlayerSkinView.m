@@ -62,6 +62,7 @@
         self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), CGRectGetMinY(self.backButton.frame), titleLabelWidth, commonHeight);
         
         [self refreshPlayTimesLabelFrame];
+        [self refreshProgressViewFrame];
         
         CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
         self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
@@ -99,7 +100,8 @@
         CGFloat documentToolHeight = 36;
         CGFloat documentToolPadding = 3;
         self.documentToolView.frame = CGRectMake((viewWidth - documentToolViewWidht) / 2, CGRectGetMinY(self.fullScreenButton.frame) - documentToolHeight - documentToolPadding, documentToolViewWidht , documentToolHeight);
-        
+        // 自动隐藏皮肤
+        [self autoHideSkinView]; 
     }else{
         self.hidden = YES;
     }
@@ -160,6 +162,16 @@
 - (void)refreshPlayTimesLabelFrame{
     CGSize playTimesLabelFitSize = [self.playTimesLabel sizeThatFits:CGSizeMake(150, 18)];
     self.playTimesLabel.frame = CGRectMake(CGRectGetMinX(self.titleLabel.frame), CGRectGetMaxY(self.titleLabel.frame) + 1, playTimesLabelFitSize.width + 8, 18);
+}
+
+- (void)refreshProgressViewFrame {
+    CGFloat toppadding;
+    if (@available(iOS 11.0, *)) {
+        toppadding = self.safeAreaInsets.top;
+    } else {
+        toppadding = 20;
+    }
+    self.progressView.frame = CGRectMake(self.frame.size.width / 2 - 73.5, self.frame.size.height / 2 - 16, 147, 32);
 }
 
 - (void)switchSkinViewLiveStatusTo:(PLVLCBasePlayerSkinViewLiveStatus)skinViewLiveStatus{

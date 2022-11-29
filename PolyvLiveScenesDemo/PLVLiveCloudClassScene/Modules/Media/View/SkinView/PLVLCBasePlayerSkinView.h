@@ -11,6 +11,7 @@
 #import "PLVLCMediaCountdownTimeView.h"
 #import "PLVProgressSlider.h"
 #import "PLVLCDocumentToolView.h"
+#import "PLVLCMediaProgressView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -52,6 +53,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 @property (nonatomic, strong) UITapGestureRecognizer * tapGR;
 @property (nonatomic, strong) UIPanGestureRecognizer * panGR;
+@property (nonatomic, strong) UITapGestureRecognizer * doubleTapGR;
 
 @property (nonatomic, strong) CAGradientLayer * topShadowLayer; // 顶部阴影背景 (负责展示 阴影背景)
 @property (nonatomic, strong) UIButton * backButton;
@@ -72,6 +74,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @property (nonatomic, strong) UILabel * durationLabel;    // 仅直播回放
 @property (nonatomic, strong) PLVProgressSlider * progressSlider; // 仅直播回放
 @property (nonatomic, strong) PLVLCDocumentToolView *documentToolView; // 文档工具视图
+@property (nonatomic, strong) PLVLCMediaProgressView *progressView; // 仅直播回放
 
 - (CGFloat)getLabelTextWidth:(UILabel *)label;
 
@@ -87,6 +90,8 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 - (void)showFloatViewShowButtonTipsLabelAnimation:(BOOL)showTips;
 
 - (void)setPlayButtonWithPlaying:(BOOL)playing;
+
+- (void)setFullScreenButtonShowOnIpad:(BOOL)show;
 
 - (void)setCountdownTime:(NSTimeInterval)time;
 
@@ -111,12 +116,17 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 /// @param hidden YES:隐藏，NO:恢复原来状态
 - (void)refreshMoreButtonHiddenOrRestore:(BOOL)hidden;
 
+- (void)refreshProgressViewFrame;
+
 /// 工具方法 (与 PLVLCBasePlayerSkinView 类本身没有逻辑关联，仅业务上相关)
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView;
 
 /// 设置PPT是否在主页
 /// @param mainSpeakerPPTOnMain ppt是否在主讲页
 - (void)setupMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain;
+
+/// 2.5秒后自动隐藏皮肤
+- (void)autoHideSkinView;
 
 @end
 
@@ -129,6 +139,8 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 - (void)plvLCBasePlayerSkinViewMoreButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
 - (void)plvLCBasePlayerSkinViewPlayButtonClicked:(PLVLCBasePlayerSkinView *)skinView wannaPlay:(BOOL)wannaPlay;
+
+- (void)plvLCBasePlayerSkinViewProgressViewPaned:(PLVLCBasePlayerSkinView *)skinView scrubTime:(NSTimeInterval)scrubTime;
 
 - (void)plvLCBasePlayerSkinViewRefreshButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 

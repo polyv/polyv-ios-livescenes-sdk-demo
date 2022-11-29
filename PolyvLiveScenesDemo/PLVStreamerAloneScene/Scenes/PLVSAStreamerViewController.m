@@ -177,11 +177,7 @@ PLVShareLiveSheetDelegate
 }
 
 - (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
-    if (self.streamerPresenter.classStarted) { // 开播后 返回开播前设置好的屏幕方向
-        return [PLVSAUtils sharedUtils].interfaceOrientation;
-    } else { // 未开播 默认竖屏
-        return UIInterfaceOrientationPortrait;
-    }
+    return [PLVSAUtils sharedUtils].interfaceOrientation;
 }
 
 - (UIStatusBarStyle)preferredStatusBarStyle{
@@ -212,22 +208,33 @@ PLVShareLiveSheetDelegate
 }
 
 /// 启动、挂断视频连麦
-- (void)startLinkMic:(BOOL)start {
-    NSString * suceessTitle = start ? @"已开启视频连麦，观众可以申请连麦" : @"已挂断所有连麦";
-    NSString * failTitle = start ? @"开启视频连麦失败，请稍后再试" : @"关闭视频连麦失败，请稍后再试";
+- (void)startLinkMic:(BOOL)start videoLinkMic:(BOOL)videoLinkMic {
+    NSString *typeTitle = videoLinkMic ? @"视频" : @"语音";
+    NSString * suceessTitle = start ? [NSString stringWithFormat:@"已开启%@连麦，观众可以申请连麦", typeTitle] : @"已挂断所有连麦";
+    NSString * failTitle = start ? [NSString stringWithFormat:@"开启%@连麦失败，请稍后再试", typeTitle] : [NSString stringWithFormat:@"关闭%@连麦失败，请稍后再试", typeTitle];
+    
     __weak typeof(self) weakSelf = self;
-    [self.streamerPresenter openVideoLinkMic:start
-                           emitCompleteBlock:^(BOOL emitSuccess) {
+    void (^ emitCompleteBlock) (BOOL emitSuccess) = ^(BOOL emitSuccess) {
         if (emitSuccess) { // 成功
             [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
-            [self.homeView setLinkMicButtonSelected:start];
+            [weakSelf.homeView setLinkMicButtonSelected:start];
             [PLVSAUtils showToastInHomeVCWithMessage:suceessTitle];
         } else {
-            [self.homeView setLinkMicButtonSelected:self.streamerPresenter.channelLinkMicOpen];
+            [weakSelf.homeView setLinkMicButtonSelected:weakSelf.streamerPresenter.channelLinkMicOpen];
             [PLVSAUtils showToastInHomeVCWithMessage:failTitle];
-            
         }
-    }];
+    };
+    
+    if (videoLinkMic) {
+        [self.streamerPresenter openVideoLinkMic:start
+                               emitCompleteBlock:^(BOOL emitSuccess) {
+            emitCompleteBlock(emitSuccess);
+        }];
+    } else {
+        [self.streamerPresenter openAudioLinkMic:start emitCompleteBlock:^(BOOL emitSuccess) {
+            emitCompleteBlock(emitSuccess);
+        }];
+    }
 }
 
 /// 缩放手势
@@ -365,7 +372,7 @@ PLVShareLiveSheetDelegate
     // 设置麦克风、摄像头默认配置
     self.streamerPresenter.micDefaultOpen = YES;
     self.streamerPresenter.cameraDefaultOpen = YES;
-    self.streamerPresenter.cameraDefaultFront = YES;
+    self.streamerPresenter.cameraDefaultFront = ![PLVRoomDataManager sharedManager].roomData.appDefaultPureViewEnabled;
     
     self.streamerPresenter.previewType = PLVStreamerPresenterPreviewType_UserArray;
     [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:[PLVRoomDataManager sharedManager].roomData.maxResolution]];
@@ -376,9 +383,13 @@ PLVShareLiveSheetDelegate
     // 初始化美颜
     [self.streamerPresenter initBeauty];
     
-    // 设置直播流比例
+    // 设置默认开播流比例
     if (self.viewerType == PLVRoomUserTypeTeacher) {
         [self setupLiveroomStreamScale];
+    }
+    // 设置默认开播方向
+    if ([PLVRoomDataManager sharedManager].roomData.appDefaultLandScapeEnabled) {
+        [self.settingView changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
     }
     
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
@@ -458,11 +469,16 @@ PLVShareLiveSheetDelegate
         if (prepareSuccess) {
             [weakSelf.streamerPresenter setupLocalPreviewWithCanvaView:nil setupCompletion:^(BOOL setupResult) {
                 if (setupResult) {
-                    [weakSelf.streamerPresenter startLocalMicCameraPreviewByDefault];
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(700 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+                        [weakSelf.streamerPresenter startLocalMicCameraPreviewByDefault];
+                    });
+                    [weakSelf.streamerPresenter switchLocalUserCamera:weakSelf.streamerPresenter.cameraDefaultFront];
                     
                     [weakSelf tryResumeClass];
                     // 开启RTC图像数据回调给美颜处理
                     [weakSelf.streamerPresenter enableBeautyProcess:[PLVBeautyViewModel sharedViewModel].beautyIsOpen];
+                    
+                    [weakSelf.settingView enableMirrorButton:weakSelf.streamerPresenter.currentCameraFront];
                 }
             }];
         }
@@ -1183,7 +1199,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 }
 
 /// 点击连麦按钮回调
-- (void)streamerHomeViewDidTapLinkMicButton:(PLVSAStreamerHomeView *)homeView linkMicButtonSelected:(BOOL)selected {
+- (void)streamerHomeViewDidTapLinkMicButton:(PLVSAStreamerHomeView *)homeView linkMicButtonSelected:(BOOL)selected videoLinkMic:(BOOL)videoLinkMic {
     if (!self.streamerPresenter.pushStreamStarted) {
         // 未开启连麦，更新连麦UI为未选中
         [self.homeView setLinkMicButtonSelected:NO];
@@ -1197,13 +1213,14 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
     
     if (!self.streamerPresenter.channelLinkMicOpen) {
-        [self startLinkMic:YES];
+        [self startLinkMic:YES videoLinkMic:videoLinkMic];
     } else {
         __weak typeof(self) weakSelf = self;
-        [PLVSAUtils showAlertWithTitle:@"确定关闭视频连麦吗？" Message:@"关闭后将挂断进行中的所有连麦" cancelActionTitle:@"取消" cancelActionBlock:^{
+        NSString *title = self.streamerPresenter.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Audio ? @"确定关闭语音连麦吗？" : @"确定关闭视频连麦吗？";
+        [PLVSAUtils showAlertWithTitle:title Message:@"关闭后将挂断进行中的所有连麦" cancelActionTitle:@"取消" cancelActionBlock:^{
             [weakSelf.homeView setLinkMicButtonSelected:YES];
         } confirmActionTitle:@"确定" confirmActionBlock:^{
-            [weakSelf startLinkMic:NO];
+            [weakSelf startLinkMic:NO videoLinkMic:videoLinkMic];
         }];
     }
 }
@@ -1227,6 +1244,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerHomeViewDidTapShareButton:(PLVSAStreamerHomeView *)homeView {
     [self.shareLiveSheet showInView:self.view];
+}
+
+- (PLVChannelLinkMicMediaType)streamerHomeViewCurrentChannelLinkMicMediaType:(PLVSAStreamerHomeView *)homeView {
+    return self.streamerPresenter.channelLinkMicMediaType;
 }
 
 #pragma mark PLVSABeautySheetDelegate

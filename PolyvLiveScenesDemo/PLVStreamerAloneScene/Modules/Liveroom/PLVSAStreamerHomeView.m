@@ -543,6 +543,15 @@ PLVSALinkMicTipViewDelegate
     return _layoutSwitchGuideView;
 }
 
+- (PLVChannelLinkMicMediaType)currentChannelLinkMicMediaType {
+    PLVChannelLinkMicMediaType type = PLVChannelLinkMicMediaType_Unknown;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentChannelLinkMicMediaType:)]) {
+        type = [self.delegate streamerHomeViewCurrentChannelLinkMicMediaType:self];
+    }
+    return type;
+}
+
 #pragma mark - [ Event ]
 
 #pragma mark Action
@@ -584,7 +593,22 @@ PLVSALinkMicTipViewDelegate
 }
 
 - (void)toolbarAreaViewDidTapLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
-    
+    [self linkMicButtonSelected:selected videoLinkMic:[self currentChannelLinkMicMediaType] == PLVChannelLinkMicMediaType_Video];
+}
+
+- (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView {
+    [self.memberSheet showInView:self];
+}
+
+- (void)toolbarAreaViewDidTapVideoLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
+    [self linkMicButtonSelected:selected videoLinkMic:YES];
+}
+
+- (void)toolbarAreaViewDidTapAudioLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
+    [self linkMicButtonSelected:selected videoLinkMic:NO];
+}
+
+- (void)linkMicButtonSelected:(BOOL)selected videoLinkMic:(BOOL)videoLinkMic {
     BOOL channelLinkMicOpen = NO;
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewChannelLinkMicOpen:)]) {
@@ -604,14 +628,14 @@ PLVSALinkMicTipViewDelegate
         return;
     }
     
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLinkMicButton:linkMicButtonSelected:)]) {
-        [self.delegate streamerHomeViewDidTapLinkMicButton:self linkMicButtonSelected:selected];
+    if (selected) { // 隐藏 有新用户正在申请连麦提示视图
+        [self.linkMicTipView dismiss];
     }
-}
-
-- (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView {
-    [self.memberSheet showInView:self];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLinkMicButton:linkMicButtonSelected:videoLinkMic:)]) {
+        [self.delegate streamerHomeViewDidTapLinkMicButton:self linkMicButtonSelected:selected videoLinkMic:videoLinkMic];
+    }
 }
 
 #pragma mark PLVSAMoreInfoSheetDelegate
@@ -730,7 +754,7 @@ PLVSALinkMicTipViewDelegate
 
 #pragma mark PLVSALinkMicTipViewDelegate
 - (void)linkMicTipViewDidTapCheckButton:(PLVSALinkMicTipView *)linkMicTipView {
-    [self.linkMicTipView dissmiss];
+    [self.linkMicTipView dismiss];
     // 回到第二屏
     [self.scrollView setContentOffset:CGPointMake(self.scrollView.bounds.size.width, 0)];
     // 显示成员列表

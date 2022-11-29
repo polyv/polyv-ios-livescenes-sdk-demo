@@ -27,7 +27,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 显示有用户申请连麦
 /// @note 0.3秒渐隐动画
-- (void)dissmiss;
+- (void)dismiss;
 
 @end
 

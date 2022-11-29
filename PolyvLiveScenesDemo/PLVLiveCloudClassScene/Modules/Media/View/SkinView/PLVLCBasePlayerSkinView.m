@@ -19,7 +19,8 @@
 
 typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
     PLVBasePlayerSkinViewTypeAdjusVolume        = 1,//在屏幕左边，上下滑动调节声音
-    PLVBasePlayerSkinViewTypeAdjusBrightness    = 2 //在屏幕右边，上下滑动调节亮度
+    PLVBasePlayerSkinViewTypeAdjusBrightness    = 2,//在屏幕右边，上下滑动调节亮度
+    PLVBasePlayerSKinViewTyoeAdjustProgress     = 3 //在屏幕中间，左右滑动调节进度
 };
 
 @interface PLVLCBasePlayerSkinView ()<
@@ -31,6 +32,9 @@ PLVLCDocumentToolViewDelegate>
 @property (nonatomic, assign) PLVBasePlayerSkinViewPanType panType;
 @property (nonatomic, strong) MPVolumeView *volumeView;
 @property (nonatomic, assign) BOOL moreButtonOriginalStatus;
+@property (nonatomic, assign) NSTimeInterval currentPlaybackTime;
+@property (nonatomic, assign) NSTimeInterval duration;
+@property (nonatomic, assign) NSTimeInterval scrubTime;
 
 @end
 
@@ -199,6 +203,10 @@ PLVLCDocumentToolViewDelegate>
     }
 }
 
+- (void)setFullScreenButtonShowOnIpad:(BOOL)show {
+    self.fullScreenButton.hidden = ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad && !show) ? YES : NO;
+}
+
 - (void)setCountdownTime:(NSTimeInterval)time{
     BOOL isShowCountdownTimeView = ((NSInteger)time) > 0;
     
@@ -233,16 +241,49 @@ PLVLCDocumentToolViewDelegate>
     }
     
     self.currentTimeLabel.text = [PLVFdUtil checkStringUseable:currentTimeString] ? currentTimeString : @"00:00";
+    self.currentPlaybackTime = [PLVFdUtil secondsToTimeInterval:self.currentTimeLabel.text];
     if (! [self.durationLabel.text isEqualToString:durationString]) {
         self.durationLabel.text = [PLVFdUtil checkStringUseable:durationString] ? durationString : @"00:00";
         [self setNeedsLayout];
     }
+    self.duration = [PLVFdUtil secondsToTimeInterval:self.durationLabel.text];
+}
+
+- (void)setProgressLabelWithCurrentTime:(NSTimeInterval)currentTime durationTime:(NSTimeInterval)durationTime {
+    NSMutableAttributedString *progressString = [[NSMutableAttributedString alloc] init];
+    NSString *currentTimeString = [PLVFdUtil secondsToString2:currentTime];
+    NSString *durationTimeString = [NSString stringWithFormat:@"/%@",[PLVFdUtil secondsToString2:durationTime]];
+    
+    NSMutableDictionary *currentTimeAttr = [NSMutableDictionary dictionary];
+    currentTimeAttr[NSFontAttributeName] = [UIFont fontWithName:@"PingFang SC" size:14];
+    currentTimeAttr[NSForegroundColorAttributeName] = PLV_UIColorFromRGB(@"6DA7FF");;
+    
+    NSMutableDictionary *durationTimeAttr = [NSMutableDictionary dictionary];
+    durationTimeAttr[NSFontAttributeName] = [UIFont fontWithName:@"PingFang SC" size:14];
+    durationTimeAttr[NSForegroundColorAttributeName] = PLV_UIColorFromRGB(@"FFFFFF");
+    
+    [progressString appendAttributedString:[[NSAttributedString alloc] initWithString:currentTimeString attributes:currentTimeAttr]];
+    [progressString appendAttributedString:[[NSAttributedString alloc] initWithString:durationTimeString attributes:durationTimeAttr]];
+    
+    self.progressView.attributedText = progressString;
+    [self refreshProgressViewFrame];
 }
 
 - (void)setupUI{
     // 添加 手势
-    self.tapGR = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction:)];
+    UITapGestureRecognizer *singleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+    singleGestureRecognizer.numberOfTapsRequired = 1;
+    singleGestureRecognizer.numberOfTouchesRequired = 1;
+    [singleGestureRecognizer addTarget:self action:@selector(tapGestureAction:)];
+    self.tapGR = singleGestureRecognizer;
     [self addGestureRecognizer:self.tapGR];
+    
+    UITapGestureRecognizer *doubleGestureRecognizer = [[UITapGestureRecognizer alloc] init];
+    doubleGestureRecognizer.numberOfTapsRequired = 2;
+    doubleGestureRecognizer.numberOfTouchesRequired = 1;
+    [doubleGestureRecognizer addTarget:self action:@selector(tapGestureAction:)];
+    self.doubleTapGR = doubleGestureRecognizer;
+    [self addGestureRecognizer:self.doubleTapGR];
     
     self.panGR = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureAction:)];
     [self addGestureRecognizer:self.panGR];
@@ -282,6 +323,7 @@ PLVLCDocumentToolViewDelegate>
         [controlsSuperview addSubview:self.diagonalsLabel];
         [controlsSuperview addSubview:self.durationLabel];
         [controlsSuperview addSubview:self.progressSlider];
+        [controlsSuperview addSubview:self.progressView];
     }
     
     [controlsSuperview bringSubviewToFront:self.backButton];
@@ -307,6 +349,10 @@ PLVLCDocumentToolViewDelegate>
     }
 }
 
+- (void)refreshProgressViewFrame {
+    NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshProgressViewFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
+}
+
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView{
     BOOL otherViewCanBeHandler = NO;
     if (otherView.hidden != YES && otherView.alpha > 0 && otherView.userInteractionEnabled) {
@@ -326,6 +372,12 @@ PLVLCDocumentToolViewDelegate>
         [self setupMainSpeakerPPTOnMain:[self.baseDelegate plvLCBasePlayerSkinViewShouldShowDocumentToolView:self]];
     }
 }
+
+- (void)autoHideSkinView {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(controlsSwitchHideStatus) object:nil];
+    [self performSelector:@selector(controlsSwitchHideStatus) withObject:nil afterDelay:2.5];
+}
+
     
 #pragma mark Animation
 - (void)controlsSwitchShowStatusWithAnimation:(BOOL)showStatus{
@@ -341,13 +393,17 @@ PLVLCDocumentToolViewDelegate>
         weakSelf.topShadowLayer.opacity = alpha;
         weakSelf.bottomShadowLayer.opacity = alpha;
         for (UIView * subview in weakSelf.subviews) {
-            if ([subview isKindOfClass:PLVLCMediaCountdownTimeView.class]) {
+            if ([subview isKindOfClass:PLVLCMediaCountdownTimeView.class] || [subview isKindOfClass:PLVLCMediaProgressView.class]) {
                 continue;
             }
             subview.alpha = alpha;
         }
     };
-    [UIView animateWithDuration:0.3 animations:animationBlock];
+    [UIView animateWithDuration:0.3 animations:animationBlock completion:^(BOOL finished) {
+        if (finished) {
+            [self autoHideSkinView];
+        }
+    }];
 }
 
 #pragma mark Setter
@@ -561,9 +617,21 @@ PLVLCDocumentToolViewDelegate>
     return _documentToolView;
 }
 
+- (PLVLCMediaProgressView *)progressView {
+    if (!_progressView && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+        _progressView = [[PLVLCMediaProgressView alloc] init];
+        _progressView.attributedText = [[NSMutableAttributedString alloc]initWithString:@"00:00:00/00:00:00"];
+        _progressView.alpha = 0;
+    }
+    return _progressView;
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setupData{
     self.skinShow = YES;
+    self.currentPlaybackTime = 0;
+    self.duration = 0;
+    self.scrubTime = 0;
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -572,9 +640,9 @@ PLVLCDocumentToolViewDelegate>
 
 - (void)controlMedia:(UIPanGestureRecognizer *)gestureRecognizer {
     CGPoint p = [gestureRecognizer locationInView:self];
+    CGPoint velocty = [gestureRecognizer velocityInView:self];
     if (gestureRecognizer.state == UIGestureRecognizerStateBegan) {
         self.lastPoint = p;
-        CGPoint velocty = [gestureRecognizer velocityInView:self];
         if (fabs(velocty.x) <= fabs(velocty.y)) { //在屏幕右边，上下滑动调整声音
             if (self.lastPoint.x > self.bounds.size.width * 0.5) {
                 self.panType = PLVBasePlayerSkinViewTypeAdjusVolume;
@@ -582,6 +650,11 @@ PLVLCDocumentToolViewDelegate>
                 self.panType = PLVBasePlayerSkinViewTypeAdjusBrightness;
                 [PLVLCMediaBrightnessView sharedBrightnessView];
             }
+        } else {
+            self.panType = PLVBasePlayerSKinViewTyoeAdjustProgress;
+            self.scrubTime = self.currentPlaybackTime;
+            [self setProgressLabelWithCurrentTime:self.currentPlaybackTime durationTime:self.duration];
+            [self showProgressView:YES];
         }
     } else if (gestureRecognizer.state == UIGestureRecognizerStateChanged
                || gestureRecognizer.state == UIGestureRecognizerStateEnded
@@ -596,6 +669,25 @@ PLVLCDocumentToolViewDelegate>
                 CGFloat dy = self.lastPoint.y - p.y;
                 [UIScreen mainScreen].brightness = [self valueOfDistance:dy baseValue:[UIScreen mainScreen].brightness];
                 break;
+            }
+            case PLVBasePlayerSKinViewTyoeAdjustProgress: {
+                if (gestureRecognizer.state == UIGestureRecognizerStateChanged) {
+                    self.scrubTime += velocty.x / 200;
+                    if (self.scrubTime > self.duration) {
+                        self.scrubTime = self.duration;
+                    }
+                    if (self.scrubTime < 0) {
+                        self.scrubTime = 0;
+                    }
+                    [self setProgressLabelWithCurrentTime:self.scrubTime durationTime:self.duration];
+                } else if (gestureRecognizer.state == UIGestureRecognizerStateEnded) {
+                    self.currentPlaybackTime = self.scrubTime;
+                    if([self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewProgressViewPaned:scrubTime:)]){
+                        [self.baseDelegate plvLCBasePlayerSkinViewProgressViewPaned:self scrubTime:self.scrubTime];
+                    }
+                    self.scrubTime = 0;
+                    [self showProgressView:NO];
+                }
             }
             default:
                 break;
@@ -632,11 +724,31 @@ PLVLCDocumentToolViewDelegate>
     }
 }
 
+- (void)showProgressView:(BOOL)show {
+    self.progressView.alpha = (show ? 1 : 0);
+}
+
+- (void)controlsSwitchHideStatus {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self];
+    if (!self.hidden && self.skinShow) {
+        [self controlsSwitchShowStatusWithAnimation:NO];
+    }
+}
 
 #pragma mark - [ Event ]
 #pragma mark Action
 - (void)tapGestureAction:(UITapGestureRecognizer *)tapGR {
-    [self controlsSwitchShowStatusWithAnimation:!self.skinShow];
+    if (tapGR.numberOfTapsRequired == 2 && tapGR.numberOfTouchesRequired == 1) {
+        BOOL wannaPlay = !self.playButton.selected;
+        if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewPlayButtonClicked:wannaPlay:)]) {
+            [self.baseDelegate plvLCBasePlayerSkinViewPlayButtonClicked:self wannaPlay:wannaPlay];
+        }
+        if (!self.skinShow) {
+            [self controlsSwitchShowStatusWithAnimation:!self.skinShow];
+        }
+    } else if (tapGR.numberOfTapsRequired == 1 && tapGR.numberOfTouchesRequired == 1) {
+        [self controlsSwitchShowStatusWithAnimation:!self.skinShow];
+    }
 }
 
 - (void)panGestureAction:(UIPanGestureRecognizer *)panGR {

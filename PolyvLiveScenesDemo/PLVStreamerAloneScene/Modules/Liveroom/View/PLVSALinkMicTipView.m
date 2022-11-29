@@ -59,12 +59,12 @@
 - (void)show {
     self.alpha = 1.0;
     
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dissmiss) object:nil];
-    [self performSelector:@selector(dissmiss) withObject:nil afterDelay:10.0];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dismiss) object:nil];
+    [self performSelector:@selector(dismiss) withObject:nil afterDelay:10.0];
 }
 
-- (void)dissmiss {
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dissmiss) object:nil];
+- (void)dismiss {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dismiss) object:nil];
     [UIView animateWithDuration:0.3 animations:^{
         self.alpha = 0.0;
     }];

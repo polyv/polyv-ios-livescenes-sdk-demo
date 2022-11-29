@@ -60,12 +60,9 @@ UIPageViewControllerDelegate
 }
 
 - (void)viewWillLayoutSubviews {
-    // iPad分屏尺寸变动，刷新菜单栏和分割线布局
     self.titleCollectionView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), kBarHeight);
-    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
-        self.seperator.frame = CGRectMake(0, kBarHeight, CGRectGetWidth(self.view.bounds), kSeperatorHeight);
-        self.pageController.view.frame = CGRectMake(0, kBarHeight + kSeperatorHeight, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - kBarHeight - kSeperatorHeight);
-    }
+    self.seperator.frame = CGRectMake(0, kBarHeight, CGRectGetWidth(self.view.bounds), kSeperatorHeight);
+    self.pageController.view.frame = CGRectMake(0, kBarHeight + kSeperatorHeight, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - kBarHeight - kSeperatorHeight);
     [self.titleCollectionView reloadData];
 }
 

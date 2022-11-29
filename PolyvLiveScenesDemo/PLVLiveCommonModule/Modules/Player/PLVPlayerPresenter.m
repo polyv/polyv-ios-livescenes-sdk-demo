@@ -517,12 +517,14 @@ PLVDefaultPageViewDelegate
 }
 
 - (void)startCountDownTimer{
-    self.countDownTime = self.defaultPageShowDuration;
-    self.countDownTimer = [NSTimer scheduledTimerWithTimeInterval:1
-                                                           target:[PLVFWeakProxy proxyWithTarget:self]
-                                                         selector:@selector(countDownTimerEvent:)
-                                                         userInfo:nil repeats:YES];
-    [[NSRunLoop currentRunLoop] addTimer:self.countDownTimer forMode:NSRunLoopCommonModes];
+    if (!self.countDownTimer) {
+        self.countDownTime = self.defaultPageShowDuration;
+        self.countDownTimer = [NSTimer scheduledTimerWithTimeInterval:1
+                                                               target:[PLVFWeakProxy proxyWithTarget:self]
+                                                             selector:@selector(countDownTimerEvent:)
+                                                             userInfo:nil repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:self.countDownTimer forMode:NSRunLoopCommonModes];
+    }
 }
 
 - (void)stopCountDownTimer {
@@ -716,6 +718,9 @@ PLVDefaultPageViewDelegate
                 }
             });
         } else {
+            if (player.mainPlayerLoadState & IJKMPMovieLoadStatePlaythroughOK) {
+                [self stopCountDownTimer];
+            }
             self.needShowLoading = NO;
             [self.activityView stopAnimating];
         }
@@ -723,13 +728,28 @@ PLVDefaultPageViewDelegate
 }
 
 /// 播放器 ’播放状态‘ 发生改变
-- (void)plvPlayer:(PLVPlayer *)player playerPlaybackStateDidChange:(PLVPlayerMainSubType)mainSubType{
-
+- (void)plvPlayer:(PLVPlayer *)player playerPlaybackStateDidChange:(PLVPlayerMainSubType)mainSubType {
+    /// 处理回放播放拖动后立即暂停情况引起的播放结束未改变 “是否正在播放中” 状态的情况
+    if (mainSubType != PLVPlayerMainSubType_Main) {
+        return;
+    }
+    if (player.mainPlayerPlaybackState == IJKMPMoviePlaybackStatePaused &&
+        [PLVRoomDataManager sharedManager].roomData.playing &&
+        self.currentVideoType == PLVChannelVideoType_Playback) {
+        [PLVRoomDataManager sharedManager].roomData.playing = NO;
+        if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
+            [self.delegate playerPresenter:self playerPlayingStateDidChanged:NO];
+        }
+    }
 }
 
 /// 播放器 ’是否正在播放中‘状态 发生改变
 - (void)plvPlayer:(PLVPlayer *)player playerPlayingStateDidChange:(PLVPlayerMainSubType)mainSubType playing:(BOOL)playing{
-    if (mainSubType == PLVPlayerMainSubType_Main) {
+    if (mainSubType != PLVPlayerMainSubType_Main) {
+        return;
+    }
+    if (player.mainPlayerPlaybackState != IJKMPMoviePlaybackStateSeekingForward ||
+        player.mainPlayerPlaybackState != IJKMPMoviePlaybackStateSeekingBackward) {
         [PLVRoomDataManager sharedManager].roomData.playing = playing;
         if (playing && !self.defaultPageView.hidden) {
             self.defaultPageView.hidden = YES;
@@ -745,6 +765,14 @@ PLVDefaultPageViewDelegate
     NSString * errorMessage = @"";
     if (finishReson == IJKMPMovieFinishReasonPlaybackEnded) {
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
+            ///回放播放拖动情况引起的播放结束未改变 “是否正在播放中” 状态的情况
+            if ([PLVRoomDataManager sharedManager].roomData.playing) {
+                [PLVRoomDataManager sharedManager].roomData.playing = NO;
+                if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
+                    [self.delegate playerPresenter:self playerPlayingStateDidChanged:NO];
+                }
+            }
+
             if ([self.delegate respondsToSelector:@selector(playerPresenter:downloadProgress:playedProgress:playedTimeString:durationTimeString:)]) {
                 [self.delegate playerPresenter:self downloadProgress:0 playedProgress:1 playedTimeString:self.livePlaybackPlayer.playedTimeString durationTimeString:self.livePlaybackPlayer.durationTimeString];
                 
@@ -1035,9 +1063,6 @@ PLVDefaultPageViewDelegate
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     roomData.playerChannelInfo = channelInfo;
-    if (!roomData.playbackSessionId) {
-        roomData.playbackSessionId = channelInfo.sessionId;
-    }
     /// 设置播放器LOGO
     [self setupPlayerLogoImage];
     if ([self.delegate respondsToSelector:@selector(playerPresenter:channelInfoDidUpdated:)]) {
@@ -1047,10 +1072,14 @@ PLVDefaultPageViewDelegate
 
 /// 直播回放播放器 ‘回放视频信息’ 发生改变
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)playbackVideoInfo {
-    [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo = playbackVideoInfo;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    roomData.playbackVideoInfo = playbackVideoInfo;
     self.vodId = playbackVideoInfo.vid;
     self.recordEnable = ![PLVFdUtil checkStringUseable:playbackVideoInfo.videoPoolId];
     self.fileId = playbackVideoInfo.fileId;
+    if (!roomData.playbackSessionId) {
+        roomData.playbackSessionId = playbackVideoInfo.channelSessionId;
+    }
     if ([self.delegate respondsToSelector:@selector(playerPresenter:playbackVideoInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self playbackVideoInfoDidUpdated:playbackVideoInfo];
     }

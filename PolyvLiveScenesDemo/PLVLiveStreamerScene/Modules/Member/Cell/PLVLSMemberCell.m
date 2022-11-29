@@ -130,13 +130,13 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
             rightOriginX = CGRectGetMinX(self.cameraSwitchButton.frame) - 44;
         }
         
+        if (rightOriginX == CGRectGetMinX(self.linkmicButton.frame) && !self.linkmicButton.hidden) {
+            rightOriginX = CGRectGetMinX(self.linkmicButton.frame) - 44;
+        }
+        
         if (!self.authSpeakerButton.isHidden) {
             self.authSpeakerButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
             rightOriginX = CGRectGetMinX(self.authSpeakerButton.frame) - 44;
-        }
-        
-        if (rightOriginX == CGRectGetMinX(self.linkmicButton.frame)) {
-            rightOriginX = CGRectGetMinX(self.linkmicButton.frame) - 44;
         }
         
         self.cameraButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
