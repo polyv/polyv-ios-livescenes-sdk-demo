@@ -748,7 +748,7 @@ PLVDefaultPageViewDelegate
     if (mainSubType != PLVPlayerMainSubType_Main) {
         return;
     }
-    if (player.mainPlayerPlaybackState != IJKMPMoviePlaybackStateSeekingForward ||
+    if (player.mainPlayerPlaybackState != IJKMPMoviePlaybackStateSeekingForward &&
         player.mainPlayerPlaybackState != IJKMPMoviePlaybackStateSeekingBackward) {
         [PLVRoomDataManager sharedManager].roomData.playing = playing;
         if (playing && !self.defaultPageView.hidden) {
