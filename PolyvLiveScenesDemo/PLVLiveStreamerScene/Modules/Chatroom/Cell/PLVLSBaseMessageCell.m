@@ -59,8 +59,9 @@
     UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
     UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
     UIMenuController *menuController = [UIMenuController sharedMenuController];
-    // 是否含有严禁词 || 提醒消息时
-    if (self.model.isProhibitMsg || self.model.isRemindMsg) {
+    // 是否含有严禁词并且发送失败时 || 提醒消息时
+    if ((self.model.isProhibitMsg && self.model.prohibitWord) ||
+        self.model.isRemindMsg) {
         [menuController setMenuItems:@[copyMenuItem]];
     } else {
         [menuController setMenuItems:@[copyMenuItem, replyMenuItem]];

@@ -20,6 +20,12 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
     PLVChatMsgStateImageLoadSuccess, // 图片加载成功
 };
 
+typedef NS_ENUM(NSInteger, PLVChatMsgContentLength) {
+    PLVChatMsgContentLength_Unvalid = 0,
+    PLVChatMsgContentLength_0To500,
+    PLVChatMsgContentLength_MoreThan500
+};
+
 @interface PLVChatModel : NSObject
 
 @property (nonatomic, strong) PLVChatUser *user;
@@ -29,7 +35,7 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 /// 被回复的原消息，用于重发回复信息
 @property (nonatomic, strong) id replyMessage;
 
-/// 不为空表示此消息含有严禁词、违规图片
+/// 不为空表示此消息含有严禁词、违规图片，发送失败
 /// @note message类型为PLVSpeakMessage、PLVQuoteMessage时：存放严禁词
 /// @note message类型为PLVImageMessage时：存放违规图片msgId
 @property (nonatomic, copy) NSString *prohibitWord;
@@ -43,6 +49,13 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 /// 图片Id，用于重发图片消息时，找到此条消息并删除
 /// @note message类型为图片消息时，imageId不为空，否则为 nil
 @property (nonatomic, copy) NSString *imageId;
+
+/// 消息文本长度类型，用于使用不同的UI显示，非文本消息默认为PLVChatMsgContentLength_Unvalid
+@property (nonatomic, assign) PLVChatMsgContentLength contentLength;
+
+/// 超长消息的完整文本，
+/// @note message为PLVSpeakMessage或PLVQuoteMessage，且overLen字段为YES时有效
+@property (nonatomic, copy) NSString *overLenContent;
 
 /// 获取 message 属性的 msgId
 /// 如果为文本消息、引用消息、图片消息、打赏消息，msgId 不为空，否则为 nil
@@ -66,6 +79,10 @@ typedef NS_ENUM(NSInteger, PLVChatMsgState) {
 /// 判断当前消息是否为：提醒消息
 /// @note YES: 提醒消息；NO: 非提醒消息
 - (BOOL)isRemindMsg;
+
+/// 判断当前消息是否为超长消息，超长消息的完整消息文本需要另外请求获取
+/// @note message为PLVSpeakMessage，且overLen字段为YES时为YES
+- (BOOL)isOverLenMsg;
 
 + (PLVChatModel *)chatModelFromPlaybackMessage:(PLVPlaybackMessage *)playbackMessage;
 

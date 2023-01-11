@@ -31,7 +31,7 @@ typedef void (^PLVSAProhibitWordTipViewDismissBlock) (void);
 
 /// 设置违规类型、违规词
 /// @param tipType 违规类型
-/// @param prohibitWord 违规词，文字类型此字段不可为空，图片类型为空
+/// @param prohibitWord 违规词，文字类型时，若此字段为空表示违禁词已被替换成*，图片类型时此字段为空
 - (void)setTipType:(PLVSAProhibitWordTipType)tipType prohibitWord:(NSString * _Nullable )prohibitWord;
 
 @end

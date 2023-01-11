@@ -173,7 +173,9 @@
 }
 
 - (void)contentBackgroudViewAddView:(UIView *)contentView{
-    contentView.frame = self.contentBackgroudView.bounds;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(200 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        contentView.frame = self.contentBackgroudView.bounds;
+    });
     contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [self.contentBackgroudView addSubview:contentView];
 }

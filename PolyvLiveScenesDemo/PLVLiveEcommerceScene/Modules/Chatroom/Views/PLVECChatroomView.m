@@ -10,6 +10,7 @@
 #import "PLVECNewMessageView.h"
 #import "PLVECWelcomView.h"
 #import "PLVECChatCell.h"
+#import "PLVECLongContentChatCell.h"
 #import "PLVECUtils.h"
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
@@ -281,6 +282,54 @@ PLVECChatroomPlaybackViewModelDelegate
     return model;
 }
 
+// 点击超长文本消息(超过200字符）的【复制】按钮时调用
+- (void)pasteFullContentWithModel:(PLVChatModel *)model {
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        if (!self.playbackEnable) { // 重放时接口返回的消息包含全部文本，不存在超长问题
+            [[PLVECChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+                if (content) {
+                    model.overLenContent = content;
+                    [UIPasteboard generalPasteboard].string = content;
+                    [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+                }
+            }];
+        }
+    } else {
+        NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (pasteString) {
+            [UIPasteboard generalPasteboard].string = pasteString;
+            [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+        }
+    }
+}
+
+// 点击超长文本消息(超过500字符）的【更多】按钮时调用
+- (void)alertToShowFullContentWithModel:(PLVChatModel *)model {
+    __weak typeof(self) weakSelf = self;
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        if (!self.playbackEnable) { // 重放时接口返回的消息包含全部文本，不存在超长问题
+            [[PLVECChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+                if (content) {
+                    model.overLenContent = content;
+                    [weakSelf notifyDelegateToAlertChatModel:model];
+                }
+            }];
+        }
+    } else {
+        NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (content) {
+            [self notifyDelegateToAlertChatModel:model];
+        }
+    }
+}
+
+- (void)notifyDelegateToAlertChatModel:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomView_alertLongContentMessage:)]) {
+        [self.delegate chatroomView_alertLongContentMessage:model];
+    }
+}
+
 #pragma mark - Action
 
 - (void)textAreaViewTapAction {
@@ -410,6 +459,10 @@ PLVECChatroomPlaybackViewModelDelegate
 }
 
 - (void)chatroomManager_didMessageDeleted {
+    [self.tableView reloadData];
+}
+
+- (void)chatroomManager_didSendProhibitMessage {
     [self.tableView reloadData];
 }
 
@@ -597,14 +650,38 @@ PLVECChatroomPlaybackViewModelDelegate
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
-    static NSString *cellIdentify = @"cellIdentify";
-    PLVECChatCell *cell = (PLVECChatCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
-    if (!cell) {
-        cell = [[PLVECChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+    if ([PLVECChatCell isModelValid:model]) {
+        static NSString *normalCellIdentify = @"normalCellIdentify";
+        PLVECChatCell *cell = (PLVECChatCell *)[tableView dequeueReusableCellWithIdentifier:normalCellIdentify];
+        if (!cell) {
+            cell = [[PLVECChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:normalCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+
+        return cell;
+    } else if ([PLVECLongContentChatCell isModelValid:model]) {
+        static NSString *LongContentMessageCellIdentify = @"PLVLCLongContentMessageCell";
+        PLVECLongContentChatCell *cell = (PLVECLongContentChatCell *)[tableView dequeueReusableCellWithIdentifier:LongContentMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVECLongContentChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        __weak typeof(self) weakSelf = self;
+        [cell setCopButtonHandler:^{
+            [weakSelf pasteFullContentWithModel:model];
+        }];
+        [cell setFoldButtonHandler:^{
+            [weakSelf alertToShowFullContentWithModel:model];
+        }];
+        return cell;
+    } else {
+        static NSString *cellIdentify = @"cellIdentify";
+        UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
+        if (!cell) {
+            cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+        }
+        return cell;
     }
-    [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
-    
-    return cell;
 }
 
 #pragma mark - UITableView Delegate
@@ -615,7 +692,12 @@ PLVECChatroomPlaybackViewModelDelegate
     }
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
-    CGFloat cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    CGFloat cellHeight = 0;
+    if ([PLVECChatCell isModelValid:model]) {
+        cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVECLongContentChatCell isModelValid:model]) {
+        cellHeight = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    }
     return cellHeight;
 }
 
@@ -669,14 +751,21 @@ PLVECChatroomPlaybackViewModelDelegate
         return NO;
     }
     
-    // 当前文本框字符长度（中英文、表情键盘上表情为一个字符，系统emoji为两个字符）
-    NSUInteger newLength = textView.attributedText.length + text.length - range.length;
-    if (newLength > TEXT_MAX_COUNT) {
-        NSLog(@"输入字数超限！");
-        return NO;
-    }
-    
     return YES;
+}
+
+- (void)textViewDidChange:(UITextView *)textView {
+    NSString *toBeString = textView.text;
+    UITextRange *selectedRange = [textView markedTextRange];
+    UITextPosition *position = [textView positionFromPosition:selectedRange.start offset:0];
+    
+    if (!position){
+        if (toBeString.length > 0) {
+            if (toBeString.length > TEXT_MAX_COUNT) {
+                textView.text = [toBeString substringToIndex:TEXT_MAX_COUNT];
+            }
+        }
+    }
 }
 
 @end

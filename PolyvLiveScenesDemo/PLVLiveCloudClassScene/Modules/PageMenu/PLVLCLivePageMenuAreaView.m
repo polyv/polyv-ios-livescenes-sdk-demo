@@ -123,8 +123,8 @@ PLVRoomDataManagerProtocol
     [self.chatVctrl updatePlaybackViewModel:self.playbackViewModel];
 }
 
-- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict {
-    [self.chatVctrl.cardPushButtonView startCardPush:start cardPushInfo:dict];
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback {
+    [self.chatVctrl.cardPushButtonView startCardPush:start cardPushInfo:dict callback:callback];
 }
 
 - (void)displayProductPageToExternalView:(UIView *)externalView {
@@ -317,6 +317,13 @@ PLVRoomDataManagerProtocol
 - (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC needOpenInteract:(NSDictionary *)dict {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:needOpenInteract:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self needOpenInteract:dict];
+    }
+}
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC alertLongContentMessage:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:alertLongContentMessage:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self alertLongContentMessage:model];
     }
 }
 

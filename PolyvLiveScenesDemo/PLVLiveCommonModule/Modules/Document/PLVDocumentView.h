@@ -95,6 +95,11 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 - (void)documentView_continueClassWithAutoId:(NSUInteger)autoId
                                   pageNumber:(NSUInteger)pageNumber;
 
+/// 讲师设置用户画笔权限
+/// @param permission 是否拥有画笔权限（YES:授权，NO:取消授权）
+/// @param userId 授权用户Id
+- (void)documentView_teacherSetPaintPermission:(BOOL)permission userId:(NSString *)userId;
+
 @end
 
 @interface PLVDocumentView : UIView
@@ -174,10 +179,10 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 /// @param channelId 频道Id
 - (void)pptStartWithFileId:(NSString *)fileId channelId:(NSString *)channelId;
 
-#pragma mark - 推流专用方法(scene == PLVDocumentViewSceneStreamer 时方生效）
+#pragma mark - 操作白板的方法(scene == PLVDocumentViewSceneCloudClass/PLVDocumentViewSceneStreamer 时方生效）
 
-/// 设置文档的用户交互启用
-/// @note 讲师默认启用，嘉宾默认禁用，只有嘉宾角色才需要开启或者关闭用户交互手势
+/// 设置文档的用户交互启用，即开启画笔权限
+/// @note 讲师默认启用。嘉宾、观众默认禁用，授权后可开启用户交互手势和画笔权限
 ///
 /// @param enabled  是否启用 YES 启用，NO禁用
 - (void)setDocumentUserInteractionEnabled:(BOOL)enabled;
@@ -196,6 +201,9 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 /// 修改画笔颜色
 /// @param hexString  RGB色值，如红色为“#FF0000”
 - (void)changeColor:(NSString *)hexString;
+
+/// 执行撤回画板操作
+- (void)doUndo;
 
 /// 进入画笔删除状态
 - (void)toDelete;

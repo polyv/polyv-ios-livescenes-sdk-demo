@@ -10,7 +10,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVLCKeyboardToolView.h"
 #import "PLVLCNewMessageView.h"
-#import "PLVLCSpeakMessageCell.h"
+#import "PLVLCQuitSpeakMessageCell.h"
 #import "PLVLCChatroomViewModel.h"
 #import "PLVLCUtils.h"
 #import "PLVLCImageMessageCell.h"
@@ -215,11 +215,11 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
-    } else if([PLVLCSpeakMessageCell isModelValid:model]) {
+    } else if([PLVLCQuitSpeakMessageCell isModelValid:model]) {
         static NSString *cellIdentify = @"PLVLCQuizSpeakMessageCell";
-        PLVLCSpeakMessageCell *cell = (PLVLCSpeakMessageCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
+        PLVLCQuitSpeakMessageCell *cell = (PLVLCQuitSpeakMessageCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
         if (!cell) {
-            cell = [[PLVLCSpeakMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
+            cell = [[PLVLCQuitSpeakMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
@@ -244,8 +244,8 @@ UITableViewDataSource
     PLVChatModel *model = [[PLVLCChatroomViewModel sharedViewModel].privateChatArray objectAtIndex:indexPath.row];
     if ([PLVLCImageMessageCell isModelValid:model]) {
         cellHeight = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
-    } else if ([PLVLCSpeakMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCQuitSpeakMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCQuitSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else {
         cellHeight = 0.0;
     }

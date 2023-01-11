@@ -18,6 +18,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (CGFloat)cellHeightWithModel:(PLVChatModel *)model cellWidth:(CGFloat)cellWidth;
 
+/// 判断model是否为有效类型
++ (BOOL)isModelValid:(PLVChatModel *)model;
+
 @end
 
 NS_ASSUME_NONNULL_END

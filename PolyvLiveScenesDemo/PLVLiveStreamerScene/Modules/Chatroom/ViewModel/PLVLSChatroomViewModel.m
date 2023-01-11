@@ -386,17 +386,17 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 /// 处理严禁词
 /// 由于公屏、提醒聊天室消息列表储存的对象都是同一个，所以只需要处理一次即可。
-- (void)markChatModelWithProhibitWord:(NSString *)word {
-    if (!word ||
-        ![word isKindOfClass:[NSString class]] ||
-        word.length == 0) {
+- (void)markChatModelWithWaring:(NSString *)warning prohibitWord:(NSString *)word {
+    if (![PLVFdUtil checkStringUseable:word]) { // 发送成功，以用**代替严禁词发出
+        [self notifyListenerDidSendProhibitMessage];
         return;
     }
+    
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     NSArray *tempChatArray = [self.chatArray copy];
     for (PLVChatModel *model in tempChatArray) {
         NSString *modelMsgId = [model msgId];
-        // 含有严禁词的消息，msgID为空
+        // 含有严禁词且发送失败的消息，msgID为空
         if (modelMsgId && modelMsgId.length > 0) {
             continue;
         }
@@ -549,8 +549,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self removeAllRemindChatModels];
 }
 
-- (void)chatroomPresenter_receiveWarning:(NSString *)message prohibitWord:(NSString *)word{
-    [self markChatModelWithProhibitWord:word];
+- (void)chatroomPresenter_receiveWarning:(NSString *)warning prohibitWord:(NSString *)word {
+    [self markChatModelWithWaring:warning prohibitWord:word];
 }
 
 - (void)chatroomPresenter_receiveImageWarningWithMsgId:(NSString *)msgId{

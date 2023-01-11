@@ -168,6 +168,16 @@
     [self refreshBottomButtonsFrame];
 }
 
+- (void)showCardPushButtonView:(BOOL)show {
+    self.cardPushBackgroudView.hidden = !show;
+    [self refreshBottomButtonsFrame];
+}
+
+- (void)refreshPaintButtonShow:(BOOL)show {
+    self.paintButton.hidden = !show;
+    [self refreshBottomButtonsFrame];
+}
+
 #pragma mark - [ Private Methods ]
 - (UIImage *)getLiveRoomImageWithName:(NSString *)imageName{
     return [PLVLCUtils imageForLiveRoomResource:imageName];
@@ -303,8 +313,11 @@
     buttonOriginX = (self.rewardButton.isHidden || !self.rewardButton.superview) ? buttonOriginX : CGRectGetMinX(self.rewardButton.frame) - likeButtonWidth - 20;
     self.commodityButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
     buttonOriginX = self.commodityButton.isHidden ? buttonOriginX : CGRectGetMinX(self.commodityButton.frame) - likeButtonWidth - 20;
+    // 适配只有一个按钮时
     buttonOriginX = MIN(buttonOriginX, viewWidth - rightSafePadding - 50 - likeButtonWidth);
     self.cardPushBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
+    buttonOriginX = self.cardPushBackgroudView.isHidden ? buttonOriginX : CGRectGetMinX(self.cardPushBackgroudView.frame) - likeButtonWidth - 20;
+    self.paintButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
 }
 
 - (void)refreshGuideChatLabelFrame {
@@ -401,6 +414,7 @@
 - (UIView *)cardPushBackgroudView{
     if (!_cardPushBackgroudView) {
         _cardPushBackgroudView = [[UIView alloc] init];
+        _cardPushBackgroudView.hidden = YES;
     }
     return _cardPushBackgroudView;
 }

@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) CGFloat sheetHight; // 弹层显示时的高度
 @property (nonatomic, assign) CGFloat sheetLandscapeWidth; // 弹层横屏时弹出宽度
+@property (nonatomic, assign, readonly) BOOL superLandscape; // 是否支持横屏
 
 @property (nonatomic, strong, readonly) UIView *contentView; // 底部内容区域
 @property (nonatomic, copy) void(^didCloseSheet)(void); // 弹层隐藏时的回调
@@ -37,6 +38,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param sheetLandscapeWidth  弹层横屏时弹出宽度，需要支持横屏时此值必须大于0
 /// @param backgroundColor 背景色，默认为黑色半透明
 - (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth backgroundColor:(UIColor *)backgroundColor;
+
+/// 设置 sheet 的圆角，如不设置则默认圆角为16；如果设置为0 则没有圆角
+/// @param cornerRadius 圆角
+- (void)setSheetCornerRadius:(CGFloat)cornerRadius;
 
 /// 弹出弹层
 /// @param parentView 展示弹层的父视图，弹层会插入到父视图的最顶上

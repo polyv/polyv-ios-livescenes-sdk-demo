@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /*
  云课堂场景，竖屏聊天室消息 cell
- 支持文本消息和私聊消息
+ 支持文本消息
  */
 @interface PLVLCSpeakMessageCell : PLVLCMessageCell
 

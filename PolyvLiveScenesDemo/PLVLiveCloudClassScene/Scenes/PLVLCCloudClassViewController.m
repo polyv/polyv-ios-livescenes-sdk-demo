@@ -30,6 +30,9 @@
 #import "PLVCommodityDetailViewController.h"
 #import "PLVCommodityCardDetailView.h"
 #import "PLVLCDownloadListViewController.h"
+#import "PLVLCMessagePopupView.h"
+#import "PLVLCLandscapeMessagePopupView.h"
+#import "PLVToast.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -46,7 +49,10 @@ PLVCommodityPushViewDelegate,
 PLVCommodityDetailViewControllerDelegate,
 PLVPopoverViewDelegate,
 PLVInteractGenericViewDelegate,
-PLVLCChatroomPlaybackDelegate
+PLVLCChatroomPlaybackDelegate,
+PLVLCChatLandscapeViewDelegate,
+PLVLCMessagePopupViewDelegate,
+PLVLCLandscapeMessagePopupViewDelegate
 >
 
 #pragma mark 数据
@@ -92,6 +98,7 @@ PLVLCChatroomPlaybackDelegate
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// ├── (PLVLCLinkMicLandscapeControlBar) landscapeControlBar (由 linkMicAreaView 持有及管理)
 /// ├── (UIView) marqueeView (由 mediaAreaView 持有及管理)
+/// ├── (PLVLCDocumentPaintModeView) paintModeView (由 mediaAreaView 持有及管理)
 /// └── (PLVPopoverView) popoverView
 @property (nonatomic, strong) PLVLCMediaAreaView *mediaAreaView;        // 媒体区
 @property (nonatomic, strong) PLVLCLinkMicAreaView *linkMicAreaView;    // 连麦区
@@ -347,7 +354,7 @@ PLVLCChatroomPlaybackDelegate
         [self.view insertSubview:self.mediaAreaView.marqueeView aboveSubview:self.mediaAreaView]; /// 保证高于 mediaAreaView 即可
         [self.view insertSubview:self.mediaAreaView.floatView belowSubview:self.popoverView.interactView]; /// 保证低于 interactView
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView 即可
-        
+        [self.view insertSubview:((UIView *)self.linkMicAreaView.linkMicPreView) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView 即可
     } else {
         // 横屏
         self.linkMicAreaView.hidden = !self.linkMicAreaView.inRTCRoom;
@@ -398,7 +405,9 @@ PLVLCChatroomPlaybackDelegate
         [self.view insertSubview:self.mediaAreaView.marqueeView aboveSubview:self.liveRoomSkinView]; /// 保证高于 liveRoomSkinView 即可
         [self.view insertSubview:self.mediaAreaView.retryPlayView aboveSubview:self.liveRoomSkinView]; /// 保证高于 liveRoomSkinView 即可
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView
-       
+        [self.view insertSubview:((UIView *)self.linkMicAreaView.linkMicPreView) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView 即可
+        [self.view insertSubview:self.mediaAreaView.paintModeView belowSubview:self.popoverView.interactView]; /// 保证低于 interactView
+        
         [self.liveRoomSkinView setNeedsLayout];
         [self.popoverView setNeedsLayout];
     }
@@ -541,6 +550,7 @@ PLVLCChatroomPlaybackDelegate
 - (PLVLCChatLandscapeView *)chatLandscapeView{
     if (!_chatLandscapeView) {
         _chatLandscapeView = [[PLVLCChatLandscapeView alloc] init];
+        _chatLandscapeView.delegate = self;
     }
     return _chatLandscapeView;
 }
@@ -639,6 +649,11 @@ PLVLCChatroomPlaybackDelegate
     
     if (self.fullScreenDifferent) {
         [self.popoverView hidRewardView];
+    }
+    
+    // 旋转竖屏需要退出画笔模式
+    if (self.mediaAreaView.isInPaintMode && self.fullScreenDifferent && !fullScreen) {
+        [self.mediaAreaView exitPaintMode];
     }
     
     // 调用setStatusBarHidden后状态栏旋转横屏不自动隐藏
@@ -818,7 +833,10 @@ PLVLCChatroomPlaybackDelegate
 }
 
 - (void)chatroomManager_startCardPush:(BOOL)start pushInfo:(NSDictionary *)pushDict {
-    [self.menuAreaView startCardPush:start cardPushInfo:pushDict];
+    __weak typeof(self) weakSelf = self;
+    [self.menuAreaView startCardPush:start cardPushInfo:pushDict callback:^(BOOL show) {
+        [weakSelf.liveRoomSkinView showCardPushButtonView:show];
+    }];
 }
 
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom {
@@ -999,6 +1017,21 @@ PLVLCChatroomPlaybackDelegate
     [self.liveRoomSkinView.documentToolView setupPageNumber:pageNumber totalPage:totalPage maxNextNumber:maxNextNumber];
 }
 
+// 画笔权限改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangePaintPermission:(BOOL)permission {
+    NSString *title = permission ? @"讲师已授予你画笔权限" : @"讲师已收回你的画笔权限";
+    [PLVLCUtils showHUDWithTitle:title detail:@"" view:self.view];
+    if (permission && !self.liveRoomSkinView.skinShow) {
+        [self.liveRoomSkinView controlsSwitchShowStatusWithAnimation:YES];
+    }
+    [self.liveRoomSkinView refreshPaintButtonShow:permission];
+}
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeInPaintMode:(BOOL)paintMode {
+    [self.linkMicAreaView restoreExternalView];
+    [self.liveRoomSkinView controlsSwitchShowStatusWithAnimation:NO];
+}
+
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain {
     [self.liveRoomSkinView setupMainSpeakerPPTOnMain:mainSpeakerPPTOnMain];
 }
@@ -1080,6 +1113,10 @@ PLVLCChatroomPlaybackDelegate
 
 /// 连麦Rtc画面窗口被点击 (表示用户希望视图位置交换)
 - (UIView *)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView rtcWindowDidClickedCanvasView:(UIView *)canvasView{
+    if (self.mediaAreaView.isInPaintMode) {
+        [self.mediaAreaView exitPaintMode];
+    }
+    
     UIView * contentViewOnMediaAreaView = [self.mediaAreaView getContentViewForExchange];
     [self.mediaAreaView displayContentView:canvasView];
     
@@ -1135,6 +1172,10 @@ PLVLCChatroomPlaybackDelegate
         sceneType = PLVLCMediaAreaViewLiveSceneType_InLinkMic;
     }else{
         sceneType = self.mediaAreaView.noDelayLiveWatching ? PLVLCMediaAreaViewLiveSceneType_WatchNoDelay : PLVLCMediaAreaViewLiveSceneType_WatchCDN;
+        if (self.mediaAreaView.isInPaintMode) { // 退出画笔模式
+            [self.mediaAreaView exitPaintMode];
+        }
+        [self.liveRoomSkinView refreshPaintButtonShow:NO];
     }
     [self.mediaAreaView switchAreaViewLiveSceneTypeTo:sceneType];
     
@@ -1222,6 +1263,17 @@ PLVLCChatroomPlaybackDelegate
 
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView needOpenInteract:(NSDictionary *)dict {
     [self.popoverView.interactView openNewPushCardWithDict:dict];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView alertLongContentMessage:(PLVChatModel *)model {
+    NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+    if (content) {
+        PLVLCMessagePopupView *popupView = [[PLVLCMessagePopupView alloc] initWithChatModel:model];
+        CGFloat containerHeight = [UIScreen mainScreen].bounds.size.height - CGRectGetMaxY(self.mediaAreaView.frame);
+        [popupView setContainerHeight:containerHeight];
+        popupView.delegate = self;
+        [popupView showOnView:self.popoverView];
+    }
 }
 
 #pragma mark  PLVCommodityPushViewDelegate
@@ -1322,6 +1374,31 @@ PLVLCChatroomPlaybackDelegate
         self.commodityURL = url;
         [self jumpToCommodityDetailViewController];
     }
+}
+
+#pragma mark PLVLCChatLandscapeViewDelegate
+
+- (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView alertLongContentMessage:(PLVChatModel *)model {
+    NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+    if (content) {
+        PLVLCLandscapeMessagePopupView *popupView = [[PLVLCLandscapeMessagePopupView alloc] initWithChatModel:model];
+        popupView.delegate = self;
+        [popupView showOnView:self.popoverView];
+    }
+}
+
+#pragma mark PLVLCMessagePopupViewDelegate
+
+- (void)messagePopupViewWillCopy:(PLVLCMessagePopupView *)popupView {
+    [UIPasteboard generalPasteboard].string = popupView.content;
+    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
+}
+
+#pragma mark PLVLCLandscapeMessagePopupViewDelegate
+
+- (void)landscapeMessagePopupViewWillCopy:(PLVLCLandscapeMessagePopupView *)popupView {
+    [UIPasteboard generalPasteboard].string = popupView.content;
+    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
 }
 
 @end

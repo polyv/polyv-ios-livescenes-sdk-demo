@@ -133,8 +133,8 @@
         return;
     }
     
-    // 违禁消息、不是讲师身份关闭回复功能
-    if (self.model.isProhibitMsg ||
+    // 违禁消息且发送失败时、不是讲师身份关闭回复功能
+    if ((self.model.isProhibitMsg && self.model.prohibitWord && self.model.prohibitWord.length > 0) ||
         [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
         self.allowReply = NO;
     }

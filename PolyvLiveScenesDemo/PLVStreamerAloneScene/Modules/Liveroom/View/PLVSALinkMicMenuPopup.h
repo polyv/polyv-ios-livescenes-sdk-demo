@@ -24,10 +24,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)dismiss;
 
-- (void)resetStatus;
-
-- (void)refreshWithMenuFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame;
-
 @end
 
 NS_ASSUME_NONNULL_END

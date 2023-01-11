@@ -67,7 +67,7 @@
 
 #pragma mark - [ Public Method ]
 
-- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict {
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback {
     if (start) {
         if (![PLVFdUtil checkDictionaryUseable:dict]) {
             return;
@@ -79,11 +79,14 @@
         __weak typeof(self) weakSelf = self;
         [self loadCardPushWithRoomId:self.channelId cardId:self.cardId completion:^(NSDictionary *cardDict) {
             if ([PLVFdUtil checkDictionaryUseable:cardDict]) {
-                [weakSelf setCardPushButtonViewWithCardInfo:cardDict];
+                [weakSelf setCardPushButtonViewWithCardInfo:cardDict callback:callback];
+            } else {
+                callback ? callback(!weakSelf.hidden) : nil;
             }
         }];
     } else {
         self.hidden = YES;
+        callback ? callback(!self.hidden) : nil;
         [self saveLocalWatchTime];
         [self cancelDispatchTimer];
     }
@@ -100,13 +103,14 @@
     [PLVLiveVideoAPI requestCardPushInfoWithChannelId:roomId cardPushId:cardId completion:completion failure:^(NSError * _Nonnull error) {}];
 }
 
-- (void)setCardPushButtonViewWithCardInfo:(NSDictionary *)cardDict {
+- (void)setCardPushButtonViewWithCardInfo:(NSDictionary *)cardDict callback:(void (^)(BOOL show))callback {
     self.canOpenCard = YES;
     self.countdownLabel.hidden = YES;
     // 是否隐藏挂件
     self.enterEnabled = PLV_SafeBoolForDictKey(cardDict, @"enterEnabled");
     self.hidden = !self.enterEnabled;
-
+    callback ? callback(!self.hidden) : nil;
+    
     NSString *imageType = PLV_SafeStringForDictKey(cardDict, @"imageType");
     // 设置 button 图片
     if ([imageType isEqualToString:@"redpack"] || [imageType isEqualToString:@"giftbox"]) {

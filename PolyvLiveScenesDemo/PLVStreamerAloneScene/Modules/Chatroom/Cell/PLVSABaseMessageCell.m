@@ -64,8 +64,8 @@
     UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
     UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
     UIMenuController *menuController = [UIMenuController sharedMenuController];
-    // 是否含有严禁词
-    if (self.model.isProhibitMsg) {
+    // 是否含有严禁词并且发送失败时
+    if (self.model.isProhibitMsg && self.model.prohibitWord) {
         [menuController setMenuItems:@[copyMenuItem]];
     } else {
         [menuController setMenuItems:@[copyMenuItem, replyMenuItem]];

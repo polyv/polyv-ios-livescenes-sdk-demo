@@ -12,7 +12,7 @@
 #import "PLVRoomDataManager.h"
 
 // 工具
-#import "PLVHCCaptureDeviceManager.h"
+#import "PLVCaptureDeviceManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVHCUtils.h"
 
@@ -119,11 +119,11 @@ static int volumeMaxLevel = 17;
 
 - (void)synchronizeConfig {
     if (self.type == PLVHCSettingConfigViewLogoutClass) {
-        PLVHCCaptureDeviceManager *deviceManager = [PLVHCCaptureDeviceManager sharedManager];
+        PLVCaptureDeviceManager *deviceManager = [PLVCaptureDeviceManager sharedManager];
         
         UISwitch *microphoneSwitch = (UISwitch *)[self viewWithTag:1];
-        microphoneSwitch.on = deviceManager.micOpen;
-        self.micSwitchOn = deviceManager.micOpen;
+        microphoneSwitch.on = deviceManager.microOpen;
+        self.micSwitchOn = deviceManager.microOpen;
         
         UISwitch *cameraSwitch = (UISwitch *)[self viewWithTag:2];
         cameraSwitch.on = deviceManager.cameraOpen;
@@ -282,8 +282,8 @@ static int volumeMaxLevel = 17;
 
 - (void)notifyControlSwitchAction:(UISwitch *)sender {
     if (sender.tag == 1 || sender.tag == 2) {
-        [[PLVHCCaptureDeviceManager sharedManager] requestAuthorizationWithCompletion:^(BOOL grant) {
-            if (grant) {
+        [[PLVCaptureDeviceManager sharedManager] requestAuthorizationWithoutAlertWithType:PLVCaptureDeviceTypeCameraAndMicrophone completion:^(BOOL granted) {
+            if (granted) {
                 if (sender.tag == 1) { // 麦克风开关
                     self.micSwitchOn = sender.on;
                     self.volumeView.hidden = !sender.on;
@@ -299,6 +299,18 @@ static int volumeMaxLevel = 17;
                         [self.delegate didChangeCameraSwitchInSettingConfigView:self enable:sender.on];
                     }
                 }
+            } else {
+                [PLVHCUtils showAlertWithTitle:@"权限不足"
+                                       message:@"你没开通访问麦克风或相机的权限，如要开通，请移步到设置进行开通"
+                             cancelActionTitle:@"取消"
+                             cancelActionBlock:nil
+                            confirmActionTitle:@"设置"
+                            confirmActionBlock:^{
+                    NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                    if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                        [[UIApplication sharedApplication] openURL:url];
+                    }
+                }];
             }
         }];
     } else if (sender.tag == 3) { // 全屏开关

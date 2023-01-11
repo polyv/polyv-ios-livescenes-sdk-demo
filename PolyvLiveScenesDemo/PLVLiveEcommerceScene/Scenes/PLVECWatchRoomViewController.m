@@ -18,12 +18,15 @@
 #import "PLVECLinkMicAreaView.h"
 #import "PLVPopoverView.h"
 #import "PLVLivePictureInPictureRestoreManager.h"
+#import "PLVChatModel.h"
 
 // UI
 #import "PLVECHomePageView.h"
 #import "PLVECLiveDetailPageView.h"
 #import "PLVECWatchRoomScrollView.h"
 #import "PLVCommodityCardDetailView.h"
+#import "PLVECMessagePopupView.h"
+#import "PLVToast.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -45,7 +48,8 @@ PLVECLinkMicAreaViewDelegate,
 PLVLivePictureInPictureRestoreDelegate,
 PLVCommodityDetailViewControllerDelegate,
 PLVPopoverViewDelegate,
-PLVInteractGenericViewDelegate
+PLVInteractGenericViewDelegate,
+PLVECMessagePopupViewDelegate
 >
 
 #pragma mark 数据
@@ -751,6 +755,15 @@ PLVInteractGenericViewDelegate
     [self.popoverView setRewardViewData:payWay rewardModelArray:modelArray pointUnit:pointUnit];
 }
 
+- (void)homePageView_alertLongContentMessage:(PLVChatModel *)model {
+    NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+    if (content) {
+        PLVECMessagePopupView *popupView = [[PLVECMessagePopupView alloc] initWithChatModel:model];
+        popupView.delegate = self;
+        [popupView showOnView:self.popoverView];
+    }
+}
+
 #pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -776,6 +789,13 @@ PLVInteractGenericViewDelegate
     } else {
         [self openCommodityDetailViewControllerWithURL:url];
     }
+}
+
+#pragma mark PLVLCMessagePopupViewDelegate
+
+- (void)messagePopupViewWillCopy:(PLVECMessagePopupView *)popupView {
+    [UIPasteboard generalPasteboard].string = popupView.content;
+    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
 }
 
 @end

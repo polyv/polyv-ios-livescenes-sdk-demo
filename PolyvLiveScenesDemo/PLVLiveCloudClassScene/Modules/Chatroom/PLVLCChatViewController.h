@@ -10,6 +10,8 @@
 #import "PLVLCLikeButtonView.h"
 #import "PLVLCCardPushButtonView.h"
 
+@class PLVChatModel;
+
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVLCChatroomPlaybackViewModel, PLVLCChatViewController;
@@ -17,6 +19,10 @@ NS_ASSUME_NONNULL_BEGIN
 @protocol PLVLCChatViewControllerDelegate <NSObject>
 
 - (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC needOpenInteract:(NSDictionary *)dict;
+
+/// 在点击超过500字符的长文本消息时会执行此回调
+/// @param model 需要展示完整文本的长文本消息数据模型
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC alertLongContentMessage:(PLVChatModel *)model;
 
 @end
 

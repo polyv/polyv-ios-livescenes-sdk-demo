@@ -447,7 +447,13 @@ static CGFloat kCellTopMargin = 10;
 
 #pragma mark Data Mode
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
-    return [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    NSString *text = nil;
+    if (model.prohibitWord) {
+        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    } else {
+        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+    }
+    return text;
 }
 
 #pragma mark 检查发送状态

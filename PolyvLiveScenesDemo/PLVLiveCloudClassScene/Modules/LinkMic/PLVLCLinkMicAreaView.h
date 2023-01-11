@@ -10,6 +10,7 @@
 
 #import "PLVLCLinkMicPortraitControlBar.h"
 #import "PLVLCLinkMicLandscapeControlBar.h"
+#import "PLVLCLinkMicPreviewView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVLinkMicPresenter.h"
 
@@ -59,6 +60,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly) UIImageView * logoImageView; // 播放器LOGO图片
 
+@property (nonatomic, strong, readonly) PLVLCLinkMicPreviewView * linkMicPreView; // 连麦预览图
+
 
 #pragma mark - [ 方法 ]
 /// 连麦区域视图 切换至 ”显示/隐藏“ 状态
@@ -75,6 +78,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 暂停/播放无延迟直播
 - (void)pauseWatchNoDelay:(BOOL)pause;
+
+/// 恢复连麦区域展示的外部视图
+- (void)restoreExternalView;
 
 /// 画中画占位视图的隐藏/显示
 /// @param show 隐藏或显示 (YES:显示 NO:隐藏)

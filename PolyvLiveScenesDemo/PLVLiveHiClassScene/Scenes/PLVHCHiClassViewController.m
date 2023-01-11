@@ -32,7 +32,7 @@
 #import "PLVHCMemberViewModel.h"
 #import "PLVHCLiveroomViewModel.h"
 #import "PLVHCLinkMicZoomManager.h"
-#import "PLVHCCaptureDeviceManager.h"
+#import "PLVCaptureDeviceManager.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -46,7 +46,7 @@ static NSString *const kPLVHCTeacherLoginClassName = @"PLVHCTeacherLoginManager"
 
 @interface PLVHCHiClassViewController ()<
 PLVMultiRoleLinkMicPresenterDelegate,
-PLVHCCaptureDeviceManagerDelegate,
+PLVCaptureDeviceManagerDelegate,
 PLVHCHiClassSettingViewDelegate, // 设备设置视图回调
 PLVHCToolbarAreaViewDelegate, // 状态栏区域视图回调
 PLVHCSettingSheetDelegate, // 设备弹层视图回调
@@ -109,7 +109,7 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     [super viewDidLoad];
     self.view.backgroundColor = [UIColor colorWithRed:0x13/255.0 green:0x14/255.0 blue:0x15/255.0 alpha:1];
     
-    [PLVHCCaptureDeviceManager sharedManager].delegate = self;
+    [PLVCaptureDeviceManager sharedManager].delegate = self;
     
     [self setupUI];
     // 注册屏幕旋转通知
@@ -235,8 +235,8 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     self.linkMicPresenter = [[PLVMultiRoleLinkMicPresenter alloc] init];
     self.linkMicPresenter.delegate = self;
     
-    PLVHCCaptureDeviceManager *deviceManager = [PLVHCCaptureDeviceManager sharedManager];
-    [self.linkMicPresenter openLocalUserMic:deviceManager.micOpen];
+    PLVCaptureDeviceManager *deviceManager = [PLVCaptureDeviceManager sharedManager];
+    [self.linkMicPresenter openLocalUserMic:deviceManager.microOpen];
     [self.linkMicPresenter openLocalUserCamera:deviceManager.cameraOpen];
     [self.linkMicPresenter switchLocalUserCamera:deviceManager.cameraFront];
     
@@ -249,7 +249,14 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     [[PLVHCLinkMicZoomManager sharedInstance] setup];
     [PLVHCLinkMicZoomManager sharedInstance].delegate = self.linkMicZoomAreaView;
 
-    [[PLVHCCaptureDeviceManager sharedManager] enterClassroom];
+    // 1. 回收麦克风资源（只有设备检测页需要）
+    [deviceManager releaseAudioResource];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass ||
+        roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
+        // 2. 根据业务需要回收摄像头资源（只有讲师登陆未上课的课节需要持有摄像头资源）
+        [deviceManager releaseVideoResource];
+    }
 }
 
 /// 登出操作
@@ -267,11 +274,14 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     // 清除连麦放大视图管理器数据
     [[PLVHCLinkMicZoomManager sharedInstance] clear];
 
-    [[PLVHCCaptureDeviceManager sharedManager] clearResource];
+    [[PLVCaptureDeviceManager sharedManager] releaseVideoResource];
+    [[PLVCaptureDeviceManager sharedManager] releaseAudioResource];
 }
 
 - (void)startClass {
-    [[PLVHCCaptureDeviceManager sharedManager] clearResource];
+    [[PLVCaptureDeviceManager sharedManager] releaseVideoResource];
+    [[PLVCaptureDeviceManager sharedManager] releaseAudioResource];
+    
     // 开始上课才开始获取成员列表
     [[PLVHCMemberViewModel sharedViewModel] start];
     
@@ -679,15 +689,15 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     [screenStreamView removeFromSuperview];
 }
 
-#pragma mark PLVHCCaptureDeviceManagerDelegate
+#pragma mark PLVCaptureDeviceManager Delegate
 
-- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didAudioVolumeChanged:(CGFloat)volume {
+- (void)captureDeviceManager:(PLVCaptureDeviceManager *)manager didAudioVolumeChanged:(CGFloat)volume {
     if (_settingView) {
         [self.settingView audioVolumeChanged:volume];
     }
 }
 
-- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didMicrophoneOpen:(BOOL)open {
+- (void)captureDeviceManager:(PLVCaptureDeviceManager *)manager didMicrophoneOpen:(BOOL)open {
     if (_settingSheet) {
         [self.settingSheet microphoneSwitchChange:open];
     }
@@ -695,7 +705,7 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     [self.linkMicPresenter openLocalUserMic:open];
 }
 
-- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didCameraOpen:(BOOL)open {
+- (void)captureDeviceManager:(PLVCaptureDeviceManager *)manager didCameraOpen:(BOOL)open {
     if (_settingSheet) {
         [self.settingSheet cameraSwitchChange:open];
     }
@@ -703,7 +713,7 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     [self.linkMicPresenter openLocalUserCamera:open];
 }
 
-- (void)captureDevice:(PLVHCCaptureDeviceManager *)manager didCameraSwitch:(BOOL)front {
+- (void)captureDeviceManager:(PLVCaptureDeviceManager *)manager didCameraSwitch:(BOOL)front {
     if (_settingSheet) {
         [self.settingSheet cameraDirectionChange:front];
     }
@@ -732,10 +742,22 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
 - (void)toolbarAreaView_classButtonSelected:(PLVHCToolbarAreaView *)toolbarAreaView startClass:(BOOL)starClass {
     __weak typeof(self) weakSelf = self;
     if (starClass) { //开始上课, 再次确保有【麦克风&摄像头】权限
-        [[PLVHCCaptureDeviceManager sharedManager] requestAuthorizationWithCompletion:^(BOOL grant) {
-            if (grant) {
+        [[PLVCaptureDeviceManager sharedManager] requestAuthorizationWithoutAlertWithType:PLVCaptureDeviceTypeCameraAndMicrophone completion:^(BOOL granted) {
+            if (granted) {
                 [weakSelf.toolbarAreaView setClassButtonEnable:NO];
                 [[PLVHCLiveroomViewModel sharedViewModel] startClass];
+            } else {
+                [PLVHCUtils showAlertWithTitle:@"权限不足"
+                                       message:@"你没开通访问麦克风或相机的权限，如要开通，请移步到设置进行开通"
+                             cancelActionTitle:@"取消"
+                             cancelActionBlock:nil
+                            confirmActionTitle:@"设置"
+                            confirmActionBlock:^{
+                    NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                    if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                        [[UIApplication sharedApplication] openURL:url];
+                    }
+                }];
             }
         }];
     } else { //结束课程

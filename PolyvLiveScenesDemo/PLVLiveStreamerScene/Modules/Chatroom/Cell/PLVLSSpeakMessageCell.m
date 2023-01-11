@@ -28,7 +28,6 @@
 #pragma mark UI
 @property (nonatomic, strong) PLVChatTextView *textView; /// 消息文本内容视图
 @property (nonatomic, strong) UIView *bubbleView; /// 背景气泡
-@property (nonatomic, strong) UIView *lineView;   /// 严禁词分割线
 @property (nonatomic, strong) PLVLSProhibitWordTipView *prohibitWordTipView; // 严禁词提示视图
 @property (nonatomic, strong) UIButton *prohibitWordTipButton; // 严禁词提示按钮
 
@@ -49,7 +48,6 @@
         
         [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.textView];
-        [self.contentView addSubview:self.lineView];
         [self.contentView addSubview:self.prohibitWordTipButton];
     }
     return self;
@@ -73,12 +71,12 @@
     
     CGFloat maxTextViewWidth = self.cellWidth - xPadding * 2;
     if (self.model.isProhibitMsg) {
-        maxTextViewWidth = maxTextViewWidth - 6 - 16 - 12;
+        maxTextViewWidth = maxTextViewWidth - 6 - 16;
     }
     CGSize textViewSize = [self.textView sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
     self.textView.frame = CGRectMake(xPadding, yPadding, textViewSize.width, textViewSize.height);
     
-    CGSize bubbleSize = CGSizeMake(textViewSize.width + xPadding * 2, textViewSize.height + yPadding * 2);
+    CGSize bubbleSize = CGSizeMake(ceilf(textViewSize.width + xPadding * 2), textViewSize.height + yPadding * 2);
     if (self.model.isProhibitMsg) {
         bubbleSize = CGSizeMake(bubbleSize.width + 6 + 16, bubbleSize.height);
     }
@@ -126,15 +124,6 @@
         [_textView addGestureRecognizer:tapGesture];
     }
     return _textView;
-}
-
-- (UIView *)lineView {
-    if (!_lineView) {
-        _lineView = [[UIView alloc] init];
-        _lineView.hidden = YES;
-        _lineView.backgroundColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:0.2];
-    }
-    return  _lineView;
 }
 
 - (PLVLSProhibitWordTipView *)prohibitWordTipView {
@@ -281,7 +270,7 @@
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
     NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
     if (model.isProhibitMsg) {
-        maxTextViewWidth = maxTextViewWidth - 6 - 16 -12;
+        maxTextViewWidth = maxTextViewWidth - 6 - 16;
     }
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
 
@@ -333,15 +322,22 @@
     }
     
     id message = model.message;
-    if (!message || ![message isKindOfClass:[PLVSpeakMessage class]]) { // 文本消息
+    if (message &&
+        [message isKindOfClass:[PLVSpeakMessage class]]) {
+        return model.contentLength == PLVChatMsgContentLength_0To500;
+    } else {
         return NO;
     }
-    
-    return YES;
 }
 
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
-    return [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    NSString *text = nil;
+    if (model.prohibitWord) {
+        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    } else {
+        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+    }
+    return text;
 }
 
 @end

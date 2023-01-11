@@ -145,13 +145,12 @@
     }
     
     id message = model.message;
-    if (!message ||
-        (![message isKindOfClass:[PLVSpeakMessage class]] && // 文本消息
-         ![message isKindOfClass:[NSString class]])) {       // 私聊消息
+    if (message &&
+        [message isKindOfClass:[PLVSpeakMessage class]]) {
+        return model.contentLength == PLVChatMsgContentLength_0To500;
+    } else {
         return NO;
     }
-    
-    return YES;
 }
 
 @end

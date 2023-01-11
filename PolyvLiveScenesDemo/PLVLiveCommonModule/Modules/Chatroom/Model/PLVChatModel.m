@@ -98,12 +98,22 @@
 }
 
 - (BOOL)isProhibitMsg {
-    if (!self.prohibitWord ||
-        ![self.prohibitWord isKindOfClass:[NSString class]] ||
-        self.prohibitWord.length == 0) {
-        return NO;
-    } else {
+    id messageObject = self.message;
+    BOOL prohibitWordReplaced = NO;
+    if ([messageObject isKindOfClass:[PLVSpeakMessage class]]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)messageObject;
+        prohibitWordReplaced = message.prohibitWordReplaced;
+    } else if ([messageObject isKindOfClass:[PLVQuoteMessage class]]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)messageObject;
+        prohibitWordReplaced = message.prohibitWordReplaced;
+    }
+    
+    if (prohibitWordReplaced) { // 消息中的严禁词已被替换并成功发送
         return YES;
+    } else if ([PLVFdUtil checkStringUseable:self.prohibitWord]) { // 消息中出现严禁词，已被禁止发出
+        return YES;
+    } else {
+        return NO;
     }
 }
 
@@ -131,6 +141,20 @@
     return isRemindMsg;
 }
 
+- (BOOL)isOverLenMsg {
+    id messageObject = self.message;
+    BOOL isOverLenMsg = NO;
+    
+    if ([messageObject isKindOfClass:[PLVSpeakMessage class]]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)messageObject;
+        isOverLenMsg = message.overLen;
+    } else if ([messageObject isKindOfClass:[PLVQuoteMessage class]]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)messageObject;
+        isOverLenMsg = message.overLen;
+    }
+    return isOverLenMsg;
+}
+
 + (PLVChatModel *)chatModelFromPlaybackMessage:(PLVPlaybackMessage *)playbackMessage {
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.message = playbackMessage.message;
@@ -139,6 +163,23 @@
     PLVChatUser *chatUser = [PLVChatUser chatUserFromPlaybackMsgUser:playbackMessage.user];
     model.user = chatUser;
     return model;
+}
+
+#pragma mark Getter & Setter
+
+- (PLVChatMsgContentLength)contentLength {
+    PLVChatMsgContentLength contentLength = PLVChatMsgContentLength_Unvalid;
+    if (self.content) {
+        contentLength = (self.content.length <= 500) ? PLVChatMsgContentLength_0To500 : PLVChatMsgContentLength_MoreThan500;
+    }
+    return contentLength;
+}
+
+- (void)setOverLenContent:(NSString *)overLenContent {
+    if (![self isOverLenMsg]) {
+        return;
+    }
+    _overLenContent = [overLenContent copy];
 }
 
 #pragma mark - [ Private Method ]

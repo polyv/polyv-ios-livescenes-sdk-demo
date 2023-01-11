@@ -14,7 +14,7 @@
 //模块
 #import "PLVLinkMicOnlineUser.h"
 #import "PLVRoomDataManager.h"
-#import "PLVHCCaptureDeviceManager.h"
+#import "PLVCaptureDeviceManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -331,9 +331,9 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
 - (void)showLocalSettingView {
     //设置设备默认值
     self.localPreviewUser = YES;
-    self.micView.button.selected = ![PLVHCCaptureDeviceManager sharedManager].micOpen;
-    self.cameraView.button.selected = ![PLVHCCaptureDeviceManager sharedManager].cameraOpen;
-    self.cameraSwitchView.button.selected = ![PLVHCCaptureDeviceManager sharedManager].cameraFront;
+    self.micView.button.selected = ![PLVCaptureDeviceManager sharedManager].microOpen;
+    self.cameraView.button.selected = ![PLVCaptureDeviceManager sharedManager].cameraOpen;
+    self.cameraSwitchView.button.selected = ![PLVCaptureDeviceManager sharedManager].cameraFront;
     
     PLVRoomUser *user = [PLVRoomDataManager sharedManager].roomData.roomUser;
     NSString *nickname = user.viewerName ? user.viewerName : user.viewerId;
@@ -457,7 +457,7 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
     sender.selected = !sender.isSelected;
     
     if (self.localPreviewUser) {
-        [[PLVHCCaptureDeviceManager sharedManager] openMicrophone:!sender.selected];
+        [[PLVCaptureDeviceManager sharedManager] openMicrophone:!sender.selected];
     } else {
         [self.currentUser wantOpenUserMic:!sender.isSelected];
     }
@@ -467,7 +467,7 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
     sender.selected = !sender.isSelected;
     
     if (self.localPreviewUser) {
-        [[PLVHCCaptureDeviceManager sharedManager] openCamera:!sender.selected];
+        [[PLVCaptureDeviceManager sharedManager] openCamera:!sender.selected];
     } else {
         [self.currentUser wantOpenUserCamera:!sender.selected];
     }
@@ -484,7 +484,7 @@ static NSString *const kSCLocalPrevierUserAvatarURLKey = @"kSCLocalPrevierUserAv
     [self dismiss];
 
     if (self.localPreviewUser) {
-        [[PLVHCCaptureDeviceManager sharedManager] switchCamera:!sender.selected];
+        [[PLVCaptureDeviceManager sharedManager] switchCamera:!sender.selected];
     } else {
         if ((self.currentUser.userType == PLVSocketUserTypeTeacher &&
             self.currentUser.localUser) ||

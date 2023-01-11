@@ -12,7 +12,7 @@
 #import "PLVHCSettingConfigView.h"
 
 // 模块
-#import "PLVHCCaptureDeviceManager.h"
+#import "PLVCaptureDeviceManager.h"
 
 // 工具类
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -81,12 +81,30 @@
 
 - (void)setupMedia {
     __weak typeof(self) weakSelf = self;
-    [[PLVHCCaptureDeviceManager sharedManager] setupMediaWithCompletion:^{
-        [weakSelf.configView openMediaSwitch];
-        weakSelf.avPreLayer = [PLVHCCaptureDeviceManager sharedManager].avPreLayer;
-        [weakSelf.preView.layer addSublayer:weakSelf.avPreLayer];
-        [weakSelf setNeedsLayout];
-        [weakSelf layoutIfNeeded];
+    PLVCaptureDeviceManager *deviceManager = [PLVCaptureDeviceManager sharedManager];
+    [deviceManager requestAuthorizationWithoutAlertWithType:PLVCaptureDeviceTypeCameraAndMicrophone completion:^(BOOL granted) {
+        if (granted) {
+            [deviceManager startVideoCapture];
+            [deviceManager startAudioRecorder];
+            
+            [weakSelf.configView openMediaSwitch];
+            weakSelf.avPreLayer = deviceManager.avPreLayer;
+            [weakSelf.preView.layer addSublayer:weakSelf.avPreLayer];
+            [weakSelf setNeedsLayout];
+            [weakSelf layoutIfNeeded];
+        } else {
+            [PLVHCUtils showAlertWithTitle:@"权限不足"
+                                   message:@"你没开通访问麦克风或相机的权限，如要开通，请移步到设置进行开通"
+                         cancelActionTitle:@"取消"
+                         cancelActionBlock:nil
+                        confirmActionTitle:@"设置"
+                        confirmActionBlock:^{
+                NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                    [[UIApplication sharedApplication] openURL:url];
+                }
+            }];
+        }
     }];
 }
 
@@ -146,20 +164,33 @@
 
 /// 进入教室
 - (void)didTapEnterButtonInSettingConfigView:(PLVHCSettingConfigView *)configView {
-    [[PLVHCCaptureDeviceManager sharedManager] requestAuthorizationWithCompletion:^(BOOL grant) {
-        if (grant) {
+    [[PLVCaptureDeviceManager sharedManager] requestAuthorizationWithoutAlertWithType:PLVCaptureDeviceTypeCameraAndMicrophone completion:^(BOOL granted) {
+        if (granted) {
             if (self.delegate &&
                 [self.delegate respondsToSelector:@selector(didTapEnterClassButtonInSettingView:)]) {
                 [self.delegate didTapEnterClassButtonInSettingView:self];
             }
+        } else {
+            [PLVHCUtils showAlertWithTitle:@"权限不足"
+                                   message:@"你没开通访问麦克风或相机的权限，如要开通，请移步到设置进行开通"
+                         cancelActionTitle:@"取消"
+                         cancelActionBlock:nil
+                        confirmActionTitle:@"设置"
+                        confirmActionBlock:^{
+                NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                    [[UIApplication sharedApplication] openURL:url];
+                }
+            }];
         }
     }];
 }
 
 /// 麦克风开关
 - (void)didChangeMicrophoneSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView enable:(BOOL)enable {
-    [[PLVHCCaptureDeviceManager sharedManager] openMicrophone:enable];
-    if ([PLVHCCaptureDeviceManager sharedManager].granted) {
+    PLVCaptureDeviceManager *deviceManager = [PLVCaptureDeviceManager sharedManager];
+    [deviceManager openMicrophone:enable];
+    if (deviceManager.microGranted) {
         if (enable) {
             [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenMic message:@"已开启麦克风"];
         } else {
@@ -170,8 +201,9 @@
 
 /// 摄像头开关
 - (void)didChangeCameraSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView enable:(BOOL)enable {
-    [[PLVHCCaptureDeviceManager sharedManager] openCamera:enable];
-    if ([PLVHCCaptureDeviceManager sharedManager].granted) {
+    PLVCaptureDeviceManager *deviceManager = [PLVCaptureDeviceManager sharedManager];
+    [deviceManager openCamera:enable];
+    if (deviceManager.cameraGranted) {
         if (enable) {
             [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenCamera message:@"已开启摄像头"];
         } else {
@@ -182,7 +214,7 @@
 
 /// 切换摄像头方向
 - (void)didChangeCameraDirectionSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView front:(BOOL)isFront {
-    [[PLVHCCaptureDeviceManager sharedManager] switchCamera:isFront];
+    [[PLVCaptureDeviceManager sharedManager] switchCamera:isFront];
 }
 
 #pragma mark - [ Public Method ]

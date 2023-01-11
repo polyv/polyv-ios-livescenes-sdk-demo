@@ -90,7 +90,7 @@
     originY += 1 + 4 - 8;
     
     if (self.model.isProhibitMsg) {
-        maxContentWidth = maxContentWidth - 6 - 16 - 12;
+        maxContentWidth = maxContentWidth - 6 - 16;
     }
     CGSize textViewSize = [self.textView sizeThatFits:CGSizeMake(maxContentWidth, MAXFLOAT)];
     self.textView.frame = CGRectMake(originX, originY, textViewSize.width, textViewSize.height);
@@ -111,7 +111,7 @@
     }
     
     CGFloat contentWidth = [self actualMaxContentWidth];
-    CGSize bubbleSize = CGSizeMake(contentWidth + bubbleXPadding *2, self.bubbleView.frame.size.height);
+    CGSize bubbleSize = CGSizeMake(ceilf(contentWidth + bubbleXPadding *2), self.bubbleView.frame.size.height);
     
     CGRect lineRect = self.line.frame;
     self.line.frame = CGRectMake(lineRect.origin.x, lineRect.origin.y, contentWidth, lineRect.size.height);
@@ -364,7 +364,7 @@
     NSMutableAttributedString *contentLabelString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
     CGFloat contentMaxWidth = maxTextViewWidth;
     if (model.isProhibitMsg) {
-        contentMaxWidth = maxTextViewWidth - 6 - 16 - 12;
+        contentMaxWidth = maxTextViewWidth - 6 - 16;
     }
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(contentMaxWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
@@ -449,14 +449,21 @@
     }
     
     id message = model.message;
-    if (!message || ![message isKindOfClass:[PLVQuoteMessage class]]) {
+    if (message &&
+        [message isKindOfClass:[PLVQuoteMessage class]]) {
+        return model.contentLength == PLVChatMsgContentLength_0To500;
+    } else {
         return NO;
     }
-    
-    return YES;
 }
 
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
-    return [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    NSString *text = nil;
+    if (model.prohibitWord) {
+        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    } else {
+        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+    }
+    return text;
 }
 @end

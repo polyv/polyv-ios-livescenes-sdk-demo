@@ -300,7 +300,8 @@ PLVLCDocumentToolViewDelegate>
     [controlsSuperview.layer addSublayer:self.bottomShadowLayer];
     [controlsSuperview addSubview:self.playButton];
     [controlsSuperview addSubview:self.fullScreenButton];
-    
+    [controlsSuperview addSubview:self.paintButton];
+
     if (self.skinViewType == PLVLCBasePlayerSkinViewType_PPTLive ||
         self.skinViewType == PLVLCBasePlayerSkinViewType_PPTPlayback) {
         [controlsSuperview addSubview:self.floatViewShowButtonTipsLabel];
@@ -351,6 +352,10 @@ PLVLCDocumentToolViewDelegate>
 
 - (void)refreshProgressViewFrame {
     NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshProgressViewFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
+}
+
+- (void)refreshPaintButtonShow:(BOOL)show {
+    NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshPaintButtonShow failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView{
@@ -564,6 +569,16 @@ PLVLCDocumentToolViewDelegate>
     return _fullScreenButton;
 }
 
+- (UIButton *)paintButton{
+    if (!_paintButton) {
+        _paintButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _paintButton.hidden = YES;
+        [_paintButton setImage:[self getImageWithName:@"plvlc_media_skin_paint"] forState:UIControlStateNormal];
+        [_paintButton setImage:[self getImageWithName:@"plvlc_media_skin_paint"] forState:UIControlStateSelected];
+        [_paintButton addTarget:self action:@selector(paintButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _paintButton;
+}
 
 - (UILabel *)currentTimeLabel{
     if (!_currentTimeLabel && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
@@ -801,6 +816,11 @@ PLVLCDocumentToolViewDelegate>
     }
 }
 
+- (void)paintButtonAction:(UIButton *)button{
+    if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewPaintButtonClicked:)]) {
+        [self.baseDelegate plvLCBasePlayerSkinViewPaintButtonClicked:self];
+    }
+}
 
 #pragma mark - [ Delegate ]
 - (void)plvProgressSlider:(PLVProgressSlider *)progressSlider sliderDragEnd:(CGFloat)currentSliderProgress{

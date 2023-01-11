@@ -11,12 +11,14 @@
 #import "PLVLCLandscapeNewMessageView.h"
 #import "PLVLCUtils.h"
 #import "PLVLCChatroomViewModel.h"
+#import "PLVLCLandscapeLongContentCell.h"
 #import "PLVLCLandscapeSpeakCell.h"
 #import "PLVLCLandscapeImageCell.h"
 #import "PLVLCLandscapeImageEmotionCell.h"
 #import "PLVLCLandscapeQuoteCell.h"
 #import "PLVLCLandscapeFileCell.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
+#import "PLVToast.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
 
@@ -290,6 +292,54 @@ UITableViewDataSource
     return model;
 }
 
+// 点击超长文本消息(超过200字符）的【复制】按钮时调用
+- (void)pasteFullContentWithModel:(PLVChatModel *)model {
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        if (!self.playbackEnable) { // 重放时接口返回的消息包含全部文本，不存在超长问题
+            [[PLVLCChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+                if (content) {
+                    model.overLenContent = content;
+                    [UIPasteboard generalPasteboard].string = content;
+                    [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+                }
+            }];
+        }
+    } else {
+        NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (pasteString) {
+            [UIPasteboard generalPasteboard].string = pasteString;
+            [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+        }
+    }
+}
+
+// 点击超长文本消息(超过500字符）的【更多】按钮时调用
+- (void)alertToShowFullContentWithModel:(PLVChatModel *)model {
+    __weak typeof(self) weakSelf = self;
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        if (!self.playbackEnable) { // 重放时接口返回的消息包含全部文本，不存在超长问题
+            [[PLVLCChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+                if (content) {
+                    model.overLenContent = content;
+                    [weakSelf notifyDelegateToAlertChatModel:model];
+                }
+            }];
+        }
+    } else {
+        NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (content) {
+            [self notifyDelegateToAlertChatModel:model];
+        }
+    }
+}
+
+- (void)notifyDelegateToAlertChatModel:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatLandscapeView:alertLongContentMessage:)]) {
+        [self.delegate chatLandscapeView:self alertLongContentMessage:model];
+    }
+}
+
 #pragma mark - PLVLCChatroomViewModelProtocol
 
 - (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
@@ -316,6 +366,10 @@ UITableViewDataSource
 }
 
 - (void)chatroomManager_didMessageDeleted {
+    [self.tableView reloadData];
+}
+
+- (void)chatroomManager_didSendProhibitMessage {
     [self.tableView reloadData];
 }
 
@@ -396,6 +450,21 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVLCLandscapeLongContentCell isModelValid:model]) {
+        static NSString *LongContentMessageCellIdentify = @"PLVLCLongContentMessageCell";
+        PLVLCLandscapeLongContentCell *cell = (PLVLCLandscapeLongContentCell *)[tableView dequeueReusableCellWithIdentifier:LongContentMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLandscapeLongContentCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        __weak typeof(self) weakSelf = self;
+        [cell setCopButtonHandler:^{
+            [weakSelf pasteFullContentWithModel:model];
+        }];
+        [cell setFoldButtonHandler:^{
+            [weakSelf alertToShowFullContentWithModel:model];
+        }];
+        return cell;
     } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVLCLandscapeImageCell";
         PLVLCLandscapeImageCell *cell = (PLVLCLandscapeImageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
@@ -451,6 +520,8 @@ UITableViewDataSource
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCLandscapeLongContentCell isModelValid:model]) {
+        cellHeight = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeImageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {

@@ -210,8 +210,8 @@ PLVShareLiveSheetDelegate
 /// 启动、挂断视频连麦
 - (void)startLinkMic:(BOOL)start videoLinkMic:(BOOL)videoLinkMic {
     NSString *typeTitle = videoLinkMic ? @"视频" : @"语音";
-    NSString * suceessTitle = start ? [NSString stringWithFormat:@"已开启%@连麦，观众可以申请连麦", typeTitle] : @"已挂断所有连麦";
-    NSString * failTitle = start ? [NSString stringWithFormat:@"开启%@连麦失败，请稍后再试", typeTitle] : [NSString stringWithFormat:@"关闭%@连麦失败，请稍后再试", typeTitle];
+    NSString *suceessTitle = start ? [NSString stringWithFormat:@"已开启%@连麦，观众可以申请连麦", typeTitle] : @"已挂断所有连麦";
+    NSString *failTitle = start ? [NSString stringWithFormat:@"开启%@连麦失败，请稍后再试", typeTitle] : [NSString stringWithFormat:@"关闭%@连麦失败，请稍后再试", typeTitle];
     
     __weak typeof(self) weakSelf = self;
     void (^ emitCompleteBlock) (BOOL emitSuccess) = ^(BOOL emitSuccess) {

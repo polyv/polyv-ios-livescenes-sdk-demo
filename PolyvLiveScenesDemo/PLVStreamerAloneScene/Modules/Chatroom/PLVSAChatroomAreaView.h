@@ -9,13 +9,17 @@
 #import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
-@class PLVSAChatroomAreaView;
+@class PLVSAChatroomAreaView, PLVChatModel;
 @protocol PLVSAChatroomAreaViewDelegate <NSObject>
 
 /// 显示清屏手势提示视图
 - (void)chatroomAreaView_showSlideRightView;
 
 - (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView DidChangeCloseRoom:(BOOL)closeRoom;
+
+/// 在点击超过500字符的长文本消息时会执行此回调
+/// @param model 需要展示完整文本的长文本消息数据模型
+- (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView alertLongContentMessage:(PLVChatModel *)model;
 
 @end
 

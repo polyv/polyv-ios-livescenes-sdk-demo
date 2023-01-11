@@ -33,6 +33,7 @@
 ///    ├── (UIButton) linkMicButton
 ///    ├── (UIButton) memberButton
 ///    ├── (UIView) memberBadgeView
+///    ├── (UIButton) commodityButton
 ///    ├── (UIButton) moreButton
 ///    ├── (PLVSASendMessageView) sendMessageView
 ///
@@ -42,6 +43,7 @@
 @property (nonatomic, strong) UIButton *linkMicButton; // 连麦按钮
 @property (nonatomic, strong) UIButton *memberButton; // 人员列表
 @property (nonatomic, strong) UIView *memberBadgeView; // 等待连麦提示红点
+@property (nonatomic, strong) UIButton *commodityButton; // 商品库按钮
 @property (nonatomic, strong) UIButton *moreButton; // 更多弹层按钮
 
 @property (nonatomic, strong) PLVSASendMessageView *sendMessageView; // 输入文字、图片、emoji标签视图
@@ -62,8 +64,8 @@
         [self addSubview:self.linkMicButton];
         [self addSubview:self.memberButton];
         [self addSubview:self.memberBadgeView];
+        [self addSubview:self.commodityButton];
         [self addSubview:self.moreButton];
-        
     }
     return self;
 }
@@ -76,7 +78,7 @@
     BOOL landscape = [PLVSAUtils sharedUtils].landscape;
     
     CGFloat marginLeft = landscape ? 36 : 8;
-    CGFloat chatButtonWidth = 150;
+    CGFloat chatButtonWidth = landscape ? 150 : 110;
     CGFloat chatButtonTop = 8;
     
     if (isPad) {
@@ -92,9 +94,11 @@
     self.chatButton.titleEdgeInsets = UIEdgeInsetsMake(0, 15, 0, 0);
     
     self.moreButton.frame = CGRectMake(self.bounds.size.width - 36 - marginLeft, 8, 36, 36);
-    
-    self.memberButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 12 - 36, 8, 36, 36);
-    
+
+    self.commodityButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 12 - 36, 8, 36, 36);
+
+    self.memberButton.frame = CGRectMake(([self canManageCommodity] ? CGRectGetMinX(self.commodityButton.frame) : CGRectGetMinX(self.moreButton.frame)) - 12 - 36, 8, 36, 36);
+
     self.memberBadgeView.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) - 10, 8, 10, 10);
     
     if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeGuest) {
@@ -137,7 +141,7 @@
         [_chatButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6] forState:UIControlStateNormal];
         [_chatButton setContentHorizontalAlignment:UIControlContentHorizontalAlignmentLeft];
         [_chatButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_chat"] forState:UIControlStateNormal];
-        [_chatButton setTitle:@"来聊点什么吧~" forState:UIControlStateNormal];
+        [_chatButton setTitle:@"一起聊聊" forState:UIControlStateNormal];
         [_chatButton addTarget:self action:@selector(chatButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _chatButton;
@@ -192,6 +196,16 @@
     return _moreButton;
 }
 
+- (UIButton *)commodityButton {
+    if (!_commodityButton) {
+        _commodityButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _commodityButton.hidden = ![self canManageCommodity];
+        [_commodityButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_commodity"] forState:UIControlStateNormal];
+        [_commodityButton addTarget:self action:@selector(commodityButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _commodityButton;
+}
+
 - (PLVSASendMessageView *)sendMessageView {
     if (!_sendMessageView) {
         _sendMessageView = [[PLVSASendMessageView alloc] init];
@@ -230,6 +244,20 @@
     return _linkMicMenu;
 }
 
+- (BOOL)canManageCommodity {
+    // 响应超管开关
+    BOOL enableManageCommodity = [PLVRoomDataManager sharedManager].roomData.menuInfo.mobileAnchorProductEnabled;
+    if (enableManageCommodity && [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        return YES;
+    }
+    return NO;
+}
+
+#pragma mark Setter
+
+#pragma mark Data Mode
+#pragma mark Net Request
+
 #pragma mark - Event
 
 #pragma mark Action
@@ -266,6 +294,12 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapMemberButton:)]) {
         [self.delegate toolbarAreaViewDidTapMemberButton:self];
+    }
+}
+
+- (void)commodityButtonAction {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapCommodityButton:)]) {
+        [self.delegate toolbarAreaViewDidTapCommodityButton:self];
     }
 }
 

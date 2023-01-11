@@ -36,6 +36,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, assign) PLVDocumentViewScene scene;        // 当前所处场景类型
 @property (nonatomic, strong) NSDictionary *userInfo;               // 登录用户信息
 @property (nonatomic, assign) BOOL userInfoHadSeted;                // 已设置登录用户信息
+@property (nonatomic, assign) BOOL hasPaintPermission; // 用户是否拥有画笔权限（讲师默认拥有）
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
 @property (nonatomic, assign, readonly) BOOL liveStatusIsLiving; // 当前直播是否正在进行
@@ -156,8 +157,10 @@ UIGestureRecognizerDelegate
         /// 推流场景 讲师角色或者嘉宾为主讲时开启userInteractionEnabled；其他场景均设为NO，不允许交互。
         if (self.scene == PLVDocumentViewSceneStreamer && self.viewerType == PLVRoomUserTypeTeacher) {
             _webView.userInteractionEnabled = YES;
+            self.hasPaintPermission = YES;
         } else {
             _webView.userInteractionEnabled = NO;
+            self.hasPaintPermission = NO;
         }
         
         // 禁用拷贝查询弹出框
@@ -297,72 +300,86 @@ UIGestureRecognizerDelegate
     [self.jsBridge pptStartWithFileId:fileId channelId:channelId];
 }
 
-#pragma mark 推流专用方法
+#pragma mark 操作白板的方法
 
 - (void)setDocumentUserInteractionEnabled:(BOOL)enabled {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
-        return;
+    BOOL streamerUser = (self.scene == PLVDocumentViewSceneStreamer);
+    BOOL watchUser = (self.scene == PLVDocumentViewSceneCloudClass);
+    if (streamerUser || watchUser) {
+        self.webView.userInteractionEnabled = enabled;
+        self.hasPaintPermission = enabled;
     }
-    if (self.viewerType != PLVRoomUserTypeGuest) {
-        return;
-    }
-    
-    self.webView.userInteractionEnabled = enabled;
 }
 
 - (void)setPaintStatus:(BOOL)open {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     [self.jsBridge setPaintStatus:open];
 }
 
 - (void)setDrawType:(PLVWebViewBrushPenType)type {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     [self.jsBridge setDrawType:type];
 }
 
 - (void)changeTextContent:(NSString *)content {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     [self.jsBridge changeTextContent:content];
 }
 
 - (void)changeColor:(NSString *)hexString {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     [self.jsBridge changeColor:hexString];
 }
 
-- (void)toDelete {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+- (void)doUndo {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
+    [self.jsBridge doUndo];
+}
+
+- (void)toDelete {
+    if (!self.hasPaintPermission) {
+        return;
+    }
+    
     [self.jsBridge toDelete];
 }
 
 - (void)deleteAllPaint {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     [self.jsBridge deleteAllPaint];
 }
 
 - (void)setSliceStart:(NSDictionary *)jsonDict {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     [self.jsBridge setSliceStart:jsonDict];
 }
 
 - (void)changePPTWithAutoId:(NSUInteger)autoId pageNumber:(NSInteger)pageNumber {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     self.isChangePPT = self.autoId != autoId;
     
     self.autoId = autoId;
@@ -372,9 +389,10 @@ UIGestureRecognizerDelegate
 }
 
 - (void)turnPage:(BOOL)isNextPage {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     if (isNextPage) {
         self.currPageNum += 1;
     } else {
@@ -384,9 +402,10 @@ UIGestureRecognizerDelegate
 }
 
 - (void)addWhiteboard {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     if (self.autoId != 0) { // 白板才能添加
         return;
     }
@@ -397,7 +416,7 @@ UIGestureRecognizerDelegate
 }
 
 - (void)resetWhiteboardPPTZoomRatio {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    if (!self.hasPaintPermission) {
         return;
     }
     
@@ -480,6 +499,8 @@ UIGestureRecognizerDelegate
               [subEvent isEqualToString:@"onSliceDraw"] ||
               [subEvent isEqualToString:@"onSliceControl"]) {
         [self receiveOnSliceMessageWithjson:jsonString jsonObject:jsonDict];
+    } else if ([subEvent isEqualToString:@"TEACHER_SET_PERMISSION"]){
+        [self receiveTeacherSetPermissionMessageWithJSONObject:jsonDict];
     }
 }
 
@@ -564,6 +585,20 @@ UIGestureRecognizerDelegate
     }
 }
 
+- (void)receiveTeacherSetPermissionMessageWithJSONObject:(NSDictionary *)jsonObject {
+    NSString *type = PLV_SafeStringForDictKey(jsonObject, @"type");
+    NSString *userId = PLV_SafeStringForDictKey(jsonObject, @"userId");
+    BOOL status = PLV_SafeBoolForDictKey(jsonObject, @"status");
+    
+    if ([PLVFdUtil checkStringUseable:type] && [type isEqualToString:@"paint"]) { // 画笔权限
+        plv_dispatch_main_async_safe(^{
+            if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_teacherSetPaintPermission:userId:)]) {
+                [self.delegate documentView_teacherSetPaintPermission:status userId:userId];
+            }
+        });
+    }
+}
+
 #pragma mark - WKNavigation Delegate
 
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
@@ -585,8 +620,11 @@ UIGestureRecognizerDelegate
         if (self.viewerType == PLVRoomUserTypeTeacher) { // 当前身份为讲师才需要发送此方法
             [self switchPPT];
         }
-    } else if (self.scene == PLVDocumentViewSceneCloudClass ||
-               self.scene == PLVDocumentViewSceneEcommerce) {
+    } else if (self.scene == PLVDocumentViewSceneCloudClass) {
+        [self setUserInfo];
+        [self.jsBridge setPaintPermission:@"speaker"];
+        [self.jsBridge setPaintStatus:NO];
+    } else if (self.scene == PLVDocumentViewSceneEcommerce) {
         [self setUserInfo];
     }
 }
@@ -650,10 +688,11 @@ UIGestureRecognizerDelegate
 }
 
 - (void)jsbridge_sendSocketEventWithJson:(id)jsonObject {
-    // 当前场景不是推流场景（三分屏、纯视频开播）不需要帮JS转发socket消息
-    if (self.scene != PLVDocumentViewSceneStreamer) {
+    // 当前场景不是推流场景（三分屏、纯视频开播）或 观看端观众（云课堂），不需要帮JS转发socket消息
+    if (!self.hasPaintPermission) {
         return;
     }
+    
     if (jsonObject) {
         NSDictionary *tempDict = nil;
         if ([jsonObject isKindOfClass:[NSString class]]) {

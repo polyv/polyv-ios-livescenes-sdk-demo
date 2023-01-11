@@ -240,8 +240,8 @@
         BOOL isRealMainSpeaker = ([NSString stringWithFormat:@"%@",classStatusDict[@"speaker"]].intValue == 1);
         
         BOOL localUser = self.localUser; // 缓存真实状态
-        if (self.userType == PLVSocketUserTypeGuest) {
-            self.localUser = YES; // 仅为了远端(嘉宾自动上麦)赋值成功
+        if (self.userType == PLVSocketUserTypeGuest || self.userType == PLVSocketUserTypeSlice) {
+            self.localUser = YES; // 仅为了远端(嘉宾自动上麦、观众上麦)赋值成功
         }
         [self updateUserCurrentStatusVoice:currentStatusVoice];
         self.localUser = localUser; // 还原真实状态

@@ -139,15 +139,14 @@
     
     CGFloat closeButtonOriginX = width - originX - 30;
     CGFloat labelWidth = closeButtonOriginX - originX;
-    CGSize labelTextSize = [self.label.text boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
+    CGFloat maxLabelHeight = 48.0;
+    CGSize labelTextSize = [self.label.text boundingRectWithSize:CGSizeMake(labelWidth, maxLabelHeight)
                                                          options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
                                                       attributes:@{ NSFontAttributeName : self.label.font }
                                                          context:nil].size;
-    
     BOOL mutipleLine = labelTextSize.height > 16;
- 
     CGFloat originY = mutipleLine ? 8 : 12;
-    CGFloat labelHeight = mutipleLine ? labelTextSize.height : 16;
+    CGFloat labelHeight = MAX(labelTextSize.height, 16);
     
     self.closeButton.frame = CGRectMake(closeButtonOriginX, 0, 40, 40);
     self.label.frame = CGRectMake(originX, originY, labelWidth, labelHeight);
@@ -159,7 +158,7 @@
         self.imageView.frame = CGRectMake(originX, CGRectGetMaxY(self.label.frame) + 4, imageSize.width, imageSize.height);
         height = CGRectGetMaxY(self.imageView.frame) + 8;
     } else {
-        height = mutipleLine ? labelTextSize.height + 8 * 2 : 40;
+        height = MAX(labelHeight + 8 * 2, 40);
     }
     
     _viewHeight = height;
@@ -189,7 +188,7 @@
         _label = [[UILabel alloc] init];
         _label.font = [UIFont systemFontOfSize:12];
         _label.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
-        _label.numberOfLines = 0;
+        _label.numberOfLines = 3;
     }
     return _label;
 }

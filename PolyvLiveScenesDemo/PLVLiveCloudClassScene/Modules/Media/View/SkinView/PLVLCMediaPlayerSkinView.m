@@ -79,6 +79,7 @@
         [self refreshRefreshButtonFrame];
         
         self.fullScreenButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
+        self.paintButton.frame = CGRectMake(CGRectGetMaxX(self.fullScreenButton.frame) - backButtonSize.width - 8, CGRectGetMinY(self.fullScreenButton.frame) - 8 - backButtonSize.height, backButtonSize.width, backButtonSize.height);
                 
         [self refreshFloatViewShowButtonFrame];
         
@@ -214,6 +215,10 @@
 - (void)refreshMoreButtonHiddenOrRestore:(BOOL)hidden {
     [super refreshMoreButtonHiddenOrRestore:hidden];
     [self refreshPictureInPictureButtonFrame];
+}
+
+- (void)refreshPaintButtonShow:(BOOL)show {
+    self.paintButton.hidden = !show;
 }
 
 @end

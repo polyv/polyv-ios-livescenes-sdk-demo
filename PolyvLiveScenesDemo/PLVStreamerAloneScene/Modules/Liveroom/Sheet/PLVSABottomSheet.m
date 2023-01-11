@@ -24,6 +24,7 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
 #pragma mark 数据
 @property (nonatomic, assign) BOOL superLandscape; // 是否支持横屏
 @property (nonatomic, assign) UIInterfaceOrientation currentOrientation; // 当前方向
+@property (nonatomic, assign) CGFloat sheetCornerRadius; // 圆角
 
 @end
 
@@ -46,6 +47,7 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
         self.sheetHight = MAX(0, sheetHeight);
         self.sheetLandscapeWidth = sheetLandscapeWidth;
         self.superLandscape = sheetLandscapeWidth > 0;
+        self.sheetCornerRadius = 16.0f;
         
         [self addSubview:self.gestureView];
         [self addSubview:self.contentView];
@@ -61,23 +63,29 @@ static CGFloat kBottomSheetAnimationDuration = 0.25;
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
-    maskLayer.frame = self.contentView.bounds;
-    UIRectCorner corners = UIRectCornerTopLeft | UIRectCornerTopRight;
-    if ([PLVSAUtils sharedUtils].isLandscape &&
-        self.superLandscape) {
-        corners = UIRectCornerTopLeft | UIRectCornerBottomLeft;
+    if (self.sheetCornerRadius > 0) {
+        CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
+        maskLayer.frame = self.contentView.bounds;
+        UIRectCorner corners = UIRectCornerTopLeft | UIRectCornerTopRight;
+        if ([PLVSAUtils sharedUtils].isLandscape &&
+            self.superLandscape) {
+            corners = UIRectCornerTopLeft | UIRectCornerBottomLeft;
+        }
+        maskLayer.path = [UIBezierPath bezierPathWithRoundedRect:self.contentView.bounds
+                                               byRoundingCorners:corners
+                                                     cornerRadii:CGSizeMake(self.sheetCornerRadius, self.sheetCornerRadius)].CGPath;
+        self.contentView.layer.mask = maskLayer;
     }
-    maskLayer.path = [UIBezierPath bezierPathWithRoundedRect:self.contentView.bounds
-                                           byRoundingCorners:corners
-                                                 cornerRadii:CGSizeMake(16, 16)].CGPath;
-    self.contentView.layer.mask = maskLayer;
 }
 
 #pragma mark - [ Public Method ]
 
 - (void)deviceOrientationDidChange {
     [self resetWithAnimate];
+}
+
+- (void)setSheetCornerRadius:(CGFloat)cornerRadius {
+    _sheetCornerRadius = cornerRadius;
 }
 
 #pragma mark - Getter

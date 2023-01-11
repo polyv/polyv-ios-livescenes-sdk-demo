@@ -428,6 +428,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     });
 }
 
+- (void)notifyDelegatesDidSendProhibitMessage {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_didSendProhibitMessage];
+    });
+}
+
 - (void)notifyDelegatesLoadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_loadHistorySuccess:noMore firstTime:first];
@@ -692,6 +698,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_didAllMessageDeleted {
     [self removeAllPublicChatModels];
+}
+
+- (void)chatroomPresenter_receiveWarning:(NSString *)warning prohibitWord:(NSString *)word {
+    [self notifyDelegatesDidSendProhibitMessage];
 }
 
 - (void)chatroomPresenter_loadImageEmotionsSuccess {

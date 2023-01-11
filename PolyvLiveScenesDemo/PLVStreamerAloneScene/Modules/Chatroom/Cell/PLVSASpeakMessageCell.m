@@ -215,12 +215,14 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     }
     
     id message = model.message;
-    if (!message || ![message isKindOfClass:[PLVSpeakMessage class]]) { // 文本消息
+    if (message &&
+        [message isKindOfClass:[PLVSpeakMessage class]]) {
+        return model.contentLength == PLVChatMsgContentLength_0To500;
+    } else {
         return NO;
     }
-    
-    return YES;
 }
+
 #pragma mark - [ Private Method ]
 
 #pragma mark Getter
@@ -288,7 +290,8 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 /// 获取消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
-                                                           loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord{
+                                                           loginUserId:(NSString *)loginUserId
+                                                          prohibitWord:(NSString *)prohibitWord {
     UIFont *font = [UIFont systemFontOfSize:12.0];
     NSString *nickNameColorHexString = [user isUserSpecial] ? @"#FFCA43" : @"#4399FF";
     UIColor *nickNameColor = [PLVColorUtil colorFromHexString:nickNameColorHexString];
@@ -360,7 +363,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 
 #pragma mark Data Mode
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
-    return [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    NSString *text = nil;
+    if (model.prohibitWord) {
+        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+    } else {
+        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+    }
+    return text;
 }
 
 #pragma mark 检查发送状态

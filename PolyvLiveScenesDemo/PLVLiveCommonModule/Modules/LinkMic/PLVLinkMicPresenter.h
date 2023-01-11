@@ -24,10 +24,12 @@ typedef NS_ENUM(NSUInteger, PLVLinkMicStatus) {
     PLVLinkMicStatus_Unknown = 0, // 未知状态
     PLVLinkMicStatus_Open    = 2, // 讲师已开启连麦，但未加入连麦
     PLVLinkMicStatus_Waiting = 4, // 等待讲师允许中（举手中）
-    PLVLinkMicStatus_Joining = 6, // 讲师已允许，正在加入，引擎正在初始化
-    PLVLinkMicStatus_Joined  = 8, // 已加入连麦（连麦中）
-    PLVLinkMicStatus_Leaving = 10,// 正在离开中
-    PLVLinkMicStatus_NotOpen = 12 // 讲师未开启连麦
+    PLVLinkMicStatus_Inviting= 6, // 讲师等待连麦邀请的应答中
+    PLVLinkMicStatus_ResponseWaiting = 8, // 已同意讲师的连麦邀请
+    PLVLinkMicStatus_Joining = 10,// 讲师已允许 或 学生已应答，正在加入，引擎正在初始化
+    PLVLinkMicStatus_Joined  = 12,// 已加入连麦（连麦中）
+    PLVLinkMicStatus_Leaving = 14,// 正在离开中
+    PLVLinkMicStatus_NotOpen = 16 // 讲师未开启连麦
 };
 
 typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
@@ -70,7 +72,23 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
     /** 600: 退出连麦失败，当前连麦状态不匹配，仅在 PLVLinkMicStatus_Joining、PLVLinkMicStatus_Joined 状态下允许退出连麦 */
     PLVLinkMicErrorCode_LeaveChannelFailedStatusIllegal = 600,
     /** 602: 退出连麦失败，消息暂时无法发送 */
-    PLVLinkMicErrorCode_LeaveChannelFailedSocketCannotSend = 602
+    PLVLinkMicErrorCode_LeaveChannelFailedSocketCannotSend = 602,
+    
+    /** 700: 获取连麦邀请应答超时时间失败，当前连麦状态不匹配，仅在 PLVLinkMicStatus_Inviting 状态下允许获取连麦邀请超时时间 */
+    PLVLinkMicErrorCode_JoinAnswerTTLFailedStatusIllegal = 700,
+    /** 702: 获取连麦邀请应答超时时间失败，消息暂时无法发送 */
+    PLVLinkMicErrorCode_JoinAnswerTTLFailedSocketCannotSend = 702,
+    /** 704: 获取连麦邀请应答超时时间失败，joinAnswerTTL 消息发送超时 */
+    PLVLinkMicErrorCode_JoinAnswerTTLFailedSocketTimeout  = 704,
+    
+    /** 800: 应答连麦邀请失败，当前连麦状态不匹配，仅在 PLVLinkMicStatus_Inviting 状态下允许应答连麦邀请 */
+    PLVLinkMicErrorCode_AnswerInvitationFailedStatusIllegal = 800,
+    /** 802: 应答连麦邀请失败，消息暂时无法发送 */
+    PLVLinkMicErrorCode_AnswerInvitationFailedSocketCannotSend = 802,
+    /** 804: 应答连麦邀请失败，消息发送超时 */
+    PLVLinkMicErrorCode_AnswerInvitationFailedSocketTimeout = 804,
+    /** 806: 应答连麦邀请失败，连麦人数达到上限 */
+    PLVLinkMicErrorCode_AnswerInvitationFailedLinkMicLimited = 806,
 };
 
 @protocol PLVLinkMicPresenterDelegate;
@@ -188,6 +206,17 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 ///
 /// @note 仅在 PLVLinkMicStatus_Waiting 状态下可调用成功
 - (void)cancelRequestJoinLinkMic;
+
+/// 获取服务器端 邀请连麦 剩余的等待时间
+/// @param callback 获取剩余时间的回调(参数ttl: 剩余时间；当为 -1 时，说明获取数据异常)
+- (void)requestInviteLinkMicTTLCallback:(void (^)(NSInteger ttl))callback;
+
+/// 同意/拒绝 连麦邀请
+///
+/// @note 在讲师发送 邀请上麦 的请求后可调用
+/// @param accept 是否接受连麦邀请  (YES:接受, NO:拒绝)
+/// @param timeoutCancel 是否是超时取消连麦邀请（accept 为NO 时有效）
+- (void)acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel;
 
 /// 退出连麦
 ///

@@ -21,6 +21,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 回复消息 回调
 - (void)chatroomListView:(PLVSAChatroomListView *)listView didTapReplyMenuItem:(PLVChatModel *)model;
 
+/// 在点击超过500字符的长文本消息时会执行此回调
+/// @param model 需要展示完整文本的长文本消息数据模型
+- (void)chatroomListView:(PLVSAChatroomListView *)listView alertLongContentMessage:(PLVChatModel *)model;
+
 @end
 
 /// 直播间聊天消息列表视图

@@ -236,6 +236,15 @@ UICollectionViewDelegate
     }
 }
 
+- (void)restoreExternalView {
+    if (self.externalView && self.showingExternalView) {
+        // 将 外部视图 交回给外部，并将rtc视图显示回列表中
+        NSIndexPath * oriIndexPath = self.showingExternalCellIndexPath;
+        [self rollbackExternalView];
+        [self rollbackLinkMicCanvasView:oriIndexPath];
+    }
+}
+
 #pragma mark Getter
 - (BOOL)mainSpeakerPPTOnMain{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:)]) {

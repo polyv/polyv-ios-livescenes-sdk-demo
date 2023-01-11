@@ -75,12 +75,6 @@
 
 - (void)showAtView:(UIView *)superView {
     [superView addSubview:self];
-    
-    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dismiss) object:nil];
-    if (self.audioLinkMicBtn.selected ||
-        self.videoLinkMicBtn.selected) {
-        [self performSelector:@selector(dismiss) withObject:nil afterDelay:3.0];
-    }
 }
 
 - (void)dismiss {
@@ -90,36 +84,6 @@
     if (self.dismissHandler) {
         self.dismissHandler();
     }
-}
-
-- (void)resetStatus{
-    self.videoLinkMicBtn.selected = NO;
-    self.audioLinkMicBtn.selected = NO;
-    
-    self.videoLinkMicBtn.hidden = NO;
-    self.audioLinkMicBtn.hidden = NO;
-    
-    [self updateMenu];
-    
-    self.audioLinkMicBtn.frame = self.videoLinkMicBtn.hidden ? self.firstButtonRect : self.secondButtonRect;
-}
-
-- (void)refreshWithMenuFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame {
-
-        self.frame = [UIScreen mainScreen].bounds;
-        
-        self.menuSize = frame.size;
-        self.menuView.frame = frame;
-        
-        self.linkMicButtonMask.frame = buttonFrame;
-        
-        self.firstButtonRect = CGRectMake(0, 0, frame.size.width, 44);
-        self.videoLinkMicBtn.frame = self.firstButtonRect;
-        
-        self.secondButtonRect = CGRectMake(0, 44 + 1, frame.size.width, 44);
-        self.audioLinkMicBtn.frame = self.videoLinkMicBtn.hidden ? self.firstButtonRect : self.secondButtonRect;
-        
-        self.line.frame = CGRectMake(12, 44, frame.size.width - 24, 1);
 }
 
 #pragma mark - [ Private Method ]
@@ -149,7 +113,6 @@
     if (!_videoLinkMicBtn) {
         _videoLinkMicBtn = [UIButton buttonWithType:UIButtonTypeCustom];
         [_videoLinkMicBtn setTitle:@"视频连麦" forState:UIControlStateNormal];
-        [_videoLinkMicBtn setTitle:@"结束连麦" forState:UIControlStateSelected];
         _videoLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];
@@ -162,7 +125,6 @@
     if (!_audioLinkMicBtn) {
         _audioLinkMicBtn = [UIButton buttonWithType:UIButtonTypeCustom];
         [_audioLinkMicBtn setTitle:@"语音连麦" forState:UIControlStateNormal];
-        [_audioLinkMicBtn setTitle:@"结束连麦" forState:UIControlStateSelected];
         _audioLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];
@@ -180,20 +142,6 @@
 }
 
 #pragma mark UI
-- (void)updateMenu {
-    BOOL unSelected = !self.videoLinkMicBtn.selected && !self.audioLinkMicBtn.selected;
-    self.menuSize = CGSizeMake(106, unSelected ? CGRectGetMaxY(self.secondButtonRect) : 44 + 8);
-    
-    UIBezierPath *bezierPath = [self BezierPathWithSize:self.menuSize];
-    CAShapeLayer* shapeLayer = [CAShapeLayer layer];
-    shapeLayer.path = bezierPath.CGPath;
-    self.menuView.layer.mask = shapeLayer;
-    
-    CGRect menuRect =  self.menuView.frame;
-    menuRect.size = self.menuSize;
-    self.menuView.frame = menuRect;
-}
-
 - (UIBezierPath *)BezierPathWithSize:(CGSize)size {
     CGFloat conner = 8.0; // 圆角角度
     CGFloat trangleHeight = 8.0; // 尖角高度

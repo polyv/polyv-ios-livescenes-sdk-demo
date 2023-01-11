@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class PLVECChatroomView;
+@class PLVECChatroomView, PLVChatModel;
 
 @protocol PLVECChatroomViewDelegate <NSObject>
 
@@ -26,6 +26,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 聊天室登录达到并发限制时触发
 - (void)chatroomView_didLoginRestrict;
+
+/// 在点击超过500字符的长文本消息时会执行此回调
+/// @param model 需要展示完整文本的长文本消息数据模型
+- (void)chatroomView_alertLongContentMessage:(PLVChatModel *)model;
 
 @end
 

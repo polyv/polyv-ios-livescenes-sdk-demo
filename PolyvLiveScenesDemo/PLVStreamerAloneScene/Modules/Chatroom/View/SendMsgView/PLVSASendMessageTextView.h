@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-static NSInteger PLVSASendMessageMaxTextLength = 200;
+static NSInteger PLVSASendMessageMaxTextLength = 2000;
 
 @interface PLVSASendMessageTextView : UITextView
 

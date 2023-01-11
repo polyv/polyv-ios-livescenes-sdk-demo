@@ -137,8 +137,12 @@
     
     NSString *text = @"";
     
-    if (tipType ==     PLVSAProhibitWordTipTypeText) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", prohibitWord];
+    if (tipType == PLVSAProhibitWordTipTypeText) {
+        if (prohibitWord) {
+            text = [NSString stringWithFormat:@"您的聊天信息中含有违规词：%@", prohibitWord];
+        } else {
+            text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        }
     } else {
         text = @"图片不合法";
     }

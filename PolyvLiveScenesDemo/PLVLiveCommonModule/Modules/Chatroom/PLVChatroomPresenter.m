@@ -155,6 +155,16 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     self.getRemindHistoryTime = 0;
 }
 
+#pragma mark - [ Public Method ]
+
+- (BOOL)overLengthSpeakMessageWithMsgId:(NSString *)msgId callback:(void (^)(NSString *content))callback {
+    if (![PLVFdUtil checkStringUseable:msgId]) {
+        return NO;
+    }
+    BOOL emit = [[PLVChatroomManager sharedManager] overLengthSpeakMessageWithMsgId:msgId callback:callback];
+    return emit;
+}
+
 #pragma mark - Getter & Setter
 
 - (BOOL)specialRole {
@@ -267,13 +277,30 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     model.msgState = PLVChatMsgStateSending;
     BOOL success = NO;
+    __weak typeof(self) weakSelf = self;
     if ([model.message isKindOfClass:[PLVSpeakMessage class]]) {
-        success  = [[PLVChatroomManager sharedManager] sendSpeakMessage:model.message callback:^(NSString * _Nonnull msgId) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        success = [[PLVChatroomManager sharedManager] sendSpeakMessage:message callback:^(NSString * _Nonnull msgId) {
             model.msgState = PLVChatMsgStateSuccess;
+            if (message.prohibitWordReplaced) {
+                if (weakSelf.delegate &&
+                    [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_receiveWarning:prohibitWord:)]) {
+                    NSString *warning = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+                    [weakSelf.delegate chatroomPresenter_receiveWarning:warning prohibitWord:nil];
+                }
+            }
         }];
     } else if ([model.message isKindOfClass:[PLVQuoteMessage class]]) {
-        success  = [[PLVChatroomManager sharedManager] sendQuoteMessage:model.message callback:^(NSString * _Nonnull msgId) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+        success = [[PLVChatroomManager sharedManager] sendQuoteMessage:message callback:^(NSString * _Nonnull msgId) {
             model.msgState = PLVChatMsgStateSuccess;
+            if (message.prohibitWordReplaced) {
+                if (weakSelf.delegate &&
+                    [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_receiveWarning:prohibitWord:)]) {
+                    NSString *warning = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+                    [weakSelf.delegate chatroomPresenter_receiveWarning:warning prohibitWord:nil];
+                }
+            }
         }];
     }
     if (!success) {
@@ -556,10 +583,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
     NSString *content = PLV_SafeStringForDictKey(dict, @"content");
     NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
+    BOOL overLen = PLV_SafeBoolForDictKey(dict, @"overLen");
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.msgId = msgId;
-    message.content = content;
+    message.content = [self convertSpecialString:content];
     message.time = time;
+    message.overLen = overLen;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;
@@ -574,6 +603,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
     NSString *content = PLV_SafeStringForDictKey(dict, @"content");
     NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
+    BOOL overLen = PLV_SafeBoolForDictKey(dict, @"overLen");
     NSDictionary *quoteDict = PLV_SafeDictionaryForDictKey(dict, @"quote");
     NSString *quoteUserId = PLV_SafeStringForDictKey(quoteDict, @"userId");
     NSString *quoteUserName = PLV_SafeStringForDictKey(quoteDict, @"nick");
@@ -585,6 +615,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.quoteUserId = quoteUserId;
     message.quoteUserName = quoteUserName;
     message.time = time;
+    message.overLen = overLen;
     if (quoteImageDict) {
         NSString *imageUrl = PLV_SafeStringForDictKey(quoteImageDict, @"url");
         message.quoteImageUrl = [PLVFdUtil packageURLStringWithHTTPS:imageUrl];
@@ -974,16 +1005,18 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSArray *values = PLV_SafeArraryForDictKey(data, @"values");
     NSString *msgId = PLV_SafeStringForDictKey(data, @"id");
     NSDictionary *quote = PLV_SafeDictionaryForDictKey(data, @"quote");
-    NSString *content = (NSString *)values.firstObject;
+    NSString *content = [self convertSpecialString:(NSString *)values.firstObject];
     NSTimeInterval time = PLV_SafeIntegerForDictKey(data, @"time");
     NSString *source = PLV_SafeStringForDictKey(data, @"source");
     NSString *msgSource = PLV_SafeStringForDictKey(data, @"msgSource");
+    BOOL overLen = PLV_SafeBoolForDictKey(data, @"overLen");
     if (quote) {
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.msgId = msgId;
         message.content = content;
         message.quoteUserName = PLV_SafeStringForDictKey(quote, @"nick");
         message.time = time;
+        message.overLen = overLen;
         NSDictionary *quoteImageDict = PLV_SafeDictionaryForDictKey(quote, @"image");
         if (quoteImageDict) {
             NSString *imageUrl = PLV_SafeStringForDictKey(quoteImageDict, @"url");
@@ -1019,6 +1052,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         message.content = content;
         message.time = time;
         message.source = source;
+        message.overLen = overLen;
         model.message = message;
         [self cachChatModel:model];
     }
@@ -1298,6 +1332,15 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     BOOL isLoginUser = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     return isLoginUser;
+}
+
+- (NSString *)convertSpecialString:(NSString *)content {
+    if (![PLVFdUtil checkStringUseable:content]) {
+        return content;
+    }
+    
+    content = [content stringByReplacingOccurrencesOfString:@"&#39;" withString:@"'"];
+    return content;
 }
 
 @end

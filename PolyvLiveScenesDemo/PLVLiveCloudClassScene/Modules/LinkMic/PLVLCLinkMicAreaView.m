@@ -11,12 +11,14 @@
 #import "PLVLCLinkMicWindowsView.h"
 #import "PLVLCLinkMicSpeakingView.h"
 #import "PLVLCUtils.h"
+#import "PLVRoomDataManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLinkMicAreaView () <
 PLVLinkMicPresenterDelegate,
 PLVLCLinkMicControlBarDelegate,
+PLVLCLinkMicPreviewViewDelegate,
 PLVLCLinkMicWindowsViewDelegate
 >
 
@@ -48,6 +50,7 @@ PLVLCLinkMicWindowsViewDelegate
 @property (nonatomic, strong) PLVLCLinkMicLandscapeControlBar * landscapeControlBar; // 连麦悬浮控制栏 (横屏时出现)
 @property (nonatomic, strong) id <PLVLCLinkMicControlBarProtocol> currentControlBar; // 当前连麦悬浮控制栏 (当前显示在屏幕上的 悬浮控制栏)
 @property (nonatomic, strong) PLVLCLinkMicSpeakingView * landscapeSpeakingView; // 横屏‘某某正在发言’ 视图
+@property (nonatomic, strong) PLVLCLinkMicPreviewView * linkMicPreView; // 连麦预览图
 
 @end
 
@@ -132,6 +135,10 @@ PLVLCLinkMicWindowsViewDelegate
     [self.windowsView refreshAllLinkMicCanvasPauseImageView:self.presenter.pausedWatchNoDelay];
 }
 
+- (void)restoreExternalView {
+    [self.windowsView restoreExternalView];
+}
+
 - (void)setPictureInPicturePlaceholderShow:(BOOL)show {
     [self.windowsView refreshAllLinkMicCanvasPictureInPicturePlaceholder:show];
 }
@@ -155,6 +162,14 @@ PLVLCLinkMicWindowsViewDelegate
 
 - (BOOL)pausedWatchNoDelay {
     return self.presenter.pausedWatchNoDelay;
+}
+
+- (PLVLCLinkMicPreviewView *)linkMicPreView {
+    if(!_linkMicPreView) {
+        _linkMicPreView = [[PLVLCLinkMicPreviewView alloc] init];
+        _linkMicPreView.delegate = self;
+    }
+    return _linkMicPreView;
 }
 
 #pragma mark - [ Private Methods ]
@@ -292,6 +307,27 @@ PLVLCLinkMicWindowsViewDelegate
     [self.presenter micOpen:open];
 }
 
+#pragma mark PLVLCLinkMicPreviewViewDelegate
+
+/// 连麦邀请 剩余等待时间
+- (void)plvLCLinkMicPreviewView:(PLVLCLinkMicPreviewView *)linkMicPreView inviteLinkMicTTL:(void (^)(NSInteger))callback {
+    [self.presenter requestInviteLinkMicTTLCallback:callback];
+}
+
+/// 同意 连麦邀请
+- (void)plvLCLinkMicPreviewViewAcceptLinkMicInvitation:(PLVLCLinkMicPreviewView *)linkMicPreView {
+    self.presenter.cameraDefaultOpen = self.linkMicPreView.cameraOpen;
+    self.presenter.micDefaultOpen = self.linkMicPreView.micOpen;
+    self.currentControlBar.micButton.selected = !self.linkMicPreView.micOpen;
+    [self.currentControlBar changeCameraButtonOpenUIWithoutEvent:self.linkMicPreView.cameraOpen];
+    [self.presenter acceptLinkMicInvitation:YES timeoutCancel:NO];
+}
+
+/// 拒绝 连麦邀请
+- (void)plvLCLinkMicPreviewView:(PLVLCLinkMicPreviewView *)linkMicPreView cancelLinkMicInvitationReason:(PLVLCCancelLinkMicInvitationReason)reason {
+    [self.presenter acceptLinkMicInvitation:NO timeoutCancel:reason == PLVLCCancelLinkMicInvitationReason_Timeout];
+}
+
 #pragma mark PLVLCLinkMicWindowsViewDelegate
 /// 连麦窗口列表视图 需获知 ‘当前频道连麦场景类型’
 - (PLVChannelLinkMicSceneType)plvLCLinkMicWindowsViewGetCurrentLinkMicSceneType:(PLVLCLinkMicWindowsView *)windowsView{
@@ -376,14 +412,22 @@ PLVLCLinkMicWindowsViewDelegate
     
     if (currentLinkMicStatus == PLVLinkMicStatus_NotOpen) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Default];
+        [self.linkMicPreView showLinkMicPreviewView:NO];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Open) {
         PLVLCLinkMicControlBarType barType = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio ? PLVLCLinkMicControlBarType_Audio : PLVLCLinkMicControlBarType_Video);
         self.currentControlBar.barType = barType;
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Open];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Waiting) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Waiting];
+    }else if (currentLinkMicStatus == PLVLinkMicStatus_Inviting) {
+        [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Default];
+        self.linkMicPreView.isOnlyAudio = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio);
+        [self.linkMicPreView showLinkMicPreviewView:YES];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Joined) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Joined];
+        // 同步控件状态
+        self.currentControlBar.micButton.selected = !self.presenter.micDefaultOpen;
+        [self.currentControlBar changeCameraButtonOpenUIWithoutEvent:self.presenter.cameraDefaultOpen];
     }
 }
 
@@ -472,6 +516,13 @@ PLVLCLinkMicWindowsViewDelegate
         }
         
         [PLVLCUtils showHUDWithTitle:@"取消举手失败" detail:msg view:currentVC.view];
+    } else if (errorCode >= PLVLinkMicErrorCode_AnswerInvitationFailedStatusIllegal &&
+               errorCode <= PLVLinkMicErrorCode_AnswerInvitationFailedLinkMicLimited){ /// 接受连麦邀请失败
+        NSString * msg = @"上麦失败";
+        if (errorCode == PLVLinkMicErrorCode_AnswerInvitationFailedLinkMicLimited) {
+            msg = @"上麦失败，当前上麦人数已达最大人数";
+        }
+        [PLVLCUtils showHUDWithTitle:nil detail:msg view:currentVC.view afterDelay:3.0f];
     } else if (errorCode >= PLVLinkMicErrorCode_JoinChannelFailed &&
                errorCode <= PLVLinkMicErrorCode_JoinChannelFailedSocketCannotSend){ /// 加入Rtc频道失败
         NSString * msg = @"";

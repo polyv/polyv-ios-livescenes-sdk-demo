@@ -12,7 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class playbackViewModel;
+@class playbackViewModel, PLVChatModel;
 
 typedef NS_ENUM(NSInteger, PLVLCLivePageMenuType) {
     PLVLCLivePageMenuTypeUnknown = -1,  // 未知
@@ -54,7 +54,11 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 通过菜单视图，更新聊天回放viewModel到聊天室视图
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
-- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict;
+/// 开启卡片推送
+/// @param start 是否开启推送 （YES 开启推送，NO关闭推送）
+/// @param dict 卡片推送参数
+/// @param callback 开始卡片推送的回调，是否显示挂件（YES 显示，NO不显示）
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback;
 
 - (void)displayProductPageToExternalView:(UIView *)externalView;
 
@@ -88,6 +92,11 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param dict 打开视图需要的参数
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView needOpenInteract:(NSDictionary *)dict;
+
+/// 在点击超过500字符的长文本消息时会执行此回调
+/// @param pageMenuAreaView 菜单视图
+/// @param model 需要展示完整文本的长文本消息数据模型
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView alertLongContentMessage:(PLVChatModel *)model;
 
 @end
 NS_ASSUME_NONNULL_END

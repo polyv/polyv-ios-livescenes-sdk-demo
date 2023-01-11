@@ -492,7 +492,11 @@
 
 - (BOOL)canShareLiveroom {
     PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
-    return (userType == PLVRoomUserTypeTeacher || userType == PLVRoomUserTypeGuest);
+    if ((userType == PLVRoomUserTypeTeacher || userType == PLVRoomUserTypeGuest) &&
+        [PLVRoomDataManager sharedManager].roomData.menuInfo.pushSharingEnabled) {
+        return YES;
+    }
+    return NO;
 }
 
 #pragma mark - Event

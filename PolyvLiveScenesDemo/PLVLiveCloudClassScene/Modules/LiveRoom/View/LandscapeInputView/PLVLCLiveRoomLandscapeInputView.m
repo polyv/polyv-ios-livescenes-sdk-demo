@@ -7,7 +7,7 @@
 //
 
 #import "PLVLCLiveRoomLandscapeInputView.h"
-
+#import "PLVLCKeyboardTextView.h"
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -199,6 +199,10 @@
         if (toBeString.length > 0) {
             self.sendButton.enabled = YES;
             [self.sendButton setBackgroundColor:PLV_UIColorFromRGB(@"2196F3")];
+            
+            if (toBeString.length > PLVLCKeyboardMaxTextLength) {
+                textField.text = [toBeString substringToIndex:PLVLCKeyboardMaxTextLength];
+            }
         }else{
             self.sendButton.enabled = NO;
             [self.sendButton setBackgroundColor:[UIColor colorWithWhite:1 alpha:0.3]];

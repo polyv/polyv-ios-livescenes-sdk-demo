@@ -23,6 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIImage *)imageForLinkMicResource:(NSString *)imageName;
 
++ (NSURL *)URLForLinkMicResource:(NSString *)resourceName;
+
 + (UIImage *)imageForMediaResource:(NSString *)imageName;
 
 + (UIImage *)imageForMenuResource:(NSString *)imageName;

@@ -13,7 +13,7 @@
 #import "PLVHCUtils.h"
 
 // 模块
-#import "PLVHCCaptureDeviceManager.h"
+#import "PLVCaptureDeviceManager.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -75,7 +75,7 @@
 
 - (void)startPreview {
     if (self.userType == PLVRoomUserTypeTeacher) {
-        self.avPreLayer = [PLVHCCaptureDeviceManager sharedManager].avPreLayer;
+        self.avPreLayer = [PLVCaptureDeviceManager sharedManager].avPreLayer;
         [self.preView.layer addSublayer:self.avPreLayer];
         self.avPreLayer.frame = self.preView.bounds;
     }

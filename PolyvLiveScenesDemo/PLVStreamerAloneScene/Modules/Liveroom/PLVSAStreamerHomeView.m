@@ -10,6 +10,7 @@
 
 // 工具类
 #import "PLVSAUtils.h"
+#import "PLVToast.h"
 
 // UI
 #import "PLVSAShadowMaskView.h"
@@ -25,8 +26,11 @@
 #import "PLVSACameraAndMicphoneStateView.h"
 #import "PLVSALinkMicLayoutSwitchGuideView.h"
 #import "PLVSALinkMicWindowsView.h"
+#import "PLVSALongContentMessageSheet.h"
+#import "PLVSAManageCommoditySheet.h"
 
 // 模块
+#import "PLVChatModel.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLinkMicOnlineUser.h"
 
@@ -71,6 +75,7 @@ PLVSALinkMicTipViewDelegate
 @property (nonatomic, strong) PLVSAMoreInfoSheet *moreInfoSheet; // 更多信息弹层
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet; // 清晰度选择面板
 @property (nonatomic, strong) PLVSAMemberSheet *memberSheet; // 成员列表弹层
+@property (nonatomic, strong) PLVSAManageCommoditySheet *commoditySheet; // 商品库弹层
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
 @property (nonatomic, strong) PLVSACameraAndMicphoneStateView *cameraAndMicphoneStateView; // 摄像头与麦克风状态视图
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
@@ -379,6 +384,36 @@ PLVSALinkMicTipViewDelegate
     }
 }
 
+- (void)linkMicButtonSelected:(BOOL)selected videoLinkMic:(BOOL)videoLinkMic {
+    BOOL channelLinkMicOpen = NO;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewChannelLinkMicOpen:)]) {
+        channelLinkMicOpen = [self.delegate streamerHomeViewChannelLinkMicOpen:self];
+    }
+    //判断连麦按钮状态是否与实际连麦与否的情况相符，若符合，正常操作连麦/结束连麦，若不符，直接调用homeView接口修改linkMic按钮状态
+    // 当前连麦按钮显示已连麦时的校验
+    if (selected &&
+        !channelLinkMicOpen) { // 实际上未连麦但UI显示已连麦
+        [self setLinkMicButtonSelected:NO];
+        return;
+    }
+    // 当前连麦按钮显示未连麦时的校验
+    if (!selected &&
+        channelLinkMicOpen) { // 实际上已连麦但UI显示未连麦
+        [self setLinkMicButtonSelected:YES];
+        return;
+    }
+    
+    if (selected) { // 隐藏 有新用户正在申请连麦提示视图
+        [self.linkMicTipView dismiss];
+    }
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLinkMicButton:linkMicButtonSelected:videoLinkMic:)]) {
+        [self.delegate streamerHomeViewDidTapLinkMicButton:self linkMicButtonSelected:selected videoLinkMic:videoLinkMic];
+    }
+}
+
 #pragma mark Getter & Setter
 
 - (PLVSAShadowMaskView *)shadowMaskView {
@@ -519,6 +554,21 @@ PLVSALinkMicTipViewDelegate
     return _memberSheet;
 }
 
+- (PLVSAManageCommoditySheet *)commoditySheet {
+    if (!_commoditySheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = 0.6;
+        CGFloat widthScale = 0.46;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat deviceWidth = MIN([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = isPad ? (maxWH * widthScale) : deviceWidth;
+        _commoditySheet = [[PLVSAManageCommoditySheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        [_commoditySheet setSheetCornerRadius:0.0f];
+    }
+    return _commoditySheet;
+}
+
 - (PLVSALinkMicTipView *)linkMicTipView {
     if (!_linkMicTipView) {
         _linkMicTipView = [[PLVSALinkMicTipView alloc] init];
@@ -592,6 +642,10 @@ PLVSALinkMicTipViewDelegate
     [self.moreInfoSheet showInView:self];
 }
 
+- (void)toolbarAreaViewDidTapCommodityButton:(PLVSAToolbarAreaView *)toolbarAreaView {
+    [self.commoditySheet showInView:self];
+}
+
 - (void)toolbarAreaViewDidTapLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
     [self linkMicButtonSelected:selected videoLinkMic:[self currentChannelLinkMicMediaType] == PLVChannelLinkMicMediaType_Video];
 }
@@ -606,36 +660,6 @@ PLVSALinkMicTipViewDelegate
 
 - (void)toolbarAreaViewDidTapAudioLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
     [self linkMicButtonSelected:selected videoLinkMic:NO];
-}
-
-- (void)linkMicButtonSelected:(BOOL)selected videoLinkMic:(BOOL)videoLinkMic {
-    BOOL channelLinkMicOpen = NO;
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(streamerHomeViewChannelLinkMicOpen:)]) {
-        [self.delegate streamerHomeViewChannelLinkMicOpen:self];
-    }
-    //判断连麦按钮状态是否与实际连麦与否的情况相符，若符合，正常操作连麦/结束连麦，若不符，直接调用homeView接口修改linkMic按钮状态
-    // 当前连麦按钮显示已连麦时的校验
-    if (selected &&
-        channelLinkMicOpen) {
-        [self setLinkMicButtonSelected:NO];
-        return;
-    }
-    // 当前连麦按钮显示未连麦时的校验
-    if (!selected &&
-        channelLinkMicOpen) {
-        [self setLinkMicButtonSelected:YES];
-        return;
-    }
-    
-    if (selected) { // 隐藏 有新用户正在申请连麦提示视图
-        [self.linkMicTipView dismiss];
-    }
-    
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLinkMicButton:linkMicButtonSelected:videoLinkMic:)]) {
-        [self.delegate streamerHomeViewDidTapLinkMicButton:self linkMicButtonSelected:selected videoLinkMic:videoLinkMic];
-    }
 }
 
 #pragma mark PLVSAMoreInfoSheetDelegate
@@ -734,6 +758,14 @@ PLVSALinkMicTipViewDelegate
 
 - (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView DidChangeCloseRoom:(BOOL)closeRoom {
     self.moreInfoSheet.closeRoom = closeRoom;
+}
+
+- (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView alertLongContentMessage:(PLVChatModel *)model {
+    NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+    if (content) {
+        PLVSALongContentMessageSheet *messageSheet = [[PLVSALongContentMessageSheet alloc] initWithChatModel:model];
+        [messageSheet showInView:self];
+    }
 }
 
 #pragma mark PLVSAMemberSheetDelegate

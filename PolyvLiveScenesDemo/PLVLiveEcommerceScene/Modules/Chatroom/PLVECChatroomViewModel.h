@@ -31,6 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于刷新列表
 - (void)chatroomManager_didMessageDeleted;
 
+/// 发送了严禁消息（图片、文字）
+/// 用于刷新列表
+- (void)chatroomManager_didSendProhibitMessage;
+
 /// 获取历史聊天记录成功时触发
 /// 用于刷新列表，停止【下拉加载更多】控件的动画
 /// @param noMore 是否还有更多历史消息，YES表示已加载完，此时可隐藏【下拉加载更多】控件

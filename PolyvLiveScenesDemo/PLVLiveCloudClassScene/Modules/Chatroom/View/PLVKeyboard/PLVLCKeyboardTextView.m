@@ -198,13 +198,14 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 - (void)paste:(id)sender {
     NSString *string = UIPasteboard.generalPasteboard.string;
     if (string.length) {
+        NSString *processString = string;
         NSRange cursorRange = self.selectedRange;
         NSUInteger newLength = self.text.length + string.length - cursorRange.length;
         if (newLength > PLVLCKeyboardMaxTextLength) {
-            return;
+            processString = [string substringToIndex:string.length - (newLength - PLVLCKeyboardMaxTextLength)];
         }
         
-        NSAttributedString *attrStr = [self convertTextWithEmoji:string];
+        NSAttributedString *attrStr = [self convertTextWithEmoji:processString];
         
         [self replaceCharactersInRange:cursorRange withAttributedString:attrStr];
         self.selectedRange = NSMakeRange(cursorRange.location + attrStr.length, 0);

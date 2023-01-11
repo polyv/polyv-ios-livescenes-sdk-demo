@@ -18,7 +18,7 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
     PLVECHomePageType_Playback = 1
 };
 
-@class PLVECHomePageView;
+@class PLVECHomePageView, PLVChatModel;
 
 @protocol PLVECHomePageViewDelegate <NSObject>
 
@@ -69,6 +69,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 /// 聊天室人数达到并发限制
 - (void)homePageView_didLoginRestrict;
+
+/// 在点击超过500字符的长文本消息时会执行此回调
+/// @param model 需要展示完整文本的长文本消息数据模型
+- (void)homePageView_alertLongContentMessage:(PLVChatModel *)model;
 
 @end
 

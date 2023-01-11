@@ -55,9 +55,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)chatroomPresenter_didAllMessageDeleted;
 
 /// 发送消息包含严禁词时触发
-/// @param message 后端返回的message提示文本
-/// @param word 触发的严禁词
-- (void)chatroomPresenter_receiveWarning:(NSString *)message prohibitWord:(NSString *)word;
+/// @param warning 后端返回的提示文本
+/// @param word 触发的严禁词, work为nil时表示消息中的严禁词已用**代替后成功发出
+- (void)chatroomPresenter_receiveWarning:(NSString *)warning prohibitWord:(NSString * _Nullable )word;
 
 /// 发送图片违规时触发
 /// @param msgId 后端返回的消息ID
@@ -196,6 +196,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 切换聊天室房间时调用，用于清空原有的聊天消息，并重新加载历史聊天消息
 - (void)changeRoom;
+
+/// 消息overLen字段为YES时，使用该方法获取超长消息
+/// @return YES-消息发出；NO-消息未发出，即callback不会执行
+- (BOOL)overLengthSpeakMessageWithMsgId:(NSString *)msgId callback:(void (^)(NSString * _Nullable content))callback;
 
 @end
 

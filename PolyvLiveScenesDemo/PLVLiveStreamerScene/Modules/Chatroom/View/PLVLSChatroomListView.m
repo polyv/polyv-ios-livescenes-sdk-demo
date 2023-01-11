@@ -13,6 +13,8 @@
 #import "PLVLSImageMessageCell.h"
 #import "PLVLSQuoteMessageCell.h"
 #import "PLVLSImageEmotionMessageCell.h"
+#import "PLVLSLongContentMessageCell.h"
+#import "PLVLSLongContentMessageSheet.h"
 
 /// 数据
 #import "PLVChatModel.h"
@@ -20,6 +22,8 @@
 /// 模块
 #import "PLVRoomDataManager.h"
 #import "PLVLSChatroomViewModel.h"
+#import "PLVLSUtils.h"
+#import "PLVToast.h"
 
 /// 依赖库
 #import <MJRefresh/MJRefresh.h>
@@ -232,6 +236,52 @@ UITableViewDataSource
     [self.tableView setContentOffset:CGPointMake(0.0, offsetY) animated:animated];
 }
 
+#pragma mark - Private Method
+
+// 点击超长文本消息(超过200字符）的【复制】按钮时调用
+- (void)pasteFullContentWithModel:(PLVChatModel *)model {
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        [[PLVLSChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+            if (content) {
+                model.overLenContent = content;
+                [UIPasteboard generalPasteboard].string = content;
+                [PLVToast showToastWithMessage:@"复制成功" inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+            }
+        }];
+    } else {
+        NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (pasteString) {
+            [UIPasteboard generalPasteboard].string = pasteString;
+            [PLVToast showToastWithMessage:@"复制成功" inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+        }
+    }
+}
+
+// 点击超长文本消息(超过500字符）的【更多】按钮时调用
+- (void)requestFullContentWithModel:(PLVChatModel *)model {
+    __weak typeof(self) weakSelf = self;
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        [[PLVLSChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+            if (content) {
+                model.overLenContent = content;
+                [weakSelf alertToShowFullContentWithModel:model];
+            }
+        }];
+
+    } else {
+        NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (content) {
+            [self alertToShowFullContentWithModel:model];
+        }
+    }
+}
+
+// 弹窗显示全部文本
+- (void)alertToShowFullContentWithModel:(PLVChatModel *)model {
+    PLVLSLongContentMessageSheet *messageSheet = [[PLVLSLongContentMessageSheet alloc] initWithChatModel:model];
+    [messageSheet showInView:[PLVLSUtils sharedUtils].homeVC.view];
+}
+
 #pragma mark - UITableView DataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -273,6 +323,33 @@ UITableViewDataSource
             [weakSelf.tableView reloadData];
         }];
         
+        return cell;
+    } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
+        static NSString *LongContentMessageCell = @"LongContentMessageCell";
+        PLVLSLongContentMessageCell *cell = (PLVLSLongContentMessageCell *)[tableView dequeueReusableCellWithIdentifier:LongContentMessageCell];
+        if (!cell) {
+            cell = [[PLVLSLongContentMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCell];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        __weak typeof(self) weakSelf = self;
+        [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
+            if (weakSelf.didTapReplyMenuItem) {
+                weakSelf.didTapReplyMenuItem(model);
+            }
+        }];
+        [cell setProhibitWordShowHandler:^{
+            [weakSelf refreshCellWithIndex:indexPath];
+        }];
+        
+        [cell setProhibitWordDismissHandler:^{
+            [weakSelf.tableView reloadData];
+        }];
+        [cell setCopButtonHandler:^{
+            [weakSelf pasteFullContentWithModel:model];
+        }];
+        [cell setFoldButtonHandler:^{
+            [weakSelf requestFullContentWithModel:model];
+        }];
         return cell;
     } else if ([PLVLSImageMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVLSImageMessageCell";
@@ -369,6 +446,8 @@ UITableViewDataSource
     PLVChatModel *model = [[PLVLSChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVLSSpeakMessageCell isModelValid:model]) {
         cellHeight = [PLVLSSpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
+        cellHeight = [PLVLSLongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLSImageMessageCell isModelValid:model]) {
         cellHeight = [PLVLSImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {

@@ -346,11 +346,12 @@
     }
     
     id message = model.message;
-    if (!message || ![message isKindOfClass:[PLVQuoteMessage class]]) {
+    if (message &&
+        [message isKindOfClass:[PLVQuoteMessage class]]) {
+        return model.contentLength == PLVChatMsgContentLength_0To500;
+    } else {
         return NO;
     }
-    
-    return YES;
 }
 
 @end

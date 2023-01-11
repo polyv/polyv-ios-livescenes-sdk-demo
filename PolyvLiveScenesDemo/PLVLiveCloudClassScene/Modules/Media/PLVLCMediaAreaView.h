@@ -11,6 +11,7 @@
 #import "PLVLCMediaPlayerSkinView.h"
 #import "PLVLCMediaFloatView.h"
 #import "PLVLCRetryPlayView.h"
+#import "PLVLCDocumentPaintModeView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define PPTPlayerViewScale (9.0 / 16.0)
@@ -96,6 +97,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 直播场景中 主讲的PPT 当前是否在主屏
 @property (nonatomic, assign, readonly) BOOL mainSpeakerPPTOnMain;
 
+/// 当前是否处于画笔模式
+@property (nonatomic, assign, readonly) BOOL isInPaintMode;
+
 #pragma mark UI
 /// 媒体播放器皮肤视图 (用于 竖屏时 显示)
 ///
@@ -116,6 +120,12 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) PLVLCRetryPlayView *retryPlayView;
+
+/// 画笔模式视图
+///
+/// @note 便于外部作图层管理
+@property (nonatomic, strong, readonly) PLVLCDocumentPaintModeView *paintModeView;
+
 
 #pragma mark - [ 方法 ]
 /// 显示或隐藏弹幕
@@ -180,6 +190,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param recordFile 暂存视频模型（PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时且 recordEnable 为 YES 时必传）
 /// @param recordEnable 是否是“暂存”视频可用 (PLVChannelVideoType_Live 时传值无效；PLVChannelVideoType_Playback 时必传
 - (void)changePlayertoChannelId:(NSString * _Nonnull)channelId vodId:(NSString * _Nullable)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel * _Nullable)recordFile recordEnable:(BOOL)recordEnable;
+
+/// 退出画笔模式
+- (void)exitPaintMode;
 
 @end
 
@@ -274,6 +287,16 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// 文档、白板页码变化的回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pageStatusChangeWithAutoId:(NSUInteger)autoId pageNumber:(NSUInteger)pageNumber totalPage:(NSUInteger)totalPage pptStep:(NSUInteger)step maxNextNumber:(NSUInteger)maxNextNumber;
+
+/// 用户画笔权限变化的回调
+/// @param mediaAreaView 播放器管理器
+/// @param permission 是否有画笔权限
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangePaintPermission:(BOOL)permission;
+
+/// 用户画笔模式变化的回调
+/// @param mediaAreaView 播放器管理器
+/// @param paintMode 是否在画笔模式（YES：进入画笔模式，NO退出画笔模式）
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeInPaintMode:(BOOL)paintMode;
 
 /// mainSpeakerPPTOnMain 发生改变回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain;

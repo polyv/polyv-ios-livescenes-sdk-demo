@@ -90,7 +90,7 @@
         originY += MAX(chatLabelRect.size.height,fileImageHeight) + 12;
         textViewRealWidth += fileImageWidth + originX;
     } else {
-        self.chatLabel.frame = CGRectMake(originX, 0, chatLabelRect.size.width, chatLabelHeight);
+        self.chatLabel.frame = CGRectMake(originX, originY, chatLabelRect.size.width, chatLabelHeight);
         originY += chatLabelHeight + 4;
     }
     
@@ -521,6 +521,12 @@
          ![message isKindOfClass:[PLVImageEmotionMessage class]] &&
          ![message isKindOfClass:[PLVCustomMessage class]] &&
          ![message isKindOfClass:[PLVFileMessage class]])) {
+        return NO;
+    }
+    
+    if (message &&
+        ([message isKindOfClass:[PLVSpeakMessage class]] || [message isKindOfClass:[PLVQuoteMessage class]]) &&
+        model.contentLength != PLVChatMsgContentLength_0To500) {
         return NO;
     }
     

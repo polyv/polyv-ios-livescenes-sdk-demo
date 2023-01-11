@@ -693,12 +693,20 @@ PLVECCardPushButtonViewDelegate
     if (![subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
         return;
     }
+    NSInteger status = PLV_SafeIntegerForDictKey(jsonDict, @"status");
     
-    if (self.shoppingCartButton.isHidden) {
+    if (status == 10) {
+        // 收到 开启/关闭商品列表 消息时进行处理
+        NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
+        NSString *enabledString = PLV_SafeStringForDictKey(contentDict, @"enabled");
+        BOOL enabled = [enabledString isEqualToString:@"N"]?NO:YES;
+        if (!enabled && _pushView) { // 收到 关闭商品列表 消息时进行处理
+            [ _pushView hide];
+        }
+        [self showShoppingCart:enabled];
+    } else if (self.shoppingCartButton.isHidden) {
         return; // 未开启商品功能
     }
-    
-    NSInteger status = PLV_SafeIntegerForDictKey(jsonDict, @"status");
     
     if (self.commodityVC) {
         [self.commodityVC receiveProductMessage:status content:jsonDict[@"content"]];
@@ -712,6 +720,8 @@ PLVECCardPushButtonViewDelegate
             [weakSelf.pushView setModel:model];
             [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 120, CGRectGetWidth(weakSelf.bounds) - 110, 114)];
         })
+    } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
+        [ _pushView hide];
     }
 }
 
@@ -786,6 +796,13 @@ PLVECCardPushButtonViewDelegate
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.delegate homePageView_didLoginRestrict];
         });
+    }
+}
+
+- (void)chatroomView_alertLongContentMessage:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(homePageView_alertLongContentMessage:)]) {
+        [self.delegate homePageView_alertLongContentMessage:model];
     }
 }
 

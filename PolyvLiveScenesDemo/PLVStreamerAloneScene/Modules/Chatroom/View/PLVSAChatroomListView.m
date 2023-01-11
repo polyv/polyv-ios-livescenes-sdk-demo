@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVToast.h"
 
 /// UI
 #import "PLVSASpeakMessageCell.h"
@@ -17,6 +18,7 @@
 #import "PLVSAImageEmotionMessageCell.h"
 #import "PLVSAQuoteMessageCell.h"
 #import "PLVSARewardMessageCell.h"
+#import "PLVSALongContentMessageCell.h"
 
 /// 数据
 #import "PLVChatModel.h"
@@ -134,6 +136,50 @@ UITableViewDataSource
 }
 
 #pragma mark - [ Private Method ]
+
+// 点击超长文本消息(超过200字符）的【复制】按钮时调用
+- (void)pasteFullContentWithModel:(PLVChatModel *)model {
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        [[PLVSAChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+            if (content) {
+                model.overLenContent = content;
+                [UIPasteboard generalPasteboard].string = content;
+                [PLVToast showToastWithMessage:@"复制成功" inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
+            }
+        }];
+    } else {
+        NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (pasteString) {
+            [UIPasteboard generalPasteboard].string = pasteString;
+            [PLVToast showToastWithMessage:@"复制成功" inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
+        }
+    }
+}
+
+// 点击超长文本消息(超过500字符）的【更多】按钮时调用
+- (void)alertToShowFullContentWithModel:(PLVChatModel *)model {
+    __weak typeof(self) weakSelf = self;
+    if ([model isOverLenMsg] && ![PLVFdUtil checkStringUseable:model.overLenContent]) {
+        [[PLVSAChatroomViewModel sharedViewModel].presenter overLengthSpeakMessageWithMsgId:model.msgId callback:^(NSString * _Nullable content) {
+            if (content) {
+                model.overLenContent = content;
+                [weakSelf notifyDelegateToAlertChatModel:model];
+            }
+        }];
+    } else {
+        NSString *content = [model isOverLenMsg] ? model.overLenContent : model.content;
+        if (content) {
+            [self notifyDelegateToAlertChatModel:model];
+        }
+    }
+}
+
+- (void)notifyDelegateToAlertChatModel:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomListView:alertLongContentMessage:)]) {
+        [self.delegate chatroomListView:self alertLongContentMessage:model];
+    }
+}
 
 #pragma mark Getter
 
@@ -262,6 +308,30 @@ UITableViewDataSource
         }];
         
         return cell;
+    } else if ([PLVSALongContentMessageCell isModelValid:model]) {
+        static NSString *LongContentMessageCell = @"LongContentMessageCell";
+        PLVSALongContentMessageCell *cell = (PLVSALongContentMessageCell *)[tableView dequeueReusableCellWithIdentifier:LongContentMessageCell];
+        if (!cell) {
+            cell = [[PLVSALongContentMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCell];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        __weak typeof(self) weakSelf = self;
+        [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapReplyMenuItem:model];
+        }];
+        [cell setDismissHandler:^{
+            [weakSelf.tableView reloadData];
+        }];
+        [cell setResendHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf resendSpeakMessage:model];
+        }];
+        [cell setCopButtonHandler:^{
+            [weakSelf pasteFullContentWithModel:model];
+        }];
+        [cell setFoldButtonHandler:^{
+            [weakSelf alertToShowFullContentWithModel:model];
+        }];
+        return cell;
     } else if ([PLVSAImageMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVSAImageMessageCell";
         PLVSAImageMessageCell *cell = (PLVSAImageMessageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
@@ -351,6 +421,8 @@ UITableViewDataSource
     PLVChatModel *model = [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVSASpeakMessageCell isModelValid:model]) {
         cellHeight = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVSALongContentMessageCell isModelValid:model]) {
+        cellHeight = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVSAImageMessageCell isModelValid:model]) {
         cellHeight = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {

@@ -21,6 +21,7 @@
 /// 模块
 #import "PLVSAChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
+#import "PLVChatModel.h"
 
 @interface PLVSAChatroomAreaView ()<
 PLVSAChatroomViewModelDelegate,
@@ -319,6 +320,13 @@ PLVSAChatroomListViewDelegate
 
 - (void)chatroomListView:(PLVSAChatroomListView *)listView didTapReplyMenuItem:(PLVChatModel *)model {
     [self.sendMsgView showWithChatModel:model];
+}
+
+- (void)chatroomListView:(PLVSAChatroomListView *)listView alertLongContentMessage:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomAreaView:alertLongContentMessage:)]) {
+        [self.delegate chatroomAreaView:self alertLongContentMessage:model];
+    }
 }
 
 @end

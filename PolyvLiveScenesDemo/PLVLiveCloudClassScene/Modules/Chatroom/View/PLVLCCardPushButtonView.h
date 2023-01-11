@@ -31,7 +31,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 开启卡片推送
 /// @param start 是否是开启推送 YES开启 NO取消
 /// @param dict 卡片推送信息
-- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict;
+/// @param callback 开始卡片推送的回调，是否显示挂件（YES 显示，NO不显示）
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback;
 
 /// 离开直播房间
 - (void)leaveLiveRoom;

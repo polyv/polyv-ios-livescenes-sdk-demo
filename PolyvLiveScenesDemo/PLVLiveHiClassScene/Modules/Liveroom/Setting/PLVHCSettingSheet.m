@@ -11,7 +11,7 @@
 #import "PLVHCSettingConfigView.h"
 
 // 模块
-#import "PLVHCCaptureDeviceManager.h"
+#import "PLVCaptureDeviceManager.h"
 
 // 工具
 #import "PLVHCUtils.h"
@@ -96,7 +96,7 @@
 
 /// 麦克风开关
 - (void)didChangeMicrophoneSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView enable:(BOOL)enable {
-    [[PLVHCCaptureDeviceManager sharedManager] openMicrophone:enable];
+    [[PLVCaptureDeviceManager sharedManager] openMicrophone:enable];
     if (enable) {
         [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenMic message:@"已开启麦克风"];
     } else {
@@ -106,7 +106,7 @@
 
 /// 摄像头开关
 - (void)didChangeCameraSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView enable:(BOOL)enable {
-    [[PLVHCCaptureDeviceManager sharedManager] openCamera:enable];
+    [[PLVCaptureDeviceManager sharedManager] openCamera:enable];
     if (enable) {
         [PLVHCUtils showToastWithType:PLVHCToastTypeIcon_OpenCamera message:@"已开启摄像头"];
     } else {
@@ -116,7 +116,7 @@
 
 /// 切换摄像头方向
 - (void)didChangeCameraDirectionSwitchInSettingConfigView:(PLVHCSettingConfigView *)configView front:(BOOL)isFront {
-    [[PLVHCCaptureDeviceManager sharedManager] switchCamera:isFront];
+    [[PLVCaptureDeviceManager sharedManager] switchCamera:isFront];
 }
 
 /// 全屏切换

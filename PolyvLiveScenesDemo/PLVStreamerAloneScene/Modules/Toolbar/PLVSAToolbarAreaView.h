@@ -21,6 +21,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击人员按钮回调
 - (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView;;
 
+/// 点击商品库按钮回调
+- (void)toolbarAreaViewDidTapCommodityButton:(PLVSAToolbarAreaView *)toolbarAreaView;
+
 /// 点击更多按钮回调
 - (void)toolbarAreaViewDidTapMoreButton:(PLVSAToolbarAreaView *)toolbarAreaView;
 

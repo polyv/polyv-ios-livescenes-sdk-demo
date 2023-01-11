@@ -37,6 +37,12 @@
     return [self imageFromBundle:@"PLVLinkMic" imageName:imageName];
 }
 
++ (NSURL *)URLForLinkMicResource:(NSString *)resourceName {
+    NSBundle *bundle = [NSBundle bundleWithPath:[[PLVLCUtils LCBundle] pathForResource:@"PLVLinkMic" ofType:@"bundle"]];
+    NSURL *resourceURL = [bundle URLForResource:resourceName withExtension:nil];
+    return resourceURL;
+}
+
 + (UIImage *)imageForMediaResource:(NSString *)imageName{
     return [self imageFromBundle:@"PLVMedia" imageName:imageName];
 }

@@ -432,9 +432,7 @@ UITextViewDelegate
         return NO;
     }
     
-    // 当前文本框字符长度（中英文、表情键盘上表情为一个字符，系统emoji为两个字符）
-    NSUInteger newLength = [textView.text length] + [text length] - range.length;
-    return (newLength <= PLVSASendMessageMaxTextLength);// 字数超限
+    return YES;
 }
 
 @end

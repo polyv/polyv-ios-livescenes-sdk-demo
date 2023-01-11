@@ -41,7 +41,8 @@ PLVLCMediaMoreViewDelegate,
 PLVLCMediaPlayerCanvasViewDelegate,
 PLVDocumentViewDelegate,
 PLVPlayerPresenterDelegate,
-PLVRoomDataManagerProtocol
+PLVRoomDataManagerProtocol,
+PLVLCDocumentPaintModeViewDelegate
 >
 
 #pragma mark 状态
@@ -58,7 +59,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, assign) BOOL networkQualityMiddleViewShowed;         // 网络不佳提示视图是否显示过
 @property (nonatomic, assign) BOOL networkQualityPoorViewShowed;   // 网络糟糕提示视图是否显示过
 @property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay; //只读，是否暂停无延迟直播
-
+@property (nonatomic, assign) BOOL hasPaintPermission; // 用户是否拥有画笔权限（默认关闭）
+@property (nonatomic, assign) BOOL isInPaintMode; // 当前是否处于画笔模式
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
@@ -129,7 +131,9 @@ PLVRoomDataManagerProtocol
 /// │
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// │
-/// └── (PLVMarqueeView) marqueeView
+/// ├── (PLVMarqueeView) marqueeView
+/// │
+/// └── (PLVLCDocumentPaintModeView) paintModeView
 @property (nonatomic, strong) UIView * contentBackgroudView; // 内容背景视图 (负责承载 不同类型的内容画面（播放器画面、或PPT画面）；直接决定了’内容画面‘ 在 PLVLCMediaAreaView 中的布局、图层)
 @property (nonatomic, strong) PLVLCMediaPlayerCanvasView * canvasView; // 播放器背景视图 (负责承载 播放器画面；可能会被移动添加至外部视图类中；当被移动添加至外部时，仍被 PLVLCMediaAreaView 持有，但subview关系改变；)
 @property (nonatomic, strong) PLVLCMediaPlayerSkinView * skinView;     // 竖屏播放器皮肤视图 (负责承载 播放器的控制按钮)
@@ -138,6 +142,7 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
+@property (nonatomic, strong) PLVLCDocumentPaintModeView *paintModeView; // 画笔模式视图
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable; // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView; // 网络糟糕提示视图
@@ -221,6 +226,11 @@ PLVRoomDataManagerProtocol
     if (self.superview && !self.marqueeView.superview) { [self.superview addSubview:self.marqueeView]; }
     self.marqueeView.frame = self.contentBackgroudView.frame;
     
+    if (self.superview && !self.paintModeView.superview) {
+        [self.superview addSubview:self.paintModeView];
+    }
+    self.paintModeView.frame = self.contentBackgroudView.frame;
+
     // iPad分屏尺寸变动，刷新更多弹框布局
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
         [self.moreView setNeedsLayout];
@@ -229,7 +239,6 @@ PLVRoomDataManagerProtocol
 
     self.watermarkView.frame = self.contentBackgroudView.frame;
 }
-
 
 #pragma mark - [ Public Methods ]
 - (void)refreshUIInfo {
@@ -280,6 +289,7 @@ PLVRoomDataManagerProtocol
             /// 竖屏皮肤视图
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
         }
+        [self.skinView refreshPaintButtonShow:NO];
     } else if (toType == PLVLCMediaAreaViewLiveSceneType_WatchNoDelay) {
         if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
             /// 播放器 清理
@@ -296,6 +306,7 @@ PLVRoomDataManagerProtocol
         }
         /// 竖屏皮肤视图
         [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay];
+        [self.skinView refreshPaintButtonShow:NO];
     } else if (toType == PLVLCMediaAreaViewLiveSceneType_InLinkMic){ /// 正在 ‘连麦’ 场景
         if (self.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchNoDelay) {
             if (self.linkMicSceneType == PLVChannelLinkMicSceneType_Alone_PartRtc) {
@@ -344,7 +355,9 @@ PLVRoomDataManagerProtocol
     if (contentView && [contentView isKindOfClass:UIView.class]) {
         // 设置PPT是否在主页
         [self setupMainSpeakerPPTOnMain:[self isPptView:contentView]];
-        [self contentBackgroundViewDisplaySubview:contentView];
+        if (!self.isInPaintMode || ![self isPptView:contentView]) {
+            [self contentBackgroundViewDisplaySubview:contentView];
+        }
     }else{
         NSLog(@"PLVLCMediaAreaView - displayExternalView failed, view is illegal : %@",contentView);
     }
@@ -414,6 +427,10 @@ PLVRoomDataManagerProtocol
     self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:self.videoType channelId:channelId vodId:vodId vodList:vodList recordFile:recordFile recordEnable:recordEnable];
     self.playerPresenter.delegate = self;
     [self.playerPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview];
+}
+
+- (void)exitPaintMode {
+    [self.paintModeView exitPaintMode];
 }
 
 #pragma mark 网络质量
@@ -846,7 +863,7 @@ PLVRoomDataManagerProtocol
         _pptView.backgroundColor = [PLVColorUtil colorFromHexString:@"#2B3045"];
         UIImage *pptBgImage = [self getImageWithName:@"plvlc_media_ppt_placeholder"];
         [_pptView setBackgroudImage:pptBgImage widthScale:180.0/375.0];
-        [_pptView loadRequestWitParamString:nil];
+        [_pptView loadRequestWitParamString:@"hasPageBtn=0"];
     }
     return _pptView;
 }
@@ -937,6 +954,15 @@ PLVRoomDataManagerProtocol
         _memoryPlayTipLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _memoryPlayTipLabel;
+}
+
+- (PLVLCDocumentPaintModeView *)paintModeView {
+    if (!_paintModeView) {
+        _paintModeView = [[PLVLCDocumentPaintModeView alloc] init];
+        _paintModeView.hidden = YES;
+        _paintModeView.delegate = self;
+    }
+    return _paintModeView;
 }
 
 - (BOOL)inLinkMic{
@@ -1099,6 +1125,16 @@ PLVRoomDataManagerProtocol
     [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
 }
 
+- (void)plvLCBasePlayerSkinViewPaintButtonClicked:(PLVLCBasePlayerSkinView *)skinView {
+    self.isInPaintMode = YES;
+    self.pptView.startClass = (self.inRTCRoom && self.inLinkMic);
+    [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+    [self.paintModeView enterPaintModeWithPPTView:self.pptView];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:didChangeInPaintMode:)]) {
+        [self.delegate plvLCMediaAreaView:self didChangeInPaintMode:YES];
+    }
+}
+
 /// 询问是否有其他视图处理此次触摸事件
 - (BOOL)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView askHandlerForTouchPointOnSkinView:(CGPoint)point{
     if ([PLVLCBasePlayerSkinView checkView:self.canvasView.playCanvasButton canBeHandlerForTouchPoint:point onSkinView:skinView]){
@@ -1166,6 +1202,7 @@ PLVRoomDataManagerProtocol
 - (UIView *)plvLCFloatViewDidTap:(PLVLCMediaFloatView *)floatView externalView:(nonnull UIView *)externalView{
     UIView * willMoveView = self.contentBackgroudView.subviews.firstObject;
     if (externalView) {
+        [externalView removeFromSuperview];
         [self.contentBackgroudView addSubview:externalView];
         externalView.frame = self.contentBackgroudView.bounds;
         externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -1229,7 +1266,25 @@ PLVRoomDataManagerProtocol
         [self.delegate plvLCMediaAreaView:self pageStatusChangeWithAutoId:autoId pageNumber:pageNumber totalPage:totalPage pptStep:step maxNextNumber:maxNextNumber];
     }
     [self.skinView.documentToolView setupPageNumber:pageNumber totalPage:totalPage maxNextNumber:maxNextNumber];
-    
+}
+
+- (void)documentView_teacherSetPaintPermission:(BOOL)permission userId:(NSString *)userId {
+    NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    if ([viewerId isEqualToString:userId]) {
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:didChangePaintPermission:)]) {
+            [self.delegate plvLCMediaAreaView:self didChangePaintPermission:permission];
+        }
+        if (permission && !self.skinView.skinShow) {
+            [self.skinView controlsSwitchShowStatusWithAnimation:YES];
+        }
+        if (!permission && self.isInPaintMode) {
+            [self exitPaintMode];
+        }
+        
+        self.hasPaintPermission = permission;
+        [self.skinView refreshPaintButtonShow:permission];
+    }
 }
 
 #pragma mark PLVStreamerPPTView Delegate
@@ -1541,6 +1596,15 @@ PLVRoomDataManagerProtocol
     NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
     [self.playerPresenter changeVid:vid];
     [self.pptView pptStartWithVideoId:videoId channelId:channelId];
+}
+
+#pragma mark PLVLCDocumentPaintModeViewDelegate
+- (void)plvLCDocumentPaintModeViewExitPaintMode:(PLVLCDocumentPaintModeView *)paintModeView {
+    self.isInPaintMode = NO;
+    [self displayContentView:self.pptView];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:didChangeInPaintMode:)]) {
+        [self.delegate plvLCMediaAreaView:self didChangeInPaintMode:NO];
+    }
 }
 
 #pragma mark - [ Action ]

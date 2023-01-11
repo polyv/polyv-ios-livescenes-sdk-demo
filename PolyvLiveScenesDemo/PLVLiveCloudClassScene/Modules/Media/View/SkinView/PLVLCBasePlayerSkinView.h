@@ -69,6 +69,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @property (nonatomic, strong) UILabel * floatViewShowButtonTipsLabel;
 @property (nonatomic, strong) UIButton * floatViewShowButton;
 @property (nonatomic, strong) UIButton * fullScreenButton;
+@property (nonatomic, strong) UIButton * paintButton; // 画笔按钮
 @property (nonatomic, strong) UILabel * currentTimeLabel; // 仅直播回放
 @property (nonatomic, strong) UILabel * diagonalsLabel;   // 仅直播回放；斜杆符号文本框
 @property (nonatomic, strong) UILabel * durationLabel;    // 仅直播回放
@@ -118,6 +119,10 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)refreshProgressViewFrame;
 
+/// 刷新进入画笔模式按钮是否显示
+/// @param show YES:显示，NO:隐藏
+- (void)refreshPaintButtonShow:(BOOL)show;
+
 /// 工具方法 (与 PLVLCBasePlayerSkinView 类本身没有逻辑关联，仅业务上相关)
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView;
 
@@ -147,6 +152,8 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 - (void)plvLCBasePlayerSkinViewFloatViewShowButtonClicked:(PLVLCBasePlayerSkinView *)skinView userWannaShowFloatView:(BOOL)wannaShow;
 
 - (void)plvLCBasePlayerSkinViewFullScreenOpenButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
+
+- (void)plvLCBasePlayerSkinViewPaintButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
 /// ‘当前皮肤视图’ 已同步 ‘其他皮肤视图’按钮状态的回调
 ///
