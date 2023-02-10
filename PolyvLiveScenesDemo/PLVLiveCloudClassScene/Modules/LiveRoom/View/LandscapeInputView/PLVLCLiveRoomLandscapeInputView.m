@@ -7,15 +7,18 @@
 //
 
 #import "PLVLCLiveRoomLandscapeInputView.h"
+#import "PLVLCLandscapeRepliedMsgView.h"
 #import "PLVLCKeyboardTextView.h"
 #import "PLVLCUtils.h"
+#import "PLVChatModel.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLiveRoomLandscapeInputView () <UITextFieldDelegate>
 
 @property (nonatomic, strong) UITextField * textField;
 @property (nonatomic, strong) UIButton * sendButton;
-@property (nonatomic, strong) UIButton * backButton;
+@property (nonatomic, strong) PLVLCLandscapeRepliedMsgView * _Nullable replyModelView; /// 显示被引用回复消息UI
+@property (nonatomic, strong) PLVChatModel * _Nullable replyModel; /// 引用回复消息
 
 @end
 
@@ -38,8 +41,10 @@
 - (void)layoutSubviews{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {
-        [self layoutRefreshForKeyboardShow:NO keyboardHeight:0];
-    }else{
+        if (!self.replyModelView) {
+            [self layoutRefreshForKeyboardShow:NO keyboardHeight:0];
+        }
+    } else {
         [self showInputView:NO];
     }
 }
@@ -48,13 +53,28 @@
 #pragma mark - [ Public Methods ]
 - (void)showInputView:(BOOL)show{
     if (show) {
+        if (self.replyModel) {
+            self.replyModelView = [[PLVLCLandscapeRepliedMsgView alloc] initWithChatModel:self.replyModel];
+            __weak typeof(self) weakSelf = self;
+            [self.replyModelView setCloseButtonHandler:^{
+                weakSelf.replyModel = nil;
+            }];
+            [self addSubview:self.replyModelView];
+        }
+        
         self.userInteractionEnabled = YES;
         [self.textField becomeFirstResponder];
-
+        
         [UIView animateWithDuration:0.33 animations:^{
             self.alpha = 1;
         }];
     }else{
+        if (self.replyModel) {
+            [self.replyModelView removeFromSuperview];
+            self.replyModelView = nil;
+            self.replyModel = nil;
+        }
+        
         self.userInteractionEnabled = NO;
         [self.textField resignFirstResponder];
         
@@ -64,6 +84,11 @@
     }
 }
 
+- (void)showWithReplyChatModel:(PLVChatModel *)model {
+    self.replyModel = model;
+    
+    [self showInputView:YES];
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setup{
@@ -79,7 +104,6 @@
     // 添加视图
     [self addSubview:self.textField];
     [self addSubview:self.sendButton];
-    [self addSubview:self.backButton];
     
     // 添加手势
     UITapGestureRecognizer * tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction:)];
@@ -98,31 +122,15 @@
     CGFloat textFieldHeight = 32.0;
     CGFloat textFieldX = viewWidth * 0.1749;
     CGFloat textFieldY = show ? (viewHeight - keyboardHeight - 16 - textFieldHeight) : (viewHeight - 26.0 - textFieldHeight);
+    CGFloat replyModelViewHeight = self.replyModelView.viewHeight;
     
     __weak typeof(self) weakSelf = self;
     NSTimeInterval animationTime = show ? 0.2 : 0.1;
     [UIView animateWithDuration:animationTime animations:^{
+        weakSelf.replyModelView.frame = CGRectMake(0, textFieldY - replyModelViewHeight, viewWidth, replyModelViewHeight);
         weakSelf.textField.frame = CGRectMake(textFieldX, textFieldY, textFieldWidth, textFieldHeight);
-        [weakSelf buttonsLayoutRefresh];
+        weakSelf.sendButton.frame = CGRectMake(CGRectGetMaxX(weakSelf.textField.frame) + 10, CGRectGetMinY(weakSelf.textField.frame), 64, CGRectGetHeight(weakSelf.textField.frame));
     }];
-}
-
-- (void)buttonsLayoutRefresh{
-    CGFloat viewWidth = CGRectGetWidth(self.bounds);
-
-    CGFloat buttonWidth = 64.0;
-    self.sendButton.frame = CGRectMake(CGRectGetMaxX(self.textField.frame) + 10, CGRectGetMinY(self.textField.frame), buttonWidth, CGRectGetHeight(self.textField.frame));
-    
-    CGFloat backButtonRightPadding = viewWidth * 0.0493;
-    CGFloat backButtonWidth = 44.0;
-    CGFloat backButtonOriginX = viewWidth - backButtonRightPadding - backButtonWidth;
-    // iPad小分屏适配（横屏1:2），隐藏连麦窗口
-    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    Boolean isSmallScreen = viewWidth <= PLVScreenWidth / 3 ? YES : NO;
-    if (isPad && isSmallScreen) {
-        backButtonOriginX = 5;
-    }
-    self.backButton.frame = CGRectMake(backButtonOriginX, CGRectGetMinY(self.textField.frame) - 6, backButtonWidth, backButtonWidth);
 }
 
 #pragma mark Getter
@@ -157,16 +165,6 @@
     return _sendButton;
 }
 
-- (UIButton *)backButton{
-    if (_backButton == nil) {
-        _backButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_backButton setImage:[self getImageWithName:@"plvlc_liveroom_input_back"] forState:UIControlStateNormal];
-        [_backButton addTarget:self action:@selector(backButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _backButton;
-}
-
-
 #pragma mark - [ Event ]
 #pragma mark Action
 - (void)tapGestureAction:(UITapGestureRecognizer *)tapGes{
@@ -175,19 +173,17 @@
 
 - (void)sendButtonAction:(UIButton *)button{
     if (self.textField.text.length > 0) {
-        if ([self.delegate respondsToSelector:@selector(plvLCLiveRoomLandscapeInputView:SendButtonClickedWithSendContent:)]) {
-            [self.delegate plvLCLiveRoomLandscapeInputView:self SendButtonClickedWithSendContent:self.textField.text];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomLandscapeInputView:SendButtonClickedWithSendContent:replyModel:)]) {
+            [self.delegate plvLCLiveRoomLandscapeInputView:self SendButtonClickedWithSendContent:self.textField.text replyModel:self.replyModel];
         }
+        
+        self.replyModel = nil;
         self.textField.text = @"";
         [self textFieldDidChangeAction:self.textField];
         [self showInputView:NO];
     }else{
         NSLog(@"PLVLCLiveRoomLandscapeInputView - send button callback failed, textField is no content");
     }
-}
-
-- (void)backButtonAction:(UIButton *)button{
-    [self showInputView:NO];
 }
 
 - (void)textFieldDidChangeAction:(UITextField *)textField{
@@ -220,6 +216,6 @@
 
 - (void)keyboardWillHide:(NSNotification *)noti {
     [self layoutRefreshForKeyboardShow:NO keyboardHeight:0];
-    [self showInputView:NO];
 }
+
 @end

@@ -9,34 +9,27 @@
 #import "PLVLCLandscapeSpeakCell.h"
 #import "PLVChatTextView.h"
 #import "PLVEmoticonManager.h"
-#import <PLVLiveScenesSDK/PLVSpeakMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLandscapeSpeakCell ()
-
-#pragma mark 数据
-
-@property (nonatomic, strong) PLVChatModel *model; /// 消息数据模型
-@property (nonatomic, assign) CGFloat cellWidth; /// cell宽度
-@property (nonatomic, strong) NSString *loginUserId; /// 登录用户的聊天室userId
 
 #pragma mark UI
 
 @property (nonatomic, strong) PLVChatTextView *textView; /// 消息文本内容视图
-@property (nonatomic, strong) UIView *bubbleView; /// 背景气泡
 
 @end
 
 @implementation PLVLCLandscapeSpeakCell
 
-#pragma mark - Life Cycle
+#pragma mark - [ Life Cycle ]
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
+        self.allowCopy = YES;
+        self.allowReply = YES;
         
-        [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.textView];
     }
     return self;
@@ -58,27 +51,7 @@
     self.bubbleView.frame = CGRectMake(0, 0, bubbleSize.width, bubbleSize.height);
 }
 
-#pragma mark - Getter
-
-- (UIView *)bubbleView {
-    if (!_bubbleView) {
-        _bubbleView = [[UIView alloc] init];
-        _bubbleView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
-        _bubbleView.layer.cornerRadius = 14.0;
-        _bubbleView.layer.masksToBounds = YES;
-    }
-    return _bubbleView;
-}
-
-- (PLVChatTextView *)textView {
-    if (!_textView) {
-        _textView = [[PLVChatTextView alloc] init];
-        _textView.showMenu = YES;
-    }
-    return _textView;
-}
-
-#pragma mark - UI
+#pragma mark - [ Public Method ]
 
 - (void)updateWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
     if (![PLVLCLandscapeSpeakCell isModelValid:model] || cellWidth == 0) {
@@ -88,16 +61,43 @@
     
     self.cellWidth = cellWidth;
     self.model = model;
-    if (loginUserId && [loginUserId isKindOfClass:[NSString class]] && loginUserId.length > 0) {
-        self.loginUserId = loginUserId;
-    }
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId];
+    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
 }
 
-#pragma mark UI - ViewModel
++ (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
+    if (![PLVLCLandscapeSpeakCell isModelValid:model] || cellWidth == 0) {
+        return 0;
+    }
+    
+    CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
+    CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
+    
+    PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+    CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    CGFloat bubbleHeight = 4 + contentLabelSize.height + 4; // content文本与气泡的内部有上下间距4
+    
+    return bubbleHeight + 5; // 气泡底部外间距为5
+}
+
++ (BOOL)isModelValid:(PLVChatModel *)model {
+    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return NO;
+    }
+    
+    id message = model.message;
+    if (message &&
+        [message isKindOfClass:[PLVSpeakMessage class]]) {
+        return model.contentLength == PLVChatMsgContentLength_0To500;
+    } else {
+        return NO;
+    }
+}
+
+#pragma mark - [ Private Methods ]
 
 /// 获取消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
@@ -134,38 +134,23 @@
     return contentLabelString;
 }
 
-#pragma mark - 高度计算
+#pragma mark Getter
 
-+ (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
-    if (![PLVLCLandscapeSpeakCell isModelValid:model] || cellWidth == 0) {
-        return 0;
+- (PLVChatTextView *)textView {
+    if (!_textView) {
+        _textView = [[PLVChatTextView alloc] init];
     }
-    
-    CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
-    CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
-    
-    PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
-    CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-    CGFloat bubbleHeight = 4 + contentLabelSize.height + 4; // content文本与气泡的内部有上下间距4
-    
-    return bubbleHeight + 5; // 气泡底部外间距为5
+    return _textView;
 }
 
-#pragma mark - Utils
+#pragma mark - [ Event ]
 
-+ (BOOL)isModelValid:(PLVChatModel *)model {
-    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
-        return NO;
-    }
-    
-    id message = model.message;
-    if (message &&
-        [message isKindOfClass:[PLVSpeakMessage class]]) {
-        return model.contentLength == PLVChatMsgContentLength_0To500;
-    } else {
-        return NO;
-    }
+#pragma mark Action
+
+- (void)customCopy:(id)sender {
+    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+    PLVSpeakMessage *message = self.model.message;
+    pasteboard.string = message.content;
 }
 
 @end

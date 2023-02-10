@@ -26,7 +26,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardToolState) {
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class PLVLCKeyboardToolView;
+@class PLVLCKeyboardToolView, PLVChatModel;
 
 @protocol PLVLCKeyboardToolViewDelegate <NSObject>
 
@@ -36,7 +36,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 面板弹出弹入回调
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show;
 /// 发送消息文本
-- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text;
+/// @param text 消息文本
+/// @param replyModel 引用回复消息，可为空
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text replyModel:(PLVChatModel * _Nullable)replyModel;
 /// 发送图片表情消息
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView
       sendImageEmotionId:(NSString *)imageId
@@ -103,6 +105,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 释放资源，退出前调用，否则 iOShui9.0 以下系统会有 bug
 - (void)clearResource;
+
+/// 回复某条消息
+- (void)replyChatModel:(PLVChatModel *)model;
 
 @end
 

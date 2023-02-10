@@ -17,15 +17,9 @@ static CGFloat kButtonoHeight = 34.0;
 
 @interface PLVLCLandscapeLongContentCell ()
 
-#pragma mark 数据
-
-@property (nonatomic, strong) PLVChatModel *model; /// 消息数据模型
-@property (nonatomic, assign) CGFloat cellWidth; /// cell宽度
-
 #pragma mark UI
 
 @property (nonatomic, strong) PLVChatTextView *textView; /// 消息文本内容视图
-@property (nonatomic, strong) UIView *bubbleView; /// 背景气泡
 @property (nonatomic, strong) UIView *contentSepLine; /// 文本和按钮之间的分隔线
 @property (nonatomic, strong) UIView *buttonSepLine; /// 两个按钮中间的分隔线
 @property (nonatomic, strong) UIButton *copButton;
@@ -40,9 +34,8 @@ static CGFloat kButtonoHeight = 34.0;
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
+        self.allowReply = YES;
         
-        [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.textView];
         [self.contentView addSubview:self.contentSepLine];
         [self.contentView addSubview:self.buttonSepLine];
@@ -166,20 +159,9 @@ static CGFloat kButtonoHeight = 34.0;
 
 #pragma mark Getter
 
-- (UIView *)bubbleView {
-    if (!_bubbleView) {
-        _bubbleView = [[UIView alloc] init];
-        _bubbleView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
-        _bubbleView.layer.cornerRadius = 14.0;
-        _bubbleView.layer.masksToBounds = YES;
-    }
-    return _bubbleView;
-}
-
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        _textView.showMenu = NO;
         _textView.textContainer.lineBreakMode = NSLineBreakByTruncatingTail;
     }
     return _textView;

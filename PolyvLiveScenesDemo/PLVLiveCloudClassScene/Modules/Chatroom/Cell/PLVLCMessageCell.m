@@ -8,10 +8,8 @@
 
 #import "PLVLCMessageCell.h"
 #import "PLVLCUtils.h"
-#import <PLVLiveScenesSDK/PLVSpeakMessage.h>
-#import <PLVLiveScenesSDK/PLVQuoteMessage.h>
-#import <PLVLiveScenesSDK/PLVImageMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @implementation PLVLCMessageCell
 
@@ -24,6 +22,9 @@
         
         [self.contentView addSubview:self.avatarImageView];
         [self.contentView addSubview:self.nickLabel];
+        
+        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressAction:)];
+        [self.contentView addGestureRecognizer:longPress];
     }
     return self;
 }
@@ -172,5 +173,68 @@
     return maskLayer;
 }
 
+#pragma mark - [ Override ]
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *touchView = [super hitTest:point withEvent:event];
+    
+    UIMenuController *menuController = [UIMenuController sharedMenuController];
+    if (menuController.isMenuVisible) {
+        [self resignFirstResponder];
+        [menuController setMenuVisible:NO animated:YES];
+    }
+    return touchView;
+}
+
+- (BOOL)canBecomeFirstResponder {
+    return (self.allowCopy || self.allowReply);
+}
+
+- (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+    BOOL canPerform = NO;
+    if (self.allowCopy && (action == @selector(customCopy:))) {
+        canPerform = YES;
+    }
+    if (self.allowReply && (action == @selector(reply:))) {
+        canPerform = YES;
+    }
+    return canPerform;
+}
+
+#pragma mark - [ Event ]
+
+#pragma mark Action
+
+- (void)reply:(id)sender {
+    if (self.replyHandler) {
+        self.replyHandler(self.model);
+    }
+}
+
+/// UIMenuItem复制方法，由子类覆盖实现，处理业务
+/// @param sender sender
+- (void)customCopy:(id)sender {
+}
+
+#pragma mark Gesture
+
+- (void)longPressAction:(id)sender {
+    if (self.allowCopy || self.allowReply) {
+        [self becomeFirstResponder];
+        
+        UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
+        UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
+        UIMenuController *menuController = [UIMenuController sharedMenuController];
+        if (self.model.isProhibitMsg && self.model.prohibitWord) { // 含有严禁词并且发送失败时
+            [menuController setMenuItems:@[copyMenuItem]];
+        } else {
+            [menuController setMenuItems:@[copyMenuItem, replyMenuItem]];
+        }
+        
+        CGRect rect = CGRectMake(24, 30, 105, 42);
+        [menuController setTargetRect:rect inView:self];
+        [menuController setMenuVisible:YES animated:YES];
+    }
+}
 
 @end

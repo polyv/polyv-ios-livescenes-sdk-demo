@@ -34,6 +34,9 @@
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
+        self.allowCopy = YES;
+        self.allowReply = YES;
+        
         [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.quoteNickLabel];
         [self.contentView addSubview:self.quoteContentLabel];
@@ -164,7 +167,6 @@
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        _textView.showMenu = YES;
     }
     return _textView;
 }
@@ -352,6 +354,14 @@
     } else {
         return NO;
     }
+}
+
+#pragma mark - [ Override ]
+
+- (void)customCopy:(id)sender {
+    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+    PLVQuoteMessage *message = self.model.message;
+    pasteboard.string = message.content;
 }
 
 @end

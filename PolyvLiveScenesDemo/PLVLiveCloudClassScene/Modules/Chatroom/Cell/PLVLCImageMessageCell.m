@@ -27,6 +27,8 @@
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
+        self.allowReply = YES;
+        
         [self.contentView addSubview:self.chatImageView];
         
         self.photoBrowser = [[PLVPhotoBrowser alloc] init];

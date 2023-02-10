@@ -280,14 +280,6 @@ static CGFloat kCellTopMargin = 10;
     
     // 加载头像
     [self loadImageWithModel:model];
-
-    
-    __weak typeof(self) weakSelf = self;
-    [self.textView setReplyHandler:^{
-        if (weakSelf.replyHandler) {
-            weakSelf.replyHandler(model);
-        }
-    }];
 }
 
 + (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {

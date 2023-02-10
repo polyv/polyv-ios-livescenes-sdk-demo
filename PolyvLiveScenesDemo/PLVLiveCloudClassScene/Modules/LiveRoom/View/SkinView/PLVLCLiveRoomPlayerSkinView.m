@@ -12,6 +12,7 @@
 #import "PLVLCLiveRoomLandscapeInputView.h"
 #import "PLVCommodityPushView.h"
 #import "PLVRoomDataManager.h"
+#import "PLVChatModel.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -176,6 +177,10 @@
 - (void)refreshPaintButtonShow:(BOOL)show {
     self.paintButton.hidden = !show;
     [self refreshBottomButtonsFrame];
+}
+
+- (void)didTapReplyChatModel:(PLVChatModel *)model {
+    [self.landscapeInputView showWithReplyChatModel:model];
 }
 
 #pragma mark - [ Private Methods ]
@@ -605,9 +610,12 @@
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVLCLiveRoomLandscapeInputViewDelegate
-- (void)plvLCLiveRoomLandscapeInputView:(PLVLCLiveRoomLandscapeInputView *)inputView SendButtonClickedWithSendContent:(NSString *)sendContent{
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinView:userWannaSendChatContent:)]) {
-        [self.delegate plvLCLiveRoomPlayerSkinView:self userWannaSendChatContent:sendContent];
+
+- (void)plvLCLiveRoomLandscapeInputView:(PLVLCLiveRoomLandscapeInputView *)inputView
+       SendButtonClickedWithSendContent:(NSString *)sendContent
+                             replyModel:(PLVChatModel *)replyModel {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinView:userWannaSendChatContent:replyModel:)]) {
+        [self.delegate plvLCLiveRoomPlayerSkinView:self userWannaSendChatContent:sendContent replyModel:replyModel];
     }
 }
 

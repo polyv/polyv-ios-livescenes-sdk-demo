@@ -7,9 +7,11 @@
 //
 
 #import "PLVECChatroomView.h"
+#import "PLVECRepliedMsgView.h"
 #import "PLVECNewMessageView.h"
 #import "PLVECWelcomView.h"
 #import "PLVECChatCell.h"
+#import "PLVECQuoteChatCell.h"
 #import "PLVECLongContentChatCell.h"
 #import "PLVECUtils.h"
 #import "PLVECChatroomViewModel.h"
@@ -61,6 +63,8 @@ PLVECChatroomPlaybackViewModelDelegate
 @property (nonatomic, strong) PLVECChatroomPlaybackViewModel *playbackViewModel;
 /// 当前视频类型
 @property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
+/// 显示被引用回复消息UI
+@property (nonatomic, strong) PLVECRepliedMsgView * _Nullable replyModelView;
 
 @end
 
@@ -448,6 +452,11 @@ PLVECChatroomPlaybackViewModelDelegate
                      - self.tableView.bounds.size.height) <= 5;
     
     [self.tableView reloadData];
+    if (@available(iOS 13.0, *)) {
+        [[UIMenuController sharedMenuController] hideMenu];
+    } else {
+        [[UIMenuController sharedMenuController]  setMenuVisible:NO];
+    }
     
     if (isBottom) { // tableview显示在最底部
         [self.receiveNewMessageView hidden];
@@ -460,6 +469,11 @@ PLVECChatroomPlaybackViewModelDelegate
 
 - (void)chatroomManager_didMessageDeleted {
     [self.tableView reloadData];
+    if (@available(iOS 13.0, *)) {
+        [[UIMenuController sharedMenuController] hideMenu];
+    } else {
+        [[UIMenuController sharedMenuController]  setMenuVisible:NO];
+    }
 }
 
 - (void)chatroomManager_didSendProhibitMessage {
@@ -649,24 +663,44 @@ PLVECChatroomPlaybackViewModelDelegate
     }
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
+    BOOL quoteReplyEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.quoteReplyEnabled && !self.playbackEnable;
     
+    __weak typeof(self) weakSelf = self;
     if ([PLVECChatCell isModelValid:model]) {
         static NSString *normalCellIdentify = @"normalCellIdentify";
         PLVECChatCell *cell = (PLVECChatCell *)[tableView dequeueReusableCellWithIdentifier:normalCellIdentify];
         if (!cell) {
             cell = [[PLVECChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:normalCellIdentify];
+            cell.quoteReplyEnabled = quoteReplyEnabled;
         }
         [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
-
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItemWithModel:model];
+        }];
+        return cell;
+    } else if ([PLVECQuoteChatCell isModelValid:model]) {
+        static NSString *quoteCellIdentify = @"quoteCellIdentify";
+        PLVECQuoteChatCell *cell = (PLVECQuoteChatCell *)[tableView dequeueReusableCellWithIdentifier:quoteCellIdentify];
+        if (!cell) {
+            cell = [[PLVECQuoteChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:quoteCellIdentify];
+            cell.quoteReplyEnabled = quoteReplyEnabled;
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItemWithModel:model];
+        }];
         return cell;
     } else if ([PLVECLongContentChatCell isModelValid:model]) {
         static NSString *LongContentMessageCellIdentify = @"PLVLCLongContentMessageCell";
         PLVECLongContentChatCell *cell = (PLVECLongContentChatCell *)[tableView dequeueReusableCellWithIdentifier:LongContentMessageCellIdentify];
         if (!cell) {
             cell = [[PLVECLongContentChatCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCellIdentify];
+            cell.quoteReplyEnabled = quoteReplyEnabled;
         }
         [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
-        __weak typeof(self) weakSelf = self;
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItemWithModel:model];
+        }];
         [cell setCopButtonHandler:^{
             [weakSelf pasteFullContentWithModel:model];
         }];
@@ -695,6 +729,8 @@ PLVECChatroomPlaybackViewModelDelegate
     CGFloat cellHeight = 0;
     if ([PLVECChatCell isModelValid:model]) {
         cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVECQuoteChatCell isModelValid:model]) {
+        cellHeight = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVECLongContentChatCell isModelValid:model]) {
         cellHeight = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     }
@@ -705,18 +741,25 @@ PLVECChatroomPlaybackViewModelDelegate
 
 - (void)sendMessage {
     if (self.textView.text.length > 0) {
-        [self tapViewAction];
-        BOOL success = [[PLVECChatroomViewModel sharedViewModel] sendSpeakMessage:self.textView.text];
+        PLVChatModel *replyModel = self.replyModelView.chatModel;
+        BOOL success = [[PLVECChatroomViewModel sharedViewModel] sendSpeakMessage:self.textView.text replyChatModel:replyModel];
         if (!success) {
             [PLVECUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self];
         }
         self.textView.text = @"";
+        
+        [self tapViewAction];
     }
 }
 
 - (void)followKeyboardAnimated:(NSDictionary *)userInfo show:(BOOL)show {
     [self.tapView setHidden:!show];
 
+    if (!show) {
+        [self.replyModelView removeFromSuperview];
+        self.replyModelView = nil;
+    }
+    
     CGRect keyBoardFrame = [userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue];
     double duration = [userInfo[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
     duration = MAX(0.3, duration);
@@ -724,6 +767,12 @@ PLVECChatroomPlaybackViewModelDelegate
         CGRect newFrame = self.textView.frame;
         newFrame.origin.y = CGRectGetMinY(keyBoardFrame) - CGRectGetHeight(newFrame);
         self.textView.frame = newFrame;
+        if (show) {
+            CGRect replyViewRect = newFrame;
+            replyViewRect.origin.y -= self.replyModelView.viewHeight;
+            replyViewRect.size.height = self.replyModelView.viewHeight;
+            self.replyModelView.frame = replyViewRect;
+        }
     } completion:^(BOOL finished) {
         if (!show) {
             self.textView.hidden = YES;
@@ -737,6 +786,24 @@ PLVECChatroomPlaybackViewModelDelegate
     [self.tableView setContentOffset:CGPointMake(0.0, offsetY) animated:YES];
 }
 
+- (void)didTapReplyMenuItemWithModel:(PLVChatModel *)model {
+    self.replyModelView = [[PLVECRepliedMsgView alloc] initWithChatModel:model];
+    [self.tapView addSubview:self.replyModelView];
+    
+    CGRect rect = self.tapView.bounds;
+    rect.origin.y = rect.size.height;
+    rect.size.height = self.replyModelView.viewHeight;
+    self.replyModelView.frame = rect;
+    
+    __weak typeof(self) weakSelf = self;
+    [self.replyModelView setCloseButtonHandler:^{
+        [weakSelf.replyModelView removeFromSuperview];
+        weakSelf.replyModelView = nil;
+    }];
+    
+    [self textAreaViewTapAction];
+}
+
 #pragma mark - <UITextViewDelegate>
 
 - (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementText:(NSString *)text {
@@ -746,7 +813,6 @@ PLVECChatroomPlaybackViewModelDelegate
     }
     
     if ([text isEqualToString:@"\n"]) {
-        [textView resignFirstResponder];
         [self sendMessage];
         return NO;
     }

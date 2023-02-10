@@ -62,6 +62,7 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, assign) BOOL watchingNoDelay;
 @property (nonatomic, assign) int originalIdleTimerDisabled; // 0 表示未记录；负值小于0 对应NO状态；正值大于0 对应YES状态；
 @property (nonatomic, assign) BOOL roomAllMicMute; // 当前是否‘房间全体静音’
+@property (nonatomic, assign) NSInteger linkMicRequestIndex; // 当前观众连麦麦序
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * linkMicSocketToken; // 当前连麦 SocketToken (不为空时重连后需发送 reJoinMic)
@@ -294,6 +295,7 @@ PLVLinkMicManagerDelegate
 #pragma mark - [ Private Methods ]
 - (void)setup{
     /// 初始化 数据
+    self.linkMicRequestIndex = -1;
     self.inLinkMic = NO;
     self.inRTCRoom = NO;
     self.linkMicSceneType = PLVChannelLinkMicSceneType_Unknown;
@@ -346,6 +348,54 @@ PLVLinkMicManagerDelegate
     } failure:^(NSError *error) {
         callback ? callback(YES) : nil;
     }];
+}
+
+- (void)linkMicNumberWithEvent:(PLVLinkMicEventType)event info:(NSDictionary *)jsonDict {
+    // 该功能受超管开关控制
+    if (![PLVRoomDataManager sharedManager].roomData.menuInfo.showJoinQueueNumberEnabled) {
+        return;
+    }
+    
+    BOOL updated = NO;
+    NSInteger requestIndex = [jsonDict[@"requestIndex"] integerValue];
+    NSString *userId = jsonDict[@"user"][@"loginId"];
+    NSString *viewerId = [PLVSocketManager sharedManager].viewerId;
+    if (event == PLVLinkMicEventType_JOIN_LEAVE ||
+        event == PLVLinkMicEventType_JOIN_SUCCESS) {
+        if (userId) {
+            if ([userId isEqualToString:viewerId]) { // 自己退出申请/上麦成功了，序号改为-1
+                self.linkMicRequestIndex = -1;
+                updated = YES;
+            } else {
+                if (requestIndex >= 0 &&
+                    requestIndex < self.linkMicRequestIndex) { // 排在自己前面的人退出申请/上麦成功了，排队序号-1
+                    self.linkMicRequestIndex--;
+                    updated = YES;
+                }
+            }
+        }
+    } else if (event == PLVLinkMicEventType_JOIN_REQUEST) {
+        if (userId) {
+            if ([userId isEqualToString:viewerId]) { // 自己申请连麦，获取初始排队序号
+                self.linkMicRequestIndex = requestIndex;
+                updated = YES;
+            } else {
+                if (requestIndex >= 0 &&
+                    self.linkMicRequestIndex >= 0 &&
+                    requestIndex < self.linkMicRequestIndex) { // 申请连麦过程中被插队，目前不会出现这种情况，暂不处理
+                }
+            }
+        }
+    }
+    if (updated) {
+        plv_dispatch_main_async_safe(^{
+            if (self.delegate &&
+                [self.delegate respondsToSelector:@selector(plvLinkMicPresenter:didLinkMicRequestIndexUpdate:)]) {
+                [self.delegate plvLinkMicPresenter:self didLinkMicRequestIndexUpdate:self.linkMicRequestIndex];
+            }
+        })
+    }
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic, @"xyj debug - event: %zd, requestIndex: %zd", event, self.linkMicRequestIndex);
 }
 
 #pragma mark Setter
@@ -1467,7 +1517,13 @@ PLVLinkMicManagerDelegate
             BOOL mainSpeakerToMainScreen = ((NSNumber *)jsonDict[@"status"]).boolValue;
             [self callbackForMainSpeaker:self.localMainSpeakerUser.linkMicUserId mainSpeakerToMainScreen:mainSpeakerToMainScreen];
         } break;
-            
+        // 某个观众退出连麦或退出申请连麦\连麦成功\请求连麦
+        case PLVLinkMicEventType_JOIN_LEAVE:
+        case PLVLinkMicEventType_JOIN_SUCCESS:
+        case PLVLinkMicEventType_JOIN_REQUEST:
+        {
+            [self linkMicNumberWithEvent:eventType info:jsonDict];
+        } break;
         default:
             break;
     }
@@ -1482,10 +1538,9 @@ PLVLinkMicManagerDelegate
     /// Socket 断开时不作刷新请求，因连麦业务基本均依赖于 Scoket 服务
     if ([PLVSocketManager sharedManager].login) {
         __weak typeof(self) weakSelf = self;
-
         // 请求，刷新‘讲师端连麦开启状态’
-        [PLVLiveVideoAPI requestLinkMicStatusWithRoomId:self.channelId.integerValue completion:^(NSString *status, NSString *type) {
-            if ([NSDate date].timeIntervalSince1970 - self.socketRefreshOpenStatusDate > 10) {
+        [PLVLinkMicManager requestLinkMicStatusWithChannelId:self.channelId completion:^(NSString *status, NSString *type) {
+            if ([NSDate date].timeIntervalSince1970 - weakSelf.socketRefreshOpenStatusDate > 10) {
                 [weakSelf refreshLinkMicOpenStatus:status mediaType:type];
             }
         } failure:^(NSError *error) {
@@ -1509,7 +1564,6 @@ PLVLinkMicManagerDelegate
         NSLog(@"PLVLinkMicPresenter - link mic status refresh failed, current socket status:%lu",(unsigned long)[PLVSocketManager sharedManager].status);
     }
 }
-
 
 #pragma mark - [ Delegate ]
 #pragma mark PLVSocketManagerProtocol

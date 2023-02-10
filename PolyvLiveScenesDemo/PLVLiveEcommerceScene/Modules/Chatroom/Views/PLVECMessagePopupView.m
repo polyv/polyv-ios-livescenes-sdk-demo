@@ -221,7 +221,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
     actorLabel.layer.masksToBounds = YES;
     
     // 将昵称label再转换为NSAttributedString对象
-    UIImage *actorImage = [PLVECMessagePopupView imageFromUIView:actorLabel];
+    UIImage *actorImage = [PLVImageUtil imageFromUIView:actorLabel];
     NSTextAttachment *labelAttach = [[NSTextAttachment alloc] init];
     labelAttach.bounds = CGRectMake(0, -3, actorLabelSize.width, actorLabelSize.height);
     labelAttach.image = actorImage;
@@ -275,16 +275,6 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
         backgroundColor = [PLVColorUtil colorFromHexString:@"#33BBC5"];
     }
     return backgroundColor;
-}
-
-/// 将头衔文本转换成图片
-+ (UIImage *)imageFromUIView:(UIView *)view {
-    UIGraphicsBeginImageContext(view.bounds.size);
-    CGContextRef ctxRef = UIGraphicsGetCurrentContext();
-    [view.layer renderInContext:ctxRef];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return image;
 }
 
 /// 获得字符串中 https、http 链接所在位置，并将这些结果放入数组中返回

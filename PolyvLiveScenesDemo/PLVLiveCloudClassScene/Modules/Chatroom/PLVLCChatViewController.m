@@ -484,6 +484,10 @@ UITableViewDataSource
     }
 }
 
+- (void)didTapReplyMenuItem:(PLVChatModel *)model {
+    [self.keyboardToolView replyChatModel:model];
+}
+
 #pragma mark - PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didLikeCountChanged:(NSUInteger)likeCount {
@@ -505,6 +509,11 @@ UITableViewDataSource
                      - self.tableView.bounds.size.height) <= 5;
     
     [self.tableView reloadData];
+    if (@available(iOS 13.0, *)) {
+        [[UIMenuController sharedMenuController] hideMenu];
+    } else {
+        [[UIMenuController sharedMenuController]  setMenuVisible:NO];
+    }
     
     if (isBottom) { // tableview显示在最底部
         [self clearNewMessageCount];
@@ -517,6 +526,11 @@ UITableViewDataSource
 
 - (void)chatroomManager_didMessageDeleted {
     [self.tableView reloadData];
+    if (@available(iOS 13.0, *)) {
+        [[UIMenuController sharedMenuController] hideMenu];
+    } else {
+        [[UIMenuController sharedMenuController]  setMenuVisible:NO];
+    }
 }
 
 - (void)chatroomManager_didSendProhibitMessage {
@@ -669,7 +683,9 @@ UITableViewDataSource
         return [UITableViewCell new];
     }
     
+    __weak typeof(self) weakSelf = self;
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    BOOL quoteReplyEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.quoteReplyEnabled;
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
@@ -677,17 +693,24 @@ UITableViewDataSource
         PLVLCSpeakMessageCell *cell = (PLVLCSpeakMessageCell *)[tableView dequeueReusableCellWithIdentifier:speakMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCSpeakMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:speakMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItem:model];
+        }];
         return cell;
     } else if ([PLVLCLongContentMessageCell isModelValid:model]) {
         static NSString *LongContentMessageCellIdentify = @"PLVLCLongContentMessageCell";
         PLVLCLongContentMessageCell *cell = (PLVLCLongContentMessageCell *)[tableView dequeueReusableCellWithIdentifier:LongContentMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCLongContentMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
-        __weak typeof(self) weakSelf = self;
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItem:model];
+        }];
         [cell setCopButtonHandler:^{
             [weakSelf pasteFullContentWithModel:model];
         }];
@@ -700,24 +723,36 @@ UITableViewDataSource
         PLVLCImageMessageCell *cell = (PLVLCImageMessageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCImageMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItem:model];
+        }];
         return cell;
     } else if ([PLVLCImageEmotionMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVLCImageEmotionMessageCell";
         PLVLCImageEmotionMessageCell *cell = (PLVLCImageEmotionMessageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCImageEmotionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItem:model];
+        }];
         return cell;
     } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVLCQuoteMessageCell";
         PLVLCQuoteMessageCell *cell = (PLVLCQuoteMessageCell *)[tableView dequeueReusableCellWithIdentifier:quoteMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCQuoteMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:quoteMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf didTapReplyMenuItem:model];
+        }];
         return cell;
     } else if ([PLVLCRewardMessageCell isModelValid:model]) {
         static NSString *rewardMessageCellIdentify = @"PLVLCRewardCell";
@@ -798,8 +833,8 @@ UITableViewDataSource
     NSLog(@"keyboardToolView - popBoard %@", show ? @"YES" : @"NO");
 }
 
-- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text {
-    BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:text];
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text replyModel:(PLVChatModel *)replyModel {
+    BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:replyModel];
     if (!success) {
         [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
     }

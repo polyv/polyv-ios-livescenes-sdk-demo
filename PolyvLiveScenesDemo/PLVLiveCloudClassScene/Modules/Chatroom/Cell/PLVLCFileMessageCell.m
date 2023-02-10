@@ -90,7 +90,6 @@
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        _textView.showMenu = YES;
         _textView.textContainer.maximumNumberOfLines = 2;
         _textView.textContainer.lineBreakMode = NSLineBreakByTruncatingMiddle;
     }

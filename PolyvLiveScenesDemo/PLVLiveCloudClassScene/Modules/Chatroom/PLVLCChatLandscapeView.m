@@ -340,6 +340,13 @@ UITableViewDataSource
     }
 }
 
+- (void)notifyDelegateToReplyChatModel:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatLandscapeView:didTapReplyMessage:)]) {
+        [self.delegate chatLandscapeView:self didTapReplyMessage:model];
+    }
+}
+
 #pragma mark - PLVLCChatroomViewModelProtocol
 
 - (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
@@ -439,7 +446,9 @@ UITableViewDataSource
         return [UITableViewCell new];
     }
     
+    __weak typeof(self) weakSelf = self;
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    BOOL quoteReplyEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.quoteReplyEnabled;
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
     if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
@@ -447,17 +456,24 @@ UITableViewDataSource
         PLVLCLandscapeSpeakCell *cell = (PLVLCLandscapeSpeakCell *)[tableView dequeueReusableCellWithIdentifier:speakMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCLandscapeSpeakCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:speakMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf notifyDelegateToReplyChatModel:model];
+        }];
         return cell;
     } else if ([PLVLCLandscapeLongContentCell isModelValid:model]) {
         static NSString *LongContentMessageCellIdentify = @"PLVLCLongContentMessageCell";
         PLVLCLandscapeLongContentCell *cell = (PLVLCLandscapeLongContentCell *)[tableView dequeueReusableCellWithIdentifier:LongContentMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCLandscapeLongContentCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
-        __weak typeof(self) weakSelf = self;
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf notifyDelegateToReplyChatModel:model];
+        }];
         [cell setCopButtonHandler:^{
             [weakSelf pasteFullContentWithModel:model];
         }];
@@ -470,24 +486,36 @@ UITableViewDataSource
         PLVLCLandscapeImageCell *cell = (PLVLCLandscapeImageCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCLandscapeImageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf notifyDelegateToReplyChatModel:model];
+        }];
         return cell;
     } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVLCLandscapeImageEmotionCell";
         PLVLCLandscapeImageEmotionCell *cell = (PLVLCLandscapeImageEmotionCell *)[tableView dequeueReusableCellWithIdentifier:imageMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCLandscapeImageEmotionCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf notifyDelegateToReplyChatModel:model];
+        }];
         return cell;
     } else if ([PLVLCLandscapeQuoteCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVLCLandscapeQuoteCell";
         PLVLCLandscapeQuoteCell *cell = (PLVLCLandscapeQuoteCell *)[tableView dequeueReusableCellWithIdentifier:quoteMessageCellIdentify];
         if (!cell) {
             cell = [[PLVLCLandscapeQuoteCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:quoteMessageCellIdentify];
+            cell.allowReply = !self.playbackEnable && quoteReplyEnabled;
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setReplyHandler:^(PLVChatModel *model) {
+            [weakSelf notifyDelegateToReplyChatModel:model];
+        }];
         return cell;
     } if ([PLVLCLandscapeFileCell isModelValid:model]) {
         static NSString *filekMessageCellIdentify = @"PLVLCLandscapeFileCell";
@@ -523,9 +551,9 @@ UITableViewDataSource
     } else if ([PLVLCLandscapeLongContentCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeImageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        cellHeight = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        cellHeight = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeQuoteCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeFileCell isModelValid:model]) {

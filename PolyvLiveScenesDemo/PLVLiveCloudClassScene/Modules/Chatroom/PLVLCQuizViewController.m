@@ -157,7 +157,7 @@ UITableViewDataSource
     return YES;
 }
 
-- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text {
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text replyModel:(PLVChatModel *)replyModel {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendQuesstionMessage:text];
     if (!success) {
         [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];

@@ -263,6 +263,7 @@ PLVLCLinkMicWindowsViewDelegate
 - (void)setCurrentControlBar:(id<PLVLCLinkMicControlBarProtocol>)currentControlBar{
     if (currentControlBar && currentControlBar != _currentControlBar) {
         [currentControlBar synchControlBarState:_currentControlBar];
+        [currentControlBar updateLinkMicRequestIndex:self.presenter.linkMicRequestIndex];
         _currentControlBar = currentControlBar;
     }
 }
@@ -415,10 +416,11 @@ PLVLCLinkMicWindowsViewDelegate
         [self.linkMicPreView showLinkMicPreviewView:NO];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Open) {
         PLVLCLinkMicControlBarType barType = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio ? PLVLCLinkMicControlBarType_Audio : PLVLCLinkMicControlBarType_Video);
-        self.currentControlBar.barType = barType;
+        [self.currentControlBar changeBarType:barType];
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Open];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Waiting) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Waiting];
+        [self.currentControlBar updateLinkMicRequestIndex:presenter.linkMicRequestIndex];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Inviting) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Default];
         self.linkMicPreView.isOnlyAudio = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio);
@@ -556,6 +558,11 @@ PLVLCLinkMicWindowsViewDelegate
         
         [PLVLCUtils showHUDWithTitle:@"退出连麦失败" detail:msg view:currentVC.view];
     }
+}
+
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter didLinkMicRequestIndexUpdate:(NSInteger)linkMicIndex {
+    [self.currentControlBar updateLinkMicRequestIndex:linkMicIndex];
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic, @"xyj debug - didLinkMicRequestIndexUpdate requestIndex: %zd", linkMicIndex);
 }
 
 /// 全部连麦成员的音频音量 回调

@@ -161,6 +161,9 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// 当前 是否已暂停无延迟观看
 @property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay;
 
+/// 当前观众连麦麦序
+@property (nonatomic, assign, readonly) NSInteger linkMicRequestIndex;
+
 #pragma mark 数据
 /// 当前 真实主讲用户 (即 “第一画面”)
 ///
@@ -298,6 +301,11 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter
               didOccurError:(PLVLinkMicErrorCode)errorCode
                   extraCode:(NSInteger)extraCode;
+
+/// 申请连麦时，用于更新连麦序号
+/// @param linkMicIndex 连麦序号，0表示排在第一位，-1表示数据出错或结束排队
+/// @note showJoinQueueNumberEnabled 为 NO 时该回调不生效
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter didLinkMicRequestIndexUpdate:(NSInteger)linkMicIndex;
 
 #pragma mark 连麦用户变化
 /// ’RTC房间在线用户数组‘ 发生改变

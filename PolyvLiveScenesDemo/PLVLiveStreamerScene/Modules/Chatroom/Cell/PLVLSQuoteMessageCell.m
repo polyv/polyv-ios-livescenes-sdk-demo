@@ -155,7 +155,6 @@
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        _textView.selectable = NO;
         UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction)];
         [_textView addGestureRecognizer:tapGesture];
     }
@@ -256,13 +255,6 @@
         self.prohibitWordTipView.hidden = YES;
     }
     self.prohibitWordTipButton.hidden = ![model isProhibitMsg];
-    
-    __weak typeof(self) weakSelf = self;
-    [self.textView setReplyHandler:^{
-        if (weakSelf.replyHandler) {
-            weakSelf.replyHandler(model);
-        }
-    }];
 }
 
 #pragma mark UI - ViewModel

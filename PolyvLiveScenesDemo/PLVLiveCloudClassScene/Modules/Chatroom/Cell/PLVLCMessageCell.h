@@ -31,6 +31,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) UIImageView *avatarImageView;
 /// 发出消息用户昵称
 @property (nonatomic, strong) UILabel *nickLabel;
+/// 支持显示复制菜单按钮
+@property (nonatomic, assign) BOOL allowCopy;
+/// 支持显示回复菜单按钮
+@property (nonatomic, assign) BOOL allowReply;
+/// 点击 回复按钮 触发
+@property (nonatomic, copy) void(^ _Nullable replyHandler)(PLVChatModel *model);
 
 #pragma mark API
 

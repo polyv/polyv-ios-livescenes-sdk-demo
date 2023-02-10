@@ -41,6 +41,8 @@ static CGFloat kButtonoHeight = 40.0;
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
+        self.allowReply = YES;
+        
         [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.quoteNickLabel];
         [self.contentView addSubview:self.quoteContentLabel];
@@ -364,7 +366,6 @@ static CGFloat kButtonoHeight = 40.0;
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        _textView.showMenu = NO;
         _textView.textContainer.lineBreakMode = NSLineBreakByTruncatingTail;
     }
     return _textView;

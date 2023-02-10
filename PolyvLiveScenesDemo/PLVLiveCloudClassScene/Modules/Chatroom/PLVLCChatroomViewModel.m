@@ -222,6 +222,16 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return sendSuccess;
 }
 
+- (BOOL)sendSpeakMessage:(NSString *)content replyChatModel:(PLVChatModel *)replyChatModel {
+    PLVChatModel *model = [self.presenter sendSpeakMessage:content replyChatModel:replyChatModel];
+    BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
+    if (sendSuccess) {
+        [self addPublicChatModel:model];
+        [self cacheDanmu:@[model]];
+    }
+    return sendSuccess;
+}
+
 - (BOOL)sendImageMessage:(UIImage *)image {
     PLVChatModel *model = [self.presenter sendImageMessage:image];
     BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;

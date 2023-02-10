@@ -7,7 +7,6 @@
 //
 
 #import "PLVECLongContentChatCell.h"
-#import "PLVChatModel.h"
 #import "PLVChatUser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVECUtils.h"
@@ -19,13 +18,7 @@ static CGFloat kButtonoHeight = 32.0;
 
 @interface PLVECLongContentChatCell ()
 
-#pragma mark 数据
-@property (nonatomic, strong) PLVChatModel *model;
-@property (nonatomic, assign) CGFloat cellWidth;
-
 #pragma mark UI
-@property (nonatomic, strong) UIView *bubbleView;
-@property (nonatomic, strong) UILabel *chatLabel;
 @property (nonatomic, strong) UIView *contentSepLine; /// 文本和按钮之间的分隔线
 @property (nonatomic, strong) UIView *buttonSepLine; /// 两个按钮中间的分隔线
 @property (nonatomic, strong) UIButton *copButton;
@@ -40,10 +33,9 @@ static CGFloat kButtonoHeight = 32.0;
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
+        self.allowCopy = NO;
+        self.allowReply = YES;
         
-        [self.contentView addSubview:self.bubbleView];
-        [self.contentView addSubview:self.chatLabel];
         [self.contentView addSubview:self.contentSepLine];
         [self.contentView addSubview:self.buttonSepLine];
         [self.contentView addSubview:self.copButton];
@@ -167,7 +159,7 @@ static CGFloat kButtonoHeight = 32.0;
     actorLabel.layer.masksToBounds = YES;
     
     // 将昵称label再转换为NSAttributedString对象
-    UIImage *actorImage = [PLVECLongContentChatCell imageFromUIView:actorLabel];
+    UIImage *actorImage = [PLVImageUtil imageFromUIView:actorLabel];
     NSTextAttachment *labelAttach = [[NSTextAttachment alloc] init];
     labelAttach.bounds = CGRectMake(0, -1.5, actorLabelSize.width, actorLabelSize.height);
     labelAttach.image = actorImage;
@@ -223,36 +215,7 @@ static CGFloat kButtonoHeight = 32.0;
     return backgroundColor;
 }
 
-/// 将头衔文本转换成图片
-+ (UIImage *)imageFromUIView:(UIView *)view {
-    UIGraphicsBeginImageContext(view.bounds.size);
-    CGContextRef ctxRef = UIGraphicsGetCurrentContext();
-    [view.layer renderInContext:ctxRef];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return image;
-}
-
 #pragma mark Getter
-
-- (UIView *)bubbleView {
-    if (!_bubbleView) {
-        _bubbleView = [[UIView alloc] init];
-        _bubbleView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.39];
-        _bubbleView.layer.cornerRadius = 10;
-        _bubbleView.layer.masksToBounds = YES;
-    }
-    return _bubbleView;
-}
-
-- (UILabel *)chatLabel {
-    if (!_chatLabel) {
-        _chatLabel = [[UILabel alloc] init];
-        _chatLabel.numberOfLines = 0;
-        _chatLabel.textAlignment = NSTextAlignmentLeft;
-    }
-    return _chatLabel;
-}
 
 - (UIView *)contentSepLine {
     if (!_contentSepLine) {

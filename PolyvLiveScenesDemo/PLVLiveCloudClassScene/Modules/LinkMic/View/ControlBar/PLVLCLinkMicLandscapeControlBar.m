@@ -12,22 +12,15 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
-/// 固定值
-/// 宽度
-static const CGFloat PLVLCLinkMicHorizontalControlBarWidth = 64.0;        // Bar 宽度
-/// 高度
-static const CGFloat PLVLCLinkMicHorizontalControlBarNormalHeight = 77.0; // Bar 正常高度
-static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Video = 200.0; // Bar 最大高度 (视频连麦类型)
-static const CGFloat PLVLCLinkMicHorizontalControlBarMaxHeight_Audio = 104.0; // Bar 最大高度 (音频连麦类型)
 static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间隔:300毫秒
 
 @interface PLVLCLinkMicLandscapeControlBar ()
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL phoneRotated; // 当前电话图标是否已旋转 (NO未旋转:倾斜 YES已旋转:水平)
+@property (nonatomic, assign) BOOL showRequestIndex; // 当前是否显示连麦排序
 
 #pragma mark 数据
-@property (nonatomic, assign, readonly) CGFloat maxHeight; // 最大高度 (根据类型返回不同值)
 @property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
 
 #pragma mark UI
@@ -38,6 +31,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 /// ├── (UIView) backgroundView (lowest)
 /// ├── (UIButton) onOffButton
 /// ├── (UILabel) textLabel
+/// ├── (UILabel) detailLabel
 /// ├── (UIButton) cameraButton
 /// ├── (UIButton) switchCameraButton
 /// └── (UIButton) micButton (top)
@@ -60,6 +54,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 @synthesize backgroundView = _backgroundView;
 @synthesize onOffButton = _onOffButton;
 @synthesize textLabel = _textLabel;
+@synthesize detailLabel = _detailLabel;
 @synthesize cameraButton = _cameraButton;
 @synthesize switchCameraButton = _switchCameraButton;
 @synthesize micButton = _micButton;
@@ -96,6 +91,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         
         CGFloat textLabelY = CGRectGetMaxY(self.onOffButton.frame) + onOffButtonTextLabelPadding;
         self.textLabel.frame = CGRectMake(0, textLabelY, self.selfWidth, textLabelHeight);
+        self.detailLabel.frame = CGRectMake(0, CGRectGetMaxY(self.textLabel.frame), self.selfWidth, 14);
         
         self.micButton.frame = CGRectMake(onOffButtonX, 12.0, onOffButtonHeight, onOffButtonHeight);
         
@@ -122,8 +118,17 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 
 
 #pragma mark - [ Public Methods ]
+
+- (void)changeBarType:(PLVLCLinkMicControlBarType)barType {
+    _barType = barType;
+    [self setNeedsLayout];
+}
+
 - (void)controlBarStatusSwitchTo:(PLVLCLinkMicControlBarStatus)status{
     _status = status;
+
+    self.showRequestIndex = NO;
+    self.detailLabel.alpha = 0;
 
     if (status == PLVLCLinkMicControlBarStatus_Default) { // 默认状态，控制栏隐藏
         [self refreshSelfViewFrameAnimation];
@@ -143,8 +148,9 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         [self onOffButtonRotate:NO];
         [self onOffButtonColorChange:PLVColor_OnOffButton_Green];
         [self mediaControlButtonsShow:NO];
-
-        [self textLabelContentChange:@"申请连麦"];
+        
+        NSString *textLabelString = self.barType == PLVLCLinkMicControlBarType_Audio ? @"申请音频连麦": @"申请视频连麦";
+        [self textLabelContentChange:textLabelString];
         
         [self resetButtons];
     }else if (status == PLVLCLinkMicControlBarStatus_Waiting){ // 显示 ‘请求中...’
@@ -189,8 +195,8 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 - (void)synchControlBarState:(id<PLVLCLinkMicControlBarProtocol>)controlBar{
     if (controlBar && controlBar != self) {
         self.cameraButtonEnable = controlBar.cameraButtonEnable;
-        [self controlBarStatusSwitchTo:controlBar.status];
         self.barType = controlBar.barType;
+        [self controlBarStatusSwitchTo:controlBar.status];
         self.cameraButton.selected = controlBar.cameraButton.selected;
         self.switchCameraButton.selected = controlBar.switchCameraButton.selected;
         self.switchCameraButton.alpha = _mediaControlButtonsShow ? (self.switchCameraButton.selected ? 0.5 : 1.0) : 0.0;
@@ -218,12 +224,23 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     self.switchCameraButton.alpha = currentOpen ? 1.0 : 0.5;
 }
 
-#pragma mark Setter
-- (void)setBarType:(PLVLCLinkMicControlBarType)barType{
-    _barType = barType;
-    [self setNeedsLayout];
+- (void)updateLinkMicRequestIndex:(NSInteger)index {
+    if (self.status != PLVLCLinkMicControlBarStatus_Waiting) {
+        return;
+    }
+    
+    if (index >= 0) {
+        self.detailLabel.alpha = 1;
+        self.showRequestIndex = YES;
+        
+        NSString *numberString = index >= 50 ? @"50+" : [NSString stringWithFormat:@"%zd", index+1];
+        NSString *text = [NSString stringWithFormat:@"排队%@", numberString];
+        self.detailLabel.text = text;
+    } else {
+        self.detailLabel.alpha = 0;
+        self.showRequestIndex = NO;
+    }
 }
-
 
 #pragma mark - [ Private Methods ]
 - (void)setupData{
@@ -246,6 +263,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     [self addSubview:self.backgroundView];
     [self addSubview:self.onOffButton];
     [self addSubview:self.textLabel];
+    [self addSubview:self.detailLabel];
     [self addSubview:self.cameraButton];
     [self addSubview:self.switchCameraButton];
     [self addSubview:self.micButton];
@@ -277,25 +295,36 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 }
 
 #pragma mark Getter
-- (CGFloat)selfWidth{
-    // 业务变更时，可直接修改此文件顶部的固定值
-    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 8 : 0;// 适配iPad
-    return PLVLCLinkMicHorizontalControlBarWidth + xPadding;
-}
 
-- (CGFloat)selfHeight{
-    // 业务变更时，可直接修改此文件顶部的固定值
-    if (self.status == PLVLCLinkMicControlBarStatus_Joined) { return self.maxHeight; }
-    return PLVLCLinkMicHorizontalControlBarNormalHeight;
-}
-
-- (CGFloat)maxHeight{
-    // 业务变更时，可直接修改此文件顶部的固定值
-    if (self.barType == PLVLCLinkMicControlBarType_Audio) {
-        return PLVLCLinkMicHorizontalControlBarMaxHeight_Audio;
-    }else{
-        return PLVLCLinkMicHorizontalControlBarMaxHeight_Video;
+- (CGFloat)selfWidth {
+    CGFloat width = 0;
+    if (self.status == PLVLCLinkMicControlBarStatus_Open) {
+        width = 96.0;
+    } else {
+        width = 64.0;
     }
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 8 : 0;// 适配iPad
+    return width + xPadding;
+}
+
+- (CGFloat)selfHeight {
+    CGFloat height = 0;
+    if (self.status == PLVLCLinkMicControlBarStatus_Waiting) {
+        if (self.showRequestIndex) {
+            height = 91.0;
+        } else {
+            height = 77.0;
+        }
+    } else if (self.status == PLVLCLinkMicControlBarStatus_Joined) {
+        if (self.barType == PLVLCLinkMicControlBarType_Audio) {
+            height = 104.0;
+        }else{
+            height = 200.0;
+        }
+    } else {
+        height = 77.0;
+    }
+    return height;
 }
 
 - (UIView *)backgroundView{
@@ -324,9 +353,19 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         _textLabel.text = @"申请连麦";
         _textLabel.textAlignment = NSTextAlignmentCenter;
         _textLabel.textColor = [UIColor whiteColor];
-        _textLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
+        _textLabel.font = [UIFont systemFontOfSize:12];
     }
     return _textLabel;
+}
+
+- (UILabel *)detailLabel {
+    if (!_detailLabel) {
+        _detailLabel = [[UILabel alloc] init];
+        _detailLabel.textAlignment = NSTextAlignmentCenter;
+        _detailLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _detailLabel.font = [UIFont systemFontOfSize:10];
+    }
+    return _detailLabel;
 }
 
 - (UIButton *)cameraButton{
@@ -418,6 +457,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         weakSelf.textLabel.alpha = 0;
     } completion:^(BOOL finished) {
         weakSelf.textLabel.text = text;
+        
         if (weakSelf.status != PLVLCLinkMicControlBarStatus_Joined) {
             [UIView animateWithDuration:(totalTime / 2.0) animations:^{
                 weakSelf.textLabel.alpha = 1;

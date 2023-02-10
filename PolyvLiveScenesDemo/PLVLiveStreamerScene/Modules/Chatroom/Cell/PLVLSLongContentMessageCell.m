@@ -201,12 +201,6 @@ static CGFloat kButtonoHeight = 34.0;
         self.prohibitWordTipView.hidden = YES;
     }
     self.prohibitWordTipButton.hidden = ![model isProhibitMsg];
-    
-    [self.textView setReplyHandler:^{
-        if (weakSelf.replyHandler) {
-            weakSelf.replyHandler(model);
-        }
-    }];
 }
 
 + (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
@@ -445,7 +439,6 @@ static CGFloat kButtonoHeight = 34.0;
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        _textView.selectable = NO;
         _textView.textContainer.lineBreakMode = NSLineBreakByTruncatingTail;
         
         UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction)];

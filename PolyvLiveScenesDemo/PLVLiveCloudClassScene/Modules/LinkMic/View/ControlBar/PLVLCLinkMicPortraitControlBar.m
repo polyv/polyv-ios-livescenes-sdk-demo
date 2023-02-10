@@ -12,17 +12,8 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
-#define PLVLCLinkMicControlBar_HoverTime 5.0  // 悬停时长 (控制栏展开后，悬停多久后自动折叠)
-
-/// 固定值
-/// 高度
-static const CGFloat PLVLCLinkMicVerticalControlBarHeigth = 48.0;       // Bar 高度
-/// 宽度
-static const CGFloat PLVLCLinkMicVerticalControlBarFoldWidth = 55.0;    // Bar 折叠宽度
-static const CGFloat PLVLCLinkMicVerticalControlBarNormalWidth = 128.0; // Bar 正常宽度
-static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Video = 200.0; // Bar 最大宽度 (视频连麦类型)
-static const CGFloat PLVLCLinkMicVerticalControlBarMaxWidth_Audio = 122.0; // Bar 最大宽度 (音频连麦类型)
 static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间隔:300毫秒
+static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展开后，悬停多久后自动折叠)
 
 @interface PLVLCLinkMicPortraitControlBar () <CAAnimationDelegate>
 
@@ -33,11 +24,11 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 @property (nonatomic, assign) BOOL foldSelf;     // 当前是否折叠自身 (折叠:即不完全隐藏，留有部分可见)
 @property (nonatomic, assign) BOOL hiddenSelf;   // 当前是否隐藏自身 (隐藏:即完全隐藏，完全不可见)
 @property (nonatomic, assign) BOOL phoneRotated; // 当前电话图标是否已旋转 (NO未旋转:倾斜 YES已旋转:水平)
+@property (nonatomic, assign) BOOL showRequestIndex; // 当前是否显示连麦排序
 
 #pragma mark 数据
 @property (nonatomic, assign) CGRect rangeRect;  // 可活动的区域值
 @property (nonatomic, assign) CGPoint lastPoint; // 上一次停留的位置
-@property (nonatomic, assign, readonly) CGFloat maxWidth; // 最大宽度 (根据类型返回不同值)
 @property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
 
 #pragma mark UI
@@ -48,6 +39,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 /// ├── (UIView) backgroundView (lowest)
 /// ├── (UIButton) onOffButton
 /// ├── (UILabel) textLabel
+/// ├── (UILabel) detailLabel
 /// ├── (UIButton) cameraButton
 /// ├── (UIButton) switchCameraButton
 /// ├── (UIButton) micButton
@@ -71,6 +63,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 @synthesize backgroundView = _backgroundView;
 @synthesize onOffButton = _onOffButton;
 @synthesize textLabel = _textLabel;
+@synthesize detailLabel = _detailLabel;
 @synthesize cameraButton = _cameraButton;
 @synthesize switchCameraButton = _switchCameraButton;
 @synthesize micButton = _micButton;
@@ -101,17 +94,24 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     
     if (!fullScreen) {
         // 竖屏布局
-        [self setBackgroudViewWidth];
+        if (CGRectGetWidth(self.backgroundView.frame) == 0) {
+            self.backgroundView.frame = CGRectMake(0, 0, self.selfWidth, self.selfHeight);
+            
+            CAShapeLayer * shapeLayer = [CAShapeLayer layer];
+            shapeLayer.path = [UIBezierPath bezierPathWithRoundedRect:self.backgroundView.bounds byRoundingCorners:UIRectCornerBottomLeft | UIRectCornerTopLeft cornerRadii:CGSizeMake(25, 25)].CGPath;
+            self.backgroundView.layer.mask = shapeLayer;
+        }
 
         CGFloat onOffbuttonHeight = 32.0;
         CGFloat onOffbuttonY = (self.selfHeight - onOffbuttonHeight) / 2.0;
         self.onOffButton.frame = CGRectMake(8, onOffbuttonY, onOffbuttonHeight, onOffbuttonHeight);
         
-        CGFloat textLabelWidth = 80.0;
-        CGFloat textLabelHeight = 22.0;
+        CGFloat textLabelWidth = self.selfWidth - 40;
+        CGFloat textLabelHeight = self.showRequestIndex ? 20 : 22;
         CGFloat textLabelX = CGRectGetMaxX(self.onOffButton.frame) + 8.0;
-        CGFloat textLabelY = (self.selfHeight - textLabelHeight) / 2.0;
+        CGFloat textLabelY = self.showRequestIndex ? 6 : (self.selfHeight - textLabelHeight) / 2.0;
         self.textLabel.frame = CGRectMake(textLabelX, textLabelY, textLabelWidth, textLabelHeight);
+        self.detailLabel.frame = CGRectMake(textLabelX, textLabelY + textLabelHeight, textLabelWidth, 17);
         
         CGFloat buttonsY = (self.selfHeight - onOffbuttonHeight) / 2.0;
         if (self.barType == PLVLCLinkMicControlBarType_Audio) {
@@ -147,9 +147,19 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 
 
 #pragma mark - [ Public Methods ]
-- (void)controlBarStatusSwitchTo:(PLVLCLinkMicControlBarStatus)status{
+
+- (void)changeBarType:(PLVLCLinkMicControlBarType)barType {
+    self.barType = barType;
+    [self setNeedsLayout];
+}
+
+- (void)controlBarStatusSwitchTo:(PLVLCLinkMicControlBarStatus)status {
     _status = status;
 
+    self.showRequestIndex = NO;
+    self.detailLabel.alpha = 0;
+    self.textLabel.font = [UIFont systemFontOfSize:16];
+    
     if (status == PLVLCLinkMicControlBarStatus_Default) { // 默认状态，控制栏隐藏
         [self hiddenSelfView];
         
@@ -168,8 +178,9 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         [self onOffButtonRotate:NO];
         [self onOffButtonColorChange:PLVColor_OnOffButton_Green];
         [self mediaControlButtonsShow:NO];
-
-        [self textLabelContentChange:@"申请连麦"];
+        
+        NSString *textLabelString = self.barType == PLVLCLinkMicControlBarType_Audio ? @"申请音频连麦": @"申请视频连麦";
+        [self textLabelContentChange:textLabelString];
         
         [self resetButtons];
     }else if (status == PLVLCLinkMicControlBarStatus_Waiting){ // 显示 ‘请求中...’
@@ -223,8 +234,8 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 - (void)synchControlBarState:(id<PLVLCLinkMicControlBarProtocol>)controlBar{
     if (controlBar && controlBar != self) {
         self.cameraButtonEnable = controlBar.cameraButtonEnable;
-        [self controlBarStatusSwitchTo:controlBar.status];
         self.barType = controlBar.barType;
+        [self controlBarStatusSwitchTo:controlBar.status];
         self.cameraButton.selected = controlBar.cameraButton.selected;
         self.switchCameraButton.selected = controlBar.switchCameraButton.selected;
         self.switchCameraButton.alpha = _mediaControlButtonsShow ? (self.switchCameraButton.selected ? 0.5 : 1.0) : 0.0;
@@ -252,12 +263,27 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     self.switchCameraButton.alpha = currentOpen ? 1.0 : 0.5;
 }
 
-#pragma mark Setter
-- (void)setBarType:(PLVLCLinkMicControlBarType)barType{
-    _barType = barType;
-    [self setNeedsLayout];
+- (void)updateLinkMicRequestIndex:(NSInteger)index {
+    if (self.status != PLVLCLinkMicControlBarStatus_Waiting) {
+        return;
+    }
+    
+    if (index >= 0) {
+        self.detailLabel.alpha = 1;
+        self.textLabel.font = [UIFont systemFontOfSize:14];
+        
+        NSString *numberString = index >= 50 ? @"50+" : [NSString stringWithFormat:@"%zd", index+1];
+        NSString *text = [NSString stringWithFormat:@"排队%@", numberString];
+        self.detailLabel.text = text;
+        
+        self.showRequestIndex = YES;
+    } else {
+        self.detailLabel.alpha = 0;
+        self.textLabel.font = [UIFont systemFontOfSize:16];
+        
+        self.showRequestIndex = NO;
+    }
 }
-
 
 #pragma mark - [ Private Methods ]
 - (void)setupData{
@@ -284,6 +310,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     [self addSubview:self.backgroundView];
     [self addSubview:self.onOffButton];
     [self addSubview:self.textLabel];
+    [self addSubview:self.detailLabel];
     [self addSubview:self.cameraButton];
     [self addSubview:self.switchCameraButton];
     [self addSubview:self.micButton];
@@ -307,16 +334,6 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     _cameraButtonEnable = YES;
 }
 
-- (void)setBackgroudViewWidth{
-    if (CGRectGetWidth(self.backgroundView.frame) == 0) {
-        self.backgroundView.frame = CGRectMake(0, 0, self.maxWidth, self.selfHeight);
-        
-        CAShapeLayer * shapeLayer = [CAShapeLayer layer];
-        shapeLayer.path = [UIBezierPath bezierPathWithRoundedRect:self.backgroundView.bounds byRoundingCorners:UIRectCornerBottomLeft | UIRectCornerTopLeft cornerRadii:CGSizeMake(25, 25)].CGPath;
-        _backgroundView.layer.mask = shapeLayer;
-    }
-}
-
 - (void)readRangeRect{
     if (@available(iOS 11.0, *)) {
         CGRect safeRect = self.superview.safeAreaLayoutGuide.layoutFrame;
@@ -332,31 +349,32 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 }
 
 #pragma mark Getter
-- (CGFloat)selfWidth{
-    // 业务变更时，可直接修改此文件顶部的固定值
-    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 4 : 0;// 适配iPad
-    CGFloat w = PLVLCLinkMicVerticalControlBarNormalWidth + xPadding;
-    if (_foldSelf) {
-        w = PLVLCLinkMicVerticalControlBarFoldWidth + xPadding;
-    } else if(_status == PLVLCLinkMicControlBarStatus_Joined){
-        w = self.maxWidth;
+
+- (CGFloat)selfWidth {
+    CGFloat w = 0;
+    if (_foldSelf) { // 折叠时
+        w = 55.0;
+    } else {
+        if(_status == PLVLCLinkMicControlBarStatus_Open) { // 显示‘申请连麦’时
+            w = 160.0;
+        } else if (self.status == PLVLCLinkMicControlBarStatus_Waiting) { // 显示‘请求中’时
+            w = 114.0;
+        } else if(_status == PLVLCLinkMicControlBarStatus_Joined) { // 已连麦时
+            if (self.barType == PLVLCLinkMicControlBarType_Audio) { // 音频连麦
+                w = 122.0;
+            } else { // 视频连麦
+                w = 200.0;
+            }
+        } else { // 默认状态下，假设为最大宽度
+            w = 200.0;
+        }
     }
-    return w;
+    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 4 : 0;// 适配iPad
+    return w + xPadding;
 }
 
-- (CGFloat)maxWidth{
-    // 业务变更时，可直接修改此文件顶部的固定值
-    CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 4 : 0;// 适配iPad
-    if (self.barType == PLVLCLinkMicControlBarType_Audio) {
-        return PLVLCLinkMicVerticalControlBarMaxWidth_Audio + xPadding;
-    }else{
-        return PLVLCLinkMicVerticalControlBarMaxWidth_Video + xPadding;
-    }
-}
-
-- (CGFloat)selfHeight{
-    // 业务变更时，可直接修改此文件顶部的固定值
-    return PLVLCLinkMicVerticalControlBarHeigth;
+- (CGFloat)selfHeight {
+    return 48.0;
 }
 
 - (UIView *)backgroundView{
@@ -385,9 +403,19 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         _textLabel.text = @"申请连麦";
         _textLabel.textAlignment = NSTextAlignmentLeft;
         _textLabel.textColor = [UIColor whiteColor];
-        _textLabel.font = [UIFont fontWithName:@"PingFang SC" size:16];
+        _textLabel.font = [UIFont systemFontOfSize:16];
     }
     return _textLabel;
+}
+
+- (UILabel *)detailLabel {
+    if (!_detailLabel) {
+        _detailLabel = [[UILabel alloc] init];
+        _detailLabel.textAlignment = NSTextAlignmentLeft;
+        _detailLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _detailLabel.font = [UIFont systemFontOfSize:12];
+    }
+    return _detailLabel;
 }
 
 - (UIButton *)cameraButton{
@@ -557,6 +585,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         weakSelf.textLabel.alpha = 0;
     } completion:^(BOOL finished) {
         weakSelf.textLabel.text = text;
+        
         if (weakSelf.status != PLVLCLinkMicControlBarStatus_Joined) {
             [UIView animateWithDuration:(totalTime / 2.0) animations:^{
                 weakSelf.textLabel.alpha = 1;
@@ -614,7 +643,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 - (void)startHideSelfViewTimer{
     if (_timer) { [self stopFoldSelfViewTimer]; }
     PLVFWeakProxy * weakProxy = [PLVFWeakProxy proxyWithTarget:self];
-    _timer = [NSTimer scheduledTimerWithTimeInterval:PLVLCLinkMicControlBar_HoverTime target:weakProxy selector:@selector(timerEvent:) userInfo:nil repeats:NO];
+    _timer = [NSTimer scheduledTimerWithTimeInterval:kLinkMicControlBarHoverTime target:weakProxy selector:@selector(timerEvent:) userInfo:nil repeats:NO];
     [[NSRunLoop currentRunLoop] addTimer:_timer forMode:NSRunLoopCommonModes];
 }
 

@@ -165,13 +165,6 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         self.prohibitWordTipView.hidden = YES;
     }
     
-    __weak typeof(self) weakSelf = self;
-    [self.textView setReplyHandler:^{
-        if (weakSelf.replyHandler) {
-            weakSelf.replyHandler(model);
-        }
-    }];
-    
     // 检查发送状态
     if (self.model.msgState == PLVChatMsgStateSending) {
         [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(checkSendState) object:nil];

@@ -31,6 +31,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView alertLongContentMessage:(PLVChatModel *)model;
 
+/// 在点击回复某条消息时
+/// @param model 被引用回复的消息模型
+- (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView didTapReplyMessage:(PLVChatModel *)model;
+
 @end
 
 NS_ASSUME_NONNULL_END

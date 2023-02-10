@@ -1091,8 +1091,13 @@ PLVLCLandscapeMessagePopupViewDelegate
     self.chatLandscapeView.hidden = !showDanmu;
 }
 
-- (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaSendChatContent:(NSString *)chatContent {
-    [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:chatContent];
+- (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView
+           userWannaSendChatContent:(NSString *)chatContent
+                         replyModel:(PLVChatModel *)replyModel {
+    BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:chatContent replyChatModel:replyModel];
+    if (!success) {
+        [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+    }
 }
 
 - (void)plvLCLiveRoomPlayerSkinViewRewardButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
@@ -1385,6 +1390,10 @@ PLVLCLandscapeMessagePopupViewDelegate
         popupView.delegate = self;
         [popupView showOnView:self.popoverView];
     }
+}
+
+- (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView didTapReplyMessage:(PLVChatModel *)model {
+    [self.liveRoomSkinView didTapReplyChatModel:model];
 }
 
 #pragma mark PLVLCMessagePopupViewDelegate

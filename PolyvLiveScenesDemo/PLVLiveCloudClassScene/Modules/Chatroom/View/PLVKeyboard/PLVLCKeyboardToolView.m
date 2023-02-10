@@ -12,6 +12,8 @@
 #import "PLVLCKeyboardMoreView.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
+#import "PLVChatModel.h"
+#import "PLVLCRepliedMsgView.h"
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
@@ -63,6 +65,10 @@ PLVLCKeyboardMoreViewDelegate
 @property (nonatomic, assign) BOOL changingToolState;
 //textView 的点击手势 当处于表情面板时点击切换输入法面板
 @property (nonatomic, strong) UITapGestureRecognizer *tapGesture;
+/// 引用回复消息
+@property (nonatomic, strong) PLVChatModel * _Nullable replyModel;
+/// 显示被引用回复消息UI
+@property (nonatomic, strong) PLVLCRepliedMsgView * _Nullable replyModelView;
 
 @end
 
@@ -242,13 +248,19 @@ PLVLCKeyboardMoreViewDelegate
         [self.textView resignFirstResponder];
     }
     
+    if (toolState != PLVLCKeyboardToolStateEmojiboard && toolState != PLVLCKeyboardToolStateKeyboard) {
+        [self updateReplyModel:nil];
+    }
+    
     _toolState = toolState;
     
     if (_toolState == PLVLCKeyboardToolStateNormal) {
         [self animateRemoveFromWindow];
-    } else if (_toolState != PLVLCKeyboardToolStateKeyboard) {
-        [self animateAddToWindow];
-    } else if (_toolState == PLVLCKeyboardToolStateKeyboard && originState == PLVLCKeyboardToolStateEmojiboard) {
+    } else if (_toolState == PLVLCKeyboardToolStateKeyboard) {
+        if (originState == PLVLCKeyboardToolStateEmojiboard) {
+            [self animateAddToWindow];
+        }
+    } else if (_toolState == PLVLCKeyboardToolStateEmojiboard || _toolState == PLVLCKeyboardToolStateMoreboard) {
         [self animateAddToWindow];
     }
     self.changingToolState = NO;
@@ -370,6 +382,13 @@ PLVLCKeyboardMoreViewDelegate
     }
 }
 
+- (void)replyChatModel:(PLVChatModel *)model {
+    [self updateReplyModel:model];
+    
+    self.toolState = PLVLCKeyboardToolStateKeyboard;
+    [self.textView becomeFirstResponder];
+}
+
 #pragma mark - Private Method
 - (void)updateUI {
     [self updateTextViewAndButton];
@@ -415,6 +434,10 @@ PLVLCKeyboardMoreViewDelegate
             boardHeight = weakSelf.bottomHeight;
         }
         weakSelf.frame = CGRectMake(0, kScreenHeight - selfRect.size.height - boardHeight + weakSelf.bottomHeight, boardWidth, selfRect.size.height);
+        if (weakSelf.replyModelView) {
+            CGFloat replyModelViewHeight = weakSelf.replyModelView.viewHeight;
+            weakSelf.replyModelView.frame = CGRectMake(0, weakSelf.frame.origin.y - replyModelViewHeight, boardWidth, replyModelViewHeight);
+        }
     }];
 }
 
@@ -442,6 +465,7 @@ PLVLCKeyboardMoreViewDelegate
     }
     // 将各个视图添加到主窗口
     [window addSubview:self.gestureView];
+    [window addSubview:self.replyModelView];
     [window addSubview:self];
     [window addSubview:self.moreboard];
     [window addSubview:self.emojiboard];
@@ -486,10 +510,12 @@ PLVLCKeyboardMoreViewDelegate
 /// 触发发送消息回调，隐藏面板
 - (void)sendTextAndClearTextView {
     if (self.textView.attributedText.length > 0) {
-        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:sendText:)]) {
-            NSString *text = [self.textView plvTextForRange:NSMakeRange(0, self.textView.attributedText.length)];
-            [self.delegate keyboardToolView:self sendText:text];
+        NSString *text = [self.textView plvTextForRange:NSMakeRange(0, self.textView.attributedText.length)];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:sendText:replyModel:)]) {
+            [self.delegate keyboardToolView:self sendText:text replyModel:self.replyModel];
         }
+        
+        [self updateReplyModel:nil];
     }
     [self tapAction:nil];
     [self.textView clearText];
@@ -531,6 +557,22 @@ PLVLCKeyboardMoreViewDelegate
         }
         [self setToolState:PLVLCKeyboardToolStateNormal];
     });
+}
+
+- (void)updateReplyModel:(PLVChatModel *)model {
+    self.replyModel = model;
+    
+    if (self.replyModel) {
+        self.replyModelView = [[PLVLCRepliedMsgView alloc] initWithChatModel:model];
+        __weak typeof(self) weakSelf = self;
+        [self.replyModelView setCloseButtonHandler:^{
+            [weakSelf updateReplyModel:nil];
+        }];
+        self.replyModelView.frame = CGRectMake(0, CGRectGetMinY(self.frame), CGRectGetWidth(self.frame), self.replyModelView.viewHeight);
+    } else {
+        [self.replyModelView removeFromSuperview];
+        self.replyModelView = nil;
+    }
 }
 
 #pragma mark - NSNotification

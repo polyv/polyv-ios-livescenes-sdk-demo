@@ -10,6 +10,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVChatModel;
+
 @protocol PLVLCLiveRoomLandscapeInputViewDelegate;
 
 /// 直播间横屏输入视图
@@ -20,11 +22,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)showInputView:(BOOL)show;
 
+/// 显示引用回复某条消息的输入视图
+- (void)showWithReplyChatModel:(PLVChatModel *)model;
+
 @end
 
 @protocol PLVLCLiveRoomLandscapeInputViewDelegate <NSObject>
 
-- (void)plvLCLiveRoomLandscapeInputView:(PLVLCLiveRoomLandscapeInputView *)inputView SendButtonClickedWithSendContent:(NSString *)sendContent;
+- (void)plvLCLiveRoomLandscapeInputView:(PLVLCLiveRoomLandscapeInputView *)inputView
+       SendButtonClickedWithSendContent:(NSString *)sendContent
+                             replyModel:(PLVChatModel *)replyModel;
 
 @end
 

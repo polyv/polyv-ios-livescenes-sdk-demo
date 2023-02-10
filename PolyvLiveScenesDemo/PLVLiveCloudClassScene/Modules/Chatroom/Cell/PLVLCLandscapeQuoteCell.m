@@ -11,16 +11,10 @@
 #import "PLVPhotoBrowser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
-#import <PLVLiveScenesSDK/PLVQuoteMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLandscapeQuoteCell ()
-
-#pragma mark 数据
-
-@property (nonatomic, strong) PLVChatModel *model; /// 消息数据模型
-@property (nonatomic, assign) CGFloat cellWidth; /// cell宽度
-@property (nonatomic, strong) NSString *loginUserId; /// 登录用户的聊天室userId
 
 #pragma mark UI
 
@@ -28,21 +22,20 @@
 @property (nonatomic, strong) UIView *line; /// 引用消息与回复消息分割线
 @property (nonatomic, strong) UILabel *quoteContentLabel; /// 被引用的消息文本（如果为图片消息，label不可见）
 @property (nonatomic, strong) UIImageView *quoteImageView; /// 被引用的消息图片（如果为文本消息，imageView不可见）
-@property (nonatomic, strong) UIView *bubbleView; /// 背景气泡
 @property (nonatomic, strong) PLVPhotoBrowser *photoBrowser; /// 消息图片Browser
 
 @end
 
 @implementation PLVLCLandscapeQuoteCell
 
-#pragma mark - Life Cycle
+#pragma mark - [ Life Cycle ]
 
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
+        self.allowCopy = YES;
+        self.allowReply = YES;
         
-        [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.textView];
         [self.contentView addSubview:self.line];
         [self.contentView addSubview:self.quoteContentLabel];
@@ -107,54 +100,7 @@
     return MAX(textViewContentWidth, MAX(quoteContentWidth, quoteImageWidth));
 }
 
-#pragma mark - Getter
-
-- (UIView *)bubbleView {
-    if (!_bubbleView) {
-        _bubbleView = [[UIView alloc] init];
-        _bubbleView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
-        _bubbleView.layer.cornerRadius = 14.0;
-        _bubbleView.layer.masksToBounds = YES;
-    }
-    return _bubbleView;
-}
-
-- (PLVChatTextView *)textView {
-    if (!_textView) {
-        _textView = [[PLVChatTextView alloc] init];
-        _textView.showMenu = YES;
-    }
-    return _textView;
-}
-
-- (UIView *)line {
-    if (!_line) {
-        _line = [[UIView alloc] init];
-        _line.backgroundColor = [UIColor colorWithWhite:0 alpha:0.12];
-    }
-    return _line;
-}
-
-- (UILabel *)quoteContentLabel {
-    if (!_quoteContentLabel) {
-        _quoteContentLabel = [[UILabel alloc] init];
-        _quoteContentLabel.numberOfLines = 2;
-    }
-    return _quoteContentLabel;
-}
-
-- (UIImageView *)quoteImageView {
-    if (!_quoteImageView) {
-        _quoteImageView = [[UIImageView alloc] init];
-        _quoteImageView.userInteractionEnabled = YES;
-        
-        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapImageViewAction)];
-        [_quoteImageView addGestureRecognizer:tapGesture];
-    }
-    return _quoteImageView;
-}
-
-#pragma mark - UI
+#pragma mark - [ Public Method ]
 
 - (void)updateWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
     if (![PLVLCLandscapeQuoteCell isModelValid:model] || cellWidth == 0) {
@@ -164,16 +110,13 @@
     
     self.cellWidth = cellWidth;
     self.model = model;
-    if (loginUserId && [loginUserId isKindOfClass:[NSString class]] && loginUserId.length > 0) {
-        self.loginUserId = loginUserId;
-    }
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
     NSMutableAttributedString *contentLabelString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     NSAttributedString *quoteLabelString = [PLVLCLandscapeQuoteCell quoteContentAttributedStringWithMessage:message
-                                                                                                loginUserId:self.loginUserId];
+                                                                                                loginUserId:loginUserId];
     self.quoteContentLabel.attributedText = quoteLabelString;
     
     NSURL *quoteImageURL = [PLVLCLandscapeQuoteCell quoteImageURLWithMessage:message];
@@ -184,7 +127,47 @@
     }
 }
 
-#pragma mark UI - ViewModel
++ (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
+    if (![PLVLCLandscapeQuoteCell isModelValid:model] || cellWidth == 0) {
+        return 0;
+    }
+    
+    CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
+    CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
+    
+    PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+    CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    
+    NSAttributedString *quoteLabelString = [PLVLCLandscapeQuoteCell quoteContentAttributedStringWithMessage:message loginUserId:loginUserId];
+    CGSize quoteContentSize = [quoteLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, 44) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    CGFloat quoteContentHeight = quoteContentSize.height;
+    
+    CGFloat quoteImageHeight = 0;
+    NSURL *quoteImageURL = [PLVLCLandscapeQuoteCell quoteImageURLWithMessage:model.message];
+    if (quoteImageURL) {
+        CGSize quoteImageViewSize = [PLVLCLandscapeQuoteCell calculateImageViewSizeWithMessage:model.message];
+        quoteImageHeight = quoteImageViewSize.height;
+    }
+    
+    return 4 + contentLabelSize.height + 4 + 1 + 4 + quoteContentHeight + (quoteImageURL ? 4 + quoteImageHeight : 0) + 4 + 5; // 气泡底部外间距为5
+}
+
++ (BOOL)isModelValid:(PLVChatModel *)model {
+    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return NO;
+    }
+    
+    id message = model.message;
+    if (message &&
+        [message isKindOfClass:[PLVQuoteMessage class]]) {
+        return model.contentLength == PLVChatMsgContentLength_0To500;
+    } else {
+        return NO;
+    }
+}
+
+#pragma mark - [ Private Methods ]
 
 /// 获取消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVQuoteMessage *)message
@@ -244,34 +227,6 @@
     return [NSURL URLWithString:imageUrl];
 }
 
-#pragma mark - 高度、尺寸计算
-
-+ (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
-    if (![PLVLCLandscapeQuoteCell isModelValid:model] || cellWidth == 0) {
-        return 0;
-    }
-    
-    CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
-    CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
-    
-    PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
-    CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-    
-    NSAttributedString *quoteLabelString = [PLVLCLandscapeQuoteCell quoteContentAttributedStringWithMessage:message loginUserId:loginUserId];
-    CGSize quoteContentSize = [quoteLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, 44) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-    CGFloat quoteContentHeight = quoteContentSize.height;
-    
-    CGFloat quoteImageHeight = 0;
-    NSURL *quoteImageURL = [PLVLCLandscapeQuoteCell quoteImageURLWithMessage:model.message];
-    if (quoteImageURL) {
-        CGSize quoteImageViewSize = [PLVLCLandscapeQuoteCell calculateImageViewSizeWithMessage:model.message];
-        quoteImageHeight = quoteImageViewSize.height;
-    }
-    
-    return 4 + contentLabelSize.height + 4 + 1 + 4 + quoteContentHeight + (quoteImageURL ? 4 + quoteImageHeight : 0) + 4 + 5; // 气泡底部外间距为5
-}
-
 /// 计算被引用消息图片尺寸
 + (CGSize)calculateImageViewSizeWithMessage:(PLVQuoteMessage *)message {
     CGSize quoteImageSize = message.quoteImageSize;
@@ -293,27 +248,54 @@
     }
 }
 
-#pragma mark - Action
+#pragma mark Getter
+
+- (PLVChatTextView *)textView {
+    if (!_textView) {
+        _textView = [[PLVChatTextView alloc] init];
+    }
+    return _textView;
+}
+
+- (UIView *)line {
+    if (!_line) {
+        _line = [[UIView alloc] init];
+        _line.backgroundColor = [UIColor colorWithWhite:0 alpha:0.12];
+    }
+    return _line;
+}
+
+- (UILabel *)quoteContentLabel {
+    if (!_quoteContentLabel) {
+        _quoteContentLabel = [[UILabel alloc] init];
+        _quoteContentLabel.numberOfLines = 2;
+    }
+    return _quoteContentLabel;
+}
+
+- (UIImageView *)quoteImageView {
+    if (!_quoteImageView) {
+        _quoteImageView = [[UIImageView alloc] init];
+        _quoteImageView.userInteractionEnabled = YES;
+        
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapImageViewAction)];
+        [_quoteImageView addGestureRecognizer:tapGesture];
+    }
+    return _quoteImageView;
+}
+
+#pragma mark - [ Event ]
+
+#pragma mark Action
+
+- (void)customCopy:(id)sender {
+    UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
+    PLVQuoteMessage *message = self.model.message;
+    pasteboard.string = message.content;
+}
 
 - (void)tapImageViewAction {
     [self.photoBrowser scaleImageViewToFullScreen:self.quoteImageView];
-}
-
-#pragma mark - Utils
-
-/// 判断model是否为有效类型
-+ (BOOL)isModelValid:(PLVChatModel *)model {
-    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
-        return NO;
-    }
-    
-    id message = model.message;
-    if (message &&
-        [message isKindOfClass:[PLVQuoteMessage class]]) {
-        return model.contentLength == PLVChatMsgContentLength_0To500;
-    } else {
-        return NO;
-    }
 }
 
 @end

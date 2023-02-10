@@ -12,6 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVChatModel;
+
 @protocol PLVLCLiveRoomPlayerSkinViewDelegate;
 
 /// 直播间播放器皮肤视图 (用于 横屏时 显示)
@@ -68,6 +70,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///  @param focusMode YES开启 NO 不关闭
 - (void)changeFocusModeStatus:(BOOL)focusMode;
 
+/// 点击回复某条消息
+- (void)didTapReplyChatModel:(PLVChatModel *)model;
+
 @end
 
 @protocol PLVLCLiveRoomPlayerSkinViewDelegate <NSObject>
@@ -76,7 +81,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaShowDanmu:(BOOL)showDanmu;
 
-- (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaSendChatContent:(NSString *)chatContent;
+- (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView
+           userWannaSendChatContent:(NSString *)chatContent
+                         replyModel:(PLVChatModel *)replyModel;
 
 - (void)plvLCLiveRoomPlayerSkinViewRewardButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
 

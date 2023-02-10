@@ -57,14 +57,13 @@ typedef NS_ENUM(NSUInteger, PLVLCLinkMicControlBarType) {
 @property (nonatomic, weak) id <PLVLCLinkMicControlBarDelegate> delegate;
 /// 是否可移动 (默认为 YES)
 @property (nonatomic, assign) BOOL canMove;
-/// 连麦控制栏类型
-@property (nonatomic, assign) PLVLCLinkMicControlBarType barType;
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL switchCameraButtonFront; // ’切换前后置摄像头按钮‘ 的当前前后置状态值 (NO:当前后置 YES:当前前置)
 @property (nonatomic, assign) BOOL mediaControlButtonsShow; // 媒体控制按钮当前是否显示
 @property (nonatomic, assign) BOOL cameraButtonEnable; // 摄像头按钮当前是否可点击(NO:当前分屏模式下视频连麦不可点击 YES：当前可点击)
 @property (nonatomic, assign) PLVLCLinkMicControlBarStatus status; // 当前连麦控制栏的状态
+@property (nonatomic, assign) PLVLCLinkMicControlBarType barType; // 连麦控制栏类型
 
 #pragma mark 数据
 @property (nonatomic, assign) CGFloat selfWidth;  // 自身当前的宽度 (目标效果不同时，读取此值得到的数值也相应不同)
@@ -74,13 +73,22 @@ typedef NS_ENUM(NSUInteger, PLVLCLinkMicControlBarType) {
 @property (nonatomic, strong) UIView * backgroundView; // 背景视图 (负责展示 圆角效果、控制栏背景色)
 @property (nonatomic, strong) UIButton * onOffButton;  // 连麦开关按钮 (申请、挂点连麦的开关按钮)
 @property (nonatomic, strong) UILabel * textLabel;     // 当前状态文本框 (负责展示 ‘申请连麦’、‘请求中’)
+@property (nonatomic, strong) UILabel * detailLabel;     // 详细状态文本框 (负责展示连麦排序 ‘排队50+’)
 @property (nonatomic, strong) UIButton * cameraButton; // 摄像头按钮 (点击 将回调 ‘开关摄像头’ 事件)
 @property (nonatomic, strong) UIButton * switchCameraButton; // 切换前后摄像头按钮 (点击 将回调 ‘切换前后摄像头’ 事件)
 @property (nonatomic, strong) UIButton * micButton;    // 麦克风按钮 (点击 将回调 ‘开关麦克风’ 事件)
 
 #pragma mark 方法
-/// 连麦控制栏 切换状态
+
+/// 更新连麦控制栏类型
 ///
+/// 更新后，控制栏的样式将更新至相应的 UI 样式。
+/// 
+/// @param barType 连麦控制栏类型
+- (void)changeBarType:(PLVLCLinkMicControlBarType)barType;
+
+/// 连麦控制栏 切换状态
+
 /// 切换过程中，控制栏的样式，将更新至相应的 UI 样式。
 ///
 /// @param status 需要切换至的状态类型
@@ -113,6 +121,9 @@ typedef NS_ENUM(NSUInteger, PLVLCLinkMicControlBarType) {
 ///
 /// @param toCameraOpen ’摄像头按钮’ 的开启关闭目标值
 - (void)changeCameraButtonOpenUIWithoutEvent:(BOOL)toCameraOpen;
+
+/// 显示连麦排序
+- (void)updateLinkMicRequestIndex:(NSInteger)index;
 
 @optional
 #pragma mark UI Optional

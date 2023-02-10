@@ -472,7 +472,6 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 - (PLVChatTextView *)textView {
     if (!_textView) {
         _textView = [[PLVChatTextView alloc] init];
-        _textView.selectable = NO;
         _textView.textContainer.lineBreakMode = NSLineBreakByTruncatingTail;
     }
     return _textView;

@@ -9,19 +9,10 @@
 #import "PLVLCLandscapeFileCell.h"
 #import "PLVChatTextView.h"
 #import "PLVLCUtils.h"
-#import <PLVLiveScenesSDK/PLVFileMessage.h>
-#import <PLVFoundationSDK/PLVColorUtil.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLandscapeFileCell ()
-
-#pragma mark 数据
-
-/// 消息数据模型
-@property (nonatomic, strong) PLVFileMessage *fileMessage;
-/// cell宽度
-@property (nonatomic, assign) CGFloat cellWidth;
-/// 登录用户的聊天室userId
-@property (nonatomic, strong) NSString *loginUserId;
 
 #pragma mark UI
 
@@ -29,8 +20,6 @@
 @property (nonatomic, strong) PLVChatTextView *textView;
 /// 文件类型图片
 @property (nonatomic, strong) UIImageView *fileImageView;
-/// 背景气泡
-@property (nonatomic, strong) UIView *bubbleView;
 /// 手势视图
 @property (nonatomic, strong) UIView *tapGestureView;
 
@@ -38,11 +27,11 @@
 
 @implementation PLVLCLandscapeFileCell
 
+#pragma mark - [ Life Cycle ]
+
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
-        [self.contentView addSubview:self.bubbleView];
         [self.contentView addSubview:self.textView];
         [self.contentView addSubview:self.fileImageView];
         [self.contentView addSubview:self.tapGestureView];
@@ -76,50 +65,7 @@
     self.tapGestureView.frame = CGRectMake(0, 0, bubbleSize.width, bubbleSize.height);
 }
 
-#pragma mark - Getter
-
-- (UIView *)bubbleView {
-    if (!_bubbleView) {
-        _bubbleView = [[UIView alloc] init];
-        _bubbleView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
-        _bubbleView.layer.cornerRadius = 14.0;
-        _bubbleView.layer.masksToBounds = YES;
-    }
-    return _bubbleView;
-}
-
-- (PLVChatTextView *)textView {
-    if (!_textView) {
-        _textView = [[PLVChatTextView alloc] init];
-        _textView.showMenu = YES;
-        _textView.textContainer.maximumNumberOfLines = 3;
-        _textView.textContainer.lineBreakMode = NSLineBreakByTruncatingMiddle;
-    }
-    return _textView;
-}
-
-- (UIImageView *)fileImageView {
-    if (!_fileImageView) {
-        _fileImageView = [[UIImageView alloc] init];
-        _fileImageView.layer.masksToBounds = YES;
-        _fileImageView.userInteractionEnabled = NO;
-        _fileImageView.contentMode = UIViewContentModeScaleAspectFill;
-    }
-    return _fileImageView;
-}
-
-- (UIView *)tapGestureView {
-    if (!_tapGestureView) {
-        _tapGestureView = [[UIView alloc] init];
-        _tapGestureView.backgroundColor = [UIColor clearColor];
-        _tapGestureView.userInteractionEnabled = YES;
-        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureViewAction)];
-        [_tapGestureView addGestureRecognizer:tap];
-    }
-    return _tapGestureView;
-}
-
-#pragma mark - UI
+#pragma mark - [ Public Method ]
 
 - (void)updateWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
     if (![PLVLCLandscapeFileCell isModelValid:model] || cellWidth == 0) {
@@ -128,20 +74,52 @@
     }
     
     self.cellWidth = cellWidth;
-    
-    if (loginUserId && [loginUserId isKindOfClass:[NSString class]] && loginUserId.length > 0) {
-        self.loginUserId = loginUserId;
-    }
+    self.model = model;
     
     PLVFileMessage *message = (PLVFileMessage *)model.message;
-    self.fileMessage = message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId];
+    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
     [self.textView setContent:contentLabelString showUrl:NO];
     UIImage *fileImageView = [PLVLCLandscapeFileCell imageWithMessage:model.message];
     [self.fileImageView setImage:fileImageView];
 }
 
-#pragma mark UI - ViewModel
++ (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
+    if (![PLVLCLandscapeFileCell isModelValid:model] || cellWidth == 0) {
+        return 0;
+    }
+    
+    CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
+    CGFloat bubbleYPadding = 8.0; // 气泡与textView的上下内间距
+    CGFloat imageViewWidth = 40;
+    CGFloat imageViewHeight = 48;
+    CGFloat maxTextViewWidth = cellWidth - imageViewWidth - xPadding * 3;
+    
+    PLVFileMessage *message = (PLVFileMessage *)model.message;
+    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+    
+    PLVChatTextView *textView = [[PLVChatTextView alloc]init];
+    textView.textContainer.maximumNumberOfLines = 3;
+    textView.attributedText = contentLabelString;
+    [textView setContent:contentLabelString showUrl:NO];
+    CGSize contentLabelSize = [textView sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
+    CGFloat bubbleHeight = MAX(contentLabelSize.height, imageViewHeight + bubbleYPadding * 2);
+    
+    return bubbleHeight + 5; // 气泡底部外间距为5
+}
+
++ (BOOL)isModelValid:(PLVChatModel *)model {
+    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return NO;
+    }
+    
+    id message = model.message;
+    if (!message || ![message isKindOfClass:[PLVFileMessage class]]) {
+        return NO;
+    }
+    return YES;
+}
+
+#pragma mark - [ Private Methods ]
 
 /// 获取消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVFileMessage *)message
@@ -190,53 +168,48 @@
     return [PLVLCUtils imageForChatroomResource:fileImageString];
 }
 
-#pragma mark - 高度计算
+#pragma mark Getter
 
-+ (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {
-    if (![PLVLCLandscapeFileCell isModelValid:model] || cellWidth == 0) {
-        return 0;
+- (PLVChatTextView *)textView {
+    if (!_textView) {
+        _textView = [[PLVChatTextView alloc] init];
+        _textView.textContainer.maximumNumberOfLines = 3;
+        _textView.textContainer.lineBreakMode = NSLineBreakByTruncatingMiddle;
     }
-    
-    CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
-    CGFloat bubbleYPadding = 8.0; // 气泡与textView的上下内间距
-    CGFloat imageViewWidth = 40;
-    CGFloat imageViewHeight = 48;
-    CGFloat maxTextViewWidth = cellWidth - imageViewWidth - xPadding * 3;
-    
-    PLVFileMessage *message = (PLVFileMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
-    
-    PLVChatTextView *textView = [[PLVChatTextView alloc]init];
-    textView.textContainer.maximumNumberOfLines = 3;
-    textView.attributedText = contentLabelString;
-    [textView setContent:contentLabelString showUrl:NO];
-    CGSize contentLabelSize = [textView sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
-    CGFloat bubbleHeight = MAX(contentLabelSize.height, imageViewHeight + bubbleYPadding * 2);
-    
-    return bubbleHeight + 5; // 气泡底部外间距为5
+    return _textView;
 }
 
-#pragma mark - Action
+- (UIImageView *)fileImageView {
+    if (!_fileImageView) {
+        _fileImageView = [[UIImageView alloc] init];
+        _fileImageView.layer.masksToBounds = YES;
+        _fileImageView.userInteractionEnabled = NO;
+        _fileImageView.contentMode = UIViewContentModeScaleAspectFill;
+    }
+    return _fileImageView;
+}
+
+- (UIView *)tapGestureView {
+    if (!_tapGestureView) {
+        _tapGestureView = [[UIView alloc] init];
+        _tapGestureView.backgroundColor = [UIColor clearColor];
+        _tapGestureView.userInteractionEnabled = YES;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureViewAction)];
+        [_tapGestureView addGestureRecognizer:tap];
+    }
+    return _tapGestureView;
+}
+
+#pragma mark - [ Event ]
+
+#pragma mark Action
 
 - (void)tapGestureViewAction {
-    NSString *url = self.fileMessage.url;
+    PLVFileMessage *message = (PLVFileMessage *)self.model.message;
+    NSString *url = message.url;
     if ([PLVFdUtil checkStringUseable:url]) {
         [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
     }
-}
-
-#pragma mark - Utils
-
-+ (BOOL)isModelValid:(PLVChatModel *)model {
-    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
-        return NO;
-    }
-    
-    id message = model.message;
-    if (!message || ![message isKindOfClass:[PLVFileMessage class]]) {
-        return NO;
-    }
-    return YES;
 }
 
 @end

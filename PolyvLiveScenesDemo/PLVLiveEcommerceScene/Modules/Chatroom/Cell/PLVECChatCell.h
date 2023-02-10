@@ -7,19 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
-
-@class PLVChatModel;
+#import "PLVECChatBaseCell.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface PLVECChatCell : UITableViewCell
-
-- (void)updateWithModel:(PLVChatModel *)model cellWidth:(CGFloat)cellWidth;
-
-+ (CGFloat)cellHeightWithModel:(PLVChatModel *)model cellWidth:(CGFloat)cellWidth;
-
-/// 判断model是否为有效类型
-+ (BOOL)isModelValid:(PLVChatModel *)model;
+@interface PLVECChatCell : PLVECChatBaseCell
 
 @end
 

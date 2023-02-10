@@ -127,6 +127,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return sendSuccess;
 }
 
+- (BOOL)sendSpeakMessage:(NSString *)content replyChatModel:(PLVChatModel *)replyChatModel {
+    PLVChatModel *model = [self.presenter sendSpeakMessage:content replyChatModel:replyChatModel];
+    BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
+    if (sendSuccess) {
+        [self addPublicChatModel:model];
+    }
+    return sendSuccess;
+}
+
 - (BOOL)sendGiftMessageWithData:(NSDictionary *)data tip:(NSString *)tip {
     PLVChatModel *chatModel = [self sendCustomMessageWithEvent:@"GiftMessage" data:data tip:tip emitMode:1];
     if (chatModel) {

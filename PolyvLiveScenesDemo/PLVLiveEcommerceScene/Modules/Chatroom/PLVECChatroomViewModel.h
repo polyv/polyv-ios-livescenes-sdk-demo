@@ -114,6 +114,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
 - (BOOL)sendSpeakMessage:(NSString *)content;
 
+/// 发送文本消息
+/// @param content 消息文本
+/// @param replyChatModel 回复消息模型（非回复消息该字段为nil）
+/// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
+- (BOOL)sendSpeakMessage:(NSString *)content replyChatModel:(PLVChatModel *)replyChatModel;
+
 /// 发送礼物消息
 /// @param data 礼物消息data字段
 /// @param tip 礼物消息tip字段

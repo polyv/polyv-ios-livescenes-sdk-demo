@@ -15,7 +15,6 @@
 #import "PLVPhotoBrowser.h"
 
 // 模块
-#import "PLVChatModel.h"
 #import "PLVChatUser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVRoomDataManager.h"
@@ -26,15 +25,7 @@
 
 @interface PLVECChatCell ()
 
-@property (nonatomic, strong) PLVChatModel *model;
-
-@property (nonatomic, assign) CGFloat cellWidth;
-
-@property (nonatomic, strong) UILabel *chatLabel;
-
 @property (nonatomic, strong) UIImageView *chatImageView;
-
-@property (nonatomic, strong) UIView *bubbleView;
 
 @property (nonatomic, strong) PLVPhotoBrowser *photoBrowser;
 
@@ -51,10 +42,6 @@
 - (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
-        self.backgroundColor = [UIColor clearColor];
-        
-        [self.contentView addSubview:self.bubbleView];
-        [self.contentView addSubview:self.chatLabel];
         [self.contentView addSubview:self.chatImageView];
         [self.contentView addSubview:self.fileImageView];
         [self.contentView addSubview:self.tapGestureView];
@@ -115,25 +102,6 @@
 
 #pragma mark - Getter
 
-- (UIView *)bubbleView {
-    if (!_bubbleView) {
-        _bubbleView = [[UIView alloc] init];
-        _bubbleView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.39];
-        _bubbleView.layer.cornerRadius = 10;
-        _bubbleView.layer.masksToBounds = YES;
-    }
-    return _bubbleView;
-}
-
-- (UILabel *)chatLabel {
-    if (!_chatLabel) {
-        _chatLabel = [[UILabel alloc] init];
-        _chatLabel.numberOfLines = 0;
-        _chatLabel.textAlignment = NSTextAlignmentLeft;
-    }
-    return _chatLabel;
-}
-
 - (UIImageView *)chatImageView {
     if (!_chatImageView) {
         _chatImageView = [[UIImageView alloc] init];
@@ -144,7 +112,7 @@
         _chatImageView.hidden = YES;
         
         self.photoBrowser = [[PLVPhotoBrowser alloc] init];
-        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction)];
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(chatImageViewTapAction)];
         [_chatImageView addGestureRecognizer:tapGesture];
     }
     return _chatImageView;
@@ -175,19 +143,19 @@
 
 #pragma mark - Action
 
-- (void)tapGestureAction {
+- (void)chatImageViewTapAction {
     [self.photoBrowser scaleImageViewToFullScreen:self.chatImageView];
 }
 
 #pragma mark - UI
 
 - (void)updateWithModel:(PLVChatModel *)model cellWidth:(CGFloat)cellWidth {
+    [super updateWithModel:model cellWidth:cellWidth];
+    
     if (![PLVECChatCell isModelValid:model] || cellWidth == 0) {
         self.cellWidth = 0;
-        self.model = nil;
         self.chatImageView.hidden = YES;
         self.chatLabel.text = @"";
-        self.bubbleView.hidden = YES;
         self.tapGestureView.hidden = YES;
         self.fileImageView.hidden = YES;
         return;
@@ -195,7 +163,6 @@
     
     self.cellWidth = cellWidth;
     self.model = model;
-    self.bubbleView.hidden = NO;
     
     // 设置聊天图片，如果是图片消息的话
     NSURL *imageURL = [PLVECChatCell chatImageURLWithMessage:model.message];
@@ -270,7 +237,7 @@
     actorLabel.layer.masksToBounds = YES;
     
     // 将昵称label再转换为NSAttributedString对象
-    UIImage *actorImage = [PLVECChatCell imageFromUIView:actorLabel];
+    UIImage *actorImage = [PLVImageUtil imageFromUIView:actorLabel];
     NSTextAttachment *labelAttach = [[NSTextAttachment alloc] init];
     labelAttach.bounds = CGRectMake(0, -1.5, actorLabelSize.width, actorLabelSize.height);
     labelAttach.image = actorImage;
@@ -321,11 +288,10 @@
 /// 获取聊天文本
 + (NSAttributedString *)contentAttributedStringWithChatModel:(PLVChatModel *)chatModel {
     id message = chatModel.message;
-    if (!message &&
-        ![message isKindOfClass:[PLVCustomMessage class]] &&
+    if (!message ||
+        (![message isKindOfClass:[PLVCustomMessage class]] &&
         ![message isKindOfClass:[PLVSpeakMessage class]] &&
-        ![message isKindOfClass:[PLVQuoteMessage class]] &&
-        ![message isKindOfClass:[PLVFileMessage class]]) {
+        ![message isKindOfClass:[PLVFileMessage class]])) {
         return nil;
     }
     
@@ -365,9 +331,6 @@
         if ([message isKindOfClass:[PLVSpeakMessage class]]) {
             PLVSpeakMessage *speakMessage = (PLVSpeakMessage *)message;
             content = speakMessage.content;
-        } else if([message isKindOfClass:[PLVQuoteMessage class]]){
-            PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)message;
-            content = quoteMessage.content;
         } else if ([message isKindOfClass:[PLVFileMessage class]]) {
             PLVFileMessage *fileMessage = (PLVFileMessage *)message;
             content = fileMessage.name;
@@ -516,7 +479,6 @@
     id message = model.message;
     if (!user || ![user isKindOfClass:[PLVChatUser class]] || !message ||
         (![message isKindOfClass:[PLVSpeakMessage class]] &&
-         ![message isKindOfClass:[PLVQuoteMessage class]] &&
          ![message isKindOfClass:[PLVImageMessage class]] &&
          ![message isKindOfClass:[PLVImageEmotionMessage class]] &&
          ![message isKindOfClass:[PLVCustomMessage class]] &&
@@ -525,21 +487,12 @@
     }
     
     if (message &&
-        ([message isKindOfClass:[PLVSpeakMessage class]] || [message isKindOfClass:[PLVQuoteMessage class]]) &&
+        [message isKindOfClass:[PLVSpeakMessage class]] &&
         model.contentLength != PLVChatMsgContentLength_0To500) {
         return NO;
     }
     
     return YES;
-}
-
-+ (UIImage *)imageFromUIView:(UIView *)view {
-    UIGraphicsBeginImageContext(view.bounds.size);
-    CGContextRef ctxRef = UIGraphicsGetCurrentContext();
-    [view.layer renderInContext:ctxRef];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-    return image;
 }
 
 @end
