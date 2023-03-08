@@ -104,8 +104,8 @@ UITableViewDataSource
     [super viewWillLayoutSubviews];
      
     if (self.hasLayoutSubView) { // 调整布局
-        CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
-        self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
+        CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
+        [self refreshTableViewFrame];
         
         CGFloat keyboardToolOriginY = CGRectGetHeight(self.view.bounds) - height;
         [self.keyboardToolView changeFrameForNewOriginY:keyboardToolOriginY];
@@ -122,7 +122,7 @@ UITableViewDataSource
             [self.keyboardToolView updateTextViewAndButton];
         }
         
-        self.receiveNewMessageView.frame = CGRectMake(0, self.keyboardToolView.frame.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
+        [self refreshReceiveNewMessageViewFrame];
         
         if (![self currentIsFullScreen]) {
             [self refreshLikeButtonViewFrame];
@@ -133,11 +133,11 @@ UITableViewDataSource
 
 - (void)viewDidLayoutSubviews {
     if (!self.hasLayoutSubView) { // 初次布局
-        CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+        CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
         CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
         [self.keyboardToolView addAtView:self.view frame:inputRect];
         self.receiveNewMessageView.frame = CGRectMake(0, inputRect.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
-        self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
+        [self refreshTableViewFrame];
         self.playbackNotifyView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), 40);
         
         [self arrangeTopMarqueeViewFrame];
@@ -148,18 +148,19 @@ UITableViewDataSource
         
         [self refreshLikeButtonViewFrame];
         [self refreshCardPushButtonViewFrame];
+//        [self refreshIarEntranceViewFrame];
     }
 }
 
 - (void)refreshLikeButtonViewFrame{
-    CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+    CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + 8 + P_SafeAreaBottomEdgeInsets();
     CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
     CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
     self.likeButtonView.frame = CGRectMake(self.view.bounds.size.width - PLVLCLikeButtonViewWidth - rightPadding, inputRect.origin.y - 17 - PLVLCLikeButtonViewHeight, PLVLCLikeButtonViewWidth, PLVLCLikeButtonViewHeight);
 }
 
 - (void)refreshCardPushButtonViewFrame{
-    CGFloat height = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+    CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
     CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
     CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
     CGFloat originX = self.view.bounds.size.width - PLVLCCardPushButtonViewWidth - rightPadding;
@@ -167,6 +168,16 @@ UITableViewDataSource
 
     self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVLCCardPushButtonViewWidth, PLVLCCardPushButtonViewHeight);
 }
+
+- (void)refreshTableViewFrame {
+    CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
+    self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
+}
+
+- (void)refreshReceiveNewMessageViewFrame {
+    self.receiveNewMessageView.frame = CGRectMake(0, self.keyboardToolView.frame.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
+}
+
 
 #pragma mark - Getter & Setter
 
@@ -201,8 +212,8 @@ UITableViewDataSource
     if (!_keyboardToolView) {
         _keyboardToolView = [[PLVLCKeyboardToolView alloc] init];
         _keyboardToolView.delegate = self;
-        _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live);
-        if (self.playbackEnable) { //聊天重放时不支持发言
+        _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback);
+        if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
             [_keyboardToolView changePlaceholderText:@"聊天室暂时关闭"];
         }
     }
@@ -826,7 +837,7 @@ UITableViewDataSource
 #pragma mark - PLVLCKeyboardToolView Delegate
 
 - (BOOL)keyboardToolView_shouldInteract:(PLVLCKeyboardToolView *)toolView {
-    return !self.playbackEnable; //聊天回放时，不支持发言以及打赏、送礼等互动
+    return [PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live; // 聊天回放时，不支持发言以及打赏、送礼等互动
 }
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show {
@@ -908,6 +919,18 @@ UITableViewDataSource
 
 - (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView {
     [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenRewardViewNotification object:nil];
+}
+
+- (void)keyboardToolView_showIarEntranceView:(PLVLCKeyboardToolView *)iarEntranceView show:(BOOL)show {
+    CGRect rect = self.keyboardToolView.frame;
+    if (show) {
+        rect.size.height += 36;
+    } else {
+        rect.size.height -= 36;
+    }
+    self.keyboardToolView.frame = rect;
+    [self.keyboardToolView updateTextViewAndButton];
+    [self.view layoutIfNeeded];
 }
 
 #pragma mark - PLVLCLikeButtonView Delegate

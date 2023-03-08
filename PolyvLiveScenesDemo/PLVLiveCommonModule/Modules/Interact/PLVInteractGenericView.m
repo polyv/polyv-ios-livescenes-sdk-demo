@@ -12,6 +12,7 @@
 #import "PLVRoomDataManager.h"
 
 static NSString *const PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
+static NSString *const PLVInteractUpdateIarEntranceCallbackNotification = @"PLVInteractUpdateIarEntranceCallbackNotification";
 
 @interface PLVInteractGenericView () <
 WKNavigationDelegate,
@@ -214,6 +215,7 @@ PLVInteractWebViewBridgeDelegate>
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
     [mutableDict addEntriesFromDictionary:sessionDict];
+    [mutableDict setObject:@"0.3.1" forKey:@"webVersion"];
 
     return mutableDict;
 }
@@ -298,6 +300,9 @@ PLVInteractWebViewBridgeDelegate>
                 }
             })
         }
+    } else if ([event isEqualToString:@"UPDATE_IAR_ENTRANCE"]) { // 更新互动入口状态
+        NSDictionary *eventDict = PLV_SafeDictionaryForDictKey(dict, @"value");
+        [[NSNotificationCenter defaultCenter]postNotificationName:PLVInteractUpdateIarEntranceCallbackNotification object:nil userInfo:eventDict];
     }
 }
 

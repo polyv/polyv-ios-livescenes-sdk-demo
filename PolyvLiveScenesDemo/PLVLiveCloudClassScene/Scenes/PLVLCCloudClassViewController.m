@@ -1260,7 +1260,7 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self plvCommodityPushViewJumpToCommodityDetail:linkURL];
 }
 
-- (void)plvLCLivePageMenuAreaViewCloseProductView {
+- (void)plvLCLivePageMenuAreaViewCloseProductView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
     if (self.currentLandscape) {
         [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:!self.liveRoomSkinView.needShowSkin];
     }

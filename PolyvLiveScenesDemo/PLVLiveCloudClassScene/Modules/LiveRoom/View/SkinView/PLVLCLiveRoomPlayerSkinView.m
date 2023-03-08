@@ -396,9 +396,7 @@
         _guideChatLabel.clipsToBounds = YES;
         _guideChatLabel.userInteractionEnabled = YES;
         
-        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        BOOL playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
-        if (playbackEnable) {
+        if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
             _guideChatLabel.text = @"聊天室暂时关闭";
         } else {
             _guideChatLabel.text = @"跟大家聊点什么吧～";

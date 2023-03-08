@@ -35,7 +35,7 @@
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
-NSString *PLVLEChatroomOpenBulletinNotification = @"PLVLEChatroomOpenBulletinNotification";
+NSString *PLVECInteractUpdateIarEntranceCallbackNotification = @"PLVInteractUpdateIarEntranceCallbackNotification";
 
 @interface PLVECWatchRoomViewController ()<
 PLVSocketManagerProtocol,
@@ -81,11 +81,13 @@ PLVECMessagePopupViewDelegate
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        [self addObserver];
     }
     return self;
 }
 
 - (void)dealloc{
+    [self removeObserver];
     NSLog(@"%s",__FUNCTION__);
 }
 
@@ -153,21 +155,6 @@ PLVECMessagePopupViewDelegate
 }
 
 #pragma mark - [ Private Methods ]
-- (void)setupModule{
-    // 通用的 配置
-//    [[NSNotificationCenter defaultCenter] addObserver:self
-//                                             selector:@selector(interfaceOrientationDidChange:)
-//                                                 name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
-    
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
-        /// 监听事件
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLEChatroomOpenBulletinNotification object:nil];
-        
-    } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
-    
-    }
-}
 
 - (void)setupUI{
     /// 注意：1. 此处不建议将共同拥有的图层，提炼在 if 判断外，来做“代码简化”
@@ -365,8 +352,34 @@ PLVECMessagePopupViewDelegate
 }
 
 #pragma mark Notification
+
+- (void)addObserver {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        /// 监听事件
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForUpdateIarEntrance:) name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
+        
+    } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
+    }
+}
+
+- (void)removeObserver {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        /// 监听事件
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
+        
+    } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
+    }
+}
 - (void)notificationForOpenBulletin:(NSNotification *)notif {
     [self.popoverView.interactView openLastBulletin];
+}
+
+- (void)notificationForUpdateIarEntrance:(NSNotification *)notification {
+    NSDictionary *dict = notification.userInfo;;
+    NSArray *buttonDataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.homePageView updateIarEntranceButtonDataArray:buttonDataArray];
 }
 
 #pragma mark - [ Delegate ]
@@ -761,6 +774,12 @@ PLVECMessagePopupViewDelegate
         PLVECMessagePopupView *popupView = [[PLVECMessagePopupView alloc] initWithChatModel:model];
         popupView.delegate = self;
         [popupView showOnView:self.popoverView];
+    }
+}
+
+- (void)homePageView_openInteractApp:(PLVECHomePageView *)homePageView eventName:(NSString *)eventName {
+    if ([PLVFdUtil checkStringUseable:eventName]) {
+        [self.popoverView.interactView openInteractAppWithEventName:eventName];
     }
 }
 

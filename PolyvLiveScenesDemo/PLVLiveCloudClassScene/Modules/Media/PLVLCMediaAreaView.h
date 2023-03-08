@@ -11,6 +11,7 @@
 #import "PLVLCMediaPlayerSkinView.h"
 #import "PLVLCMediaFloatView.h"
 #import "PLVLCRetryPlayView.h"
+#import "PLVMarqueeView.h"
 #import "PLVLCDocumentPaintModeView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
