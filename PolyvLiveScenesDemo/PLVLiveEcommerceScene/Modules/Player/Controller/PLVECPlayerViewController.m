@@ -15,6 +15,7 @@
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVPlayerPresenter.h"
 #import "PLVWatermarkView.h"
+#import "PLVMarqueeView.h"
 
 @interface PLVECPlayerViewController ()<
 PLVPlayerPresenterDelegate
@@ -174,7 +175,7 @@ PLVPlayerPresenterDelegate
 #pragma mark Marquee
 - (void)setupMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick  {
     __weak typeof(self) weakSelf = self;
-    [self handleMarquee:channel customNick:customNick completion:^(PLVMarqueeStyleModel *model, NSError *error) {
+    [self handleMarquee:channel customNick:customNick completion:^(PLVMarqueeModel *model, NSError *error) {
         if (model) {
             [weakSelf loadVideoMarqueeView:model];
         } else if (error) {
@@ -191,7 +192,7 @@ PLVPlayerPresenterDelegate
     }];
 }
 
-- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeStyleModel * model, NSError *error))completion {
+- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeModel * model, NSError *error))completion {
     switch (channel.marqueeType) {
         case PLVChannelMarqueeType_Nick:
             if (customNick) {
@@ -201,14 +202,14 @@ PLVPlayerPresenterDelegate
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
-            PLVMarqueeStyleModel *model = [PLVMarqueeStyleModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
+            PLVMarqueeModel *model = [PLVMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
             completion(model, nil);
         } break;
         case PLVChannelMarqueeType_URL: {
             if (channel.marquee) {
                 [PLVLiveVideoAPI loadCustomMarquee:[NSURL URLWithString:channel.marquee] withChannelId:channel.channelId.integerValue userId:channel.accountUserId code:@"" completion:^(BOOL valid, NSDictionary *marqueeDict) {
                     if (valid) {
-                        completion([PLVMarqueeStyleModel createMarqueeModelWithMarqueeDict:marqueeDict], nil);
+                        completion([PLVMarqueeModel createMarqueeModelWithMarqueeDict:marqueeDict], nil);
                     } else {
                         NSError *error = [NSError errorWithDomain:@"net.plv.ecommerceBaseMediaError" code:-10000 userInfo:@{NSLocalizedDescriptionKey:marqueeDict[@"msg"]}];
                         completion(nil, error);
@@ -224,7 +225,7 @@ PLVPlayerPresenterDelegate
     }
 }
 
-- (void)loadVideoMarqueeView:(PLVMarqueeStyleModel *)model {
+- (void)loadVideoMarqueeView:(PLVMarqueeModel *)model {
     __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         // 设置跑马灯

@@ -25,7 +25,8 @@ typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
 
 @interface PLVLCBasePlayerSkinView ()<
 PLVProgressSliderDelegate,
-PLVLCDocumentToolViewDelegate>
+PLVLCDocumentToolViewDelegate,
+UIGestureRecognizerDelegate>
 
 @property (nonatomic, assign) PLVLCBasePlayerSkinViewType skinViewType;
 @property (nonatomic, assign) CGPoint lastPoint;
@@ -283,6 +284,7 @@ PLVLCDocumentToolViewDelegate>
     doubleGestureRecognizer.numberOfTouchesRequired = 1;
     [doubleGestureRecognizer addTarget:self action:@selector(tapGestureAction:)];
     self.doubleTapGR = doubleGestureRecognizer;
+    self.doubleTapGR.delegate = self;
     [self addGestureRecognizer:self.doubleTapGR];
     
     self.panGR = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panGestureAction:)];
@@ -840,6 +842,16 @@ PLVLCDocumentToolViewDelegate>
         [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinView:didChangePageWithType:)]) {
         [self.baseDelegate plvLCBasePlayerSkinView:self didChangePageWithType:type];
     }
+}
+
+#pragma mark UIGestureRecognizerDelegate
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    // Fix player exception pause when touch subview button
+    if ([NSStringFromClass([touch.view class]) isEqualToString:@"UIButton"]) {
+        return NO;
+    }
+    return YES;
 }
 
 @end

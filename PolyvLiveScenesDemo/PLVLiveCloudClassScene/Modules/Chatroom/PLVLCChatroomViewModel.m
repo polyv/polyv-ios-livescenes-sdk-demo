@@ -424,6 +424,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)notifyDelegatesDidReceiveMessages:(NSArray <PLVChatModel *> *)modelArray {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        return;
+    }
     if (!modelArray || ![modelArray isKindOfClass:[NSArray class]] || [modelArray count] == 0) {
         return;
     }
@@ -457,18 +460,27 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)notifyDelegatesForLoginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        return;
+    }
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_loginUsers:userArray];
     });
 }
 
 - (void)notifyDelegatesForManagerMessage:(NSString *)content {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        return;
+    }
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_managerMessage:content];
     });
 }
 
 - (void)notifyDelegatesForDanmu:(NSString *)content {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        return;
+    }
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_danmu:content];
     });
@@ -693,6 +705,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)chatroomPresenter_didReceiveChatModels:(NSArray <PLVChatModel *> *)modelArray {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        return;
+    }
+
     [self addPublicChatModels:modelArray];
     [self cacheManagerMessages:modelArray];
     [self cacheDanmu:modelArray];

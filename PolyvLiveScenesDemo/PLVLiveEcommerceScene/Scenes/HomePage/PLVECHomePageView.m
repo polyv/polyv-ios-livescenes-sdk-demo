@@ -79,6 +79,7 @@ PLVECCardPushButtonViewDelegate
 @property (nonatomic, assign) BOOL noDelayWatchMode;                   // 当前是否为无延迟观看模式
 @property (nonatomic, assign) BOOL networkQualityMiddleViewShowed;     // 网络不佳提示视图是否显示过
 @property (nonatomic, assign) BOOL networkQualityPoorViewShowed;       // 网络糟糕提示视图是否显示过
+@property (nonatomic, copy) NSString *questionnaireEventName;          // 互动问卷事件
 /// 回放特有属性
 @property (nonatomic, assign) NSTimeInterval duration;                 // 回放视频时长
 @property (nonatomic, assign) NSUInteger curSpeedIndex;                // 回放视频当前播放速率
@@ -103,6 +104,7 @@ PLVECCardPushButtonViewDelegate
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
 @property (nonatomic, strong) UIButton *playbackListButton;            // 回放列表按钮
+@property (nonatomic, strong) UIButton *questionnaireButton;          // 互动问卷入口
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable;      // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
 
@@ -153,6 +155,7 @@ PLVECCardPushButtonViewDelegate
         [self addSubview:self.chatroomView];
         [self addSubview:self.likeButtonView];
         [self addSubview:self.giftButton];
+        [self addSubview:self.questionnaireButton];
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.chatroomView];
         [self addSubview:self.playerContolView];
@@ -252,6 +255,26 @@ PLVECCardPushButtonViewDelegate
         [_playbackListButton addTarget:self action:@selector(playbackListButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _playbackListButton;
+}
+
+- (UIButton *)questionnaireButton {
+    if (!_questionnaireButton) {
+        _questionnaireButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_questionnaireButton setTitle:@"问卷" forState:UIControlStateNormal];
+        _questionnaireButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
+        [_questionnaireButton setBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.16)];
+        [_questionnaireButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        _questionnaireButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_questionnaireButton setImage:[PLVECUtils imageForWatchResource:@"plvec_iarentrance_questionnaire"] forState:UIControlStateNormal];
+        [_questionnaireButton addTarget:self action:@selector(questionnaireButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _questionnaireButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+        [_questionnaireButton setTitleEdgeInsets:UIEdgeInsetsMake(0, 4, 0, 0)];
+        [_questionnaireButton setImageEdgeInsets:UIEdgeInsetsMake(0, 0, 0, 4)];
+        _questionnaireButton.layer.masksToBounds = YES;
+        _questionnaireButton.layer.cornerRadius = 12;
+        _questionnaireButton.hidden = YES;
+    }
+    return _questionnaireButton;
 }
 
 - (PLVECMoreView *)moreView {
@@ -505,6 +528,23 @@ PLVECCardPushButtonViewDelegate
     [self updateUIFrame];
 }
 
+- (void)updateIarEntranceButtonDataArray:(NSArray *)dataArray {
+    if (![PLVFdUtil checkArrayUseable:dataArray]) {
+        self.questionnaireButton.hidden = YES;
+    }
+    for (NSInteger index = 0; index < dataArray.count; index++) {
+        NSDictionary *dict = dataArray[index];
+        if ([PLVFdUtil checkDictionaryUseable:dict]) {
+            BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
+            NSString *title = PLV_SafeStringForDictKey(dict, @"title");
+            if ([PLVFdUtil checkStringUseable:title] && [title isEqualToString:@"问卷"]) {
+                self.questionnaireEventName = PLV_SafeStringForDictKey(dict, @"event");
+                self.questionnaireButton.hidden = !isShow;
+            }
+        }
+    }
+}
+
 #pragma mark - Private
 
 - (void)updateCodeRateSwitchViewHiddenState {
@@ -550,6 +590,15 @@ PLVECCardPushButtonViewDelegate
         self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - 219 - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, 219, 28);
         self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
         
+        // 判断是否有公告控件 有则适配问卷控件按钮位置
+        PLVECBulletinView *bulletinView;
+        for (UIView *subview in self.subviews) {
+            if (subview && [subview isKindOfClass:[PLVECBulletinView class]]) {
+                bulletinView = (PLVECBulletinView *)subview;
+            }
+        }
+        CGFloat questionnaireButtonOriginY = bulletinView ? CGRectGetMaxY(bulletinView.frame) + 10 : CGRectGetMaxY(self.liveRoomInfoView.frame) + 15;
+        self.questionnaireButton.frame =  CGRectMake(15, questionnaireButtonOriginY, 68, 28);
     } else if (self.type == PLVECHomePageType_Playback) {
         // 聊天室布局
         self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-P_SafeAreaBottomEdgeInsets());
@@ -611,6 +660,12 @@ PLVECCardPushButtonViewDelegate
     [[PLVFdUtil getCurrentViewController] presentViewController:playbackListVC animated:YES completion:nil];
     
     self.playbackListVC = playbackListVC;
+}
+
+- (void)questionnaireButtonAction:(id)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_openInteractApp:eventName:)]) {
+        [self.delegate homePageView_openInteractApp:self eventName:self.questionnaireEventName];
+    }
 }
 
 - (void)swithDelayLiveClick:(UIButton *)button {

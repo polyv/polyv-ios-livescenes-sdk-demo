@@ -14,15 +14,21 @@
 #import "PLVLCUtils.h"
 #import "PLVChatModel.h"
 #import "PLVLCRepliedMsgView.h"
+#import "PLVLCIarEntranceView.h"
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
+
+NSString *PLVLCInteractUpdateIarEntranceCallbackNotification = @"PLVInteractUpdateIarEntranceCallbackNotification";
+
+NSString *PLVLCKeyBoardToolViewChatroomOpenInteractAppNotification = @"PLVLCChatroomOpenInteractAppNotification";
 
 static CGFloat kMaxTextViewHeight = 120.0;
 
 @interface PLVLCKeyboardToolView ()<
 UITextViewDelegate,
 PLVLCEmojiSelectViewDelegate,
+PLVLCIarEntranceViewDelegate,
 PLVLCKeyboardMoreViewDelegate
 >
 /// 不同的 mode，决定不同的 UI
@@ -33,6 +39,8 @@ PLVLCKeyboardMoreViewDelegate
 @property (nonatomic, strong) UIView *tempInputView;
 /// 文本输入框
 @property (nonatomic, strong) PLVLCKeyboardTextView *textView;
+/// 互动功能入口
+@property (nonatomic, strong) PLVLCIarEntranceView *iarEntranceView;
 /// emoji 按钮
 @property (nonatomic, strong) UIButton *emojiButton;
 /// 打赏按钮
@@ -103,6 +111,7 @@ PLVLCKeyboardMoreViewDelegate
     if (self.mode == PLVLCKeyboardToolModeDefault) {
         [self addSubview:self.moreButton];
         [self addSubview:self.rewardButton];
+        [self addSubview:self.iarEntranceView];
     }
 }
 
@@ -114,6 +123,15 @@ PLVLCKeyboardMoreViewDelegate
         _textView.delegate = self;
     }
     return _textView;
+}
+
+- (PLVLCIarEntranceView *)iarEntranceView {
+    if (!_iarEntranceView) {
+        _iarEntranceView = [[PLVLCIarEntranceView alloc] init];
+        _iarEntranceView.hidden = YES;
+        _iarEntranceView.delegate = self;
+    }
+    return _iarEntranceView;
 }
 
 - (UIButton *)emojiButton {
@@ -321,6 +339,11 @@ PLVLCKeyboardMoreViewDelegate
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidHide:) name:UIKeyboardDidHideNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onDeviceOrientationDidChange) name:UIDeviceOrientationDidChangeNotification object:nil];
+        if (self.mode == PLVLCKeyboardToolModeDefault) {
+            [[NSNotificationCenter defaultCenter] addObserver:self
+                                                     selector:@selector(interactUpdateIarEntranceCallback:) name:PLVLCInteractUpdateIarEntranceCallbackNotification
+                                                       object:nil];
+        }
     }
     return self;
 }
@@ -335,7 +358,7 @@ PLVLCKeyboardMoreViewDelegate
     
     self.frame = rect;
     self.originY = rect.origin.y;
-    self.bottomHeight = rect.size.height - PLVLCKeyboardToolViewHeight;
+    self.bottomHeight = rect.size.height - [self getKeyboardToolViewHeight];
     
     [self updateUI];
 }
@@ -344,15 +367,16 @@ PLVLCKeyboardMoreViewDelegate
     CGRect rect = self.frame;
     CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 左右边距
     CGFloat textViewWidth = rect.size.width - xPadding - (self.mode == PLVLCKeyboardToolModeSimple ? 40 + xPadding : 80 + xPadding);
-    [self.textView setupWithFrame:CGRectMake(xPadding, 8, textViewWidth, 40)];
+    CGFloat iarEntranceViewHeight = self.iarEntranceView.hidden ? 0.0 : PLVLCIarEntranceViewHeight + 8.0;
+    [self.textView setupWithFrame:CGRectMake(xPadding, iarEntranceViewHeight + 8, textViewWidth, 40)];
 
     if (self.mode == PLVLCKeyboardToolModeDefault && self.enableReward) {
-        self.rewardButton.frame = CGRectMake(xPadding, 12, 32, 32);
-        [self.textView setupWithFrame:CGRectMake(CGRectGetMaxX(self.rewardButton.frame) + 8, 8, textViewWidth - 40, 40)];
+        self.rewardButton.frame = CGRectMake(xPadding, iarEntranceViewHeight + 8, 32, 32);
+        [self.textView setupWithFrame:CGRectMake(CGRectGetMaxX(self.rewardButton.frame) + 8, iarEntranceViewHeight + 8, textViewWidth - 40, 40)];
     }
     
-    self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
-    self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
+    self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, iarEntranceViewHeight + 12, 32, 32);
+    self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, iarEntranceViewHeight + 12, 32, 32);
 }
 
 - (void)updateChatButtonDataArray:(NSArray *)dataArray {
@@ -389,13 +413,24 @@ PLVLCKeyboardMoreViewDelegate
     [self.textView becomeFirstResponder];
 }
 
+- (CGFloat)getKeyboardToolViewHeight {
+    if (self.iarEntranceView.hidden) {
+        return 56.0;
+    }
+    return 56.0 + PLVLCIarEntranceViewHeight + 8.0;
+}
+
 #pragma mark - Private Method
 - (void)updateUI {
+    self.iarEntranceView.frame = CGRectMake(0, 8, kScreenWidth, PLVLCIarEntranceViewHeight);
     [self updateTextViewAndButton];
     self.lastTextViewHeight = ceilf([self.textView sizeThatFits:self.textView.frame.size].height);
-    
-    self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
-    self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
+    self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, PLVLCIarEntranceViewHeight + 20, 32, 32);
+    self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, PLVLCIarEntranceViewHeight + 20, 32, 32);
+    if (self.iarEntranceView.hidden) {
+        self.emojiButton.frame = CGRectMake(CGRectGetMaxX(self.textView.frame) + 8, 12, 32, 32);
+        self.moreButton.frame = CGRectMake(CGRectGetMaxX(self.emojiButton.frame) + 8, 12, 32, 32);
+    }
     
     CGFloat emojiboardHeight = 190.0 + self.bottomHeight;
     if (self.mode == PLVLCKeyboardToolModeDefault) {
@@ -494,7 +529,7 @@ PLVLCKeyboardMoreViewDelegate
     [self.normalSuperView addSubview:self];
     // 设置视图 frame 值
     CGRect selfRect = self.frame;
-    CGFloat normalSuperViewHeight = self.originY + PLVLCKeyboardToolViewHeight + self.bottomHeight;
+    CGFloat normalSuperViewHeight = self.originY + [self getKeyboardToolViewHeight] + self.bottomHeight;
     self.frame = CGRectMake(0, normalSuperViewHeight - selfRect.size.height, kScreenWidth, selfRect.size.height);
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:popBoard:)]) {
@@ -596,6 +631,16 @@ PLVLCKeyboardMoreViewDelegate
     }
 }
 
+- (void)interactUpdateIarEntranceCallback:(NSNotification *)notification {
+    NSDictionary *dict = notification.userInfo;;
+    NSArray *buttonDataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.iarEntranceView updateIarEntranceButtonDataArray:buttonDataArray];
+    [self tapAction:nil];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_showIarEntranceView:show:)]) {
+        [self.delegate keyboardToolView_showIarEntranceView:self show:!self.iarEntranceView.hidden];
+    }
+}
+
 #pragma mark - UITextView Delegate
 
 - (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
@@ -647,6 +692,10 @@ PLVLCKeyboardMoreViewDelegate
             CGRect rect = weakSelf.frame;
             CGFloat maxY = rect.origin.y + rect.size.height;
             rect.size.height = textRect.origin.y * 2.0 + textRect.size.height + weakSelf.bottomHeight;
+            if (!weakSelf.iarEntranceView.hidden) {
+                rect.size.height -= PLVLCIarEntranceViewHeight + 8.0;
+            }
+            
             rect.origin.y = maxY - rect.size.height;
             weakSelf.frame = rect;
             // 重新布局
@@ -747,6 +796,14 @@ PLVLCKeyboardMoreViewDelegate
 
 - (void)sendEmoji {
     [self sendTextAndClearTextView];
+}
+
+#pragma mark - PLVLCIarEntranceView Delegate
+
+- (void)iarEntranceView_openInteractApp:(PLVLCIarEntranceView *)iarEntranceView eventName:(NSString *)eventName {
+    if ([PLVFdUtil checkStringUseable:eventName]) {
+        [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCKeyBoardToolViewChatroomOpenInteractAppNotification object:eventName];
+    }
 }
 
 @end

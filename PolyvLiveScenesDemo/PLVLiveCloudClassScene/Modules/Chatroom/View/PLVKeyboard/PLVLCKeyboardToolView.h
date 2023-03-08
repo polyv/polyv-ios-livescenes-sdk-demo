@@ -12,7 +12,7 @@ static CGFloat const PLVLCKeyboardToolViewHeight = 56.0;
 
 /// PLVLCKeyboardToolView 模式 - 不同模式下包含不同控件
 typedef NS_ENUM(NSInteger, PLVLCKeyboardToolMode) {
-    PLVLCKeyboardToolModeDefault,     // 默认模式：包含文本输入框、emoji 按钮、更多按钮
+    PLVLCKeyboardToolModeDefault,     // 默认模式：包含文本输入框、emoji 按钮、更多按钮、互动功能入口
     PLVLCKeyboardToolModeSimple,      // 简单模式：包含文本输入框、emoji 按钮
 };
 
@@ -54,9 +54,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 打开互动应用模块
 - (void)keyboardToolView_openInteractApp:(PLVLCKeyboardToolView *)moreView eventName:(NSString *)eventName;
 /// 打开礼物打赏面板
-- (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView;
+- (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)c;
 /// 点击【屏蔽特效】或【展示特效】
 - (void)keyboardToolView_switchRewardDisplay:(PLVLCKeyboardToolView *)moreView on:(BOOL)on;
+/// 键盘显示互动功能入口
+- (void)keyboardToolView_showIarEntranceView:(PLVLCKeyboardToolView *)iarEntranceView show:(BOOL)show;
 
 @end
 
@@ -108,6 +110,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 回复某条消息
 - (void)replyChatModel:(PLVChatModel *)model;
+
+/// 获取键盘默认模式高度
+- (CGFloat)getKeyboardToolViewHeight;
 
 @end
 

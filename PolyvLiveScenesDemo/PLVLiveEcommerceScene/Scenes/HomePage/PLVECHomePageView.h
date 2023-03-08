@@ -74,6 +74,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)homePageView_alertLongContentMessage:(PLVChatModel *)model;
 
+/// 打开互动应用模块
+- (void)homePageView_openInteractApp:(PLVECHomePageView *)homePageView eventName:(NSString *)eventName;
+
 @end
 
 @interface PLVECHomePageView : UIView
@@ -116,6 +119,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 更新更多按钮的显示或隐藏
 /// @param show YES:显示  NO:隐藏
 - (void)updateMoreButtonShow:(BOOL)show;
+
+- (void)updateIarEntranceButtonDataArray:(NSArray *)dataArray;
 
 @end
 
