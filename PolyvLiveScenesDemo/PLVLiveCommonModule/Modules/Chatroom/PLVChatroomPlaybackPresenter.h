@@ -25,13 +25,16 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *channelId;
 /// 回放场次id
 @property (nonatomic, copy, readonly) NSString *sessionId;
+/// 回放视频id
+@property (nonatomic, copy, readonly) NSString *videoId;
 
 #pragma mark 方法
 
 /// 初始化方法
 /// @param channelId 频道号
 /// @param sessionId 当场回放的场次id
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId;
+/// @param videoId 当场回放的视频id
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId;
 
 /// 获取/更新回放视频时长
 - (void)updateDuration:(NSTimeInterval)duration;

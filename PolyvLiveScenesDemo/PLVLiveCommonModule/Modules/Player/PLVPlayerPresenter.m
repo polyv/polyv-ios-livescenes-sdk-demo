@@ -160,7 +160,10 @@ PLVDefaultPageViewDelegate
 }
 
 - (BOOL)channelWatchNoDelay{
-    if (self.channelMatchExternal) {
+    if (self.currentExternalRoomData.menuInfo.transmitMode && self.currentExternalRoomData.menuInfo.mainRoom) {
+        // 双师模式下，位于大房间时只允许拉CDN流
+        return NO;
+    } else if (self.channelMatchExternal) {
         return self.currentExternalRoomData.menuInfo.watchNoDelay;
     } else {
         /// 当前PlayerPresenter的频道号，与外部频道号不一致
@@ -174,7 +177,10 @@ PLVDefaultPageViewDelegate
 }
 
 - (BOOL)channelWatchQuickLive{
-    if (self.channelMatchExternal) {
+    if (self.currentExternalRoomData.menuInfo.transmitMode && self.currentExternalRoomData.menuInfo.mainRoom) {
+        // 双师模式下，位于大房间时只允许拉CDN流
+        return NO;
+    } else if (self.channelMatchExternal) {
         return self.currentExternalRoomData.menuInfo.watchQuickLive;
     } else {
         /// 当前PlayerPresenter的频道号，与外部频道号不一致
@@ -382,6 +388,7 @@ PLVDefaultPageViewDelegate
 
 - (void)changeVid:(NSString *)vid {
     self.currentLivePlaybackChangingVid = YES;
+    [self.livePlaybackPlayer pause];
     [self.livePlaybackPlayer changeLivePlaybackVodId:vid];
     [self resumePlay];
 }

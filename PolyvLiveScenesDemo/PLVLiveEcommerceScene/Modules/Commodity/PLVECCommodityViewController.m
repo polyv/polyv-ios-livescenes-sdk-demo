@@ -7,56 +7,63 @@
 //  商品列表核心类
 
 #import "PLVECCommodityViewController.h"
-
 #import "PLVRoomDataManager.h"
-#import "PLVECCommodityModelsManager.h"
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
-#import "PLVECCommodityView.h"
-#import "PLVECCommodityCell.h"
-
-@interface PLVECCommodityViewController ()
-<
-UIGestureRecognizerDelegate
-,UITableViewDelegate
-,UITableViewDataSource
-,PLVECCommodityCellDelegate
+@interface PLVECCommodityViewController ()<
+UIGestureRecognizerDelegate,
+WKNavigationDelegate,
+PLVProductWebViewBridgeDelegate
 >
 
-// 商品数据管理
-@property (nonatomic, strong) PLVECCommodityModelsManager *commodityModelsManager;
-// 商品列表View
-@property (nonatomic, strong) PLVECCommodityView *commodityView;
+/// UI
+@property (nonatomic, strong) WKWebView *webView;
+
+/// 数据
+@property (nonatomic, strong) PLVProductWebViewBridge *webViewBridge;
 
 @end
 
 @implementation PLVECCommodityViewController
 
-#pragma mark - [ Life Period ]
+#pragma mark - [ Life Cycle ]
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     
     [self setupUI];
+    [self loadWebView];
+}
+
+#pragma mark - [ Public Method ]
+
+- (void)updateUserInfo {
+    NSDictionary *userInfo = [self getUserInfo];
+    [self.webViewBridge updateNativeAppParamsInfo:userInfo];
+}
+
+#pragma mark - [ Private Method ]
+
+- (void)loadWebView {
+    self.webViewBridge = [[PLVProductWebViewBridge alloc] initBridgeWithWebView:self.webView webViewDelegate:self];
+    self.webViewBridge.delegate = self;
     
-    _commodityModelsManager = [[PLVECCommodityModelsManager alloc] init];
-    [self loadCommodityInfo];
+    NSString *urlString = PLVLiveConstantsProductListHTML;
+    PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
+    BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
+    urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
+    NSURL *interactURL = [NSURL URLWithString:urlString];
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
+    [self.webView loadRequest:request];
 }
 
-#pragma mark - [ Public Methods ]
-- (void)receiveProductMessage:(NSInteger)status content:(id)content {
-    [self.commodityModelsManager receiveProductMessage:status content:content];
-    [self.commodityView reloadData:self.commodityModelsManager.totalItems];
-}
-
-#pragma mark - [ Private Methods ]
 - (void)setupUI {
-    [self.view addSubview:self.commodityView];
-    
+    [self.view addSubview:self.webView];
     // 添加点击关闭按钮关闭页面回调
     __weak typeof(self) weakSelf = self;
-    self.commodityView.closeButtonActionBlock = ^(PLVECBottomView * _Nonnull view) {
-        [weakSelf tapAction:nil];
-    };
-    
+
     // 添加单击关闭页面手势
     UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] init];
     [tapGestureRecognizer addTarget:self action:@selector(tapAction:)];
@@ -64,120 +71,93 @@ UIGestureRecognizerDelegate
     [self.view addGestureRecognizer:tapGestureRecognizer];
 }
 
-- (void)loadCommodityInfo {
-    [self.commodityView startLoading];
+- (NSDictionary *)getUserInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSDictionary *userInfo = @{
+        @"nick" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerName],
+        @"userId" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerId],
+        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar]
+    };
+    NSDictionary *channelInfo = @{
+        @"channelId" : [NSString stringWithFormat:@"%@", roomData.channelId],
+        @"roomId" : [NSString stringWithFormat:@"%@", roomData.channelId]
+    };
+    NSDictionary *sessionDict = @{
+        @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
+        @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
+        @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId]
+    };
     
-    __weak typeof(self)weakSelf = self;
-    [self.commodityModelsManager loadCommodityInfoWithCompletion:^(NSError * _Nonnull error) {
-        [weakSelf.commodityView stopLoading];
-        if (error) {
-            NSLog(@"loadCommodityInfo-loadCommodityInfoWithCompletion 请求失败：%@", error.localizedDescription);
-        }
-        [weakSelf.commodityView reloadData:weakSelf.commodityModelsManager.totalItems];
-    }];
+    NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
+    [mutableDict setObject:userInfo forKey:@"userInfo"];
+    [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    [mutableDict addEntriesFromDictionary:sessionDict];
+    
+    return mutableDict;
 }
 
-#pragma mark Getter
-- (PLVECCommodityView *)commodityView {
-    if (! _commodityView) {
-        
+#pragma mark Getter & Setter
+
+- (WKWebView *)webView {
+    if (!_webView) {
+        WKWebViewConfiguration * config = [[WKWebViewConfiguration alloc] init];
+        if (@available(iOS 13.0, *)) {
+            config.defaultWebpagePreferences.preferredContentMode = WKContentModeMobile;
+        }
         CGFloat height = 410;
         CGRect frame = CGRectMake(0, CGRectGetHeight(self.view.bounds)-height, CGRectGetWidth(self.view.bounds), height);
-        
-        _commodityView = [[PLVECCommodityView alloc] initWithFrame:frame];
-        _commodityView.dataSource = self;
-        _commodityView.delegate = self;
+        _webView = [[WKWebView alloc] initWithFrame:frame configuration:config];
+        _webView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
+        _webView.opaque = NO;
+        _webView.scrollView.bounces = NO;
+        if (@available(iOS 11.0,*)) {
+            [_webView.scrollView setContentInsetAdjustmentBehavior:UIScrollViewContentInsetAdjustmentNever];
+        }
     }
-    
-    return _commodityView;
+    return _webView;
 }
 
 #pragma mark - Action
+
 - (void)tapAction:(UIGestureRecognizer *)gestureRecognizer {
     [self dismissViewControllerAnimated:YES completion:^{}];
 }
 
-#pragma mark - Delegate
+#pragma mark - [ Delegate ]
+
 #pragma mark UIGestureRecognizerDelegate
+
 -(BOOL) gestureRecognizer:(UIGestureRecognizer*)gestureRecognizer shouldReceiveTouch:(UITouch*)touch {
-    return touch.view == self.view; // 设置商品列表View（PLVECCommodityView）不响应手势
+    return touch.view == self.view; // 设置商品列表View不响应手势
 }
 
-#pragma mark UITableViewDataSource
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 1;
+#pragma mark PLVProductWebViewBridgeDelegate
+
+- (NSDictionary *)getAPPInfoInProductWebViewBridge:(PLVProductWebViewBridge *)webViewBridge {
+    return [self getUserInfo];
 }
 
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return self.commodityModelsManager.models.count;
-}
-
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    NSString *reuseIdentifier = @"reuseIdentifier";
-    PLVECCommodityCell *cell = [tableView dequeueReusableCellWithIdentifier:reuseIdentifier];
-    if (!cell) {
-        cell = [[PLVECCommodityCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:reuseIdentifier];
-        cell.delegate = self;
-    }
-    cell.model = self.commodityModelsManager.models[indexPath.section];
-    
-    return cell;
-}
-
-#pragma mark UITableViewDelegate
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    return 88.0;
-}
-
-- (CGFloat)tableView:(UITableView *)tableView heightForFooterInSection:(NSInteger)section {
-    return 20.0;
-}
-
-- (UIView *)tableView:(UITableView *)tableView viewForFooterInSection:(NSInteger)section {
-    UIView *view = [[UIView alloc] init];
-    view.backgroundColor = [UIColor clearColor];
-    return view;
-}
-
-#pragma mark UIScrollViewDelegate
-- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    // 商品列表滑动到底部加载更多
-    CGFloat bottomOffset = scrollView.contentSize.height - scrollView.contentOffset.y;
-    if (bottomOffset < CGRectGetHeight(scrollView.bounds) + 1
-        && self.commodityModelsManager.totalItems != self.commodityModelsManager.models.count) { // tolerance
-        [self.commodityView startLoading];
+- (void)plvProductWebViewBridge:(PLVProductWebViewBridge *)webViewBridge clickProductButtonWithJSONObject:(id)jsonObject {
+    if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonObject, @"data");
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:data];
+        NSURL *linkURL;
+        if (model.linkType == 10) { // 通用链接
+            linkURL = [NSURL URLWithString:model.link];
+        } else if (model.linkType == 11) { // 多平台链接
+            linkURL = [NSURL URLWithString:model.mobileAppLink];
+        }
         
-        __weak typeof(self) weakSelf = self;
-        [self.commodityModelsManager loadMoreCommodityInfoWithCompletion:^(NSError * _Nonnull error) {
-            [weakSelf.commodityView stopLoading];
-            if (error) {
-                NSLog(@"scrollViewDidScroll-loadMoreCommodityInfoWithCompletion 请求失败：%@", error.localizedDescription);
-                return;
-            }
-            
-            [weakSelf.commodityView reloadData:weakSelf.commodityModelsManager.totalItems];
-        }];
-    }
-}
-
-#pragma mark PLVECCommodityCellDelegate
-- (void)didSelectWithCommodityCell:(PLVECCommodityCell *)commodityCell {
-    NSURL *jumpLinkUrl = commodityCell.jumpLinkUrl;
-    if (! jumpLinkUrl) {
-        return;
-    }
-    
-    NSLog(@"商品跳转：%@",jumpLinkUrl);
-    [self dismissViewControllerAnimated:NO completion:^{}];
-    
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityViewControllerJumpToCommodityDetail:)]) {
-        [self.delegate plvCommodityViewControllerJumpToCommodityDetail:jumpLinkUrl];
-    } else {
-        if (![UIApplication.sharedApplication openURL:jumpLinkUrl]) {
-            NSLog(@"url: %@",jumpLinkUrl);
+        if (linkURL && !linkURL.scheme) {
+            linkURL = [NSURL URLWithString:[@"http://" stringByAppendingString:linkURL.absoluteString]];
+        }
+        
+        [self tapAction:nil];
+        
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvECClickProductInViewController:linkURL:)]) {
+            [self.delegate plvECClickProductInViewController:self linkURL:linkURL];
         }
     }
-    
 }
 
 @end

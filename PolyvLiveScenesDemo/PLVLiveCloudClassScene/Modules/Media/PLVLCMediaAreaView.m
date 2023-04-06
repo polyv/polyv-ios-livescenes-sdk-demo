@@ -433,6 +433,10 @@ PLVLCDocumentPaintModeViewDelegate
     [self.paintModeView exitPaintMode];
 }
 
+- (void)changePPTWithAutoId:(NSUInteger)autoId pageNumber:(NSInteger)pageNumber {
+    [self.pptView changePPTWithAutoId:autoId pageNumber:pageNumber];
+}
+
 #pragma mark 网络质量
 - (void)showNetworkQualityMiddleView {
     if (self.networkQualityMiddleViewShowed) {
@@ -603,8 +607,8 @@ PLVLCDocumentPaintModeViewDelegate
             downloadModel = [PLVLCMediaMoreModel modelWithSwitchTitle:PLVLCMediaAreaView_Data_DownloadOptionTitle normalImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selectedImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selected:NO];
         }
         
-        PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_SpeedOptionTitle optionItemsArray:@[@"0.5x",@"1.0x",@"1.5x",@"2.0x"] selectedIndex:1];
-        speedModel.optionSpecifiedWidth = 50.0;
+        PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_SpeedOptionTitle optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x"] selectedIndex:1];
+        speedModel.optionSpecifiedWidth = 40.0;
         
         NSMutableArray * modelArray = [[NSMutableArray alloc] init];
         if (downloadModel) { [modelArray addObject:downloadModel]; }
@@ -864,6 +868,7 @@ PLVLCDocumentPaintModeViewDelegate
         UIImage *pptBgImage = [self getImageWithName:@"plvlc_media_ppt_placeholder"];
         [_pptView setBackgroudImage:pptBgImage widthScale:180.0/375.0];
         [_pptView loadRequestWitParamString:@"hasPageBtn=0"];
+        [_pptView openChangePPTPermission];
     }
     return _pptView;
 }

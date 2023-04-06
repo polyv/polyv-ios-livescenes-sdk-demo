@@ -13,7 +13,7 @@
 static NSString *const PLVStreamerPresenter_DictValue_GuestAllowed = @"allowed";
 static NSString *const PLVStreamerPresenter_DictValue_GuestAllowedWithRaiseHand = @"allowedWithRaiseHand";
 static NSString *const PLVStreamerPresenter_DictValue_GuestJoined = @"joined";
-static NSString *const PLVStreamerPresenter_AppGroup = @"group.polyv.PolyvLiveScenesDemo.ScreenShare.test";
+static NSString *const PLVStreamerPresenter_AppGroup = @"group.cn.plv.PolyvLiveScenesDemo.ScreenShare";
 
 @interface PLVStreamerPresenter ()<
 PLVSocketManagerProtocol,

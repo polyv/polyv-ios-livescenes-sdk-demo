@@ -495,6 +495,10 @@ PLVECCardPushButtonViewDelegate
     }
 }
 
+- (void)updatePlaybackVideoInfo {
+    [self.chatroomView playbackVideoInfoDidUpdated];
+}
+
 - (void)showNetworkQualityMiddleView {
     if (self.networkQualityMiddleViewShowed) {
         return;
@@ -763,10 +767,6 @@ PLVECCardPushButtonViewDelegate
         return; // 未开启商品功能
     }
     
-    if (self.commodityVC) {
-        [self.commodityVC receiveProductMessage:status content:jsonDict[@"content"]];
-    }
-    
     if (9 == status) {
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
@@ -824,9 +824,9 @@ PLVECCardPushButtonViewDelegate
 
 #pragma mark PLVECCommodityViewControllerDelegate
 
-- (void)plvCommodityViewControllerJumpToCommodityDetail:(NSURL *)commodityURL {
+- (void)plvECClickProductInViewController:(PLVECCommodityViewController *)viewController linkURL:(NSURL *)linkURL {
     if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openCommodityDetail:)]) {
-        [self.delegate homePageView:self openCommodityDetail:commodityURL];
+        [self.delegate homePageView:self openCommodityDetail:linkURL];
     }
 }
 

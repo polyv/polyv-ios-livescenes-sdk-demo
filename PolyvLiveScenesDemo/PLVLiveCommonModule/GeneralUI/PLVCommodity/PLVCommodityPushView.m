@@ -328,10 +328,6 @@
     
     NSString *linkString = [self getJumpLinkURLString];
     self.jumpButton.enabled = [PLVFdUtil checkStringUseable:linkString];
-    
-    if (self.type == PLVCommodityPushViewTypeEC) {
-        [self addCountdownTimer];
-    }
 }
 
 #pragma mark - Action

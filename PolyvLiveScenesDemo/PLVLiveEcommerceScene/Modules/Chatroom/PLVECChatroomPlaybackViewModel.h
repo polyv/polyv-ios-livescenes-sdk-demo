@@ -26,6 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy, readonly) NSString *channelId;
 /// 当场回放场次id
 @property (nonatomic, copy, readonly) NSString *sessionId;
+/// 当场回放视频id
+@property (nonatomic, copy, readonly) NSString *videoId;
 /// 聊天重放common层presenter
 @property (nonatomic, strong, readonly) PLVChatroomPlaybackPresenter *presenter;
 /// 公聊消息数组
@@ -36,7 +38,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 初始化方法
 /// @param channelId 频道号
 /// @param sessionId 当场回放的场次id
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId;
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId;
 
 /// 获取/更新回放视频时长
 - (void)updateDuration:(NSTimeInterval)duration;

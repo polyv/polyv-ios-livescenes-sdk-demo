@@ -99,6 +99,9 @@
             UIButton * button = self.buttonsArray[i];
             
             CGFloat buttonsPadding = 16.0;
+            if (self.buttonsArray.count >= 5) {
+                buttonsPadding = 8.0;
+            }
             CGFloat buttonX = (i == 0 ? leftPadding : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
             CGFloat buttonWidth = [button.titleLabel sizeThatFits:CGSizeMake(100, 26.0)].width + (12 * 2);
             if (self.currentModel.optionSpecifiedWidth > 0) {

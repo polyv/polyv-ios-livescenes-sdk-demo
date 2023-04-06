@@ -26,6 +26,8 @@ PLVChatroomPlaybackPresenterDelegate
 @property (nonatomic, copy) NSString *channelId;
 /// 当场回放的场次id
 @property (nonatomic, copy) NSString *sessionId;
+/// 当场回放的视频id
+@property (nonatomic, copy) NSString *videoId;
 /// 聊天回放common层presenter
 @property (nonatomic, strong) PLVChatroomPlaybackPresenter *presenter;
 /// 公聊消息数组，私聊无聊天回放
@@ -58,13 +60,14 @@ PLVChatroomPlaybackPresenterDelegate
 
 #pragma mark - [ Public Method ]
 
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId {
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId {
     self = [super init];
     if (self) {
         self.channelId = (channelId && [channelId isKindOfClass:[NSString class]]) ? channelId : @"";
         self.sessionId = (sessionId && [sessionId isKindOfClass:[NSString class]]) ? sessionId : @"";
+        self.videoId = (videoId && [videoId isKindOfClass:[NSString class]]) ? videoId : @"";
         
-        self.presenter = [[PLVChatroomPlaybackPresenter alloc] initWithChannelId:self.channelId sessionId:self.sessionId];
+        self.presenter = [[PLVChatroomPlaybackPresenter alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId];
         self.presenter.delegate = self;
         
         // 多代理

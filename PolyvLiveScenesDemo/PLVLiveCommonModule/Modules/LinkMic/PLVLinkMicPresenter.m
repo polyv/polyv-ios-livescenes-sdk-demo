@@ -330,7 +330,8 @@ PLVLinkMicManagerDelegate
 }
 
 - (void)checkLinkMicLimitedCallback:(void (^)(BOOL limited))callback {
-    [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId sessionId:self.sessionId completion:^(NSDictionary *dict) {
+    BOOL getSubRooms = [PLVRoomDataManager sharedManager].roomData.listenMain;
+    [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId sessionId:self.sessionId getSubRooms:getSubRooms completion:^(NSDictionary *dict) {
         NSInteger limitCount = PLV_SafeIntegerForValue([PLVRoomDataManager sharedManager].roomData.menuInfo.linkMicLimit);
         NSArray *joinList = dict[@"joinList"]; // joinList 用户并不一定上麦，需要根据 voice 判断
         NSInteger voiceCount = 0;
@@ -414,7 +415,8 @@ PLVLinkMicManagerDelegate
 
 - (NSString *)channelId{
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    return roomData.channelId;
+    NSString *channelId = roomData.listenMain ? roomData.menuInfo.mainRoomChannelId : roomData.channelId;
+    return channelId;
 }
 
 - (NSString *)sessionId{
@@ -830,7 +832,8 @@ PLVLinkMicManagerDelegate
                 dispatch_block_cancel(weakSelf.requestOnlineListBlock);
             }
             dispatch_block_t requestBlock = dispatch_block_create(DISPATCH_BLOCK_INHERIT_QOS_CLASS, ^{
-                [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:weakSelf.channelId sessionId:weakSelf.sessionId completion:^(NSDictionary *dict) {
+                BOOL getSubRooms = [PLVRoomDataManager sharedManager].roomData.listenMain;
+                [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:weakSelf.channelId sessionId:weakSelf.sessionId getSubRooms:getSubRooms completion:^(NSDictionary *dict) {
                     if (weakSelf.arraySafeQueue) {
                         dispatch_async(weakSelf.arraySafeQueue, ^{
                             BOOL includeTargetLinkMicUser = [weakSelf refreshLinkMicOnlineUserListWithDataDictionary:dict targetLinkMicUserId:linkMicUserId];
@@ -1385,7 +1388,8 @@ PLVLinkMicManagerDelegate
         if ([PLVFdUtil checkDictionaryUseable:parames]) {
             [jsonDict addEntriesFromDictionary:parames];
         }
-        NSString *roomId = [PLVSocketManager sharedManager].roomId; // 此处不可使用频道号，因存在分房间的可能
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        NSString *roomId = roomData.listenMain ? roomData.menuInfo.mainRoomChannelId : [PLVSocketManager sharedManager].roomId; // 此处不可使用频道号，因存在分房间的可能
         PLVBSocketUserType bUserType = (PLVBSocketUserType)[PLVSocketManager sharedManager].userType;
         NSString *userTypeString = [PLVBSocketUser userTypeStringWithUserType:bUserType english:YES];
         if (![PLVFdUtil checkStringUseable:userTypeString]) {
@@ -1533,7 +1537,12 @@ PLVLinkMicManagerDelegate
 #pragma mark - [ Event ]
 #pragma mark Timer
 - (void)linkMicTimerEvent:(NSTimer *)timer{
-    if (!self.channelInLive) { return; }
+    if (!self.channelInLive) {
+        if (self.linkMicOpen) {
+            [self refreshLinkMicOpenStatus:@"close" mediaType:@""];
+        }
+        return;
+    }
     
     /// Socket 断开时不作刷新请求，因连麦业务基本均依赖于 Scoket 服务
     if ([PLVSocketManager sharedManager].login) {
@@ -1550,7 +1559,8 @@ PLVLinkMicManagerDelegate
         if (self.linkMicStatus == PLVLinkMicStatus_Joined ||
             self.rtcRoomJoinStatus == PLVLinkMicPresenterRoomJoinStatus_Joined) {
             // 请求，刷新‘连麦在线用户列表’
-            [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId sessionId:self.sessionId completion:^(NSDictionary *dict) {
+            BOOL getSubRooms = [PLVRoomDataManager sharedManager].roomData.listenMain;
+            [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId sessionId:self.sessionId getSubRooms:getSubRooms completion:^(NSDictionary *dict) {
                 if (weakSelf.arraySafeQueue) {
                     dispatch_async(weakSelf.arraySafeQueue, ^{
                         [weakSelf refreshLinkMicOnlineUserListWithDataDictionary:dict targetLinkMicUserId:nil];

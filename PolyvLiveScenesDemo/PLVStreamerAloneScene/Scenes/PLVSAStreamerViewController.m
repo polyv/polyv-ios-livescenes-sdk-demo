@@ -375,7 +375,7 @@ PLVShareLiveSheetDelegate
     self.streamerPresenter.cameraDefaultFront = ![PLVRoomDataManager sharedManager].roomData.appDefaultPureViewEnabled;
     
     self.streamerPresenter.previewType = PLVStreamerPresenterPreviewType_UserArray;
-    [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:[PLVRoomDataManager sharedManager].roomData.maxResolution]];
+    [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:[PLVRoomDataManager sharedManager].roomData.defaultResolution]];
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
     [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_Tile];
@@ -509,7 +509,7 @@ PLVShareLiveSheetDelegate
             [weakSelf tryResumeDeviceOrientation];
             [weakSelf.streamerPresenter joinRTCChannel];
             weakSelf.tryResumeClassBlock = ^{
-                PLVResolutionType type = [PLVRoomDataManager sharedManager].roomData.maxResolution;
+                PLVResolutionType type = [PLVRoomDataManager sharedManager].roomData.defaultResolution;
                 [weakSelf streamerSettingViewStartButtonClickWithResolutionType:type];
             };
         }];

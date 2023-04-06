@@ -121,6 +121,9 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
 + (NSString * _Nullable)resolutionStringWithType:(PLVResolutionType)resolutionType {
     NSString *string = nil;
     switch (resolutionType) {
+        case PLVResolutionType1080P:
+            string = @"超高清";
+            break;
         case PLVResolutionType720P:
             string = @"超清";
             break;
@@ -142,6 +145,8 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
         resolution = PLVResolutionType360P;
     }else if (streamQuality == PLVBLinkMicStreamQuality720P){
         resolution = PLVResolutionType720P;
+    }else if (streamQuality == PLVBLinkMicStreamQuality1080P){
+        resolution = PLVResolutionType1080P;
     }
     return resolution;
 }
@@ -154,6 +159,8 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
         streamQuality = PLVBLinkMicStreamQuality360P;
     }else if (resolution == PLVResolutionType720P){
         streamQuality = PLVBLinkMicStreamQuality720P;
+    }else if (resolution == PLVResolutionType1080P){
+        streamQuality = PLVBLinkMicStreamQuality1080P;
     }
     return streamQuality;
 }

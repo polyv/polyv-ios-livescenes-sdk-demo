@@ -769,6 +769,10 @@ PLVLCKeyboardMoreViewDelegate
     [self.textView replaceCharactersInRange:cursorRange withAttributedString:emojiAttrStr];
     self.textView.selectedRange = NSMakeRange(cursorRange.location + emojiAttrStr.length, 0);
     [self textViewDidChange:self.textView];
+    if (self.textView.selectedRange.location == self.textView.text.length) {
+        CGFloat offsetY = MAX(self.textView.contentSize.height - self.textView.bounds.size.height, 0);
+        [self.textView setContentOffset:CGPointMake(0.0, offsetY) animated:YES];
+    }
 }
 
 - (void)selectImageEmotions:(PLVImageEmotion *)emojiModel {

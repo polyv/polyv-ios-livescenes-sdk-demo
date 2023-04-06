@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PLVPlayerPresenter.h"
 
 /// 网络质量（快直播独有）
 typedef NS_ENUM(NSInteger, PLVECLivePlayerQuickLiveNetworkQuality) {
@@ -48,6 +49,9 @@ NS_ASSUME_NONNULL_BEGIN
   currentPlaybackTimeInterval:(NSTimeInterval)currentPlaybackTimeInterval
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime;
+
+/// 播放器 ‘回放视频信息’ 发生改变
+- (void)playerController:(PLVECPlayerViewController *)playerController playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo;
 
 #pragma mark  无延迟播放的回调
 

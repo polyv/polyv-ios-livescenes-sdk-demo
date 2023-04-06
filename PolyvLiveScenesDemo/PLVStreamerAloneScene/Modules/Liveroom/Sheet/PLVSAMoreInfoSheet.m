@@ -430,7 +430,9 @@
 /// 将成字符串转换成清晰度枚举值
 - (PLVResolutionType)changeBitRateTypeWithString:(NSString *)bitRatestring {
     PLVResolutionType type = PLVResolutionType360P;
-    if ([bitRatestring isEqualToString:@"超清"]) {
+    if ([bitRatestring isEqualToString:@"超高清"]) {
+        type = PLVResolutionType1080P;
+    } else if ([bitRatestring isEqualToString:@"超清"]) {
         type = PLVResolutionType720P;
     } else if ([bitRatestring isEqualToString:@"高清"]) {
         type = PLVResolutionType360P;
@@ -454,21 +456,40 @@
             break;
         case PLVResolutionType720P:
             title = @"超清\n  ";
+            imageName = @"plvsa_liveroom_btn_fhd";
+            break;
+        case PLVResolutionType1080P:
+            title = @"超高清\n  ";
             imageName = @"plvsa_liveroom_btn_uhd";
             break;
         default:
             break;
     }
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+        title = [NSString stringWithFormat:@"%@\n  ",[self qualityNameWithResolutionType:type]];
+    }
     
     // iPad时，文案去掉换行
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     if (isPad) {
-        NSString *padTitle = [title substringToIndex:2];
+        NSRange range = [title rangeOfString:@"\n  "];
+        NSString *padTitle = [title substringToIndex:range.location];
         title = padTitle;
     }
 
     [self.cameraBitRateButton setTitle:title forState:UIControlStateNormal];
     [self.cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:imageName] forState:UIControlStateNormal];
+}
+
+/// 将清晰度枚举值转换成字符串
+- (NSString *)qualityNameWithResolutionType:(PLVResolutionType)resolutionType {
+    NSString *string = nil;
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+    int i = (int)resolutionType / 4.0;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
+        string = videoParams[i].qualityName;
+    }
+    return string;
 }
 
 /// 讲师、助教、管理员可以禁言操作

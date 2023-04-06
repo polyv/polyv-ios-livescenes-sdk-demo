@@ -14,6 +14,7 @@
 
 static NSString *kResolutionCellIdentifier = @"resolutionCellIdentifier";
 static NSString *const kSettingResolutionKey = @"settingResolutionKey";
+static NSString *const kSettingResolutionLevelKey = @"settingResolutionLevelKey";
 
 @interface PLVLSResolutionSheet ()<
 UITableViewDataSource,
@@ -123,7 +124,17 @@ UITableViewDelegate
 - (NSArray *)resolutionTypeArray {
     if (!_resolutionTypeArray) {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        if (roomData.maxResolution == PLVResolutionType720P) {
+        NSArray *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+        if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams]) {
+            NSMutableArray * resolutionLevelArray = [NSMutableArray array];
+            for (int i = 0; i < videoParams.count; i++) {
+                int reolutionType = (int) i * 4;
+                [resolutionLevelArray addObject:@(reolutionType)];
+            }
+            _resolutionTypeArray = resolutionLevelArray;
+        } else if (roomData.maxResolution == PLVResolutionType1080P) {
+            _resolutionTypeArray = @[@(PLVResolutionType1080P), @(PLVResolutionType720P), @(PLVResolutionType360P)];
+        } else if (roomData.maxResolution == PLVResolutionType720P) {
             _resolutionTypeArray = @[@(PLVResolutionType720P), @(PLVResolutionType360P), @(PLVResolutionType180P)];
         } else if (roomData.maxResolution == PLVResolutionType360P) {
             _resolutionTypeArray = @[@(PLVResolutionType360P), @(PLVResolutionType180P)];
@@ -140,6 +151,9 @@ UITableViewDelegate
         for (int i = 0; i < [self.resolutionTypeArray count]; i++) {
             PLVResolutionType resolutionType = [self.resolutionTypeArray[i] integerValue];
             NSString *string = [self stringWithResolutionType:resolutionType];
+            if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+                string = [self qualityNameWithResolutionType:resolutionType];
+            }
             [muArray addObject:string];
         }
         _resolutionStringArray = [muArray copy];
@@ -191,6 +205,9 @@ UITableViewDelegate
 - (NSString *)stringWithResolutionType:(PLVResolutionType)resolutionType {
     NSString *string = nil;
     switch (resolutionType) {
+        case PLVResolutionType1080P:
+            string = @"超高清";
+            break;
         case PLVResolutionType720P:
             string = @"超清";
             break;
@@ -204,6 +221,17 @@ UITableViewDelegate
     return string;
 }
 
+/// 将清晰度枚举值转换成字符串
+- (NSString *)qualityNameWithResolutionType:(PLVResolutionType)resolutionType {
+    NSString *string = nil;
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+    int i = (int)resolutionType / 4.0;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
+        string = videoParams[i].qualityName;
+    }
+    return string;
+}
+
 /// 把缓存的清晰度转换成当前索引
 - (NSInteger)selectedResolutionIndex {
     NSInteger selectedIndex = 0;
@@ -212,9 +240,13 @@ UITableViewDelegate
     
     NSString * saveResolutionString = [[NSUserDefaults standardUserDefaults] objectForKey:kSettingResolutionKey];
     PLVResolutionType saveResolution;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+        saveResolutionString = [[NSUserDefaults standardUserDefaults] objectForKey:kSettingResolutionLevelKey];
+    }
+    
     if (![PLVFdUtil checkStringUseable:saveResolutionString]) {
         /// 若无本地记录，则默认360P
-        saveResolution = PLVResolutionType360P;
+        saveResolution = [PLVRoomDataManager sharedManager].roomData.defaultResolution;
     }else{
         saveResolution = saveResolutionString.integerValue;
     }
@@ -230,8 +262,14 @@ UITableViewDelegate
 
 /// 保存当前选择的清晰度到本地
 - (void)saveSelectedResolution:(PLVResolutionType)resolutionType {
-    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)resolutionType] forKey:kSettingResolutionKey];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+        [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)resolutionType] forKey:kSettingResolutionLevelKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    } else {
+        [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)resolutionType] forKey:kSettingResolutionKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
 }
 
 @end

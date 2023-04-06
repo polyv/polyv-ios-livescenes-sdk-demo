@@ -13,7 +13,6 @@
 #import "PLVLivePictureInPicturePlaceholderView.h"
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
-#import "PLVPlayerPresenter.h"
 #import "PLVWatermarkView.h"
 #import "PLVMarqueeView.h"
 
@@ -693,6 +692,13 @@ PLVPlayerPresenterDelegate
     if (self.roomData.videoType == PLVChannelVideoType_Playback) {
         /// 设置防录屏水印
         [self setupWatermark];
+    }
+}
+
+/// 播放器 ‘回放信息’ 发生改变
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:playbackVideoInfoDidUpdated:)]) {
+        [self.delegate playerController:self playbackVideoInfoDidUpdated:videoInfo];
     }
 }
 

@@ -21,6 +21,8 @@ PLVPlaybackMessageManagerDelegate
 @property (nonatomic, copy) NSString *channelId;
 /// 回放场次id
 @property (nonatomic, copy) NSString *sessionId;
+/// 回放视频id
+@property (nonatomic, copy) NSString *videoId;
 /// 回调定时器
 @property (nonatomic, strong) NSTimer *timer;
 /// 当前视频播放时间戳，单位毫秒
@@ -44,13 +46,14 @@ PLVPlaybackMessageManagerDelegate
 
 #pragma mark - [ Public Method ]
 
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId {
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId {
     self = [super init];
     if (self) {
         self.channelId = (channelId && [channelId isKindOfClass:[NSString class]]) ? channelId : @"";
         self.sessionId = (sessionId && [sessionId isKindOfClass:[NSString class]]) ? sessionId : @"";
+        self.videoId = (videoId && [videoId isKindOfClass:[NSString class]]) ? videoId : @"";
         
-        self.manager = [[PLVPlaybackMessageManager alloc] initWithChannelId:self.channelId sessionId:self.sessionId];
+        self.manager = [[PLVPlaybackMessageManager alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId];
         self.manager.delegate = self;
         
         // 创建定时器

@@ -141,7 +141,17 @@
 - (NSArray *)resolutionTypeArray {
     if (!_resolutionTypeArray) {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        if (roomData.maxResolution == PLVResolutionType720P) {
+        NSArray *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+        if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams]) {
+            NSMutableArray * resolutionLevelArray = [NSMutableArray array];
+            for (int i = 0; i < videoParams.count; i++) {
+                int reolutionType = (int) i * 4;
+                [resolutionLevelArray addObject:@(reolutionType)];
+            }
+            _resolutionTypeArray = resolutionLevelArray;
+        } else if (roomData.maxResolution == PLVResolutionType1080P) {
+            _resolutionTypeArray = @[@(PLVResolutionType1080P), @(PLVResolutionType720P), @(PLVResolutionType360P)];
+        } else if (roomData.maxResolution == PLVResolutionType720P) {
             _resolutionTypeArray = @[@(PLVResolutionType720P), @(PLVResolutionType360P), @(PLVResolutionType180P)];
         } else if (roomData.maxResolution == PLVResolutionType360P) {
             _resolutionTypeArray = @[@(PLVResolutionType360P), @(PLVResolutionType180P)];
@@ -158,11 +168,27 @@
         for (int i = 0; i < [self.resolutionTypeArray count]; i++) {
             PLVResolutionType resolutionType = [self.resolutionTypeArray[i] integerValue];
             NSString *string = [PLVRoomData resolutionStringWithType:resolutionType];
+            if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+                string = [self qualityNameWithResolutionType:resolutionType];
+            }
             [muArray addObject:string];
         }
         _resolutionStringArray = [muArray copy];
     }
     return _resolutionStringArray;
+}
+
+#pragma mark - Private
+
+// 将清晰度枚举值转换成字符串
+- (NSString *)qualityNameWithResolutionType:(PLVResolutionType)resolutionType {
+    NSString *string = nil;
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+    int i = (int)resolutionType / 4.0;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
+        string = videoParams[i].qualityName;
+    }
+    return string;
 }
 
 #pragma mark - [ Action ]

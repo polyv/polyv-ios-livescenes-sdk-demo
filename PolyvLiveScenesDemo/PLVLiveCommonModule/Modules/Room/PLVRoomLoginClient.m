@@ -71,7 +71,19 @@
                 [[PLVRoomDataManager sharedManager] configRoomData:roomData];
                 
                 [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
-                    !completion ?: completion(roomData.customParam);
+                    if (channelMenuInfo.transmitMode) {
+                        if (apiChannelType != PLVChannelTypePPT) {
+                            !failure ?: failure(@"纯视频场景暂时不支持双师");
+                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login live room failed with【纯视频场景暂时不支持双师】", __FUNCTION__);
+                        } else if (channelMenuInfo.mainRoom) {
+                            !failure ?: failure(@"房间已开启双师功能，限制学生登录");
+                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s login live room failed with【双师暂不支持大房间登录】", __FUNCTION__);
+                        } else {
+                            !completion ?: completion(roomData.customParam);
+                        }
+                    } else {
+                        !completion ?: completion(roomData.customParam);
+                    }
                 }];
             }
         } failure:^(NSError * _Nonnull error) {
@@ -251,7 +263,7 @@
                                     sectionList = list;
                                 }];
                             }
-                            [PLVLiveVideoAPI requestPlaybackList:channelId listType:channelPlaybackInfo.type page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
+                            [PLVLiveVideoAPI requestPlaybackList:channelId listType:channelPlaybackInfo.playbackOrigin page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
                                 playbackList = list;
                             }];
                             [self playbackLoginWithChannelType:channelType channelId:channelId vid:videoPoolId userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {
@@ -409,6 +421,9 @@
         // 初始化直播间数据
         PLVRoomData *roomData = [[PLVRoomData alloc] init];
         roomData.maxResolution = videoResolution;
+        if (videoResolution == PLVResolutionType1080P) {
+            roomData.defaultResolution = PLVResolutionType720P;
+        }
         roomData.videoType = PLVChannelVideoType_Streamer;
         roomData.channelType = apiChannelType;
         roomData.channelId = PLV_SafeStringForDictKey(data, @"channelId");
@@ -440,10 +455,33 @@
         
         NSString * viewerId = channelId;
         PLVRoomUserType viewerType = PLVRoomUserTypeTeacher;
+        NSInteger rtcDefaultResolution = [data[@"teacherDefaultResolution"] integerValue];
+        NSString *defaultQualityLevel = [PLVLiveVideoConfig sharedInstance].teacherDefaultQualityLevel;
         if ([role isEqualToString:@"guest"]) {
             viewerId = PLV_SafeStringForDictKey(data, @"InteractUid");
             viewerType = PLVRoomUserTypeGuest;
+            rtcDefaultResolution = [data[@"guestDefaultResolution"] integerValue];
+            defaultQualityLevel = [PLVLiveVideoConfig sharedInstance].guestDefaultQualityLevel;
         }
+        
+        PLVResolutionType defaultVideoResolution = PLVResolutionType180P;
+        if (rtcDefaultResolution >= 720) {
+            defaultVideoResolution = PLVResolutionType720P;
+        } else if (rtcDefaultResolution == 360) {
+            defaultVideoResolution = PLVResolutionType360P;
+        }
+        roomData.defaultResolution = defaultVideoResolution;
+        NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+        if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && [PLVFdUtil checkStringUseable:defaultQualityLevel]) {
+            for (int i = 0; i < videoParams.count; i++) {
+                NSString *qualityLevel = videoParams[i].qualityLevel;
+                if ([PLVFdUtil checkStringUseable:qualityLevel] && [qualityLevel isEqualToString:defaultQualityLevel]) {
+                    roomData.defaultResolution = (int)i * 4;
+                    break;
+                }
+            }
+        }
+        
         PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithViewerId:viewerId viewerName:teacherNickname viewerAvatar:avatar viewerType:viewerType];
         roomUser.actor = actor;
         roomUser.role = role;

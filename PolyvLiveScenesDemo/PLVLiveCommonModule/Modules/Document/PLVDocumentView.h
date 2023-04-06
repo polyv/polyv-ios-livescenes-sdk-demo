@@ -179,13 +179,16 @@ typedef NS_ENUM(NSUInteger, PLVDocumentViewScene) {
 /// @param channelId 频道Id
 - (void)pptStartWithFileId:(NSString *)fileId channelId:(NSString *)channelId;
 
-#pragma mark - 操作白板的方法(scene == PLVDocumentViewSceneCloudClass/PLVDocumentViewSceneStreamer 时方生效）
+#pragma mark - 操作白板的方法
 
 /// 设置文档的用户交互启用，即开启画笔权限
 /// @note 讲师默认启用。嘉宾、观众默认禁用，授权后可开启用户交互手势和画笔权限
 ///
 /// @param enabled  是否启用 YES 启用，NO禁用
 - (void)setDocumentUserInteractionEnabled:(BOOL)enabled;
+
+/// 在非授权白板权限的情况下，允许切换文档或白板，用于双师模式
+- (void)openChangePPTPermission;
 
 /// 设置画板是否处于可绘制状态
 /// @param open  打开或关闭画板

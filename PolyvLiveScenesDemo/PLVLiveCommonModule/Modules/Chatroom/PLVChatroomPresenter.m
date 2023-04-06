@@ -326,6 +326,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     PLVImageMessage *message = [[PLVImageMessage alloc] init];
     message.image = image;
+    message.processImageData = [PLVImageUtil compressImage:image mbValue:2];
     message.time = [PLVFdUtil curTimeInterval];
     message.source = source;
     

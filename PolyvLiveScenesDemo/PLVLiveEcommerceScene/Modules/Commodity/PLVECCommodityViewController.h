@@ -10,10 +10,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVECCommodityViewController;
+
 @protocol PLVECCommodityViewControllerDelegate <NSObject>
 
-/// 商品跳转代理方法
-- (void)plvCommodityViewControllerJumpToCommodityDetail:(NSURL *)commodityURL;
+/// 点击商品库中商品的回调
+/// @param viewController 商品库页面控制器
+/// @param linkURL 商品链接url
+- (void)plvECClickProductInViewController:(PLVECCommodityViewController *)viewController linkURL:(NSURL *)linkURL;
 
 @end
 
@@ -21,11 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVECCommodityViewControllerDelegate> delegate;
 
-/// 处理socket商品信息
-///
-/// @param status 商品操作信息类型
-/// @param content 商品信息
-- (void)receiveProductMessage:(NSInteger)status content:(id)content;
+/// 更新用户信息
+/// 在用户的信息改变后进行通知
+- (void)updateUserInfo;
 
 @end
 

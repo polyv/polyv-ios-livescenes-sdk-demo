@@ -99,6 +99,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)setup {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.menuInfo.transmitMode && roomData.menuInfo.mainRoom) {
+        return;
+    }
+    
     // 初始化信号量
     _publicChatArrayLock = dispatch_semaphore_create(1);
     _privateChatArrayLock = dispatch_semaphore_create(1);
@@ -281,6 +286,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 /// 调用销毁接口时
 - (void)removeAllPrivateChatModels {
+    if (!_privateChatArrayLock) {
+        return;
+    }
     dispatch_semaphore_wait(_privateChatArrayLock, DISPATCH_TIME_FOREVER);
     [self.privateChatArray removeAllObjects];
     dispatch_semaphore_signal(_privateChatArrayLock);
@@ -355,6 +363,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 /// 接收到socket删除所有公聊消息的通知时、调用销毁接口时
 - (void)removeAllPublicChatModels {
+    if (!_publicChatArrayLock) {
+        return;
+    }
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     [self.publicChatArray removeAllObjects];
     [self.partOfPublicChatArray removeAllObjects];
@@ -578,6 +589,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)removeAllLoginUsers {
+    if (!_loginArrayLock) {
+        return;
+    }
     dispatch_semaphore_wait(_loginArrayLock, DISPATCH_TIME_FOREVER);
     [self.loginUserArray removeAllObjects];
     dispatch_semaphore_signal(_loginArrayLock);
@@ -614,6 +628,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)removeAllManagerMessages {
+    if (!_managerMessageArrayLock) {
+        return;
+    }
     dispatch_semaphore_wait(_managerMessageArrayLock, DISPATCH_TIME_FOREVER);
     [self.managerMessageArray removeAllObjects];
     dispatch_semaphore_signal(_managerMessageArrayLock);
@@ -649,6 +666,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (void)removeAllDanmus {
+    if (!_danmuArrayLock) {
+        return;
+    }
     dispatch_semaphore_wait(_danmuArrayLock, DISPATCH_TIME_FOREVER);
     [self.danmuArray removeAllObjects];
     dispatch_semaphore_signal(_danmuArrayLock);

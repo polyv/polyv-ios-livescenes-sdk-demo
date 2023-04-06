@@ -141,6 +141,9 @@ static PLVEmoticonManager *_sharedManager = nil;
 
 - (NSMutableAttributedString *)converEmoticonTextToEmotionFormatText:(NSAttributedString *)emoticonText font:(UIFont *)font {
     NSMutableAttributedString *mAttributedStr = [[NSMutableAttributedString alloc] initWithAttributedString:emoticonText];
+    NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+    [paragraphStyle setMinimumLineHeight:20];
+    [mAttributedStr addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, emoticonText.length)];
     NSArray<NSTextCheckingResult *> *matchArr = [self.regularExpression  matchesInString:emoticonText.string options:kNilOptions range:NSMakeRange(0, mAttributedStr.length)];
     
     NSUInteger offset = 0;

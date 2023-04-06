@@ -29,7 +29,6 @@
 UITextViewDelegate,
 UITableViewDelegate,
 UITableViewDataSource,
-PLVRoomDataManagerProtocol,
 PLVECChatroomViewModelProtocol,
 PLVECChatroomPlaybackViewModelDelegate
 >
@@ -90,12 +89,6 @@ PLVECChatroomPlaybackViewModelDelegate
             [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillHide:) name:UIKeyboardWillHideNotification object:nil];
         } else { // 回放时只有chatInputDisable为YES时会显示聊天室
             [[PLVECChatroomViewModel sharedViewModel] setup];
-            [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-            
-            if (self.playbackEnable && roomData.playbackSessionId) {
-                self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
-                self.playbackViewModel.delegate = self;
-            }
         }
         
         self.observingTableView = NO;
@@ -262,6 +255,17 @@ PLVECChatroomPlaybackViewModelDelegate
     [self.playbackViewModel playbakTimeChanged];
 }
 
+- (void)playbackVideoInfoDidUpdated {
+    // 清理上一场的数据
+    [self.playbackViewModel clear];
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (self.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
+        self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId videoId:roomData.playbackVideoInfo.fileId];
+        self.playbackViewModel.delegate = self;
+    }
+}
+
 #pragma mark - Private Method
 
 // 数据源数目
@@ -412,30 +416,6 @@ PLVECChatroomPlaybackViewModelDelegate
     }
     
     [self followKeyboardAnimated:notification.userInfo show:NO];
-}
-
-#pragma mark PLVRoomDataManagerProtocol
-
-- (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (self.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
-        if (!self.playbackViewModel) { // 填入vid登陆的回放场景，需要在登陆后通过播放器返回场次id
-            self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
-            self.playbackViewModel.delegate = self;
-        }
-    }
-}
-
-/// vid更新，回放场景中，自动播放回放列表的下一个回放视频时触发
-- (void)roomDataManager_didVidChanged:(NSString *)vid {
-    // 清理上一场的数据
-    [self.playbackViewModel clear];
-    
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (self.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
-        self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
-        self.playbackViewModel.delegate = self;
-    }
 }
 
 #pragma mark - PLVECChatroomViewModelProtocol

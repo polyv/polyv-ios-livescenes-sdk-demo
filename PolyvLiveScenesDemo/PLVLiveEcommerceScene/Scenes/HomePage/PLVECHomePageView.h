@@ -112,6 +112,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
           currentPlaybackTime:(NSString *)currentPlaybackTime
                  durationTime:(NSString *)durationTime;
 
+- (void)updatePlaybackVideoInfo;
+
 - (void)showNetworkQualityMiddleView;
 
 - (void)showNetworkQualityPoorView;

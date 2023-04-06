@@ -19,6 +19,7 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
     PLVResolutionType180P = 0, // 180p（标清）
     PLVResolutionType360P = 4, // 360p（高清）
     PLVResolutionType720P = 8, // 720p（超清）
+    PLVResolutionType1080P = 12, // 1080p（超高清）
 };
 
 @interface PLVRoomData : NSObject
@@ -64,6 +65,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL restrictChatEnabled;
 /// 最大同时在线人数
 @property (nonatomic, assign) NSUInteger maxViewerCount;
+/// 双师模式且当前频道为小房间时，当前是否接收大房间的转播
+@property (nonatomic, assign) BOOL listenMain;
 
 #pragma mark 直播独有属性
 /// 直播状态
@@ -129,6 +132,10 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL multiplexingEnabled;
 /// 推流最大清晰度，默认为 PLVLSResolutionType720P
 @property (nonatomic, assign) PLVResolutionType maxResolution;
+/// 推流默认清晰度
+@property (nonatomic, assign) PLVResolutionType defaultResolution;
+/// 推流默认清晰度等级
+@property (nonatomic, copy) NSString *defaultResolutionLevel;
 /// 开始推流的时间戳（单位秒；以 sessionId 成功获取为起始时间）
 @property (nonatomic, assign) NSTimeInterval startTimestamp;
 /// 已推流时长（单位秒；不包含退至后台时间）

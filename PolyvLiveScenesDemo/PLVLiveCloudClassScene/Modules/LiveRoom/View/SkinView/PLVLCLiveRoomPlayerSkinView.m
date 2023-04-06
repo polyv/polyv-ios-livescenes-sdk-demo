@@ -313,6 +313,7 @@
 
     self.likeButtonBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
     UIView *likeButtonView = self.likeButtonBackgroudView.subviews.firstObject;
+    likeButtonView.frame = self.likeButtonBackgroudView.bounds;
     buttonOriginX = (likeButtonView && !likeButtonView.isHidden) ? CGRectGetMinX(self.likeButtonBackgroudView.frame) - 20 - likeButtonWidth : buttonOriginX;
     self.rewardButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
     buttonOriginX = (self.rewardButton.isHidden || !self.rewardButton.superview) ? buttonOriginX : CGRectGetMinX(self.rewardButton.frame) - likeButtonWidth - 20;

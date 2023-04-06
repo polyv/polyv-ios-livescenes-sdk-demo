@@ -559,6 +559,10 @@ PLVECMessagePopupViewDelegate
     [self.homePageView updateDowloadProgress:dowloadProgress playedProgress:playedProgress duration:duration currentPlaybackTimeInterval:currentPlaybackTimeInterval currentPlaybackTime:currentPlaybackTime durationTime:durationTime];
 }
 
+- (void)playerController:(PLVECPlayerViewController *)playerController playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
+    [self.homePageView updatePlaybackVideoInfo];
+}
+
 - (void)playerController:(PLVECPlayerViewController *)playerController noDelayLiveStartUpdate:(BOOL)noDelayLiveStart {
     [self.linkMicAreaView startWatchNoDelay:noDelayLiveStart];
 }

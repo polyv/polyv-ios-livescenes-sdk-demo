@@ -11,7 +11,7 @@
 #import <PLVBusinessSDK/PLVBusinessSDK.h>
 #import <mach/mach.h>
 
-#define kPLVAppGroup @"group.polyv.PolyvLiveScenesDemo.ScreenShare.test"
+#define kPLVAppGroup @"group.cn.plv.PolyvLiveScenesDemo.ScreenShare"
 
 @interface SampleHandler ()<PLVBroadcastSampleHandlerDelegate>
  

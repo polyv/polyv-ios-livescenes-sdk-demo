@@ -72,7 +72,7 @@ UITableViewDataSource
 /// 聊天室顶部欢迎横幅
 @property (nonatomic, strong) PLVLCWelcomeView *welcomeView;
 /// 聊天室顶部回放功能横幅
-@property (nonatomic, strong) PLVLCPlaybackNotifyView *playbackNotifyView;
+@property (nonatomic, strong) PLVLCPlaybackNotifyView *notifyView;
 /// 聊天室顶部公告横幅
 @property (nonatomic, strong) PLVLCNotifyMarqueeView *notifyMarqueeView;
 /// 打赏成功提示条幅
@@ -91,13 +91,20 @@ UITableViewDataSource
 - (void)setupUI {
     self.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#202127"];
     
-    [self.view addSubview:self.tableView];
-    [self.view addSubview:self.likeButtonView];
-    [self.view addSubview:self.cardPushButtonView];
-    [self.view addSubview:self.welcomeView];
-    [self.view addSubview:self.notifyMarqueeView];
-    [self.view addSubview:self.receiveNewMessageView];
-    [self.view addSubview:self.playbackNotifyView];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.menuInfo.transmitMode &&
+        roomData.menuInfo.mainRoom) {
+        [self.view addSubview:self.notifyView];
+        [self.notifyView showNotifyhMessage:@"已关联其他房间，仅可观看直播内容"];
+    } else {
+        [self.view addSubview:self.tableView];
+        [self.view addSubview:self.likeButtonView];
+        [self.view addSubview:self.cardPushButtonView];
+        [self.view addSubview:self.welcomeView];
+        [self.view addSubview:self.notifyMarqueeView];
+        [self.view addSubview:self.receiveNewMessageView];
+        [self.view addSubview:self.notifyView];
+    }
 }
 
 - (void)viewWillLayoutSubviews {
@@ -138,7 +145,7 @@ UITableViewDataSource
         [self.keyboardToolView addAtView:self.view frame:inputRect];
         self.receiveNewMessageView.frame = CGRectMake(0, inputRect.origin.y - 28, CGRectGetWidth(self.view.bounds), 28);
         [self refreshTableViewFrame];
-        self.playbackNotifyView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), 40);
+        self.notifyView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), 40);
         
         [self arrangeTopMarqueeViewFrame];
         
@@ -255,11 +262,11 @@ UITableViewDataSource
     return _welcomeView;
 }
 
-- (PLVLCPlaybackNotifyView *)playbackNotifyView {
-    if (!_playbackNotifyView) {
-        _playbackNotifyView = [[PLVLCPlaybackNotifyView alloc] init];
+- (PLVLCPlaybackNotifyView *)notifyView {
+    if (!_notifyView) {
+        _notifyView = [[PLVLCPlaybackNotifyView alloc] init];
     }
-    return _playbackNotifyView;
+    return _notifyView;
 }
 
 - (PLVLCNotifyMarqueeView *)notifyMarqueeView {
@@ -648,7 +655,7 @@ UITableViewDataSource
 
 - (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
     NSString *content = success ? @"聊天室重放功能已开启，将会显示历史消息" : @"回放消息正在准备中，可稍等刷新查看";
-    [self.playbackNotifyView showNotifyhMessage:content];
+    [self.notifyView showNotifyhMessage:content];
 }
 
 - (void)didReceiveNewMessagesForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {

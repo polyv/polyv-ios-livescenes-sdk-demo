@@ -65,6 +65,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///       当项目未适配分屏时，建议设置为YES
 @property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
 
+/// 双师模式时允许切换PPT
+@property (nonatomic, assign) BOOL allowChangePPT;
+
 #pragma mark 状态
 /// 当前播放时间
 @property (nonatomic, assign, readonly) NSTimeInterval currentPlayTime;
@@ -194,6 +197,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// 退出画笔模式
 - (void)exitPaintMode;
+
+/// 切换ppt，属性allowChangePPT为YES才能生效
+- (void)changePPTWithAutoId:(NSUInteger)autoId pageNumber:(NSInteger)pageNumber;
 
 @end
 

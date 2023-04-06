@@ -37,6 +37,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, strong) NSDictionary *userInfo;               // 登录用户信息
 @property (nonatomic, assign) BOOL userInfoHadSeted;                // 已设置登录用户信息
 @property (nonatomic, assign) BOOL hasPaintPermission; // 用户是否拥有画笔权限（讲师默认拥有）
+@property (nonatomic, assign) BOOL allowChangePPT; // 是否允许切换PPT（双师模式时为YES）
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, assign, readonly) PLVChannelVideoType videoType;
 @property (nonatomic, assign, readonly) BOOL liveStatusIsLiving; // 当前直播是否正在进行
@@ -311,6 +312,10 @@ UIGestureRecognizerDelegate
     }
 }
 
+- (void)openChangePPTPermission {
+    self.allowChangePPT = YES;
+}
+
 - (void)setPaintStatus:(BOOL)open {
     if (!self.hasPaintPermission) {
         return;
@@ -376,7 +381,8 @@ UIGestureRecognizerDelegate
 }
 
 - (void)changePPTWithAutoId:(NSUInteger)autoId pageNumber:(NSInteger)pageNumber {
-    if (!self.hasPaintPermission) {
+    if (!self.hasPaintPermission &&
+        !self.allowChangePPT) {
         return;
     }
     
@@ -427,9 +433,6 @@ UIGestureRecognizerDelegate
 
 /// 当属性 autoId、currPageNum 发生变化时调用该方法
 - (void)switchPPT {
-    if (self.scene != PLVDocumentViewSceneStreamer) {
-        return;
-    }
     // 当 autoId 改变时，currPageNum 此处不起作用，需通过属性 isChangePPT 进行二次切换
     [self.jsBridge changePPTWithAutoId:self.autoId pageNumber:self.currPageNum];
     

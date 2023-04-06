@@ -176,7 +176,7 @@
 
 - (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag {
     // This flag is NO when the application enters background.
-    if (flag && self.isRunning) {
+    if (self.isRunning) {
         [self start];
     }
 }

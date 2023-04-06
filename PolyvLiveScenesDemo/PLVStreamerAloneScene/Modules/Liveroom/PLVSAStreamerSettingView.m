@@ -86,8 +86,8 @@ PLVSABitRateSheetDelegate
         [self setupUI];
         [self addObserver];
         [self initChannelName];
-        /// 根据需要选择默认清晰度（默认最高清晰度）
-        [self initBitRate:[PLVRoomDataManager sharedManager].roomData.maxResolution];
+        /// 根据需要选择默认清晰度
+        [self initBitRate:[PLVRoomDataManager sharedManager].roomData.defaultResolution];
         // 初始化设备方向为 竖屏
         [[PLVSAUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
         UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(endEditingAction:)];
@@ -231,7 +231,7 @@ PLVSABitRateSheetDelegate
 /// 初始化默认清晰度
 - (void)initBitRate:(PLVResolutionType)resolutionType {
     PLVResolutionType maxResolution = [PLVRoomDataManager sharedManager].roomData.maxResolution;
-    self.resolutionType = resolutionType > maxResolution ? PLVResolutionType360P : resolutionType;
+    self.resolutionType = resolutionType > maxResolution ? maxResolution : resolutionType;
     [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType];
 }
 
@@ -296,25 +296,43 @@ PLVSABitRateSheetDelegate
 
 /// 根据当前清晰度改变清晰度按钮标题和icon
 - (void)changeBitRateButtonTitleAndImageWithBitRate:(PLVResolutionType)resolutionType {
-    switch (resolutionType) {
-        case PLVResolutionType720P:{
-            [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_uhd"]  forState:UIControlStateNormal];
-            [self.bitRateButton setTitle:@"超清" forState:UIControlStateNormal];
-            break;
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+    int i = (int)resolutionType / 4.0;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
+        [self.bitRateButton setTitle:videoParams[i].qualityName forState:UIControlStateNormal];
+    } else {
+        switch (resolutionType) {
+            case PLVResolutionType1080P:{
+                [self.bitRateButton setTitle:@"超高清" forState:UIControlStateNormal];
+                break;
+            }
+            case PLVResolutionType720P:{
+                [self.bitRateButton setTitle:@"超清" forState:UIControlStateNormal];
+                break;
+            }
+            case PLVResolutionType360P:{
+                [self.bitRateButton setTitle:@"高清" forState:UIControlStateNormal];
+                break;
+            }
+            case PLVResolutionType180P:{
+                [self.bitRateButton setTitle:@"标清" forState:UIControlStateNormal];
+                break;
+            }
+            default:
+                break;
         }
-        case PLVResolutionType360P:{
-            [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_hd"]  forState:UIControlStateNormal];
-            [self.bitRateButton setTitle:@"高清" forState:UIControlStateNormal];
-            break;
-        }
-        case PLVResolutionType180P:{
-            [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sd"]  forState:UIControlStateNormal];
-            [self.bitRateButton setTitle:@"标清" forState:UIControlStateNormal];
-            break;
-        }
-        default:
-            break;
     }
+    
+    if (i == 0) {
+        [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sd"]  forState:UIControlStateNormal];
+    } else if (i == 1) {
+        [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_hd"]  forState:UIControlStateNormal];
+    } else if (i == 2) {
+        [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_fhd"]  forState:UIControlStateNormal];
+    } else if (i >= 3) {
+        [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_uhd"]  forState:UIControlStateNormal];
+    }
+    
 }
 
 - (void)showConfigView:(BOOL)show {
@@ -413,6 +431,7 @@ PLVSABitRateSheetDelegate
     if (!_bitRateButton) {
         _bitRateButton = [self buttonWithTitle:@"高清" NormalImageString:@"plvsa_liveroom_btn_hd" selectedImageString:@"plvsa_liveroom_btn_hd"];
         [_bitRateButton addTarget:self action:@selector(bitRateAction:) forControlEvents:UIControlEventTouchUpInside];
+        _bitRateButton.titleEdgeInsets = UIEdgeInsetsMake(_bitRateButton.imageView.frame.size.height + 14, - 67, 0, -38);
     }
     return _bitRateButton;
 }

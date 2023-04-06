@@ -213,10 +213,6 @@ PLVLCLandscapeMessagePopupViewDelegate
                 [weakSelf.mediaAreaView changeFileId:deleteFileId];
             }
         }];
-        
-        if ([self enableChatroomPlaybackViewModel]) {
-            [self setupChatroomPlaybackViewModel];
-        }
     }
 }
 
@@ -229,7 +225,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 /// 创建聊天室回放viewModel并更新到相关子视图
 - (void)setupChatroomPlaybackViewModel {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId];
+    self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId videoId:roomData.playbackVideoInfo.fileId];
     self.playbackViewModel.delegate = self;
     
     [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
@@ -517,6 +513,8 @@ PLVLCLandscapeMessagePopupViewDelegate
         _mediaAreaView.delegate = self;
         _mediaAreaView.limitContentViewInSafeArea = YES;
         _mediaAreaView.topPaddingBelowiOS11 = 20.0;
+        PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+        _mediaAreaView.allowChangePPT = (self.videoType == PLVChannelVideoType_Live && menuInfo.transmitMode && !menuInfo.mainRoom);
     }
     return _mediaAreaView;
 }
@@ -678,12 +676,6 @@ PLVLCLandscapeMessagePopupViewDelegate
 #pragma mark PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
-    if ([self enableChatroomPlaybackViewModel]) {
-        if (!self.playbackViewModel) { // 填入vid登陆的回放场景，需要在登陆后通过播放器返回场次id
-            [self setupChatroomPlaybackViewModel];
-        }
-    }
-    
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     self.liveRoomSkinView.danmuButtonShow = !roomData.channelInfo.closeDanmuEnable;
     [self.menuAreaView updateLiveUserInfo];
@@ -700,16 +692,6 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount{
     [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:watchCount];
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
-}
-
-/// vid更新，回放场景中，自动播放回放列表的下一个回放视频时触发
-- (void)roomDataManager_didVidChanged:(NSString *)vid {
-    // 清理上一场的数据
-    [self.playbackViewModel clear];
-    
-    if ([self enableChatroomPlaybackViewModel]) { // 创建新的聊天重放viewModel
-        [self setupChatroomPlaybackViewModel];
-    }
 }
 
 #pragma mark PLVSocketManagerProtocol
@@ -771,6 +753,58 @@ PLVLCLandscapeMessagePopupViewDelegate
         plv_dispatch_main_async_safe(^{
             [self productMessageEvent:jsonDict];
         })
+    }
+}
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (self.videoType != PLVChannelVideoType_Live ||
+        !roomData.menuInfo.transmitMode ||
+        roomData.menuInfo.mainRoom) { // 【直播+支持双师模式+小房间】三个条件满足才需要监听以下消息
+        return;
+    }
+    
+    BOOL listenMain = roomData.listenMain;
+    if ([event isEqualToString:@"transmit"]) { // 【双师模式】所需监听event
+        if ([subEvent isEqualToString:@"transmitDoubleMode"]) { // 双师模式小房间登陆聊天室时收到ack
+            if (jsonString &&
+                [jsonString isKindOfClass:[NSString class]]) {
+                if ([jsonString isEqualToString:@"listenMain"]) {
+                    roomData.listenMain = YES;
+                } else if ([jsonString isEqualToString:@"listenChild"]) {
+                    roomData.listenMain = NO;
+                }
+            }
+        } else if ([subEvent isEqualToString:@"changeDoubleMode"]) { // 双师模式切换房间时收到
+            NSDictionary *jsonDict = (NSDictionary *)object;
+            if (jsonDict &&
+                [jsonDict isKindOfClass:[NSDictionary class]]) {
+                NSString *mode = jsonDict[@"mode"];
+                if ([mode isEqualToString:@"listenMain"]) {
+                    roomData.listenMain = YES;
+                } else if ([mode isEqualToString:@"listenChild"]) {
+                    roomData.listenMain = NO;
+                }
+                NSInteger autoId = [jsonDict[@"autoId"] integerValue];
+                NSInteger pageId = [jsonDict[@"pageId"] integerValue];
+                [self.mediaAreaView changePPTWithAutoId:autoId pageNumber:pageId];
+            }
+        }
+    }
+    
+    if (roomData.listenMain != listenMain) { // listenMain发生变化时，切换播放器频道
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (roomData.listenMain) {
+                [PLVToast showToastWithMessage:@"已切换至大房间进行上课" inView:self.view afterDelay:3.0];
+                [self.mediaAreaView changePlayertoChannelId:roomData.menuInfo.mainRoomChannelId vodId:nil vodList:NO recordFile:nil recordEnable:NO];
+            } else {
+                [PLVToast showToastWithMessage:@"已切回小房间上课" inView:self.view afterDelay:3.0];
+                [self.mediaAreaView changePlayertoChannelId:roomData.channelId vodId:nil vodList:NO recordFile:nil recordEnable:NO];
+            }
+        });
     }
 }
 
@@ -1076,6 +1110,10 @@ PLVLCLandscapeMessagePopupViewDelegate
         [self.menuAreaView updateLiveStatus:PLVLCLiveStatusCached];
     }else {
         [self.menuAreaView updateLiveStatus:PLVLCLiveStatusPlayback];
+    }
+    [self.playbackViewModel clear];
+    if ([self enableChatroomPlaybackViewModel]) {
+        [self setupChatroomPlaybackViewModel];
     }
 }
 

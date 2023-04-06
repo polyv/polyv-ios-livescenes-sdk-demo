@@ -44,6 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于聊天重放时，回放视频被seek时通知聊天回放viewModel
 - (void)playbackTimeChanged;
 
+/// 用于聊天重放时，回放视频信息更新时通知聊天回放viewModel
+- (void)playbackVideoInfoDidUpdated;
+
 @end
 
 NS_ASSUME_NONNULL_END
