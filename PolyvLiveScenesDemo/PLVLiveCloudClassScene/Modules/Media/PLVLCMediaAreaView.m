@@ -480,6 +480,11 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 #pragma mark Getter
+
+- (BOOL)advertPlaying {
+    return self.playerPresenter.advertPlaying;
+}
+
 - (BOOL)channelInLive{
     return self.playerPresenter.channelInLive;
 }

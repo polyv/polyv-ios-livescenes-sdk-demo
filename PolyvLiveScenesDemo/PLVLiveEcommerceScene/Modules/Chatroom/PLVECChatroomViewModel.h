@@ -60,6 +60,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pointUnit 打赏单位
 - (void)chatroomManager_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit;
 
+/// 显示倒计时红包挂件
+/// @param type 红包类型
+/// @param delayTime 倒计时时间，单位秒
+- (void)chatroomManager_showDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime;
+
+/// 隐藏倒计时红包挂件
+- (void)chatroomManager_hideDelayRedpack;
+
 /// 聊天室登录达到并发限制时触发
 - (void)chatroomManager_didLoginRestrict;
 
@@ -70,6 +78,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 聊天室专注模式是否开启关闭时触发
 /// @param focusMode 是否关闭聊天室，YES-关闭，NO-开启
 - (void)chatroomManager_focusMode:(BOOL)focusMode;
+
+/// 方法'-checkRedpackStateWithChatModel:'触发
+/// @param state 红包消息状态
+/// @param model 对应消息数据模型
+- (void)chatroomManager_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model;
+
+/// 红包消息state字段发生变化时触发，可刷新UI
+- (void)chatroomManager_didRedpackStateChanged;
 
 @end
 
@@ -140,6 +156,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送点赞消息
 /// 点赞数的实时更新通过监听roomData的likeCount获得
 - (void)sendLike;
+
+/// 打开红包前判断红包状态
+- (void)checkRedpackStateWithChatModel:(PLVChatModel *)model;
+
+/// 点开红包后，从h5页面接收消息更新指定红包状态
+/// @param redpackId 对应红包ID
+/// @param state 红包状态（字符串类型）
+/// @return 转换为枚举值的红包状态
+- (PLVRedpackState)changeRedpackStateWithRedpackId:(NSString *)redpackId state:(NSString *)state;
 
 @end
 

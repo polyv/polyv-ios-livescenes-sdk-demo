@@ -80,6 +80,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 该频道是否 ‘直播中’ (以 ‘直播流状态’ 作为依据)
 @property (nonatomic, assign, readonly) BOOL channelInLive;
 
+/// 是否正在播放广告
+@property (nonatomic, assign, readonly) BOOL advertPlaying;
+
 /// 该频道是否观看 ‘无延迟直播’
 @property (nonatomic, assign, readonly) BOOL channelWatchNoDelay;
 

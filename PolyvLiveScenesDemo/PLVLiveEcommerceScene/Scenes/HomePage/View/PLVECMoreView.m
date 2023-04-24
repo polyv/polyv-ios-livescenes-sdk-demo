@@ -8,6 +8,7 @@
 
 #import "PLVECMoreView.h"
 #import "PLVECUtils.h"
+#import <SDWebImage/UIButton+WebCache.h>
 
 @interface PLVECMoreViewItem ()
 
@@ -62,11 +63,16 @@
         }
         [itemBtn setTitleEdgeInsets:UIEdgeInsetsMake(42, -35, 0, 0)];
         
-        UIImage *image = [PLVECUtils imageForWatchResource:item.iconImageName];
-        [itemBtn setImage:image forState:UIControlStateNormal];
-        if (item.selectedIconImageName) {
-            UIImage *selectImage = [PLVECUtils imageForWatchResource:item.selectedIconImageName];
-            [itemBtn setImage:selectImage forState:UIControlStateSelected];
+        if (item.iconURLString) {
+            NSURL *iconURL = [NSURL URLWithString:item.iconURLString];
+            [itemBtn sd_setImageWithURL:iconURL forState:UIControlStateNormal];
+        } else {
+            UIImage *image = [PLVECUtils imageForWatchResource:item.iconImageName];
+            [itemBtn setImage:image forState:UIControlStateNormal];
+            if (item.selectedIconImageName) {
+                UIImage *selectImage = [PLVECUtils imageForWatchResource:item.selectedIconImageName];
+                [itemBtn setImage:selectImage forState:UIControlStateSelected];
+            }
         }
         [itemBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 9, 22, 9)];
         

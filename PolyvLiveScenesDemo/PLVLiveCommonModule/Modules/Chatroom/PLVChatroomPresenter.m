@@ -8,9 +8,11 @@
 
 #import "PLVChatroomPresenter.h"
 #import "PLVChatUser.h"
+#import "PLVRedpackResult.h"
 #import "PLVRoomDataManager.h"
-#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
+
+static NSString *kPLVChatroomRedpackReceiveKey = @"kPLVChatroomRedpackReceiveKey";
 
 @interface PLVChatroomPresenter ()<
 PLVSocketManagerProtocol, // socket协议
@@ -33,6 +35,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 @property (nonatomic, assign) BOOL delayRequestHistory;
 /// 获取历史记录成功的次数
 @property (nonatomic, assign) NSInteger getHistoryTime;
+/// 本地缓存的领取红包记录，以红包时间为key，红包id为value，该属性里所记录的红包UI表现为不响应触碰事件
+/// @note 后续程序运行途中无需更新，只用于加载历史聊天消息时更新状态到列表数据源中
+@property (nonatomic, strong) NSDictionary *cacheRedpackReceiveDict;
+/// 本地缓存的已领完红包记录，以红包时间为key，红包id为value，该属性里所记录的红包UI表现为不响应触碰事件
+/// @note 后续程序运行途中无需更新，只用于加载历史聊天消息时更新状态到列表数据源中
+@property (nonatomic, strong) NSDictionary *cacheRedpackNoneDict;
 
 #pragma mark 内部属性
 ///图片表情的数据
@@ -106,8 +114,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT)];
         
         [self loadHistory];
-        if (!roomData.inHiClassScene) { //互动学堂场景无图片表情功能
+        if (!roomData.inHiClassScene) { //互动学堂场景无图片表情功能、无红包功能
             [self loadImageEmotions];
+            [self loadNewesetRedpack];
         }
     }
     return self;
@@ -163,6 +172,128 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
     BOOL emit = [[PLVChatroomManager sharedManager] overLengthSpeakMessageWithMsgId:msgId callback:callback];
     return emit;
+}
+
+- (void)loadRedpackReceiveCacheWithRedpackId:(NSString *)redpackId
+                                  redCacheId:(NSString *)redCacheId
+                                  completion:(void (^)(PLVRedpackState redpackState))completion
+                                     failure:(void (^)(NSError *error))failure {
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    [PLVLiveVideoAPI requestRedpackReceiveCacheWithChannelId:channelId viewerId:viewerId redpackId:redpackId redCacheId:redCacheId completion:^(NSDictionary * _Nonnull data) {
+        // 红包状态 expired-已过期, none_redpack-已派完, receive-已领取, success-可领取
+        NSString *state = PLV_SafeStringForDictKey(data, @"state");
+        PLVRedpackState redpackState = PLVRedpackStateUnknow;
+        if (state) {
+            if ([state isEqualToString:@"expired"]) {
+                redpackState = PLVRedpackStateExpired;
+            } else if ([state isEqualToString:@"none_redpack"]) {
+                redpackState = PLVRedpackStateNoneRedpack;
+            } else if ([state isEqualToString:@"receive"]) {
+                redpackState = PLVRedpackStateReceive;
+            } else if ([state isEqualToString:@"success"]) {
+                redpackState = PLVRedpackStateSuccess;
+            }
+        }
+        if (completion) {
+            completion(redpackState);
+        }
+    } failure:failure];
+}
+
+- (void)recordRedpackReceiveWithID:(NSString *)redpackId time:(NSTimeInterval)time state:(PLVRedpackState)state {
+    if (![PLVFdUtil checkStringUseable:redpackId]) {
+        return;
+    }
+    
+    if (state == PLVRedpackStateReceive ||
+        state == PLVRedpackStateNoneRedpack) {
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        NSString *key = [NSString stringWithFormat:@"%@_%@_%@", kPLVChatroomRedpackReceiveKey, roomData.channelId, (state == PLVRedpackStateReceive ? @"received" : @"none")];
+        
+        NSDictionary *dict = [[NSUserDefaults standardUserDefaults] objectForKey:key];
+        NSMutableDictionary *muDict = [[NSMutableDictionary alloc] init];
+        if ([PLVFdUtil checkDictionaryUseable:dict]) {
+            [muDict addEntriesFromDictionary:dict];
+        }
+        
+        NSString *timeString = [NSString stringWithFormat:@"%lld", (long long)time];
+        muDict[timeString] = redpackId;
+        
+        [[NSUserDefaults standardUserDefaults] setObject:[muDict copy] forKey:key];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+}
+
+#pragma mark - [ Private Method ]
+
+- (void)loadNewesetRedpack {
+    __weak typeof(self) weakSelf = self;
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    [PLVLiveVideoAPI requestNewestRedpackWithChannelId:channelId completion:^(NSDictionary * _Nonnull data) {
+        BOOL timeEnabled = PLV_SafeBoolForDictKey(data, @"timeEnabled");
+        NSTimeInterval sendTime = PLV_SafeFloatForDictKey(data, @"sendTime");
+        NSInteger delayTime = (sendTime - [PLVFdUtil curTimeInterval]) / 1000.0;
+        if (timeEnabled && delayTime > 0) {
+            NSString *type = PLV_SafeStringForDictKey(data, @"redpackType");
+            PLVRedpackMessageType redpackType = PLVRedpackMessageTypeUnknown;
+            if (type && [type isEqualToString:@"ALIPAY_PASSWORD_OFFICIAL_NORMAL"]) {
+                redpackType = PLVRedpackMessageTypeAliPassword;
+            }
+            [weakSelf notifyListenerDelayRedpackWithType:redpackType delayTime:delayTime];
+        }
+    } failure:nil];
+}
+
+/// 读取沙盒缓存的红包状态到属性cacheRedpackReceiveDict，清理过期缓存
+- (void)getRedpackStateCache {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    
+    NSString *receiveKey = [NSString stringWithFormat:@"%@_%@_received", kPLVChatroomRedpackReceiveKey, roomData.channelId];
+    NSDictionary *receiveDict = [[NSUserDefaults standardUserDefaults] objectForKey:receiveKey];
+    if ([PLVFdUtil checkDictionaryUseable:receiveDict]) {
+        NSMutableDictionary *muDict = [[NSMutableDictionary alloc] initWithDictionary:receiveDict];
+        NSArray *sortedArray = [receiveDict.allKeys sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+            return [obj1 compare:obj2];
+        }];
+        
+        // 清理掉超过1天的红包消息状态
+        for (long i = [sortedArray count] - 1; i >= 0; i--) {
+            NSString *timeString = sortedArray[i];
+            if ([PLVFdUtil curTimeInterval] - [timeString integerValue] >= 24 * 60 * 60 * 1000) {
+                [muDict removeObjectForKey:timeString];
+            } else {
+                break;
+            }
+        }
+        self.cacheRedpackReceiveDict = [muDict copy];
+        // 更新沙盒文件，清理过期缓存
+        [[NSUserDefaults standardUserDefaults] setObject:self.cacheRedpackReceiveDict forKey:receiveKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
+    
+    NSString *noneKey = [NSString stringWithFormat:@"%@_%@_none", kPLVChatroomRedpackReceiveKey, roomData.channelId];
+    NSDictionary *noneDict = [[NSUserDefaults standardUserDefaults] objectForKey:noneKey];
+    if ([PLVFdUtil checkDictionaryUseable:noneDict]) {
+        NSMutableDictionary *muDict = [[NSMutableDictionary alloc] initWithDictionary:noneDict];
+        NSArray *sortedArray = [noneDict.allKeys sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+            return [obj1 compare:obj2];
+        }];
+        
+        // 清理掉超过1天的红包消息状态
+        for (long i = [sortedArray count] - 1; i >= 0; i--) {
+            NSString *timeString = sortedArray[i];
+            if ([PLVFdUtil curTimeInterval] - [timeString integerValue] >= 24 * 60 * 60 * 1000) {
+                [muDict removeObjectForKey:timeString];
+            } else {
+                break;
+            }
+        }
+        self.cacheRedpackNoneDict = [muDict copy];
+        // 更新沙盒文件，清理过期缓存
+        [[NSUserDefaults standardUserDefaults] setObject:self.cacheRedpackNoneDict forKey:noneKey];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+    }
 }
 
 #pragma mark - Getter & Setter
@@ -444,12 +575,17 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (!roomId || roomId.length == 0) {
         roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
     }
+    
     NSInteger startIndex = self.getHistoryTime * self.eachLoadingHistoryCount;
     NSInteger endIndex = (self.getHistoryTime + 1) * self.eachLoadingHistoryCount - 1;
     [PLVLiveVideoAPI requestChatRoomHistoryWithRoomId:roomId startIndex:startIndex endIndex:endIndex completion:^(NSArray * _Nonnull historyList) {
         
         BOOL success = (historyList && [historyList isKindOfClass:[NSArray class]]);
         if (success) {
+            if (weakSelf.getHistoryTime == 0) {
+                [weakSelf getRedpackStateCache];
+            }
+            
             if ([historyList count] > 0) {
                 NSMutableArray *tempArray = [[NSMutableArray alloc] initWithCapacity:[historyList count]];
                 for (NSDictionary *dict in historyList) {
@@ -523,17 +659,19 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *msgType = [self messageTypeWithHistoryDict:dict];
     
     if ([msgType isEqualToString:@"speak"]) {
-        return [self modelSpeakChatDict:dict];
+        model = [self modelSpeakChatDict:dict];
     } else if ([msgType isEqualToString:@"quote"]) {
-        return [self modelQuoteChatDict:dict];
+        model = [self modelQuoteChatDict:dict];
     } else if ([msgType isEqualToString:@"image"]) {
-        return [self modelImageChatDict:dict];
+        model = [self modelImageChatDict:dict];
     } else if ([msgType isEqualToString:@"reward"]) {
-        return [self modelRewardChatDict:dict];
+        model = [self modelRewardChatDict:dict];
     } else if ([msgType isEqualToString:@"emotion"]) {
-        return [self modelEmotionChatDict:dict];
+        model = [self modelEmotionChatDict:dict];
     } else if ([msgType isEqualToString:@"file"]) {
-        return [self modelFileChatDict:dict];
+        model = [self modelFileChatDict:dict];
+    } else if ([msgType isEqualToString:@"redpaper"]) { // 红包消息，目前移动端只支持支付宝口令红包
+        model = [self modelRedpackChatDict:dict];
     }
     return model;
 }
@@ -545,34 +683,41 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 打赏消息 @"reward"
 /// 图片表情消息 @"emotion"
 /// 文件下载消息 @"file"
+/// 红包消息 @"redpaper"
 - (NSString *)messageTypeWithHistoryDict:(NSDictionary *)dict {
     NSString *msgSource = PLV_SafeStringForDictKey(dict, @"msgSource");
-    NSString *msgType = PLV_SafeStringForDictKey(dict, @"msgType");
     
-    NSDictionary *userDict = PLV_SafeDictionaryForDictKey(dict, @"user");
-    NSString *uid = PLV_SafeStringForDictKey(userDict, @"uid");
-    
-    if (msgSource && [msgSource isEqualToString:@"chatImg"]) { // 图片消息
-        //图片消息分为 直接发送的图片消息和图片表情消息
-        NSDictionary *imageContent = PLV_SafeDictionaryForDictKey(dict, @"content");
-        if (imageContent) {
+    if (msgSource && msgSource.length > 0) {
+        if ([msgSource isEqualToString:@"chatImg"]) { // 图片消息或图片表情消息
+            NSDictionary *imageContent = PLV_SafeDictionaryForDictKey(dict, @"content");
             NSString *imageType = PLV_SafeStringForDictKey(imageContent, @"type");
-            if (imageType && [imageType isEqualToString:@"emotion"]) {
+            if (imageType && [imageType isEqualToString:@"emotion"]) { // 图片表情消息
                 return @"emotion";
+            } else {  // 图片消息
+                return @"image";
+            }
+        } else if ([msgSource isEqualToString:@"reward"]) { // 打赏消息
+            return @"reward";
+        } else if ([msgSource isEqualToString:@"file"]) { // 文件下载消息
+            return @"file";
+        } else if ([msgSource isEqualToString:@"redpaper"]) { // 红包消息
+            NSString *type = PLV_SafeStringForDictKey(dict, @"type");
+            if (type && type.length > 0 && [type isEqualToString:@"alipay_password_official_normal"]) { // 目前移动端只支持支付宝口令红包
+                return @"redpaper";
             }
         }
-        return @"image";
-    } else if (!msgType && !msgSource && ![uid isEqualToString:@"1"] && ![uid isEqualToString:@"2"]) { // 文本/引用消息
-        if (PLV_SafeStringForDictKey(dict, @"content")) {
+    } else {
+        NSString *msgType = PLV_SafeStringForDictKey(dict, @"msgType");
+        NSString *content = PLV_SafeStringForDictKey(dict, @"content");
+        NSDictionary *userDict = PLV_SafeDictionaryForDictKey(dict, @"user");
+        NSString *uid = PLV_SafeStringForDictKey(userDict, @"uid");
+        if (!msgType &&
+            content &&
+            ![uid isEqualToString:@"1"] &&
+            ![uid isEqualToString:@"2"]) { // 文本或引用消息
             NSDictionary *quoteDict = PLV_SafeDictionaryForDictKey(dict, @"quote");
             return quoteDict ? @"quote" : @"speak";
         }
-    } else if (msgSource &&
-               [msgSource isEqualToString:@"reward"]) { // 打赏消息：红包、礼物
-        return @"reward";
-    } else if (msgSource &&
-               [msgSource isEqualToString:@"file"]) { // 文件下载消息
-        return @"file";
     }
     return nil;
 }
@@ -754,6 +899,48 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     return model;
 }
 
+- (PLVChatModel *)modelRedpackChatDict:(NSDictionary *)dict {
+    NSDictionary *userDict = PLV_SafeDictionaryForDictKey(dict, @"user");
+    PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+    
+    NSString *msgId = PLV_SafeStringForDictKey(dict, @"id");
+    NSString *redCacheId = PLV_SafeStringForDictKey(dict, @"redCacheId");
+    NSString *redpackId = PLV_SafeStringForDictKey(dict, @"redpackId");
+    NSString *content = PLV_SafeStringForDictKey(dict, @"content");
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
+    NSInteger number = PLV_SafeIntegerForDictKey(dict, @"number");
+    float totalAmount = PLV_SafeFloatForDictKey(dict, @"totalAmount");
+    PLVRedpackMessageType redpackType = PLVRedpackMessageTypeUnknown;
+    NSString *type = PLV_SafeStringForDictKey(dict, @"type");
+    if (type &&
+        [type isEqualToString:@"alipay_password_official_normal"]) {
+        redpackType = PLVRedpackMessageTypeAliPassword;
+    }
+    
+    PLVRedpackMessage *message = [[PLVRedpackMessage alloc] init];
+    message.msgId = msgId;
+    message.redCacheId = redCacheId;
+    message.redpackId = redpackId;
+    message.content = content;
+    message.time = time;
+    message.number = number;
+    message.totalAmount = totalAmount;
+    message.type = redpackType;
+    
+    NSString *timeString = [NSString stringWithFormat:@"%lld", (long long)message.time];
+    if (self.cacheRedpackReceiveDict && self.cacheRedpackReceiveDict[timeString]) {
+        message.state = PLVRedpackStateReceive;
+    } else if (self.cacheRedpackNoneDict && self.cacheRedpackNoneDict[timeString]) {
+        message.state = PLVRedpackStateNoneRedpack;
+    }
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = user;
+    model.message = message;
+    
+    return model;
+}
+
 #pragma mark 获取图片表情数据
 
 ///加载图片表情列表 设置为固定size
@@ -868,6 +1055,13 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
 }
 
+- (void)notifyListenerDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomPresenter_didReceiveDelayRedpackWithType:delayTime:)]) {
+        [self.delegate chatroomPresenter_didReceiveDelayRedpackWithType:type delayTime:delayTime];
+    }
+}
+
 #pragma mark - 更新 RoomData 属性
 
 - (void)updateOnlineCount:(NSInteger)onlineCount {
@@ -917,6 +1111,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self speakMessageEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"CHAT_IMG"]) { // someone send a picture message
         [self imageMessageEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"REDPAPER"]) { // someone send a redpack
+        [self redpackEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"RED_PAPER_RESULT"]) { // someone get a redpack
+//        [self redpackResultEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"REDPAPER_FOR_DELAY"]) { // someone get a redpack
+        [self redpackDelayEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"T_ANSWER"]) {
         [self teacherAnswerEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"REMOVE_CONTENT"]) { // admin deleted a message
@@ -1097,6 +1297,93 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.imageSize = CGSizeMake(width, height);
     model.message = message;
     [self cachChatModel:model];
+}
+
+/// 有用户发送红包消息
+- (void)redpackEvent:(NSDictionary *)data {
+    NSDictionary *userDict = PLV_SafeDictionaryForDictKey(data, @"user");
+    NSString *msgSource = PLV_SafeStringForDictKey(data, @"msgSource");
+    NSString *redCacheId = PLV_SafeStringForDictKey(data, @"redCacheId");
+    NSString *redpackId = PLV_SafeStringForDictKey(data, @"redpackId");
+    NSString *content = PLV_SafeStringForDictKey(data, @"content");
+    if (!userDict ||
+        !redCacheId ||
+        !redpackId ||
+        !content ||
+        !msgSource ||
+        ![msgSource isEqualToString:@"redpaper"]) {
+        return;
+    }
+    
+    NSTimeInterval time = PLV_SafeIntegerForDictKey(data, @"timestamp");
+    NSInteger number = PLV_SafeIntegerForDictKey(data, @"number");
+    float totalAmount = PLV_SafeFloatForDictKey(data, @"totalAmount");
+    NSString *type = PLV_SafeStringForDictKey(data, @"type");
+    PLVRedpackMessageType redpackType = PLVRedpackMessageTypeUnknown;
+    if (type &&
+        [type isEqualToString:@"alipay_password_official_normal"]) {
+        redpackType = PLVRedpackMessageTypeAliPassword;
+    }
+    
+    PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+    PLVRedpackMessage *message = [[PLVRedpackMessage alloc] init];
+    message.redCacheId = redCacheId;
+    message.redpackId = redpackId;
+    message.content = content;
+    message.time = time;
+    message.number = number;
+    message.totalAmount = totalAmount;
+    message.type = redpackType;
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = user;
+    model.message = message;
+    [self cachChatModel:model];
+}
+
+/// 观众领取口令红包
+- (void)redpackResultEvent:(NSDictionary *)data {
+    NSString *redpackId = PLV_SafeStringForDictKey(data, @"redpackId");
+    NSString *nick = PLV_SafeStringForDictKey(data, @"nick");
+    if (!redpackId ||
+        redpackId.length == 0 ||
+        !nick ||
+        nick.length == 0) {
+        return;
+    }
+    
+    NSString *type = PLV_SafeStringForDictKey(data, @"type");
+    BOOL isOver = PLV_SafeBoolForDictKey(data, @"isOver");
+    PLVRedpackMessageType redpackType = PLVRedpackMessageTypeUnknown;
+    if (type &&
+        [type isEqualToString:@"alipay_password_official_normal"]) {
+        redpackType = PLVRedpackMessageTypeAliPassword;
+    }
+    
+    PLVRedpackResult *redpackResult = [[PLVRedpackResult alloc] init];
+    redpackResult.redpackId = redpackId;
+    redpackResult.nick = nick;
+    redpackResult.over = isOver;
+    redpackResult.type = redpackType;
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.message = redpackResult;
+    [self cachChatModel:model];
+}
+
+/// 讲师设置了倒计时红包
+- (void)redpackDelayEvent:(NSDictionary *)data {
+    NSInteger delayTime = PLV_SafeIntegerForDictKey(data, @"delayTime");
+    if (delayTime <= 0) {
+        return;
+    }
+    
+    NSString *type = PLV_SafeStringForDictKey(data, @"type");
+    PLVRedpackMessageType redpackType = PLVRedpackMessageTypeUnknown;
+    if (type && [type isEqualToString:@"alipay_password_official_normal"]) {
+        redpackType = PLVRedpackMessageTypeAliPassword;
+    }
+    [self notifyListenerDelayRedpackWithType:redpackType delayTime:delayTime];
 }
 
 ///有用户发送图片表情消息为了应对高并发只返回了图片id

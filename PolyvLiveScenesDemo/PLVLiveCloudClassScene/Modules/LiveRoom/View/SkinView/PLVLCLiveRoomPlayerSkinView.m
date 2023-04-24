@@ -23,6 +23,7 @@
 @property (nonatomic, strong) UIButton * danmuButton;
 @property (nonatomic, strong) UILabel * guideChatLabel;
 @property (nonatomic, strong) UIView * likeButtonBackgroudView;
+@property (nonatomic, strong) UIView * redpackBackgroudView;
 @property (nonatomic, strong) UIView * cardPushBackgroudView;
 @property (nonatomic, strong) UIButton *rewardButton;
 @property (nonatomic, strong) UIButton *commodityButton;
@@ -154,6 +155,16 @@
     }
 }
 
+- (void)displayRedpackButtonView:(UIView *)redpackButtonView {
+    if (redpackButtonView && [redpackButtonView isKindOfClass:UIView.class]) {
+        [self.redpackBackgroudView addSubview:redpackButtonView];
+        redpackButtonView.frame = self.redpackBackgroudView.bounds;
+        redpackButtonView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }else{
+        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayCardPushButtonView failed, view illegal %@", redpackButtonView);
+    }
+}
+
 - (void)displayCardPushButtonView:(UIView *)cardPushButtonView {
     if (cardPushButtonView && [cardPushButtonView isKindOfClass:UIView.class]) {
         [self.cardPushBackgroudView addSubview:cardPushButtonView];
@@ -166,6 +177,11 @@
 
 - (void)showCommodityButton:(BOOL)show {
     self.commodityButton.hidden = !show;
+    [self refreshBottomButtonsFrame];
+}
+
+- (void)showRedpackButtonView:(BOOL)show {
+    self.redpackBackgroudView.hidden = !show;
     [self refreshBottomButtonsFrame];
 }
 
@@ -307,29 +323,50 @@
     }
     
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
-    CGFloat likeButtonWidth = 36.0;
-    CGFloat buttonOriginX = viewWidth - rightSafePadding - 10 - likeButtonWidth;
-    CGFloat buttonOriginY = self.playButton.center.y - likeButtonWidth / 2.0f;
+    CGFloat buttonWidth = 36.0;
+    CGFloat buttonOriginX = viewWidth - rightSafePadding - 10 - buttonWidth;
+    CGFloat buttonOriginY = self.playButton.center.y - buttonWidth / 2.0f;
+    CGFloat buttonPadding = 16.0; // 每个按钮中间的间隔
 
-    self.likeButtonBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
     UIView *likeButtonView = self.likeButtonBackgroudView.subviews.firstObject;
-    likeButtonView.frame = self.likeButtonBackgroudView.bounds;
-    buttonOriginX = (likeButtonView && !likeButtonView.isHidden) ? CGRectGetMinX(self.likeButtonBackgroudView.frame) - 20 - likeButtonWidth : buttonOriginX;
-    self.rewardButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
-    buttonOriginX = (self.rewardButton.isHidden || !self.rewardButton.superview) ? buttonOriginX : CGRectGetMinX(self.rewardButton.frame) - likeButtonWidth - 20;
-    self.commodityButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
-    buttonOriginX = self.commodityButton.isHidden ? buttonOriginX : CGRectGetMinX(self.commodityButton.frame) - likeButtonWidth - 20;
-    // 适配只有一个按钮时
-    buttonOriginX = MIN(buttonOriginX, viewWidth - rightSafePadding - 50 - likeButtonWidth);
-    self.cardPushBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
-    buttonOriginX = self.cardPushBackgroudView.isHidden ? buttonOriginX : CGRectGetMinX(self.cardPushBackgroudView.frame) - likeButtonWidth - 20;
-    self.paintButton.frame = CGRectMake(buttonOriginX, buttonOriginY, likeButtonWidth, likeButtonWidth);
+    if (likeButtonView && !likeButtonView.isHidden) {
+        self.likeButtonBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
+    if (!self.rewardButton.isHidden && self.rewardButton.superview) {
+        self.rewardButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
+    if (!self.commodityButton.isHidden) {
+        self.commodityButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
+    if (!self.redpackBackgroudView.isHidden) {
+        self.redpackBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
+    // 从右数起第一个按钮为卡片推送时，位置适配，右边间隔从10改为50
+    buttonOriginX = MIN(buttonOriginX, viewWidth - rightSafePadding - 50 - buttonWidth);
+    if (!self.cardPushBackgroudView.isHidden) {
+        self.cardPushBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
+    // 从右数起第一个按钮为画笔时，位置适配，右边间隔从10改为50
+    buttonOriginX = MIN(buttonOriginX, viewWidth - rightSafePadding - 50 - buttonWidth);
+    if (!self.paintButton.isHidden) {
+        self.paintButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+    }
 }
 
 - (void)refreshGuideChatLabelFrame {
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat viewHeight = CGRectGetHeight(self.bounds);
-    CGFloat bottomPadding = 28.0;
+    CGFloat bottomPadding = 22.0;
 
     CGFloat guideChatLabelWidth = 0.23 * viewWidth;
     CGFloat guideChatLabelHeight = 36.0;
@@ -338,12 +375,12 @@
     Boolean isSmallScreen = viewWidth <= PLVScreenWidth / 3 ? YES : NO;
     if (isPad && isSmallScreen) {
         // iPad小分屏适配（横屏1:2），聊天引导栏布局上调
-        self.guideChatLabel.frame = CGRectMake(30, viewHeight - (bottomPadding - 6) - guideChatLabelHeight * 2 - 10, CGRectGetWidth(self.bounds) - 30 * 2 , guideChatLabelHeight);
+        self.guideChatLabel.frame = CGRectMake(30, viewHeight - bottomPadding - guideChatLabelHeight * 2 - 10, CGRectGetWidth(self.bounds) - 30 * 2 , guideChatLabelHeight);
     } else {
         CGFloat middleOriginX = (viewWidth - guideChatLabelWidth) / 2.0;
         CGFloat danmuButtonMaxOriginX = CGRectGetMaxX(self.danmuButton.frame) + 10.0;
         CGFloat guideChatLabelOriginX = MAX(middleOriginX,danmuButtonMaxOriginX);
-        self.guideChatLabel.frame = CGRectMake(guideChatLabelOriginX, viewHeight - (bottomPadding - 6) - guideChatLabelHeight, guideChatLabelWidth, guideChatLabelHeight);
+        self.guideChatLabel.frame = CGRectMake(guideChatLabelOriginX, viewHeight - bottomPadding - guideChatLabelHeight, guideChatLabelWidth, guideChatLabelHeight);
     }
 }
 
@@ -415,6 +452,14 @@
     return _likeButtonBackgroudView;
 }
 
+- (UIView *)redpackBackgroudView{
+    if (!_redpackBackgroudView) {
+        _redpackBackgroudView = [[UIView alloc] init];
+        _redpackBackgroudView.hidden = YES;
+    }
+    return _redpackBackgroudView;
+}
+
 - (UIView *)cardPushBackgroudView{
     if (!_cardPushBackgroudView) {
         _cardPushBackgroudView = [[UIView alloc] init];
@@ -466,6 +511,7 @@
     [self addSubview:self.danmuButton];
     [self addSubview:self.guideChatLabel];
     [self addSubview:self.likeButtonBackgroudView];
+    [self addSubview:self.redpackBackgroudView];
     [self addSubview:self.cardPushBackgroudView];
     [self addSubview:self.landscapeInputView];
     [self addSubview:self.commodityButton];

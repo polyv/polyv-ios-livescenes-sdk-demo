@@ -17,21 +17,25 @@
 /// 悬浮窗初始位置，默认为离屏幕底部 16pt，离屏幕右侧 16pt
 @property (nonatomic, assign) CGPoint originPoint;
 /// 需要在悬浮窗上显示的，由外部带入的视图，与悬浮窗口等尺寸
-@property (nonatomic, strong) UIView *contentView;
-/// contentView在悬浮窗上显示之前的父视图，关闭悬浮窗时需要把contentView重新放回去
-@property (nonatomic, weak) UIView *contentOriginSuperview;
+@property (nonatomic, strong) UIView *containerView;
 /// 关闭按钮
 @property (nonatomic, strong) UIButton *closeButton;
+/// 返回按钮
+@property (nonatomic, strong) UIButton *backButton;
 
 #pragma mark 手势
-/// 点击手势
-@property (nonatomic, strong) UITapGestureRecognizer *tapGestureRecognizer;
 /// 拖动手势
 @property (nonatomic, strong) UIPanGestureRecognizer *panGestureRecognizer;
 
 @end
 
 @implementation PLVECFloatingWindow
+
+#pragma mark - [ Life Cycle ]
+
+- (void)layoutSubviews {
+    self.containerView.frame = self.bounds;
+}
 
 #pragma mark - 初始化
 
@@ -55,9 +59,10 @@
         [self resetPosition];
         
         // 添加手势
-        [self addGestureRecognizer:self.tapGestureRecognizer];
         [self addGestureRecognizer:self.panGestureRecognizer];
         
+        [self addSubview:self.containerView];
+        [self addSubview:self.backButton];
         [self addSubview:self.closeButton];
     }
     return self;
@@ -70,9 +75,18 @@
     self.originPoint = CGPointMake(screenSize.width - self.windowSize.width - 16, screenSize.height - self.windowSize.height - 16);
     
     self.frame = CGRectMake(self.originPoint.x, self.originPoint.y, self.windowSize.width, self.windowSize.height);
+    self.backButton.frame = self.bounds;
 }
 
 #pragma mark - Getter
+
+- (UIView *)containerView {
+    if (!_containerView) {
+        _containerView = [[UIView alloc] init];
+        _containerView.backgroundColor = [UIColor clearColor];
+    }
+    return _containerView;
+}
 
 - (UIButton *)closeButton {
     if (!_closeButton) {
@@ -85,10 +99,22 @@
     return _closeButton;
 }
 
+- (UIButton *)backButton {
+    if (!_backButton) {
+        _backButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_backButton addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _backButton;
+}
+
 #pragma mark - Action
 
 - (void)closeAction {
     [self closeAndBack:NO];
+}
+
+- (void)backAction {
+    [self closeAndBack:YES];
 }
 
 - (void)closeAndBack:(BOOL)back {
@@ -104,45 +130,32 @@
 - (void)showContentView:(UIView *)contentView {
     self.hidden = NO;
     
-    self.contentView = contentView;
-    self.contentOriginSuperview = contentView.superview;
-    [self insertSubview:self.contentView atIndex:0];
+    for (UIView * subview in self.containerView.subviews) {
+        [subview removeFromSuperview];
+    }
     
-    self.contentView.frame = self.bounds;
+    if (!contentView) {
+        return;
+    }
+    
+    [self.containerView addSubview:contentView];
+    contentView.frame = self.containerView.bounds;
+    contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    contentView.userInteractionEnabled = YES;
 }
 
 - (void)close {
     self.hidden = YES;
     [self resetPosition];
-    
-    if (self.contentView && self.contentOriginSuperview) {
-        [self.contentOriginSuperview insertSubview:self.contentView atIndex:0];
-    } else if (self.contentView && self.contentView.superview == self) {
-        [self.contentView removeFromSuperview];
-    }
-    
-    self.contentView = nil;
-    self.contentOriginSuperview = nil;
 }
 
 #pragma mark - 手势
-
-- (UITapGestureRecognizer *)tapGestureRecognizer {
-    if (!_tapGestureRecognizer) {
-        _tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapWindow:)];
-    }
-    return _tapGestureRecognizer;
-}
 
 - (UIPanGestureRecognizer *)panGestureRecognizer {
     if (!_panGestureRecognizer) {
         _panGestureRecognizer = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(dragWindow:)];
     }
     return _panGestureRecognizer;
-}
-
-- (void)tapWindow:(UITapGestureRecognizer *)gesture {
-    [self closeAndBack:YES];
 }
 
 - (void)dragWindow:(UIPanGestureRecognizer *)gesture {

@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -21,6 +22,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 @class PLVECHomePageView, PLVChatModel;
 
 @protocol PLVECHomePageViewDelegate <NSObject>
+
+- (BOOL)homePageView_inLinkMic:(PLVECHomePageView *)homePageView;
 
 @optional
 
@@ -77,6 +80,11 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 打开互动应用模块
 - (void)homePageView_openInteractApp:(PLVECHomePageView *)homePageView eventName:(NSString *)eventName;
 
+/// 点击领取红包时触发
+/// @param state 红包消息状态
+/// @param model 对应消息数据模型
+- (void)homePageView_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model;
+
 @end
 
 @interface PLVECHomePageView : UIView
@@ -98,6 +106,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)updateLikeCount:(NSUInteger)likeCount;
 
 - (void)updatePlayerState:(BOOL)playing;
+
+- (void)updateLinkMicState:(BOOL)linkMic;
 
 - (void)updateLineCount:(NSUInteger)lineCount defaultLine:(NSUInteger)line;
 
@@ -123,6 +133,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)updateMoreButtonShow:(BOOL)show;
 
 - (void)updateIarEntranceButtonDataArray:(NSArray *)dataArray;
+
+/// 更新更多按钮的按钮状态
+/// @param dataArray 按钮数据
+- (void)updateMoreButtonDataArray:(NSArray *)dataArray;
 
 @end
 

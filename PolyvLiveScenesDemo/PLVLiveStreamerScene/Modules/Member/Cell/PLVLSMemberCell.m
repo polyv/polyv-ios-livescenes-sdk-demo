@@ -114,7 +114,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         originX += self.actorBgView.frame.size.width + 4;
     }
     
-    self.nickNameLabel.frame = CGRectMake(originX, 15, self.bounds.size.width - 44 * 4 + 8 - originX, 18);
+    self.nickNameLabel.frame = CGRectMake(originX, 15, self.bounds.size.width - 44 * 3 + 8 - originX, 18);
     
     CGFloat rightOriginX = self.bounds.size.width - 36;
     self.linkmicButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
@@ -213,6 +213,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         _nickNameLabel = [[UILabel alloc] init];
         _nickNameLabel.font = [UIFont systemFontOfSize:12];
         _nickNameLabel.textColor = [PLVColorUtil colorFromHexString:@"#f0f1f5"];
+        _nickNameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
     }
     return _nickNameLabel;
 }
@@ -428,7 +429,20 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     self.actorBgView.hidden = !specialType;
     self.actorLabel.hidden = !specialType;
     if (specialType) {
-        self.actorLabel.text = user.actor;
+        CGFloat actorTextWidth = [user.actor boundingRectWithSize:CGSizeMake(100, 14)
+                                                                    options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                                 attributes:@{NSFontAttributeName:self.actorLabel.font}
+                                                                    context:nil].size.width;
+        CGFloat nickNameTextWidth = [user.userName boundingRectWithSize:CGSizeMake(200, 18)
+                                                                    options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                                 attributes:@{NSFontAttributeName:self.nickNameLabel.font}
+                                                                    context:nil].size.width;
+        // 优先显示昵称完整，当宽度不能完全展示头衔+昵称，头衔最多展示4个文字
+        if ((nickNameTextWidth + actorTextWidth) > (self.bounds.size.width - 40 - 44 * 3) && [PLVFdUtil checkStringUseable:user.actor]) {
+            self.actorLabel.text = [PLVFdUtil cutSting:user.actor WithCharacterLength:3];
+        } else {
+            self.actorLabel.text = user.actor;
+        }
     }
     
     // 配置头衔背景渐变
@@ -439,7 +453,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         }
     }
     
-    self.nickNameLabel.text = [PLVFdUtil cutSting:user.userName WithCharacterLength:8];
+    self.nickNameLabel.text = user.userName;
     
     self.editView.banned = user.banned;
     

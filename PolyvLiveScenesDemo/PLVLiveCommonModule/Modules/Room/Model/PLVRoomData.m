@@ -109,6 +109,7 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
             weakSelf.welcomeShowDisable = ![switchInfo[@"welcome"] boolValue];
             weakSelf.sendImageDisable = ![switchInfo[@"viewerSendImgEnabled"] boolValue];
             weakSelf.sendLikeDisable = ![switchInfo[@"sendFlowersEnabled"] boolValue];
+            weakSelf.watchFeedbackEnabled = [switchInfo[@"watchFeedbackEnabled"] boolValue];
             [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomFunctionGotNotification object:switchInfo];
         }
     } failure:^(NSError * _Nonnull error) {

@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVLCLikeButtonView.h"
+#import "PLVLCRedpackButtonView.h"
 #import "PLVLCCardPushButtonView.h"
 
 @class PLVChatModel;
@@ -41,20 +42,28 @@ extern NSString *PLVLCChatroomOpenRewardViewNotification;
 /// 点赞悬浮按钮（含点赞数、点赞动画）自定义视图
 @property (nonatomic, strong) PLVLCLikeButtonView *likeButtonView;
 
+/// 倒计时红包悬浮按钮
+@property (nonatomic, strong) PLVLCRedpackButtonView *redpackButtonView;
+
 /// 卡片推送悬浮按钮 自定义视图
 @property (nonatomic, strong) PLVLCCardPushButtonView *cardPushButtonView;
 
 /// 初始化方法
 - (instancetype)initWithLiveRoom:(UIViewController *)liveRoom;
 
-- (void)resumeLikeButtonViewLayout;
-
-- (void)resumeCardPushButtonViewLayout;
+/// 调整右侧悬浮按钮位置
+- (void)resumeFloatingButtonViewLayout;
 
 /// 主页创建/更新回放viewModel之后，通过菜单视图，通知聊天室视图
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
 - (void)leaveLiveRoom;
+
+/// 开启卡片推送
+/// @param start 是否是开启推送 YES开启 NO取消
+/// @param dict 卡片推送信息
+/// @param callback 开始卡片推送的回调，是否显示挂件（YES 显示，NO不显示）
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback;
 
 @end
 

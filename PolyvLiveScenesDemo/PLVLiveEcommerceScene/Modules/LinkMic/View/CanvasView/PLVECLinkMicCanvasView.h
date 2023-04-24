@@ -1,22 +1,31 @@
 //
 //  PLVECLinkMicCanvasView.h
-//  PolyvLiveScenesDemo
+//  PLVLiveScenesDemo
 //
-//  Created by Sakya on 2021/10/11.
-//  Copyright © 2021 PLV. All rights reserved.
+//  Created by Lincal on 2020/9/22.
+//  Copyright © 2020 PLV. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
 /// 直播带货场景下 PLVLinkMicOnlineUser 的 rtcview 的容器
 ///
-/// @note 负责承载 PLVLinkMicOnlineUser 的 rtcview；并负责直播带货场景的UI业务；
+/// @note 负责承载 PLVLinkMicOnlineUser 的 rtcview；并负责云课堂场景的UI业务；
 ///       PLVECLinkMicCanvasView 应仅负责承载，可通过调用 [addRTCView:] 添加 rtcview；
 @interface PLVECLinkMicCanvasView : UIView
 
+#pragma mark - [ 属性 ]
+
+/// 背景视图 (负责展示 占位图)
+@property (nonatomic, strong, readonly) UIImageView *placeholderImageView;
+/// 播放器LOGO视图
+@property (nonatomic, strong, readonly) UIImageView *logoImageView;
+
 #pragma mark - [ 方法 ]
+
 /// 添加 rtcview
 - (void)addRTCView:(UIView *)rtcView;
 
@@ -27,6 +36,21 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param rtcViewShow rtcview 隐藏或显示 (YES:显示 NO:隐藏)
 - (void)rtcViewShow:(BOOL)rtcViewShow;
+
+/// 播放器LOGO 隐藏/显示
+///
+/// @param logoViewShow 播放器LOGO 隐藏或显示 (YES:显示 NO:隐藏)
+- (void)logoViewShow:(BOOL)logoViewShow;
+
+/// 更新 ‘网络状态视图’ 状态
+///
+/// @param status 网络状态值 (对应不同的网络状态图标)
+- (void)updateNetworkQualityImageViewWithStatus:(PLVBLinkMicNetworkQuality)status;
+
+/// 设置讲师连麦视图的封面图
+///
+/// @param urlString 封面图的url
+- (void)setSplashImageWithURLString:(NSString *)urlString;
 
 /// pauseWatchNoDelayImageView 隐藏/显示
 ///

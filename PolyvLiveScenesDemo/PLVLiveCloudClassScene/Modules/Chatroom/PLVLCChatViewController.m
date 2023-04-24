@@ -12,6 +12,7 @@
 #import "PLVLCWelcomeView.h"
 #import "PLVLCPlaybackNotifyView.h"
 #import "PLVLCNotifyMarqueeView.h"
+#import "PLVLCRedpackMessageCell.h"
 #import "PLVLCSpeakMessageCell.h"
 #import "PLVLCLongContentMessageCell.h"
 #import "PLVLCImageMessageCell.h"
@@ -99,6 +100,7 @@ UITableViewDataSource
     } else {
         [self.view addSubview:self.tableView];
         [self.view addSubview:self.likeButtonView];
+        [self.view addSubview:self.redpackButtonView];
         [self.view addSubview:self.cardPushButtonView];
         [self.view addSubview:self.welcomeView];
         [self.view addSubview:self.notifyMarqueeView];
@@ -132,8 +134,7 @@ UITableViewDataSource
         [self refreshReceiveNewMessageViewFrame];
         
         if (![self currentIsFullScreen]) {
-            [self refreshLikeButtonViewFrame];
-            [self refreshCardPushButtonViewFrame];
+            [self refreshFloatingButtonViewFrame];
         }
     }
 }
@@ -152,28 +153,37 @@ UITableViewDataSource
         self.hasLayoutSubView = YES;
         
         [self scrollsToBottom:NO];
-        
-        [self refreshLikeButtonViewFrame];
-        [self refreshCardPushButtonViewFrame];
+        [self refreshFloatingButtonViewFrame];
 //        [self refreshIarEntranceViewFrame];
     }
 }
 
-- (void)refreshLikeButtonViewFrame{
-    CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + 8 + P_SafeAreaBottomEdgeInsets();
-    CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
+- (void)refreshFloatingButtonViewFrame {
+    CGFloat keyboardToolViewHeight = PLVLCKeyboardToolViewHeight + P_SafeAreaBottomEdgeInsets();
+    CGRect keyboardToolViewRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - keyboardToolViewHeight, CGRectGetWidth(self.view.bounds), keyboardToolViewHeight);
     CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
-    self.likeButtonView.frame = CGRectMake(self.view.bounds.size.width - PLVLCLikeButtonViewWidth - rightPadding, inputRect.origin.y - 17 - PLVLCLikeButtonViewHeight, PLVLCLikeButtonViewWidth, PLVLCLikeButtonViewHeight);
-}
-
-- (void)refreshCardPushButtonViewFrame{
-    CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
-    CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
-    CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
-    CGFloat originX = self.view.bounds.size.width - PLVLCCardPushButtonViewWidth - rightPadding;
-    CGFloat originY = (!_likeButtonView || self.likeButtonView.hidden) ? (inputRect.origin.y - 17 - PLVLCCardPushButtonViewHeight) : CGRectGetMinY(self.likeButtonView.frame) - 10 - PLVLCCardPushButtonViewHeight;
-
-    self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVLCCardPushButtonViewWidth, PLVLCCardPushButtonViewHeight);
+    CGFloat centerPadding = rightPadding + 40.0 / 2.0; // 40pt宽的按钮屏幕右间距为rightPadding，悬浮按钮都跟40pt宽的按钮垂直对齐
+    CGFloat buttonYPadding = 12.0; // 悬浮按钮之间垂直间隔17pt
+    CGFloat originX = 0;
+    CGFloat originY = keyboardToolViewRect.origin.y;
+    
+    if (!self.likeButtonView.hidden && self.likeButtonView.superview == self.view) {
+        originX = self.view.bounds.size.width - centerPadding - PLVLCLikeButtonViewWidth / 2.0;
+        originY -= (buttonYPadding + PLVLCLikeButtonViewHeight);
+        self.likeButtonView.frame = CGRectMake(originX, originY, PLVLCLikeButtonViewWidth, PLVLCLikeButtonViewHeight);
+    }
+    
+    if (!self.redpackButtonView.hidden && self.redpackButtonView.superview == self.view) {
+        originX = self.view.bounds.size.width - centerPadding - PLVLCRedpackButtonViewWidth / 2.0;
+        originY -= (buttonYPadding + PLVLCRedpackButtonViewHeight);
+        self.redpackButtonView.frame = CGRectMake(originX, originY, PLVLCRedpackButtonViewWidth, PLVLCRedpackButtonViewHeight);
+    }
+    
+    if (!self.cardPushButtonView.hidden && self.cardPushButtonView.superview == self.view) {
+        originX = self.view.bounds.size.width - centerPadding - PLVLCCardPushButtonViewWidth / 2.0;
+        originY -= (buttonYPadding + PLVLCCardPushButtonViewHeight);
+        self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVLCCardPushButtonViewWidth, PLVLCCardPushButtonViewHeight);
+    }
 }
 
 - (void)refreshTableViewFrame {
@@ -245,6 +255,13 @@ UITableViewDataSource
         _likeButtonView.delegate = self;
     }
     return _likeButtonView;
+}
+
+- (PLVLCRedpackButtonView *)redpackButtonView {
+    if (!_redpackButtonView) {
+        _redpackButtonView = [[PLVLCRedpackButtonView alloc] init];
+    }
+    return _redpackButtonView;
 }
 
 - (PLVLCCardPushButtonView *)cardPushButtonView {
@@ -368,14 +385,12 @@ UITableViewDataSource
     return self;
 }
 
-- (void)resumeLikeButtonViewLayout {
+- (void)resumeFloatingButtonViewLayout {
     [self.view insertSubview:self.likeButtonView belowSubview:self.receiveNewMessageView];
-    [self refreshLikeButtonViewFrame];
-}
-
-- (void)resumeCardPushButtonViewLayout {
+    [self.view insertSubview:self.redpackButtonView belowSubview:self.receiveNewMessageView];
     [self.view insertSubview:self.cardPushButtonView belowSubview:self.receiveNewMessageView];
-    [self refreshCardPushButtonViewFrame];
+    
+    [self refreshFloatingButtonViewFrame];
 }
 
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel {
@@ -385,6 +400,14 @@ UITableViewDataSource
 
 - (void)leaveLiveRoom {
     [self.cardPushButtonView leaveLiveRoom];
+}
+
+- (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback  {
+    __weak typeof(self) weakSelf = self;
+    [self.cardPushButtonView startCardPush:start cardPushInfo:dict callback:^(BOOL show) {
+        callback ? callback(show) : nil;
+        [weakSelf refreshFloatingButtonViewFrame];
+    }];
 }
 
 #pragma mark - Private Method
@@ -504,6 +527,10 @@ UITableViewDataSource
 
 - (void)didTapReplyMenuItem:(PLVChatModel *)model {
     [self.keyboardToolView replyChatModel:model];
+}
+     
+- (void)didTapRedpackModel:(PLVChatModel *)model {
+    [[PLVLCChatroomViewModel sharedViewModel] checkRedpackStateWithChatModel:model];
 }
 
 #pragma mark - PLVRoomDataManagerProtocol
@@ -639,12 +666,33 @@ UITableViewDataSource
     }
 }
 
+- (void)chatroomManager_showDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
+    if (type != PLVRedpackMessageTypeAliPassword) {
+        return;
+    }
+    
+    BOOL showFirst = (self.redpackButtonView.hidden == YES);
+    [self.redpackButtonView showWithRedpackMessageType:type delayTime:delayTime];
+    if (showFirst) {
+        [self refreshFloatingButtonViewFrame];
+    }
+}
+
+- (void)chatroomManager_hideDelayRedpack {
+    [self.redpackButtonView dismiss];
+    [self refreshFloatingButtonViewFrame];
+}
+
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom {
     [self.keyboardToolView changeCloseRoomStatus:closeRoom];
 }
 
 - (void)chatroomManager_focusMode:(BOOL)focusMode {
     [self.keyboardToolView changeFocusMode:focusMode];
+}
+
+- (void)chatroomManager_didRedpackStateChanged {
+    [self.tableView reloadData];
 }
 
 #pragma mark - PLVLCChatroomPlaybackViewModelDelegate
@@ -789,6 +837,17 @@ UITableViewDataSource
         CGFloat fileMessageCellWidth = self.likeButtonView.frame.origin.x - 8;// 气泡保证不遮挡点赞按钮
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:fileMessageCellWidth];
         return cell;
+    } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
+        static NSString *redpackMessageCellIdentify = @"PLVLCRedpackMessageCell";
+        PLVLCRedpackMessageCell *cell = (PLVLCRedpackMessageCell *)[tableView dequeueReusableCellWithIdentifier:redpackMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCRedpackMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:redpackMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setTapRedpackHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapRedpackModel:model];
+        }];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -806,7 +865,7 @@ UITableViewDataSource
         return 0;
     }
     
-    CGFloat cellHeight = 44.0;
+    CGFloat cellHeight = 0.0;
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
@@ -823,8 +882,8 @@ UITableViewDataSource
         cellHeight = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCFileMessageCell isModelValid:model]) {
         cellHeight = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
-    } else {
-        cellHeight = 0;
+    } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     }
     
     return cellHeight;

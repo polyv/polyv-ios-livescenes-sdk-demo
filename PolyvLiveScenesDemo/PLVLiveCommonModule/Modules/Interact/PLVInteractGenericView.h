@@ -7,8 +7,17 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PLVChatModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+/// 直播场景
+typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
+    /// 云课堂场景
+    PLVInteractGenericViewLiveTypeLC = 0,
+    /// 直播带货场景
+    PLVInteractGenericViewLiveTypeEC = 1
+};
 
 @class PLVInteractGenericView;
 
@@ -19,6 +28,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param url 加载 webview 的链接
 /// @param insideLoad 收否当前页面内部加载 （YES本页面加载，NO页面加载）
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView loadWebViewURL:(NSURL *)url insideLoad:(BOOL)insideLoad;
+
+/// 收到用户打开红包的回调
+/// @param interactView 互动视图
+/// @param redpackId 红包ID
+/// @param status 红包状态
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView
+                didOpenRedpack:(NSString *)redpackId
+                        status:(NSString *)status;
 
 @end
 
@@ -41,8 +58,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL keepInteractViewTop;
 
 /// 创建 互动视图
+/// @param liveType 直播场景
 /// @param liveRoom 是否是直播的房间
-- (instancetype)initWithLiveRoom:(BOOL)liveRoom;
+- (instancetype)initWithLiveType:(PLVInteractGenericViewLiveType)liveType liveRoom:(BOOL)liveRoom;
 
 #pragma mark - 页面加载
 
@@ -66,6 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 推送卡片
 - (void)openNewPushCardWithDict:(NSDictionary *)dict;
+
+/// 打开红包
+- (void)openRedpackWithChatModel:(PLVChatModel *)model;
 
 /// 打开互动应用弹窗
 /// @param eventName 事件名称，由 JS 传递过来。

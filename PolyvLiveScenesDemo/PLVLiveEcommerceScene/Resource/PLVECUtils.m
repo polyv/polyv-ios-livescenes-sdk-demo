@@ -33,6 +33,13 @@
     return [self imageFromBundle:@"WatchResource" imageName:imageName];
 }
 
++ (NSURL *)URLForWatchResource:(NSString *)resourceName {
+    NSBundle *bundle = [NSBundle bundleForClass:[PLVECUtils class]];
+    NSBundle *resourceBundle = [NSBundle bundleWithPath:[bundle pathForResource:@"WatchResource" ofType:@"bundle"]];
+    NSURL *resourceURL = [resourceBundle URLForResource:resourceName withExtension:nil];
+    return resourceURL;
+}
+
 + (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url {
     [self setImageView:imageView url:url placeholderImage:nil options:0 progress:nil completed:nil];
 }

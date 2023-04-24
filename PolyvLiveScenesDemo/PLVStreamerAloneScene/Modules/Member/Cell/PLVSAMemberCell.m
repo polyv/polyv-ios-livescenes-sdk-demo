@@ -9,7 +9,7 @@
 #import "PLVSAMemberCell.h"
 #import "PLVChatUser.h"
 #import "PLVRoomDataManager.h"
-#import "PLVSAUtils.h">
+#import "PLVSAUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSAMemberCell ()
@@ -110,13 +110,38 @@
     // 配置禁言标志
     self.bannedImageView.hidden = !(user.banned && !specialType);
     
+    // 配置连麦按钮、更多按钮
+    [self refreshMoreButtonState];
+    [self refreshLinkMicButtonState];
+    
     // 配置头衔标志
     self.actorBgView.hidden = !specialType;
     self.actorLabel.hidden = !specialType;
     if (specialType) {
-        self.actorLabel.text = user.actor;
+        CGFloat actorTextWidth = [user.actor boundingRectWithSize:CGSizeMake(100, 18)
+                                                                    options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                                 attributes:@{NSFontAttributeName:self.actorLabel.font}
+                                                                    context:nil].size.width;
+        CGFloat nickNameTextWidth = [user.userName boundingRectWithSize:CGSizeMake(200, 20)
+                                                                    options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
+                                                                 attributes:@{NSFontAttributeName:self.nickNameLabel.font}
+                                                                    context:nil].size.width;
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat margin = isPad ? 56 : 32;
+        CGFloat buttonOriginX = self.bounds.size.width - margin * 2 - 88;
+        if (!self.moreButton.hidden) {
+            buttonOriginX -= (32 + 20);
+        }
+        if (!self.linkmicButton.hidden) {
+            buttonOriginX -= 32;
+        }
+        // 优先显示昵称完整，当宽度不能完全展示头衔+昵称，头衔最多展示4个文字
+        if ((nickNameTextWidth + actorTextWidth + 8 * 3) > buttonOriginX && [PLVFdUtil checkStringUseable:user.actor]) {
+            self.actorLabel.text = [PLVFdUtil cutSting:user.actor WithCharacterLength:3];
+        } else {
+            self.actorLabel.text = user.actor;
+        }
     }
-    
     // 配置头衔背景渐变
     if (specialType) {
         UIColor *startColor = nil;
@@ -129,10 +154,6 @@
     
     // 配置昵称文本
     self.nickNameLabel.text = self.user.userName;
-    
-    // 配置连麦按钮、更多按钮
-    [self refreshMoreButtonState];
-    [self refreshLinkMicButtonState];
 }
 
 + (CGFloat)cellHeight {

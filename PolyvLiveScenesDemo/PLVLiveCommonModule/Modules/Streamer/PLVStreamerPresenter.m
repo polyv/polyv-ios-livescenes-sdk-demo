@@ -14,6 +14,7 @@ static NSString *const PLVStreamerPresenter_DictValue_GuestAllowed = @"allowed";
 static NSString *const PLVStreamerPresenter_DictValue_GuestAllowedWithRaiseHand = @"allowedWithRaiseHand";
 static NSString *const PLVStreamerPresenter_DictValue_GuestJoined = @"joined";
 static NSString *const PLVStreamerPresenter_AppGroup = @"group.cn.plv.PolyvLiveScenesDemo.ScreenShare";
+extern NSString *PLVSDKGlobalBeautySDKVersion;
 
 @interface PLVStreamerPresenter ()<
 PLVSocketManagerProtocol,
@@ -220,6 +221,7 @@ PLVChannelClassManagerDelegate
             [weakSelf startClassEmitCompleteBlock:^(BOOL emitSuccess) {
                 if (!emitSuccess) {
                     NSError * finalError = [weakSelf errorWithCode:PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed errorDescription:nil];
+                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"startClass emit onSliceStart failed");
                     [weakSelf callbackForDidOccurError:finalError];
                 }
             }];
@@ -645,6 +647,7 @@ PLVChannelClassManagerDelegate
 #pragma mark - [ Private Methods ]
 - (void)setup{
     /// 初始化 数据
+    PLVSDKGlobalBeautySDKVersion = nil;// 若使用美颜4.4.2版本请设置 PLVSDKGlobalBeautySDKVersion = @"4.4.2";
     self.originalIdleTimerDisabled = 0;
     self.waitUserMuArray = [[NSMutableArray<PLVLinkMicWaitUser *> alloc] init];
     self.onlineUserMuArray = [[NSMutableArray<PLVLinkMicOnlineUser *> alloc] init];
@@ -725,7 +728,7 @@ PLVChannelClassManagerDelegate
     jsonDict[@"timeStamp"] = @((NSInteger)self.pushStreamValidDuration);
 
     __weak typeof(self) weakSelf = self;
-    [[PLVSocketManager sharedManager] emitMessage:jsonDict timeout:5.0 callback:^(NSArray * _Nonnull ackArray) {
+    BOOL success = [[PLVSocketManager sharedManager] emitMessage:jsonDict timeout:5.0 callback:^(NSArray * _Nonnull ackArray) {
         if ([PLVFdUtil checkArrayUseable:ackArray]) {
             weakSelf.classStarted = YES;
             [weakSelf callbackForClassStartedDidChanged:jsonDict];
@@ -735,6 +738,10 @@ PLVChannelClassManagerDelegate
             if (emitCompleteBlock) { emitCompleteBlock(NO); }
         }
     }];
+    
+    if (!success && [PLVSocketManager sharedManager].status != PLVSocketConnectStatusConnected) {
+        if (emitCompleteBlock) { emitCompleteBlock(NO); }
+    }
 }
 
 /// 结束上课

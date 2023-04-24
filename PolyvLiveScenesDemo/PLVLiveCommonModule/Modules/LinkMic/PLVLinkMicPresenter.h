@@ -104,6 +104,9 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// delegate
 @property (nonatomic, weak) id <PLVLinkMicPresenterDelegate> delegate;
 
+/// 连麦时视频流宽高比，默认 PLVBLinkMicStreamScale16_9
+@property (nonatomic, assign) PLVBLinkMicStreamScale streamScale;
+
 /// 麦克风 是否默认开启
 ///
 /// @note 仅在 [requestJoinLinkMic:] 方法调用前设置有效
@@ -127,6 +130,12 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// @note 因渲染机制特性，需设置‘预渲染容器’，以保证在某些特殊场景下，RTC画面能正常渲染；
 ///       要求：preRenderContainer 必须拥有根视图
 @property (nonatomic, weak) UIView * preRenderContainer;
+
+/// 在线连麦成员是否排序，默认不排序
+///
+/// @note 如果观看端不会本地更改第一画面时，可设置该字段为YES，会根据用户角色、是否本地用户、是否主讲来进行排序；
+///       如果观看端会本地修改第一画面（譬如云课堂场景），则不应该设置该属性
+@property (nonatomic, assign) BOOL linkMicListSort;
 
 #pragma mark 状态
 /// 当前 房间加入状态
@@ -315,8 +324,9 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicOnlineUserListRefresh:(NSArray *)onlineUserArray;
 
 #pragma mark 业务事件
+
 /// 讲师让某位连麦人成为’主讲‘，’主讲‘角色已变更
-- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerChangedToLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser;
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter mainSpeakerChangedToLinkMicUserId:(NSString *)linkMicUserId;
 
 /// 当前’主讲‘ 的rtc画面，需要切至 主屏/副屏 显示
 /// 非连麦状态时，此回调不应被处理
@@ -358,6 +368,11 @@ reportAudioVolumeOfSpeakers:(NSDictionary<NSString *, NSNumber *> * _Nonnull)vol
 /// @param presenter 连麦管理器
 /// @param rxQuality 当前下行网络质量
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality;
+
+/// 当前用户被老师下麦
+///
+/// @param presenter 连麦管理器
+- (void)plvLinkMicPresenterLocalUserLinkMicWasHanduped:(PLVLinkMicPresenter *)presenter;
 
 
 @end

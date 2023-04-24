@@ -146,79 +146,160 @@
                     BOOL sectionEnabled = channelPlaybackInfo.sectionEnabled;
                     __block NSArray<PLVLivePlaybackSectionModel *> *sectionList;
                     __block PLVPlaybackListModel *playbackList;
-                    NSString *videoPoolId = channelPlaybackInfo.targetPlaybackVideo.videoPoolId;
-                    NSString *videoId = channelPlaybackInfo.targetPlaybackVideo.videoId;
-                    NSString *playbackSessionId = channelPlaybackInfo.targetPlaybackVideo.channelSessionId;
+                    __block NSString *videoPoolId = channelPlaybackInfo.targetPlaybackVideo.videoPoolId;
+                    __block NSString *videoId = channelPlaybackInfo.targetPlaybackVideo.videoId;
+                    __block NSString *playbackSessionId = channelPlaybackInfo.targetPlaybackVideo.channelSessionId;
                     
-                    if (![PLVFdUtil checkStringUseable:channelPlaybackInfo.playbackOrigin]) {
-                        !failure ?: failure(@"回放类型获取失败");
-                        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放类型不可为空】", __FUNCTION__);
-                    }
-                    
-                    if (![PLVFdUtil checkStringUseable:channelPlaybackInfo.type]) {
-                        !failure ?: failure(@"回放方式获取失败");
-                        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放方式不可为空】", __FUNCTION__);
-                    } else if ([channelPlaybackInfo.type isEqualToString:@"single"]) { // 回放方式-单个视频
-                        if ([channelPlaybackInfo.playbackOrigin isEqualToString:@"record"]) { // 使用最新暂存
-                            if (!channelPlaybackInfo.hasRecordFile || !channelPlaybackInfo.recordFile) {
-                                !failure ?: failure(@"直播暂存为空");
-                                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【直播暂存不可为空】", __FUNCTION__);
+                    // 选择回放列表 默认按点播列表播放
+                    if (vodList) {
+                        [PLVLiveVideoAPI requestPlaybackList:channelId listType:@"vod" page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
+                            if (error) {
+                                !failure ?: failure(@"点播列表获取失败");
+                                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【点播列表获取失败】", __FUNCTION__);
                             } else {
-                                PLVLiveRecordFileModel *recordFile = channelPlaybackInfo.recordFile;
-                                [PLVLiveVideoAPI verifyLivePermissionWithChannelId:channelId.integerValue userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
-                                    [PLVLiveVideoConfig setPrivateDomainWithData:data];
-                                    if (sectionEnabled && [PLVFdUtil checkStringUseable:recordFile.fileId]) {
-                                        [PLVLiveVideoAPI requestLiveRecordSectionListWithChannelId:channelId fileId:recordFile.fileId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nullable error) {
+                                playbackList = list;
+                                if (![PLVFdUtil checkArrayUseable:playbackList.contents]) {
+                                    !failure ?: failure(@"点播列表获取为空");
+                                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【点播列表获取为空】", __FUNCTION__);
+                                } else {
+                                    PLVPlaybackVideoModel *playbackVideo = playbackList.contents.firstObject;
+                                    videoPoolId = playbackVideo.videoPoolId;
+                                    videoId = playbackVideo.videoId;
+                                    playbackSessionId = playbackVideo.channelSessionId;
+                                    if (sectionEnabled) {
+                                        [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:channelId videoId:videoId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nonnull error) {
                                             sectionList = list;
                                         }];
                                     }
-                                    [PLVLiveVideoAPI liveStatus2:channelId appId:appId appSecret:appSecret completion:^(PLVChannelType apiChannelType, PLVChannelLiveStreamState liveState) {
-                                        if ((apiChannelType & channelType) <= 0) {
-                                            !failure ?: failure(@"频道类型出错");
-                                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get liveRecord channel failed with with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
-                                        } else {
-                                            // 初始化直播间数据
-                                            PLVRoomData *roomData = [[PLVRoomData alloc] init];
-                                            roomData.videoType = PLVChannelVideoType_Playback;
-                                            roomData.channelType = apiChannelType;
-                                            roomData.channelId = channelId;
-                                            roomData.recordEnable = YES;
-                                            roomData.recordFile = recordFile;
-                                            if (apiChannelType == PLVChannelTypePPT) {
-                                                roomData.sectionEnable = sectionEnabled;
-                                                roomData.sectionList = sectionList;
-                                            }
-                                            roomData.playbackSessionId = recordFile.channelSessionId;
-                                            
-                                            // 使用roomUserHandler配置用户对象
-                                            PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:apiChannelType];
-                                            if (roomUserHandler) {
-                                                roomUserHandler(roomUser);
-                                            }
-                                            [roomData setupRoomUser:roomUser];
-                                            
-                                            // 登陆SDK,一定要第一时间调用这个方法，否则会导致API接口参数为空
-                                            [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
-                                            // 注册日志管理器
-                                            [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];
-                                            
-                                            // 将当前的roomData配置到PLVRoomDataManager进行管理
-                                            [[PLVRoomDataManager sharedManager] configRoomData:roomData];
-                                            
-                                            [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
-                                                !completion ?: completion(roomData.customParam);
+                                    [self playbackLoginWithChannelType:channelType channelId:channelId vid:videoPoolId userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {
+                                        roomData.vid = videoPoolId;
+                                        roomData.vodList = YES;
+                                        if (roomData.channelType == PLVChannelTypePPT) {
+                                            roomData.sectionEnable = sectionEnabled;
+                                            roomData.sectionList = sectionList;
+                                        }
+                                        roomData.playbackList = playbackList;
+                                        roomData.playbackSessionId = playbackSessionId;
+                                        
+                                        // 使用roomUserHandler配置用户对象
+                                        if (roomUserHandler) {
+                                            roomUserHandler(roomData.roomUser);
+                                        }
+                                        [roomData setupRoomUser:roomData.roomUser];
+                                        
+                                        !completion ?: completion(roomData.customParam);
+                                        
+                                    } failure:^(NSString *errorMessage) {
+                                        !failure ?: failure(errorMessage);
+                                    }];
+                                }
+                            }
+                        }];
+                    } else {
+                        if (![PLVFdUtil checkStringUseable:channelPlaybackInfo.playbackOrigin]) {
+                            !failure ?: failure(@"回放类型获取失败");
+                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放类型不可为空】", __FUNCTION__);
+                        }
+                        
+                        if (![PLVFdUtil checkStringUseable:channelPlaybackInfo.type]) {
+                            !failure ?: failure(@"回放方式获取失败");
+                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放方式不可为空】", __FUNCTION__);
+                        } else if ([channelPlaybackInfo.type isEqualToString:@"single"]) { // 回放方式-单个视频
+                            if ([channelPlaybackInfo.playbackOrigin isEqualToString:@"record"]) { // 使用最新暂存
+                                if (!channelPlaybackInfo.hasRecordFile || !channelPlaybackInfo.recordFile) {
+                                    !failure ?: failure(@"直播暂存为空");
+                                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【直播暂存不可为空】", __FUNCTION__);
+                                } else {
+                                    PLVLiveRecordFileModel *recordFile = channelPlaybackInfo.recordFile;
+                                    [PLVLiveVideoAPI verifyLivePermissionWithChannelId:channelId.integerValue userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
+                                        [PLVLiveVideoConfig setPrivateDomainWithData:data];
+                                        if (sectionEnabled && [PLVFdUtil checkStringUseable:recordFile.fileId]) {
+                                            [PLVLiveVideoAPI requestLiveRecordSectionListWithChannelId:channelId fileId:recordFile.fileId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nullable error) {
+                                                sectionList = list;
                                             }];
                                         }
+                                        [PLVLiveVideoAPI liveStatus2:channelId appId:appId appSecret:appSecret completion:^(PLVChannelType apiChannelType, PLVChannelLiveStreamState liveState) {
+                                            if ((apiChannelType & channelType) <= 0) {
+                                                !failure ?: failure(@"频道类型出错");
+                                                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get liveRecord channel failed with with【频道类型出错】(apiChannelType:%zd, channelType:%zd)", __FUNCTION__, apiChannelType, channelType);
+                                            } else {
+                                                // 初始化直播间数据
+                                                PLVRoomData *roomData = [[PLVRoomData alloc] init];
+                                                roomData.videoType = PLVChannelVideoType_Playback;
+                                                roomData.channelType = apiChannelType;
+                                                roomData.channelId = channelId;
+                                                roomData.recordEnable = YES;
+                                                roomData.recordFile = recordFile;
+                                                if (apiChannelType == PLVChannelTypePPT) {
+                                                    roomData.sectionEnable = sectionEnabled;
+                                                    roomData.sectionList = sectionList;
+                                                }
+                                                roomData.playbackSessionId = recordFile.channelSessionId;
+                                                
+                                                // 使用roomUserHandler配置用户对象
+                                                PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:apiChannelType];
+                                                if (roomUserHandler) {
+                                                    roomUserHandler(roomUser);
+                                                }
+                                                [roomData setupRoomUser:roomUser];
+                                                
+                                                // 登陆SDK,一定要第一时间调用这个方法，否则会导致API接口参数为空
+                                                [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
+                                                // 注册日志管理器
+                                                [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];
+                                                
+                                                // 将当前的roomData配置到PLVRoomDataManager进行管理
+                                                [[PLVRoomDataManager sharedManager] configRoomData:roomData];
+                                                
+                                                [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                                                    !completion ?: completion(roomData.customParam);
+                                                }];
+                                            }
+                                        } failure:^(NSError * _Nonnull error) {
+                                            !failure ?: failure(@"获取频道类型失败");
+                                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get liveRecord channel failed with【%@】（获取频道类型失败）", __FUNCTION__, error);
+                                        }];
                                     } failure:^(NSError * _Nonnull error) {
-                                        !failure ?: failure(@"获取频道类型失败");
-                                        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get liveRecord channel failed with【%@】（获取频道类型失败）", __FUNCTION__, error);
+                                        !failure ?: failure(@"登陆校验失败");
+                                        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登陆校验失败)", __FUNCTION__, error);
                                     }];
-                                } failure:^(NSError * _Nonnull error) {
-                                    !failure ?: failure(@"登陆校验失败");
-                                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登陆校验失败)", __FUNCTION__, error);
-                                }];
+                                }
+                            } else if ([channelPlaybackInfo.playbackOrigin isEqualToString:@"vod"] || [channelPlaybackInfo.playbackOrigin isEqualToString:@"playback"]) { // 从回放列表或者点播列表添加
+                                if (!channelPlaybackInfo.hasPlaybackVideo || !channelPlaybackInfo.targetPlaybackVideo) {
+                                    !failure ?: failure(@"回放视频为空");
+                                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放视频不可为空】", __FUNCTION__);
+                                } else {
+                                    if (sectionEnabled) {
+                                        [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:channelId videoId:videoId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nonnull error) {
+                                            sectionList = list;
+                                        }];
+                                    }
+                                    [self playbackLoginWithChannelType:channelType channelId:channelId vid:videoPoolId userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {
+                                        roomData.vid = videoPoolId;
+                                        roomData.vodList = [channelPlaybackInfo.playbackOrigin isEqualToString:@"vod"];
+                                        if (roomData.channelType == PLVChannelTypePPT) {
+                                            roomData.sectionEnable = sectionEnabled;
+                                            roomData.sectionList = sectionList;
+                                        }
+                                        roomData.playbackSessionId = playbackSessionId;
+                                        
+                                        // 使用roomUserHandler配置用户对象
+                                        if (roomUserHandler) {
+                                            roomUserHandler(roomData.roomUser);
+                                        }
+                                        [roomData setupRoomUser:roomData.roomUser];
+                                        
+                                        !completion ?: completion(roomData.customParam);
+                                        
+                                    } failure:^(NSString *errorMessage) {
+                                        !failure ?: failure(errorMessage);
+                                    }];
+                                }
+                            } else {
+                                !failure ?: failure(@"回放类型暂不支持");
+                                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放类型不可用】", __FUNCTION__);
                             }
-                        } else if ([channelPlaybackInfo.playbackOrigin isEqualToString:@"vod"] || [channelPlaybackInfo.playbackOrigin isEqualToString:@"playback"]) { // 从回放列表或者点播列表添加
+                        } else if ([channelPlaybackInfo.type isEqualToString:@"list"]) { // 回放方式-列表回放
                             if (!channelPlaybackInfo.hasPlaybackVideo || !channelPlaybackInfo.targetPlaybackVideo) {
                                 !failure ?: failure(@"回放视频为空");
                                 PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放视频不可为空】", __FUNCTION__);
@@ -228,6 +309,9 @@
                                         sectionList = list;
                                     }];
                                 }
+                                [PLVLiveVideoAPI requestPlaybackList:channelId listType:channelPlaybackInfo.playbackOrigin page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
+                                    playbackList = list;
+                                }];
                                 [self playbackLoginWithChannelType:channelType channelId:channelId vid:videoPoolId userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {
                                     roomData.vid = videoPoolId;
                                     roomData.vodList = [channelPlaybackInfo.playbackOrigin isEqualToString:@"vod"];
@@ -235,6 +319,7 @@
                                         roomData.sectionEnable = sectionEnabled;
                                         roomData.sectionList = sectionList;
                                     }
+                                    roomData.playbackList = playbackList;
                                     roomData.playbackSessionId = playbackSessionId;
                                     
                                     // 使用roomUserHandler配置用户对象
@@ -250,47 +335,9 @@
                                 }];
                             }
                         } else {
-                            !failure ?: failure(@"回放类型暂不支持");
-                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放类型不可用】", __FUNCTION__);
+                            !failure ?: failure(@"回放方式暂不支持");
+                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放方式不可用】", __FUNCTION__);
                         }
-                    } else if ([channelPlaybackInfo.type isEqualToString:@"list"]) { // 回放方式-列表回放
-                        if (!channelPlaybackInfo.hasPlaybackVideo || !channelPlaybackInfo.targetPlaybackVideo) {
-                            !failure ?: failure(@"回放视频为空");
-                            PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放视频不可为空】", __FUNCTION__);
-                        } else {
-                            if (sectionEnabled) {
-                                [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:channelId videoId:videoId appId:appId appSecret:appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull list, NSError * _Nonnull error) {
-                                    sectionList = list;
-                                }];
-                            }
-                            [PLVLiveVideoAPI requestPlaybackList:channelId listType:channelPlaybackInfo.playbackOrigin page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
-                                playbackList = list;
-                            }];
-                            [self playbackLoginWithChannelType:channelType channelId:channelId vid:videoPoolId userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {
-                                roomData.vid = videoPoolId;
-                                roomData.vodList = [channelPlaybackInfo.playbackOrigin isEqualToString:@"vod"];
-                                if (roomData.channelType == PLVChannelTypePPT) {
-                                    roomData.sectionEnable = sectionEnabled;
-                                    roomData.sectionList = sectionList;
-                                }
-                                roomData.playbackList = playbackList;
-                                roomData.playbackSessionId = playbackSessionId;
-                                
-                                // 使用roomUserHandler配置用户对象
-                                if (roomUserHandler) {
-                                    roomUserHandler(roomData.roomUser);
-                                }
-                                [roomData setupRoomUser:roomData.roomUser];
-                                
-                                !completion ?: completion(roomData.customParam);
-                                
-                            } failure:^(NSString *errorMessage) {
-                                !failure ?: failure(errorMessage);
-                            }];
-                        }
-                    } else {
-                        !failure ?: failure(@"回放方式暂不支持");
-                        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【回放方式不可用】", __FUNCTION__);
                     }
                 }
             } else {
@@ -416,6 +463,10 @@
             videoResolution = PLVResolutionType720P;
         } else if (rtcMaxResolution == 360) {
             videoResolution = PLVResolutionType360P;
+        }
+        
+        if ([@"Y" isEqualToString:PLV_SafeStringForDictKey(data, @"appPushResolution1080Enabled")]) {
+            videoResolution = PLVResolutionType1080P;
         }
         
         // 初始化直播间数据

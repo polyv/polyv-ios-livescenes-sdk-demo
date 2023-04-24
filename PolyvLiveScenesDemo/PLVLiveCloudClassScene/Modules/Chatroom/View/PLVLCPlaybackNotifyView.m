@@ -7,14 +7,12 @@
 //
 
 #import "PLVLCPlaybackNotifyView.h"
-#import "PLVLCUtils.h"
 
 static CGFloat kShowDuration = 5.0;
 
 @interface PLVLCPlaybackNotifyView ()
 
 @property (nonatomic, strong) UILabel *label;
-@property (nonatomic, strong) UIButton *closeButton;
 
 @end
 
@@ -24,7 +22,6 @@ static CGFloat kShowDuration = 5.0;
 
 - (void)layoutSubviews {
     self.label.frame = CGRectMake(15, (self.bounds.size.height - 20) / 2.0, self.bounds.size.width - 15 * 2, 20);
-    self.closeButton.frame = CGRectMake(self.bounds.size.width - 32, 0, 32, self.bounds.size.height);
 }
 
 #pragma mark - [ Life Cycle ]
@@ -36,7 +33,6 @@ static CGFloat kShowDuration = 5.0;
         self.hidden = YES;
         
         [self addSubview:self.label];
-        [self addSubview:self.closeButton];
     }
     return self;
 }
@@ -48,8 +44,8 @@ static CGFloat kShowDuration = 5.0;
         self.label.text = message;
         self.hidden = NO;
         
-//        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(notifyHidden) object:nil];
-//        [self performSelector:@selector(notifyHidden) withObject:nil afterDelay:kShowDuration];
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(notifyHidden) object:nil];
+        [self performSelector:@selector(notifyHidden) withObject:nil afterDelay:kShowDuration];
     }
 }
 
@@ -64,27 +60,9 @@ static CGFloat kShowDuration = 5.0;
     return _label;
 }
 
-- (UIButton *)closeButton {
-    if (!_closeButton) {
-        _closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        UIImage *image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_notify_close_icon"];
-        [_closeButton setImage:image forState:UIControlStateNormal];
-        [_closeButton addTarget:self action:@selector(closeAction) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _closeButton;
-}
-
 #pragma mark - [ Private Method ]
 
 - (void)notifyHidden {
-    self.hidden = YES;
-}
-
-#pragma mark - [ Event ]
-
-#pragma mark Action
-
-- (void)closeAction {
     self.hidden = YES;
 }
 

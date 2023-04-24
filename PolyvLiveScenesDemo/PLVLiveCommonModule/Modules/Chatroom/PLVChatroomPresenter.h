@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVChatModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -83,6 +84,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param focusMode 聊天室专注当前状态，YES：只允许特殊身份（譬如讲师）发言；
 ///                               NO：关闭，允许全体人员发言
 - (void)chatroomPresenter_didChangeFocusMode:(BOOL)focusMode;
+
+/// 讲师设置了倒计时红包
+/// @param type 红包类型
+/// @param delayTime 倒计时时间，单位秒
+- (void)chatroomPresenter_didReceiveDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime;
 
 @end
 
@@ -200,6 +206,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// 消息overLen字段为YES时，使用该方法获取超长消息
 /// @return YES-消息发出；NO-消息未发出，即callback不会执行
 - (BOOL)overLengthSpeakMessageWithMsgId:(NSString *)msgId callback:(void (^)(NSString * _Nullable content))callback;
+
+/// 判断观众是否已抢红包
+/// @param redpackId 红包ID
+/// @param redCacheId 红包CacheID
+/// @param completion 成功回调
+/// @param failure 失败回调
+- (void)loadRedpackReceiveCacheWithRedpackId:(NSString *)redpackId
+                                  redCacheId:(NSString *)redCacheId
+                                  completion:(void (^)(PLVRedpackState redpackState))completion
+                                     failure:(void (^_Nullable)(NSError *error))failure;
+
+/// 更新沙盒的已领取红包状态缓存数据
+- (void)recordRedpackReceiveWithID:(NSString *)redpackId time:(NSTimeInterval)time state:(PLVRedpackState)state;
 
 @end
 

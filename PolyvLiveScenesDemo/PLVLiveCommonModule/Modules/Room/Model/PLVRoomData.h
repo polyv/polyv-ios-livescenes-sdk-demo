@@ -104,6 +104,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL sendImageDisable;
 /// 禁止显示欢迎语，默认NO-允许显示欢迎语
 @property (nonatomic, assign) BOOL welcomeShowDisable;
+/// 开启显示举报反馈，默认NO-不显示举报反馈
+@property (nonatomic, assign) BOOL watchFeedbackEnabled;
 
 #pragma mark 连麦独有属性
 /// 当前 是否处于RTC房间中

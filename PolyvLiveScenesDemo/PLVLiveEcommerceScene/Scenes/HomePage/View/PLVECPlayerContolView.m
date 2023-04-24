@@ -50,7 +50,7 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    CGFloat originY = 0;
+    CGFloat originY = 9;
     self.playButton.frame = CGRectMake(15, originY, 20, 20);
     
     CGFloat currentTimeWidth = [self getLabelTextWidth:self.currentTimeLabel];
@@ -59,7 +59,7 @@
     CGFloat totalTimeWidth = [self getLabelTextWidth:self.totalTimeLabel];
     self.totalTimeLabel.frame = CGRectMake(CGRectGetWidth(self.bounds)-totalTimeWidth, originY+4, totalTimeWidth, 12);
     
-    self.progressSlider.frame = CGRectMake(CGRectGetMaxX(self.currentTimeLabel.frame)+4, originY+4, CGRectGetMinX(self.totalTimeLabel.frame)-CGRectGetMaxX(self.currentTimeLabel.frame)-8, 12);
+    self.progressSlider.frame  = CGRectMake(CGRectGetMaxX(self.currentTimeLabel.frame)+4, originY-10, CGRectGetMinX(self.totalTimeLabel.frame)-CGRectGetMaxX(self.currentTimeLabel.frame)-8, 40);
 }
 
 - (CGFloat)getLabelTextWidth:(UILabel *)label {

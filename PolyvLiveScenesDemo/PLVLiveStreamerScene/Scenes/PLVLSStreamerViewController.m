@@ -1006,8 +1006,13 @@ PLVShareLiveSheetDelegate
         message = @"错误";
     }
     message = [message stringByAppendingFormat:@" code:%@",fullErrorCodeString];
-    
-    [PLVLSUtils showToastWithMessage:message inView:self.view afterDelay:3];
+    if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed) {
+        [PLVLSUtils showAlertWithMessage:[NSString stringWithFormat:@"检测到%@，是否结束直播", message] cancelActionTitle:@"继续直播" cancelActionBlock:nil confirmActionTitle:@"结束直播" confirmActionBlock:^{
+            [self logout];
+        }];
+    } else {
+        [PLVLSUtils showToastWithMessage:message inView:self.view afterDelay:3];
+    }
 }
 
 /// 本地用户 麦克风音量大小检测

@@ -562,7 +562,6 @@ PLVLCLinkMicWindowsViewDelegate
 
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter didLinkMicRequestIndexUpdate:(NSInteger)linkMicIndex {
     [self.currentControlBar updateLinkMicRequestIndex:linkMicIndex];
-    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic, @"xyj debug - didLinkMicRequestIndexUpdate requestIndex: %zd", linkMicIndex);
 }
 
 /// 全部连麦成员的音频音量 回调
@@ -590,6 +589,12 @@ PLVLCLinkMicWindowsViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:localUserNetworkRxQuality:)]) {
         [self.delegate plvLCLinkMicAreaView:self localUserNetworkRxQuality:rxQuality];
     }
+}
+
+/// 当前用户被老师下麦
+- (void)plvLinkMicPresenterLocalUserLinkMicWasHanduped:(PLVLinkMicPresenter *)presenter {
+    UIViewController *currentVC = [PLVFdUtil getCurrentViewController];
+    [PLVLCUtils showHUDWithTitle:@"主播已结束您的连麦" detail:@"" view:currentVC.view];
 }
 
 @end

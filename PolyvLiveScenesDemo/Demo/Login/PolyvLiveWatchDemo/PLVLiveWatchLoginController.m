@@ -42,6 +42,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 @property (nonatomic, weak) IBOutlet UIButton *btnCloundClass;
 @property (nonatomic, weak) IBOutlet UIButton *btnLive;
+@property (nonatomic, weak) IBOutlet UIButton *backButton;
 
 @property (weak, nonatomic) IBOutlet UISwitch *vodListSwitch;
 @property (weak, nonatomic) IBOutlet UILabel *vodListSwitchLabel;
@@ -234,6 +235,10 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 - (IBAction)vodListSwitchChanged:(UISwitch *)sender {
     NSLog(@"%@", sender.isOn ? @"打开点播列表" : @"关闭点播列表");
+}
+
+- (IBAction)backAction:(id)sender {
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 #pragma mark - 登录

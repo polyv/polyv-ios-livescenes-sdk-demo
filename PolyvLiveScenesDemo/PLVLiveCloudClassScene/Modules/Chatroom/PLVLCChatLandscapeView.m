@@ -11,6 +11,7 @@
 #import "PLVLCLandscapeNewMessageView.h"
 #import "PLVLCUtils.h"
 #import "PLVLCChatroomViewModel.h"
+#import "PLVLCLandscapeRedpackMessageCell.h"
 #import "PLVLCLandscapeLongContentCell.h"
 #import "PLVLCLandscapeSpeakCell.h"
 #import "PLVLCLandscapeImageCell.h"
@@ -347,6 +348,10 @@ UITableViewDataSource
     }
 }
 
+- (void)didTapRedpackModel:(PLVChatModel *)model {
+    [[PLVLCChatroomViewModel sharedViewModel] checkRedpackStateWithChatModel:model];
+}
+
 #pragma mark - PLVLCChatroomViewModelProtocol
 
 - (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
@@ -395,6 +400,10 @@ UITableViewDataSource
 
 - (void)chatroomManager_loadHistoryFailure {
     [self.refresher endRefreshing];
+}
+
+- (void)chatroomManager_didRedpackStateChanged {
+    [self.tableView reloadData];
 }
 
 #pragma mark - PLVLCChatroomPlaybackViewModelDelegate
@@ -525,6 +534,17 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
+        static NSString *redpackMessageCellIdentify = @"PLVLCLandscapeRedpackMessageCell";
+        PLVLCLandscapeRedpackMessageCell *cell = (PLVLCLandscapeRedpackMessageCell *)[tableView dequeueReusableCellWithIdentifier:redpackMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLandscapeRedpackMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:redpackMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        [cell setRedpackTapHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapRedpackModel:model];
+        }];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -542,7 +562,7 @@ UITableViewDataSource
         return 0;
     }
     
-    CGFloat cellHeight = 44.0;
+    CGFloat cellHeight = 0;
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
@@ -558,8 +578,8 @@ UITableViewDataSource
         cellHeight = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCLandscapeFileCell isModelValid:model]) {
         cellHeight = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
-    } else {
-        cellHeight = 0;
+    } else if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
     }
     
     return cellHeight;

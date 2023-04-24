@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="19162" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="s36-zj-Vc5">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="21507" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="s36-zj-Vc5">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="19144"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21505"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -243,8 +243,8 @@
                                                     </userDefinedRuntimeAttribute>
                                                 </userDefinedRuntimeAttributes>
                                             </button>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="© 2013-2022 广州易方信息科技股份有限公司 版权所有" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="37N-te-f8q">
-                                                <rect key="frame" x="55" y="755" width="304.5" height="17"/>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="© 2013-2023 易方信息科技股份有限公司 版权所有" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="37N-te-f8q">
+                                                <rect key="frame" x="66.5" y="755" width="281" height="17"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="17" id="xcj-cl-94N"/>
                                                 </constraints>
@@ -261,6 +261,18 @@
                                                 <color key="textColor" white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
+                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="CdR-QO-0x5">
+                                                <rect key="frame" x="16" y="16" width="44" height="44"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="width" constant="44" id="Ilr-bf-cPq"/>
+                                                    <constraint firstAttribute="height" constant="44" id="bvC-SN-1GR"/>
+                                                </constraints>
+                                                <inset key="imageEdgeInsets" minX="0.0" minY="0.0" maxX="2.2250738585072014e-308" maxY="0.0"/>
+                                                <state key="normal" title="Button" image="plvlw_btn_back.png"/>
+                                                <connections>
+                                                    <action selector="backAction:" destination="Qpr-3F-BGy" eventType="touchUpInside" id="tTO-yJ-uRM"/>
+                                                </connections>
+                                            </button>
                                         </subviews>
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
@@ -271,6 +283,7 @@
                                             <constraint firstItem="tsJ-eq-Ju7" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" id="7ep-WO-6uN"/>
                                             <constraint firstItem="E8K-RN-qnj" firstAttribute="leading" secondItem="l4c-x7-iig" secondAttribute="trailing" constant="5" id="7v9-gY-PXS"/>
                                             <constraint firstItem="1s7-Bj-WAc" firstAttribute="leading" secondItem="GGH-lc-kaL" secondAttribute="leading" id="7vT-E3-jgk"/>
+                                            <constraint firstItem="CdR-QO-0x5" firstAttribute="top" secondItem="br8-fM-YrR" secondAttribute="top" constant="16" id="8iE-kr-Kdn"/>
                                             <constraint firstItem="pNv-DS-Rax" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" constant="60" id="9XV-jO-f34"/>
                                             <constraint firstItem="S9h-C0-K9m" firstAttribute="top" secondItem="br8-fM-YrR" secondAttribute="top" constant="310" id="AL0-qW-mUq"/>
                                             <constraint firstItem="RY3-Lx-2fF" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" id="Bfg-0F-pyY"/>
@@ -291,6 +304,7 @@
                                             <constraint firstItem="RY3-Lx-2fF" firstAttribute="top" secondItem="br8-fM-YrR" secondAttribute="top" constant="400" id="ece-hX-T0d"/>
                                             <constraint firstItem="r2V-SM-gAK" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" constant="-60" id="fu7-Kx-Hxg"/>
                                             <constraint firstItem="WaU-LJ-k2O" firstAttribute="top" secondItem="Qg5-f0-iO5" secondAttribute="bottom" constant="85" id="hpa-0w-v38"/>
+                                            <constraint firstItem="CdR-QO-0x5" firstAttribute="leading" secondItem="br8-fM-YrR" secondAttribute="leading" constant="16" id="iGR-QW-XJF"/>
                                             <constraint firstItem="r2V-SM-gAK" firstAttribute="top" secondItem="Qg5-f0-iO5" secondAttribute="bottom" constant="44" id="izV-L4-mEm"/>
                                             <constraint firstItem="Dg2-5S-4sA" firstAttribute="top" secondItem="N3E-Vg-Zaq" secondAttribute="bottom" constant="20" id="jvu-yw-wHR"/>
                                             <constraint firstItem="d7V-MP-SkI" firstAttribute="top" secondItem="E8K-RN-qnj" secondAttribute="top" id="kDr-rb-ufw"/>
@@ -335,6 +349,7 @@
                         <outlet property="appIDTF" destination="jDV-Zg-QiY" id="2vy-Qq-Ezq"/>
                         <outlet property="appSecretLineView" destination="qwI-j9-UaK" id="o0n-dg-XCL"/>
                         <outlet property="appSecretTF" destination="Wke-gG-7wN" id="dl6-1b-CUf"/>
+                        <outlet property="backButton" destination="CdR-QO-0x5" id="vxe-B1-M4j"/>
                         <outlet property="btnCloundClass" destination="d7V-MP-SkI" id="SAg-wu-evF"/>
                         <outlet property="btnLive" destination="DUG-WS-h72" id="yTm-eJ-NcL"/>
                         <outlet property="channelIdTF" destination="Nsa-Mh-god" id="Bhr-AN-vsa"/>
@@ -360,6 +375,7 @@
         </scene>
     </scenes>
     <resources>
+        <image name="plvlw_btn_back.png" width="36" height="36"/>
         <image name="plvlw_login_logo.png" width="210" height="39"/>
     </resources>
 </document>

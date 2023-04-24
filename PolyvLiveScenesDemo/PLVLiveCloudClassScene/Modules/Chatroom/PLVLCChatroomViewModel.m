@@ -8,7 +8,7 @@
 
 #import "PLVLCChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
-#import <PLVFoundationSDK/PLVMulticastDelegate.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVGiveRewardPresenter.h"
 
 @interface PLVLCChatroomViewModel ()<
@@ -17,6 +17,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 >
 
 @property (nonatomic, strong) PLVChatroomPresenter *presenter; /// 聊天室Presenter
+
+#pragma mark 倒计时红包
+
+/// 当前倒计时红包类型
+@property (nonatomic, assign) PLVRedpackMessageType currentRedpackType;
+/// 红包倒计时
+@property (nonatomic, strong) NSTimer *redpackTimer;
+/// 倒计时时间，单位秒
+@property (nonatomic, assign) NSInteger delayTime;
 
 #pragma mark 登录用户上报
 
@@ -173,6 +182,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     
     self.onlyTeacher = NO;
     self.focusMode = NO;
+    
+    [self stopRedpackTimer];
 }
 
 #pragma mark - 加载打赏开关
@@ -207,7 +218,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self.presenter loadImageEmotions];
 }
 
-#pragma mark - 发送消息
+#pragma mark - [ Public Medthods ]
 
 - (BOOL)sendQuesstionMessage:(NSString *)content {
     PLVChatModel *model = [self.presenter sendQuesstionMessage:content];
@@ -261,6 +272,68 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)createAnswerChatModel {
     [self.presenter createAnswerChatModel];
+}
+
+- (void)checkRedpackStateWithChatModel:(PLVChatModel *)model {
+    if (!model.message || ![model.message isKindOfClass:[PLVRedpackMessage class]]) {
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    PLVRedpackMessage *message = (PLVRedpackMessage *)model.message;
+    [self.presenter loadRedpackReceiveCacheWithRedpackId:message.redpackId
+                                              redCacheId:message.redCacheId
+                                              completion:^(PLVRedpackState redpackState) {
+        message.state = redpackState;
+        [weakSelf notifyDelegatesCheckRedpackStateResult:redpackState chatModel:model];
+        [weakSelf notifyDelegatesRedpackStateChanged];
+        [weakSelf.presenter recordRedpackReceiveWithID:message.redpackId time:message.time state:redpackState];
+    } failure:^(NSError * _Nonnull error) {
+        message.state = PLVRedpackStateUnknow;
+        [weakSelf notifyDelegatesCheckRedpackStateResult:PLVRedpackStateUnknow chatModel:model];
+    }];
+}
+
+- (PLVRedpackState)changeRedpackStateWithRedpackId:(NSString *)redpackId state:(NSString *)state {
+    if (![PLVFdUtil checkStringUseable:redpackId] ||
+        ![PLVFdUtil checkStringUseable:state]) {
+        return PLVRedpackStateUnknow;
+    }
+    
+    PLVRedpackState redpackState = PLVRedpackStateUnknow;
+    if ([state isEqualToString:@"expired"]) {
+        redpackState = PLVRedpackStateExpired;
+    } else if ([state isEqualToString:@"none_redpack"]) {
+        redpackState = PLVRedpackStateNoneRedpack;
+    } else if ([state isEqualToString:@"received"]) {
+        redpackState = PLVRedpackStateReceive;
+    } else if ([state isEqualToString:@"noReceive"]) {
+        redpackState = PLVRedpackStateSuccess;
+    }
+    
+    if (redpackState == PLVRedpackStateExpired ||
+        redpackState == PLVRedpackStateReceive ||
+        redpackState == PLVRedpackStateNoneRedpack) {
+        NSArray *modelArray = [self.publicChatArray copy];
+        for (int i = 0; i < [modelArray count]; i++) {
+            PLVChatModel *model = modelArray[i];
+            if (!model.message ||
+                ![model.message isKindOfClass:[PLVRedpackMessage class]]) {
+                continue;
+            }
+            PLVRedpackMessage *redpackMessage = (PLVRedpackMessage *)model.message;
+            if (redpackMessage.redpackId &&
+                [redpackMessage.redpackId isEqualToString:redpackId] &&
+                redpackMessage.state != redpackState) {
+                redpackMessage.state = redpackState;
+                [self notifyDelegatesRedpackStateChanged];
+                [self.presenter recordRedpackReceiveWithID:redpackMessage.redpackId time:redpackMessage.time state:redpackState];
+                break;
+            }
+        }
+    }
+    
+    return redpackState;
 }
 
 #pragma mark - 消息数组
@@ -515,6 +588,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     });
 }
 
+- (void)notifyDelegatesShowDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_showDelayRedpackWithType:type delayTime:delayTime];
+    });
+}
+
+- (void)notifyDelegatesHideDelayRedpack {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_hideDelayRedpack];
+    });
+}
+
 - (void)notifyDelegatesLoadImageEmotionSuccess {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_loadImageEmotionSuccess:self.imageEmotionArray];
@@ -542,6 +627,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)notifyDelegatesFocusMode:(BOOL)focusMode {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_focusMode:focusMode];
+    });
+}
+
+- (void)notifyDelegatesCheckRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_checkRedpackStateResult:state chatModel:model];
+    });
+}
+
+- (void)notifyDelegatesRedpackStateChanged {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_didRedpackStateChanged];
     });
 }
 
@@ -674,6 +771,38 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_signal(_danmuArrayLock);
 }
 
+#pragma mark 倒计时红包
+
+- (void)startRedpackTimerWithRedpackType:(PLVRedpackMessageType)redpackType delayTime:(NSInteger)delayTime {
+    if (_redpackTimer) {
+        [self stopRedpackTimer];
+    }
+    
+    self.currentRedpackType = redpackType;
+    self.delayTime = delayTime;
+    
+    plv_dispatch_main_async_safe(^{
+        self.redpackTimer = [NSTimer timerWithTimeInterval:1 target:self selector:@selector(redpackTimerAction) userInfo:nil repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:self.redpackTimer forMode:NSRunLoopCommonModes];
+    })
+}
+
+- (void)stopRedpackTimer {
+    [_redpackTimer invalidate];
+    _redpackTimer = nil;
+}
+
+- (void)redpackTimerAction {
+    if (--self.delayTime == 0) {
+        self.currentRedpackType = PLVRedpackMessageTypeUnknown;
+        [self stopRedpackTimer];
+        [self notifyDelegatesHideDelayRedpack];
+        return;
+    }
+    
+    [self notifyDelegatesShowDelayRedpackWithType:self.currentRedpackType delayTime:self.delayTime];
+}
+
 #pragma mark - PLVSocketManager Protocol
 
 - (void)socketMananger_didReceiveMessage:(NSString *)subEvent
@@ -769,6 +898,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)chatroomPresenter_didChangeFocusMode:(BOOL)focusMode {
     self.focusMode = focusMode;
     [self notifyDelegatesFocusMode:focusMode];
+}
+
+- (void)chatroomPresenter_didReceiveDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
+    [self startRedpackTimerWithRedpackType:type delayTime:delayTime];
 }
 
 #pragma mark - Utils

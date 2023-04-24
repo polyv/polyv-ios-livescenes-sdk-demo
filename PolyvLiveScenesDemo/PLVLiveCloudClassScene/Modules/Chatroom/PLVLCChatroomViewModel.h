@@ -99,6 +99,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pushDict 卡片推送的信息
 - (void)chatroomManager_startCardPush:(BOOL)start pushInfo:(NSDictionary *)pushDict;
 
+/// 显示倒计时红包挂件
+/// @param type 红包类型
+/// @param delayTime 倒计时时间，单位秒
+- (void)chatroomManager_showDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime;
+
+/// 隐藏倒计时红包挂件
+- (void)chatroomManager_hideDelayRedpack;
+
 /// 聊天室是否开启关闭时触发
 /// @param closeRoom 是否关闭聊天室，YES-关闭，NO-开启
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom;
@@ -106,6 +114,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 聊天室专注模式是否开启关闭时触发
 /// @param focusMode 是否关闭聊天室，YES-关闭，NO-开启
 - (void)chatroomManager_focusMode:(BOOL)focusMode;
+
+/// 方法'-checkRedpackStateWithChatModel:'触发
+/// @param state 红包消息状态
+/// @param model 对应消息数据模型
+- (void)chatroomManager_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model;
+
+/// 红包消息state字段发生变化时触发，可刷新UI
+- (void)chatroomManager_didRedpackStateChanged;
 
 @end
 
@@ -185,6 +201,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 本地生成一条教师消息，作为私聊窗口的第一条消息
 /// 生成后的消息数据模型通过回调 '-chatroomPresenter_didReceiveAnswerChatModel:' 返回
 - (void)createAnswerChatModel;
+
+/// 打开红包前判断红包状态
+- (void)checkRedpackStateWithChatModel:(PLVChatModel *)model;
+
+/// 点开红包后，从h5页面接收消息更新指定红包状态
+/// @param redpackId 对应红包ID
+/// @param state 红包状态（字符串类型）
+/// @return 转换为枚举值的红包状态
+- (PLVRedpackState)changeRedpackStateWithRedpackId:(NSString *)redpackId state:(NSString *)state;
 
 /// 增加PLVLCChatroomViewModelProtocol协议的监听者
 /// @param delegate 待增加的监听者

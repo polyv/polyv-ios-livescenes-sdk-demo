@@ -14,7 +14,6 @@
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVWatermarkView.h"
-#import "PLVMarqueeView.h"
 
 @interface PLVECPlayerViewController ()<
 PLVPlayerPresenterDelegate
@@ -113,7 +112,9 @@ PLVPlayerPresenterDelegate
     }
     
     // 设置跑马灯区域位置、尺寸
-    self.marqueeView.frame = self.playerBackgroundView.frame;
+    if (self.marqueeView.superview == self.view) {
+        self.marqueeView.frame = self.playerBackgroundView.frame;
+    }
     
     // 设置防录屏水印位置、尺寸
     self.watermarkView.frame = self.contentBackgroudView.frame;

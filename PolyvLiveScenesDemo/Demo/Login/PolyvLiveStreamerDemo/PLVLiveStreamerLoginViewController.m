@@ -35,6 +35,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 @property (nonatomic, strong) UIButton * btnAgree;          // 协议
 @property (nonatomic, strong) UIButton * btnPrivacyPolicy;  // 隐私协议
 @property (nonatomic, strong) UIButton * btnUserProtocol;   // 使用协议
+@property (nonatomic, strong) UIButton *backButton;
 
 @end
 
@@ -77,6 +78,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 - (void)setupUI {
     [self.view addSubview:self.backgroundImageView];
 
+    [self.view addSubview:self.backButton];
     [self.view addSubview:self.lbTitle];
     [self.view addSubview:self.tfChannelId];
     [self.view addSubview:self.tfPassword];
@@ -154,6 +156,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     uiFrame.origin.x = UIViewGetRight(self.btnAgree) - uiFrame.size.width;
     self.btnUserProtocol.frame = uiFrame;
     
+    self.backButton.frame = CGRectMake(16, 16, 44, 44);
 }
 
 // 自动填充用户信息
@@ -374,6 +377,15 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     return _btnUserProtocol;
 }
 
+- (UIButton *)backButton {
+    if (!_backButton) {
+        _backButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_backButton setImage:[[self class] imageWithImageName:@"plvls_btn_back"] forState:UIControlStateNormal];
+        [_backButton addTarget:self action:@selector(backAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _backButton;
+}
+
 #pragma mark Utils
 
 + (UIImage *)imageWithImageName:(NSString *)imageName {
@@ -480,6 +492,9 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     [self presentViewController:nav animated:YES completion:nil];
 }
 
+- (void)backAction {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
 
 #pragma mark - [ Delegate ]
 #pragma mark UITextFieldDelegate
@@ -510,8 +525,8 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         maxLength = 16;
         newLength = toBeString.length;
     } else {
-        maxLength = 25;
-        newLength = [self calculateTextLengthWithString:toBeString];
+        maxLength = 15;
+        newLength = toBeString.length;
     }
     
     if (newLength <= maxLength) {

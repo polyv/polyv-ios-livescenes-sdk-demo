@@ -18,6 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong) NSString *iconImageName;
 
+@property (nonatomic, copy) NSString *iconURLString;
+
 @property (nonatomic, strong) NSString *selectedIconImageName;
 
 @property (nonatomic, getter=isSelected) BOOL selected;

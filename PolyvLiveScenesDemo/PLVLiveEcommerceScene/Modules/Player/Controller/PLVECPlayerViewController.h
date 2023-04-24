@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVPlayerPresenter.h"
+#import "PLVMarqueeView.h"
 
 /// 网络质量（快直播独有）
 typedef NS_ENUM(NSInteger, PLVECLivePlayerQuickLiveNetworkQuality) {
@@ -106,6 +107,9 @@ NS_ASSUME_NONNULL_BEGIN
 // 播放器区域 解决事件传递响应链的问题
 @property (nonatomic, strong, readonly) UIView *displayView;
 
+/// 跑马灯视图
+@property (nonatomic, strong, readonly) PLVMarqueeView *marqueeView;
+
 /// 播放器播放状态
 @property (nonatomic, assign, readonly) BOOL playing;
 
@@ -117,6 +121,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 播放器当前是否正在播放无延迟直播
 @property (nonatomic, assign, readonly) BOOL noDelayLiveWatching;
+
+/// 该频道是否 ‘直播中’ 
+@property (nonatomic, assign, readonly) BOOL channelInLive;
 
 /// 播放直播/回放
 - (void)play;

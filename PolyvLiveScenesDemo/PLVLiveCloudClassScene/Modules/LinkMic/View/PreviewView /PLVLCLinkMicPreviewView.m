@@ -9,8 +9,8 @@
 #import "PLVLCLinkMicPreviewView.h"
 #import "PLVCaptureDeviceManager.h"
 #import "PLVLCUtils.h"
-#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <AudioToolbox/AudioToolbox.h>
 
 static NSString *kPLVLCUserLinkMicPreConfig = @"kPLVLCUserLinkMicPreConfig";

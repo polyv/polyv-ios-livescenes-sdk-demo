@@ -124,7 +124,7 @@ PLVRoomDataManagerProtocol
 }
 
 - (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback {
-    [self.chatVctrl.cardPushButtonView startCardPush:start cardPushInfo:dict callback:callback];
+    [self.chatVctrl startCardPush:start cardPushInfo:dict callback:callback];
 }
 
 - (void)displayProductPageToExternalView:(UIView *)externalView {

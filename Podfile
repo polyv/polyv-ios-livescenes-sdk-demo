@@ -2,17 +2,17 @@ source 'https://github.com/CocoaPods/Specs.git'
 source 'https://gitee.com/polyv_ef/plvspecs.git'
 
 # Uncomment the next line to define a global platform for your project
-platform :ios, '9.0'
+platform :ios, '10.0'
 
 target 'PolyvLiveScenesDemo' do
   use_frameworks!
 
   # 保利威 多场景 SDK
-  pod 'PLVLiveScenesSDK', '1.10.8'
+  pod 'PLVLiveScenesSDK', '1.11.2'
 
   # 保利威 手机开播场景 需依赖的库
   pod 'PLVBytedEffectSDK', '4.3.1'
-  pod 'PLVBusinessSDK', '1.10.8', :subspecs => ['Beauty']
+  pod 'PLVBusinessSDK', '1.11.2', :subspecs => ['Beauty']
   
   # 保利威 UI源码 需依赖的库
   pod 'SDWebImage', '4.4.0'
@@ -24,7 +24,7 @@ end
 
 target 'PLVScreenShareExtension' do
   use_frameworks!
-  pod 'PLVBusinessSDK', '1.10.8', :subspecs => ['AbstractBSH','ReplayKitExt']
-  pod 'PLVFoundationSDK', '1.10.8'
-  pod 'TXLiteAVSDK_TRTC', '9.3.10763'
+  pod 'PLVBusinessSDK', '1.11.2', :subspecs => ['AbstractBSH','ReplayKitExt']
+  pod 'PLVFoundationSDK', '1.11.2'
+  pod 'TXLiteAVSDK_TRTC', '10.9.13164'
 end

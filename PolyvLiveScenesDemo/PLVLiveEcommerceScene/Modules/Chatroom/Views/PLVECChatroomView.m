@@ -494,6 +494,18 @@ PLVECChatroomPlaybackViewModelDelegate
     }
 }
 
+- (void)chatroomManager_showDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomView_showDelayRedpackWithType:delayTime:)]) {
+        [self.delegate chatroomView_showDelayRedpackWithType:type delayTime:delayTime];
+    }
+}
+
+- (void)chatroomManager_hideDelayRedpack {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomView_hideDelayRedpack)]) {
+        [self.delegate chatroomView_hideDelayRedpack];
+    }
+}
+
 - (void)chatroomManager_didLoginRestrict {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomView_didLoginRestrict)]) {
         [self.delegate chatroomView_didLoginRestrict];
@@ -519,6 +531,12 @@ PLVECChatroomPlaybackViewModelDelegate
             [self tapViewAction];
         }
     });
+}
+
+- (void)chatroomManager_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomView_checkRedpackStateResult:chatModel:)]) {
+        [self.delegate chatroomView_checkRedpackStateResult:state chatModel:model];
+    }
 }
 
 #pragma mark - PLVECChatroomPlaybackViewModelDelegate
@@ -657,6 +675,9 @@ PLVECChatroomPlaybackViewModelDelegate
         [cell setReplyHandler:^(PLVChatModel *model) {
             [weakSelf didTapReplyMenuItemWithModel:model];
         }];
+        [cell setRedpackTapHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapRedpackWithModel:model];
+        }];
         return cell;
     } else if ([PLVECQuoteChatCell isModelValid:model]) {
         static NSString *quoteCellIdentify = @"quoteCellIdentify";
@@ -782,6 +803,13 @@ PLVECChatroomPlaybackViewModelDelegate
     }];
     
     [self textAreaViewTapAction];
+}
+
+- (void)didTapRedpackWithModel:(PLVChatModel *)model {
+    if (![model.message isKindOfClass:[PLVRedpackMessage class]]) {
+        return;
+    }
+    [[PLVECChatroomViewModel sharedViewModel] checkRedpackStateWithChatModel:model];
 }
 
 #pragma mark - <UITextViewDelegate>

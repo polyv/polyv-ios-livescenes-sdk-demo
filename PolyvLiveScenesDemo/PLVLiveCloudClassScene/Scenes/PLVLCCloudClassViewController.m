@@ -324,8 +324,7 @@ PLVLCLandscapeMessagePopupViewDelegate
         
         if (self.fullScreenDifferent) {
             [self.mediaAreaView.skinView synchOtherSkinViewState:self.liveRoomSkinView];
-            [self.menuAreaView.chatVctrl resumeLikeButtonViewLayout];
-            [self.menuAreaView.chatVctrl resumeCardPushButtonViewLayout];
+            [self.menuAreaView.chatVctrl resumeFloatingButtonViewLayout];
             [self.menuAreaView rollbackProductPageContentView];
             [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, isPad ? 308 : CGRectGetWidth(self.view.frame) - 60, 114)];
             [self.cardDetailView hiddenCardDetailView];
@@ -369,6 +368,7 @@ PLVLCLandscapeMessagePopupViewDelegate
         if (self.fullScreenDifferent) {
             [self.liveRoomSkinView synchOtherSkinViewState:self.mediaAreaView.skinView];
             [self.liveRoomSkinView displayLikeButtonView:self.menuAreaView.chatVctrl.likeButtonView];
+            [self.liveRoomSkinView displayRedpackButtonView:self.menuAreaView.chatVctrl.redpackButtonView];
             [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
             [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 114), 308, 114)];
             [self.cardDetailView hiddenCardDetailView];
@@ -873,6 +873,17 @@ PLVLCLandscapeMessagePopupViewDelegate
     }];
 }
 
+- (void)chatroomManager_showDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
+    if (type != PLVRedpackMessageTypeAliPassword) {
+        return;
+    }
+    [self.liveRoomSkinView showRedpackButtonView:YES];
+}
+
+- (void)chatroomManager_hideDelayRedpack {
+    [self.liveRoomSkinView showRedpackButtonView:NO];
+}
+
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom {
     NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
     plv_dispatch_main_async_safe(^{
@@ -889,6 +900,11 @@ PLVLCLandscapeMessagePopupViewDelegate
         [self.chatLandscapeView updateChatTableView];
     })
 
+}
+
+- (void)chatroomManager_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model {
+    // 若红包已过期或领完，打开后h5的UI会给予提示
+    [self.popoverView.interactView openRedpackWithChatModel:model];
 }
 
 #pragma mark PLVLCChatroomPlaybackDelegate
@@ -1267,7 +1283,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 /// 需获知 ‘当前频道是否直播中’
 - (BOOL)plvLCLinkMicAreaViewGetChannelInLive:(PLVLCLinkMicAreaView *)linkMicAreaView{
-    return self.mediaAreaView.channelInLive;
+    return self.mediaAreaView.channelInLive && !self.mediaAreaView.advertPlaying;
 }
 
 /// 需获知 ‘主讲的PPT 当前是否在主屏’
@@ -1417,6 +1433,12 @@ PLVLCLandscapeMessagePopupViewDelegate
         self.commodityURL = url;
         [self jumpToCommodityDetailViewController];
     }
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView
+                didOpenRedpack:(NSString *)redpackId
+                        status:(NSString *)status {
+    [[PLVLCChatroomViewModel sharedViewModel] changeRedpackStateWithRedpackId:redpackId state:status];
 }
 
 #pragma mark PLVLCChatLandscapeViewDelegate

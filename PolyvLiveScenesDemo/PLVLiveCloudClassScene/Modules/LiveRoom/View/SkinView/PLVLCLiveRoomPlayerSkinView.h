@@ -52,11 +52,17 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)displayLikeButtonView:(UIView *)likeButtonView;
 
+- (void)displayRedpackButtonView:(UIView *)redpackButtonView;
+
 - (void)displayCardPushButtonView:(UIView *)cardPushButtonView;
 
 /// 是否显示打开商品库的按钮
 /// @param show YES 显示 NO 不显示
 - (void)showCommodityButton:(BOOL)show;
+
+/// 是否显示红包按钮视图
+/// @param show YES 显示 NO 不显示
+- (void)showRedpackButtonView:(BOOL)show;
 
 /// 是否显示卡片推送按钮视图
 /// @param show YES 显示 NO 不显示

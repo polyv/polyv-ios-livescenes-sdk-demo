@@ -518,11 +518,11 @@ PLVLinkMicManagerDelegate
     })
 }
 
-- (void)callbackForMainSpeakerChangedToLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser {
+- (void)callbackForMainSpeakerChangedToLinkMicUserId:(NSString *)linkMicUserId {
     plv_dispatch_main_async_safe(^{
-        if ([self.delegate respondsToSelector:@selector(plvLinkMicPresenter:mainSpeakerChangedToLinkMicUser:)]) {
-            [self.delegate plvLinkMicPresenter:self
-               mainSpeakerChangedToLinkMicUser:linkMicUser];
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(plvLinkMicPresenter:mainSpeakerChangedToLinkMicUserId:)]) {
+            [self.delegate plvLinkMicPresenter:self mainSpeakerChangedToLinkMicUserId:linkMicUserId];
         }
     })
 }
@@ -566,6 +566,15 @@ PLVLinkMicManagerDelegate
         NSLog(@"PLVLinkMicPresenter - delegate not implement method:[plvLinkMicPresenterGetChannelInLive:]");
         return NO;
     }
+}
+
+- (void)callbackForLocalUserLinkMicWasHanduped {
+    plv_dispatch_main_async_safe(^{
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(plvLinkMicPresenterLocalUserLinkMicWasHanduped:)]) {
+            [self.delegate plvLinkMicPresenterLocalUserLinkMicWasHanduped:self];
+        }
+    })
 }
 
 #pragma mark RTC Prepare
@@ -613,6 +622,7 @@ PLVLinkMicManagerDelegate
     BOOL cameraDefaultOpen = (self.linkMicMediaType == PLVChannelLinkMicMediaType_Audio) ? NO : self.cameraDefaultOpen;
     if (_linkMicManager == nil) {
         _linkMicManager = [PLVLinkMicManager linkMicManagerWithRTCType:self.rtcType];
+        _linkMicManager.streamScale = self.streamScale;
         _linkMicManager.delegate = self;
         
         /// 硬件默认值配置
@@ -860,12 +870,18 @@ PLVLinkMicManagerDelegate
 
 /// 连麦用户列表管理
 #pragma mark LinkMic User Manage
+/// 属性linkMicListSort为YES时，对连麦列表进行排序，用在观看端不会本地更改第一画面的场景
+/// 排序的顺序是：主讲人 > 讲师 > 我 >  嘉宾
 - (void)sortOnlineUserList{
+    __weak typeof(self) weakSelf = self;
     NSArray * sortArray = [self.onlineUserMuArray sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
         PLVLinkMicOnlineUser * user1 = (PLVLinkMicOnlineUser *)obj1;
         PLVLinkMicOnlineUser * user2 = (PLVLinkMicOnlineUser *)obj2;
         
-        if (user1.userType > user2.userType) return NSOrderedAscending;
+        CGFloat user1SortWeight =  [weakSelf.realMainSpeakerUser.linkMicUserId isEqualToString:user1.linkMicUserId] ? 100 : (user1.localUser ? 4.5 : (CGFloat)user1.userType);
+        CGFloat user2SortWeight =  [weakSelf.realMainSpeakerUser.linkMicUserId isEqualToString:user2.linkMicUserId] ? 100 : (user2.localUser ? 4.5 : (CGFloat)user2.userType);
+        
+        if (user1SortWeight > user2SortWeight) return NSOrderedAscending;
         
         return NSOrderedDescending;
     }];
@@ -944,7 +960,10 @@ PLVLinkMicManagerDelegate
                         [weakSelf removePrerecordWithLinkMicUserId:user.linkMicUserId];
                     }
                     
-                    //[weakSelf sortOnlineUserList];
+                    if (weakSelf.linkMicListSort) {
+                        [weakSelf sortOnlineUserList];
+                    }
+                    
                     weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
                     [weakSelf callbackForLinkMicUserListRefresh];
                 }else{
@@ -1095,6 +1114,10 @@ PLVLinkMicManagerDelegate
                 if (targetUserIndex < weakSelf.onlineUserMuArray.count) {
                     if (targetUserIndex > 0) {
                         [weakSelf.onlineUserMuArray exchangeObjectAtIndex:targetUserIndex withObjectAtIndex:0];
+                        if (weakSelf.linkMicListSort) {
+                            [weakSelf sortOnlineUserList];
+                        }
+                        
                         weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
                         [weakSelf callbackForLinkMicUserListRefresh];
                     }
@@ -1447,6 +1470,7 @@ PLVLinkMicManagerDelegate
                 [self refreshLinkMicOpenStatus:jsonDict[@"status"] mediaType:jsonDict[@"type"]];
             } else if ([jsonDict[@"userId"] isEqualToString:self.linkMicUserId]) {  /// 讲师单独挂断学生连麦
                 [self callbackForOperationInProgress:YES];
+                [self callbackForLocalUserLinkMicWasHanduped];
                 [self leaveLinkMic];
             }
         } break;
@@ -1509,6 +1533,7 @@ PLVLinkMicManagerDelegate
         case PLVLinkMicEventType_SwitchView: {
             NSString * nowMainSpeakerLinkMicUserId = [NSString stringWithFormat:@"%@",jsonDict[@"userId"]];
             [self changeMainSpeakerWithLinkMicUserId:nowMainSpeakerLinkMicUserId byLocalOperation:NO forceSynchronLocal:YES];
+            [self callbackForMainSpeakerChangedToLinkMicUserId:nowMainSpeakerLinkMicUserId];
         } break;
             
         // 讲师设置连麦人权限

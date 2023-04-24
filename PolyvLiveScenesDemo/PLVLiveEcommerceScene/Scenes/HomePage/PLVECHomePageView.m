@@ -22,6 +22,7 @@
 #import "PLVECChatroomView.h"
 #import "PLVECLikeButtonView.h"
 #import "PLVECCardPushButtonView.h"
+#import "PLVECRedpackButtonView.h"
 #import "PLVECPlayerContolView.h"
 #import "PLVECMoreView.h"
 #import "PLVECSwitchView.h"
@@ -66,6 +67,8 @@ PLVECCardPushButtonViewDelegate
 @property (nonatomic, weak) id<PLVECHomePageViewDelegate> delegate;
 @property (nonatomic, assign) PLVECHomePageType type;
 @property (nonatomic, assign) PLVECSwitchViewType switchViewType;
+@property (nonatomic, strong) NSArray *interactButtonArray;            // 互动应用添加按钮
+
 /// 直播特有属性
 @property (nonatomic, copy) NSArray<NSString *> *codeRateItems;        // 当前直播支持码率列表
 @property (nonatomic, assign) NSUInteger curCodeRateIndex;             // 当前直播播放码率
@@ -99,6 +102,7 @@ PLVECCardPushButtonViewDelegate
 @property (nonatomic, strong) PLVECChatroomView *chatroomView;         // 聊天室视图
 @property (nonatomic, strong) PLVECLikeButtonView *likeButtonView;     // 点赞视图
 @property (nonatomic, strong) PLVECCardPushButtonView *cardPushButtonView; // 卡片推送挂件
+@property (nonatomic, strong) PLVECRedpackButtonView *redpackButtonView; // 倒计时红包挂件
 @property (nonatomic, strong) PLVECPlayerContolView *playerContolView; // 视频播放控制视图
 @property (nonatomic, strong) UIButton *moreButton;                    // 更多按钮
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
@@ -163,6 +167,7 @@ PLVECCardPushButtonViewDelegate
             [self addSubview:self.playbackListButton];
         }
     }
+    [self addSubview:self.redpackButtonView];
     [self addSubview:self.cardPushButtonView];
     [self addSubview:self.moreButton];
     [self addSubview:self.shoppingCartButton];
@@ -197,6 +202,13 @@ PLVECCardPushButtonViewDelegate
         _cardPushButtonView.hidden = YES;
     }
     return _cardPushButtonView;
+}
+
+- (PLVECRedpackButtonView *)redpackButtonView {
+    if (!_redpackButtonView) {
+        _redpackButtonView = [[PLVECRedpackButtonView alloc] init];
+    }
+    return _redpackButtonView;
 }
 
 - (PLVECLikeButtonView *)likeButtonView {
@@ -404,11 +416,7 @@ PLVECCardPushButtonViewDelegate
 
 - (void)showMoreView {
     if (self.type == PLVECHomePageType_Live) {
-        if (self.isPlaying) {
-            [self.moreView reloadData];
-        } else {
-            [self.moreView removeMoreViewItems];
-        }
+        [self.moreView reloadData];
         self.moreView.hidden = NO;
     } else if (self.type == PLVECHomePageType_Playback) {
         [self updateSwitchView:PLVECSwitchViewType_Speed];
@@ -442,6 +450,10 @@ PLVECCardPushButtonViewDelegate
             self.playerContolView.playButton.selected = playing;
         }
     }
+}
+
+- (void)updateLinkMicState:(BOOL)linkMic {
+    _moreView.hidden = YES;
 }
 
 - (void)updateLineCount:(NSUInteger)lineCount defaultLine:(NSUInteger)line {
@@ -549,6 +561,13 @@ PLVECCardPushButtonViewDelegate
     }
 }
 
+- (void)updateMoreButtonDataArray:(NSArray *)dataArray {
+    self.interactButtonArray = dataArray;
+    if (_moreView) {
+        [self.moreView reloadData];
+    }
+}
+
 #pragma mark - Private
 
 - (void)updateCodeRateSwitchViewHiddenState {
@@ -588,8 +607,19 @@ PLVECCardPushButtonViewDelegate
         self.shoppingCartButton.frame = self.giftButton.hidden ? self.giftButton.frame : CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         // 点赞按钮
         self.likeButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
-        // 卡片推送挂件
-        self.cardPushButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetHeight(self.frame) * 0.55, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
+        
+        { // 右侧悬浮挂件位置
+            CGFloat originX = CGRectGetMinX(self.moreButton.frame);
+            CGFloat originY = CGRectGetHeight(self.frame) * 0.55;
+            if (!self.redpackButtonView.hidden) { // 倒计时红包挂件
+                self.redpackButtonView.frame = CGRectMake(originX, originY, PLVECRedpackButtonViewWidth, PLVECRedpackButtonViewHeight);
+                originY -= (12 + PLVECCardPushButtonViewHeight);
+            }
+            
+            // 卡片推送挂件
+            self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
+        }
+        
         // 网络提示
         self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - 219 - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, 219, 28);
         self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
@@ -610,7 +640,7 @@ PLVECCardPushButtonViewDelegate
         self.playbackListButton.frame = CGRectMake(15, CGRectGetHeight(self.bounds) - buttonWidth - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
         self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - buttonWidth - 15, CGRectGetHeight(self.bounds) - buttonWidth - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
         self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
-        self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 32, CGRectGetMaxX(self.moreButton.frame), 41);
+        self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 41, CGRectGetMaxX(self.moreButton.frame), 41);
         // 卡片推送挂件
         self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, CGRectGetMinY(self.playerContolView.frame)-PLVECLikeButtonViewHeight, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
     }
@@ -861,50 +891,97 @@ PLVECCardPushButtonViewDelegate
     }
 }
 
+- (void)chatroomView_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(homePageView_checkRedpackStateResult:chatModel:)]) {
+        [self.delegate homePageView_checkRedpackStateResult:state chatModel:model];
+    }
+}
+
+- (void)chatroomView_showDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
+    if (type != PLVRedpackMessageTypeAliPassword) {
+        return;
+    }
+    
+    BOOL showFirst = (self.redpackButtonView.hidden == YES);
+    [self.redpackButtonView showWithRedpackMessageType:type delayTime:delayTime];
+    if (showFirst) {
+        [self updateUIFrame];
+    }
+}
+
+- (void)chatroomView_hideDelayRedpack {
+    [self.redpackButtonView dismiss];
+    [self updateUIFrame];
+}
+
 #pragma mark PLVECMoreViewDelegate
 
 - (NSArray<PLVECMoreViewItem *> *)dataSourceOfMoreView:(PLVECMoreView *)moreView {
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:3];
     
-    if (!self.noDelayWatchMode) {
-        PLVECMoreViewItem *item1 = [[PLVECMoreViewItem alloc] init];
-        item1.title = PLVECHomePageView_Data_AudioModeItemTitle;
-        item1.selectedTitle = @"视频模式";
-        item1.iconImageName = @"plv_audioSwitch_btn";
-        item1.selectedIconImageName = @"plv_videoSwitch_btn";
-        item1.selected = self.audioMode;
-        [muArray addObject:item1];
+    BOOL inLinkMic = YES;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(homePageView_inLinkMic:)]) {
+        inLinkMic = [self.delegate homePageView_inLinkMic:self];
     }
     
-    if (!self.noDelayWatchMode && self.lineCount > 1) {
-        PLVECMoreViewItem *item2 = [[PLVECMoreViewItem alloc] init];
-        item2.title = PLVECHomePageView_Data_RouteItemTitle;
-        item2.iconImageName = @"plv_lineSwitch_btn";
-        [muArray addObject:item2];
+    if (!inLinkMic && self.isPlaying) {
+        if (!self.noDelayWatchMode) {
+            PLVECMoreViewItem *item1 = [[PLVECMoreViewItem alloc] init];
+            item1.title = PLVECHomePageView_Data_AudioModeItemTitle;
+            item1.selectedTitle = @"视频模式";
+            item1.iconImageName = @"plv_audioSwitch_btn";
+            item1.selectedIconImageName = @"plv_videoSwitch_btn";
+            item1.selected = self.audioMode;
+            [muArray addObject:item1];
+        }
+        
+        if (!self.noDelayWatchMode && self.lineCount > 1) {
+            PLVECMoreViewItem *item2 = [[PLVECMoreViewItem alloc] init];
+            item2.title = PLVECHomePageView_Data_RouteItemTitle;
+            item2.iconImageName = @"plv_lineSwitch_btn";
+            [muArray addObject:item2];
+        }
+        
+        if (!self.noDelayWatchMode && !self.hiddenCodeRateSwitch) {
+            PLVECMoreViewItem *item3 = [[PLVECMoreViewItem alloc] init];
+            item3.title = PLVECHomePageView_Data_QualityItemTitle;
+            item3.iconImageName = @"plv_codeRateSwitch_btn";
+            [muArray addObject:item3];
+        }
+        
+        if (!self.hiddenDelayModeSwitch) {
+            PLVECMoreViewItem *item4 = [[PLVECMoreViewItem alloc] init];
+            item4.title = PLVECHomePageView_Data_DelayModeItemTitle;
+            item4.iconImageName = @"plv_delayModeSwitch_btn";
+            [muArray addObject:item4];
+        }
+        
+        if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive &&
+            [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+            PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
+            item5.title = PLVECHomePageView_Data_PictureInPictureItemTitle;
+            item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
+            [muArray addObject:item5];
+        }
     }
     
-    if (!self.noDelayWatchMode && !self.hiddenCodeRateSwitch) {
-        PLVECMoreViewItem *item3 = [[PLVECMoreViewItem alloc] init];
-        item3.title = PLVECHomePageView_Data_QualityItemTitle;
-        item3.iconImageName = @"plv_codeRateSwitch_btn";
-        [muArray addObject:item3];
+    if ([PLVFdUtil checkArrayUseable:self.interactButtonArray]) {
+        for (NSInteger index = 0; index < self.interactButtonArray.count; index++) {
+            NSDictionary *dict = self.interactButtonArray[index];
+            if ([PLVFdUtil checkDictionaryUseable:dict]) {
+                BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
+                if (isShow) {
+                    PLVECMoreViewItem *interactItem = [[PLVECMoreViewItem alloc] init];
+                    interactItem.title = PLV_SafeStringForDictKey(dict, @"title");
+                    interactItem.iconURLString = PLV_SafeStringForDictKey(dict, @"icon");
+                    [muArray addObject:interactItem];
+                }
+            }
+        }
     }
-    
-    if (!self.hiddenDelayModeSwitch) {
-        PLVECMoreViewItem *item4 = [[PLVECMoreViewItem alloc] init];
-        item4.title = PLVECHomePageView_Data_DelayModeItemTitle;
-        item4.iconImageName = @"plv_delayModeSwitch_btn";
-        [muArray addObject:item4];
-    }
-    
-    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive &&
-        [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
-        PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
-        item5.title = PLVECHomePageView_Data_PictureInPictureItemTitle;
-        item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
-        [muArray addObject:item5];
-    }
-    
+
     return [muArray copy];
 }
 
@@ -930,10 +1007,24 @@ PLVECCardPushButtonViewDelegate
             switchViewType = PLVECSwitchViewType_DelayMode;
         }
         [self updateSwitchView:switchViewType];
-    }else if ([title isEqualToString:PLVECHomePageView_Data_PictureInPictureItemTitle]) {
+    } else if ([title isEqualToString:PLVECHomePageView_Data_PictureInPictureItemTitle]) {
         moreView.hidden = YES;
         if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewClickPictureInPicture:)]) {
             [self.delegate homePageViewClickPictureInPicture:self];
+        }
+    } else {
+        __block NSString *eventName;
+        [self.interactButtonArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([PLVFdUtil checkDictionaryUseable:obj]) {
+                NSString *buttonTitle = PLV_SafeStringForDictKey(obj, @"title");
+                if ([title isEqualToString:buttonTitle]) {
+                    eventName = PLV_SafeStringForDictKey(obj, @"event");
+                    *stop = YES;
+                }
+            }
+        }];
+        if ([PLVFdUtil checkStringUseable:eventName] && self.delegate && [self.delegate respondsToSelector:@selector(homePageView_openInteractApp:eventName:)]) {
+            [self.delegate homePageView_openInteractApp:self eventName:eventName];
         }
     }
 }

@@ -24,6 +24,8 @@
 @property (nonatomic, assign) BOOL isLiveRoom;
 /// 礼物打赏场景类型
 @property (nonatomic, assign) PLVRewardViewType rewardType;
+/// 互动应用场景类型
+@property (nonatomic, assign) PLVInteractGenericViewLiveType interactLiveType;
 
 @end
 
@@ -144,7 +146,7 @@
 
 - (PLVInteractGenericView *)interactView {
     if (!_interactView) {
-        _interactView = [[PLVInteractGenericView alloc] initWithLiveRoom: self.isLiveRoom];
+        _interactView = [[PLVInteractGenericView alloc] initWithLiveType:self.interactLiveType liveRoom:self.isLiveRoom];
         _interactView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
         [_interactView loadOnlineInteract];
     }
@@ -153,6 +155,10 @@
 
 - (PLVRewardViewType)rewardType {
     return self.liveType == PLVPopoverViewLiveTypeLC ? PLVRewardViewTypeLC : PLVRewardViewTypeEC;
+}
+
+- (PLVInteractGenericViewLiveType)interactLiveType {
+    return self.liveType == PLVPopoverViewLiveTypeLC ? PLVInteractGenericViewLiveTypeLC : PLVInteractGenericViewLiveTypeEC;
 }
 
 @end

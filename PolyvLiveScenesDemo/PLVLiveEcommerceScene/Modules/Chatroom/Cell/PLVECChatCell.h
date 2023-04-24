@@ -13,6 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVECChatCell : PLVECChatBaseCell
 
+@property (nonatomic, copy) void (^redpackTapHandler)(PLVChatModel *model);
+
 @end
 
 NS_ASSUME_NONNULL_END

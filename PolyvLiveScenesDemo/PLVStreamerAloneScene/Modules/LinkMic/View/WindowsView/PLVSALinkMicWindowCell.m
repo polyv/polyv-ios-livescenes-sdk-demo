@@ -11,9 +11,6 @@
 #import "PLVSAUtils.h"
 #import "PLVLinkMicOnlineUser+SA.h"
 
-#import <PLVFoundationSDK/PLVFoundationSDK.h>
-#import <SDWebImage/UIImageView+WebCache.h>
-#import <SDWebImage/SDWebImageDownloader.h>
 
 @interface PLVSALinkMicWindowCell ()
 

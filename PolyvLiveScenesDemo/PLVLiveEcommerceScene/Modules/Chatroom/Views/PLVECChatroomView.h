@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -30,6 +31,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// 在点击超过500字符的长文本消息时会执行此回调
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)chatroomView_alertLongContentMessage:(PLVChatModel *)model;
+
+/// 点击领取红包时触发
+/// @param state 红包消息状态
+/// @param model 对应消息数据模型
+- (void)chatroomView_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model;
+
+/// 显示倒计时红包挂件
+/// @param type 红包类型
+/// @param delayTime 倒计时时间，单位秒
+- (void)chatroomView_showDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime;
+
+/// 隐藏倒计时红包挂件
+- (void)chatroomView_hideDelayRedpack;
 
 @end
 

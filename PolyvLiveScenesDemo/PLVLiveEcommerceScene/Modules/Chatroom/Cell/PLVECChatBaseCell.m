@@ -76,7 +76,8 @@
         [message isKindOfClass:[PLVImageMessage class]] ||
         [message isKindOfClass:[PLVImageEmotionMessage class]] ||
         [message isKindOfClass:[PLVCustomMessage class]] ||
-        [message isKindOfClass:[PLVFileMessage class]]) {
+        [message isKindOfClass:[PLVFileMessage class]] ||
+        [message isKindOfClass:[PLVRedpackMessage class]]) {
         return YES;
     } else {
         return NO;
@@ -88,7 +89,7 @@
 - (UIView *)bubbleView {
     if (!_bubbleView) {
         _bubbleView = [[UIView alloc] init];
-        _bubbleView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.39];
+        _bubbleView.backgroundColor =  [PLVColorUtil colorFromHexString:@"#333333" alpha:0.66];
         _bubbleView.layer.cornerRadius = 10;
         _bubbleView.layer.masksToBounds = YES;
     }

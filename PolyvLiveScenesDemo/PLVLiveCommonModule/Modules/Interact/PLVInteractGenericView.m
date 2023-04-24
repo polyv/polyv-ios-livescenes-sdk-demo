@@ -13,6 +13,7 @@
 
 static NSString *const PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
 static NSString *const PLVInteractUpdateIarEntranceCallbackNotification = @"PLVInteractUpdateIarEntranceCallbackNotification";
+static NSString *const PLVInteractChannelSwitchCallbackNotification = @"PLVLCChatroomFunctionGotNotification";
 
 @interface PLVInteractGenericView () <
 WKNavigationDelegate,
@@ -28,6 +29,8 @@ PLVInteractWebViewBridgeDelegate>
 @property (nonatomic, assign) BOOL webviewLoadFinish; //webview 是否已加载完成
 @property (nonatomic, assign) BOOL webviewLoadFaid; //webview 是否加载失败
 @property (nonatomic, assign) BOOL isLiveRoom; //是否是直播的房间
+@property (nonatomic, assign) PLVInteractGenericViewLiveType liveType; //直播场景
+@property (nonatomic, assign) BOOL receivedSwitchNotification; //是否已经收到频道开关的通知
 
 @end
 
@@ -36,12 +39,14 @@ PLVInteractWebViewBridgeDelegate>
 #pragma mark - [ Life Cycle ]
 
 - (void)dealloc {
+    [self removeObserver];
     PLV_LOG_INFO(PLVConsoleLogModuleTypeInteract, @"%s",__FUNCTION__);
 }
 
-- (instancetype)initWithLiveRoom:(BOOL)liveRoom {
+- (instancetype)initWithLiveType:(PLVInteractGenericViewLiveType)liveType liveRoom:(BOOL)liveRoom {
     if (self = [super init]) {
         self.isLiveRoom = liveRoom;
+        self.liveType = liveType;
         [self setupData];
         [self setupUI];
     }
@@ -86,6 +91,34 @@ PLVInteractWebViewBridgeDelegate>
     }
 }
 
+- (void)openRedpackWithChatModel:(PLVChatModel *)model {
+    if (!model ||
+        ![model isKindOfClass:[PLVChatModel class]] ||
+        ![model.message isKindOfClass:[PLVRedpackMessage class]]) {
+        return;
+    }
+    
+    PLVRedpackMessage *redpackMessage = (PLVRedpackMessage *)model.message;
+    
+    NSMutableDictionary *muDict = [[NSMutableDictionary alloc] init];
+    muDict[@"EVENT"] = @"REDPAPER";
+    muDict[@"msgSource"] = @"redpaper";
+    muDict[@"type"] = redpackMessage.typeString ?: @"";
+    muDict[@"content"] = redpackMessage.content ?: @"";
+    muDict[@"redCacheId"] = redpackMessage.redCacheId ?: @"";
+    muDict[@"redpackId"] = redpackMessage.redpackId ?: @"";
+    muDict[@"number"] = @(redpackMessage.number);
+    muDict[@"totalAmount"] = @(redpackMessage.totalAmount);
+    muDict[@"timestamp"] = [NSString stringWithFormat:@"%lld", (long long)redpackMessage.time];
+    
+    NSDictionary *userDict = @{@"nick" : (model.user.userName ?: @""),
+                               @"pic" : (model.user.avatarUrl ?: @"")};
+    muDict[@"user"] = userDict;
+    
+    [self.webViewBridge callWebViewEvent:@{@"event" : @"OPEN_RED_PAPER",
+                                           @"data" : [muDict copy]}];
+}
+
 - (void)openInteractAppWithEventName:(NSString *)eventName {
     if ([PLVFdUtil checkStringUseable:eventName]) {
         [self.webViewBridge callWebViewEvent:@{@"event" : eventName}];
@@ -99,6 +132,8 @@ PLVInteractWebViewBridgeDelegate>
     
     self.webViewBridge = [[PLVInteractWebViewBridge alloc] initBridgeWithWebView:self.webView webViewDelegate:self];
     self.webViewBridge.delegate = self;
+    
+    [self addObserver];
 }
 
 - (void)setupUI {
@@ -134,8 +169,7 @@ PLVInteractWebViewBridgeDelegate>
     dispatch_async(dispatch_get_main_queue(), ^{
         self.hidden = !show;
         if (show && self.keepInteractViewTop) {
-            [[UIApplication sharedApplication].keyWindow addSubview:self];
-            [self.superview bringSubviewToFront:self];/// 移至最顶层
+            [self.superview bringSubviewToFront:self]; /// 移至最顶层
         } else if (!show) {
             [self updateForbidRotateNow:NO];
             [PLVLiveVideoConfig sharedInstance].triviaCardUnableRotate = NO;
@@ -155,6 +189,15 @@ PLVInteractWebViewBridgeDelegate>
         [PLVLiveVideoConfig sharedInstance].triviaCardUnableRotate = forbidRotateNow;
     }
     // 注: 若原本是‘不可转屏’，则直到 [closeWebview] 被调用，都将保持不可转屏，避免部分交互页面不支持转屏
+}
+
+- (void)updateChannelConfigInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSDictionary *parames = @{@"event" : @"UPDATE_CHANNEL_SWITCH",
+                            @"value" : @[@{@"type" : @"watchFeedbackEnabled",
+                                        @"enabled" : roomData.watchFeedbackEnabled ? @"Y" : @"N"}]
+    };
+    [self.webViewBridge updateChannelConfigInfo:parames];
 }
 
 #pragma mark Getter & Setter
@@ -208,18 +251,34 @@ PLVInteractWebViewBridgeDelegate>
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
-        @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId]
+        @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
+        @"webVersion" : @"0.3.2"
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
     [mutableDict addEntriesFromDictionary:sessionDict];
-    [mutableDict setObject:@"0.3.1" forKey:@"webVersion"];
+    [mutableDict setObject:@"0.3.3" forKey:@"webVersion"];
+    NSString *liveScene = self.liveType == PLVInteractGenericViewLiveTypeLC ? @"0" : @"1";
+    [mutableDict setObject:liveScene forKey:@"liveScene"]; // 0 表示云课堂场景，1 表示直播带货场景
 
     return mutableDict;
 }
 
+#pragma mark - NSNotification
+- (void)addObserver {
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(interactChannelSwitchCallback:)
+                                                 name:PLVInteractChannelSwitchCallbackNotification
+                                               object:nil];
+}
+
+- (void)removeObserver {
+    [[NSNotificationCenter defaultCenter] removeObserver:self
+                                                    name:PLVInteractChannelSwitchCallbackNotification
+                                                  object:nil];
+}
 
 #pragma mark - [ Event ]
 
@@ -227,6 +286,15 @@ PLVInteractWebViewBridgeDelegate>
 
 - (void)closeButtonAction {
     [self showWebView:NO];
+}
+
+#pragma mark - NSNotification
+- (void)interactChannelSwitchCallback:(NSNotification *)notification {
+    self.receivedSwitchNotification = YES;
+    if (self.webviewLoadFinish) {
+        // 更新频道配置
+        [self updateChannelConfigInfo];
+    }
 }
 
 #pragma mark - [ Delegate ]
@@ -237,6 +305,10 @@ PLVInteractWebViewBridgeDelegate>
     // 更新 加载状态
     self.webviewLoadFaid = NO;
     self.webviewLoadFinish = YES;
+    if (self.receivedSwitchNotification) {
+        // 更新频道配置
+        [self updateChannelConfigInfo];
+    }
 }
 
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
@@ -303,6 +375,18 @@ PLVInteractWebViewBridgeDelegate>
     } else if ([event isEqualToString:@"UPDATE_IAR_ENTRANCE"]) { // 更新互动入口状态
         NSDictionary *eventDict = PLV_SafeDictionaryForDictKey(dict, @"value");
         [[NSNotificationCenter defaultCenter]postNotificationName:PLVInteractUpdateIarEntranceCallbackNotification object:nil userInfo:eventDict];
+    } else if ([event isEqualToString:@"changeRedpackStatus"]) { // 打开红包
+        NSDictionary *valueDcit = PLV_SafeDictionaryForDictKey(dict, @"value");
+        NSString *redpackId = PLV_SafeStringForDictKey(valueDcit, @"redpackId");
+        NSString *status = PLV_SafeStringForDictKey(valueDcit, @"status");
+        if ([PLVFdUtil checkStringUseable:redpackId] &&
+            [PLVFdUtil checkStringUseable:status]) {
+            plv_dispatch_main_async_safe(^{
+                if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:didOpenRedpack:status:)]) {
+                    [self.delegate plvInteractGenericView:self didOpenRedpack:redpackId status:status];
+                }
+            })
+        }
     }
 }
 

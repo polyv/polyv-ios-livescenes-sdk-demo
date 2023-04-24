@@ -19,6 +19,7 @@
 #import "PLVPopoverView.h"
 #import "PLVLivePictureInPictureRestoreManager.h"
 #import "PLVChatModel.h"
+#import "PLVECChatroomViewModel.h"
 
 // UI
 #import "PLVECHomePageView.h"
@@ -36,6 +37,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NSString *PLVECInteractUpdateIarEntranceCallbackNotification = @"PLVInteractUpdateIarEntranceCallbackNotification";
+NSString *PLVECInteractUpdateMoreButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
 
 @interface PLVECWatchRoomViewController ()<
 PLVSocketManagerProtocol,
@@ -79,6 +81,7 @@ PLVECMessagePopupViewDelegate
     self = [super init];
     if (self) {
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        [[PLVRoomDataManager sharedManager].roomData requestChannelFunctionSwitch];
         
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         [self addObserver];
@@ -115,17 +118,20 @@ PLVECMessagePopupViewDelegate
     [super viewWillAppear:animated];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
     
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
-        self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
-        [self.scrollView insertSubview:self.playerVC.view atIndex:0];
-        
-        [self.playerVC cancelMute];
-    } else {
-        self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
-        [self.scrollView insertSubview:self.playerVC.view atIndex:0];
-        
-        [self.playerVC cancelMute];
+    self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
+    self.linkMicAreaView.frame = self.scrollView.bounds;
+    
+    CGSize boundsSize = self.scrollView.bounds.size;
+    CGSize marqueeViewSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
+    self.playerVC.marqueeView.frame = CGRectMake(self.scrollView.contentOffset.x, (boundsSize.height - marqueeViewSize.height) / 2.0, marqueeViewSize.width, marqueeViewSize.height);
+    
+    [self.scrollView insertSubview:self.playerVC.view atIndex:0];
+    [self.scrollView insertSubview:self.linkMicAreaView atIndex:1];
+    [self.scrollView insertSubview:self.playerVC.marqueeView aboveSubview:self.linkMicAreaView];
+    
+    [self.playerVC cancelMute];
+    if (self.linkMicAreaView.inLinkMic) {
+        [self.linkMicAreaView reloadLinkMicUserWindows];
     }
     
     self.logoutWhenStopPictureInPicutre = NO;
@@ -182,7 +188,10 @@ PLVECMessagePopupViewDelegate
         /// 互动
         [self.view addSubview:self.popoverView];
         self.popoverView.frame = self.view.bounds;
-
+        
+        [self.view insertSubview:((UIView *)self.linkMicAreaView.linkMicPreView) belowSubview:self.popoverView]; /// 保证低于 互动视图
+        [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView]; /// 保证低于 互动视图
+        
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
         
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
@@ -252,7 +261,12 @@ PLVECMessagePopupViewDelegate
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
         if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-            [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view]; // 打开应用内悬浮窗
+            // 打开应用内悬浮窗
+            if (self.linkMicAreaView.inLinkMic) {
+                [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
+            } else {
+                [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view];
+            }
         }
     }
     
@@ -358,6 +372,7 @@ PLVECMessagePopupViewDelegate
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForUpdateIarEntrance:) name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interactUpdateMoreButtonCallback:) name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
         
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     }
@@ -368,7 +383,7 @@ PLVECMessagePopupViewDelegate
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
-        
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     }
 }
@@ -380,6 +395,12 @@ PLVECMessagePopupViewDelegate
     NSDictionary *dict = notification.userInfo;;
     NSArray *buttonDataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
     [self.homePageView updateIarEntranceButtonDataArray:buttonDataArray];
+}
+
+- (void)interactUpdateMoreButtonCallback:(NSNotification *)notification {
+    NSDictionary *dict = notification.userInfo;
+    NSArray *buttonDataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.homePageView updateMoreButtonDataArray:buttonDataArray];
 }
 
 #pragma mark - [ Delegate ]
@@ -651,10 +672,6 @@ PLVECMessagePopupViewDelegate
 
 #pragma mark PLVECLinkMicAreaViewDelegate
 
-- (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView {
-    [self.playerVC displayContentView:canvasView];
-}
-
 /// 无延迟直播观看 网络质量检测
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView localUserNetworkRxQuality:(PLVBLinkMicNetworkQuality)rxQuality {
     if (rxQuality == PLVBLinkMicNetworkQualityFine) {
@@ -666,12 +683,28 @@ PLVECMessagePopupViewDelegate
 
 /// ‘是否在RTC房间中’ 状态值发生改变
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inRTCRoomChanged:(BOOL)inRTCRoom {
+    //TODO: 随着RTC房间的状态变化，切换视图是否合适，如果网络变差，临时从连麦中断开，也会导致变成播放器画面
     if (inRTCRoom) {
         [self.playerVC cleanPlayer];
+    } else {
+        [self.playerVC reload];
     }
+    self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
+}
+
+- (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic {
+    [self.homePageView updateLinkMicState:inLinkMic];
+}
+
+- (BOOL)plvECLinkMicAreaViewGetChannelInLive:(PLVECLinkMicAreaView *)linkMicAreaView {
+    return self.playerVC.channelInLive && !self.playerVC.advertPlaying;
 }
 
 #pragma mark PLVECHomePageView Delegate
+
+- (BOOL)homePageView_inLinkMic:(PLVECHomePageView *)homePageView {
+    return self.linkMicAreaView.inLinkMic;
+}
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPlayLine:(NSUInteger)line {
     [self.playerVC switchPlayLine:line showHud:NO];
@@ -752,6 +785,9 @@ PLVECMessagePopupViewDelegate
 }
 
 - (void)homePageViewClickPictureInPicture:(PLVECHomePageView *)homePageView {
+    if (self.linkMicAreaView.inLinkMic) {
+        return;
+    }
     if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         [self.playerVC stopPictureInPicture];
     }else {
@@ -787,12 +823,25 @@ PLVECMessagePopupViewDelegate
     }
 }
 
+- (void)homePageView_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model {
+    // 若红包已过期或领完，打开后h5的UI会给予提示
+    [self.popoverView.interactView openRedpackWithChatModel:model];
+}
+
 #pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
-    CGRect linkMicWindowFrame = self.playerVC.view.frame;
+    CGRect linkMicWindowFrame = self.linkMicAreaView.frame;
     linkMicWindowFrame.origin.x = scrollView.contentOffset.x;
-    self.playerVC.view.frame = linkMicWindowFrame;
+    self.linkMicAreaView.frame = linkMicWindowFrame;
+    
+    CGRect playerVCFrame = self.playerVC.view.frame;
+    playerVCFrame.origin.x = scrollView.contentOffset.x;
+    self.playerVC.view.frame = playerVCFrame;
+    
+    CGRect marqueeViewFrame = self.playerVC.marqueeView.frame;
+    marqueeViewFrame.origin.x = scrollView.contentOffset.x;
+    self.playerVC.marqueeView.frame = marqueeViewFrame;
 }
 
 #pragma mark  PLVPopoverViewDelegate
@@ -812,6 +861,12 @@ PLVECMessagePopupViewDelegate
     } else {
         [self openCommodityDetailViewControllerWithURL:url];
     }
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView
+                didOpenRedpack:(NSString *)redpackId
+                        status:(NSString *)status {
+    [[PLVECChatroomViewModel sharedViewModel] changeRedpackStateWithRedpackId:redpackId state:status];
 }
 
 #pragma mark PLVLCMessagePopupViewDelegate
