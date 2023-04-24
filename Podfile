@@ -26,5 +26,4 @@ target 'PLVScreenShareExtension' do
   use_frameworks!
   pod 'PLVBusinessSDK', '1.11.2', :subspecs => ['AbstractBSH','ReplayKitExt']
   pod 'PLVFoundationSDK', '1.11.2'
-  pod 'TXLiteAVSDK_TRTC', '10.9.13164'
 end
