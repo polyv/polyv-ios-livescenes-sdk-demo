@@ -10,6 +10,8 @@
 #import "PLVDanMuLabel.h"
 #import "PLVDanMuDefine.h"
 
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
+
 @interface PLVDanMu () <PLVDanMuLabelDelegate>
 
 @property (nonatomic, assign) NSUInteger            rollChannel;
@@ -17,6 +19,8 @@
 @property (nonatomic, strong) NSMutableDictionary   *fadeChannelDict;
 @property (nonatomic, assign) CGRect                currentFrame;
 @property (nonatomic, strong) NSMutableArray *dmLabelArray;
+@property (nonatomic, strong) NSMutableArray *dmLabelTempArray;
+@property (nonatomic, strong) NSTimer * timer;
 
 @end
 
@@ -29,11 +33,18 @@
         self.backgroundColor = [UIColor clearColor];
         self.currentFrame = frame;
         self.dmLabelArray = [[NSMutableArray alloc] initWithCapacity:100];
-        
+        self.dmLabelTempArray = [[NSMutableArray alloc] initWithCapacity:100];
         [self dmInitChannel];
         
     }
     return self;
+}
+
+-(void)dealloc {
+    if (_timer) {
+        [_timer invalidate];
+        _timer = nil;
+    }
 }
 
 /* 初始化航道信息 */
@@ -70,7 +81,15 @@
         plvDML.startTime = [NSDate date];
         [plvDML makeup:content dmlOriginY:bestChannel * KPLVDMHEIGHT + 5 superFrame:self.currentFrame style:PLVDMLRoll];
     } else {
-        plvDML = [PLVDanMuLabel dmInitDML:content dmlOriginY:bestChannel * KPLVDMHEIGHT + 5 superFrame:self.currentFrame style:PLVDMLRoll];
+        CGFloat animateDuration = [self callbackForDanmuSpeed];
+        plvDML = [PLVDanMuLabel dmInitDML:content dmlOriginY:bestChannel * KPLVDMHEIGHT + 5 superFrame:self.currentFrame style:PLVDMLRoll animateDuration:animateDuration];
+        NSUInteger bestChannel = [self dmBestRollChannelWithDanMuLable:plvDML];
+        if (bestChannel < 0) {
+            plvDML.startTime = [NSDate date];
+            [self addTempArray:plvDML];
+            return;
+        }
+        [plvDML resetOriginY:bestChannel * KPLVDMHEIGHT + 5];
         plvDML.delegate = self;
     }
     
@@ -82,19 +101,21 @@
 /* 插入弹幕 */
 - (void)insertDML:(NSMutableAttributedString *)content
 {
-    PLVDMLStyle dmlStyle = PLVDMLFade;
+    PLVDMLStyle dmlStyle = PLVDMLRoll;
     
     // 计算最佳航道
-    NSUInteger bestChannel;
-    if (arc4random_uniform(10)) {
-        dmlStyle = PLVDMLRoll;
-        bestChannel = [self dmBestRollChannel];
-    } else {
-        bestChannel = [self dmBestFadeChannel];
-    }
-    
+    NSUInteger bestChannel = 0;
+    CGFloat animateDuration = [self callbackForDanmuSpeed];
     // 初始化弹幕
-    PLVDanMuLabel *plvDML = [PLVDanMuLabel dmInitDML:content dmlOriginY:bestChannel * KPLVDMHEIGHT + 5 superFrame:self.currentFrame style:dmlStyle];
+    PLVDanMuLabel *plvDML = [PLVDanMuLabel dmInitDML:content dmlOriginY:bestChannel * KPLVDMHEIGHT + 5 superFrame:self.currentFrame style:dmlStyle animateDuration:animateDuration];
+    bestChannel = [self dmBestRollChannelWithDanMuLable:plvDML];
+    if (bestChannel < 0) {
+        plvDML.startTime = [NSDate date];
+        [self addTempArray:plvDML];
+        return;
+    }
+    [plvDML resetOriginY:bestChannel * KPLVDMHEIGHT + 5];
+    
     [self addSubview:plvDML];
     
     [plvDML dmBeginAnimation];
@@ -153,6 +174,37 @@
     return arc4random_uniform((u_int32_t)self.rollChannel);
 }
 
+/* 计算滚动最佳航道-适配弹幕速度变化 */
+- (NSUInteger)dmBestRollChannelWithDanMuLable:(PLVDanMuLabel *)danMuLable
+{
+    for (NSUInteger i = 0; i < self.rollChannel; i ++) {
+        
+        NSMutableArray *array = [NSMutableArray arrayWithArray:[self.rollChannelDict objectForKey:@(i)]];
+        PLVDanMuLabel *dml = [array lastObject];
+        
+        if (dml) {
+            
+            NSTimeInterval duration = [[NSDate date] timeIntervalSinceDate:dml.startTime];
+            
+            if (duration * dml.dmlSpeed >= dml.frame.size.width + 5 + arc4random_uniform(40)) {
+                // 当航道原有弹幕速度大于新弹幕速度 或者 新弹幕追及不上旧弹幕时
+                if (dml.dmlSpeed > danMuLable.dmlSpeed ||
+                    danMuLable.animateDuration < ((duration * dml.dmlSpeed - (dml.frame.size.width + 5)) / (danMuLable.dmlSpeed - dml.dmlSpeed))) {
+                    return i;
+                }
+            }
+        } else {
+            
+            return i;
+            
+        }
+        
+    }
+    
+    // 如果航道铺满整屏，则返回-1
+    return -1;
+}
+
 /* 计算浮动最佳航道 */
 - (NSUInteger)dmBestFadeChannel
 {
@@ -188,6 +240,50 @@
     self.currentFrame = frame;
     
     [self dmInitChannel];
+}
+
+- (CGFloat)callbackForDanmuSpeed {
+    CGFloat danmuSpeed = 20;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvDanMuGetSpeed:)]) {
+        danmuSpeed = [self.delegate plvDanMuGetSpeed:self];
+    }
+    return danmuSpeed;
+}
+
+- (void)addTempArray:(PLVDanMuLabel*)model {
+    if (!self.timer) {
+        self.timer = [NSTimer scheduledTimerWithTimeInterval:0.15
+                                                      target:[PLVFWeakProxy proxyWithTarget:self]
+                                                    selector:@selector(timerEvent:)
+                                                    userInfo:nil repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:self.timer forMode:NSRunLoopCommonModes];
+    }
+    [self.dmLabelTempArray addObject:model];
+}
+
+#pragma mark - [ Event ]
+
+- (void)timerEvent:(NSTimer *)timer{
+    for (PLVDanMuLabel *model in self.dmLabelTempArray) {
+        NSTimeInterval duration = [[NSDate date] timeIntervalSinceDate:model.startTime];
+        if (duration >= 5) {
+            [self.dmLabelTempArray removeObject:model];// 超过5秒未显示则舍弃弹幕
+            continue;
+        }
+        NSUInteger bestChannel = [self dmBestRollChannelWithDanMuLable:model];
+        if (bestChannel > -1) {
+            [self.dmLabelTempArray removeObject:model];
+            [model resetOriginY:bestChannel * KPLVDMHEIGHT + 5];
+            [self addSubview:model];
+            [model dmBeginAnimation];
+            // 插入弹幕队列
+            [self insertDMQueue:model channel:bestChannel];
+        }
+    }
+    if (![PLVFdUtil checkArrayUseable:self.dmLabelTempArray]) {
+        [self.timer invalidate];
+        self.timer = nil;
+    }
 }
 
 #pragma mark - plvDanMuLabelDelegate

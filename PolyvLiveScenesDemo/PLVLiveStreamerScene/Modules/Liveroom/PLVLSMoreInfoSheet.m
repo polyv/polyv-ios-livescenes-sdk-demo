@@ -20,6 +20,7 @@
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜按钮
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
 @property (nonatomic, strong) UIButton *shareButton; // 分享按钮
+@property (nonatomic, strong) UIButton *badNetworkButton; //  弱网处理按钮
 @property (nonatomic, strong) UIView *buttonSplitLine; // 退出登陆按钮顶部分割线
 @property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登陆按钮背后的文本
 @property (nonatomic, strong) UIButton *logoutButton; // 退出登陆按钮
@@ -40,10 +41,11 @@
         if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
             [self.contentView addSubview:self.beautyButton];
         }
+        [self.contentView addSubview:self.resolutionButton];
         if ([self canShareLiveroom]) {
             [self.contentView addSubview:self.shareButton];
         }
-        [self.contentView addSubview:self.resolutionButton];
+        [self.contentView addSubview:self.badNetworkButton];
         [self.contentView addSubview:self.buttonSplitLine];
         [self.contentView addSubview:self.logoutButtonLabel];
         [self.contentView addSubview:self.logoutButton];
@@ -68,20 +70,35 @@
     self.sheetTitleLabel.frame = CGRectMake(originX, sheetTitleLabelTop, self.sheetWidth - originX * 2, 22);
     self.titleSplitLine.frame = CGRectMake(originX, titleSplitLineTop, self.sheetWidth - originX * 2, 1);
     
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
-        CGFloat beautyOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 24;
-        self.beautyButton.frame = CGRectMake(originX, beautyOriginY, 48, 53);
-        self.resolutionButton.frame = CGRectMake(CGRectGetMaxX(self.beautyButton.frame) + 28, beautyOriginY, 48, 53);
+    CGFloat buttonOriginX = originX;
+    CGFloat buttonOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 24;
+    CGFloat buttonWidth = 48.0;
+    CGFloat buttonHeight = 53.0;
+    CGFloat buttonPadding = MIN(ceil((self.sheetWidth - originX * 2 - buttonWidth * 4)/3.0), 28.0);
+    
+    if (self.beautyButton.superview) {
+        self.beautyButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
         [self setButtonInsets:self.beautyButton];
-        [self setButtonInsets:self.resolutionButton];
-    }
-    else {
-        self.resolutionButton.frame = CGRectMake(originX, CGRectGetMaxY(self.titleSplitLine.frame) + 24, 48, 53);
-        [self setButtonInsets:self.resolutionButton];
+        buttonOriginX += buttonWidth + buttonPadding;
     }
     
-    self.shareButton.frame = CGRectMake(CGRectGetMaxX(self.resolutionButton.frame) + 28, CGRectGetMaxY(self.titleSplitLine.frame) + 24, 48, 53);
-    [self setButtonInsets:self.shareButton];
+    if (self.resolutionButton.superview) {
+        self.resolutionButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+        [self setButtonInsets:self.resolutionButton];
+        buttonOriginX += buttonWidth + buttonPadding;
+    }
+    
+    if (self.shareButton.superview) {
+        self.shareButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+        [self setButtonInsets:self.shareButton];
+        buttonOriginX += buttonWidth + buttonPadding;
+    }
+    
+    if (self.badNetworkButton.superview) {
+        self.badNetworkButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+        [self setButtonInsets:self.badNetworkButton];
+        buttonOriginX += buttonWidth + buttonPadding;
+    }
 
     self.buttonSplitLine.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight - 1, self.sheetWidth - originX * 2, 1);
     self.logoutButtonLabel.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
@@ -150,6 +167,15 @@
         }
     return _shareButton;
 }
+
+- (UIButton *)badNetworkButton {
+    if (!_badNetworkButton) {
+        _badNetworkButton = [self buttonWithTitle:@"弱网处理" NormalImageString:@"plvls_liveroom_badNetwork_switch_btn" selectedImageString:@"plvls_liveroom_badNetwork_switch_btn"];
+        [_badNetworkButton addTarget:self action:@selector(badNetworkButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _badNetworkButton;
+}
+
 
 - (UIView *)buttonSplitLine {
     if (!_buttonSplitLine) {
@@ -261,6 +287,15 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLogoutButton:)]) {
         [self.delegate moreInfoSheetDidTapLogoutButton:self];
+    }
+}
+
+- (void)badNetworkButtonAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidBadNetworkButton:)]) {
+        [self.delegate moreInfoSheetDidBadNetworkButton:self];
     }
 }
 

@@ -27,6 +27,7 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
 @property (nonatomic, strong) PLVLiveVideoChannelMenuInfo *menuInfo;
 @property (nonatomic, strong) PLVRoomUser *roomUser;
 @property (nonatomic, strong) PLVViewLogCustomParam *customParam;
+@property (nonatomic, assign) PLVQualityPreferenceType pushQualityPreference;
 
 @end
 
@@ -49,6 +50,20 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     param.vodParam2 = roomUser.viewerName;
     param.vodViewerAvatar = roomUser.viewerAvatar;
     self.customParam = param;
+}
+
+- (void)setupPushQualityPreference:(NSString *)pushQualityPreferenceString {
+    if (![PLVFdUtil checkStringUseable:pushQualityPreferenceString]) {
+        self.pushQualityPreference = PLVQualityPreferenceTypeClear;
+    } else {
+        if ([pushQualityPreferenceString isEqualToString:@"PREFER_BETTER_QUALITY"]) {
+            self.pushQualityPreference = PLVQualityPreferenceTypeClear;
+        } else if([pushQualityPreferenceString isEqualToString:@"PREFER_BETTER_FLUENCY"]) {
+            self.pushQualityPreference = PLVQualityPreferenceTypeSmooth;
+        } else {
+            self.pushQualityPreference = PLVQualityPreferenceTypeClear;
+        }
+    }
 }
 
 #pragma mark HTTP Request

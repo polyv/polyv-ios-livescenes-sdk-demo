@@ -30,9 +30,8 @@
 @property (nonatomic, strong) UIButton *closeRoomButton; // 全体禁言
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜
 @property (nonatomic, strong) UIButton *shareButton; // 分享
-
-// 数据
-@property (nonatomic, assign, readonly) PLVRoomUserType userType;
+@property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
+@property (nonatomic, strong) NSArray *buttonArray;
 
 @end
 
@@ -40,23 +39,19 @@
 
 #pragma mark - [ Life Cycle ]
 
-- (instancetype)initWithSheetHeight:(CGFloat)sheetHeight sheetLandscapeWidth:(CGFloat)sheetLandscapeWidth{
+- (instancetype)init {
+    CGFloat heightScale = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0.246 : 0.34;
+    CGFloat widthScale = 0.37;
+    CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+    CGFloat sheetHeight = maxWH * heightScale;
+    CGFloat sheetLandscapeWidth = maxWH * widthScale;
     self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
-        [self.contentView addSubview:self.titleLabel];
-        [self.contentView addSubview:self.cameraButton];
-        [self.contentView addSubview:self.microphoneButton];
-        [self.contentView addSubview:self.cameraReverseButton];
-        [self.contentView addSubview:self.mirrorButton];
-        [self.contentView addSubview:self.screenShareButton];
-        [self.contentView addSubview:self.flashButton];
-        [self.contentView addSubview:self.cameraBitRateButton];
-        [self.contentView addSubview:self.closeRoomButton];
-        if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
-            [self.contentView addSubview:self.beautyButton];
-        }
-        if ([self canShareLiveroom]) {
-            [self.contentView addSubview:self.shareButton];
+        [self initUI];
+        
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        if (!isPad && [self.buttonArray count] > 10) { // 超过两行
+            self.sheetHight += (28 + 12 + 14 + 16);
         }
     }
     return self;
@@ -72,36 +67,11 @@
     CGFloat titleX = isLandscape ? 32 : (isPad ? 56 :16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
-    NSMutableArray *buttonArray = [NSMutableArray arrayWithArray:@[self.cameraButton,
-                                                                   self.microphoneButton,
-                                                                   self.cameraReverseButton,
-                                                                   self.mirrorButton]];
     
-    // 美颜按钮
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
-        [buttonArray addObject:self.beautyButton];
-    }
+    CGSize buttonSize = [self getMaxButtonSize];
     
-    // 屏幕共享
-    self.screenShareButton.hidden = ![self canScreenShare];
-    if ([self canScreenShare]) {
-        [buttonArray addObject:self.screenShareButton];
-    }
-    
-    [buttonArray addObjectsFromArray:@[self.flashButton,
-                                       self.cameraBitRateButton]];
-    // 全体禁言
-    self.closeRoomButton.hidden = ![self canManagerCloseRoom];
-    if ([self canManagerCloseRoom]) {
-        [buttonArray addObject:self.closeRoomButton];
-    }
-    
-    if ([self canShareLiveroom]) {
-        [buttonArray addObject:self.shareButton];
-    }
-    
-    [self setButtonFrameWithArray:buttonArray];
-    [self setButtonInsetsWithArray:buttonArray];
+    [self setButtonFrameWithButtonSize:buttonSize];
+    [self setButtonInsets];
 }
 
 
@@ -167,6 +137,59 @@
 }
 
 #pragma mark - [ Private Method ]
+
+- (void)initUI {
+    [self.contentView addSubview:self.titleLabel];
+    
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    UIView *buttonSuperView = self.contentView;
+        
+    // 摄像头、麦克风、前后摄像头、镜像
+    [buttonSuperView addSubview:self.cameraButton];
+    [buttonSuperView addSubview:self.microphoneButton];
+    [buttonSuperView addSubview:self.cameraReverseButton];
+    [buttonSuperView addSubview:self.mirrorButton];
+    NSMutableArray *muButtonArray = [NSMutableArray arrayWithArray:@[self.cameraButton,
+                                                                   self.microphoneButton,
+                                                                   self.cameraReverseButton,
+                                                                   self.mirrorButton]];
+    
+    // 美颜按钮
+    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        [buttonSuperView addSubview:self.beautyButton];
+        [muButtonArray addObject:self.beautyButton];
+    }
+    
+    // 屏幕共享
+    if ([PLVSAMoreInfoSheet canScreenShare]) {
+        [buttonSuperView addSubview:self.screenShareButton];
+        [muButtonArray addObject:self.screenShareButton];
+    }
+    
+    // 闪光灯、清晰度
+    [buttonSuperView addSubview:self.flashButton];
+    [buttonSuperView addSubview:self.cameraBitRateButton];
+    [muButtonArray addObjectsFromArray:@[self.flashButton,
+                                       self.cameraBitRateButton]];
+    
+    // 全体禁言
+    if ([PLVSAMoreInfoSheet canManagerCloseRoom]) {
+        [buttonSuperView addSubview:self.closeRoomButton];
+        [muButtonArray addObject:self.closeRoomButton];
+    }
+    
+    // 分享
+    if ([PLVSAMoreInfoSheet canShareLiveroom]) {
+        [buttonSuperView addSubview:self.shareButton];
+        [muButtonArray addObject:self.shareButton];
+    }
+    
+    // 弱网处理
+    [buttonSuperView addSubview:self.badNetworkButton];
+    [muButtonArray addObject:self.badNetworkButton];
+    
+    self.buttonArray = [muButtonArray copy];
+}
 
 #pragma mark Getter
 
@@ -299,10 +322,6 @@
     return _closeRoomButton;
 }
 
-- (PLVRoomUserType)userType{
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
-}
-
 - (UIButton *)beautyButton {
     if (!_beautyButton) {
         _beautyButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -329,83 +348,67 @@
     return _shareButton;
 }
 
-#pragma mark setButtonFrame
-
-- (CGFloat)getMaxButtonWidthWithArray:(NSArray *)buttonArray {
-    CGFloat maxButtonWidth = 28;
-    for (int i = 0; i < buttonArray.count ; i++) {
-        UIButton *button = buttonArray[i];
-        
-        // width
-        NSAttributedString *attr = [[NSAttributedString alloc] initWithString:button.titleLabel.text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12]}];
-        CGSize titleSize = [attr boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-        maxButtonWidth = MAX(titleSize.width, maxButtonWidth);
+- (UIButton *)badNetworkButton {
+    if (!_badNetworkButton) {
+        _badNetworkButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _badNetworkButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _badNetworkButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_badNetworkButton setTitle:@"弱网处理" forState:UIControlStateNormal];
+        [_badNetworkButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_badNetwork_switch_btn"] forState:UIControlStateNormal];
+        [_badNetworkButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_badNetwork_switch_btn"] forState:UIControlStateSelected];
+        [_badNetworkButton addTarget:self action:@selector(badNetworkButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
-    return maxButtonWidth;
+    return _badNetworkButton;
 }
 
-- (void)setButtonFrameWithArray:(NSArray *)buttonArray {
+#pragma mark setButtonFrame
+
+- (CGSize)getMaxButtonSize {
+    CGFloat maxWidth = 28.0;
+    CGFloat maxHeight = 28.0 + 12.0 + 14.0;
+    
+    for (int i = 0; i < self.buttonArray.count ; i++) {
+        UIButton *button = self.buttonArray[i];
+        
+        NSAttributedString *attr = [[NSAttributedString alloc] initWithString:button.titleLabel.text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12]}];
+        CGSize titleSize = [attr boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+        
+        maxWidth = MAX(titleSize.width, maxWidth);
+        maxHeight = MAX(titleSize.height, maxHeight);
+    }
+    return CGSizeMake(maxWidth, maxHeight);
+}
+
+- (void)setButtonFrameWithButtonSize:(CGSize)buttonSize {
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
-    CGFloat titleLabelMaxY =  ((self.bounds.size.height > 667 || isLandscape) ? 32 : 18) + 18;
-    CGFloat buttonX = isLandscape ? 38 : (isPad ? 56 : 21.5);
-    CGFloat buttonY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : titleLabelMaxY + 10;
-    CGFloat buttonImageHeight = 28;
-    CGFloat buttonWidth = [self getMaxButtonWidthWithArray:buttonArray];
-    CGFloat defaultButtonHeight = buttonImageHeight + 12 +14;
-    CGFloat buttonHeight = defaultButtonHeight;
-    CGFloat rowMaxHeight = defaultButtonHeight; // 上面一行的最大高度
-    CGFloat padding = 0;
-    if (isLandscape) {
-        padding = (self.sheetLandscapeWidth - buttonX * 2 - buttonWidth * 3) / 2;
-    } else {
-        padding = (self.bounds.size.width - buttonX * 2 - buttonWidth * 5) / 4;
-    }
-    CGFloat margin = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
-    
+    NSInteger buttonCount = isLandscape ? 3 : (isPad ? 7 : 5); // 竖屏时（iphone）每行5个按钮、横屏时（iphone & ipad）每行3个按钮
+    CGFloat buttonOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
+    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : 46;
+    CGFloat buttonXPadding = (self.contentView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
+    CGFloat buttonYPadding = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
     if (isPad && !isLandscape) {
-        buttonY = CGRectGetMaxY(self.titleLabel.frame) + 24;
-        padding = 0;
-        if (buttonX < 0) {
-            buttonWidth = self.bounds.size.width / 7;
-            buttonX = 0;
-        }
+        buttonOriginY = CGRectGetMaxY(self.titleLabel.frame) + 28.0;
+        buttonYPadding = 30.0;
     }
     
-    for (int i = 0; i < buttonArray.count ; i++) {
-        UIButton *button = buttonArray[i];
+    for (int i = 0; i < self.buttonArray.count ; i++) {
+        UIButton *button = self.buttonArray[i];
         
-        // width
-        NSAttributedString *attr = [[NSAttributedString alloc] initWithString:button.titleLabel.text attributes:@{NSFontAttributeName:[UIFont systemFontOfSize:12]}];
-        CGSize titleSize = [attr boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-        buttonWidth = MAX(titleSize.width, buttonWidth);
-        buttonHeight = MAX(titleSize.height + buttonImageHeight + 12, defaultButtonHeight);
-        rowMaxHeight = MAX(buttonHeight, rowMaxHeight);
-        // 换行
-        if (isLandscape) {
-            if (i == 3 || i == 6 || i == 9) {
-                buttonX = isLandscape ? 38 : 21.5;;
-                buttonY += rowMaxHeight + margin;
-                rowMaxHeight = defaultButtonHeight;
-            }
-        } else {
-            if (!isPad && i == 5) {
-                buttonX = 21.5;
-                buttonY += buttonHeight + margin;
-            }
+        if (i % buttonCount == 0 && i != 0) { // 换行
+            buttonOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
+            buttonOriginY += buttonSize.height + buttonYPadding;
         }
         
-        // frame
-        button.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
-        // buttonX
-        buttonX += buttonWidth + padding;
+        button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonSize.width, buttonSize.height);
+        buttonOriginX += buttonSize.width + buttonXPadding;
     }
 }
 
-- (void)setButtonInsetsWithArray:(NSArray *)buttonArray {
-    for (int i = 0; i < buttonArray.count ; i++) {
-        UIButton *but = buttonArray[i];
+- (void)setButtonInsets {
+    for (int i = 0; i < self.buttonArray.count ; i++) {
+        UIButton *but = self.buttonArray[i];
         CGFloat padding = 12;
         CGFloat imageBottom = but.titleLabel.intrinsicContentSize.height;
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
@@ -493,25 +496,27 @@
 }
 
 /// 讲师、助教、管理员可以禁言操作
-- (BOOL)canManagerCloseRoom {
-    if (self.userType == PLVRoomUserTypeTeacher ||
-        self.userType == PLVRoomUserTypeAssistant ||
-        self.userType == PLVRoomUserTypeManager) {
++ (BOOL)canManagerCloseRoom {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    if (userType == PLVRoomUserTypeTeacher ||
+        userType == PLVRoomUserTypeAssistant ||
+        userType == PLVRoomUserTypeManager) {
         return YES;
     }
     return NO;
 }
 
 /// 讲师和嘉宾可以进行屏幕共享操作
-- (BOOL)canScreenShare {
++ (BOOL)canScreenShare {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
     if (![[PLVRoomDataManager sharedManager].roomData.menuInfo.rtcType isEqualToString:@"agora"] &&
-        (self.userType == PLVRoomUserTypeTeacher || self.userType == PLVRoomUserTypeGuest)) {
+        (userType == PLVRoomUserTypeTeacher || userType == PLVRoomUserTypeGuest)) {
         return YES;
     }
     return NO;
 }
 
-- (BOOL)canShareLiveroom {
++ (BOOL)canShareLiveroom {
     PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
     if ((userType == PLVRoomUserTypeTeacher || userType == PLVRoomUserTypeGuest) &&
         [PLVRoomDataManager sharedManager].roomData.menuInfo.pushSharingEnabled) {
@@ -613,6 +618,14 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapShareButton:)]) {
         [self.delegate moreInfoSheetDidTapShareButton:self];
+    }
+}
+
+- (void)badNetworkButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapBadNetworkButton:)]) {
+        [self.delegate moreInfoSheetDidTapBadNetworkButton:self];
     }
 }
 

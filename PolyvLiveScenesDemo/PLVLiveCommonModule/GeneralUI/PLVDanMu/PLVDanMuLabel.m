@@ -13,18 +13,24 @@
 
 @property (nonatomic, assign) CGRect superFrame;
 @property (nonatomic, assign) CGFloat animateDuration;
+@property (nonatomic, assign) NSMutableAttributedString *content;
 
 @end
 
 @implementation PLVDanMuLabel
 
 /* 创建 */
-+ (instancetype)dmInitDML:(NSMutableAttributedString *)content dmlOriginY:(CGFloat)dmlOriginY superFrame:(CGRect)superFrame style:(PLVDMLStyle)style
++ (instancetype)dmInitDML:(NSMutableAttributedString *)content dmlOriginY:(CGFloat)dmlOriginY superFrame:(CGRect)superFrame style:(PLVDMLStyle)style animateDuration:(CGFloat)animateDuration
 {
     PLVDanMuLabel *dmLabel = [[PLVDanMuLabel alloc] init];
     [dmLabel makeup:content dmlOriginY:dmlOriginY superFrame:superFrame style:style];
-    
+    dmLabel.animateDuration = animateDuration;
+    dmLabel.content = content;
     return dmLabel;
+}
+
+- (void)resetOriginY:(CGFloat)originY {
+    [self dmInitWithContent:self.content dmlOriginY:originY];
 }
 
 - (void)makeup:(NSMutableAttributedString *)content dmlOriginY:(CGFloat)dmlOriginY superFrame:(CGRect)superFrame style:(PLVDMLStyle)style {
@@ -66,12 +72,6 @@
         self.startTime = [NSDate date];
         
         if (self.plvDMLStyle == PLVDMLRoll) {
-            int scale = self.frame.size.width / [UIScreen mainScreen].bounds.size.width;
-            scale = sqrt(scale) * 2.0;
-            if (scale == 0) {
-                scale = 1;
-            }
-            self.animateDuration = KPLVDMLROLLANIMATION * scale;
             [UIView animateWithDuration:self.animateDuration delay:0.0f options:UIViewAnimationOptionCurveLinear animations:^{
                 
                 CGRect frame = self.frame;

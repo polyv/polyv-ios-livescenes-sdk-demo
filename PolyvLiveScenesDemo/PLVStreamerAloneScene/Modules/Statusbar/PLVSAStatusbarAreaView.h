@@ -10,14 +10,16 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class PLVSAStatusbarAreaView;
+@class PLVSAStatusbarAreaView, PLVSAStatusBarButton;
 
 typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
-    PLVSAStatusBarNetworkQuality_Unknown = 0, // 未知
-    PLVSAStatusBarNetworkQuality_Good = 1,    // 信号良好
-    PLVSAStatusBarNetworkQuality_Fine = 2,    // 信号一般
-    PLVSAStatusBarNetworkQuality_Bad = 3,     // 信号差
-    PLVSAStatusBarNetworkQuality_Disconnect = 4, // 无法连接
+    PLVSAStatusBarNetworkQuality_Unknown = 0,   // 未知
+    PLVSAStatusBarNetworkQuality_Excellent = 1, // 当前网络非常好
+    PLVSAStatusBarNetworkQuality_Good = 2,      // 当前网络比较好
+    PLVSAStatusBarNetworkQuality_Poor = 3,      // 当前网络一般
+    PLVSAStatusBarNetworkQuality_Bad = 4,       // 当前网络较差
+    PLVSAStatusBarNetworkQuality_VBad = 5,      // 当前网络很差
+    PLVSAStatusBarNetworkQuality_Down = 6,      // 无法连接
 };
 
 
@@ -34,6 +36,12 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 
 /// 当前是否处于推流状态
 @property (nonatomic, assign, readonly) BOOL inClass;
+
+/// 时间按钮
+@property (nonatomic, strong, readonly) PLVSAStatusBarButton *timeButton;
+
+/// 讲师按钮
+@property (nonatomic, strong, readonly) PLVSAStatusBarButton *teacherNameButton;
 
 /// 已上课时长，同时更新界面时长文本
 @property (nonatomic, assign) NSTimeInterval duration;
@@ -56,6 +64,8 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 /// 开始上课/结束上课
 /// @param start YES - 开始上课 NO - 结束上课
 - (void)startClass:(BOOL)start;
+
+- (void)updateRTT:(NSInteger)rtt upLoss:(NSInteger)upLoss downLoss:(NSInteger)downLoss;
 
 @end
 

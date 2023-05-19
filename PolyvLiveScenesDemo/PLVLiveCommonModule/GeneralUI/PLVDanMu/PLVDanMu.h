@@ -8,9 +8,13 @@
 
 #import <UIKit/UIKit.h>
 
+@protocol PLVDanMuDelegate;
+
 @interface PLVDanMu : UIView
 
-/* 插入弹幕 （随机样式）*/
+@property (nonatomic, weak) id <PLVDanMuDelegate> delegate;
+
+/* 插入弹幕 （滚动样式-弹幕不重叠）*/
 - (void)insertDML:(NSMutableAttributedString *)content;
 
 /* 插入弹幕 （滚动样式）*/
@@ -18,5 +22,11 @@
 
 /* 重置Frame */
 - (void)resetFrame:(CGRect)frame;
+
+@end
+
+@protocol PLVDanMuDelegate <NSObject>
+
+- (CGFloat)plvDanMuGetSpeed:(PLVDanMu *)danmuView;
 
 @end

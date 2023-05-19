@@ -7,7 +7,9 @@
 //
 
 #import "PLVLSStatusAreaView.h"
+#import "PLVLSSignalButton.h"
 #import "PLVLSLinkMicMenuPopup.h"
+#import "PLVLSNetworkStatePopup.h"
 #import "PLVLSLinkMicApplyTipsView.h"
 #import "PLVRoomDataManager.h"
 
@@ -16,6 +18,7 @@
 
 // 模块
 #import "PLVRoomDataManager.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 static CGFloat kStatusBarHeight = 44;
 static NSString *kGustDefaultTintColor  = @"0x888888";
@@ -26,7 +29,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 @property (nonatomic, strong) UILabel *channelInfoLabel;
 @property (nonatomic, strong) UIButton *channelInfoButton;
 @property (nonatomic, strong) UILabel *timeLabel;
-@property (nonatomic, strong) UIButton *signalButton;
+@property (nonatomic, strong) PLVLSSignalButton *signalButton;
 @property (nonatomic, strong) UIButton *whiteboardButton;
 @property (nonatomic, strong) UIButton *documentButton;
 @property (nonatomic, strong) UIButton *linkmicButton;
@@ -38,6 +41,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 @property (nonatomic, strong) UIButton *stopPushButton;
 @property (nonatomic, strong) PLVLSLinkMicMenuPopup *linkMicMenu;
 @property (nonatomic, strong) PLVLSLinkMicApplyTipsView *linkMicApplyView;
+@property (nonatomic, strong) PLVLSNetworkStatePopup *networkStatePopup;
 
 /// 数据
 @property (nonatomic, assign) BOOL inClass;
@@ -107,9 +111,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     self.signalButton.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_SignalButton) {
         self.signalButton.hidden = NO;
-        self.signalButton.frame = CGRectMake(originX, 0, 70, 44);
-        self.signalButton.titleEdgeInsets = UIEdgeInsetsMake(0, -1, 0, 0);
-        self.signalButton.imageEdgeInsets = UIEdgeInsetsMake(0, -8, 0, 0);
+        self.signalButton.frame = CGRectMake(originX, 11, 84, 20);
     }
     
     /// 右侧控件
@@ -170,6 +172,20 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         CGRect buttonRect = [self convertRect:self.linkmicButton.frame toView:self.superview];
         [_linkMicMenu refreshWithMenuFrame:rect buttonFrame:buttonRect];
     }
+    
+    if (_networkStatePopup) {
+        CGFloat width = 196.0;
+        CGFloat height = 76.0;
+        CGFloat originX = MAX(0, self.frame.origin.x + self.signalButton.frame.origin.x + self.signalButton.frame.size.width - width); // 弹层与按钮右侧对齐
+        CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
+        CGRect rect = CGRectMake(originX, originY, width, height);
+        CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
+        
+        [self.networkStatePopup refreshWithBubbleFrame:rect buttonFrame:buttonRect];
+        if (self.networkStatePopup.showing) {
+            [self.networkStatePopup dismiss];
+        }
+    }
 }
 
 #pragma mark - Getter
@@ -221,15 +237,19 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     return _timeLabel;
 }
 
-- (UIButton *)signalButton {
+- (PLVLSSignalButton *)signalButton {
     if (!_signalButton) {
-        _signalButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_signalButton setTitle:@"检测中" forState:UIControlStateNormal];
-        [_signalButton setTitleColor:[UIColor clearColor] forState:UIControlStateNormal];
-        _signalButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        UIImage *image = [PLVLSUtils imageForStatusResource:@"plvls_status_signal_good_icon"];
-        [_signalButton setImage:image forState:UIControlStateNormal];
-        _signalButton.userInteractionEnabled = NO;
+        _signalButton = [[PLVLSSignalButton alloc] init];
+        _signalButton.hidden = YES;
+        [_signalButton setImage:[PLVLSUtils imageForStatusResource:@"plvls_status_signal_good_icon"]];
+        __weak typeof(self) weakSelf = self;
+        [_signalButton setDidTapHandler:^{
+            if (weakSelf.networkStatePopup.showing) {
+                [weakSelf.networkStatePopup dismiss];
+            } else {
+                [weakSelf.networkStatePopup showAtView:weakSelf.superview];
+            }
+        }];
     }
     return _signalButton;
 }
@@ -420,6 +440,19 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     return _linkMicApplyView;
 }
 
+- (PLVLSNetworkStatePopup *)networkStatePopup {
+    if (!_networkStatePopup) {
+        CGFloat width = 196.0;
+        CGFloat height = 76.0;
+        CGFloat originX = MAX(0, self.frame.origin.x + self.signalButton.frame.origin.x + self.signalButton.frame.size.width - width); // 弹层与按钮右侧对齐
+        CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
+        CGRect rect = CGRectMake(originX, originY, width, height);
+        CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
+        _networkStatePopup = [[PLVLSNetworkStatePopup alloc] initWithBubbleFrame:rect buttonFrame:buttonRect];
+    }
+    return _networkStatePopup;
+}
+
 #pragma mark - Setter
 
 - (void)setDuration:(NSTimeInterval)duration{
@@ -430,42 +463,43 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 - (void)setNetState:(PLVLSStatusBarNetworkQuality)netState {
     _netState = netState;
     
-    UIColor *color = nil;
     NSString *title = nil;
     NSString *imageName = nil;
-    UIColor *specialColor = [UIColor colorWithRed:0xf2/255.0 green:0x44/255.0 blue:0x53/255.0 alpha:1];
     
     switch (netState) {
         case PLVLSStatusBarNetworkQuality_Unknown:
             title = @"检测中";
-            color = specialColor;
             imageName = @"plvls_status_signal_good_icon";
             break;
-        case PLVLSStatusBarNetworkQuality_Disconnect:
-            title = @"检测中";
-            color = specialColor;
-            imageName = @"plvls_status_signal_error_icon";
-            break;
-        case PLVLSStatusBarNetworkQuality_Bad:
-            title = @"检测中";
-            color = [UIColor clearColor];
+        case PLVLSStatusBarNetworkQuality_Down:
+            title = @"网络断开";
             imageName = @"plvls_status_signal_bad_icon";
             break;
-        case PLVLSStatusBarNetworkQuality_Fine:
-            title = @"检测中";
-            color = [UIColor clearColor];
+        case PLVLSStatusBarNetworkQuality_VBad:
+            title = @"网络很差";
+            imageName = @"plvls_status_signal_bad_icon";
+            break;
+        case PLVLSStatusBarNetworkQuality_Poor:
+            title = @"网络较差";
+            imageName = @"plvls_status_signal_fine_icon";
+            break;
+        case PLVLSStatusBarNetworkQuality_Bad:
+            title = @"网络一般";
             imageName = @"plvls_status_signal_fine_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Good:
-            title = @"检测中";
-            color = [UIColor clearColor];
+            title = @"网络良好";
+            imageName = @"plvls_status_signal_good_icon";
+            break;
+        case PLVLSStatusBarNetworkQuality_Excellent:
+            title = @"网络优秀";
             imageName = @"plvls_status_signal_good_icon";
             break;
     }
     
-    [self.signalButton setTitle:title forState:UIControlStateNormal];
-    [self.signalButton setTitleColor:color forState:UIControlStateNormal];
-    [self.signalButton setImage:[PLVLSUtils imageForStatusResource:imageName] forState:UIControlStateNormal];
+    self.signalButton.text = title;
+    [self.signalButton setImage:[PLVLSUtils imageForStatusResource:imageName]];
+    [self.signalButton enableWarningMode:netState == PLVLSStatusBarNetworkQuality_Down];
 }
 
 #pragma mark 判断是否有连麦管理权限
@@ -577,6 +611,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 - (void)startClass:(BOOL)start {
     self.inClass = start;
     
+    self.signalButton.userInteractionEnabled = self.inClass;
     self.timeLabel.text = @"00:00:00";
     
     if (!start) {
@@ -633,6 +668,10 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         self.whiteboardButton.selected = NO;
         self.documentButton.selected = NO;
     }
+}
+
+- (void)updateStatistics:(PLVRTCStatistics *)statistics {
+    [self.networkStatePopup updateRTT:statistics.rtt upLoss:statistics.upLoss downLoss:statistics.downLoss];
 }
 
 @end

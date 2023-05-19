@@ -44,6 +44,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 分享 按钮 触发回调
 - (void)moreInfoSheetDidTapShareButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 弱网处理 按钮 触发回调
+- (void)moreInfoSheetDidTapBadNetworkButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层

@@ -36,13 +36,18 @@ typedef NS_ENUM(NSUInteger, PLVDMLStyle) {
 /* 弹幕浮动时间 */
 @property (nonatomic, assign, readonly) CGFloat             dmlFadeTime;
 
+@property (nonatomic, assign, readonly) CGFloat             animateDuration;
+
 /* 创建 */
-+ (instancetype)dmInitDML:(NSMutableAttributedString *)content dmlOriginY:(CGFloat)dmlOriginY superFrame:(CGRect)superFrame style:(PLVDMLStyle)style;
++ (instancetype)dmInitDML:(NSMutableAttributedString *)content dmlOriginY:(CGFloat)dmlOriginY superFrame:(CGRect)superFrame style:(PLVDMLStyle)style animateDuration:(CGFloat)animateDuration;
 
 - (void)makeup:(NSMutableAttributedString *)content dmlOriginY:(CGFloat)dmlOriginY superFrame:(CGRect)superFrame style:(PLVDMLStyle)style;
 
 /* 开始弹幕动画 */
 - (void)dmBeginAnimation;
+
+/* 重置航道高度 */
+- (void)resetOriginY:(CGFloat)originY;
 
 @end
 

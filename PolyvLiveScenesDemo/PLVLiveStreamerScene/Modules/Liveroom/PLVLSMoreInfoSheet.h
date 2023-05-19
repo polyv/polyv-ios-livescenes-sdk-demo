@@ -20,6 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidTapLogoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheetDidBadNetworkButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 @interface PLVLSMoreInfoSheet : PLVLSSideSheet

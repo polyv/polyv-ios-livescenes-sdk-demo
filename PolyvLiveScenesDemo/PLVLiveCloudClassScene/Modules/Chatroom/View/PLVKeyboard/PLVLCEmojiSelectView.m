@@ -113,6 +113,11 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
     self.sendButton.frame = CGRectMake(self.deleteButton.frame.origin.x, CGRectGetMaxY(self.deleteButton.frame) + 10, itemSize.width - 8, itemSize.height * 2);
 }
 
+- (void)removeFromSuperview {
+    [super removeFromSuperview];
+    self.deleteButton.enabled = NO;
+}
+
 #pragma mark - Getter && Setter
 
 - (UIView *)contentView {
@@ -126,6 +131,7 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
         _defaultEmojiSelectView = [[PLVLCDefaultEmojiSelectView alloc] init];
         __weak typeof(self) weakSelf = self;
         _defaultEmojiSelectView.selectItemBlock = ^(NSInteger index) {
+            weakSelf.deleteButton.enabled = YES;
             if (weakSelf.delegate&& [weakSelf.delegate respondsToSelector:@selector(selectEmoji:)]) {
                 [weakSelf.delegate selectEmoji:[weakSelf.faces objectAtIndex:index]];
             }
@@ -184,6 +190,7 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
     if (!_deleteButton) {
         _deleteButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _deleteButton.layer.cornerRadius = 5.0;
+        _deleteButton.enabled = NO;
         _deleteButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#3E3E4E"];
         [_deleteButton setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_btn_delete"] forState:UIControlStateNormal];
         [_deleteButton addTarget:self action:@selector(deleteButtonTouchBegin:)forControlEvents:UIControlEventTouchDown];

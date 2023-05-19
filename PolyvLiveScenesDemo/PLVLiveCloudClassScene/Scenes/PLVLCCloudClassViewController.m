@@ -1145,6 +1145,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     self.chatLandscapeView.hidden = !showDanmu;
 }
 
+- (void)plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
+    [self.mediaAreaView danmuSettingViewOnSuperview:liveRoomPlayerSkinView.superview];
+}
+
 - (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView
            userWannaSendChatContent:(NSString *)chatContent
                          replyModel:(PLVChatModel *)replyModel {

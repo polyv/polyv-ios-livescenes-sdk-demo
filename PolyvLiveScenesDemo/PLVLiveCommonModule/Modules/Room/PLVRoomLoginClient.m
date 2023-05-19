@@ -494,6 +494,8 @@
         roomData.appWebStartResolutionRatioEnabled = PLV_SafeBoolForDictKey(data, @"appWebStartResolutionRatioEnabled");
         roomData.appDefaultLandScapeEnabled = PLV_SafeBoolForDictKey(data, @"appDefaultLandScapeEnabled");
         roomData.appDefaultPureViewEnabled = PLV_SafeBoolForDictKey(data, @"appDefaultPureViewEnabled");
+        NSString *preferenceString = PLV_SafeStringForDictKey(data, @"pushQualityPreference");
+        [roomData setupPushQualityPreference:preferenceString];
         
         // 初始化直播间用户数据
         NSString *teacherNickname = PLV_SafeStringForDictKey(data, @"teacherNickname");

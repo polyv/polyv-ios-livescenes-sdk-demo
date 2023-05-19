@@ -22,6 +22,12 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
     PLVResolutionType1080P = 12, // 1080p（超高清）
 };
 
+/// 推流画质优先设置
+typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
+    PLVQualityPreferenceTypeClear = 0, // 画质优先
+    PLVQualityPreferenceTypeSmooth = 1, // 流畅度优先
+};
+
 @interface PLVRoomData : NSObject
 
 #pragma mark 通用属性
@@ -156,7 +162,8 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 @property (nonatomic, assign) BOOL appDefaultLandScapeEnabled;
 /// 支持默认开启后置摄像头，YES默认开启后置摄像头，NO不开启（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL appDefaultPureViewEnabled;
-
+/// 推流画质优先/流畅优先，默认画质优先
+@property (nonatomic, assign, readonly) PLVQualityPreferenceType pushQualityPreference;
 
 /// 设置 roomUser
 - (void)setupRoomUser:(PLVRoomUser *)roomUser;
@@ -169,6 +176,9 @@ typedef NS_ENUM (NSInteger, PLVResolutionType) {
 
 /// 获取功能开关
 - (void)requestChannelFunctionSwitch;
+
+/// 配置pushQualityPreference枚举值
+- (void)setupPushQualityPreference:(NSString *)pushQualityPreferenceString;
 
 /// 将清晰度枚举值转换成字符串
 /// @return 返回值为nil时表示参数resolutionType出错，无法转换

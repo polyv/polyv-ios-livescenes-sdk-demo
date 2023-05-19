@@ -28,11 +28,15 @@
 #import "PLVSALinkMicWindowsView.h"
 #import "PLVSALongContentMessageSheet.h"
 #import "PLVSAManageCommoditySheet.h"
+#import "PLVSABadNetworkTipsView.h"
+#import "PLVSASwitchSuccessTipsView.h"
+#import "PLVSABadNetworkSwitchSheet.h"
 
 // 模块
 #import "PLVChatModel.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLinkMicOnlineUser.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 static NSString * const kUserDefaultShowedSlideRightTips = @"UserDefaultShowedSlideRightTips";
 
@@ -45,7 +49,8 @@ PLVSAToolbarAreaViewDelegate,
 PLVSAMoreInfoSheetDelegate,
 PLVSABitRateSheetDelegate,
 PLVSAMemberSheetDelegate,
-PLVSALinkMicTipViewDelegate
+PLVSALinkMicTipViewDelegate,
+PLVSABadNetworkSwitchSheetDelegate
 >
 /// view hierarchy
 ///
@@ -76,9 +81,12 @@ PLVSALinkMicTipViewDelegate
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet; // 清晰度选择面板
 @property (nonatomic, strong) PLVSAMemberSheet *memberSheet; // 成员列表弹层
 @property (nonatomic, strong) PLVSAManageCommoditySheet *commoditySheet; // 商品库弹层
+@property (nonatomic, strong) PLVSABadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
 @property (nonatomic, strong) PLVSACameraAndMicphoneStateView *cameraAndMicphoneStateView; // 摄像头与麦克风状态视图
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
+@property (nonatomic, strong) PLVSABadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
+@property (nonatomic, strong) PLVSASwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
 
 /// 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser *localOnlineUser; // 本地用户模型，使用弱引用
@@ -177,6 +185,42 @@ PLVSALinkMicTipViewDelegate
     self.chatroomAreaView.frame = CGRectMake(left, CGRectGetMinY(self.toolbarAreaView.frame) - chatroomHeight, chatroomWidth, chatroomHeight);
     self.slideRightTipsView.frame = self.bounds;
     self.layoutSwitchGuideView.frame = CGRectMake(selfSize.width - toolbarViewMarginRight - 36 * 4 - 12 * 3 - 50 - right, CGRectGetMinY(self.toolbarAreaView.frame) - 62, 107, 62);
+    
+    UIView *teacherNameButton = (UIView *)self.statusbarAreaView.teacherNameButton;
+    CGRect teacherNameRect = [self convertRect:teacherNameButton.frame toView:self.homePageView];
+    CGFloat behindTeacherName = self.statusbarAreaView.frame.origin.x + CGRectGetMaxX(teacherNameRect) + 8.0;
+    CGFloat belowTeacherName = self.statusbarAreaView.frame.origin.y + CGRectGetMaxY(teacherNameRect) + 8.0;
+    CGFloat belowCameraAndMicphoneStateView = CGRectGetMaxY(self.cameraAndMicphoneStateView.frame) + 12.0;
+    CGFloat originX = 0;
+    CGFloat originY = 0;
+    
+    if (_badNetworkTipsView && _badNetworkTipsView.showing) {
+        CGFloat width = kPLVSABadNetworkTipsViewWidth;
+        CGFloat height = kPLVSABadNetworkTipsViewHeight;
+        CGFloat center = self.homePageView.bounds.size.width / 2.0 - width / 2.0;
+        if (isLandscape) {
+            originX = MAX(behindTeacherName, center);
+            originY = self.statusbarAreaView.frame.origin.y + teacherNameRect.origin.y;
+        } else {
+            originX = center;
+            originY = self.cameraAndMicphoneStateView.hidden ? belowTeacherName : belowCameraAndMicphoneStateView;
+        }
+        
+        self.badNetworkTipsView.frame = CGRectMake(originX, originY, width, height);
+    } else if (_switchSuccessTipsView && _switchSuccessTipsView.showing) {
+        CGFloat width = kPLVSASwitchSuccessTipsViewWidth;
+        CGFloat height = kPLVSASwitchSuccessTipsViewHeight;
+        CGFloat center = self.homePageView.bounds.size.width / 2.0 - width / 2.0;
+        if (isLandscape) {
+            originX = MAX(behindTeacherName, center);
+            originY = self.statusbarAreaView.frame.origin.y + teacherNameRect.origin.y;
+        } else {
+            originX = center;
+            originY = self.cameraAndMicphoneStateView.hidden ? belowTeacherName : belowCameraAndMicphoneStateView;
+        }
+        
+        self.switchSuccessTipsView.frame = CGRectMake(originX, originY, width, height);
+    }
 }
 
 #pragma mark - [ Override ]
@@ -215,7 +259,7 @@ PLVSALinkMicTipViewDelegate
     self.statusbarAreaView.duration = duration;
 }
 
-- (void)setNetworkQuality:(PLVBLinkMicNetworkQuality)netState {
+- (void)setNetworkQuality:(PLVBRTCNetworkQuality)netState {
     self.statusbarAreaView.netState = (PLVSAStatusBarNetworkQuality)netState;
 }
 
@@ -292,6 +336,17 @@ PLVSALinkMicTipViewDelegate
 - (void)showBeautySheet:(BOOL)show {
     self.closeButton.hidden = show;
     self.homePageView.hidden = show;
+}
+
+- (void)updateStatistics:(PLVRTCStatistics *)statistics {
+    [self.statusbarAreaView updateRTT:statistics.rtt upLoss:statistics.upLoss downLoss:statistics.downLoss];
+}
+
+- (void)showBadNetworkTipsView {
+    [self.badNetworkTipsView showAtView:self.homePageView aboveSubview:self.statusbarAreaView];
+    
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
 }
 
 #pragma mark - [ Private Method ]
@@ -510,13 +565,7 @@ PLVSALinkMicTipViewDelegate
 
 - (PLVSAMoreInfoSheet *)moreInfoSheet {
     if (!_moreInfoSheet) {
-        CGFloat heightScale = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 0.246 : 0.34;
-        CGFloat widthScale = 0.37;
-        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
-        CGFloat sheetHeight = maxWH * heightScale;
-        CGFloat sheetLandscapeWidth = maxWH * widthScale;
-        
-        _moreInfoSheet = [[PLVSAMoreInfoSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _moreInfoSheet = [[PLVSAMoreInfoSheet alloc] init];
         _moreInfoSheet.delegate = self;
     }
     return _moreInfoSheet;
@@ -569,6 +618,20 @@ PLVSALinkMicTipViewDelegate
     return _commoditySheet;
 }
 
+- (PLVSABadNetworkSwitchSheet *)badNetworkSwitchSheet {
+    if (!_badNetworkSwitchSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.250 : 0.36;
+        CGFloat widthScale = 0.37;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = MAX(maxWH * heightScale, 279);
+        CGFloat sheetLandscapeWidth = MAX(maxWH * widthScale, 375);
+        _badNetworkSwitchSheet = [[PLVSABadNetworkSwitchSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _badNetworkSwitchSheet.delegate = self;
+    }
+    return _badNetworkSwitchSheet;
+}
+
 - (PLVSALinkMicTipView *)linkMicTipView {
     if (!_linkMicTipView) {
         _linkMicTipView = [[PLVSALinkMicTipView alloc] init];
@@ -600,6 +663,32 @@ PLVSALinkMicTipViewDelegate
         type = [self.delegate streamerHomeViewCurrentChannelLinkMicMediaType:self];
     }
     return type;
+}
+
+- (PLVSABadNetworkTipsView *)badNetworkTipsView {
+    if (!_badNetworkTipsView) {
+        _badNetworkTipsView = [[PLVSABadNetworkTipsView alloc] init];
+        __weak typeof(self) weakSelf = self;
+        [_badNetworkTipsView setSwitchButtonActionBlock:^{
+            if (weakSelf.delegate &&
+                [weakSelf.delegate respondsToSelector:@selector(streamerHomeView:didChangeVideoQosPreference:)]){
+                [weakSelf.delegate streamerHomeView:weakSelf didChangeVideoQosPreference:PLVBRTCVideoQosPreferenceSmooth];
+            }
+            
+            [weakSelf.switchSuccessTipsView showAtView:weakSelf.homePageView aboveSubview:weakSelf.statusbarAreaView];
+            
+            [weakSelf setNeedsLayout];
+            [weakSelf layoutIfNeeded];
+        }];
+    }
+    return _badNetworkTipsView;
+}
+
+- (PLVSASwitchSuccessTipsView *)switchSuccessTipsView {
+    if (!_switchSuccessTipsView) {
+        _switchSuccessTipsView = [[PLVSASwitchSuccessTipsView alloc] init];
+    }
+    return _switchSuccessTipsView;
 }
 
 #pragma mark - [ Event ]
@@ -734,6 +823,14 @@ PLVSALinkMicTipViewDelegate
     }
 }
 
+- (void)moreInfoSheetDidTapBadNetworkButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentVideoQosPreference:)]) {
+        PLVBRTCVideoQosPreference videoQosPreference =[self.delegate streamerHomeViewCurrentVideoQosPreference:self];
+        [self.badNetworkSwitchSheet showInView:self currentVideoQosPreference:videoQosPreference];
+    }
+}
+
 #pragma mark PLVSABitRateSheetDelegate
 
 - (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet bitRateButtonClickWithBitRate:(PLVResolutionType)bitRate {
@@ -741,6 +838,29 @@ PLVSALinkMicTipViewDelegate
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeResolutionType:)]) {
         [self.delegate streamerHomeView:self didChangeResolutionType:bitRate];
         self.moreInfoSheet.streamQuality = bitRate;
+    }
+}
+
+#pragma mark PLVSABadNetworkSwitchSheetDelegate
+
+- (void)switchSheet:(PLVSABadNetworkSwitchSheet *)switchSheet didChangedVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference {
+    if (videoQosPreference == PLVBRTCVideoQosPreferenceSmooth) {
+        if (_badNetworkTipsView &&
+            _badNetworkTipsView.showing) {
+            [_badNetworkTipsView dismiss];
+        }
+    } else if (videoQosPreference == PLVBRTCVideoQosPreferenceClear) {
+           if (_switchSuccessTipsView &&
+               _switchSuccessTipsView.showing) {
+               [_switchSuccessTipsView dismiss];
+           }
+    }
+    
+    [_badNetworkTipsView reset];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeVideoQosPreference:)]){
+        [self.delegate streamerHomeView:self didChangeVideoQosPreference:videoQosPreference];
     }
 }
 

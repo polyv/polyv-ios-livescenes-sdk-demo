@@ -10,6 +10,7 @@
 
 #import "PLVLinkMicWaitUser.h"
 #import "PLVLinkMicOnlineUser.h"
+#import "PLVRoomData.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -127,6 +128,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @note 填充或适应（画面可能会有黑边），默认值：{@link PLVBRTCVideoViewFillMode_Fill}
 @property (nonatomic, assign) PLVBRTCVideoViewFillMode localPreviewViewFillMode;
 
+/// 默认推流视频画质偏好，只用来配置推流前的默认值，后续修改配置应使用方法 ‘-setupVideoQosPreference:’
+@property (nonatomic, assign) PLVQualityPreferenceType defaultVideoQosPreference;
+
 #pragma mark 状态
 /// 当前 麦克风摄像头 是否已授权限
 @property (nonatomic, assign, readonly) BOOL micCameraGranted;
@@ -146,7 +150,7 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// 当前 网络状态
 ///
 /// @note 仅在 处于RTC房间内 期间，会通过 [plvStreamerPresenter:networkQualityDidChanged:] 回调，定时(每2秒)返回一次网络状态
-@property (nonatomic, assign, readonly) PLVBLinkMicNetworkQuality networkQuality;
+@property (nonatomic, assign, readonly) PLVBRTCNetworkQuality networkQuality;
 
 /// 本地用户的 麦克风 当前是否开启
 @property (nonatomic, assign, readonly) BOOL currentMicOpen;
@@ -192,6 +196,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///
 /// @note 枚举类型详见 PLVCloudClassSDK/PLVLiveDefine.h
 @property (nonatomic, assign, readonly) PLVChannelLiveStreamState currentStreamState;
+
+/// 视频流画质偏好
+@property (nonatomic, assign, readonly) PLVBRTCVideoQosPreference videoQosPreference;
 
 #pragma mark 数据
 /// 当前 场次Id
@@ -325,6 +332,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///
 /// @param streamQuality 流清晰度
 - (void)setupStreamQuality:(PLVBLinkMicStreamQuality)streamQuality;
+
+/// 配置视频流画质偏好
+- (void)setupVideoQosPreference:(PLVBRTCVideoQosPreference)qosPreference;
 
 /// 配置 ‘本地视频预览’与‘远端观看’的镜像效果 是否一致
 ///
@@ -518,7 +528,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///
 /// @param presenter 推流管理器
 /// @param networkQuality 当前 ‘网络状态’ 状态值
-- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter networkQualityDidChanged:(PLVBLinkMicNetworkQuality)networkQuality;
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter networkQualityDidChanged:(PLVBRTCNetworkQuality)networkQuality;
+
+/// RTC频道统计信息回调
+/// 该回调每间隔2秒抛出一次，只在进入频道后触发
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter rtcStatistics:(PLVRTCStatistics *)statistics;
 
 #pragma mark 课程事件
 /// 当前频道 sessionId 场次Id发生变化

@@ -42,6 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param indicatorImage 指示器图片，表示可以点击，可设置为空
 - (void)setImage:(UIImage *)image indicatorImage:(UIImage * _Nullable)indicatorImage;
 
+/// 开启之后，标题颜色为红色，背景色也为红色；关闭之后，标题变成默认的白色，背景色为黑色
+- (void)enableWarningMode:(BOOL)warning;
+
 
 @end
 

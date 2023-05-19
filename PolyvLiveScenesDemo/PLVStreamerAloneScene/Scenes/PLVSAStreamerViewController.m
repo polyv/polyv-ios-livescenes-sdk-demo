@@ -369,16 +369,19 @@ PLVShareLiveSheetDelegate
     self.streamerPresenter.preRenderContainer = self.linkMicAreaView;
     self.streamerPresenter.localPreviewViewFillMode = PLVBRTCVideoViewFillMode_Fit;
     
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    
     // 设置麦克风、摄像头默认配置
     self.streamerPresenter.micDefaultOpen = YES;
     self.streamerPresenter.cameraDefaultOpen = YES;
-    self.streamerPresenter.cameraDefaultFront = ![PLVRoomDataManager sharedManager].roomData.appDefaultPureViewEnabled;
+    self.streamerPresenter.cameraDefaultFront = !roomData.appDefaultPureViewEnabled;
     
     self.streamerPresenter.previewType = PLVStreamerPresenterPreviewType_UserArray;
-    [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:[PLVRoomDataManager sharedManager].roomData.defaultResolution]];
+    [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:roomData.defaultResolution]];
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
     [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_Tile];
+    [self.streamerPresenter setDefaultVideoQosPreference:roomData.pushQualityPreference];
     
     // 初始化美颜
     [self.streamerPresenter initBeauty];
@@ -388,7 +391,7 @@ PLVShareLiveSheetDelegate
         [self setupLiveroomStreamScale];
     }
     // 设置默认开播方向
-    if ([PLVRoomDataManager sharedManager].roomData.appDefaultLandScapeEnabled) {
+    if (roomData.appDefaultLandScapeEnabled) {
         [self.settingView changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
     }
     
@@ -526,7 +529,7 @@ PLVShareLiveSheetDelegate
     __weak typeof(self) weakSelf = self;
     if (self.streamerPresenter.micCameraGranted &&
         self.streamerPresenter.inRTCRoom) {
-        if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) {
+        if (self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Unknown) {
             // 麦克风和摄像头当前全部关闭时
             if (!self.streamerPresenter.currentMicOpen &&
                 !self.streamerPresenter.currentCameraOpen) {
@@ -535,7 +538,7 @@ PLVShareLiveSheetDelegate
             }else{
                 needRetry = YES;
             }
-        } else if(self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
+        } else if(self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Down) {
             needRetry = YES;
         }else{
             /// 开始上课倒数
@@ -806,8 +809,7 @@ PLVShareLiveSheetDelegate
 }
 
 /// ‘网络状态’ 发生变化
-- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
-    networkQualityDidChanged:(PLVBLinkMicNetworkQuality)networkQuality {
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter networkQualityDidChanged:(PLVBRTCNetworkQuality)networkQuality {
     BOOL updateNetState = YES;
     if (self.viewerType == PLVRoomUserTypeGuest) {
         /// 嘉宾角色在非上麦状态下，不更新网络状态UI
@@ -819,6 +821,14 @@ PLVShareLiveSheetDelegate
     }
     if (updateNetState) {
         [self.homeView setNetworkQuality:networkQuality];
+    }
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter rtcStatistics:(PLVRTCStatistics *)statistics {
+    [self.homeView updateStatistics:statistics];
+    
+    if (presenter.videoQosPreference == PLVBRTCVideoQosPreferenceClear && statistics.upLoss > 30) {
+        [self.homeView showBadNetworkTipsView];
     }
 }
 
@@ -1238,6 +1248,14 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference {
+    [self.streamerPresenter setupVideoQosPreference:videoQosPreference];
+}
+
+- (PLVBRTCVideoQosPreference)streamerHomeViewCurrentVideoQosPreference:(PLVSAStreamerHomeView *)homeView {
+    return self.streamerPresenter.videoQosPreference;
 }
 
 - (void)streamerHomeViewDidTapBeautyButton:(PLVSAStreamerHomeView *)homeView {

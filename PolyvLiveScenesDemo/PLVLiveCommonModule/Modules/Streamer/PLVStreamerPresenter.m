@@ -264,6 +264,10 @@ PLVChannelClassManagerDelegate
     [self.rtcStreamerManager setupStreamQuality:streamQuality];
 }
 
+- (void)setupVideoQosPreference:(PLVBRTCVideoQosPreference)qosPreference {
+    [self.rtcStreamerManager setupVideoQosPreference:qosPreference];
+}
+
 - (void)setupLocalVideoPreviewSameAsRemoteWatch:(BOOL)localSameAsRemote{
     _localVideoPreviewSameAsRemoteWatch = localSameAsRemote;
     if (localSameAsRemote) {
@@ -547,6 +551,18 @@ PLVChannelClassManagerDelegate
     self.rtcStreamerManager.cameraDefaultFront = cameraDefaultFront;
 }
 
+- (void)setDefaultVideoQosPreference:(PLVQualityPreferenceType)defaultVideoQosPreference {
+    switch (defaultVideoQosPreference) {
+        case PLVQualityPreferenceTypeClear:
+            // SDK默认就是画质优先，无需配置
+            break;
+        case PLVQualityPreferenceTypeSmooth:
+            [self setupVideoQosPreference:PLVBRTCVideoQosPreferenceSmooth];
+        default:
+            break;
+    }
+}
+
 #pragma mark Getter
 - (BOOL)micDefaultOpen{
     return self.rtcStreamerManager.micDefaultOpen;
@@ -596,8 +612,8 @@ PLVChannelClassManagerDelegate
     return self.rtcStreamerManager.pushStreamStarted;
 }
 
-- (PLVBLinkMicNetworkQuality)networkQuality{
-    return self.rtcStreamerManager.networkQuality;
+- (PLVBRTCNetworkQuality)networkQuality{
+    return self.rtcStreamerManager.localNetworkQuality;
 }
 
 - (BOOL)currentMicOpen{
@@ -642,6 +658,10 @@ PLVChannelClassManagerDelegate
 
 - (PLVChannelLiveStreamState)currentStreamState{
     return self.channelClassManager.currentStreamState;
+}
+
+- (PLVBRTCVideoQosPreference)videoQosPreference {
+    return self.rtcStreamerManager.videoQosPreference;
 }
 
 #pragma mark - [ Private Methods ]
@@ -1146,8 +1166,8 @@ PLVChannelClassManagerDelegate
     });
 }
 
-- (void)updateGuestAutoLinkMicWithNetworkQuality:(PLVBLinkMicNetworkQuality)networkQuality {
-    BOOL networkConnected = !(networkQuality == PLVBLinkMicNetworkQualityDown || networkQuality == PLVBLinkMicNetworkQualityUnknown);
+- (void)updateGuestAutoLinkMicWithNetworkQuality:(PLVBRTCNetworkQuality)networkQuality {
+    BOOL networkConnected = !(networkQuality == PLVBRTCNetworkQuality_Down || networkQuality == PLVBRTCNetworkQuality_Unknown);
     if (self.currentNetworkConnected != networkConnected && networkConnected) {
         // 网络连接状态恢复至已可用
         BOOL isUserTypeGuest = (self.viewerType == PLVRoomUserTypeGuest);
@@ -2051,6 +2071,14 @@ PLVChannelClassManagerDelegate
     })
 }
 
+- (void)callbackForStatistics:(PLVRTCStatistics *)statistics {
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:rtcStatistics:)]) {
+            [self.delegate plvStreamerPresenter:self rtcStatistics:statistics];
+        }
+    })
+}
+
 - (void)callbackForLocalUserMicOpenChanged{
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:localUserMicOpenChanged:)]) {
@@ -2377,9 +2405,13 @@ PLVChannelClassManagerDelegate
     [self callbackForSessionIdDidChanged];
 }
 
-- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager networkQualityDidChanged:(PLVBLinkMicNetworkQuality)networkQuality{
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager localNetworkQualityDidChanged:(PLVBRTCNetworkQuality)networkQuality {
     [self updateGuestAutoLinkMicWithNetworkQuality:networkQuality];
     [self callbackForNetworkQualityDidChanged];
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager rtcStatistics:(PLVRTCStatistics *)statistics {
+    [self callbackForStatistics:statistics];
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager pushStreamStartedDidChanged:(BOOL)pushStreamStarted{

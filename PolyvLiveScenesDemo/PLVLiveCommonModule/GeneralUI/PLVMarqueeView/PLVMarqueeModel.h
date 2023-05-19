@@ -87,11 +87,13 @@ typedef NS_ENUM(NSUInteger, PLVMarqueeModelStyle) {
 /// 初始化最简单的跑马灯样式model
 /// @param content 跑马灯内容
 /// @param fontSize 字体大小
+/// @param speed 跑马灯文字移动指定像素所需时间/显示时间（单位：秒）当传0时，默认为20
 /// @param fontColor 字体颜色（0x000000）
 /// @param alpha 文本透明度（范围：0~1）
 /// @param style 动画类型
 + (instancetype)createMarqueeModelWithContent:(NSString *)content
                                      fontSize:(NSUInteger)fontSize
+                                        speed:(NSUInteger)speed
                                     fontColor:(NSString *)fontColor
                                         alpha:(float)alpha
                                         style:(PLVMarqueeModelStyle)style;

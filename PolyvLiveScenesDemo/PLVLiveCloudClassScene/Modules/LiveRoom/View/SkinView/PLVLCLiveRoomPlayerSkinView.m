@@ -21,6 +21,7 @@
 #pragma mark UI
 @property (nonatomic, strong) UIButton * bulletinButton;
 @property (nonatomic, strong) UIButton * danmuButton;
+@property (nonatomic, strong) UIButton * danmuSettingButton;
 @property (nonatomic, strong) UILabel * guideChatLabel;
 @property (nonatomic, strong) UIView * likeButtonBackgroudView;
 @property (nonatomic, strong) UIView * redpackBackgroudView;
@@ -310,6 +311,8 @@
         originX += CGRectGetWidth(self.floatViewShowButton.frame) + 5;
     }
     self.danmuButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
+    originX += CGRectGetWidth(self.danmuButton.frame) + 5;
+    self.danmuSettingButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
 }
 
 - (void)refreshBottomButtonsFrame {
@@ -378,7 +381,7 @@
         self.guideChatLabel.frame = CGRectMake(30, viewHeight - bottomPadding - guideChatLabelHeight * 2 - 10, CGRectGetWidth(self.bounds) - 30 * 2 , guideChatLabelHeight);
     } else {
         CGFloat middleOriginX = (viewWidth - guideChatLabelWidth) / 2.0;
-        CGFloat danmuButtonMaxOriginX = CGRectGetMaxX(self.danmuButton.frame) + 10.0;
+        CGFloat danmuButtonMaxOriginX = CGRectGetMaxX(self.danmuSettingButton.frame) + 10.0;
         CGFloat guideChatLabelOriginX = MAX(middleOriginX,danmuButtonMaxOriginX);
         self.guideChatLabel.frame = CGRectMake(guideChatLabelOriginX, viewHeight - bottomPadding - guideChatLabelHeight, guideChatLabelWidth, guideChatLabelHeight);
     }
@@ -415,12 +418,23 @@
     if (!_danmuButton) {
         _danmuButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _danmuButton.hidden = YES;
-        [_danmuButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_chatroom_open"] forState:UIControlStateNormal];
-        [_danmuButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_chatroom_close"] forState:UIControlStateSelected];
+        [_danmuButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_danmu_open"] forState:UIControlStateNormal];
+        [_danmuButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_danmu_close"] forState:UIControlStateSelected];
         _danmuButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_danmuButton addTarget:self action:@selector(chatRoomShowButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _danmuButton;
+}
+
+- (UIButton *)danmuSettingButton{
+    if (!_danmuSettingButton) {
+        _danmuSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _danmuSettingButton.hidden = YES;
+        [_danmuSettingButton setImage:[self getLiveRoomImageWithName:@"plvlc_liveroom_danmu_setting"] forState:UIControlStateNormal];
+        _danmuSettingButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_danmuSettingButton addTarget:self action:@selector(chatRoomDanmuSettingButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _danmuSettingButton;
 }
 
 - (UILabel *)guideChatLabel{
@@ -501,6 +515,7 @@
 - (void)setDanmuButtonShow:(BOOL)danmuButtonShow {
     _danmuButtonShow = danmuButtonShow;
     self.danmuButton.hidden = !danmuButtonShow;
+    self.danmuSettingButton.hidden = self.danmuButton.hidden || self.danmuButton.selected;
 }
 
 #pragma mark - [ Father Public Methods ]
@@ -509,6 +524,7 @@
 
     /// 底部UI
     [self addSubview:self.danmuButton];
+    [self addSubview:self.danmuSettingButton];
     [self addSubview:self.guideChatLabel];
     [self addSubview:self.likeButtonBackgroudView];
     [self addSubview:self.redpackBackgroudView];
@@ -637,7 +653,14 @@
     self.danmuButton.selected = !self.danmuButton.selected;
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:userWannaShowDanmu:)]) {
         BOOL showDanmu = !self.danmuButton.selected;
+        self.danmuSettingButton.hidden = !showDanmu;
         [self.delegate plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:self userWannaShowDanmu:showDanmu];
+    }
+}
+
+- (void)chatRoomDanmuSettingButtonAction:(UIButton *)button{
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:)]) {
+        [self.delegate plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:self];
     }
 }
 

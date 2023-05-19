@@ -13,7 +13,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class PLVSAStreamerHomeView, PLVLinkMicOnlineUser, PLVLinkMicOnlineUser, PLVSALinkMicWindowsView;
+@class PLVSAStreamerHomeView, PLVLinkMicOnlineUser, PLVLinkMicOnlineUser, PLVSALinkMicWindowsView, PLVRTCStatistics;
 
 @protocol PLVSAStreamerHomeViewDelegate <NSObject>
 
@@ -31,6 +31,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 改变 清晰度 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type;
+
+/// 改变 视频流画质偏好 触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference;
+
+/// 获取当前视频流画质偏好
+- (PLVBRTCVideoQosPreference)streamerHomeViewCurrentVideoQosPreference:(PLVSAStreamerHomeView *)homeView;
 
 /// 点击 连麦 按钮回调
 - (void)streamerHomeViewDidTapLinkMicButton:(PLVSAStreamerHomeView *)homeView linkMicButtonSelected:(BOOL)selected videoLinkMic:(BOOL)videoLinkMic;
@@ -86,7 +92,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)setPushStreamDuration:(NSTimeInterval)duration;
 
 /// 设置状态栏网络信号
-- (void)setNetworkQuality:(PLVBLinkMicNetworkQuality)netState;
+- (void)setNetworkQuality:(PLVBRTCNetworkQuality)netState;
 
 /// 更新成员列表弹层所需数据
 /// @param userList 成员列表数据
@@ -132,6 +138,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否显示美颜弹窗
 /// @param show YES: 显示；NO：隐藏
 - (void)showBeautySheet:(BOOL)show;
+
+- (void)updateStatistics:(PLVRTCStatistics *)statistics;
+
+- (void)showBadNetworkTipsView;
 
 @end
 

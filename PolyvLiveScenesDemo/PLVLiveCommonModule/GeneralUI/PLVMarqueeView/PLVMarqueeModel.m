@@ -74,6 +74,7 @@ static float FloatValueWithJsonValue(id obj) {
 /// @param style 动画类型
 + (instancetype)createMarqueeModelWithContent:(NSString *)content
                                      fontSize:(NSUInteger)fontSize
+                                        speed:(NSUInteger)speed
                                     fontColor:(NSString *)fontColor
                                         alpha:(float)alpha
                                         style:(PLVMarqueeModelStyle)style {
@@ -85,7 +86,7 @@ static float FloatValueWithJsonValue(id obj) {
     model.style = style;
     
     //default
-    model.speed = 20;
+    model.speed = speed <= 0 ? 20 : speed;
     model.outline = YES;
     model.outlineColor = @"#FFFFFF";
     return model;

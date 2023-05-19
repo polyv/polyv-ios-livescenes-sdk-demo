@@ -13,6 +13,7 @@
 #import "PLVLCMediaMoreView.h"
 #import "PLVWatermarkView.h"
 #import "PLVLCDownloadBottomSheet.h"
+#import "PLVLCMediaDanmuSettingView.h"
 
 // 模块
 #import "PLVDocumentView.h"
@@ -34,10 +35,13 @@ static NSString *const PLVLCMediaAreaView_Data_RouteOptionTitle = @"线路";
 static NSString *const PLVLCMediaAreaView_Data_LiveDelayOptionTitle = @"延迟";
 static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 static NSInteger const PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum = 5;
+static NSString * const kUserDefaultDanmuSpeed = @"UserDefaultDanmuSpeed";
 
 @interface PLVLCMediaAreaView () <
 PLVLCFloatViewDelegate,
 PLVLCMediaMoreViewDelegate,
+PLVDanMuDelegate,
+PLVLCMediaDanmuSettingViewDelegate,
 PLVLCMediaPlayerCanvasViewDelegate,
 PLVDocumentViewDelegate,
 PLVPlayerPresenterDelegate,
@@ -140,6 +144,7 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, strong) PLVLCMediaFloatView * floatView;
 @property (nonatomic, strong) PLVLCMediaMoreView * moreView;
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
+@property (nonatomic, strong) PLVLCMediaDanmuSettingView *danmuSettingView;  // 弹幕设置视图
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) PLVLCDocumentPaintModeView *paintModeView; // 画笔模式视图
@@ -695,6 +700,10 @@ PLVLCDocumentPaintModeViewDelegate
     self.danmuView.hidden = !show;
 }
 
+- (void)danmuSettingViewOnSuperview:(UIView *)superView {
+    [self.danmuSettingView showDanmuSettingViewOnSuperview:superView];
+}
+
 - (void)insertDanmu:(NSString *)danmu {
     UIFont *font = [UIFont systemFontOfSize:14];
     NSShadow *shadow = [NSShadow new];
@@ -706,6 +715,22 @@ PLVLCDocumentPaintModeViewDelegate
     NSAttributedString *attString = [[NSAttributedString alloc] initWithString:danmu attributes:dict];
     NSMutableAttributedString *muString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:attString font:font];
     [self.danmuView insertDML:muString];
+}
+
+/// 读取弹幕速度数据
+- (NSNumber *)getCacheDanmuSpeed {
+    NSNumber *speed = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultDanmuSpeed];
+    NSNumber *barrageSpeed = [NSNumber numberWithFloat:self.roomData.channelInfo.barrageSpeed];
+    if (!speed) {
+        speed = barrageSpeed ? : @20;
+    }
+    return speed;
+}
+
+///  写入弹幕速度数据
+- (void)saveCacheCacheDanmuSpeed:(NSNumber *)speed {
+    [[NSUserDefaults standardUserDefaults] setObject:speed forKey:kUserDefaultDanmuSpeed];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 #pragma mark Marquee
@@ -738,7 +763,7 @@ PLVLCDocumentPaintModeViewDelegate
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
-            PLVMarqueeModel *model = [PLVMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
+            PLVMarqueeModel *model = [PLVMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue speed:channel.marqueeSpeed fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
             completion(model, nil);
         } break;
         case PLVChannelMarqueeType_URL: {
@@ -835,8 +860,18 @@ PLVLCDocumentPaintModeViewDelegate
         _danmuView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         _danmuView.hidden = YES;
         _danmuView.userInteractionEnabled = NO;
+        _danmuView.delegate = self;
     }
     return _danmuView;
+}
+
+- (PLVLCMediaDanmuSettingView *)danmuSettingView {
+    if (!_danmuSettingView) {
+        _danmuSettingView = [[PLVLCMediaDanmuSettingView alloc] init];
+        _danmuSettingView.delegate = self;
+        _danmuSettingView.defaultDanmuSpeed = [self getCacheDanmuSpeed];
+    }
+    return _danmuSettingView;
 }
 
 - (PLVLCMediaPlayerSkinView *)skinView{
@@ -1231,6 +1266,18 @@ PLVLCDocumentPaintModeViewDelegate
     if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:floatViewSwitchToShow:)]) {
         [self.delegate plvLCMediaAreaView:self floatViewSwitchToShow:show];
     }
+}
+
+#pragma mark PLVDanMuDelegate
+
+- (CGFloat)plvDanMuGetSpeed:(PLVDanMu *)danmuView {
+    return [self getCacheDanmuSpeed].floatValue;
+}
+
+#pragma mark PLVLCMediaDanmuSettingViewDelegate
+
+- (void)plvLCMediaDanmuSettingView:(PLVLCMediaDanmuSettingView *)danmuSettingView danmuSpeedUpdate:(NSNumber *)speed {
+    [self saveCacheCacheDanmuSpeed:speed];
 }
 
 #pragma mark PLVLCMediaMoreViewDelegate

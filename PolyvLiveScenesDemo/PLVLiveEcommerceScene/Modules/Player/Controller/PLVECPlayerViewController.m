@@ -202,7 +202,7 @@ PLVPlayerPresenterDelegate
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
-            PLVMarqueeModel *model = [PLVMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
+            PLVMarqueeModel *model = [PLVMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue speed:channel.marqueeSpeed fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
             completion(model, nil);
         } break;
         case PLVChannelMarqueeType_URL: {

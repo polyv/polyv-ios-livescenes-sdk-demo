@@ -16,6 +16,7 @@
 
 // UI
 #import "PLVSAStatusBarButton.h"
+#import "PLVSANetworkStatePopup.h"
 
 @interface PLVSAStatusbarAreaView()
 
@@ -36,6 +37,7 @@
 @property (nonatomic, strong) PLVSAStatusBarButton *timeButton; // 时间按钮
 @property (nonatomic, strong) PLVSAStatusBarButton *teacherNameButton; // 讲师按钮
 @property (nonatomic, strong) PLVSAStatusBarButton *signalButton; // 信号视图
+@property (nonatomic, strong) PLVSANetworkStatePopup *networkStatePopup;
 
 #pragma mark 数据
 @property (nonatomic, assign) BOOL inClass;
@@ -95,6 +97,20 @@
         signalControlY = CGRectGetMaxY(self.channelInfoButton.frame) + padding;
     }
     self.signalButton.frame = CGRectMake(signalControlX, signalControlY, 84, 20);
+    
+    if (_networkStatePopup) {
+        CGFloat width = 196.0;
+        CGFloat height = 76.0;
+        CGFloat originX = MAX(0, self.frame.origin.x + CGRectGetMaxX(self.signalButton.frame) - width); // 弹层与按钮右侧对齐
+        CGFloat originY = self.frame.origin.y + CGRectGetMaxY(self.signalButton.frame) + 4.0;
+        CGRect rect = CGRectMake(originX, originY, width, height);
+        CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
+        
+        [self.networkStatePopup refreshWithBubbleFrame:rect buttonFrame:buttonRect];
+        if (self.networkStatePopup.showing) {
+            [self.networkStatePopup dismiss];
+        }
+    }
 }
 
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
@@ -114,6 +130,11 @@
     self.signalButton.hidden = !start;
     self.inClass = start;
     self.timeButton.text = @"00:00:00";
+    self.signalButton.userInteractionEnabled = start;
+}
+
+- (void)updateRTT:(NSInteger)rtt upLoss:(NSInteger)upLoss downLoss:(NSInteger)downLoss {
+    [self.networkStatePopup updateRTT:rtt upLoss:upLoss downLoss:downLoss];
 }
 
 #pragma mark - [ Private Method ]
@@ -183,14 +204,36 @@
 - (PLVSAStatusBarButton *)signalButton {
     if (!_signalButton) {
         _signalButton = [[PLVSAStatusBarButton alloc] init];
+        _signalButton.userInteractionEnabled = NO;
         _signalButton.layer.cornerRadius = 10;
-        _signalButton.titlePaddingX = 8;
+        _signalButton.titlePaddingX = 6;
         _signalButton.text = @"检测中";
         _signalButton.font = [UIFont systemFontOfSize:12];
         _signalButton.hidden = YES;
-        [_signalButton setImage:[PLVSAUtils imageForStatusbarResource:@"plvsa_statusbar_signal_icon_unknown"]];
+        [_signalButton setImage:[PLVSAUtils imageForStatusbarResource:@"plvsa_statusbar_signal_icon_good"]];
+        __weak typeof(self) weakSelf = self;
+        [_signalButton setDidTapHandler:^{
+            if (weakSelf.networkStatePopup.showing) {
+                [weakSelf.networkStatePopup dismiss];
+            } else {
+                [weakSelf.networkStatePopup showAtView:weakSelf.superview];
+            }
+        }];
     }
     return _signalButton;
+}
+
+- (PLVSANetworkStatePopup *)networkStatePopup {
+    if (!_networkStatePopup) {
+        CGFloat width = 196.0;
+        CGFloat height = 76.0;
+        CGFloat originX = MAX(0, self.frame.origin.x + CGRectGetMaxX(self.signalButton.frame) - width); // 弹层与按钮右侧对齐
+        CGFloat originY = self.frame.origin.y + CGRectGetMaxY(self.signalButton.frame) + 4.0;
+        CGRect rect = CGRectMake(originX, originY, width, height);
+        CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
+        _networkStatePopup = [[PLVSANetworkStatePopup alloc] initWithBubbleFrame:rect buttonFrame:buttonRect];
+    }
+    return _networkStatePopup;
 }
 
 #pragma mark Setter
@@ -234,17 +277,21 @@
     switch (netState) {
         case PLVSAStatusBarNetworkQuality_Unknown:
             title = @"检测中";
-            imageName = @"plvsa_statusbar_signal_icon_unknown";
+            imageName = @"plvsa_statusbar_signal_icon_good";
             break;
-        case PLVSAStatusBarNetworkQuality_Disconnect:
-            title = @"网络异常";
+        case PLVSAStatusBarNetworkQuality_Down:
+            title = @"网络断开";
             imageName = @"plvsa_statusbar_signal_icon_bad";
+            break;
+        case PLVSAStatusBarNetworkQuality_VBad:
+            title = @"网络很差";
+            imageName = @"plvsa_statusbar_signal_icon_bad";
+            break;
+        case PLVSAStatusBarNetworkQuality_Poor:
+            title = @"网络较差";
+            imageName = @"plvsa_statusbar_signal_icon_fine";
             break;
         case PLVSAStatusBarNetworkQuality_Bad:
-            title = @"网络异常";
-            imageName = @"plvsa_statusbar_signal_icon_bad";
-            break;
-        case PLVSAStatusBarNetworkQuality_Fine:
             title = @"网络一般";
             imageName = @"plvsa_statusbar_signal_icon_fine";
             break;
@@ -252,9 +299,14 @@
             title = @"网络良好";
             imageName = @"plvsa_statusbar_signal_icon_good";
             break;
+        case PLVSAStatusBarNetworkQuality_Excellent:
+            title = @"网络优秀";
+            imageName = @"plvsa_statusbar_signal_icon_good";
+            break;
     }
     self.signalButton.text = title;
     [self.signalButton setImage:[PLVSAUtils imageForStatusbarResource:imageName]];
+    [self.signalButton enableWarningMode:netState == PLVSAStatusBarNetworkQuality_Down];
 }
 
 - (void)setCurrentMicOpen:(BOOL)currentMicOpen {

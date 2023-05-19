@@ -138,6 +138,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 显示或隐藏弹幕
 - (void)showDanmu:(BOOL)show;
 
+/// 显示弹幕设置
+- (void)danmuSettingViewOnSuperview:(UIView *)superview;
+
 /// 插入一条滚动弹幕
 - (void)insertDanmu:(NSString *)danmu;
 

@@ -11,11 +11,13 @@
 NS_ASSUME_NONNULL_BEGIN
 
 typedef NS_ENUM(NSInteger, PLVLSStatusBarNetworkQuality){
-    PLVLSStatusBarNetworkQuality_Unknown = 0, // 未知
-    PLVLSStatusBarNetworkQuality_Good = 1,    // 信号良好
-    PLVLSStatusBarNetworkQuality_Fine = 2,    // 信号一般
-    PLVLSStatusBarNetworkQuality_Bad = 3,     // 信号差
-    PLVLSStatusBarNetworkQuality_Disconnect = 4, // 无法连接
+    PLVLSStatusBarNetworkQuality_Unknown = 0,   // 未知
+    PLVLSStatusBarNetworkQuality_Excellent = 1, // 当前网络非常好
+    PLVLSStatusBarNetworkQuality_Good = 2,      // 当前网络比较好
+    PLVLSStatusBarNetworkQuality_Poor = 3,      // 当前网络一般
+    PLVLSStatusBarNetworkQuality_Bad = 4,       // 当前网络较差
+    PLVLSStatusBarNetworkQuality_VBad = 5,      // 当前网络很差
+    PLVLSStatusBarNetworkQuality_Down = 6       // 无法连接
 };
 
 typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
@@ -31,6 +33,8 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
     PLVLSStatusBarControls_ShareButton      = 1 << 8,
     PLVLSStatusBarControls_PushButton       = 1 << 9,
 };
+
+@class PLVRTCStatistics;
 
 @protocol PLVLSStatusAreaViewProtocol <NSObject>
 
@@ -89,6 +93,9 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 /// 本地用户授权为主讲(当为主讲权限时，可以管理文档)
 /// @param auth 是否授权(YES授权，NO取消授权)
 - (void)updateDocumentSpeakerAuth:(BOOL)auth;
+
+///  更新推流时RTC统计数据
+- (void)updateStatistics:(PLVRTCStatistics *)statistics;
 
 @end
 

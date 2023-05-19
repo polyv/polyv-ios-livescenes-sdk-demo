@@ -65,6 +65,16 @@
     self.indicatorImageView.image = indicatorImage;
 }
 
+- (void)enableWarningMode:(BOOL)warning {
+    if (warning) {
+        self.backgroundColor = [UIColor colorWithRed:0xff/255.0 green:0x63/255.0 blue:0x63/255.0 alpha:0.2];
+        self.titleLabel.textColor = [UIColor colorWithRed:0xff/255.0 green:0x63/255.0 blue:0x63/255.0 alpha:1.0];
+    } else {
+        self.backgroundColor = [UIColor colorWithRed:0/255.0 green:0/255.0 blue:0/255.0 alpha:0.2];
+        self.titleLabel.textColor = [UIColor whiteColor];
+    }
+}
+
 #pragma mark - [ Private Method ]
 #pragma mark Getter
 

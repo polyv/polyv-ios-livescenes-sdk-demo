@@ -23,6 +23,9 @@
 #import "PLVLSBeautySheet.h"
 #import "PLVLSMoreInfoSheet.h"
 #import "PLVShareLiveSheet.h"
+#import "PLVLSBadNetworkTipsView.h"
+#import "PLVLSSwitchSuccessTipsView.h"
+#import "PLVLSBadNetworkSwitchSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -50,7 +53,8 @@ PLVStreamerPresenterDelegate,
 PLVMemberPresenterDelegate,
 PLVLSBeautySheetDelegate,
 PLVLSMoreInfoSheetDelegate,
-PLVShareLiveSheetDelegate
+PLVShareLiveSheetDelegate,
+PLVLSBadNetworkSwitchSheetDelegate
 >
 
 #pragma mark 功能
@@ -72,6 +76,9 @@ PLVShareLiveSheetDelegate
 @property (nonatomic, strong) PLVLSBeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVLSMoreInfoSheet *moreInfoSheet; // 更多弹层
 @property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
+@property (nonatomic, strong) PLVLSBadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
+@property (nonatomic, strong) PLVLSBadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
+@property (nonatomic, strong) PLVLSSwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -174,6 +181,18 @@ PLVShareLiveSheetDelegate
     if (_coutBackView) {
         _coutBackView.frame = self.view.bounds;
     }
+    
+    if (_badNetworkTipsView && _badNetworkTipsView.showing) {
+        CGFloat width = kPLVLSBadNetworkTipsViewWidth;
+        CGFloat height = kPLVLSBadNetworkTipsViewHeight;
+        self.badNetworkTipsView.frame = CGRectMake(self.documentAreaView.center.x - width/2.0, self.documentAreaView.frame.origin.y + 10, width, height);
+        [self.view insertSubview:self.badNetworkTipsView aboveSubview:self.documentAreaView];
+    } else if (_switchSuccessTipsView && _switchSuccessTipsView.showing) {
+        CGFloat width = kPLVLSSwitchSuccessTipsViewWidth;
+        CGFloat height = kPLVLSSwitchSuccessTipsViewHeight;
+        self.switchSuccessTipsView.frame = CGRectMake(self.documentAreaView.center.x - width/2.0, self.documentAreaView.frame.origin.y + 10, width, height);
+        [self.view insertSubview:self.switchSuccessTipsView aboveSubview:self.documentAreaView];
+    }
 }
 
 #pragma mark - Initialize
@@ -207,6 +226,10 @@ PLVShareLiveSheetDelegate
     
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:self.settingSheet.resolution];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [self.streamerPresenter setDefaultVideoQosPreference:roomData.pushQualityPreference];
+    
     [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_MainSpeaker];
     
     self.memberPresenter = [[PLVMemberPresenter alloc] init];
@@ -356,6 +379,34 @@ PLVShareLiveSheetDelegate
         _shareLiveSheet.delegate = self;
     }
     return _shareLiveSheet;
+}
+
+- (PLVLSBadNetworkTipsView *)badNetworkTipsView {
+    if (!_badNetworkTipsView) {
+        _badNetworkTipsView = [[PLVLSBadNetworkTipsView alloc] init];
+        __weak typeof(self) weakSelf = self;
+        [_badNetworkTipsView setSwitchButtonActionBlock:^{
+            [weakSelf.streamerPresenter setupVideoQosPreference:PLVBRTCVideoQosPreferenceSmooth];
+//            [weakSelf.switchSuccessTipsView showAtView:weakSelf.view aboveSubview:weakSelf.documentAreaView];
+            [PLVLSUtils showToastWithMessage:@"已切换到流畅模式" inView:weakSelf.view];
+        }];
+    }
+    return _badNetworkTipsView;
+}
+
+- (PLVLSSwitchSuccessTipsView *)switchSuccessTipsView {
+    if (!_switchSuccessTipsView) {
+        _switchSuccessTipsView = [[PLVLSSwitchSuccessTipsView alloc] init];
+    }
+    return _switchSuccessTipsView;
+}
+
+- (PLVLSBadNetworkSwitchSheet *)badNetworkSwitchSheet {
+    if (!_badNetworkSwitchSheet) {
+        _badNetworkSwitchSheet = [[PLVLSBadNetworkSwitchSheet alloc] init];
+        _badNetworkSwitchSheet.delegate = self;
+    }
+    return _badNetworkSwitchSheet;
 }
 
 #pragma mark - Private
@@ -863,7 +914,7 @@ PLVShareLiveSheetDelegate
 }
 
 /// ‘网络状态’ 发生变化
-- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter networkQualityDidChanged:(PLVBLinkMicNetworkQuality)networkQuality{
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter networkQualityDidChanged:(PLVBRTCNetworkQuality)networkQuality {
     PLVLSStatusBarNetworkQuality statusBarNetworkQuality = (PLVLSStatusBarNetworkQuality) networkQuality;
     BOOL updateNetState = YES;
     if (self.viewerType == PLVRoomUserTypeGuest) {
@@ -876,6 +927,14 @@ PLVShareLiveSheetDelegate
     }
     if (updateNetState) {
         self.statusAreaView.netState = statusBarNetworkQuality;
+    }
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter rtcStatistics:(PLVRTCStatistics *)statistics {
+    [self.statusAreaView updateStatistics:statistics];
+    
+    if (presenter.videoQosPreference == PLVBRTCVideoQosPreferenceClear && statistics.upLoss > 30) {
+        [self.badNetworkTipsView showAtView:self.view aboveSubview:self.documentAreaView];
     }
 }
 
@@ -1106,6 +1165,10 @@ PLVShareLiveSheetDelegate
     }];
 }
 
+- (void)moreInfoSheetDidBadNetworkButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.badNetworkSwitchSheet showInView:self.view currentVideoQosPreference:self.streamerPresenter.videoQosPreference];
+}
+
 #pragma mark PLVShareLiveSheetDelegate
 
 - (void)shareLiveSheetCopyLinkFinished:(PLVShareLiveSheet *)shareLiveSheet {
@@ -1115,6 +1178,25 @@ PLVShareLiveSheetDelegate
 - (void)shareLiveSheet:(PLVShareLiveSheet *)shareLiveSheet savePictureSuccess:(BOOL)success {
     NSString *message = success ? @"图片已保存到相册" : @"保存失败";
     [PLVLSUtils showToastWithMessage:message inView:self.view];
+}
+
+#pragma mark PLVLSBadNetworkSwitchSheetDelegate
+
+- (void)switchSheet:(PLVLSBadNetworkSwitchSheet *)switchSheet didChangedVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference {
+    if (videoQosPreference == PLVBRTCVideoQosPreferenceSmooth) {
+        if (_badNetworkTipsView &&
+            _badNetworkTipsView.showing) {
+            [_badNetworkTipsView dismiss];
+        }
+    } else if (videoQosPreference == PLVBRTCVideoQosPreferenceClear) {
+           if (_switchSuccessTipsView &&
+               _switchSuccessTipsView.showing) {
+               [_switchSuccessTipsView dismiss];
+           }
+    }
+    
+    [_badNetworkTipsView reset];
+    [self.streamerPresenter setupVideoQosPreference:videoQosPreference];
 }
 
 @end

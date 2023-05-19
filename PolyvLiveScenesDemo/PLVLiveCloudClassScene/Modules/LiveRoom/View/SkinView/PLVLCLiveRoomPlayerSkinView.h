@@ -87,6 +87,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaShowDanmu:(BOOL)showDanmu;
 
+- (void)plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
+
 - (void)plvLCLiveRoomPlayerSkinView:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView
            userWannaSendChatContent:(NSString *)chatContent
                          replyModel:(PLVChatModel *)replyModel;

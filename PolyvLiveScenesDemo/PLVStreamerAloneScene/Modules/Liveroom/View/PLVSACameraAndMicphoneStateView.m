@@ -97,6 +97,8 @@
     self.tipLabel.text = tipString;
     self.hidden = cameraOpen && micphoneOpen;
     
+    [self.superview setNeedsLayout];
+    [self.superview layoutIfNeeded];
 }
 #pragma mark - [ Private Method ]
 
