@@ -194,6 +194,12 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
 
 #pragma mark Getter & Setter
 
+- (void)setChannelInfo:(PLVChannelInfoModel *)channelInfo {
+    _channelInfo = channelInfo;
+    
+    [[PLVWLogReporterManager sharedManager] setupSessionId:self.channelInfo.sessionId];
+}
+
 - (NSString *)sessionId {
     if (self.channelInfo) {
         return self.channelInfo.sessionId;

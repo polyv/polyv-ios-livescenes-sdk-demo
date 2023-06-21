@@ -277,6 +277,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     } else { // 直播带货场景
         void(^successBlock)(void) = ^() { // 登录成功页面跳转回调
             PLVECWatchRoomViewController * watchLiveVC = [[PLVECWatchRoomViewController alloc] init];
+            watchLiveVC.fullScreenButtonShowOnIpad = YES;
             if (PushOrModel) {
                 [self.navigationController pushViewController:watchLiveVC animated:YES];
             }else{

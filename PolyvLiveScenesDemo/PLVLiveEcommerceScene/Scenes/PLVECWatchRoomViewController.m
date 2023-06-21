@@ -106,22 +106,40 @@ PLVECMessagePopupViewDelegate
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
+    [self getEdgeInset];
+    
     /// 布局视图 [多次]
     CGFloat closeBtn_y = 32.f;
     if (@available(iOS 11.0, *)) {
         closeBtn_y = self.view.safeAreaLayoutGuide.layoutFrame.origin.y + 12;
     }
     self.closeButton.frame = CGRectMake(CGRectGetWidth(self.view.bounds)-47, closeBtn_y, 32, 32);
+    self.closeButton.hidden = [PLVECUtils sharedUtils].isLandscape;
+    CGRect scrollViewFrame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(P_SafeAreaLeftEdgeInsets(), 0, CGRectGetWidth(self.view.bounds) - P_SafeAreaLeftEdgeInsets(), CGRectGetHeight(self.view.bounds) ):CGRectMake(0, P_SafeAreaTopEdgeInsets(), CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - P_SafeAreaTopEdgeInsets());
+    self.scrollView.frame = scrollViewFrame;
+    self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
+    
+    self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
+    
+    self.liveDetailPageView.frame = CGRectMake(0, 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
+    self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
+    self.popoverView.frame = self.view.bounds;
+    
+    CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? self.scrollView.bounds.size.width - P_SafeAreaRightEdgeInsets() : self.scrollView.bounds.size.width;
+
+    self.playerVC.view.frame = CGRectMake(self.scrollView.bounds.origin.x, self.scrollView.bounds.origin.y, playerVCWidth, self.scrollView.bounds.size.height);// 重新布局
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
-    
-    self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
+    CGPoint boundsPoint = self.scrollView.bounds.origin;
+    CGSize boundsSize = self.scrollView.bounds.size;
+    CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? boundsSize.width - P_SafeAreaRightEdgeInsets() : boundsSize.width;
+
+    self.playerVC.view.frame = CGRectMake(boundsPoint.x, boundsPoint.y, playerVCWidth, boundsSize.height);// 重新布局
     self.linkMicAreaView.frame = self.scrollView.bounds;
     
-    CGSize boundsSize = self.scrollView.bounds.size;
     CGSize marqueeViewSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
     self.playerVC.marqueeView.frame = CGRectMake(self.scrollView.contentOffset.x, (boundsSize.height - marqueeViewSize.height) / 2.0, marqueeViewSize.width, marqueeViewSize.height);
     
@@ -149,15 +167,30 @@ PLVECMessagePopupViewDelegate
 }
 
 - (BOOL)shouldAutorotate {
-    return NO;
+    return (_playerVC.fullScreenEnable && !_linkMicAreaView.inLinkMic) || [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
 }
 
 - (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
+    if ((_playerVC.fullScreenEnable && !_linkMicAreaView.inLinkMic) || [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height) {
+        return [PLVECUtils sharedUtils].interfaceOrientation;
+    }
     return UIInterfaceOrientationPortrait;
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    return UIInterfaceOrientationMaskPortrait;
+    if ((_playerVC.fullScreenEnable && !_linkMicAreaView.inLinkMic) || [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height) {
+        return (UIInterfaceOrientationMaskLandscapeRight | UIInterfaceOrientationMaskPortrait);
+    } else {
+        return UIInterfaceOrientationMaskPortrait;
+    }
+    
+}
+
+- (void)getEdgeInset {
+    [PLVECUtils sharedUtils].landscape = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (@available(iOS 11, *)) {
+        [[PLVECUtils sharedUtils] setupAreaInsets:self.view.safeAreaInsets];
+    }
 }
 
 #pragma mark - [ Private Methods ]
@@ -357,6 +390,13 @@ PLVECMessagePopupViewDelegate
         _cardDetailView = [[PLVCommodityCardDetailView alloc] init];
     }
     return _cardDetailView;
+}
+
+#pragma mark Getter
+- (void)setFullScreenButtonShowOnIpad:(BOOL)fullScreenButtonShowOnIpad {
+    _fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
+    self.playerVC.fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
+    self.homePageView.backButtonShowOnIpad = fullScreenButtonShowOnIpad;
 }
 
 #pragma mark - [ Event ]
@@ -571,6 +611,11 @@ PLVECMessagePopupViewDelegate
         }];
 }
 
+- (void)playerControllerWannaFullScreen:(PLVECPlayerViewController *)playerController {
+    [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+    [[PLVECUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+}
+
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(NSTimeInterval)duration
@@ -690,10 +735,16 @@ PLVECMessagePopupViewDelegate
         [self.playerVC reload];
     }
     self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
+    self.linkMicAreaView.alpha = inRTCRoom ? 1 : 0;
 }
 
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic {
     [self.homePageView updateLinkMicState:inLinkMic];
+    if (inLinkMic && [PLVECUtils sharedUtils].isLandscape) {
+        [PLVFdUtil changeDeviceOrientationToPortrait];
+        [[PLVECUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
+        [PLVECUtils showHUDWithTitle:nil detail:@"连麦成功，已为你切换到竖屏模式" view:self.view afterDelay:3.0];
+    }
 }
 
 - (BOOL)plvECLinkMicAreaViewGetChannelInLive:(PLVECLinkMicAreaView *)linkMicAreaView {
@@ -798,6 +849,13 @@ PLVECMessagePopupViewDelegate
     }
 }
 
+- (void)homePageViewWannaBackToVerticalScreen:(PLVECHomePageView *)homePageView {
+    if (self.view.bounds.size.width > self.view.bounds.size.height) {
+        [PLVFdUtil changeDeviceOrientationToPortrait];
+        [[PLVECUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
+    }
+}
+
 - (void)plvCommodityDetailViewControllerAfterTheBack {
     if (![PLVECFloatingWindow sharedInstance].hidden) {
         [[PLVECFloatingWindow sharedInstance] close]; // 关闭悬浮窗
@@ -842,6 +900,14 @@ PLVECMessagePopupViewDelegate
     CGRect marqueeViewFrame = self.playerVC.marqueeView.frame;
     marqueeViewFrame.origin.x = scrollView.contentOffset.x;
     self.playerVC.marqueeView.frame = marqueeViewFrame;
+    
+    if (scrollView.contentOffset.x == scrollView.frame.size.width) {
+        [self.homePageView showInScreen:YES];
+        [self.playerVC fullScreenButtonShowInView:YES];
+    } else {
+        [self.homePageView showInScreen:NO];
+        [self.playerVC fullScreenButtonShowInView:NO];
+    }
 }
 
 #pragma mark  PLVPopoverViewDelegate

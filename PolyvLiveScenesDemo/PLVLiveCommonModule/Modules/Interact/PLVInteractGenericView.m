@@ -251,15 +251,18 @@ PLVInteractWebViewBridgeDelegate>
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
+        @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
         @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
-        @"webVersion" : @"0.3.2"
+        @"webVersion" : @"0.4.0"
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
     [mutableDict addEntriesFromDictionary:sessionDict];
-    [mutableDict setObject:@"0.3.3" forKey:@"webVersion"];
+    if (roomData.menuInfo.promotionInfo) {
+        [mutableDict setObject:roomData.menuInfo.promotionInfo forKey:@"promotionInfo"];
+    }
     NSString *liveScene = self.liveType == PLVInteractGenericViewLiveTypeLC ? @"0" : @"1";
     [mutableDict setObject:liveScene forKey:@"liveScene"]; // 0 表示云课堂场景，1 表示直播带货场景
 

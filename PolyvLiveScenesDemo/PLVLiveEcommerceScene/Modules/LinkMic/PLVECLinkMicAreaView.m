@@ -10,7 +10,7 @@
 #import "PLVECLinkMicWindowsView.h"
 #import "PLVLinkMicPresenter.h"
 #import "PLVLinkMicOnlineUser+EC.h"
-#import "PLVECLinkMicPortraitControlBar.h"
+#import "PLVECLinkMicControlBar.h"
 #import "PLVECUtils.h"
 
 @interface PLVECLinkMicAreaView ()<
@@ -21,6 +21,7 @@ PLVECLinkMicWindowsViewDelegate
 >
 #pragma mark 状态
 @property (nonatomic, assign) BOOL externalNoDelayPaused; // 外部的 ‘无延迟播放’ 是否已暂停
+@property (nonatomic, assign) BOOL currentLandscape; // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
 #pragma mark 对象
 @property (nonatomic, strong) PLVLinkMicPresenter * presenter; // 连麦逻辑处理模块
 @property (nonatomic, strong) id <PLVECLinkMicControlBarProtocol> currentControlBar; // 当前连麦悬浮控制栏 (当前显示在屏幕上的 悬浮控制栏)
@@ -31,10 +32,10 @@ PLVECLinkMicWindowsViewDelegate
 ///  ├── (PLVECLinkMicAreaView) self (lowest)
 ///  │    └── (PLVECLinkMicWindowsView) windowsView
 ///  │
-///  └── (PLVECLinkMicPortraitControlBar) portraitControlBar
+///  └── (PLVECLinkMicControlBar) controlBar
 @property (nonatomic, strong) PLVECLinkMicWindowsView *windowsView; // 连麦窗口列表视图 (负责展示多个连麦成员RTC画面窗口)
 @property (nonatomic, strong) PLVECLinkMicPreviewView *linkMicPreView; // 连麦预览图
-@property (nonatomic, strong) PLVECLinkMicPortraitControlBar *portraitControlBar;   // 连麦悬浮控制栏 (竖屏时出现)
+@property (nonatomic, strong) PLVECLinkMicControlBar *controlBar;   // 连麦悬浮控制栏
 
 @end
 
@@ -53,13 +54,15 @@ PLVECLinkMicWindowsViewDelegate
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    BOOL fullScreenDifferent = (self.currentLandscape != fullScreen);
+    self.currentLandscape = fullScreen;
     self.windowsView.frame = self.bounds;
     
     // iPad分屏尺寸变动，刷新连麦布局
     BOOL isPad = ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad);
-    if (isPad) {
-        [self.portraitControlBar refreshControlBarFrame];
+    if (isPad || fullScreenDifferent) {
+        [self.controlBar refreshControlBarFrame];
     }
 }
 
@@ -122,7 +125,7 @@ PLVECLinkMicWindowsViewDelegate
     self.alpha = 0;
     [self addSubview:self.windowsView];
     
-    self.currentControlBar = self.portraitControlBar;
+    self.currentControlBar = self.controlBar;
 }
 
 - (void)showAreaView:(BOOL)showStatus {
@@ -139,12 +142,12 @@ PLVECLinkMicWindowsViewDelegate
 
 #pragma mark Getter & Setter
 
-- (PLVECLinkMicPortraitControlBar *)portraitControlBar{
-    if (!_portraitControlBar) {
-        _portraitControlBar = [[PLVECLinkMicPortraitControlBar alloc] init];
-        _portraitControlBar.delegate = self;
+- (PLVECLinkMicControlBar *)controlBar{
+    if (!_controlBar) {
+        _controlBar = [[PLVECLinkMicControlBar alloc] init];
+        _controlBar.delegate = self;
     }
-    return _portraitControlBar;
+    return _controlBar;
 }
 
 - (void)setCurrentControlBar:(id<PLVECLinkMicControlBarProtocol>)currentControlBar {
@@ -331,7 +334,7 @@ PLVECLinkMicWindowsViewDelegate
 
 /// 连麦管理器 ‘是否正在处理’ 发生改变
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter operationInProgress:(BOOL)inProgress {
-    [self.portraitControlBar controlBarUserInteractionEnabled:!inProgress];
+    [self.controlBar controlBarUserInteractionEnabled:!inProgress];
 }
 
 /// 连麦管理器发生错误

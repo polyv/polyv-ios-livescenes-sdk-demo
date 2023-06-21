@@ -63,6 +63,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 打开小窗播放
 - (void)homePageViewClickPictureInPicture:(PLVECHomePageView *)homePageView;
 
+/// 返回竖屏样式
+- (void)homePageViewWannaBackToVerticalScreen:(PLVECHomePageView *)homePageView;
+
 /// 加载打赏信息时触发
 /// @param rewardEnable 是否支持打赏
 /// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏
@@ -88,6 +91,13 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 @end
 
 @interface PLVECHomePageView : UIView
+
+/// 是否在iPad上显示横屏返回按钮
+///
+/// @note NO-在iPad上横屏时不显示横屏返回按钮，YES-显示
+///       当项目未适配分屏时，建议设置为YES
+@property (nonatomic,assign) BOOL backButtonShowOnIpad;
+
 
 /// 初始化方法
 - (instancetype)initWithType:(PLVECHomePageType)type delegate:(id<PLVECHomePageViewDelegate>)delegate;
@@ -137,6 +147,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 更新更多按钮的按钮状态
 /// @param dataArray 按钮数据
 - (void)updateMoreButtonDataArray:(NSArray *)dataArray;
+
+- (void)showInScreen:(BOOL)show;
 
 @end
 

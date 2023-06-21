@@ -20,6 +20,7 @@
 #import <MJRefresh/MJRefresh.h>
 #import "PLVRewardDisplayManager.h"
 #import "PLVECChatroomPlaybackViewModel.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define TEXT_MAX_COUNT 200
 
@@ -169,15 +170,15 @@ PLVECChatroomPlaybackViewModelDelegate
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    CGFloat tableViewHeight = 156;
+    CGFloat tableViewHeight = [PLVECUtils sharedUtils].isLandscape ? self.bounds.size.height * 0.4 :156;
     CGRect textAreaViewRect= CGRectMake(15, CGRectGetHeight(self.bounds)-15-32, 165, 32);
     self.textAreaView.frame = textAreaViewRect;
     self.tableViewBackgroundView.frame = CGRectMake(15, CGRectGetMinY(textAreaViewRect)-tableViewHeight-15, 234, tableViewHeight);
+    self.tableView.frame = self.tableViewBackgroundView.bounds;
     self.gradientLayer.frame = self.tableViewBackgroundView.bounds;
     self.welcomView.frame = CGRectMake(-258, CGRectGetMinY(self.tableViewBackgroundView.frame)-22-15, 258, 22);
     self.originWelcomViewFrame = self.welcomView.frame;
-    self.rewardDisplayView.frame = CGRectMake(0, CGRectGetMidY(self.bounds) - 150/2, PLVScreenWidth, CGRectGetHeight(self.bounds) - CGRectGetMidY(self.bounds) + 150/2);
-    
+    self.rewardDisplayView.frame = CGRectMake(0, CGRectGetMidY(self.bounds) - 150/2, MIN(PLVScreenWidth, PLVScreenHeight), CGRectGetHeight(self.bounds) - CGRectGetMidY(self.bounds) + 150/2);
     CGFloat tvbBottom = self.tableViewBackgroundView.frame.origin.y + tableViewHeight;
     self.receiveNewMessageView.frame = CGRectMake(15, tvbBottom - 24, 86, 24);
 }
@@ -226,7 +227,7 @@ PLVECChatroomPlaybackViewModelDelegate
 
 - (PLVRewardDisplayManager *)rewardDisplayManager{
     if (!_rewardDisplayManager) {
-        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] init];
+        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] initWithLiveType:PLVRewardDisplayManagerTypeEC];
         _rewardDisplayManager.superView = self.rewardDisplayView;
     }
     return _rewardDisplayManager;
@@ -282,9 +283,9 @@ PLVECChatroomPlaybackViewModelDelegate
 // 根据indexPath得到数据模型
 - (PLVChatModel *)modelAtIndexPath:(NSIndexPath *)indexPath {
     PLVChatModel *model = nil;
-    if (self.playbackEnable) {
+    if (self.playbackEnable && [PLVFdUtil checkArrayUseable:self.playbackViewModel.chatArray]) {
         model = self.playbackViewModel.chatArray[indexPath.row];
-    } else {
+    } else if ([PLVFdUtil checkArrayUseable:[[PLVECChatroomViewModel sharedViewModel] chatArray]]) {
         model = [[PLVECChatroomViewModel sharedViewModel] chatArray][indexPath.row];
     }
     return model;
@@ -336,6 +337,44 @@ PLVECChatroomPlaybackViewModelDelegate
         [self.delegate respondsToSelector:@selector(chatroomView_alertLongContentMessage:)]) {
         [self.delegate chatroomView_alertLongContentMessage:model];
     }
+}
+
+- (void)trackLogAction {
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:self.tableView.indexPathsForVisibleRows.count];
+    for (NSIndexPath *indexPath in self.tableView.indexPathsForVisibleRows) {
+        CGRect cellRect = [self.tableView rectForRowAtIndexPath:indexPath];
+        if (cellRect.origin.y + 28.0 >= self.tableView.contentOffset.y &&
+            cellRect.origin.y + cellRect.size.height - 28.0 <= self.tableView.contentOffset.y + self.tableView.frame.size.height) {
+            PLVChatModel *model = [self modelAtIndexPath:indexPath];
+            id message = model.message;
+            if (message &&
+                [message isKindOfClass:[PLVRedpackMessage class]]) {
+                PLVRedpackMessage *redpackMessage = (PLVRedpackMessage *)message;
+                [muArray addObject:redpackMessage];
+            }
+        }
+    }
+    
+    NSArray *currentVisibleRedpackMessages = [muArray copy];
+    if ([currentVisibleRedpackMessages count] > 0) {
+        [self trackLog:currentVisibleRedpackMessages];
+    }
+}
+
+- (void)trackLog:(NSArray <PLVRedpackMessage *> *)redpackMessages {
+    NSTimeInterval interval = [[NSDate date] timeIntervalSince1970];
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:redpackMessages.count];
+    for (PLVRedpackMessage *redpackMessage in redpackMessages) {
+        NSString *repackTypeString = (redpackMessage.type == PLVRedpackMessageTypeAliPassword) ? @"alipay_password_official_normal" : @"";
+        NSDictionary *eventInfo = @{
+            @"repackType": repackTypeString,
+            @"redpackId" : redpackMessage.redpackId,
+            @"exposureTime" : @(lround(interval))
+        };
+        [muArray addObject:eventInfo];
+    }
+    
+    [[PLVWLogReporterManager sharedManager] reportTrackWithEventId:@"user_read_redpack" eventType:@"show" specInformationArray:[muArray copy]];
 }
 
 #pragma mark - Action
@@ -391,6 +430,7 @@ PLVECChatroomPlaybackViewModelDelegate
             [UIView animateWithDuration:0.2 animations:^{
                 CGRect newFrame = CGRectMake(0, CGRectGetHeight (self.tableViewBackgroundView.bounds)-contentHeight, CGRectGetWidth(self.tableViewBackgroundView.bounds), contentHeight);
                 self.tableView.frame = newFrame;
+                [self scrollViewDidScroll:self.tableView];
             }];
         } else if (CGRectGetHeight(self.tableViewBackgroundView.bounds) > 0) {
             self.tableView.scrollEnabled = YES;
@@ -736,6 +776,11 @@ PLVECChatroomPlaybackViewModelDelegate
         cellHeight = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     }
     return cellHeight;
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(trackLogAction) object:nil];
+    [self performSelector:@selector(trackLogAction) withObject:nil afterDelay:1];
 }
 
 #pragma mark - Private

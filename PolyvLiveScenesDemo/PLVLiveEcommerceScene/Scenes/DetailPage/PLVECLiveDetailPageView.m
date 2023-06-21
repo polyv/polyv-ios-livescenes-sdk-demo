@@ -55,6 +55,7 @@
     if (self.liveInfoCardViewHeight == 0) {
         self.liveInfoCardView.frame = CGRectMake(0, CGRectGetHeight(self.scrollView.bounds)-liveInfoHeight, CGRectGetWidth(self.scrollView.bounds), liveInfoHeight);
     }
+    [self refreshBulletinCardView];
 }
 
 #pragma mark - Public
@@ -69,15 +70,20 @@
 - (void)addBulletinCardView:(NSString *)content {
     self.bulletinCardView.hidden = NO;
     self.bulletinCardView.content = content;
-    
-    CGSize newSize = [self.bulletinCardView.contentTextView sizeThatFits:CGSizeMake(CGRectGetWidth(self.scrollView.bounds)-30, MAXFLOAT)];
-    CGFloat bulletinHeight =  newSize.height + 66;
-    self.bulletinCardView.frame = CGRectMake(0, CGRectGetMinY(self.liveInfoCardView.frame)-bulletinHeight-8, CGRectGetWidth(self.scrollView.bounds), bulletinHeight);
+    [self refreshBulletinCardView];
 }
 
 - (void)removeBulletinCardView {
     self.bulletinCardView.hidden = YES;
     self.bulletinCardView.content = nil;
+}
+
+#pragma mark - Pravite
+
+- (void)refreshBulletinCardView {
+    CGSize newSize = [self.bulletinCardView.contentTextView sizeThatFits:CGSizeMake(CGRectGetWidth(self.scrollView.bounds)-30, MAXFLOAT)];
+    CGFloat bulletinHeight =  newSize.height + 66;
+    self.bulletinCardView.frame = CGRectMake(0, CGRectGetMinY(self.liveInfoCardView.frame)-bulletinHeight-8, CGRectGetWidth(self.scrollView.bounds), bulletinHeight);
 }
 
 #pragma mark - <PLVECCardViewDelegate>

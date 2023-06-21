@@ -41,6 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
  quickLiveNetworkQuality:(PLVECLivePlayerQuickLiveNetworkQuality)netWorkQuality;
 
 - (void)playerControllerWannaSwitchLine:(PLVECPlayerViewController *)playerController;
+
+- (void)playerControllerWannaFullScreen:(PLVECPlayerViewController *)playerController;
 #pragma mark 回放的回调
 
 /// 更新回放进度
@@ -113,6 +115,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 播放器播放状态
 @property (nonatomic, assign, readonly) BOOL playing;
 
+/// 播放器播放状态
+@property (nonatomic, assign, readonly) BOOL fullScreenEnable;
+
 /// 广告播放状态
 @property (nonatomic, readonly) BOOL advertPlaying;
 
@@ -124,6 +129,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 该频道是否 ‘直播中’ 
 @property (nonatomic, assign, readonly) BOOL channelInLive;
+
+/// 是否在iPad上显示全屏按钮
+///
+/// @note NO-在iPad上竖屏时不显示全屏按钮，YES-显示
+///       当项目未适配分屏时，建议设置为YES
+@property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
 
 /// 播放直播/回放
 - (void)play;
@@ -179,6 +190,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 在[无延迟播放场景] 下 播放器区域中展示的一个内容视图
 - (void)displayContentView:(UIView *)contentView;
+
+/// 在[直播场景]下 控制播放器区域全屏按钮显示/隐藏
+- (void)fullScreenButtonShowInView:(BOOL)show;
 
 @end
 

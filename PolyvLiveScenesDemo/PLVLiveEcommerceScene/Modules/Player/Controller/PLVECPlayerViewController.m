@@ -42,6 +42,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) UIView *displayView; // 播放器区域
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) UIButton * playButton; // 播放器暂停、播放按钮
+@property (nonatomic, strong) UIButton *fullScreenButton;          // 横屏按钮
 @property (nonatomic, strong) PLVLivePictureInPicturePlaceholderView *pictureInPicturePlaceholderView;    // 画中画占位图
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) UILabel *memoryPlayTipLabel; // 记忆播放提示
@@ -51,6 +52,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, assign) CGSize videoSize; // 视频源尺寸
 @property (nonatomic, readonly) PLVRoomData *roomData; // 只读，当前直播间数据
 @property (nonatomic, assign) BOOL playing; // 播放器播放状态
+@property (nonatomic, assign) BOOL fullScreenEnable;
 
 @end
 
@@ -63,7 +65,7 @@ PLVPlayerPresenterDelegate
         /// 播放器
         self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:self.roomData.videoType];
         self.playerPresenter.delegate = self;
-        
+        self.fullScreenEnable = NO;
         [self addTapGestureRecognizer];
     }
     return self;
@@ -82,6 +84,7 @@ PLVPlayerPresenterDelegate
     [self contentBackgroundViewDisplaySubview:self.displayView];
     [self.view addSubview:self.audioAnimalView];
     [self.view addSubview:self.playButton];
+    [self.view addSubview:self.fullScreenButton];
     [self.view addSubview:self.pictureInPicturePlaceholderView];
     [self.view addSubview:self.memoryPlayTipLabel];
     
@@ -109,6 +112,14 @@ PLVPlayerPresenterDelegate
         self.contentBackgroudView.frame = self.playerBackgroundView.frame;
     } else {
         self.contentBackgroudView.frame = self.displayRect;
+    }
+    
+    self.fullScreenButton.frame = CGRectMake(boundsSize.width - 36, CGRectGetMaxY(self.contentBackgroudView.frame) + 4, 32, 32);
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (fullScreen || (boundsSize.width == 90 && boundsSize.height == 160)) {
+        [self fullScreenButtonShowInView:NO];
+    } else if (!fullScreen && self.fullScreenButton.alpha == 0 && self.fullScreenEnable) {
+        [self fullScreenButtonShowInView:YES];
     }
     
     // 设置跑马灯区域位置、尺寸
@@ -336,6 +347,16 @@ PLVPlayerPresenterDelegate
     return _playButton;
 }
 
+- (UIButton *)fullScreenButton {
+    if (!_fullScreenButton) {
+        _fullScreenButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_fullScreenButton setImage:[PLVECUtils imageForWatchResource:@"plvec_media_skin_fullscreen"] forState:UIControlStateNormal];
+        [_fullScreenButton addTarget:self action:@selector(fullScreenButtonButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        self.fullScreenButton.alpha = 0.0;
+    }
+    return _fullScreenButton;
+}
+
 - (BOOL)noDelayWatchMode {
     return _playerPresenter.noDelayWatchMode;
 }
@@ -432,6 +453,12 @@ PLVPlayerPresenterDelegate
         } else {
             [self play];
         }
+    }
+}
+
+- (void)fullScreenButtonButtonAction:(id)sender {
+    if (self.delegate &&[self.delegate respondsToSelector:@selector(playerControllerWannaFullScreen:)]) {
+        [self.delegate playerControllerWannaFullScreen:self];
     }
 }
 
@@ -555,6 +582,19 @@ PLVPlayerPresenterDelegate
     [self.playerPresenter stopPictureInPicture];
 }
 
+- (void)fullScreenButtonShowInView:(BOOL)show {
+    if (!self.fullScreenButtonShowOnIpad && [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        self.fullScreenButton.alpha = 0.0;
+        return;
+    }
+    
+    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live || [PLVRoomDataManager sharedManager].roomData.liveState != PLVChannelLiveStreamState_Live) {
+        self.fullScreenButton.alpha = 0.0;
+        return;
+    }
+    self.fullScreenButton.alpha = show ? 1.0 : 0.0;
+}
+
 #pragma mark 回放方法
 
 - (void)seek:(NSTimeInterval)time {
@@ -596,6 +636,9 @@ PLVPlayerPresenterDelegate
     
     self.displayRect = [self getDisplayViewRect];
     self.contentBackgroudView.frame = self.displayRect;
+    self.fullScreenEnable = self.playerPresenter.currentVideoType == PLVChannelVideoType_Live && self.videoSize.width > self.videoSize.height && self.playerPresenter.currentStreamState == PLVChannelLiveStreamState_Live;
+    [self fullScreenButtonShowInView:self.fullScreenEnable];
+    self.fullScreenButton.frame = CGRectMake(self.view.bounds.size.width - 36, CGRectGetMaxY(self.contentBackgroudView.frame) + 4, 32, 32);
     self.watermarkView.frame = self.contentBackgroudView.frame;
     self.pictureInPicturePlaceholderView.frame = self.displayRect;
     if (self.playerPresenter.currentPlaybackTime > 0.5) {
@@ -623,6 +666,8 @@ PLVPlayerPresenterDelegate
     } else {
         // 移除水印
         [self.watermarkView removeFromSuperview];
+        self.fullScreenEnable = NO;
+        [self fullScreenButtonShowInView:NO];
     }
 }
 

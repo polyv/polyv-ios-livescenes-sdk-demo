@@ -7,6 +7,7 @@
 //  推送商品
 
 #import "PLVCommodityPushView.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVCommodityPushView ()
@@ -40,6 +41,8 @@
 @property (nonatomic, assign) PLVCommodityPushViewType type;
 
 @property (nonatomic, assign) BOOL needShow; // 是否需要显示
+
+@property (nonatomic, strong) CAShapeLayer *shapeLayer;
 
 @end
 
@@ -155,6 +158,11 @@
 #pragma mark - [ Private Method ]
 
 - (void)drawLayer {
+    if (_shapeLayer.superlayer) {
+        [_shapeLayer removeFromSuperlayer];
+        _shapeLayer = nil;
+    }
+    
     CGFloat midX = CGRectGetMidX(self.jumpButton.frame);
     CGFloat maxY = CGRectGetHeight(self.bounds);
     
@@ -169,7 +177,8 @@
     shapeLayer.frame = self.bounds;
     shapeLayer.fillColor = UIColor.whiteColor.CGColor;
     shapeLayer.path = maskPath.CGPath;
-    [self.layer insertSublayer:shapeLayer atIndex:0];
+    _shapeLayer = shapeLayer;
+    [self.layer insertSublayer:_shapeLayer atIndex:0];
 }
 
 - (void)hide {
@@ -370,6 +379,7 @@
         return;
     }
     
+    [self removeFromSuperview];
     self.initialFrame = initialFrame;
     self.frame = initialFrame;
     [superView addSubview:self];
@@ -377,7 +387,7 @@
     CGFloat endX = 0.0;
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    if (fullScreen) {
+    if (fullScreen && self.type == PLVCommodityPushViewTypeLC) {
         [superView sendSubviewToBack:self];
     }
     if (self.type == PLVCommodityPushViewTypeLC) {
@@ -391,6 +401,26 @@
         weakSelf.alpha = 1;
         weakSelf.frame = CGRectMake(endX, initialFrame.origin.y, initialFrame.size.width, initialFrame.size.height);
     } completion:nil];
+}
+
+- (void)reportTrackEvent {
+    if (!self.model) {
+        return;
+    }
+    
+    NSTimeInterval interval = [[NSDate date] timeIntervalSince1970];
+    NSString *productId = [NSString stringWithFormat:@"%zd", self.model.productId];
+    NSDictionary *info = @{
+        @"exposureTime" : @(lround(interval)),
+        @"name": self.model.name ?: @"",
+        @"productId" : productId,
+        @"realPrice" : @([self.model.realPrice doubleValue]),
+        @"price" : @([self.model.price doubleValue]),
+        @"productType" : self.model.productType ?: @"",
+        @"linkType" : @"mobile",
+        @"pushId" : self.model.logId ?: @""
+    };
+    [[PLVWLogReporterManager sharedManager] reportTrackWithEventId:@"product_push_item_view" eventType:@"show" specInformation:info];
 }
 
 @end

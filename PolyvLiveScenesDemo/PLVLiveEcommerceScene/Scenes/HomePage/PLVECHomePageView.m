@@ -109,8 +109,10 @@ PLVECCardPushButtonViewDelegate
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
 @property (nonatomic, strong) UIButton *playbackListButton;            // 回放列表按钮
 @property (nonatomic, strong) UIButton *questionnaireButton;          // 互动问卷入口
+@property (nonatomic, strong) UIButton *backButton;                  // 横屏返回按钮
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable;      // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
+@property (nonatomic, assign) BOOL visiable;                       // 该属性为YES表示当前该视图处于用户可见状态
 
 @end
 
@@ -141,7 +143,6 @@ PLVECCardPushButtonViewDelegate
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    self.liveRoomInfoView.frame = CGRectMake(15, 10, 118, 36);
     [self updateUIFrame];
 }
 
@@ -160,6 +161,7 @@ PLVECCardPushButtonViewDelegate
         [self addSubview:self.likeButtonView];
         [self addSubview:self.giftButton];
         [self addSubview:self.questionnaireButton];
+        [self addSubview:self.backButton];
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.chatroomView];
         [self addSubview:self.playerContolView];
@@ -289,6 +291,15 @@ PLVECCardPushButtonViewDelegate
     return _questionnaireButton;
 }
 
+- (UIButton *)backButton {
+    if (!_backButton) {
+        _backButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_backButton setImage:[PLVECUtils imageForWatchResource:@"plvec_media_skin_back"] forState:UIControlStateNormal];
+        [_backButton addTarget:self action:@selector(backButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _backButton;
+}
+
 - (PLVECMoreView *)moreView {
     if (!_moreView) {
         CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
@@ -304,6 +315,7 @@ PLVECCardPushButtonViewDelegate
     if (!_switchView) {
         _switchView = [[PLVECSwitchView alloc] initWithFrame:self.moreView.frame];
         _switchView.delegate = self;
+        _switchView.hidden = YES;
         [self addSubview:_switchView];
     }
     return _switchView;
@@ -597,12 +609,23 @@ PLVECCardPushButtonViewDelegate
 /// 更新UI布局的Frame
 - (void)updateUIFrame {
     CGFloat buttonWidth = 32.f;
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     
+    self.liveRoomInfoView.frame = CGRectMake(15, 10, 118, 36);
+
     if (self.type == PLVECHomePageType_Live) {
+        self.backButton.hidden = ![PLVECUtils sharedUtils].isLandscape || (isPad && !self.backButtonShowOnIpad);
+        if (fullScreen && !self.backButton.hidden) {
+            self.backButton.frame = CGRectMake(15, 16, 24, 24);
+            self.liveRoomInfoView.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame) + 8 , 10, 118, 36);
+        }
+        CGFloat bottomMargin = [PLVECUtils sharedUtils].isLandscape ? 0 : P_SafeAreaBottomEdgeInsets();
+        CGFloat rightMargin = [PLVECUtils sharedUtils].isLandscape ? 15 + P_SafeAreaRightEdgeInsets() : 15 ;
         // 聊天室布局
-        self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-P_SafeAreaBottomEdgeInsets());
+        self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-bottomMargin);
         // 底部按钮
-        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-15, CGRectGetHeight(self.bounds)-buttonWidth-15-P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
+        self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-buttonWidth-rightMargin, CGRectGetHeight(self.bounds)-buttonWidth-15-bottomMargin, buttonWidth, buttonWidth);
         self.giftButton.frame = self.moreButton.hidden ? self.moreButton.frame : CGRectMake(CGRectGetMinX(self.moreButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         self.shoppingCartButton.frame = self.giftButton.hidden ? self.giftButton.frame : CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         // 点赞按钮
@@ -633,6 +656,11 @@ PLVECCardPushButtonViewDelegate
         }
         CGFloat questionnaireButtonOriginY = bulletinView ? CGRectGetMaxY(bulletinView.frame) + 10 : CGRectGetMaxY(self.liveRoomInfoView.frame) + 15;
         self.questionnaireButton.frame =  CGRectMake(15, questionnaireButtonOriginY, 68, 28);
+        if (fullScreen) {
+            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 120, 308, 114);
+        } else {
+            [self.pushView showOnView:self initialFrame:CGRectMake(-(CGRectGetWidth(self.frame)), CGRectGetMinY(self.shoppingCartButton.frame) - 120, CGRectGetWidth(self.bounds) - 110, 114)];
+        }
     } else if (self.type == PLVECHomePageType_Playback) {
         // 聊天室布局
         self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-P_SafeAreaBottomEdgeInsets());
@@ -644,6 +672,10 @@ PLVECCardPushButtonViewDelegate
         // 卡片推送挂件
         self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, CGRectGetMinY(self.playerContolView.frame)-PLVECLikeButtonViewHeight, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
     }
+    
+    CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
+    self.moreView.frame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(CGRectGetWidth(self.bounds) - 375, 0, 375, CGRectGetHeight(self.bounds)) : CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height);
+    self.switchView.frame = self.moreView.frame;
 }
 
 #pragma mark 快直播
@@ -699,6 +731,12 @@ PLVECCardPushButtonViewDelegate
 - (void)questionnaireButtonAction:(id)sender {
     if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_openInteractApp:eventName:)]) {
         [self.delegate homePageView_openInteractApp:self eventName:self.questionnaireEventName];
+    }
+}
+
+- (void)backButtonAction:(id)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewWannaBackToVerticalScreen:)]) {
+        [self.delegate homePageViewWannaBackToVerticalScreen:self];
     }
 }
 
@@ -765,6 +803,13 @@ PLVECCardPushButtonViewDelegate
     }
 }
 
+- (void)showInScreen:(BOOL)show {
+    self.visiable = show;
+    if (show && _pushView.alpha == 1) {
+        [self.pushView reportTrackEvent];
+    }
+}
+
 - (void)likesEvent:(NSDictionary *)jsonDict {
     NSString *userId = PLV_SafeStringForDictKey(jsonDict, @"userId");
     if ([userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]) {
@@ -805,6 +850,9 @@ PLVECCardPushButtonViewDelegate
             [weakSelf.pushView setModel:model];
             [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 120, CGRectGetWidth(weakSelf.bounds) - 110, 114)];
         })
+        if (self.visiable) {
+            [self.pushView reportTrackEvent];
+        }
     } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
         [ _pushView hide];
     }

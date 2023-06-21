@@ -667,7 +667,7 @@ PLVChannelClassManagerDelegate
 #pragma mark - [ Private Methods ]
 - (void)setup{
     /// 初始化 数据
-    PLVSDKGlobalBeautySDKVersion = nil;// 若使用美颜4.4.2版本请设置 PLVSDKGlobalBeautySDKVersion = @"4.4.2";
+    PLVSDKGlobalBeautySDKVersion = @"4.4.2";// 使用美颜4.4.2版
     self.originalIdleTimerDisabled = 0;
     self.waitUserMuArray = [[NSMutableArray<PLVLinkMicWaitUser *> alloc] init];
     self.onlineUserMuArray = [[NSMutableArray<PLVLinkMicOnlineUser *> alloc] init];

@@ -577,7 +577,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (PLVRewardDisplayManager *)rewardDisplayManager{
     if (!_rewardDisplayManager) {
-        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] init];
+        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] initWithLiveType:PLVRewardDisplayManagerTypeLC];
     }
     return _rewardDisplayManager;
 }
@@ -817,6 +817,7 @@ PLVLCLandscapeMessagePopupViewDelegate
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
         [self.pushView setModel:model];
+        [self.pushView reportTrackEvent];
         if (self.currentLandscape) {
             [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 144 - 16, 308, 114)];
         } else {

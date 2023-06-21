@@ -133,7 +133,7 @@ PLVRoomDataManagerProtocol
             [self.productVctrl viewDidLoad];
         }
         [self displaySubview:self.productVctrl.contentBackgroudView toSuperview:externalView];
-        [self.productVctrl viewWillLayoutSubviews];
+        [self.productVctrl showInLandscape];
     }
 }
 

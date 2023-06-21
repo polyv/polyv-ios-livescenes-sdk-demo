@@ -40,6 +40,7 @@ PLVProductWebViewBridgeDelegate>
     [super viewWillAppear:animated];
     
     [self.webView layoutSubviews];
+    [self.webViewBridge callWebViewEvent:@{@"event" : @"OPEN_PRODUCT"}];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -66,6 +67,11 @@ PLVProductWebViewBridgeDelegate>
     [self.view addSubview:self.contentBackgroudView];
     self.contentBackgroudView.frame = self.view.bounds;
     self.contentBackgroudView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+}
+
+- (void)showInLandscape {
+    [self viewWillLayoutSubviews];
+    [self.webViewBridge callWebViewEvent:@{@"event" : @"OPEN_PRODUCT"}];
 }
 
 #pragma mark - [ Private Method ]
@@ -104,12 +110,17 @@ PLVProductWebViewBridgeDelegate>
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
-        @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId]
+        @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
+        @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
+        @"webVersion" : @"0.4.0"
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    if (roomData.menuInfo.promotionInfo) {
+        [mutableDict setObject:roomData.menuInfo.promotionInfo forKey:@"promotionInfo"];
+    }
     [mutableDict addEntriesFromDictionary:sessionDict];
     
     return mutableDict;

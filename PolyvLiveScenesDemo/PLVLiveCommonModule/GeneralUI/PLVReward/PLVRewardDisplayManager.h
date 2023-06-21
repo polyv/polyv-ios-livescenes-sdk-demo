@@ -10,6 +10,14 @@
 #import <Foundation/Foundation.h>
 #import "PLVRewardGoodsModel.h"
 
+/// 直播场景
+typedef NS_ENUM(NSUInteger, PLVRewardDisplayManagerType) {
+    /// 云课堂场景
+    PLVRewardDisplayManagerTypeLC = 0,
+    /// 直播带货场景
+    PLVRewardDisplayManagerTypeEC = 1
+};
+
 NS_ASSUME_NONNULL_BEGIN
 
 /// 打赏展示管理器
@@ -17,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 需要承载‘打赏展示’的父视图（weak）
 @property (nonatomic, weak) UIView *superView;
+
+/// 根据直播场景初始化
+- (instancetype)initWithLiveType:(PLVRewardDisplayManagerType)liveType;
 
 /// 添加一次打赏展示
 /// @param model 所展示的礼物模型

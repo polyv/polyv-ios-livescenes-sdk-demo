@@ -37,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)rollbackProductPageContentView;
 
+/// 横屏展示边看边买
+- (void)showInLandscape;
+
 @end
 
 NS_ASSUME_NONNULL_END

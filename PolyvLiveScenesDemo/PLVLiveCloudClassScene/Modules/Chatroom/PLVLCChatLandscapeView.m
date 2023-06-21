@@ -22,6 +22,7 @@
 #import "PLVToast.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define KEYPATH_CONTENTSIZE @"contentSize"
 
@@ -213,6 +214,7 @@ UITableViewDataSource
                 self.tableView.frame = newFrame;
                 [self scrollsToBottom:NO];
                 self.tableView.scrollEnabled = NO;
+                [self scrollViewDidScroll:self.tableView];
             }];
         } else if (CGRectGetHeight(self.bounds) > 0) {
             self.tableView.frame = self.bounds;
@@ -350,6 +352,48 @@ UITableViewDataSource
 
 - (void)didTapRedpackModel:(PLVChatModel *)model {
     [[PLVLCChatroomViewModel sharedViewModel] checkRedpackStateWithChatModel:model];
+}
+
+- (void)trackLogAction {
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (!fullScreen) {
+        return;
+    }
+    
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:self.tableView.indexPathsForVisibleRows.count];
+    for (NSIndexPath *indexPath in self.tableView.indexPathsForVisibleRows) {
+        CGRect cellRect = [self.tableView rectForRowAtIndexPath:indexPath];
+        if (cellRect.origin.y + 28.0 >= self.tableView.contentOffset.y &&
+            cellRect.origin.y + cellRect.size.height - 28.0 <= self.tableView.contentOffset.y + self.tableView.frame.size.height) {
+            PLVChatModel *model = [self modelAtIndexPath:indexPath];
+            if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
+                id message = model.message;
+                PLVRedpackMessage *redpackMessage = (PLVRedpackMessage *)message;
+                [muArray addObject:redpackMessage];
+            }
+        }
+    }
+    
+    NSArray *currentVisibleRedpackMessages = [muArray copy];
+    if ([currentVisibleRedpackMessages count] > 0) {
+        [self trackLog:currentVisibleRedpackMessages];
+    }
+}
+
+- (void)trackLog:(NSArray <PLVRedpackMessage *> *)redpackMessages {
+    NSTimeInterval interval = [[NSDate date] timeIntervalSince1970];
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:redpackMessages.count];
+    for (PLVRedpackMessage *redpackMessage in redpackMessages) {
+        NSString *repackTypeString = (redpackMessage.type == PLVRedpackMessageTypeAliPassword) ? @"alipay_password_official_normal" : @"";
+        NSDictionary *eventInfo = @{
+            @"repackType": repackTypeString,
+            @"redpackId" : redpackMessage.redpackId,
+            @"exposureTime" : @(lround(interval))
+        };
+        [muArray addObject:eventInfo];
+    }
+    
+    [[PLVWLogReporterManager sharedManager] reportTrackWithEventId:@"user_read_redpack" eventType:@"show" specInformationArray:[muArray copy]];
 }
 
 #pragma mark - PLVLCChatroomViewModelProtocol
@@ -594,6 +638,9 @@ UITableViewDataSource
     if (!up) {
         [self clearNewMessageCount];
     }
+    
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(trackLogAction) object:nil];
+    [self performSelector:@selector(trackLogAction) withObject:nil afterDelay:1];
 }
 
 @end

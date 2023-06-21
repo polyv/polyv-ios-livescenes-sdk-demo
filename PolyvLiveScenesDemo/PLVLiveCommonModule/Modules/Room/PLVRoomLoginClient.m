@@ -66,11 +66,15 @@
                 [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
                 // 注册日志管理器
                 [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];
+                [[PLVWLogReporterManager sharedManager] setupViewerId:roomUser.viewerId viewerName:roomUser.viewerName role:roomUser.role];
                 
                 // 将当前的roomData配置到PLVRoomDataManager进行管理
                 [[PLVRoomDataManager sharedManager] configRoomData:roomData];
                 
                 [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                    if (channelMenuInfo.watchEventTrackEnabled) {
+                        [[PLVWLogReporterManager sharedManager] enableTrackEventReport:YES];
+                    }
                     if (channelMenuInfo.transmitMode) {
                         if (apiChannelType != PLVChannelTypePPT) {
                             !failure ?: failure(@"纯视频场景暂时不支持双师");
@@ -247,11 +251,15 @@
                                                 [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
                                                 // 注册日志管理器
                                                 [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];
+                                                [[PLVWLogReporterManager sharedManager] setupViewerId:roomUser.viewerId viewerName:roomUser.viewerName role:roomUser.role];
                                                 
                                                 // 将当前的roomData配置到PLVRoomDataManager进行管理
                                                 [[PLVRoomDataManager sharedManager] configRoomData:roomData];
                                                 
                                                 [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                                                    if (channelMenuInfo.watchEventTrackEnabled) {
+                                                        [[PLVWLogReporterManager sharedManager] enableTrackEventReport:YES];
+                                                    }
                                                     !completion ?: completion(roomData.customParam);
                                                 }];
                                             }
@@ -743,14 +751,18 @@
                 
                 // 登陆SDK,一定要第一时间调用这个方法，否则会导致API接口参数为空
                 [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
-                // 注册日志管理器
-                [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId vId:vid];
                 
                 // 将当前的roomData配置到PLVRoomDataManager进行管理
                 [[PLVRoomDataManager sharedManager] configRoomData:roomData];
                 
                 [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
                     !completion ?: completion(roomData);
+                    // 注册日志管理器
+                    [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId vId:vid];
+                    [[PLVWLogReporterManager sharedManager] setupViewerId:roomUser.viewerId viewerName:roomUser.viewerName role:roomUser.role];
+                    if (channelMenuInfo.watchEventTrackEnabled) {
+                        [[PLVWLogReporterManager sharedManager] enableTrackEventReport:YES];
+                    }
                 }];
             }
         } failure:^(NSError * _Nonnull error) {
@@ -815,12 +827,16 @@
             [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
             // 注册日志管理器
             [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId vId:vid];
+            [[PLVWLogReporterManager sharedManager] setupViewerId:roomUser.viewerId viewerName:roomUser.viewerName role:roomUser.role];
             
             // 将当前的roomData配置到PLVRoomDataManager进行管理
             [[PLVRoomDataManager sharedManager] configRoomData:roomData];
             
             if (networkStatus != PLVNotReachable) {
                 [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                    if (channelMenuInfo.watchEventTrackEnabled) {
+                        [[PLVWLogReporterManager sharedManager] enableTrackEventReport:YES];
+                    }
                     !completion ?: completion(roomData.customParam);
                 }];
             }else {
@@ -899,12 +915,16 @@
             [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
             // 注册日志管理器
             [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];
+            [[PLVWLogReporterManager sharedManager] setupViewerId:roomUser.viewerId viewerName:roomUser.viewerName role:roomUser.role];
             
             // 将当前的roomData配置到PLVRoomDataManager进行管理
             [[PLVRoomDataManager sharedManager] configRoomData:roomData];
             
             if (networkStatus != PLVNotReachable) {
                 [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
+                    if (channelMenuInfo.watchEventTrackEnabled) {
+                        [[PLVWLogReporterManager sharedManager] enableTrackEventReport:YES];
+                    }
                     !completion ?: completion(roomData.customParam);
                 }];
             }else {
