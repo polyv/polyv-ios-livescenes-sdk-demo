@@ -374,6 +374,12 @@ reportAudioVolumeOfSpeakers:(NSDictionary<NSString *, NSNumber *> * _Nonnull)vol
 /// @param presenter 连麦管理器
 - (void)plvLinkMicPresenterLocalUserLinkMicWasHanduped:(PLVLinkMicPresenter *)presenter;
 
+/// 当前连麦用户的 视频尺寸发生改变
+///
+/// @param presenter 连麦管理器
+/// @param linkMicUserId 连麦用户ID
+/// @param videoSize 视频的尺寸
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicUserId:(NSString *)linkMicUserId videoSizeChanged:(CGSize)videoSize;
 
 @end
 

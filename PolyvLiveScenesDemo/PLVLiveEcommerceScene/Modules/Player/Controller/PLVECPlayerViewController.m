@@ -98,7 +98,7 @@ PLVPlayerPresenterDelegate
     // 设置播放器背景图位置、尺寸
     CGSize boundsSize = self.view.bounds.size;
     CGSize playerBgSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
-    self.playerBackgroundView.frame = CGRectMake(0, (boundsSize.height - playerBgSize.height) / 2.0, playerBgSize.width, playerBgSize.height);
+    self.playerBackgroundView.frame = CGRectMake(0, boundsSize.height * 0.166, playerBgSize.width, playerBgSize.height);
     
     // 设置音频模式背景图位置、尺寸
     self.audioAnimalView.frame = self.playerBackgroundView.frame;
@@ -138,7 +138,7 @@ PLVPlayerPresenterDelegate
         
         CGFloat width = containerSize.width;
         CGFloat height = containerSize.width / self.videoSize.width * self.videoSize.height;
-        return CGRectMake(0, (containerSize.height - height) / 2.0, width, height);
+        return CGRectMake(0, containerSize.height * 0.166, width, height);
         
     } else {  // 视频源高大于宽时
         CGFloat w_h = self.videoSize.width / self.videoSize.height;

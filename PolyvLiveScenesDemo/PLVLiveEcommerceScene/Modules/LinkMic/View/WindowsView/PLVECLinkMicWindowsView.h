@@ -38,6 +38,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param speakerMode 连麦的布局模式是否为主讲模式
 - (void)switchLinkMicWindowsLayoutSpeakerMode:(BOOL)speakerMode;
 
+/// 连麦用户video size 发生改变
+/// @param linkMicUserId 连麦用户id
+/// @param videoSize 视频尺寸
+- (void)videoSizeChangedWithUserId:(NSString *)linkMicUserId videoSize:(CGSize)videoSize;
+
 @end
 
 @protocol PLVECLinkMicWindowsViewDelegate <NSObject>

@@ -37,6 +37,7 @@ UICollectionViewDelegate
 @property (nonatomic, assign) BOOL externalNoDelayPaused;   // 外部的 ‘无延迟播放’ 是否已暂停
 @property (nonatomic, assign) BOOL showSeparatelyLinkMicLayout; // 是否显示单独连麦的布局 默认YES
 @property (nonatomic, assign) NSInteger showSeparatelyUserIndex; // 单独显示的用户下标（大于0 才需要单独显示）
+@property (nonatomic, strong) NSMutableDictionary *videoSizeDict; // 本地保存的连麦用户的视频尺寸
 
 #pragma mark UI
 /// view hierarchy
@@ -85,7 +86,12 @@ UICollectionViewDelegate
     CGFloat collectionViewY = top;
 
     if (self.linkMicUserCount <= 1) { //连麦人数1人以下,且不需要显示讲师讲师占位图
-        self.collectionView.frame = self.bounds;
+        if (self.linkMicUserCount == 1) {
+            PLVLinkMicOnlineUser *onlineUser = [self onlineUserWithIndex:0];
+            [self updateViewLayouForUserVideoSizeChanged:onlineUser.linkMicUserId];
+        } else {
+            self.collectionView.frame = self.bounds;
+        }
     } else {
         CGFloat collectionViewWidth = windowsViewWidth - collectionViewX - right;
         CGFloat collectionViewHeight = windowsViewHeight - collectionViewY - bottom;
@@ -189,6 +195,33 @@ UICollectionViewDelegate
         [self layoutIfNeeded];
     }
     [self.collectionView reloadData];
+}
+
+- (void)videoSizeChangedWithUserId:(NSString *)linkMicUserId videoSize:(CGSize)videoSize {
+    NSValue *videoSizeValue = [self.videoSizeDict valueForKey:linkMicUserId];
+    CGSize saveVideoSize = videoSizeValue ? videoSizeValue.CGSizeValue : CGSizeZero;
+    if (CGSizeEqualToSize(saveVideoSize, videoSize)) {
+        return;
+    }
+    
+    [self.videoSizeDict setObject:[NSValue valueWithCGSize:videoSize] forKey:linkMicUserId];
+    if (self.linkMicUserCount == 1) {
+        PLVLinkMicOnlineUser *onlineUser = [self onlineUserWithIndex:0];
+        if ([onlineUser.linkMicUserId isEqualToString:linkMicUserId]) {
+            [self updateViewLayouForUserVideoSizeChanged:linkMicUserId];
+        }
+    }
+}
+
+- (void)updateViewLayouForUserVideoSizeChanged:(NSString *)linkMicUserId {
+    NSValue *videoSizeValue = [self.videoSizeDict valueForKey:linkMicUserId];
+    CGSize videoSize = videoSizeValue ? videoSizeValue.CGSizeValue : CGSizeZero;
+    BOOL isLandscape = !CGSizeEqualToSize(videoSize, CGSizeZero) && videoSize.width > videoSize.height;
+    if (isLandscape) {
+        self.collectionView.frame = CGRectMake(0, self.bounds.size.height * 0.166, self.bounds.size.width, self.bounds.size.width/videoSize.width * videoSize.height);
+    } else {
+        self.collectionView.frame = self.bounds;
+    }
 }
 
 #pragma mark - [ Private Method ]
@@ -348,6 +381,13 @@ UICollectionViewDelegate
     } else {
         return nil;
     }
+}
+
+- (NSMutableDictionary *)videoSizeDict {
+    if (!_videoSizeDict) {
+        _videoSizeDict = [NSMutableDictionary dictionary];
+    }
+    return _videoSizeDict;
 }
 
 - (UICollectionViewFlowLayout *)collectionViewLayout {

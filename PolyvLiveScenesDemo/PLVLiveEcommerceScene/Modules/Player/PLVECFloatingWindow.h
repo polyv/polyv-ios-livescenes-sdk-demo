@@ -14,6 +14,10 @@
 /// @param back YES:返回直播页 NO:停留在当前页面
 - (void)floatingWindow_closeWindowAndBack:(BOOL)back;
 
+/// 悬浮窗口静音回调
+/// @param mute YES:静音 NO:取消静音
+- (void)floatingWindow_mute:(BOOL)mute;
+
 @end
 
 NS_ASSUME_NONNULL_BEGIN
@@ -49,6 +53,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 关闭悬浮窗并返回原来的页面
 - (void)closeAndBack;
 
+/// 静音悬浮窗
+- (void)mute;
+
+/// 取消静音悬浮窗
+- (void)cancleMute;
 @end
 
 NS_ASSUME_NONNULL_END

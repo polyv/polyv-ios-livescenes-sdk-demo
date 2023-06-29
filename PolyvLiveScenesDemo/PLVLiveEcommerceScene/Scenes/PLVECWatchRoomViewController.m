@@ -179,7 +179,7 @@ PLVECMessagePopupViewDelegate
         /// 布局视图 [单次]
         CGRect scrollViewFrame = CGRectMake(0, P_SafeAreaTopEdgeInsets(), CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - P_SafeAreaTopEdgeInsets());
         self.scrollView.frame = scrollViewFrame;
-        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
+        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame) - P_SafeAreaBottomEdgeInsets());
         
         self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         
@@ -206,7 +206,7 @@ PLVECMessagePopupViewDelegate
         /// 布局视图 [单次]
         CGRect scrollViewFrame = CGRectMake(0, P_SafeAreaTopEdgeInsets(), CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - P_SafeAreaTopEdgeInsets());
         self.scrollView.frame = scrollViewFrame;
-        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
+        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame) - P_SafeAreaBottomEdgeInsets());
         
         self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         
@@ -551,6 +551,17 @@ PLVECMessagePopupViewDelegate
     }
 }
 
+- (void)floatingWindow_mute:(BOOL)mute {
+    if(!self.linkMicAreaView.inLinkMic) {
+        if (mute)
+        {
+            [self.playerVC mute];
+        } else {
+            [self.playerVC cancelMute];
+        }
+    }
+}
+
 #pragma mark PLVECPlayerViewController Protocol
 
 - (void)playerController:(PLVECPlayerViewController *)playerController codeRateItems:(NSArray<NSString *> *)codeRateItems codeRate:(NSString *)codeRate lines:(NSUInteger)lines line:(NSInteger)line noDelayWatchMode:(BOOL)noDelayWatchMode {
@@ -694,6 +705,10 @@ PLVECMessagePopupViewDelegate
 
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic {
     [self.homePageView updateLinkMicState:inLinkMic];
+    // 如果当前正在开启系统画中画且连麦则关闭小窗
+    if (inLinkMic && [PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+    }
 }
 
 - (BOOL)plvECLinkMicAreaViewGetChannelInLive:(PLVECLinkMicAreaView *)linkMicAreaView {

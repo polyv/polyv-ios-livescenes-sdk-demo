@@ -212,12 +212,26 @@
     [self closeAndBack:YES];
 }
 
+- (void)mute {
+    [self muteWindow:YES];
+}
+
+- (void)cancleMute {
+    [self muteWindow:NO];
+}
+
 #pragma mark - Pravite
 
 - (void)cleanRestoreSource {
     self.holdingViewController = nil;
     self.holdingNavigation = nil;
     self.restoreWithPresent = NO;
+}
+
+- (void)muteWindow:(BOOL)mute {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(floatingWindow_mute:)]) {
+        [self.delegate floatingWindow_mute:mute];
+    }
 }
 
 #pragma mark - 手势

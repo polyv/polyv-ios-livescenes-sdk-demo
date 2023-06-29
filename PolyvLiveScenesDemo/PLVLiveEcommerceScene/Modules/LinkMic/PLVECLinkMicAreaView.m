@@ -488,4 +488,8 @@ PLVECLinkMicWindowsViewDelegate
     [PLVECUtils showHUDWithTitle:@"主播已结束您的连麦" detail:@"" view:currentVC.view];
 }
 
+- (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter linkMicUserId:(nonnull NSString *)linkMicUserId videoSizeChanged:(CGSize)videoSize{
+    [self.windowsView videoSizeChangedWithUserId:linkMicUserId videoSize:videoSize];
+}
+
 @end

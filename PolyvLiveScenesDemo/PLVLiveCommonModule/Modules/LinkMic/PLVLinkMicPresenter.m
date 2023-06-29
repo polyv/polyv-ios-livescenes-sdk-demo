@@ -1726,6 +1726,14 @@ PLVLinkMicManagerDelegate
     [self muteUser:uid mediaType:@"audio" mute:muted];
 }
 
+- (void)plvLinkMicManager:(PLVLinkMicManager *)manager videoSizeChangedOfUid:(NSString *)uid width:(int)width height:(int)height {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLinkMicPresenter:linkMicUserId:videoSizeChanged:)]) {
+        plv_dispatch_main_async_safe(^{
+            [self.delegate plvLinkMicPresenter:self linkMicUserId:uid videoSizeChanged:CGSizeMake(width, height)];
+        });
+    }
+}
+
 - (void)plvLinkMicManager:(PLVLinkMicManager *)manager didVideoMuted:(BOOL)muted byUid:(NSString *)uid{
     [self muteUser:uid mediaType:@"video" mute:muted];
 }

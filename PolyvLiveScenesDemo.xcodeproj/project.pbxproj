@@ -538,6 +538,7 @@
 		04D97C9E26F469750075CAD8 /* PLVHCLoginCustomButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 04D97C9D26F469750075CAD8 /* PLVHCLoginCustomButton.m */; };
 		04D97C9F26F469750075CAD8 /* PLVHCLoginCustomButton.m in Sources */ = {isa = PBXBuildFile; fileRef = 04D97C9D26F469750075CAD8 /* PLVHCLoginCustomButton.m */; };
 		04EEC0B3281000EC00F111B5 /* PLVLivePictureInPicturePlaceholderView.m in Sources */ = {isa = PBXBuildFile; fileRef = FA561B7327BA48410080AADE /* PLVLivePictureInPicturePlaceholderView.m */; };
+		0BA5C413AD59F7531E949B8A /* Pods_PLVScreenShareExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7130A2C9D19D96BD45E67C77 /* Pods_PLVScreenShareExtension.framework */; };
 		211CF15E29E93C2E0036795C /* plvlw_btn_back@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 211CF15B29E93C2D0036795C /* plvlw_btn_back@2x.png */; };
 		211CF16029E93C2E0036795C /* plvlw_btn_back@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 211CF15C29E93C2E0036795C /* plvlw_btn_back@3x.png */; };
 		213973D829FA698D0052F584 /* plvlw_btn_back@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = 211CF15C29E93C2E0036795C /* plvlw_btn_back@3x.png */; };
@@ -976,6 +977,7 @@
 		55F17FD72806B35E003635EB /* PLVSABeautySheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 55F17FD52806B35E003635EB /* PLVSABeautySheet.m */; };
 		55F17FDA2806CB7B003635EB /* PLVSABeautySliderView.m in Sources */ = {isa = PBXBuildFile; fileRef = 55F17FD92806CB7B003635EB /* PLVSABeautySliderView.m */; };
 		55F17FDB2806CB7B003635EB /* PLVSABeautySliderView.m in Sources */ = {isa = PBXBuildFile; fileRef = 55F17FD92806CB7B003635EB /* PLVSABeautySliderView.m */; };
+		60CB3BA22A908BB22B66DC8A /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C6B5BF1FFC987312A2DEA1A1 /* Pods_PolyvLiveScenesDemo.framework */; };
 		6306571124DCF01B00EAA430 /* PLVLCUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 6306571024DCF01B00EAA430 /* PLVLCUtils.m */; };
 		6306571624DCF17500EAA430 /* PLVLinkMic.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 6306571524DCF17500EAA430 /* PLVLinkMic.bundle */; };
 		630A462824ED13E90041EE0E /* PLVLinkMicOnlineUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 630A462724ED13E90041EE0E /* PLVLinkMicOnlineUser.m */; };
@@ -1001,7 +1003,6 @@
 		633E4222257A094A0039D35D /* PLVLCLinkMicSpeakingView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E421C257A09490039D35D /* PLVLCLinkMicSpeakingView.m */; };
 		633E4229257A09F80039D35D /* PLVLCLiveRoomLandscapeInputView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E4224257A09F80039D35D /* PLVLCLiveRoomLandscapeInputView.m */; };
 		633E422A257A09F80039D35D /* PLVLCLiveRoomPlayerSkinView.m in Sources */ = {isa = PBXBuildFile; fileRef = 633E4227257A09F80039D35D /* PLVLCLiveRoomPlayerSkinView.m */; };
-		633E425D257DCD710039D35D /* PLVLiveScenesSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 633E425C257DCD710039D35D /* PLVLiveScenesSDK.framework */; };
 		63420556264ABBE4005A7B56 /* PLVLinkMicWaitUser.m in Sources */ = {isa = PBXBuildFile; fileRef = 63420553264AB768005A7B56 /* PLVLinkMicWaitUser.m */; };
 		634597B125764FD0006DEEF8 /* PLVECWatchRoomViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 634597B025764FD0006DEEF8 /* PLVECWatchRoomViewController.m */; };
 		63958924262ADB1500D34B21 /* PLVLSLinkMic.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 6395DE49262148D0000D0A44 /* PLVLSLinkMic.bundle */; };
@@ -1056,7 +1057,6 @@
 		67C43BC22803DD200050EDFA /* PLVLCBuyViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 67C43BC02803DD200050EDFA /* PLVLCBuyViewController.m */; };
 		67D700C52476807200429B55 /* WatchResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 67D700C42476807200429B55 /* WatchResource.bundle */; };
 		67D700C92476817500429B55 /* PLVECUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 67D700C82476817500429B55 /* PLVECUtils.m */; };
-		8770B812263E5193ABBBD180 /* Pods_PLVScreenShareExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AE5E797B8952EF22DC81F320 /* Pods_PLVScreenShareExtension.framework */; };
 		8F119EF4280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F119EF3280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m */; };
 		8F119EF5280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F119EF3280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m */; };
 		8F119EFC280EC0F0008215FF /* PLVSABeautyBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F119EFB280EC0F0008215FF /* PLVSABeautyBaseViewController.m */; };
@@ -1316,7 +1316,6 @@
 		FA688A15284DF9530099AEF7 /* PLVDownloadPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = FA688A13284DF9530099AEF7 /* PLVDownloadPresenter.m */; };
 		FA72053D2831F61A00EBE00E /* PLVLivePictureInPictureRestoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = FA72053B2831F5FE00EBE00E /* PLVLivePictureInPictureRestoreManager.m */; };
 		FA72053E2831F64300EBE00E /* PLVLivePictureInPictureRestoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = FA72053B2831F5FE00EBE00E /* PLVLivePictureInPictureRestoreManager.m */; };
-		FCDAD17B6EB5C1A961B7B280 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 865C01C3938549D110862056 /* Pods_PolyvLiveScenesDemo.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -2210,9 +2209,9 @@
 		69D86DE1574DFFCF04CB4FC0 /* Pods-PolyvLiveEcommerceDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemo.release.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemo/Pods-PolyvLiveEcommerceDemo.release.xcconfig"; sourceTree = "<group>"; };
 		6ED5072918A006C94EB83D86 /* Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		700664EC58706B370D316A0D /* Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
+		7130A2C9D19D96BD45E67C77 /* Pods_PLVScreenShareExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PLVScreenShareExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		7C49AAB10C751E2B055EF928 /* Pods-business-PLVScreenShareExtension.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-PLVScreenShareExtension.debug.xcconfig"; path = "Target Support Files/Pods-business-PLVScreenShareExtension/Pods-business-PLVScreenShareExtension.debug.xcconfig"; sourceTree = "<group>"; };
 		81BB2D37856852474920C292 /* Pods-business-cloudClass-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-cloudClass-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-cloudClass-PolyvLiveScenesDemo/Pods-business-cloudClass-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
-		865C01C3938549D110862056 /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		8F119EF2280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSABeautyFilterCollectionViewCell.h; sourceTree = "<group>"; };
 		8F119EF3280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVSABeautyFilterCollectionViewCell.m; sourceTree = "<group>"; };
 		8F119EFA280EC0F0008215FF /* PLVSABeautyBaseViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSABeautyBaseViewController.h; sourceTree = "<group>"; };
@@ -2443,7 +2442,6 @@
 		A306B0E8EE71BAB0FC2F9D3F /* Pods-PolyvLiveEcommerceDemoUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemoUITests.release.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemoUITests/Pods-PolyvLiveEcommerceDemoUITests.release.xcconfig"; sourceTree = "<group>"; };
 		A80F0CB539F9A66B888935AA /* Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		A91828FB8B935C297A2CF557 /* Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveScenesDemo/Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
-		AE5E797B8952EF22DC81F320 /* Pods_PLVScreenShareExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PLVScreenShareExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		BB195403DD396B7AF22FDE5F /* Pods-business-cloudClass-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-cloudClass-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-business-cloudClass-PolyvLiveScenesDemo/Pods-business-cloudClass-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
 		BC31BA32D353707672EAA4F7 /* Pods-business-liveScenes-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveScenesDemo/Pods-business-liveScenes-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
 		BDEE85DC15A60B23D1611569 /* Pods-PolyvLiveEcommerceDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemo.debug.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemo/Pods-PolyvLiveEcommerceDemo.debug.xcconfig"; sourceTree = "<group>"; };
@@ -2458,6 +2456,7 @@
 		BF7CFC5B25BA636B0084C160 /* PLVCommodityPushView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVCommodityPushView.m; sourceTree = "<group>"; };
 		BF7CFC5D25BA636B0084C160 /* PLVCommodityPushView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVCommodityPushView.h; sourceTree = "<group>"; };
 		BF7CFC6025BA636B0084C160 /* PLVECCommodityViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVECCommodityViewController.m; sourceTree = "<group>"; };
+		C6B5BF1FFC987312A2DEA1A1 /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C8C0B1BDBA08B5A1387EB520 /* Pods-PolyvLiveScenesDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveScenesDemo.release.xcconfig"; path = "Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo.release.xcconfig"; sourceTree = "<group>"; };
 		D12BFA48BFD11F80E5A2FAA5 /* Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo/Pods-business-liveScenes-liveScenesDemo-PolyvStreamerAloneDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		D9C6F1C98177E8003A3399A9 /* Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveStreamerDemo/Pods-business-liveScenes-PolyvLiveStreamerDemo.release.xcconfig"; sourceTree = "<group>"; };
@@ -2527,7 +2526,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3660408B27B3AF6000557F90 /* ReplayKit.framework in Frameworks */,
-				8770B812263E5193ABBBD180 /* Pods_PLVScreenShareExtension.framework in Frameworks */,
+				0BA5C413AD59F7531E949B8A /* Pods_PLVScreenShareExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2535,8 +2534,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				633E425D257DCD710039D35D /* PLVLiveScenesSDK.framework in Frameworks */,
-				FCDAD17B6EB5C1A961B7B280 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
+				60CB3BA22A908BB22B66DC8A /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -5281,8 +5279,8 @@
 				430C9CF57975329ADA06E5C9 /* Pods_PolyvLiveEcommerceDemoUITests.framework */,
 				6ED5072918A006C94EB83D86 /* Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework */,
 				3660408A27B3AF6000557F90 /* ReplayKit.framework */,
-				AE5E797B8952EF22DC81F320 /* Pods_PLVScreenShareExtension.framework */,
-				865C01C3938549D110862056 /* Pods_PolyvLiveScenesDemo.framework */,
+				7130A2C9D19D96BD45E67C77 /* Pods_PLVScreenShareExtension.framework */,
+				C6B5BF1FFC987312A2DEA1A1 /* Pods_PolyvLiveScenesDemo.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
