@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVLinkMicOnlineUser.h"
+#import "PLVECSeparateLinkMicView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -20,6 +21,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 连麦第一画面Canvas视图
 @property (nonatomic, weak, readonly) UIView *firstSiteCanvasView;
+
+/// 悬浮的连麦小窗
+@property (nonatomic, strong, readonly) PLVECSeparateLinkMicView *separateLinkMicView;
 
 /// 刷新连麦窗口
 - (void)reloadLinkMicUserWindows;
@@ -58,6 +62,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param targetIndex 目标下标值
 - (PLVLinkMicOnlineUser *)onlineUserInLinkMicWindowsView:(PLVECLinkMicWindowsView *)windowsView
                                          withTargetIndex:(NSInteger)targetIndex;
+/// 第一画面连麦窗口变更
+- (void)currentFirstSiteCanvasViewChangedInLinkMicWindowsView:(PLVECLinkMicWindowsView *)windowsView;
 
 @end
 

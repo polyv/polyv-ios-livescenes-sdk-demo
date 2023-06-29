@@ -173,6 +173,7 @@ PLVECMessagePopupViewDelegate
         [self.view addSubview:self.scrollView];
         [self.scrollView addSubview:self.homePageView];
         [self.scrollView addSubview:self.liveDetailPageView];
+        [self.view addSubview:self.linkMicAreaView.separateLinkMicView];
         [self.view addSubview:self.closeButton];
         
         /// 布局视图 [单次]
@@ -189,6 +190,7 @@ PLVECMessagePopupViewDelegate
         [self.view addSubview:self.popoverView];
         self.popoverView.frame = self.view.bounds;
         
+        [self.view insertSubview:self.linkMicAreaView.separateLinkMicView belowSubview:self.popoverView]; /// 保证低于 互动视图
         [self.view insertSubview:((UIView *)self.linkMicAreaView.linkMicPreView) belowSubview:self.popoverView]; /// 保证低于 互动视图
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView]; /// 保证低于 互动视图
         
@@ -259,15 +261,14 @@ PLVECMessagePopupViewDelegate
 
 - (void)openCommodityDetailViewControllerWithURL:(NSURL *)commodityURL {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
-        if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-            // 打开应用内悬浮窗
-            if (self.linkMicAreaView.inLinkMic) {
-                [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
-            } else {
-                [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view];
-            }
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        // 打开应用内悬浮窗
+        if (self.linkMicAreaView.inLinkMic) {
+            [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
+        } else {
+            [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view size:self.playerVC.displayView.frame.size];
         }
+        [PLVECFloatingWindow sharedInstance].holdingViewController = self;
     }
     
     // 跳转商品详情页
@@ -278,6 +279,7 @@ PLVECMessagePopupViewDelegate
         [self.navigationController pushViewController:self.commodityDetailVC animated:YES];
     } else {
         [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
+        [PLVECFloatingWindow sharedInstance].restoreWithPresent = NO;
         PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.commodityDetailVC];
         nav.navigationBarHidden = NO;
         nav.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -544,13 +546,7 @@ PLVECMessagePopupViewDelegate
 #pragma mark PLVECFloatingWindowProtocol
 
 - (void)floatingWindow_closeWindowAndBack:(BOOL)back {
-    if (back) {
-        if (self.navigationController) {
-            [self.navigationController popViewControllerAnimated:YES];
-        } else {
-            [self.commodityDetailVC dismissViewControllerAnimated:YES completion:nil];
-        }
-    } else {
+    if (!back) {
         [self.playerVC mute];
     }
 }
@@ -690,6 +686,10 @@ PLVECMessagePopupViewDelegate
         [self.playerVC reload];
     }
     self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
+    
+    if (![PLVECFloatingWindow sharedInstance].hidden && !inRTCRoom) {
+        [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view size:self.playerVC.displayView.frame.size];
+    }
 }
 
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic {
@@ -698,6 +698,12 @@ PLVECMessagePopupViewDelegate
 
 - (BOOL)plvECLinkMicAreaViewGetChannelInLive:(PLVECLinkMicAreaView *)linkMicAreaView {
     return self.playerVC.channelInLive && !self.playerVC.advertPlaying;
+}
+
+- (void)plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:(PLVECLinkMicAreaView *)linkMicAreaView {
+    if (self.linkMicAreaView.inLinkMic && ![PLVECFloatingWindow sharedInstance].hidden) {
+        [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
+    }
 }
 
 #pragma mark PLVECHomePageView Delegate

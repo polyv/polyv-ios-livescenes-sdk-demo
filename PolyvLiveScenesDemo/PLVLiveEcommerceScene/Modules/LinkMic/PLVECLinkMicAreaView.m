@@ -171,6 +171,10 @@ PLVECLinkMicWindowsViewDelegate
     return _linkMicPreView;
 }
 
+- (UIView *)separateLinkMicView {
+    return self.windowsView.separateLinkMicView;
+}
+
 #pragma mark - [Delegate]
 
 #pragma mark PLVLCLinkMicControlBarDelegate
@@ -269,6 +273,12 @@ PLVECLinkMicWindowsViewDelegate
                                          withTargetIndex:(NSInteger)targetIndex {
     PLVLinkMicOnlineUser *onlineUser = [self.presenter getUserModelFromOnlineUserArrayWithIndex:targetIndex];
     return onlineUser;
+}
+
+- (void)currentFirstSiteCanvasViewChangedInLinkMicWindowsView:(PLVECLinkMicWindowsView *)windowsView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:)]) {
+        [self.delegate plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:self];
+    }
 }
 
 #pragma mark PLVLinkMicPresenterDelegate

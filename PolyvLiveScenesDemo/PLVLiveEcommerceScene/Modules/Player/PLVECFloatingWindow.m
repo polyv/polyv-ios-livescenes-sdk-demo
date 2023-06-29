@@ -8,8 +8,12 @@
 
 #import "PLVECFloatingWindow.h"
 #import "PLVECUtils.h"
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVECFloatingWindow ()
+
+#pragma mark - 数据
+@property (nonatomic, strong) UINavigationController *holdingNavigation;
 
 #pragma mark - UI
 /// 悬浮窗尺寸
@@ -35,6 +39,7 @@
 
 - (void)layoutSubviews {
     self.containerView.frame = self.bounds;
+    self.closeButton.frame = CGRectMake(self.windowSize.width - 24, 0, 24, 24);
 }
 
 #pragma mark - 初始化
@@ -69,8 +74,12 @@
 }
 
 - (void)resetPosition {
-    self.windowSize = CGSizeMake(90, 160);
-    
+    [self resetPositionWithSize:CGSizeMake(90, 160)];
+}
+
+- (void)resetPositionWithSize:(CGSize)size {
+    CGSize newSize = !CGSizeEqualToSize(size, CGSizeZero) ? size : CGSizeMake(90, 160);
+    self.windowSize = newSize;
     CGSize screenSize = [UIScreen mainScreen].bounds.size;
     self.originPoint = CGPointMake(screenSize.width - self.windowSize.width - 16, screenSize.height - self.windowSize.height - 16);
     
@@ -78,7 +87,7 @@
     self.backButton.frame = self.bounds;
 }
 
-#pragma mark - Getter
+#pragma mark - Getter & Setter
 
 - (UIView *)containerView {
     if (!_containerView) {
@@ -91,7 +100,6 @@
 - (UIButton *)closeButton {
     if (!_closeButton) {
         _closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        _closeButton.frame = CGRectMake(self.windowSize.width - 24, 0, 24, 24);
         UIImage *image = [PLVECUtils imageForWatchResource:@"plv_floating_winow_close_btn"];
         [_closeButton setImage:image forState:UIControlStateNormal];
         [_closeButton addTarget:self action:@selector(closeAction) forControlEvents:UIControlEventTouchUpInside];
@@ -107,6 +115,11 @@
     return _backButton;
 }
 
+- (void)setHoldingViewController:(UIViewController *)holdingViewController {
+    _holdingViewController = holdingViewController;
+    self.holdingNavigation = holdingViewController.navigationController;
+}
+
 #pragma mark - Action
 
 - (void)closeAction {
@@ -118,7 +131,40 @@
 }
 
 - (void)closeAndBack:(BOOL)back {
-    [self close];
+    self.hidden = YES;
+    [self resetPosition];
+    
+    if (back) {
+        if (self.holdingNavigation) {
+            NSArray *vcArray = self.holdingNavigation.viewControllers;
+            NSInteger index = -1;
+            for (NSInteger i = 0; i < vcArray.count; i++) {
+                UIViewController *child = vcArray[i];
+                if ([child isEqual:self.holdingViewController]) {
+                    index = i;
+                }
+            }
+            if (index == -1) {
+                // 不在导航栈内
+                [self.holdingNavigation pushViewController:self.holdingViewController animated:YES];
+            } else if (index == vcArray.count - 1) {
+                // 在栈顶，则直接恢复
+            } else {
+                [self.holdingNavigation popToViewController:self.holdingViewController animated:YES];
+            }
+        } else {
+            UIViewController *currentViewController = [PLVFdUtil getCurrentViewController];
+            if (currentViewController != self.holdingViewController) {
+                if (self.restoreWithPresent) {
+                    [currentViewController presentViewController:self.holdingViewController animated:YES completion:nil];
+                }else {
+                    [currentViewController dismissViewControllerAnimated:YES completion:nil];
+                }
+            }
+        }
+    }
+    
+    [self cleanRestoreSource];
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(floatingWindow_closeWindowAndBack:)]) {
         [self.delegate floatingWindow_closeWindowAndBack:back];
@@ -128,6 +174,10 @@
 #pragma mark - Public
 
 - (void)showContentView:(UIView *)contentView {
+    [self showContentView:contentView size:CGSizeZero];
+}
+
+- (void)showContentView:(UIView *)contentView size:(CGSize)size {
     self.hidden = NO;
     
     for (UIView * subview in self.containerView.subviews) {
@@ -136,6 +186,14 @@
     
     if (!contentView) {
         return;
+    }
+    
+    if (size.width == 0 || size.height == 0) {
+        [self resetPosition];
+    } else {
+        CGFloat scale = size.width / size.height;
+        CGSize newSize = scale > 1 ? CGSizeMake(90 * scale, 90) : CGSizeMake(160 * scale, 160);
+        [self resetPositionWithSize:newSize];
     }
     
     [self.containerView addSubview:contentView];
@@ -147,6 +205,19 @@
 - (void)close {
     self.hidden = YES;
     [self resetPosition];
+    [self cleanRestoreSource];
+}
+
+- (void)closeAndBack {
+    [self closeAndBack:YES];
+}
+
+#pragma mark - Pravite
+
+- (void)cleanRestoreSource {
+    self.holdingViewController = nil;
+    self.holdingNavigation = nil;
+    self.restoreWithPresent = NO;
 }
 
 #pragma mark - 手势

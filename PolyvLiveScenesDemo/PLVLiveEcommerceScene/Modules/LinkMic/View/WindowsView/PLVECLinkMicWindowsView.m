@@ -35,6 +35,8 @@ UICollectionViewDelegate
 @property (nonatomic, copy) NSString *currentSpeakerLinkMicUserId; //当前显示主讲用户的连麦id[布局模式切换时缓存此id]
 @property (nonatomic, assign) NSInteger currentSpeakerUserIndex; // 当前主讲用户在数据中的下标
 @property (nonatomic, assign) BOOL externalNoDelayPaused;   // 外部的 ‘无延迟播放’ 是否已暂停
+@property (nonatomic, assign) BOOL showSeparatelyLinkMicLayout; // 是否显示单独连麦的布局 默认YES
+@property (nonatomic, assign) NSInteger showSeparatelyUserIndex; // 单独显示的用户下标（大于0 才需要单独显示）
 
 #pragma mark UI
 /// view hierarchy
@@ -47,6 +49,7 @@ UICollectionViewDelegate
 @property (nonatomic, strong) PLVECLinkMicWindowsSpeakerView *speakerView; // 主讲模式下的第一画面
 @property (nonatomic, weak) UIView *firstSiteCanvasView; // 连麦第一画面Canvas视图
 @property (nonatomic, strong) UILabel *linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
+@property (nonatomic, strong) PLVECSeparateLinkMicView *separateLinkMicView; // 1v1时悬浮的连麦小窗视图
 
 @end
 
@@ -57,6 +60,7 @@ UICollectionViewDelegate
 - (instancetype)init {
     self = [super init];
     if (self) {
+        self.showSeparatelyLinkMicLayout = YES;
         [self addSubview:self.collectionView];
         [self addSubview:self.speakerView];
     }
@@ -120,8 +124,36 @@ UICollectionViewDelegate
     }
     
     [self setupFirstSiteCanvasViewWithUserId:self.currentSpeakerLinkMicUserId];
+    [self filterShowSeparatelyUserIndex];
 
     [self.collectionView reloadData];
+}
+
+- (void)filterShowSeparatelyUserIndex {
+    NSInteger separatelyUserIndex = -1;
+    NSInteger localUserIndex = [self findLocalUserIndex];
+    if (self.showSeparatelyLinkMicLayout &&
+        self.linkMicLayoutMode != PLVECLinkMicLayoutModeSpeaker &&
+        self.dataArray.count == 2 && localUserIndex > -1) {
+        PLVLinkMicOnlineUser *localUser = [self readUserModelFromDataArray:localUserIndex];
+        if ([localUser.linkMicUserId isEqualToString:self.currentSpeakerLinkMicUserId]) {
+            separatelyUserIndex = (localUserIndex == 0) ? 1 : 0;
+        } else {
+            separatelyUserIndex = localUserIndex;
+        }
+    }
+    
+    if (separatelyUserIndex > -1) {
+        PLVLinkMicOnlineUser *separatelyUser = [self onlineUserWithIndex:separatelyUserIndex];
+        [self setupLinkMicCanvasViewWithOnlineUser:separatelyUser];
+        [self setupWillDeallocBlockWithOnlineUser:separatelyUser];
+        [self.separateLinkMicView setUserModel:separatelyUser];
+        self.linkMicUserCount = 1;
+        self.separateLinkMicView.hidden = NO;
+    } else {
+        self.separateLinkMicView.hidden = YES;
+    }
+    self.showSeparatelyUserIndex = separatelyUserIndex;    
 }
 
 - (void)refreshAllLinkMicCanvasPauseImageView:(BOOL)noDelayPaused {
@@ -140,6 +172,7 @@ UICollectionViewDelegate
     if (self.linkMicLayoutMode == PLVECLinkMicLayoutModeSpeaker) {
         [self updateSpeakerView];
     }
+    [self filterShowSeparatelyUserIndex];
     [self.collectionView reloadData];
 }
 
@@ -186,6 +219,17 @@ UICollectionViewDelegate
         onlineUser = [self.delegate onlineUserInLinkMicWindowsView:self withTargetIndex:targetIndex];
     }
     return onlineUser;
+}
+
+- (NSInteger)findLocalUserIndex{
+    NSInteger targetUserIndex = -1;
+    if ([self.delegate respondsToSelector:@selector(onlineUserIndexInLinkMicWindowsView:filterBlock:)]) {
+        targetUserIndex = [self.delegate onlineUserIndexInLinkMicWindowsView:self filterBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
+            if (enumerateUser.localUser) { return YES; }
+            return NO;
+        }];
+    }
+    return targetUserIndex;
 }
 
 - (NSInteger)findCellIndexWithUserId:(NSString *)userId{
@@ -287,6 +331,13 @@ UICollectionViewDelegate
     firstSiteUserModel = [self readUserModelFromDataArray:linkMicUserIndex];
     self.currentSpeakerLinkMicUserId = firstSiteUserModel.linkMicUserId;
     self.currentSpeakerUserIndex = linkMicUserIndex;
+    [self setupLinkMicCanvasViewWithOnlineUser:firstSiteUserModel];
+    [self setupWillDeallocBlockWithOnlineUser:firstSiteUserModel];
+    self.firstSiteCanvasView = firstSiteUserModel.canvasView;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(currentFirstSiteCanvasViewChangedInLinkMicWindowsView:)]) {
+        [self.delegate currentFirstSiteCanvasViewChangedInLinkMicWindowsView:self];
+    }
 }
 
 #pragma mark Getter & Setter
@@ -332,6 +383,14 @@ UICollectionViewDelegate
         _speakerView = [[PLVECLinkMicWindowsSpeakerView alloc] init];
     }
     return _speakerView;
+}
+
+- (PLVECSeparateLinkMicView *)separateLinkMicView {
+    if (!_separateLinkMicView) {
+        _separateLinkMicView = [[PLVECSeparateLinkMicView alloc] init];
+        _separateLinkMicView.hidden = YES;
+    }
+    return _separateLinkMicView;
 }
 
 #pragma mark - [ Delegate ]

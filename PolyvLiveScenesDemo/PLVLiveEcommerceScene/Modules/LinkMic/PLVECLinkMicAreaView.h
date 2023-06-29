@@ -51,6 +51,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param linkMicAreaView 连麦区域视图
 - (BOOL)plvECLinkMicAreaViewGetChannelInLive:(PLVECLinkMicAreaView *)linkMicAreaView;
 
+/// ‘第一画面连麦窗口’ 发生改变
+///
+/// @param linkMicAreaView 连麦区域视图
+- (void)plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:(PLVECLinkMicAreaView *)linkMicAreaView;
+
 @end
 
 /// 连麦区域视图
@@ -90,6 +95,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) PLVECLinkMicPreviewView *linkMicPreView; // 连麦预览图
 
 @property (nonatomic, weak, readonly) UIView *firstSiteCanvasView; // 连麦第一画面Canvas视图
+
+/// 悬浮的连麦小窗
+@property (nonatomic, weak, readonly) UIView *separateLinkMicView;
 
 #pragma mark - Method
 

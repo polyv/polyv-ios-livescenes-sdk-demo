@@ -308,7 +308,10 @@ PLVDefaultPageViewDelegate
     }
     
     if (self.currentVideoType == PLVChannelVideoType_Live) {
-        [self.livePlayer reloadLivePlayer];
+        // 修复频道未在开播状态时，主动调用resumePlay方法，导致的播放器异常问题
+        if (self.currentStreamState == PLVChannelLiveStreamState_Live || self.currentStreamState == PLVChannelLiveStreamState_Stop) {
+            [self.livePlayer reloadLivePlayer];
+        }
     } else if (self.currentVideoType == PLVChannelVideoType_Playback){
         [self.livePlaybackPlayer play];
     }
@@ -321,7 +324,10 @@ PLVDefaultPageViewDelegate
 
 - (BOOL)pausePlay{
     if (self.currentVideoType == PLVChannelVideoType_Live) {
-        [self.livePlayer pause];
+        // 修复频道未在开播状态时，主动调用pausePlay方法，导致的播放器异常问题
+        if (self.currentStreamState == PLVChannelLiveStreamState_Live || self.currentStreamState == PLVChannelLiveStreamState_Stop) {
+            [self.livePlayer pause];
+        }
     } else if (self.currentVideoType == PLVChannelVideoType_Playback){
         [self.livePlaybackPlayer pause];
     }
@@ -1022,6 +1028,10 @@ PLVDefaultPageViewDelegate
 
 -(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
     [PLVRoomDataManager sharedManager].roomData.playing = playing;
+}
+
+-(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing systemInterrupts:(BOOL)systemInterrupts{
+    
 }
 
 #pragma mark PLVLivePlaybackPlayerDelegate
