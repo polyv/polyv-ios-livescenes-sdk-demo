@@ -21,6 +21,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)didTapMoreButtonInCell:(PLVSAMemberCell *)cell chatUser:(PLVChatUser *)chatUser;
 
+- (void)didInviteUserJoinLinkMicInCell:(PLVChatUser *)user;
+
+/// 是否开始上课
+- (BOOL)startClassInCell:(PLVSAMemberCell *)cell;
+
+/// 是否开启音视频连麦（YES开启，NO关闭）
+- (BOOL)enableAudioVideoLinkMicInCell:(PLVSAMemberCell *)cell;
+
 @end
 
 @interface PLVSAMemberCell : UITableViewCell

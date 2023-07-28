@@ -37,6 +37,11 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
                 didOpenRedpack:(NSString *)redpackId
                         status:(NSString *)status;
 
+/// 收到更新抽奖挂件的回调
+/// @param interactView 互动视图
+/// @param dict 抽奖挂件的数据
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict;
+
 @end
 
 /// 互动视图

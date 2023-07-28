@@ -211,7 +211,7 @@ PLVECMessagePopupViewDelegate
         /// 布局视图 [单次]
         CGRect scrollViewFrame = CGRectMake(0, P_SafeAreaTopEdgeInsets(), CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - P_SafeAreaTopEdgeInsets());
         self.scrollView.frame = scrollViewFrame;
-        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
+        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame) - P_SafeAreaBottomEdgeInsets());
         
         self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         
@@ -237,7 +237,7 @@ PLVECMessagePopupViewDelegate
         /// 布局视图 [单次]
         CGRect scrollViewFrame = CGRectMake(0, P_SafeAreaTopEdgeInsets(), CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - P_SafeAreaTopEdgeInsets());
         self.scrollView.frame = scrollViewFrame;
-        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
+        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame) - P_SafeAreaBottomEdgeInsets());
         
         self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
         
@@ -292,15 +292,14 @@ PLVECMessagePopupViewDelegate
 
 - (void)openCommodityDetailViewControllerWithURL:(NSURL *)commodityURL {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为直播
-        if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-            // 打开应用内悬浮窗
-            if (self.linkMicAreaView.inLinkMic) {
-                [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
-            } else {
-                [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view];
-            }
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        // 打开应用内悬浮窗
+        if (self.linkMicAreaView.inLinkMic) {
+            [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
+        } else {
+            [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view size:self.playerVC.displayView.frame.size];
         }
+        [PLVECFloatingWindow sharedInstance].holdingViewController = self;
     }
     
     // 跳转商品详情页
@@ -311,6 +310,7 @@ PLVECMessagePopupViewDelegate
         [self.navigationController pushViewController:self.commodityDetailVC animated:YES];
     } else {
         [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
+        [PLVECFloatingWindow sharedInstance].restoreWithPresent = NO;
         PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.commodityDetailVC];
         nav.navigationBarHidden = NO;
         nav.modalPresentationStyle = UIModalPresentationFullScreen;
@@ -584,13 +584,7 @@ PLVECMessagePopupViewDelegate
 #pragma mark PLVECFloatingWindowProtocol
 
 - (void)floatingWindow_closeWindowAndBack:(BOOL)back {
-    if (back) {
-        if (self.navigationController) {
-            [self.navigationController popViewControllerAnimated:YES];
-        } else {
-            [self.commodityDetailVC dismissViewControllerAnimated:YES completion:nil];
-        }
-    } else {
+    if (!back) {
         [self.playerVC mute];
     }
 }
@@ -736,6 +730,10 @@ PLVECMessagePopupViewDelegate
     }
     self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
     self.linkMicAreaView.alpha = inRTCRoom ? 1 : 0;
+    
+    if (![PLVECFloatingWindow sharedInstance].hidden && !inRTCRoom) {
+        [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view size:self.playerVC.displayView.frame.size];
+    }
 }
 
 - (void)plvECLinkMicAreaView:(PLVECLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic {
@@ -749,6 +747,12 @@ PLVECMessagePopupViewDelegate
 
 - (BOOL)plvECLinkMicAreaViewGetChannelInLive:(PLVECLinkMicAreaView *)linkMicAreaView {
     return self.playerVC.channelInLive && !self.playerVC.advertPlaying;
+}
+
+- (void)plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:(PLVECLinkMicAreaView *)linkMicAreaView {
+    if (self.linkMicAreaView.inLinkMic && ![PLVECFloatingWindow sharedInstance].hidden) {
+        [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
+    }
 }
 
 #pragma mark PLVECHomePageView Delegate
@@ -886,6 +890,10 @@ PLVECMessagePopupViewDelegate
     [self.popoverView.interactView openRedpackWithChatModel:model];
 }
 
+- (void)homePageView:(PLVECHomePageView *)homePageView emitInteractEvent:(NSString *)event {
+    [self.popoverView.interactView openInteractAppWithEventName:event];
+}
+
 #pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -933,6 +941,11 @@ PLVECMessagePopupViewDelegate
                 didOpenRedpack:(NSString *)redpackId
                         status:(NSString *)status {
     [[PLVECChatroomViewModel sharedViewModel] changeRedpackStateWithRedpackId:redpackId state:status];
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict {
+    NSArray *dataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.homePageView updateLotteryWidgetViewInfo:dataArray];
 }
 
 #pragma mark PLVLCMessagePopupViewDelegate

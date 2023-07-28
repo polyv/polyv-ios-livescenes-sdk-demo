@@ -232,7 +232,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
     [PLVLiveVideoAPI requestNewestRedpackWithChannelId:channelId completion:^(NSDictionary * _Nonnull data) {
         BOOL timeEnabled = PLV_SafeBoolForDictKey(data, @"timeEnabled");
-        NSTimeInterval sendTime = PLV_SafeFloatForDictKey(data, @"sendTime");
+        NSTimeInterval sendTime = PLV_SafeIntegerForDictKey(data, @"sendTime");
         NSInteger delayTime = (sendTime - [PLVFdUtil curTimeInterval]) / 1000.0;
         if (timeEnabled && delayTime > 0) {
             NSString *type = PLV_SafeStringForDictKey(data, @"redpackType");
@@ -337,7 +337,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = self.loginChatUser;
+    model.user = [PLVChatUser copyUser:self.loginChatUser];
     model.message = content;
     
     BOOL success = [[PLVChatroomManager sharedManager] sendQuesstionMessage:content];
@@ -364,7 +364,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = self.loginChatUser;
+    model.user = [PLVChatUser copyUser:self.loginChatUser];
     
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.content = content;
@@ -462,7 +462,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.source = source;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = self.loginChatUser;
+    model.user = [PLVChatUser copyUser:self.loginChatUser];
     model.message = message;
     
     if (![PLVChatroomManager sharedManager].banned) { // 禁言消息只显示到本地，不推给服务器
@@ -485,7 +485,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.imageUrl = imageUrl;
     message.sendState = PLVImageEmotionMessageSendStateReady;
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = self.loginChatUser;
+    model.user = [PLVChatUser copyUser:self.loginChatUser];
     model.imageId = imageId;
     model.message = message;
     
@@ -514,7 +514,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     message.emitMode = emitMode;
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
-    model.user = self.loginChatUser;
+    model.user = [PLVChatUser copyUser:self.loginChatUser];
     model.message = message;
     
     BOOL success = [[PLVChatroomManager sharedManager] sendCustonMessage:message];
@@ -540,6 +540,21 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     [self addLikeCount:1];
     // 由 SDK 发送点赞
     [[PLVChatroomManager sharedManager] sendLikeEvent];
+}
+#pragma mark 修改昵称消息
+
+- (void)sendChangeNickname:(NSString *)nickname {
+    if (![PLVFdUtil checkStringUseable:nickname]) {
+        return;
+    }
+
+    BOOL success = [[PLVChatroomManager sharedManager] sendChangeNickname:nickname];
+    if (success) {
+        // 更新本地昵称
+        PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+        PLVRoomUser *newRoomUser = [[PLVRoomUser alloc] initWithViewerId:roomUser.viewerId viewerName:nickname viewerAvatar:roomUser.viewerAvatar viewerType:roomUser.viewerType];
+        [[PLVRoomDataManager sharedManager].roomData setupRoomUser:newRoomUser];
+    }
 }
 
 #pragma mark - 获取历史聊天消息

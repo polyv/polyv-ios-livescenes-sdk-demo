@@ -44,6 +44,13 @@ NS_ASSUME_NONNULL_BEGIN
 ///@note 此方法表示用户希望 第一画面连麦视图与外部视图 externalView回滚至原本位置，将触发(plvLSLinkMicAreaView:rollbackExternalView:)此代理方法
 - (void)rollbackFirstSiteWindowCellAndExternalView;
 
+/// 本地用户连麦状态发生改变
+/// @param linkMicStatus 连麦状态
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
+
+/// 下课（直播结束）
+- (void)finishClass;
+
 @end
 
 /// 连麦区域视图Delegate
@@ -84,6 +91,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param linkMicAreaView 连麦区域视图
 /// @param externalView 被添加在连麦区域视图上的外部视图
 - (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView rollbackExternalView:(UIView *)externalView;
+
+/// 同意/取消 连麦邀请
+/// @param linkMicAreaView 连麦区域视图
+/// @param accept 是否同意连麦邀请（YES同意，NO拒绝）
+/// @param timeoutCancel 是否是超时拒绝，当accept 为NO时有效
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel;
+
+/// 需要获取 连麦邀请 剩余的等待时间
+/// @param linkMicAreaView 连麦区域视图
+/// @param callback 获取剩余时间的回调
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback;
 
 @end
 

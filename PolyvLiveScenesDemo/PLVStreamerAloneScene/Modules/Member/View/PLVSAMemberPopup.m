@@ -101,12 +101,13 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     // 配置需要显示的按钮类型
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:4];
     if (linkMicing) {
-        if ([PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Video) {
+        BOOL isOnlyAudio = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+        if ((self.chatUser.userType == PLVRoomUserTypeGuest && !isOnlyAudio) ||
+            [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Video) {
             [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonCamera), @(PLVSAMemberPopupButtonMicrophone)]];
         } else {
             [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonMicrophone)]];
         }
-        
     }
     
     if (self.chatUser.userType == PLVRoomUserTypeGuest) {

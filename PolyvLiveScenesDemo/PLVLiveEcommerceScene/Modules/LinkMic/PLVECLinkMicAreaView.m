@@ -274,6 +274,12 @@ PLVECLinkMicWindowsViewDelegate
     return onlineUser;
 }
 
+- (void)currentFirstSiteCanvasViewChangedInLinkMicWindowsView:(PLVECLinkMicWindowsView *)windowsView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:)]) {
+        [self.delegate plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:self];
+    }
+}
+
 #pragma mark PLVLinkMicPresenterDelegate
 
 /// ‘房间加入状态’ 发生改变

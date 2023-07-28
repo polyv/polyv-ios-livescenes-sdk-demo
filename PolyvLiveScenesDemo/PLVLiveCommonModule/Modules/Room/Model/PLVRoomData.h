@@ -112,6 +112,8 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
 @property (nonatomic, assign) BOOL welcomeShowDisable;
 /// 开启显示举报反馈，默认NO-不显示举报反馈
 @property (nonatomic, assign) BOOL watchFeedbackEnabled;
+/// 条件红包是否开启，默认NO-不开启
+@property (nonatomic, assign) BOOL conditionLotteryEnabled;
 
 #pragma mark 连麦独有属性
 /// 当前 是否处于RTC房间中

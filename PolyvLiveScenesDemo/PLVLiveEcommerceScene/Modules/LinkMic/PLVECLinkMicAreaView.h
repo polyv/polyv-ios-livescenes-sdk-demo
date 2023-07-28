@@ -51,6 +51,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param linkMicAreaView 连麦区域视图
 - (BOOL)plvECLinkMicAreaViewGetChannelInLive:(PLVECLinkMicAreaView *)linkMicAreaView;
 
+/// ‘第一画面连麦窗口’ 发生改变
+///
+/// @param linkMicAreaView 连麦区域视图
+- (void)plvECLinkMicAreaViewCurrentFirstSiteCanvasViewChanged:(PLVECLinkMicAreaView *)linkMicAreaView;
+
 @end
 
 /// 连麦区域视图

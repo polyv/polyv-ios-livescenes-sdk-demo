@@ -59,6 +59,7 @@
 @property (nonatomic, assign) BOOL currentHandUp;
 @property (nonatomic, assign) BOOL isRealMainSpeaker;
 @property (nonatomic, assign) BOOL currentScreenShareOpen;
+@property (nonatomic, assign) PLVLinkMicUserLinkMicStatus linkMicStatus;
 
 @end
 
@@ -570,8 +571,30 @@
     }
 }
 
+- (void)updateUserCurrentLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    if (!(self.localUser && self.userType == PLVSocketUserTypeGuest)) {
+        return;
+    }
+    
+    _linkMicStatus = linkMicStatus;
+    if (self.linkMicStatusBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.linkMicStatusBlock(weakSelf); }
+        })
+    }
+}
 
 #pragma mark 通知机制
+- (void)wantUserRequestJoinLinkMic:(BOOL)request{
+    if (self.wantRequestJoinLinkMicBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantRequestJoinLinkMicBlock(weakSelf, request); }
+        })
+    }
+}
+
 - (void)wantOpenUserMic:(BOOL)openMic{
     if (self.wantOpenMicBlock) {
         __weak typeof(self) weakSelf = self;

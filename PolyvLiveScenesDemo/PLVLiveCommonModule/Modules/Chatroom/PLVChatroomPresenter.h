@@ -191,6 +191,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送点赞消息
 - (void)sendLike;
 
+/// 发送修改昵称消息
+- (void)sendChangeNickname:(NSString *)nickname;
+
 /// 加载历史聊天记录
 - (void)loadHistory;
 

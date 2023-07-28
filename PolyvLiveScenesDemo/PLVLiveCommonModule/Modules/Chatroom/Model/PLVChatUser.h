@@ -28,6 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy)  NSString * _Nullable role;
 /// 用户Id
 @property (nonatomic, copy) NSString * _Nullable userId;
+/// 用户连麦Id，为空时则用userId
+@property (nonatomic, copy) NSString * _Nullable micId;
 /// 用户昵称
 @property (nonatomic, copy) NSString * _Nullable userName;
 /// 用户头像地址
@@ -66,6 +68,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)isUserSpecial;
 
 + (PLVChatUser *)chatUserFromPlaybackMsgUser:(PLVPlaybackMsgUser *)playbackMsgUser;
+
++ (PLVChatUser *)copyUser:(PLVChatUser *)user;
 
 @end
 

@@ -7,6 +7,7 @@
 //
 
 #import "PLVLinkMicWaitUser.h"
+#import "PLVChatUser.h"
 
 @interface PLVLinkMicWaitUser ()
 
@@ -26,6 +27,7 @@
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentRaiseHand;
 @property (nonatomic, assign) BOOL currentAnswerAgreeJoin;
+@property (nonatomic, assign) PLVLinkMicUserLinkMicStatus linkMicStatus;
 
 @end
 
@@ -81,6 +83,13 @@
         /// 用户信息
         user.userId = [PLVFdUtil checkStringUseable:dictionary[@"loginId"]] ? dictionary[@"loginId"] : nil;
         user.linkMicUserId = [PLVFdUtil checkStringUseable:dictionary[@"userId"]] ? dictionary[@"userId"] : nil;
+        // 特殊情况创建的等待观众观众用户
+        NSString *isCreat = PLV_SafeStringForDictKey(dictionary, @"isCreat");
+        if ([PLVFdUtil checkStringUseable:isCreat] && [isCreat isEqualToString:@"1"]) {
+            user.userId = [PLVFdUtil checkStringUseable:dictionary[@"userId"]] ? dictionary[@"userId"] : nil;
+            user.linkMicUserId = [PLVFdUtil checkStringUseable:dictionary[@"loginId"]] ? dictionary[@"loginId"] : nil;
+        }
+        
         user.nickname = [PLVFdUtil checkStringUseable:dictionary[@"nick"]] ? dictionary[@"nick"] : nil;
         user.avatarPic = [PLVFdUtil checkStringUseable:dictionary[@"pic"]] ? dictionary[@"pic"] : nil;
         user.actor = [PLVFdUtil checkStringUseable:dictionary[@"actor"]] ? dictionary[@"actor"] : nil;
@@ -97,9 +106,37 @@
     return nil;
 }
 
++ (instancetype)modelWithChatUser:(PLVChatUser *)chatUser {
+    if (!chatUser ||
+        ![chatUser isKindOfClass:[PLVChatUser class]]) {
+        return nil;
+    }
+    
+    PLVLinkMicWaitUser *user = [[PLVLinkMicWaitUser alloc] init];
+    user.userType = [PLVRoomUser sockerUserTypeWithRoomUserType:chatUser.userType];
+    user.userId = chatUser.userId;
+    user.linkMicUserId = chatUser.micId ? chatUser.micId : chatUser.userId;
+    user.nickname = chatUser.userName;
+    user.avatarPic = chatUser.avatarUrl;
+    user.actor = chatUser.actor;
+    user.originalUserDict = @{
+        @"actor" : [NSString stringWithFormat:@"%@", chatUser.actor],
+        @"userType" : [NSString stringWithFormat:@"%@", [PLVRoomUser userTypeStringWithUserType:chatUser.userType]],
+        @"nick" : [NSString stringWithFormat:@"%@", chatUser.userName],
+        @"pic" : [NSString stringWithFormat:@"%@",chatUser.avatarUrl],
+        @"userId" : [NSString stringWithFormat:@"%@", user.userId],
+        @"loginId" : [NSString stringWithFormat:@"%@", user.linkMicUserId],
+        @"banned" : @(chatUser.banned),
+        @"isCreat" : @"1" // 是否是自己创建的数据
+    };
+    return user;
+}
+
 #pragma mark 状态更新
 - (void)updateUserCurrentRaiseHand:(BOOL)raiseHand{
-    if (self.userType == PLVSocketUserTypeGuest) {
+    if (self.userType == PLVSocketUserTypeGuest ||
+        self.userType == PLVSocketUserTypeSlice ||
+        self.userType == PLVSocketUserTypeStudent) {
         _currentRaiseHand = raiseHand;
     }
 }
@@ -110,12 +147,18 @@
     }
 }
 
-#pragma mark 通知机制
-- (void)wantAllowUserJoinLinkMic{
-    if (self.wantAllowJoinLinkMicBlock) {
+- (void)updateUserCurrentLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    if (self.userType != PLVSocketUserTypeGuest &&
+        self.userType != PLVSocketUserTypeSlice &&
+        self.userType != PLVSocketUserTypeStudent) {
+        return;
+    }
+    
+    _linkMicStatus = linkMicStatus;
+    if (self.linkMicStatusBlock) {
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
-            if (weakSelf) { weakSelf.wantAllowJoinLinkMicBlock(weakSelf); }
+            if (weakSelf) { weakSelf.linkMicStatusBlock(weakSelf); }
         })
     }
 }

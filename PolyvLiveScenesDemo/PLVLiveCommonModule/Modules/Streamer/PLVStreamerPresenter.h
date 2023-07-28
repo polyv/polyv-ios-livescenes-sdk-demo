@@ -52,6 +52,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
     
     /// 600: 下课失败，网络请求错误
     PLVStreamerPresenterErrorCode_EndClassFailedNetFailed = 100,
+    
+    /** 700: 应答连麦邀请失败，当前连麦状态不匹配，仅在 PLVLinkMicStatus_Inviting 状态下允许应答连麦邀请 */
+    PLVStreamerPresenterErrorCode_AnswerInvitationFailedStatusIllegal = 700,
+    /** 702: 应答连麦邀请失败，消息返回异常 */
+    PLVStreamerPresenterErrorCode_AnswerInvitationFailedAckIllegal = 702,
+    /** 704: 应答连麦邀请失败，连麦人数达到上限 */
+    PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited = 704,
 };
 
 @protocol PLVStreamerPresenterDelegate;
@@ -435,6 +442,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param emitCompleteBlock ‘允许 某位远端用户 上麦’的请求发送结果Block
 - (void)allowRemoteUserJoinLinkMic:(PLVLinkMicWaitUser *)waitUser emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock;
 
+/// 邀请某位远端用户 上麦
+/// @param waitUser 远端用户等待连麦模型
+/// @param emitCompleteBlock ‘邀请 某位远端用户 上麦’的请求发送结果Block
+- (void)inviteRemoteUserJoinLinkMic:(PLVLinkMicWaitUser *)waitUser emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock;
+
 /// 开启或关闭 某位远端用户 的麦克风
 ///
 /// @param onlineUser 远端用户RTC在线模型
@@ -458,6 +470,22 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///
 /// @param muteAllMic 是否静音全部连麦用户的麦克风 (YES:静音 NO:取消静音)
 - (void)muteAllLinkMicUserMic:(BOOL)muteAllMic;
+
+#pragma mark 本地连麦用户
+/// 本地用户 同意/拒绝 连麦邀请【嘉宾】
+///
+/// @note 在讲师发送 邀请上麦 的请求后可调用
+/// @param accept 是否接受连麦邀请  (YES:接受, NO:拒绝)
+/// @param timeoutCancel 是否是超时取消连麦邀请（accept 为NO 时有效）
+- (void)localUserAcceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel;
+
+/// 获取服务器端 邀请连麦 剩余的等待时间
+/// @param callback 获取剩余时间的回调(参数ttl: 剩余时间；当为 -1 时，说明获取数据异常)
+- (void)requestLocalUserInviteLinkMicTTLCallback:(void (^)(NSInteger ttl))callback;
+
+/// 本地用户关闭连麦【嘉宾】
+/// @param emitCompleteBlock 关闭本地用户连麦的请求发送结果Block
+- (void)closeLocalUserLinkMicEmitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock;
 
 #pragma mark 连麦用户查找
 /// 查询某个条件的‘连麦在线用户’，在数组中的下标值
@@ -648,6 +676,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param voiceAudible 是否接收到本地可听得见的声音（以 localVoiceValue 是否大于 0.156 为准；若需以其他值为准，可自行根据 localVoiceValue 作判断）
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserVoiceValue:(CGFloat)localVoiceValue receivedLocalAudibleVoice:(BOOL)voiceAudible;
 
+#pragma mark 待连麦用户事件
+/// ’待连麦用户 响应加入连麦邀请状态‘ 发生改变
+///
+/// @param presenter 推流管理器
+/// @param waitUser 待连麦用户的模型
+/// @param isAccept 是否接收连麦邀请
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter   waitLinkMicUser:(PLVLinkMicWaitUser *)waitUser joinAnswer:(BOOL)isAccept;
 
 #pragma mark 连麦用户事件
 /// ’等待连麦用户数组‘ 发生改变
@@ -661,6 +696,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param waitUserArray 当前的等待连麦用户数组
 /// @param newWaitUserAdded 是否新增了连麦等待用户
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicWaitUserListRefresh:(NSArray <PLVLinkMicWaitUser *>*)waitUserArray newWaitUserAdded:(BOOL)newWaitUserAdded;
+
+/// ’本地用户连麦状态‘ 发生改变
+/// @param presenter 推流管理器
+/// @param linkMicStatus 连麦状态
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserLinkMicStatusChanged:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
 
 /// ’连麦在线用户数组‘ 发生改变
 ///

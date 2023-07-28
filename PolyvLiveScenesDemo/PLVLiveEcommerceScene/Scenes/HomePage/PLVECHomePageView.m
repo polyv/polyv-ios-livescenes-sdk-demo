@@ -26,6 +26,7 @@
 #import "PLVECPlayerContolView.h"
 #import "PLVECMoreView.h"
 #import "PLVECSwitchView.h"
+#import "PLVECLotteryWidgetView.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -59,7 +60,8 @@ PLVECCommodityViewControllerDelegate,
 PLVCommodityPushViewDelegate,
 PLVSocketManagerProtocol,
 PLVECChatroomViewDelegate,
-PLVECCardPushButtonViewDelegate
+PLVECCardPushButtonViewDelegate,
+PLVECLotteryWidgetViewDelegate
 >
 
 #pragma mark 数据
@@ -104,6 +106,7 @@ PLVECCardPushButtonViewDelegate
 @property (nonatomic, strong) PLVECCardPushButtonView *cardPushButtonView; // 卡片推送挂件
 @property (nonatomic, strong) PLVECRedpackButtonView *redpackButtonView; // 倒计时红包挂件
 @property (nonatomic, strong) PLVECPlayerContolView *playerContolView; // 视频播放控制视图
+@property (nonatomic, strong) PLVECLotteryWidgetView *lotteryWidgetView; // 抽奖挂件视图
 @property (nonatomic, strong) UIButton *moreButton;                    // 更多按钮
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
@@ -171,6 +174,7 @@ PLVECCardPushButtonViewDelegate
     }
     [self addSubview:self.redpackButtonView];
     [self addSubview:self.cardPushButtonView];
+    [self addSubview:self.lotteryWidgetView];
     [self addSubview:self.moreButton];
     [self addSubview:self.shoppingCartButton];
 }
@@ -231,6 +235,14 @@ PLVECCardPushButtonViewDelegate
         _playerContolView.delegate = self;
     }
     return _playerContolView;
+}
+
+- (PLVECLotteryWidgetView *)lotteryWidgetView {
+    if (!_lotteryWidgetView) {
+        _lotteryWidgetView = [[PLVECLotteryWidgetView alloc] init];
+        _lotteryWidgetView.delegate = self;
+    }
+    return _lotteryWidgetView;
 }
 
 - (UIButton *)moreButton {
@@ -580,6 +592,14 @@ PLVECCardPushButtonViewDelegate
     }
 }
 
+- (void)updateLotteryWidgetViewInfo:(NSArray *)dataArray {
+    if ([PLVFdUtil checkArrayUseable:dataArray]) {
+        [self.lotteryWidgetView updateLotteryWidgetInfo:dataArray.firstObject];
+    } else {
+        [self.lotteryWidgetView hideWidgetView];
+    }
+}
+
 #pragma mark - Private
 
 - (void)updateCodeRateSwitchViewHiddenState {
@@ -640,7 +660,15 @@ PLVECCardPushButtonViewDelegate
             }
             
             // 卡片推送挂件
-            self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
+            if (!self.cardPushButtonView.hidden) {
+                self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
+                originY -= (12 + PLVECCardPushButtonViewHeight);
+            }
+            // 抽奖挂件
+            if (!self.lotteryWidgetView.hidden) {
+                self.lotteryWidgetView.frame = CGRectMake(originX, originY, self.lotteryWidgetView.widgetSize.width, self.lotteryWidgetView.widgetSize.height);
+                originY -= (12 + self.lotteryWidgetView.widgetSize.height);
+            }
         }
         
         // 网络提示
@@ -669,8 +697,17 @@ PLVECCardPushButtonViewDelegate
         self.moreButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - buttonWidth - 15, CGRectGetHeight(self.bounds) - buttonWidth - P_SafeAreaBottomEdgeInsets(), buttonWidth, buttonWidth);
         self.shoppingCartButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 41, CGRectGetMaxX(self.moreButton.frame), 41);
+        
+        CGFloat widgetOriginY = CGRectGetMinY(self.playerContolView.frame);
         // 卡片推送挂件
-        self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, CGRectGetMinY(self.playerContolView.frame)-PLVECLikeButtonViewHeight, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
+        if (!self.cardPushButtonView.hidden) {
+            widgetOriginY -= PLVECLikeButtonViewHeight;
+            self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, widgetOriginY-PLVECLikeButtonViewHeight, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
+        }
+        if (!self.lotteryWidgetView.hidden) {
+            widgetOriginY -= self.lotteryWidgetView.widgetSize.height - 5;
+            self.lotteryWidgetView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - self.lotteryWidgetView.widgetSize.width/2, widgetOriginY, self.lotteryWidgetView.widgetSize.width, self.lotteryWidgetView.widgetSize.height);
+        }
     }
     
     CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
@@ -1150,6 +1187,29 @@ PLVECCardPushButtonViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:openCardPush:)]) {
         [self.delegate homePageView:self openCardPush:dict];
     }
+}
+
+- (void)cardPushButtonView:(PLVECCardPushButtonView *)pushButtonView showStatusChanged:(BOOL)show {
+    [self updateUIFrame];
+}
+
+- (void)cardPushButtonViewPopupViewDidShow:(PLVECCardPushButtonView *)pushButtonView {
+    [self.lotteryWidgetView hidePopupView];
+}
+
+#pragma mark PLVECLotteryWidgetViewDelegate
+- (void)lotteryWidgetViewDidClickAction:(PLVECLotteryWidgetView *)lotteryWidgetView eventName:(NSString *)eventName {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:emitInteractEvent:)]) {
+        [self.delegate homePageView:self emitInteractEvent:eventName];
+    }
+}
+
+- (void)lotteryWidgetView:(PLVECLotteryWidgetView *)lotteryWidgetView showStatusChanged:(BOOL)show {
+    [self updateUIFrame];
+}
+
+- (void)lotteryWidgetViewPopupViewDidShow:(PLVECLotteryWidgetView *)lotteryWidgetView {
+    [self.cardPushButtonView hidePopupView];
 }
 
 @end

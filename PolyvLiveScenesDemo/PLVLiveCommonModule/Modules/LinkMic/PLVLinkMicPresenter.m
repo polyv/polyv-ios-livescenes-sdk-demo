@@ -1533,6 +1533,11 @@ PLVLinkMicManagerDelegate
         case PLVLinkMicEventType_SwitchView: {
             NSString * nowMainSpeakerLinkMicUserId = [NSString stringWithFormat:@"%@",jsonDict[@"userId"]];
             [self changeMainSpeakerWithLinkMicUserId:nowMainSpeakerLinkMicUserId byLocalOperation:NO forceSynchronLocal:YES];
+            if (self.inLinkMic) {
+                BOOL localUserFirstScreen = [nowMainSpeakerLinkMicUserId isEqualToString:self.currentLocalLinkMicUser.linkMicUserId];
+                // 本地用户是否切换至第一画面
+                [self.linkMicManager linkMicLocalUserFirstScreenDidChanged:localUserFirstScreen];
+            }
             [self callbackForMainSpeakerChangedToLinkMicUserId:nowMainSpeakerLinkMicUserId];
         } break;
             

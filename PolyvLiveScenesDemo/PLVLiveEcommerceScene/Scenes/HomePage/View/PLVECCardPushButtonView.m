@@ -82,6 +82,10 @@
     }
 }
 
+- (void)hidePopupView {
+    self.popupView.hidden = YES;
+}
+
 - (void)leaveLiveRoom {
     [self saveLocalWatchTime];
     [self cancelDispatchTimer];
@@ -148,6 +152,9 @@
         
         [self setNeedsLayout];
     }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(cardPushButtonView:showStatusChanged:)]) {
+        [self.delegate cardPushButtonView:self showStatusChanged:!self.hidden];
+    }
 }
 
 - (void)startCountdownWithLocalWatchTime:(NSInteger)watchTime endCallback:(void (^)(void))callback {
@@ -198,6 +205,9 @@
 
 - (void)showPopupTitleView {
     if (self.popupView.hidden) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(cardPushButtonViewPopupViewDidShow:)]) {
+            [self.delegate cardPushButtonViewPopupViewDidShow:self];
+        }
         self.popupView.hidden = NO;
         __weak typeof(self) weakSelf = self;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{

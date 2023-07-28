@@ -22,6 +22,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param dict 打开视图需要的参数
 - (void)cardPushButtonView:(PLVECCardPushButtonView *)pushButtonView needOpenInteract:(NSDictionary *)dict;
 
+/// 卡片推送挂件的显示状态改变的的回调
+/// @param pushButtonView 卡片推送挂件
+/// @param show 当前的显示状态
+- (void)cardPushButtonView:(PLVECCardPushButtonView *)pushButtonView showStatusChanged:(BOOL)show;
+
+/// 卡片推送挂件的 PopupView 显示的的回调
+/// @param pushButtonView 卡片推送挂件
+- (void)cardPushButtonViewPopupViewDidShow:(PLVECCardPushButtonView *)pushButtonView;
+
 @end
 
 @interface PLVECCardPushButtonView : UIView
@@ -32,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param start 是否是开启推送 YES开启 NO取消
 /// @param dict 卡片推送信息
 - (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict;
+
+/// 隐藏 Popup 视图
+- (void)hidePopupView;
 
 /// 离开直播房间
 - (void)leaveLiveRoom;

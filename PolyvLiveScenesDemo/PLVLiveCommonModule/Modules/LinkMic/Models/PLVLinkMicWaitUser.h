@@ -7,19 +7,20 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "PLVLinkMicUserDefine.h"
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class PLVLinkMicWaitUser;
+@class PLVChatUser, PLVLinkMicWaitUser;
 
 /// 回调定义
 ///
+/// [状态] 用户的 ’连麦状态‘ 改变Block
+typedef void (^PLVLinkMicWaitUserLinkMicStatusChangedBlock)(PLVLinkMicWaitUser * waitUser);
 /// [事件] 用户模型 即将销毁 回调Block
 typedef void (^PLVLinkMicWaitUserWillDeallocBlock)(PLVLinkMicWaitUser * waitUser);
-/// [事件] 希望允许用户加入连麦 回调Block
-typedef void (^PLVLinkMicWaitUserWantAllowJoinLinkMicBlock)(PLVLinkMicWaitUser * waitUser);
 
 /// 等待连麦用户模型
 ///
@@ -33,11 +34,10 @@ typedef void (^PLVLinkMicWaitUserWantAllowJoinLinkMicBlock)(PLVLinkMicWaitUser *
 /// @note 不保证在主线程回调
 @property (nonatomic, copy, nullable) PLVLinkMicWaitUserWillDeallocBlock willDeallocBlock;
 
-/// [事件] 希望允许用户加入连麦 回调Block
+/// [状态] 用户 连麦状态改变 回调Block
 ///
-/// @note 由 [wantAllowUserJoinLinkMic] 方法直接触发；
-///       将在主线程回调；
-@property (nonatomic, copy, nullable) PLVLinkMicWaitUserWantAllowJoinLinkMicBlock wantAllowJoinLinkMicBlock;
+/// @note 不保证在主线程回调
+@property (nonatomic, copy, nullable) PLVLinkMicWaitUserLinkMicStatusChangedBlock linkMicStatusBlock;
 
 #pragma mark 数据
 /// 用户聊天室Id
@@ -68,15 +68,21 @@ typedef void (^PLVLinkMicWaitUserWantAllowJoinLinkMicBlock)(PLVLinkMicWaitUser *
 /// 用户 当前是否答复同意加入 (注意：仅在 [userType] 为Guests时，此值有意义)
 @property (nonatomic, assign, readonly) BOOL currentAnswerAgreeJoin;
 
+/// 用户 当前的连麦状态 (注意：仅在 [userType] 为Guests、slice、student时，此值有意义)
+@property (nonatomic, assign, readonly) PLVLinkMicUserLinkMicStatus linkMicStatus;
+
 #pragma mark - [ 方法 ]
 #pragma mark 创建
 /// 通过数据字典创建模型
 + (instancetype)modelWithDictionary:(NSDictionary *)dictionary;
 
+/// 通过 PLVChatUser 数据模型 创建模型 (适用于远端用户)
++ (instancetype)modelWithChatUser:(PLVChatUser *)chatUser;
+
 #pragma mark 状态更新
 /// 更新用户的 ‘当前举手状态值’
 ///
-/// @note 仅在 [userType] 为Guests时，调用此方法生效；
+/// @note 仅在 [userType] 为Guests、slice、student时，调用此方法生效；
 - (void)updateUserCurrentRaiseHand:(BOOL)raiseHand;
 
 /// 更新用户的 ‘当前是否答复同意加入状态值’
@@ -84,12 +90,10 @@ typedef void (^PLVLinkMicWaitUserWantAllowJoinLinkMicBlock)(PLVLinkMicWaitUser *
 /// @note 仅在 [userType] 为Guests时，调用此方法生效；
 - (void)updateUserCurrentAnswerAgreeJoin:(BOOL)answerAgreeJoin;
 
-#pragma mark 通知机制
-/// 希望允许用户加入连麦
+/// 更新用户的 ‘当前连麦状态值’
 ///
-/// @note 不直接改变该模型内部的任何值；
-///       而是作为通知机制，直接触发 [wantAllowJoinLinkMicBlock]，由Block实现方去执行相关逻辑
-- (void)wantAllowUserJoinLinkMic;
+/// @note 仅在 [userType] 为Guests、slice、student时，调用此方法生效；
+- (void)updateUserCurrentLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
 
 #pragma mark 多接收方回调配置
 /// 使用 blockKey 添加一个 ’用户模型 即将销毁‘ 回调Block

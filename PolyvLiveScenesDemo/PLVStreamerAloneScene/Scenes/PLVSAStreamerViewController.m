@@ -10,6 +10,7 @@
 
 // 工具类
 #import "PLVSAUtils.h"
+#import "PLVBroadcastNotificationsManager.h"
 
 // UI
 #import "PLVSALinkMicAreaView.h"
@@ -35,6 +36,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
+static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
 
 /// PLVSAStreamerViewController 所处的四种状态，不同状态下，展示不同的页面
 typedef NS_ENUM(NSInteger, PLVSAStreamerViewState) {
@@ -102,6 +104,7 @@ PLVShareLiveSheetDelegate
 @property (nonatomic, strong) PLVSABeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
+@property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -139,6 +142,7 @@ PLVShareLiveSheetDelegate
     
     [self setupUI];
     [self setupModule];
+    [self setupNotification];
     [self preapareStartClass];
     [self clearDatedChannelStreamInfo];
 }
@@ -398,6 +402,19 @@ PLVShareLiveSheetDelegate
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
 }
 
+- (void)setupNotification {
+    self.broadcastNotification = [[PLVBroadcastNotificationsManager alloc] init];
+    __weak typeof(self) weakSelf = self;
+    [self.broadcastNotification listenForMessageWithIdentifier:PLVSABroadcastStartedNotification listener:^{
+        if (@available(iOS 11.0, *)) {
+            if (weakSelf.viewerType == PLVRoomUserTypeTeacher || weakSelf.streamerPresenter.localOnlineUser.isRealMainSpeaker) {
+                [weakSelf.streamerPresenter openLocalUserScreenShare:YES];
+                [weakSelf.homeView changeScreenShareButtonSelectedState:YES];
+            }
+        }
+    }];
+}
+
 /// 设置直播间 流比例
 - (void)setupLiveroomStreamScale {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
@@ -583,6 +600,7 @@ PLVShareLiveSheetDelegate
     plv_dispatch_main_async_safe(^{
         if (self.viewerType == PLVRoomUserTypeGuest) {
             [self.streamerPresenter finishClass];
+            [self.linkMicAreaView finishClass];
             [self.homeView startClass:NO];
         } else {
             // 结束上课
@@ -729,6 +747,10 @@ PLVShareLiveSheetDelegate
     return self.streamerPresenter.onlineUserArray;
 }
 
+- (NSArray *)currentWaitUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter{
+    return self.streamerPresenter.waitUserArray;
+}
+
 #pragma mark PLVSocketManager Protocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
@@ -745,12 +767,12 @@ PLVShareLiveSheetDelegate
 - (void)socketMananger_didLoginFailure:(NSError *)error {
     __weak typeof(self) weakSelf = self;
     if (error.code == PLVSocketLoginErrorCodeKick) {
+        [self finishClass]; // 讲师被踢出后立即结束当前课程
         plv_dispatch_main_async_safe(^{
-            [PLVSAUtils showToastWithMessage:@"频道已被禁止直播" inView:self.view afterDelay:3.0];
+            [PLVSAUtils showAlertWithMessage:@"当前直播间已被禁止直播" cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+                [weakSelf logout];
+            }];
         })
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [weakSelf logout]; // 使用weakSelf，不影响self释放内存
-        });
     } else if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
         error.code == PLVSocketLoginErrorCodeRelogin) &&
         error.localizedDescription) {
@@ -850,6 +872,13 @@ PLVShareLiveSheetDelegate
     [self.memberPresenter refreshUserListWithLinkMicWaitUserArray:waitUserArray];
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserLinkMicStatusChanged:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    if (linkMicStatus == PLVLinkMicUserLinkMicStatus_Inviting) {
+        [self.homeView dismissBottomSheet];
+    }
+    [self.linkMicAreaView updateLocalUserLinkMicStatus:linkMicStatus];
+}
+
 /// ’RTC房间在线用户数组‘ 发生改变
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
 linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray {
@@ -935,7 +964,12 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
 /// 已挂断 某位远端用户的连麦 事件回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
    didCloseRemoteUserLinkMic:(PLVLinkMicOnlineUser *)onlineUser {
-    
+    NSString * nickName = onlineUser.nickname;
+    if (nickName.length > 12) {
+        nickName = [NSString stringWithFormat:@"%@...",[nickName substringToIndex:12]];
+    }
+    NSString * message = [NSString stringWithFormat:@"已挂断%@的连麦",nickName];
+    [PLVSAUtils showToastWithMessage:message inView:self.view];
 }
 
 /// 本地用户的 ’麦克风开关状态‘ 发生变化
@@ -979,6 +1013,13 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter waitLinkMicUser:(nonnull PLVLinkMicWaitUser *)waitUser joinAnswer:(BOOL)isAccept {
+    if (waitUser && !isAccept) {
+        NSString *message = [NSString stringWithFormat:@"%@没有接受你的邀请", waitUser.nickname];
+        [PLVSAUtils showToastWithMessage:message inView:self.view];
+    }
+}
+
 /// 推流管理器 ‘发生错误’ 回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
                didOccurError:(NSError *)error
@@ -996,6 +1037,8 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         message = @"RTC内部错误，启动音频模块失败，请退出重新登录";
     }else if (error.code == PLVStreamerPresenterErrorCode_EndClassFailedNetFailed){
         message = @"下课错误，请直接退出上课页";
+    }else if (error.code >= PLVStreamerPresenterErrorCode_AnswerInvitationFailedStatusIllegal && error.code <= PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited){
+        message = (error.code == PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited) ? @"上麦失败，当前上麦人数已达最大人数" : @"上麦失败";
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
         message = @"未知错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){
@@ -1079,6 +1122,14 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     self.otherUserFullScreen = isFullScreen && !onlineUser.localUser;
 }
 
+- (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
+    [self.streamerPresenter localUserAcceptLinkMicInvitation:accept timeoutCancel:timeoutCancel];
+}
+
+- (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
+    [self.streamerPresenter requestLocalUserInviteLinkMicTTLCallback:callback];
+}
+
 #pragma mark PLVSAStreamerSettingViewDelegate
 
 - (void)streamerSettingViewBackButtonClick {
@@ -1144,6 +1195,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self.memberPresenter kickUserWithUserId:userId];
 }
 
+- (void)inviteUserJoinLinkMicInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUser:(PLVLinkMicWaitUser *)user {
+    [self.streamerPresenter inviteRemoteUserJoinLinkMic:user emitCompleteBlock:nil];
+}
+
 - (void)streamerHomeViewDidTapCloseButton:(PLVSAStreamerHomeView *)homeView {
     __weak typeof(self) weakSelf = self;
     PLVSAFinishStreamerSheet *actionSheet = [[PLVSAFinishStreamerSheet alloc] init];
@@ -1188,14 +1243,16 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
     
     if (@available(iOS 11.0, *)) {
-        [self.streamerPresenter openLocalUserScreenShare:screenShareOpen];
         if (screenShareOpen) {
+            [self.homeView changeScreenShareButtonSelectedState:NO];
             if (@available(iOS 12.0, *)) {
                 [[PLVBroadcastExtensionLauncher sharedInstance] launch];
             } else {
                 NSString *message = @"请到控制中心，长按录制按钮，选择 POLYV屏幕共享 打开录制";
                 [PLVSAUtils showAlertWithMessage:message cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:@"我知道了" confirmActionBlock:nil];
             }
+        } else {
+            [self.streamerPresenter openLocalUserScreenShare:screenShareOpen];
         }
      } else {
          if (screenShareOpen) {

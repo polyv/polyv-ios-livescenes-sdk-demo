@@ -56,6 +56,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)displayCardPushButtonView:(UIView *)cardPushButtonView;
 
+- (void)displayLotteryWidgetView:(UIView *)lotteryWidgetView;
+
 /// 是否显示打开商品库的按钮
 /// @param show YES 显示 NO 不显示
 - (void)showCommodityButton:(BOOL)show;
@@ -67,6 +69,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否显示卡片推送按钮视图
 /// @param show YES 显示 NO 不显示
 - (void)showCardPushButtonView:(BOOL)show;
+
+/// 是否显示抽奖挂件视图
+/// @param show YES 显示 NO 不显示
+- (void)showLotteryWidgetView:(BOOL)show;
 
 /// 切换聊天室关闭状态，开启/禁用输入框
 ///  @param closeRoom YES关闭 NO 不关闭

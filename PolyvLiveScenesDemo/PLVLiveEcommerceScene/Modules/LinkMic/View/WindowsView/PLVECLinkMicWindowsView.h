@@ -58,6 +58,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param targetIndex 目标下标值
 - (PLVLinkMicOnlineUser *)onlineUserInLinkMicWindowsView:(PLVECLinkMicWindowsView *)windowsView
                                          withTargetIndex:(NSInteger)targetIndex;
+/// 第一画面连麦窗口变更
+- (void)currentFirstSiteCanvasViewChangedInLinkMicWindowsView:(PLVECLinkMicWindowsView *)windowsView;
 
 @end
 

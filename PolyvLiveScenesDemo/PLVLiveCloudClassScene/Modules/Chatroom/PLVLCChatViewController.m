@@ -48,6 +48,7 @@ NSString *PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateC
 PLVLCKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
 PLVLCCardPushButtonViewDelegate,
+PLVLCLotteryWidgetViewDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
 PLVLCChatroomPlaybackViewModelDelegate,
@@ -106,6 +107,7 @@ UITableViewDataSource
         [self.view addSubview:self.notifyMarqueeView];
         [self.view addSubview:self.receiveNewMessageView];
         [self.view addSubview:self.notifyView];
+        [self.view addSubview:self.lotteryWidgetView];
     }
 }
 
@@ -183,6 +185,12 @@ UITableViewDataSource
         originX = self.view.bounds.size.width - centerPadding - PLVLCCardPushButtonViewWidth / 2.0;
         originY -= (buttonYPadding + PLVLCCardPushButtonViewHeight);
         self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVLCCardPushButtonViewWidth, PLVLCCardPushButtonViewHeight);
+    }
+    
+    if (!self.lotteryWidgetView.hidden && self.lotteryWidgetView.superview == self.view) {
+        originX = self.view.bounds.size.width - centerPadding - self.lotteryWidgetView.widgetSize.width / 2.0;
+        originY -= (buttonYPadding + self.lotteryWidgetView.widgetSize.height);
+        self.lotteryWidgetView.frame = CGRectMake(originX, originY, self.lotteryWidgetView.widgetSize.width, self.lotteryWidgetView.widgetSize.height);
     }
 }
 
@@ -293,6 +301,14 @@ UITableViewDataSource
     return _notifyMarqueeView;
 }
 
+- (PLVLCLotteryWidgetView *)lotteryWidgetView {
+    if (!_lotteryWidgetView) {
+        _lotteryWidgetView = [[PLVLCLotteryWidgetView alloc] init];
+        _lotteryWidgetView.delegate = self;
+    }
+    return _lotteryWidgetView;
+}
+
 - (PLVRewardDisplayManager *)rewardDisplayManager {
     if (!_rewardDisplayManager) {
         _rewardDisplayManager = [[PLVRewardDisplayManager alloc] initWithLiveType:PLVRewardDisplayManagerTypeLC];
@@ -389,6 +405,7 @@ UITableViewDataSource
     [self.view insertSubview:self.likeButtonView belowSubview:self.receiveNewMessageView];
     [self.view insertSubview:self.redpackButtonView belowSubview:self.receiveNewMessageView];
     [self.view insertSubview:self.cardPushButtonView belowSubview:self.receiveNewMessageView];
+    [self.view insertSubview:self.lotteryWidgetView belowSubview:self.receiveNewMessageView];
     
     [self refreshFloatingButtonViewFrame];
 }
@@ -408,6 +425,14 @@ UITableViewDataSource
         callback ? callback(show) : nil;
         [weakSelf refreshFloatingButtonViewFrame];
     }];
+}
+
+- (void)updateLotteryWidgetViewInfo:(NSArray *)dataArray {
+    if ([PLVFdUtil checkArrayUseable:dataArray]) {
+        [self.lotteryWidgetView updateLotteryWidgetInfo:dataArray.firstObject];
+    } else {
+        [self.lotteryWidgetView hideWidgetView];
+    }
 }
 
 #pragma mark - Private Method
@@ -1056,6 +1081,29 @@ UITableViewDataSource
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:needOpenInteract:)]) {
         [self.delegate plvLCChatViewController:self needOpenInteract:dict];
     }
+}
+
+- (void)cardPushButtonViewPopupViewDidShow:(PLVLCCardPushButtonView *)pushButtonView {
+    [self.lotteryWidgetView hidePopupView];
+}
+
+#pragma mark - PLVLCLotteryWidgetViewDelegate
+
+- (void)lotteryWidgetViewDidClickAction:(PLVLCLotteryWidgetView *)lotteryWidgetView eventName:(NSString *)eventName {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:emitInteractEvent:)]) {
+        [self.delegate plvLCChatViewController:self emitInteractEvent:eventName];
+    }
+}
+
+- (void)lotteryWidgetView:(PLVLCLotteryWidgetView *)lotteryWidgetView showStatusChanged:(BOOL)show {
+    [self refreshFloatingButtonViewFrame];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:lotteryWidgetShowStatusChanged:)]) {
+        [self.delegate plvLCChatViewController:self lotteryWidgetShowStatusChanged:show];
+    }
+}
+
+- (void)lotteryWidgetViewPopupViewDidShow:(PLVLCLotteryWidgetView *)lotteryWidgetView {
+    [self.cardPushButtonView hidePopupView];
 }
 
 #pragma mark - UIImagePickerControllerDelegate

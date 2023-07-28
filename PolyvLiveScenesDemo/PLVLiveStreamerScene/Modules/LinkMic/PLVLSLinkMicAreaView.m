@@ -62,6 +62,15 @@
     [self.windowsView rollbackFirstSiteWindowCellAndExternalView];
 }
 
+- (void)finishClass {
+    [self.windowsView finishClass];
+}
+
+/// 连麦状态 发生改变
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    [self.windowsView updateLocalUserLinkMicStatus:linkMicStatus];
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
     // 添加 连麦窗口列表视图
@@ -117,6 +126,18 @@
 - (void)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView rollbackExternalView:(UIView *)externalView {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicAreaView:rollbackExternalView:)]) {
         [self.delegate plvLSLinkMicAreaView:self rollbackExternalView:externalView];
+    }
+}
+
+- (void)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicAreaView:acceptLinkMicInvitation:timeoutCancel:)]) {
+        [self.delegate plvLSLinkMicAreaView:self acceptLinkMicInvitation:accept timeoutCancel:timeoutCancel];
+    }
+}
+
+- (void)plvLSLinkMicWindowsView:(PLVLSLinkMicWindowsView *)windowsView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicAreaView:inviteLinkMicTTL:)]) {
+        [self.delegate plvLSLinkMicAreaView:self inviteLinkMicTTL:callback];
     }
 }
 

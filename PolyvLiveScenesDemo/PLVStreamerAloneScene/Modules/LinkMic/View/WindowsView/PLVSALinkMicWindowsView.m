@@ -12,6 +12,7 @@
 #import "PLVSALinkMicGuideView.h"
 #import "PLVSALinkMicWindowsSpeakerView.h"
 #import "PLVSALinkMicSpeakerPlaceholderView.h"
+#import "PLVSALinkMicPreviewView.h"
 
 // 模块
 #import "PLVLinkMicOnlineUser+SA.h"
@@ -32,7 +33,8 @@ static NSString *kFullScreenCloseCountKey = @"PLVSAFullScreenCloseCount";
 @interface PLVSALinkMicWindowsView ()<
 UICollectionViewDataSource,
 UICollectionViewDelegate,
-PLVSALinkMicWindowCellDelegate
+PLVSALinkMicWindowCellDelegate,
+PLVSALinkMicPreviewViewDelegate
 >
 
 #pragma mark 数据
@@ -60,6 +62,8 @@ PLVSALinkMicWindowCellDelegate
 @property (nonatomic, strong) PLVSALinkMicSpeakerPlaceholderView *speakerPlaceholderView; // 嘉宾角色登录时 主播的占位图
 @property (nonatomic, strong) UILabel *linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
 @property (nonatomic, strong) PLVSALinkMicWindowCell *fullScreenCell; // 全屏视图
+@property (nonatomic, strong) PLVSALinkMicPreviewView *linkMicPreView; // 连麦预览视图
+@property (nonatomic, strong) UIView *fullScreenContentView; // 全屏展示视图的容器
 
 @end
 
@@ -131,6 +135,18 @@ PLVSALinkMicWindowCellDelegate
     [self.collectionView reloadData];
 }
 
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    if (linkMicStatus == PLVLinkMicUserLinkMicStatus_Inviting) {
+        self.linkMicPreView.isOnlyAudio = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+        [self.linkMicPreView showLinkMicPreviewView:YES];
+        UIView *superview = self.superview.superview;
+        if (superview) {
+            [superview addSubview:self.linkMicPreView];
+            [superview bringSubviewToFront:self.linkMicPreView];
+        }
+    }
+}
+
 - (void)switchLinkMicWindowsLayoutSpeakerMode:(BOOL)speakerMode linkMicWindowMainSpeaker:(NSString * _Nullable)linkMicUserId {
     PLVSALinkMicLayoutMode layoutMode = speakerMode ? PLVSALinkMicLayoutModeSpeaker : PLVSALinkMicLayoutModeTiled;
     if (layoutMode == PLVSALinkMicLayoutModeSpeaker) {
@@ -148,6 +164,10 @@ PLVSALinkMicWindowCellDelegate
 
 - (void)fullScreenLinkMicUser:(PLVLinkMicOnlineUser *)onlineUser {
     [self fullScreenViewOnlineUser:onlineUser didFullScreen:YES];
+}
+
+- (void)finishClass {
+    [self.linkMicPreView showLinkMicPreviewView:NO];
 }
 
 #pragma mark - [ Private Method ]
@@ -426,6 +446,7 @@ PLVSALinkMicWindowCellDelegate
         }
         
         [self.fullScreenCell.contentView removeFromSuperview];
+        self.fullScreenContentView.hidden = YES;
         self.fullScreenCell.delegate = nil;
         self.fullScreenCell = nil;
         self.fullScreenUserId = nil;
@@ -436,7 +457,8 @@ PLVSALinkMicWindowCellDelegate
         self.fullScreenCell = [[PLVSALinkMicWindowCell alloc] init];
         self.fullScreenCell.delegate = self;
         self.fullScreenCell.frame = self.bounds;
-        [[PLVSAUtils sharedUtils].homeVC.view addSubview:self.fullScreenCell.contentView];
+        self.fullScreenContentView.hidden = NO;
+        [self.fullScreenContentView addSubview:self.fullScreenCell.contentView];
         [self.fullScreenCell setUserModel:onlineUser hideCanvasViewWhenCameraClose:NO];
         [self.fullScreenCell setNeedsLayout];
         [self.fullScreenCell layoutIfNeeded];
@@ -537,6 +559,22 @@ PLVSALinkMicWindowCellDelegate
     return _speakerPlaceholderView;
 }
 
+- (PLVSALinkMicPreviewView *)linkMicPreView {
+    if(!_linkMicPreView) {
+        _linkMicPreView = [[PLVSALinkMicPreviewView alloc] init];
+        _linkMicPreView.delegate = self;
+    }
+    return _linkMicPreView;
+}
+
+- (UIView *)fullScreenContentView {
+    if(!_fullScreenContentView) {
+        _fullScreenContentView = [[UIView alloc] init];
+        _fullScreenContentView.hidden = YES;
+    }
+    return _fullScreenContentView;
+}
+
 - (PLVRoomUserType)viewerType{
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
 }
@@ -595,6 +633,13 @@ PLVSALinkMicWindowCellDelegate
         });
     } else {
         [PLVSAUtils showToastInHomeVCWithMessage:message];
+    }
+}
+
+#pragma mark Callback
+- (void)callbackForAcceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicWindowsView:acceptLinkMicInvitation:timeoutCancel:)]) {
+        [self.delegate plvSALinkMicWindowsView:self acceptLinkMicInvitation:accept timeoutCancel:timeoutCancel];
     }
 }
 
@@ -713,6 +758,23 @@ PLVSALinkMicWindowCellDelegate
     self.delayDisplayToast = YES;
     [self fullScreenViewOnlineUser:onlineUser didFullScreen:onlineUser.currentScreenShareOpen];
     [PLVSAUtils showToastInHomeVCWithMessage:message];
+}
+
+#pragma mark PLVSALinkMicPreviewViewDelegate
+- (void)plvSALinkMicPreviewViewAcceptLinkMicInvitation:(PLVSALinkMicPreviewView *)linkMicPreView {
+    [self.localOnlineUser wantOpenUserMic:self.linkMicPreView.micOpen];
+    [self.localOnlineUser wantOpenUserCamera:self.linkMicPreView.cameraOpen];
+    [self callbackForAcceptLinkMicInvitation:YES timeoutCancel:NO];
+}
+
+- (void)plvSALinkMicPreviewView:(PLVSALinkMicPreviewView *)linkMicPreView cancelLinkMicInvitationReason:(PLVSACancelLinkMicInvitationReason)reason {
+    [self callbackForAcceptLinkMicInvitation:NO timeoutCancel:reason == PLVSACancelLinkMicInvitationReason_Timeout];
+}
+
+- (void)plvSALinkMicPreviewView:(PLVSALinkMicPreviewView *)linkMicPreView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicWindowsView:inviteLinkMicTTL:)]) {
+        [self.delegate plvSALinkMicWindowsView:self inviteLinkMicTTL:callback];
+    }
 }
 
 @end

@@ -210,6 +210,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
     __weak typeof(self) weakSelf = self;
     [UIView animateWithDuration:(show ? PLVLCLinkMicControlBar_CommonTime : 0.1) animations:^{
         weakSelf.alpha = show ? 1.0 : 0.0;
+        [weakSelf controlBarUserInteractionEnabled:show];
     }];
 }
 
@@ -403,11 +404,13 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 #pragma mark Animation
 /// 刷新控制栏长度动画
 - (void)refreshSelfViewFrameAnimation{
+    [self controlBarUserInteractionEnabled:NO];
     __weak typeof(self) weakSelf = self;
     [UIView animateWithDuration:PLVLCLinkMicControlBar_ShiftTime delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         [weakSelf refreshControlBarFrame];
         weakSelf.alpha = 1;
     } completion:^(BOOL finished) {
+        [weakSelf controlBarUserInteractionEnabled:YES];
     }];
 }
 

@@ -63,6 +63,14 @@ PLVSALinkMicWindowsViewDelegate
     [self.windowsView updateFirstSiteCanvasViewWithUserId:linkMicUserId toFirstSite:toFirstSite];
 }
 
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    [self.windowsView updateLocalUserLinkMicStatus:linkMicStatus];
+}
+
+- (void)finishClass {
+    [self.windowsView finishClass];
+}
+
 - (void)clear {
     [self.windowsView removeFromSuperview];
 }
@@ -219,6 +227,18 @@ PLVSALinkMicWindowsViewDelegate
 - (void)linkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen {
     if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicAreaView:onlineUser:isFullScreen:)]) {
         [self.delegate linkMicAreaView:self onlineUser:onlineUser isFullScreen:isFullScreen];
+    }
+}
+
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicAreaView:acceptLinkMicInvitation:timeoutCancel:)]) {
+        [self.delegate plvSALinkMicAreaView:self acceptLinkMicInvitation:accept timeoutCancel:timeoutCancel];
+    }
+}
+
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicAreaView:inviteLinkMicTTL:)]) {
+        [self.delegate plvSALinkMicAreaView:self inviteLinkMicTTL:callback];
     }
 }
 

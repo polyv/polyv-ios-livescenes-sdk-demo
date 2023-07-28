@@ -35,6 +35,8 @@ PLVSocketManagerProtocol // socket协议
 @property (nonatomic, assign) BOOL autoly;
 /// 只读，当前连麦在线用户数组
 @property (nonatomic, strong, readonly) NSArray <PLVLinkMicOnlineUser *> * currentOnlineUserArray;
+/// 只读，等待连麦在线用户数组
+@property (nonatomic, strong, readonly) NSArray <PLVLinkMicWaitUser *> * currentWaitUserArray;
 
 @end
 
@@ -157,7 +159,7 @@ PLVSocketManagerProtocol // socket协议
         ![linkMicWaitUserArray isKindOfClass:[NSArray class]]) {
         return;
     }
-    
+    BOOL isNotified = NO; // 兼容个别角色取消举手时不会通知
     NSArray *originUserArray = [self.userArray copy];
     NSArray <NSString *> *userIdArray = [originUserArray valueForKeyPath:@"userId"];
     for (int i = 0; i < linkMicWaitUserArray.count; i++) {
@@ -168,6 +170,7 @@ PLVSocketManagerProtocol // socket协议
                 if ([chatUser.userId isEqualToString:waitUser.userId]) {
                     chatUser.onlineUser = nil;
                     chatUser.waitUser = waitUser;
+                    isNotified = YES;
                     [self sortUsers];
                     [self notifyUserArrayChanged];
                     break;
@@ -178,6 +181,7 @@ PLVSocketManagerProtocol // socket协议
                 PLVChatUser * chatUser = [[PLVChatUser alloc] initWithUserInfo:waitUser.originalUserDict];
                 chatUser.onlineUser = nil;
                 chatUser.waitUser = waitUser;
+                isNotified = YES;
                 [self addUser:chatUser];
                 [self notifyUserArrayChanged];
             }else{
@@ -193,12 +197,17 @@ PLVSocketManagerProtocol // socket协议
             NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, chatUser.userId illegal %@", chatUser.userId);
             continue;
         }
-        if (![waitUserIdArray containsObject:chatUser.userId] &&
+        if (![waitUserIdArray containsObject:chatUser.userId] && ![waitUserIdArray containsObject:chatUser.micId] &&
             chatUser.waitUser) {
             chatUser.waitUser = nil;
+            isNotified = YES;
             [self sortUsers];
             [self notifyUserArrayChanged];
         }
+    }
+    
+    if (!isNotified) {
+        [self notifyUserArrayChanged];
     }
 }
 
@@ -282,6 +291,15 @@ PLVSocketManagerProtocol // socket协议
         currentOnlineUserList = [self.delegate currentOnlineUserListInMemberPresenter:self];
     }
     return currentOnlineUserList;
+}
+
+- (NSArray<PLVLinkMicWaitUser *> *)currentWaitUserArray{
+    NSArray * currentWaitUserList;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(currentWaitUserListInMemberPresenter:)]) {
+        currentWaitUserList = [self.delegate currentWaitUserListInMemberPresenter:self];
+    }
+    return currentWaitUserList;
 }
 
 #pragma mark 在线用户
@@ -403,6 +421,9 @@ PLVSocketManagerProtocol // socket协议
 - (void)addUser:(PLVChatUser *)user {
     PLVChatUser *existedUser = [self searchUserInUserArrayWithUserId:user.userId];
     if (existedUser) {
+        if (!existedUser.waitUser && !existedUser.onlineUser) {
+            existedUser.waitUser = user.waitUser;
+        }
         return;
     }
     
@@ -607,6 +628,11 @@ PLVSocketManagerProtocol // socket协议
 /// 有用户登陆
 - (void)loginEvent:(NSDictionary *)data {
     NSDictionary *userDict = data[@"user"];
+    NSString *userSource = PLV_SafeStringForDictKey(userDict, @"userSource");
+    if ([userSource isEqualToString:@"chatroom"]) {
+        return; // 过滤"userSource":"chatroom"的用户
+    }
+    
     PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
     [self addUser:user];
     // 数据变更通知

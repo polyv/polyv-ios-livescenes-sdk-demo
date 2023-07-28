@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PLVLinkMicUserDefine.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -54,6 +55,10 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 
 - (BOOL)statusAreaView_didTapAudioLinkMicButton:(BOOL)start;
 
+- (void)statusAreaView_didRequestJoinLinkMic:(BOOL)requestJoin;
+
+- (void)statusAreaView_didTapCloseLinkMicButton;
+
 - (PLVLSStatusBarControls)statusAreaView_selectControlsInDemand;
 
 @end
@@ -84,9 +89,6 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 /// @param whiteboard YES - 选中白板 NO - 选中文档
 - (void)syncSelectedWhiteboardOrDocument:(BOOL)whiteboard;
 
-/// 有新成员上线，成员按钮显示红点
-- (void)hasNewMember;
-
 /// 收到新的连麦申请
 - (void)receivedNewJoinLinkMicRequest;
 
@@ -94,8 +96,14 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 /// @param auth 是否授权(YES授权，NO取消授权)
 - (void)updateDocumentSpeakerAuth:(BOOL)auth;
 
+/// 更新当前连麦状态
+/// @param status 当前用户的连麦状态
+- (void)updateStatusViewLinkMicStatus:(PLVLinkMicUserLinkMicStatus)status;
+
 ///  更新推流时RTC统计数据
 - (void)updateStatistics:(PLVRTCStatistics *)statistics;
+
+- (void)changeMemberButtonSelectedState:(BOOL)selected;
 
 @end
 

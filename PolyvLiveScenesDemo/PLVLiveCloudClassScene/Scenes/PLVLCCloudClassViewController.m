@@ -370,6 +370,7 @@ PLVLCLandscapeMessagePopupViewDelegate
             [self.liveRoomSkinView displayLikeButtonView:self.menuAreaView.chatVctrl.likeButtonView];
             [self.liveRoomSkinView displayRedpackButtonView:self.menuAreaView.chatVctrl.redpackButtonView];
             [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
+            [self.liveRoomSkinView displayLotteryWidgetView:self.menuAreaView.chatVctrl.lotteryWidgetView];
             [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 114), 308, 114)];
             [self.cardDetailView hiddenCardDetailView];
         }
@@ -1340,6 +1341,14 @@ PLVLCLandscapeMessagePopupViewDelegate
     }
 }
 
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView emitInteractEvent:(NSString *)event {
+    [self.popoverView.interactView openInteractAppWithEventName:event];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView lotteryWidgetShowStatusChanged:(BOOL)show {
+    [self.liveRoomSkinView showLotteryWidgetView:show];
+}
+
 #pragma mark  PLVCommodityPushViewDelegate
 
 - (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL {
@@ -1444,6 +1453,11 @@ PLVLCLandscapeMessagePopupViewDelegate
                 didOpenRedpack:(NSString *)redpackId
                         status:(NSString *)status {
     [[PLVLCChatroomViewModel sharedViewModel] changeRedpackStateWithRedpackId:redpackId state:status];
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict {
+    NSArray *dataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.menuAreaView.chatVctrl updateLotteryWidgetViewInfo:dataArray];
 }
 
 #pragma mark PLVLCChatLandscapeViewDelegate

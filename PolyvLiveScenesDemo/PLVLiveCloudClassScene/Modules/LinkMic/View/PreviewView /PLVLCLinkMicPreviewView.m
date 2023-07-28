@@ -9,6 +9,7 @@
 #import "PLVLCLinkMicPreviewView.h"
 #import "PLVCaptureDeviceManager.h"
 #import "PLVLCUtils.h"
+#import "PLVCLinkMicUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <AudioToolbox/AudioToolbox.h>
@@ -383,7 +384,7 @@ static NSInteger kPLVLCLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 - (SystemSoundID)soundID {
     if (!_soundID || _soundID == 0) {
         SystemSoundID soundID = 0;
-        CFURLRef url = (__bridge CFURLRef)[PLVLCUtils URLForLinkMicResource:@"plvlc_linkmic_invitation_bgm.wav"];
+        CFURLRef url = (__bridge CFURLRef)[PLVCLinkMicUtils URLForCLinkMicResource:@"plv_linkmic_invitation_bgm.wav"];
         AudioServicesCreateSystemSoundID(url, &soundID);
         _soundID = soundID;
     }

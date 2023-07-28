@@ -299,6 +299,10 @@ PLVLSBadNetworkSwitchSheetDelegate
     if (!_memberSheet) {
         _memberSheet = [[PLVLSMemberSheet alloc] initWithUserList:[self.memberPresenter userList] userCount:self.memberPresenter.userCount];
         _memberSheet.delegate = self;
+        __weak typeof(self) weakSelf = self;
+        [_memberSheet setSideSheetDismissBlock:^{
+            [weakSelf.statusAreaView changeMemberButtonSelectedState:NO];
+        }];
     }
     return _memberSheet;
 }
@@ -565,6 +569,7 @@ PLVLSBadNetworkSwitchSheetDelegate
     [self.statusAreaView startPushButtonEnable:YES];
     [self.statusAreaView startClass:YES];
     [self.documentAreaView startClass:startClassInfoDict];
+    [self.memberSheet startClass:YES];
 }
 
 - (void)finishClass {
@@ -572,10 +577,12 @@ PLVLSBadNetworkSwitchSheetDelegate
     [self.statusAreaView startClass:NO];
     [self.streamerPresenter finishClass];
     [self.documentAreaView finishClass];
+    [self.memberSheet startClass:NO];
     
     if (self.viewerType == PLVSocketUserTypeGuest) { // 嘉宾登录 下课后重置为未非全屏
         self.fullscreen = NO;
         [self documentFullscreen:self.fullscreen];
+        [self.linkMicAreaView finishClass];
     }
 }
 
@@ -672,6 +679,7 @@ PLVLSBadNetworkSwitchSheetDelegate
             plv_dispatch_main_async_safe(^{
                 if (emitSuccess) {
                     [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
+                    [weakSelf.memberSheet enableAudioVideoLinkMic:start];
                     [PLVLSUtils showToastWithMessage:suceessTitle inView:weakSelf.view];
                 }else{
                     [PLVLSUtils showToastWithMessage:failTitle inView:weakSelf.view];
@@ -699,6 +707,7 @@ PLVLSBadNetworkSwitchSheetDelegate
             plv_dispatch_main_async_safe(^{
                 if (emitSuccess) {
                     [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
+                    [weakSelf.memberSheet enableAudioVideoLinkMic:start];
                     [PLVLSUtils showToastWithMessage:suceessTitle inView:weakSelf.view];
                 }else{
                     [PLVLSUtils showToastWithMessage:failTitle inView:weakSelf.view];
@@ -712,13 +721,26 @@ PLVLSBadNetworkSwitchSheetDelegate
 - (PLVLSStatusBarControls)statusAreaView_selectControlsInDemand{
     if (self.viewerType == PLVRoomUserTypeGuest) {
         PLVChannelLiveStreamState streamState = self.streamerPresenter.currentStreamState;
+        PLVLSStatusBarControls barControls;
         if(streamState == PLVChannelLiveStreamState_Live){
-            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_TimeLabel | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_WhiteboardButton | PLVLSStatusBarControls_DocumentButton;
+            barControls = PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_TimeLabel | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_WhiteboardButton | PLVLSStatusBarControls_DocumentButton;
         }else{
-            return PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_WhiteboardButton | PLVLSStatusBarControls_DocumentButton;
+            barControls = PLVLSStatusBarControls_ChannelInfo | PLVLSStatusBarControls_SignalButton | PLVLSStatusBarControls_MemberButton | PLVLSStatusBarControls_SettingButton | PLVLSStatusBarControls_WhiteboardButton | PLVLSStatusBarControls_DocumentButton;
         }
+        if ([PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic) {
+            barControls =  barControls | PLVLSStatusBarControls_LinkmicButton;
+        }
+        return barControls;
     }
     return PLVLSStatusBarControls_All;
+}
+
+- (void)statusAreaView_didRequestJoinLinkMic:(BOOL)requestJoin {
+    [self.streamerPresenter.localOnlineUser wantUserRequestJoinLinkMic:requestJoin];
+}
+
+- (void)statusAreaView_didTapCloseLinkMicButton {
+    [self.streamerPresenter closeLocalUserLinkMicEmitCompleteBlock:nil];
 }
 
 #pragma mark - PLVLSResolutionSheetDelegate
@@ -790,6 +812,14 @@ PLVLSBadNetworkSwitchSheetDelegate
     [self.memberPresenter kickUserWithUserId:userId];
 }
 
+- (void)inviteUserJoinLinkMicInMemberSheet:(PLVLSMemberSheet *)memberSheet chatUser:(PLVChatUser *)user {
+    PLVLinkMicWaitUser *waitUser = user.waitUser;
+    if (!waitUser) {
+        waitUser = [PLVLinkMicWaitUser modelWithChatUser:user];
+    }
+    [self.streamerPresenter inviteRemoteUserJoinLinkMic:waitUser emitCompleteBlock:nil];
+}
+
 #pragma mark - PLVSDocumentAreaView Delegate
 
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView openBrush:(BOOL)isOpen {
@@ -830,12 +860,14 @@ PLVLSBadNetworkSwitchSheetDelegate
 - (void)socketMananger_didLoginFailure:(NSError *)error {
     __weak typeof(self) weakSelf = self;
     if (error.code == PLVSocketLoginErrorCodeKick) {
+        if (self.streamerPresenter.classStarted) {
+            [self finishClass]; // 讲师被踢出后立即结束当前课程
+        }
         plv_dispatch_main_async_safe(^{
-            [PLVLSUtils showToastWithMessage:@"频道已被禁止直播" inView:self.view afterDelay:3.0];
+            [PLVLSUtils showAlertWithMessage:@"当前直播间已被禁止直播" cancelActionTitle:@"确定" cancelActionBlock:^{
+                [weakSelf logout];
+            } confirmActionTitle:nil confirmActionBlock:nil];
         })
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [weakSelf logout]; // 使用weakSelf，不影响self释放内存，不需要等待此函数执行完成
-        });
     } else if ((error.code == PLVSocketLoginErrorCodeLoginRefuse ||
         error.code == PLVSocketLoginErrorCodeRelogin) &&
         error.localizedDescription) {
@@ -885,6 +917,10 @@ PLVLSBadNetworkSwitchSheetDelegate
 
 - (NSArray *)currentOnlineUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter{
     return self.streamerPresenter.onlineUserArray;
+}
+
+- (NSArray *)currentWaitUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter{
+    return self.streamerPresenter.waitUserArray;
 }
 
 #pragma mark - PLVStreamerPresenterDelegate
@@ -944,6 +980,21 @@ PLVLSBadNetworkSwitchSheetDelegate
         [self.statusAreaView receivedNewJoinLinkMicRequest];
     }
     [self.memberPresenter refreshUserListWithLinkMicWaitUserArray:waitUserArray];
+}
+
+/// ’连麦用户连麦状态‘ 发生改变
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserLinkMicStatusChanged:(PLVLinkMicUserLinkMicStatus)linkMicStatus{
+    if (linkMicStatus == PLVLinkMicUserLinkMicStatus_Inviting) {
+        [self.memberSheet dismiss];
+        [self.channelInfoSheet dismiss];
+        [self.settingSheet dismiss];
+        [self.beautySheet dismiss];
+        [self.moreInfoSheet dismiss];
+        [self.shareLiveSheet dismiss];
+        [self.badNetworkSwitchSheet dismiss];
+    }
+    [self.statusAreaView updateStatusViewLinkMicStatus:linkMicStatus];
+    [self.linkMicAreaView updateLocalUserLinkMicStatus:linkMicStatus];
 }
 
 /// ’RTC房间在线用户数组‘ 发生改变
@@ -1044,6 +1095,13 @@ PLVLSBadNetworkSwitchSheetDelegate
     [PLVLSUtils showToastWithMessage:(currentCameraFront ? @"摄像头已前置" : @"摄像头已后置") inView:self.view];
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter waitLinkMicUser:(nonnull PLVLinkMicWaitUser *)waitUser joinAnswer:(BOOL)isAccept {
+    if (waitUser && !isAccept) {
+        NSString *message = [NSString stringWithFormat:@"%@没有接受你的邀请", waitUser.nickname];
+        [PLVLSUtils showToastWithMessage:message inView:self.view];
+    }
+}
+
 /// 推流管理器 ‘发生错误’ 回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter didOccurError:(NSError *)error fullErrorCode:(NSString *)fullErrorCodeString {
     NSString * message = @"";
@@ -1059,6 +1117,8 @@ PLVLSBadNetworkSwitchSheetDelegate
         message = @"RTC内部错误，启动音频模块失败，请退出重新登录";
     }else if (error.code == PLVStreamerPresenterErrorCode_EndClassFailedNetFailed){
         message = @"下课错误，请直接退出上课页";
+    }else if (error.code >= PLVStreamerPresenterErrorCode_AnswerInvitationFailedStatusIllegal && error.code <= PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited){
+        message = (error.code == PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited) ? @"上麦失败，当前上麦人数已达最大人数" : @"上麦失败";
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
         message = @"未知错误";
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){
@@ -1123,6 +1183,14 @@ PLVLSBadNetworkSwitchSheetDelegate
 
 - (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView rollbackExternalView:(UIView *)externalView {
     [self.documentAreaView displayExternalView:externalView];
+}
+
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
+    [self.streamerPresenter localUserAcceptLinkMicInvitation:accept timeoutCancel:timeoutCancel];
+}
+
+- (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
+    [self.streamerPresenter requestLocalUserInviteLinkMicTTLCallback:callback];
 }
 
 #pragma mark PLVLSBeautySheetDelegate

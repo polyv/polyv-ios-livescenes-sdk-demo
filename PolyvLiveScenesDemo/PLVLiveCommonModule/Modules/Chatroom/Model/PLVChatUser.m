@@ -43,6 +43,7 @@
         
         self.userId = PLV_SafeStringForDictKey(userInfo, @"userId");
         self.userName = PLV_SafeStringForDictKey(userInfo, @"nick");
+        self.micId = PLV_SafeStringForDictKey(userInfo, @"micId");
         
         self.role = PLV_SafeStringForDictKey(userInfo, @"userType");
         self.userType = [PLVRoomUser userTypeWithUserTypeString:self.role];
@@ -104,6 +105,18 @@
     chatUser.actor = playbackMsgUser.actor;
     chatUser.role = playbackMsgUser.role;
     chatUser.userType = [PLVRoomUser userTypeWithUserTypeString:chatUser.role];
+    chatUser.specialIdentity = [PLVRoomUser isSpecialIdentityWithUserType:chatUser.userType];
+    return chatUser;
+}
+
++ (PLVChatUser *)copyUser:(PLVChatUser *)user {
+    PLVChatUser *chatUser = [[PLVChatUser alloc] init];
+    chatUser.userId = user.userId;
+    chatUser.userName = user.userName;
+    chatUser.avatarUrl = user.avatarUrl;
+    chatUser.actor = user.actor;
+    chatUser.role = user.role;
+    chatUser.userType = [PLVFdUtil checkStringUseable:chatUser.role] ? [PLVRoomUser userTypeWithUserTypeString:chatUser.role] : user.userType;
     chatUser.specialIdentity = [PLVRoomUser isSpecialIdentityWithUserType:chatUser.userType];
     return chatUser;
 }

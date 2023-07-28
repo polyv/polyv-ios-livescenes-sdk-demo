@@ -194,8 +194,10 @@ PLVInteractWebViewBridgeDelegate>
 - (void)updateChannelConfigInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     NSDictionary *parames = @{@"event" : @"UPDATE_CHANNEL_SWITCH",
-                            @"value" : @[@{@"type" : @"watchFeedbackEnabled",
-                                        @"enabled" : roomData.watchFeedbackEnabled ? @"Y" : @"N"}]
+                            @"value" :@[@{@"type" : @"watchFeedbackEnabled",
+                                            @"enabled" : roomData.watchFeedbackEnabled ? @"Y" : @"N"},
+                                       @{@"type" : @"conditionLotteryEnabled",
+                                            @"enabled" : roomData.conditionLotteryEnabled ? @"Y" : @"N"}]
     };
     [self.webViewBridge updateChannelConfigInfo:parames];
 }
@@ -253,7 +255,7 @@ PLVInteractWebViewBridgeDelegate>
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
         @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
         @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
-        @"webVersion" : @"0.4.0"
+        @"webVersion" : @"0.5.0"
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
@@ -352,6 +354,13 @@ PLVInteractWebViewBridgeDelegate>
     if ([event isEqualToString:@"UPDATE_CHAT_BUTTON"]) { // 更新聊天室按钮
         NSDictionary *eventDict = PLV_SafeDictionaryForDictKey(dict, @"value");
         [[NSNotificationCenter defaultCenter] postNotificationName:PLVInteractUpdateChatButtonCallbackNotification object:nil userInfo:eventDict];
+    } else if ([event isEqualToString:@"UPDATE_IAR_PENDANT"]) { // 更新挂件控件
+        NSDictionary *eventDict = PLV_SafeDictionaryForDictKey(dict, @"value");
+        plv_dispatch_main_async_safe(^{
+            if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:updateLotteryWidget:)]) {
+                [self.delegate plvInteractGenericView:self updateLotteryWidget:eventDict];
+            }
+        })
     }
 }
 

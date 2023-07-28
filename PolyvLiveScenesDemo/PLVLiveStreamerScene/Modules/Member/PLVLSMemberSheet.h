@@ -39,6 +39,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)kickUsersInMemberSheet:(PLVLSMemberSheet *)memberSheet
                         userId:(NSString *)userId;
 
+/// 邀请某个用户加入连麦
+/// @param user 邀请用户的数据
+- (void)inviteUserJoinLinkMicInMemberSheet:(PLVLSMemberSheet *)memberSheet chatUser:(PLVChatUser *)user;
+
 @end
 
 @interface PLVLSMemberSheet : PLVLSSideSheet
@@ -52,6 +56,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param userCount 在线成员总数（在线成员总数不一定等于数组userList的count）
 - (instancetype)initWithUserList:(NSArray <PLVChatUser *> *)userList userCount:(NSInteger)userCount;
 
+/// 开始上课/结束上课【嘉宾】
+/// @param start YES - 开始上课 NO - 结束上课
+- (void)startClass:(BOOL)start;
+
 /// 更新成员列表弹层所需数据
 /// @param userList 成员列表数据
 /// @param userCount 在线成员总数
@@ -61,6 +69,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 更新本地用户主讲权限
 /// @param auth 本地用户是否授权主讲
 - (void)updateLocalUserSpeakerAuth:(BOOL)auth;
+
+/// 是否开启音视频连麦
+/// @param enable YES 开启，NO关闭
+- (void)enableAudioVideoLinkMic:(BOOL)enable;
 
 @end
 

@@ -29,6 +29,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param toFirstSite 是否到第一画面
 - (void)updateFirstSiteCanvasViewWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite;
 
+/// 本地用户连麦状态发生改变
+/// @param linkMicStatus 连麦状态
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
+
+/// 下课（直播结束）
+- (void)finishClass;
+
 /// 退出直播时调用
 - (void)clear;
 
@@ -89,6 +96,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param onlineUser 连麦用户信息
 /// @param isFullScreen 是否开启全屏(YES 开启 NO 关闭)
 - (void)linkMicAreaView:(PLVSALinkMicAreaView *)areaView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen;
+
+/// 同意/取消 连麦邀请
+/// @param areaView 连麦窗口列表视图
+/// @param accept 是否同意连麦邀请（YES同意，NO拒绝）
+/// @param timeoutCancel 是否是超时拒绝，当accept 为NO时有效
+- (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel;
+
+/// 需要获取 连麦邀请 剩余的等待时间
+/// @param areaView 连麦窗口列表视图
+/// @param callback 获取剩余时间的回调
+- (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback;
 
 @end
 

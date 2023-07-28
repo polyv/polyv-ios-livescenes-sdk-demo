@@ -327,4 +327,18 @@ PLVRoomDataManagerProtocol
     }
 }
 
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC emitInteractEvent:(NSString *)event {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:emitInteractEvent:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self emitInteractEvent:event];
+    }
+}
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC lotteryWidgetShowStatusChanged:(BOOL)show {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:lotteryWidgetShowStatusChanged:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self lotteryWidgetShowStatusChanged:show];
+    }
+}
+
 @end

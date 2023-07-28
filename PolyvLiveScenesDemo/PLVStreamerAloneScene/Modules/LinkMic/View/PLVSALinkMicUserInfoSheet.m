@@ -41,6 +41,7 @@
 @property (nonatomic, weak) PLVLinkMicOnlineUser *user;
 @property (nonatomic, weak) PLVLinkMicOnlineUser *localUser;
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType; // 本地用户类型
+@property (nonatomic, strong) NSArray *buttonArray; // 当前需要显示的按钮
 
 @end
 
@@ -69,7 +70,6 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    BOOL specialType = [self isSpecialIdentityWithUserType:self.user.userType];
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
@@ -85,29 +85,11 @@
     self.nicknameLabel.frame = CGRectMake(lineViewMargin, CGRectGetMaxY(self.actorLabel.frame) + 9, width - lineViewMargin *2, 20);
     
     self.lineView.frame = CGRectMake(lineViewMargin, CGRectGetMaxY(self.nicknameLabel.frame) + lineViewTop, width - lineViewMargin *2, 1);
-        
-    NSMutableArray *buttonArray = [NSMutableArray arrayWithCapacity:6];
-    if (self.viewerType == PLVRoomUserTypeGuest) {
-        if (!self.authSpeakerButton.isHidden) {
-            [buttonArray addObject:self.authSpeakerButton];
-        }
-        [buttonArray addObject:self.fullScreenButton];
-    } else if(self.viewerType == PLVRoomUserTypeTeacher) {
-        if (!self.cameraButton.isHidden) {
-            [buttonArray addObject:self.cameraButton];
-        }
-        [buttonArray addObjectsFromArray:@[self.micphoneButton]];
-        if (!self.authSpeakerButton.isHidden) {
-            [buttonArray addObject:self.authSpeakerButton];
-        }
-        [buttonArray addObject:self.fullScreenButton];
-        if (!specialType) {
-            [buttonArray addObject:self.stopLinkMicButton];
-        }
-    }
     
-    [self setButtonFrameWithArray:buttonArray];
-    [self setButtonInsetsWithArray:buttonArray];
+    if ([PLVFdUtil checkArrayUseable:self.buttonArray]) {
+        [self setButtonFrameWithArray:self.buttonArray];
+        [self setButtonInsetsWithArray:self.buttonArray];
+    }
 }
 
 #pragma mark - [ Public Method ]
@@ -130,10 +112,18 @@
     }
     
     self.actorLabel.hidden = !specialType && user.actor;
-    self.cameraButton.hidden = !isTeacher || ([PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video);
+    PLVChannelLinkMicMediaType mediaType = [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType;
+    BOOL isOnlyAudio = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+    BOOL showCameraButton = isTeacher && ((specialType && !isOnlyAudio) || mediaType == PLVChannelLinkMicMediaType_Video);
+    self.cameraButton.hidden = !showCameraButton;
     self.micphoneButton.hidden = !isTeacher;
     self.authSpeakerButton.hidden = !(self.hasManageSpeakerAuth && user.userType == PLVRoomUserTypeGuest);
-    self.stopLinkMicButton.hidden = specialType || !isTeacher;
+    BOOL isGuestManualJoinLinkMic = [PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
+    BOOL hiddenLinkMicButton = specialType || !isTeacher;
+    if (isGuestManualJoinLinkMic) {
+        hiddenLinkMicButton = (specialType && user.userType != PLVSocketUserTypeGuest) || !isTeacher;
+    }
+    self.stopLinkMicButton.hidden = hiddenLinkMicButton;
     
     NSString *colorHexString = [self actorBgColorHexStringWithUserType:user.userType];
     if (colorHexString && !self.actorLabel.hidden) {
@@ -150,9 +140,23 @@
         [self addLocalUserInfoChangedBlock:localUser];
     }
 
+    // 更新button数据
+    [self updateNeedShowButtonArray];
     // 刷新UI
+    [self updateSheetHight];
     [self setNeedsLayout];
     [self layoutIfNeeded];
+}
+
+- (void)updateSheetHight {
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    NSInteger buttonCount = [PLVFdUtil checkArrayUseable:self.buttonArray] ? self.buttonArray.count : 0;
+    if (![PLVSAUtils sharedUtils].isLandscape && !isPad && buttonCount > 4) {
+        CGFloat heightScale = 0.46;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        self.sheetHight = sheetHeight;
+    }
 }
 
 - (void)showInView:(UIView *)parentView {
@@ -446,6 +450,30 @@
             [weakSelf layoutSubviews];
         })
     } blockKey:self];
+}
+
+- (void)updateNeedShowButtonArray {
+    NSMutableArray *buttonArray = [NSMutableArray arrayWithCapacity:6];
+    if (self.viewerType == PLVRoomUserTypeGuest) {
+        if (!self.authSpeakerButton.isHidden) {
+            [buttonArray addObject:self.authSpeakerButton];
+        }
+        [buttonArray addObject:self.fullScreenButton];
+    } else if(self.viewerType == PLVRoomUserTypeTeacher) {
+        if (!self.cameraButton.isHidden) {
+            [buttonArray addObject:self.cameraButton];
+        }
+        [buttonArray addObjectsFromArray:@[self.micphoneButton]];
+        if (!self.authSpeakerButton.isHidden) {
+            [buttonArray addObject:self.authSpeakerButton];
+        }
+        [buttonArray addObject:self.fullScreenButton];
+        if (!self.stopLinkMicButton.isHidden) {
+            [buttonArray addObject:self.stopLinkMicButton];
+        }
+    }
+
+    self.buttonArray = buttonArray;
 }
 
 #pragma mark - Event

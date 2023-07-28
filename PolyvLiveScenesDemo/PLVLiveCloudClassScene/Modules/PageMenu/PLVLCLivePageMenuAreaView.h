@@ -98,5 +98,15 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView alertLongContentMessage:(PLVChatModel *)model;
 
+/// 点击互动模块控件的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param event 互动模块事件
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView emitInteractEvent:(NSString *)event;
+
+/// 抽奖挂件显示状态改变的的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param show 当前的显示状态
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView lotteryWidgetShowStatusChanged:(BOOL)show;
+
 @end
 NS_ASSUME_NONNULL_END

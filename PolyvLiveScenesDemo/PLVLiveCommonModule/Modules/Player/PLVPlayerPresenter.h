@@ -112,6 +112,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 无延迟直播的当前 ‘开始结束状态’
 @property (nonatomic, assign, readonly) BOOL currentNoDelayLiveStart;
 
+/// 播放器当前的缩放尺寸
+@property (nonatomic, assign,readonly) IJKMPMovieScalingMode scalingMode;
+
 #pragma mark UI
 /// 外部传入的，负责承载播放器画面的父视图
 ///
@@ -157,6 +160,12 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param displayView 承载播放器画面的父视图
 - (void)setupPlayerWithDisplayView:(UIView *)displayView;
+
+
+/// 设置 播放器 的缩放尺寸
+///
+/// @param scalingMode 缩放尺寸，默认为IJKMPMovieScalingModeAspectFit
+- (void)setupScalingMode:(IJKMPMovieScalingMode)scalingMode;
 
 /// 清理播放器
 - (void)cleanPlayer;

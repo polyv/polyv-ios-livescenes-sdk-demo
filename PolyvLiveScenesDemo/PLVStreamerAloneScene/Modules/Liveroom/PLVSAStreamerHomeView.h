@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 踢出某个用户回调
 - (void)kickUsersInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUserId:(NSString *)userId;
 
+/// 邀请某个用户加入连麦的回调
+- (void)inviteUserJoinLinkMicInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUser:(PLVLinkMicWaitUser *)user;
+
 /// 获取当前清晰度
 - (PLVResolutionType)streamerHomeViewCurrentQuality:(PLVSAStreamerHomeView *)homeView;
 
@@ -140,6 +143,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)showBeautySheet:(BOOL)show;
 
 - (void)updateStatistics:(PLVRTCStatistics *)statistics;
+
+- (void)dismissBottomSheet;
 
 - (void)showBadNetworkTipsView;
 

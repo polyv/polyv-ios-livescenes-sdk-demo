@@ -26,6 +26,7 @@
 @property (nonatomic, strong) UIView * likeButtonBackgroudView;
 @property (nonatomic, strong) UIView * redpackBackgroudView;
 @property (nonatomic, strong) UIView * cardPushBackgroudView;
+@property (nonatomic, strong) UIView * lotteryWidgetView;
 @property (nonatomic, strong) UIButton *rewardButton;
 @property (nonatomic, strong) UIButton *commodityButton;
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
@@ -176,6 +177,16 @@
     }
 }
 
+- (void)displayLotteryWidgetView:(UIView *)lotteryWidgetView {
+    if (lotteryWidgetView && [lotteryWidgetView isKindOfClass:UIView.class]) {
+        [self.lotteryWidgetView addSubview:lotteryWidgetView];
+        lotteryWidgetView.frame = self.lotteryWidgetView.bounds;
+        lotteryWidgetView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }else{
+        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayLotteryWidgetView failed, view illegal %@", lotteryWidgetView);
+    }
+}
+
 - (void)showCommodityButton:(BOOL)show {
     self.commodityButton.hidden = !show;
     [self refreshBottomButtonsFrame];
@@ -188,6 +199,11 @@
 
 - (void)showCardPushButtonView:(BOOL)show {
     self.cardPushBackgroudView.hidden = !show;
+    [self refreshBottomButtonsFrame];
+}
+
+- (void)showLotteryWidgetView:(BOOL)show {
+    self.lotteryWidgetView.hidden = !show;
     [self refreshBottomButtonsFrame];
 }
 
@@ -351,11 +367,15 @@
         self.redpackBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
         buttonOriginX -= (buttonPadding + buttonWidth);
     }
-    
     // 从右数起第一个按钮为卡片推送时，位置适配，右边间隔从10改为50
     buttonOriginX = MIN(buttonOriginX, viewWidth - rightSafePadding - 50 - buttonWidth);
     if (!self.cardPushBackgroudView.isHidden) {
         self.cardPushBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
+    if (!self.lotteryWidgetView.isHidden) {
+        self.lotteryWidgetView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
         buttonOriginX -= (buttonPadding + buttonWidth);
     }
     
@@ -482,6 +502,14 @@
     return _cardPushBackgroudView;
 }
 
+- (UIView *)lotteryWidgetView{
+    if (!_lotteryWidgetView) {
+        _lotteryWidgetView = [[UIView alloc] init];
+        _lotteryWidgetView.hidden = YES;
+    }
+    return _lotteryWidgetView;
+}
+
 - (UIButton *)rewardButton {
     if (!_rewardButton) {
         _rewardButton = [[UIButton alloc]init];
@@ -529,8 +557,9 @@
     [self addSubview:self.likeButtonBackgroudView];
     [self addSubview:self.redpackBackgroudView];
     [self addSubview:self.cardPushBackgroudView];
-    [self addSubview:self.landscapeInputView];
+    [self addSubview:self.lotteryWidgetView];
     [self addSubview:self.commodityButton];
+    [self addSubview:self.landscapeInputView];
 
     // 注意：懒加载过程中已增加判断，若场景不匹配，将创建失败并返回nil
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 视频类型为 直播

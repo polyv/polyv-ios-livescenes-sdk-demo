@@ -156,7 +156,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     uiFrame.origin.x = UIViewGetRight(self.btnAgree) - uiFrame.size.width;
     self.btnUserProtocol.frame = uiFrame;
     
-    self.backButton.frame = CGRectMake(16, 16, 44, 44);
+    self.backButton.frame = CGRectMake(16, 16 + P_SafeAreaTopEdgeInsets(), 44, 44);
 }
 
 // 自动填充用户信息

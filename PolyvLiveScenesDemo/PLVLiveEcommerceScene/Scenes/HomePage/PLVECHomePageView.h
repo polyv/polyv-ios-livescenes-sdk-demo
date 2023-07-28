@@ -88,6 +88,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param model 对应消息数据模型
 - (void)homePageView_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model;
 
+/// 点击互动模块控件的回调
+/// @param event 互动模块事件
+- (void)homePageView:(PLVECHomePageView *)homePageView emitInteractEvent:(NSString *)event;
+
 @end
 
 @interface PLVECHomePageView : UIView
@@ -149,6 +153,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)updateMoreButtonDataArray:(NSArray *)dataArray;
 
 - (void)showInScreen:(BOOL)show;
+
+/// 更新抽奖插件信息
+/// @param dataArray 抽奖插件数据
+- (void)updateLotteryWidgetViewInfo:(NSArray *)dataArray;
 
 @end
 

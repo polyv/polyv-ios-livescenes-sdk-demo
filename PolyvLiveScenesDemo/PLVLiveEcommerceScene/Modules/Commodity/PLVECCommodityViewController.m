@@ -100,7 +100,7 @@ PLVProductWebViewBridgeDelegate
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
         @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
         @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
-        @"webVersion" : @"0.4.0"
+        @"webVersion" : @"0.5.0"
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];

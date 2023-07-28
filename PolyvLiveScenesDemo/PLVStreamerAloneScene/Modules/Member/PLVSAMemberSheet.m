@@ -35,6 +35,8 @@ PLVSAMemberCellDelegate
 @property (nonatomic, assign) NSInteger userCount;
 @property (nonatomic, assign) NSInteger onlineCount;
 @property (nonatomic, assign) BOOL showingPopup;
+@property (nonatomic, assign) BOOL startClass; // 是否开始上课
+@property (nonatomic, assign) BOOL enableLinkMic; // 是否开启连麦
 
 @end
 
@@ -72,6 +74,19 @@ PLVSAMemberCellDelegate
     self.userCount = userCount;
     self.onlineCount = onlineCount;
     [self updateUI];
+}
+
+- (void)startClass:(BOOL)start {
+    _startClass = start;
+    if (!start) {
+        [self enableAudioVideoLinkMic:NO];
+    }
+    [self.tableView reloadData];
+}
+
+- (void)enableAudioVideoLinkMic:(BOOL)enable {
+    _enableLinkMic = enable;
+    [self.tableView reloadData];
 }
 
 #pragma mark - [ Private Method ]
@@ -123,6 +138,9 @@ PLVSAMemberCellDelegate
         _tableView.tableFooterView = [UIView new];
         _tableView.showsVerticalScrollIndicator = NO;
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+        if (@available(iOS 11.0, *)) {
+            _tableView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
+        }
     }
     return _tableView;
 }
@@ -276,6 +294,20 @@ PLVSAMemberCellDelegate
     NSInteger maxLinkMicCount = [PLVRoomDataManager sharedManager].roomData.interactNumLimit;
     BOOL allowLinkmic = self.onlineCount <= maxLinkMicCount;
     return allowLinkmic;
+}
+
+- (void)didInviteUserJoinLinkMicInCell:(PLVChatUser *)user {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(inviteUserJoinLinkMicInMemberSheet:chatUser:)]) {
+        [self.delegate inviteUserJoinLinkMicInMemberSheet:self chatUser:user];
+    }
+}
+
+- (BOOL)startClassInCell:(PLVSAMemberCell *)cell {
+    return self.startClass;
+}
+
+- (BOOL)enableAudioVideoLinkMicInCell:(PLVSAMemberCell *)cell {
+    return self.enableLinkMic;
 }
 
 @end

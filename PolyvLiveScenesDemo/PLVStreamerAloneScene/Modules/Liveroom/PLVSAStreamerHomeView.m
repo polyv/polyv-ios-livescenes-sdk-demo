@@ -39,6 +39,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 static NSString * const kUserDefaultShowedSlideRightTips = @"UserDefaultShowedSlideRightTips";
+static NSInteger kPLVSALinkMicRequestExpiredTime = 30; // 连麦邀请等待时间(秒)
 
 @interface PLVSAStreamerHomeView ()<
 UIScrollViewDelegate,
@@ -94,6 +95,10 @@ PLVSABadNetworkSwitchSheetDelegate
 @property (nonatomic, assign) BOOL showingLayoutSwitchGuide; // 是否正在显示布局切换新手引导
 @property (nonatomic, strong) NSArray <PLVChatUser *> *userList;
 @property (nonatomic, assign) NSInteger userCount;
+@property (nonatomic, strong) NSTimer *requestLinkMicTimer; // 申请连麦计时器
+@property (nonatomic, assign) NSTimeInterval requestLinkMicLimitTs; // 请求连麦的限制时间
+@property (nonatomic, assign, readonly) BOOL isGuest; // 是否为嘉宾
+@property (nonatomic, assign, readonly) BOOL isGuestManualLinkMic; // 本地嘉宾手动连麦模式
 
 @end
 
@@ -109,6 +114,7 @@ PLVSABadNetworkSwitchSheetDelegate
         self.showingLayoutSwitchGuide = NO;
         [self setupLocalOnlineUser:localOnlineUser];
         [self setupUIWithLinkMicWindowsView:linkMicWindowsView];
+        [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_NotLive];
     }
     return self;
 }
@@ -176,6 +182,7 @@ PLVSABadNetworkSwitchSheetDelegate
         self.linkMicWindowsView.frame = linkMicWindowFrame;
     }
    
+    self.linkMicWindowsView.fullScreenContentView.frame = self.bounds;
     self.statusbarAreaView.frame = CGRectMake(left, top, selfSize.width - left - right, 72);
     self.cameraAndMicphoneStateView.frame = CGRectMake(left, CGRectGetMaxY(self.statusbarAreaView.frame) + cameraAndMicphoneStateViewTop, selfSize.width - left - right, 36);
     self.toolbarAreaView.frame = CGRectMake(left, selfSize.height - bottom - toolbarAreaViewHeight, selfSize.width - left - right, toolbarAreaViewHeight);
@@ -253,6 +260,9 @@ PLVSABadNetworkSwitchSheetDelegate
 - (void)startClass:(BOOL)start {
     [self.statusbarAreaView startClass:start];
     [self.moreInfoSheet startClass:start];
+    [self.memberSheet startClass:start];
+    PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = start ? PLVSAToolbarLinkMicButtonStatus_Default : PLVSAToolbarLinkMicButtonStatus_NotLive;
+    [self updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
 }
 
 - (void)setPushStreamDuration:(NSTimeInterval)duration {
@@ -284,6 +294,7 @@ PLVSABadNetworkSwitchSheetDelegate
 
 - (void)setLinkMicButtonSelected:(BOOL)selected {
     self.toolbarAreaView.channelLinkMicOpen = selected;
+    [self.memberSheet enableAudioVideoLinkMic:selected];
 }
 
 - (void)showMemberBadge:(BOOL)show {
@@ -342,6 +353,14 @@ PLVSABadNetworkSwitchSheetDelegate
     [self.statusbarAreaView updateRTT:statistics.rtt upLoss:statistics.upLoss downLoss:statistics.downLoss];
 }
 
+- (void)dismissBottomSheet {
+    [self.memberSheet dismiss];
+    [self.channelInfoSheet dismiss];
+    [self.moreInfoSheet dismiss];
+    [self.bitRateSheet dismiss];
+    [self.commoditySheet dismiss];
+}
+
 - (void)showBadNetworkTipsView {
     [self.badNetworkTipsView showAtView:self.homePageView aboveSubview:self.statusbarAreaView];
     
@@ -355,6 +374,7 @@ PLVSABadNetworkSwitchSheetDelegate
     self.linkMicWindowsView = linkMicWindowsView;
     
     [self addSubview:self.scrollView];
+    [self insertSubview:self.linkMicWindowsView.fullScreenContentView aboveSubview:self.scrollView];
     [self insertSubview:self.closeButton aboveSubview:self.scrollView];
 
     // 迁移连麦窗口到homeView上
@@ -392,6 +412,21 @@ PLVSABadNetworkSwitchSheetDelegate
         weakSelf.moreInfoSheet.currentMicOpen = onlineUser.currentMicOpen;
         [weakSelf.cameraAndMicphoneStateView updateCameraOpen:onlineUser.currentCameraOpen micphoneOpen:onlineUser.currentMicOpen];
     };
+    
+    [self.localOnlineUser addCurrentStatusVoiceChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = onlineUser.currentStatusVoice ? PLVSAToolbarLinkMicButtonStatus_Joined : PLVSAToolbarLinkMicButtonStatus_Default;
+        [weakSelf updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
+    } blockKey:self];
+    
+    self.localOnlineUser.linkMicStatusBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = PLVSAToolbarLinkMicButtonStatus_Default;
+        if (onlineUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_Joined) {
+            linkMicbButtonStatus = PLVSAToolbarLinkMicButtonStatus_Joined;
+        } else if (onlineUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_HandUp) {
+            linkMicbButtonStatus = PLVSAToolbarLinkMicButtonStatus_HandUp;
+        }
+        [weakSelf updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
+    };
 }
 
 /// 设置更多弹窗数据
@@ -411,7 +446,7 @@ PLVSABadNetworkSwitchSheetDelegate
 }
 
 - (void)showLayoutSwitchGuideWithUserCount:(NSInteger)userCount {
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeGuest || userCount < 2) {
+    if (self.isGuest || userCount < 2) {
         self.showingLayoutSwitchGuide = NO;
         [self.layoutSwitchGuideView showLinkMicLayoutSwitchGuide:NO];
         return;
@@ -466,6 +501,54 @@ PLVSABadNetworkSwitchSheetDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLinkMicButton:linkMicButtonSelected:videoLinkMic:)]) {
         [self.delegate streamerHomeViewDidTapLinkMicButton:self linkMicButtonSelected:selected videoLinkMic:videoLinkMic];
+    }
+}
+
+- (void)guestLinMicButtonAction {
+    if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_NotLive) {
+        [PLVSAUtils showToastInHomeVCWithMessage:@"上课前无法发起连麦"];
+    } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_HandUp) {
+        __weak typeof(self) weakSelf = self;
+        [PLVSAUtils showAlertWithMessage:@"等待接听中，是否取消" cancelActionTitle:@"否" cancelActionBlock:nil confirmActionTitle:@"是" confirmActionBlock:^{
+            [weakSelf.localOnlineUser wantUserRequestJoinLinkMic:NO];
+            [weakSelf updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
+        }];
+    } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_Joined) {
+        __weak typeof(self) weakSelf = self;
+        [PLVSAUtils showAlertWithMessage:@"确定结束连麦吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+            [weakSelf.localOnlineUser wantCloseUserLinkMic];
+            [weakSelf updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
+        }];
+    } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_Default) {
+        [self.localOnlineUser wantUserRequestJoinLinkMic:YES];
+        [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_HandUp];
+    }
+}
+
+// 更新连麦按钮状态 手动上麦嘉宾有效
+- (void)updateToolbarLinkMicButtonStatus:(PLVSAToolbarLinkMicButtonStatus)status {
+    if (self.isGuest && self.isGuestManualLinkMic) {
+        if (status == PLVSAToolbarLinkMicButtonStatus_HandUp) {
+            [self createRequestLinkMicTimer];
+        } else {
+            [self destroyRequestLinkMicTimer];
+        }
+        [self.toolbarAreaView updateLinkMicButtonStatus:status];
+    }
+}
+
+- (void)createRequestLinkMicTimer {
+    if (_requestLinkMicTimer) {
+        [self destroyRequestLinkMicTimer];
+    }
+    self.requestLinkMicLimitTs = kPLVSALinkMicRequestExpiredTime;
+    _requestLinkMicTimer = [NSTimer scheduledTimerWithTimeInterval:1 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(requestLinkMicTimerAction) userInfo:nil repeats:YES];
+}
+
+- (void)destroyRequestLinkMicTimer {
+    if (_requestLinkMicTimer) {
+        [_requestLinkMicTimer invalidate];
+        _requestLinkMicTimer = nil;
     }
 }
 
@@ -665,6 +748,15 @@ PLVSABadNetworkSwitchSheetDelegate
     return type;
 }
 
+- (BOOL)isGuest {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return userType == PLVRoomUserTypeGuest;;
+}
+
+- (BOOL)isGuestManualLinkMic {
+    return self.isGuest && [PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
+}
+
 - (PLVSABadNetworkTipsView *)badNetworkTipsView {
     if (!_badNetworkTipsView) {
         _badNetworkTipsView = [[PLVSABadNetworkTipsView alloc] init];
@@ -702,6 +794,15 @@ PLVSABadNetworkSwitchSheetDelegate
     }
 }
 
+#pragma mark Timer
+- (void)requestLinkMicTimerAction {
+    self.requestLinkMicLimitTs -= 1;
+    if (self.requestLinkMicLimitTs <= 0) {
+        [self.localOnlineUser wantUserRequestJoinLinkMic:NO];
+        [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
+    }
+}
+
 #pragma mark - Delegate
 
 #pragma mark UIScrollViewDelegate
@@ -736,7 +837,11 @@ PLVSABadNetworkSwitchSheetDelegate
 }
 
 - (void)toolbarAreaViewDidTapLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
-    [self linkMicButtonSelected:selected videoLinkMic:[self currentChannelLinkMicMediaType] == PLVChannelLinkMicMediaType_Video];
+    if (self.isGuest) { // 嘉宾用户
+        [self guestLinMicButtonAction];
+    } else {
+        [self linkMicButtonSelected:selected videoLinkMic:[self currentChannelLinkMicMediaType] == PLVChannelLinkMicMediaType_Video];
+    }
 }
 
 - (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView {
@@ -901,6 +1006,16 @@ PLVSABadNetworkSwitchSheetDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(kickUsersInStreamerHomeView:withUserId:)]) {
         [self.delegate kickUsersInStreamerHomeView:self withUserId:userId];
+    }
+}
+
+- (void)inviteUserJoinLinkMicInMemberSheet:(PLVSAMemberSheet *)memberSheet chatUser:(PLVChatUser *)user {
+    PLVLinkMicWaitUser *waitUser = user.waitUser;
+    if (!waitUser) {
+        waitUser = [PLVLinkMicWaitUser modelWithChatUser:user];
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(inviteUserJoinLinkMicInStreamerHomeView:withUser:)]) {
+        [self.delegate inviteUserJoinLinkMicInStreamerHomeView:self withUser:waitUser];
     }
 }
 

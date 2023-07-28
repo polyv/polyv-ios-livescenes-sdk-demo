@@ -45,6 +45,8 @@ UITableViewDataSource
 @property (nonatomic, assign) BOOL delayReload; // 是否在左滑时遇到列表刷新通知
 @property (nonatomic, assign) BOOL showLeftDragAnimation; // 显示左滑动画
 @property (nonatomic, assign) BOOL isRealMainSpeaker; // 本地用户是否是主讲
+@property (nonatomic, assign) BOOL startClass; // 是否开始上课
+@property (nonatomic, assign) BOOL enableLinkMic; // 是否开启连麦
 
 @end
 
@@ -110,8 +112,21 @@ UITableViewDataSource
     [self updateUI];
 }
 
+- (void)startClass:(BOOL)start {
+    _startClass = start;
+    if (!start) {
+        [self enableAudioVideoLinkMic:NO];
+    }
+    [self.tableView reloadData];
+}
+
 - (void)updateLocalUserSpeakerAuth:(BOOL)auth {
     self.isRealMainSpeaker = auth;
+    [self.tableView reloadData];
+}
+
+- (void)enableAudioVideoLinkMic:(BOOL)enable {
+    self.enableLinkMic = enable;
     [self.tableView reloadData];
 }
 
@@ -289,6 +304,12 @@ UITableViewDataSource
     }
 }
 
+- (void)memberCell_inviteUserJoinLinkMic:(PLVChatUser *)user {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(inviteUserJoinLinkMicInMemberSheet:chatUser:)]) {
+        [self.delegate inviteUserJoinLinkMicInMemberSheet:self chatUser:user];
+    }
+}
+
 - (BOOL)allowLinkMicInCell:(PLVLSMemberCell *)cell {
     NSInteger maxLinkMicCount = [PLVRoomDataManager sharedManager].roomData.interactNumLimit;
     BOOL allowLinkmic = self.onlineCount <= maxLinkMicCount;
@@ -297,6 +318,14 @@ UITableViewDataSource
 
 - (BOOL)localUserIsRealMainSpeakerInCell:(PLVLSMemberCell *)cell {
     return self.isRealMainSpeaker;
+}
+
+- (BOOL)startClassInCell:(PLVLSMemberCell *)cell {
+    return self.startClass;
+}
+
+- (BOOL)enableAudioVideoLinkMicInCell:(PLVLSMemberCell *)cell {
+    return self.enableLinkMic;
 }
 
 #pragma mark UITableViewDataSource

@@ -287,6 +287,13 @@ UICollectionViewDelegate
     firstSiteUserModel = [self readUserModelFromDataArray:linkMicUserIndex];
     self.currentSpeakerLinkMicUserId = firstSiteUserModel.linkMicUserId;
     self.currentSpeakerUserIndex = linkMicUserIndex;
+    [self setupLinkMicCanvasViewWithOnlineUser:firstSiteUserModel];
+    [self setupWillDeallocBlockWithOnlineUser:firstSiteUserModel];
+    self.firstSiteCanvasView = firstSiteUserModel.canvasView;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(currentFirstSiteCanvasViewChangedInLinkMicWindowsView:)]) {
+        [self.delegate currentFirstSiteCanvasViewChangedInLinkMicWindowsView:self];
+    }
 }
 
 #pragma mark Getter & Setter

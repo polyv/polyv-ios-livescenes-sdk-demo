@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PLVLinkMicUserDefine.h"
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
@@ -42,8 +43,12 @@ typedef void (^PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock)(PLVLinkMicOnl
 typedef void (^PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’屏幕共享开关状态‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserScreenShareOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户的 ’连麦状态‘ 改变Block
+typedef void (^PLVLinkMicOnlineUserLinkMicStatusChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 
 ///
+/// [事件] 希望用户申请加入连麦 回调Block
+typedef void (^PLVLinkMicOnlineUserWantRequestJoinLinkMicBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantRequest);
 /// [事件] 用户模型 即将销毁 回调Block
 typedef void (^PLVLinkMicOnlineUserWillDeallocBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [事件] 希望开关该用户的麦克风 回调Block
@@ -155,6 +160,17 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 仅在 currentScreenShareOpen 开关值 有改变时会触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserScreenShareOpenChangedBlock screenShareOpenChangedBlock;
+
+/// [状态] 用户 ‘连麦状态改变’ 回调Block
+///
+/// @note 仅在 linkMicStatus 状态 有改变时会触发；不保证在主线程回调
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserLinkMicStatusChangedBlock linkMicStatusBlock;
+
+/// [事件] 希望用户申请加入连麦 回调Block
+///
+/// @note 由 [wantUserRequestJoinLinkMic] 方法直接触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantRequestJoinLinkMicBlock wantRequestJoinLinkMicBlock;
 
 /// [事件] 用户模型 即将销毁 回调Block
 ///
@@ -310,6 +326,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 用户的 屏幕共享 当前是否开启
 @property (nonatomic, assign, readonly) BOOL currentScreenShareOpen;
 
+/// 用户的连麦状态【当本地为嘉宾用户时有效】
+@property (nonatomic, assign, readonly) PLVLinkMicUserLinkMicStatus linkMicStatus;
+
 /// 当前用户的连麦画面是否在放大区域，默认为NO，此时连麦画面在连麦列表上，为YES时表示在放大区域，当前连麦列表需要显示占位图（目前该字段只在互动学堂场景有效）
 @property (nonatomic, assign) BOOL inLinkMicZoom;
 
@@ -400,7 +419,20 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 若最终 用户屏幕共享状态 有所改变，则将触发 [screenShareOpenChangedBlock]；
 - (void)updateUserCurrentScreenShareOpen:(BOOL)screenShareOpen;
 
+/// 更新用户的 ‘当前连麦状态值’
+///
+/// @note 仅在 本地用户为嘉宾时，调用此方法生效；
+- (void)updateUserCurrentLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
+
 #pragma mark 通知机制
+/// 希望该用户申请加入连麦
+///
+/// @note 不直接改变该模型内部的任何值；
+///       而是作为通知机制，直接触发 [wantRequestJoinLinkMicBlock]，由Block实现方去执行相关逻辑
+///
+/// @param request 是否希望用户申请加入连麦 (YES:希望请求，NO:取消请求)
+- (void)wantUserRequestJoinLinkMic:(BOOL)request;
+
 /// 希望开关该用户的麦克风
 ///
 /// @note 不直接改变该模型内部的任何值；

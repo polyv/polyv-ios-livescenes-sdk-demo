@@ -23,9 +23,13 @@
 @property (nonatomic, strong) UILabel *nickNameLabel;
 @property (nonatomic, strong) UIButton *linkmicButton;
 @property (nonatomic, strong) UIButton *moreButton;
+@property (nonatomic, strong) UIImageView *handUpImageView;
 
 /// 数据
 @property (nonatomic, strong) PLVChatUser *user;
+@property (nonatomic, assign, readonly) BOOL startClass; // 是否开始上课
+@property (nonatomic, assign, readonly) BOOL enableLinkMic; // 是否开启连麦
+@property (nonatomic, assign, readonly) BOOL inviteAudioEnabled; // 是否开启邀请连麦开关
 
 @end
 
@@ -46,6 +50,7 @@
         [self.contentView addSubview:self.nickNameLabel];
         [self.contentView addSubview:self.linkmicButton];
         [self.contentView addSubview:self.moreButton];
+        [self.contentView addSubview:self.handUpImageView];
         
         [self.actorBgView.layer addSublayer:self.gradientLayer];
         [self.actorBgView addSubview:self.actorLabel];
@@ -58,7 +63,8 @@
     
     CGFloat cellHeight = self.bounds.size.height;
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    CGFloat margin = isPad ? 56 : 32;
+    CGFloat right = [PLVSAUtils sharedUtils].areaInsets.right;
+    CGFloat margin = isPad ? 56 : MAX(right, 32);
 
     // 配置头像、禁言标志位置
     self.avatarImageView.frame = CGRectMake(margin, (cellHeight - 44)/2.0, 44, 44);
@@ -84,6 +90,7 @@
         buttonOriginX -= (32 + 20);
     }
     self.linkmicButton.frame = CGRectMake(buttonOriginX, (cellHeight - 32)/2.0, 32, 32);
+    self.handUpImageView.frame = CGRectMake(CGRectGetMinX(self.linkmicButton.frame) - 20 - 4, CGRectGetMidY(self.linkmicButton.frame) - 10, 20, 20);
     if (!self.linkmicButton.hidden) {
         buttonOriginX -= 32;
     }
@@ -154,6 +161,13 @@
     
     // 配置昵称文本
     self.nickNameLabel.text = self.user.userName;
+    
+    if(self.user.waitUser) {
+        __weak typeof(self) weakSelf = self;
+        self.user.waitUser.linkMicStatusBlock = ^(PLVLinkMicWaitUser * _Nonnull waitUser) {
+            [weakSelf refreshLinkMicButtonState];
+        };
+    }
 }
 
 + (CGFloat)cellHeight {
@@ -232,24 +246,53 @@
 
 /// 配置【连麦】按钮的显示与隐藏，还有选中状态
 - (void)refreshLinkMicButtonState {
-    BOOL isLoginUser = [self isLoginUser:self.user.userId];
+    BOOL isCanLinkMicGuest = (self.user.userType == PLVRoomUserTypeGuest); // 可以邀请连麦的嘉宾
+    BOOL isCanLinkMicWatchUser = ((self.user.userType == PLVRoomUserTypeSlice || self.user.userType == PLVRoomUserTypeStudent) && self.enableLinkMic && self.inviteAudioEnabled); // 可以邀请连麦的观众
+    BOOL isManagerLinkMicUser = [self canManagerLinkMic]; // 讲师等角色可以操作邀请嘉宾、观众用户连麦
+    BOOL hiddenLinkMicButton = self.startClass ? ((isManagerLinkMicUser && (isCanLinkMicGuest || isCanLinkMicWatchUser)) ? NO : YES) : YES;
+    self.linkmicButton.hidden = hiddenLinkMicButton;
     
-    BOOL buttonHidden = NO;
-    if (isLoginUser || ![self canManagerLinkMic]) {
-        buttonHidden = YES;
-    } else if (self.user.onlineUser.userType == PLVSocketUserTypeGuest) {
-        buttonHidden = ![PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
-    } else {
-        buttonHidden = (self.user.onlineUser || self.user.waitUser) ? NO : YES;
+    BOOL linkMicButtonSelected = (self.user.onlineUser) ? YES : NO;
+    self.linkmicButton.selected = linkMicButtonSelected;
+    if (linkMicButtonSelected && isManagerLinkMicUser && !self.user.onlineUser.localUser) {
+        self.linkmicButton.hidden = NO;
     }
-    self.linkmicButton.hidden = buttonHidden;
     
-    BOOL buttonSelected = NO;
-    if (self.user.onlineUser || self.user.waitUser) {
-        buttonSelected = self.user.onlineUser ? YES : NO;
+    BOOL canShowHandUpUser = (self.user.waitUser && self.user.waitUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_HandUp && isManagerLinkMicUser); // 举手用户
+    BOOL hiddenHandUpImageView = canShowHandUpUser ? NO : YES;
+    self.handUpImageView.hidden = hiddenHandUpImageView;
+    if (canShowHandUpUser) {
+        self.linkmicButton.hidden = NO;
     }
-    self.linkmicButton.selected = buttonSelected;
-    self.linkmicButton.enabled = YES;
+    
+    [self refreshLinkMicButtonStateWithNormal];
+    if (!linkMicButtonSelected && self.user.waitUser && self.user.waitUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_Inviting) {
+        [self refreshLinkMicButtonStateWithInviting];
+    }
+}
+
+/// 刷新按钮状态为邀请连麦中
+- (void)refreshLinkMicButtonStateWithInviting {
+    self.linkmicButton.userInteractionEnabled = NO;
+    UIImageView *buttonImageView = self.linkmicButton.imageView;
+    NSMutableArray *imageArray = [NSMutableArray arrayWithCapacity:3];
+    for (NSInteger i = 0; i < 3; i ++) {
+        [imageArray addObject:[PLVSAUtils imageForMemberResource:[NSString stringWithFormat:@"plvsa_member_linkmic_wait_icon_0%ld.png", i]]];
+    }
+    [buttonImageView setAnimationImages:[imageArray copy]];
+    [buttonImageView setAnimationDuration:1];
+    [buttonImageView startAnimating];
+}
+
+/// 刷新按钮状态为普通状态
+- (void)refreshLinkMicButtonStateWithNormal {
+    self.linkmicButton.userInteractionEnabled = YES;
+    UIImageView *buttonImageView = self.linkmicButton.imageView;
+    if (buttonImageView.isAnimating) {
+        [buttonImageView stopAnimating];
+    }
+    buttonImageView.animationImages = nil;
+    [self.linkmicButton setImage:[PLVSAUtils imageForMemberResource:@"plvsa_member_join_request"] forState:UIControlStateNormal];
 }
 
 #pragma mark Getter & Setter
@@ -332,6 +375,33 @@
     return _moreButton;
 }
 
+- (UIImageView *)handUpImageView {
+    if (!_handUpImageView) {
+        _handUpImageView = [[UIImageView alloc] init];
+        _handUpImageView.image = [PLVSAUtils imageForMemberResource:@"plvsa_member_linkmic_handup_icon"];
+        _handUpImageView.hidden = YES;
+    }
+    return _handUpImageView;
+}
+
+- (BOOL)startClass {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(startClassInCell:)]) {
+        return [self.delegate startClassInCell:self];
+    }
+    return NO;
+}
+
+- (BOOL)enableLinkMic {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(enableAudioVideoLinkMicInCell:)]) {
+        return [self.delegate enableAudioVideoLinkMicInCell:self];
+    }
+    return NO;
+}
+
+- (BOOL)inviteAudioEnabled {
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.inviteAudioEnabled;
+}
+
 #pragma mark Utils
 
 - (BOOL)isLoginUser:(NSString *)userId {
@@ -360,20 +430,30 @@
 #pragma mark Action
 
 - (void)linkMicButtonAction:(id)sender {
-    if (self.user.waitUser) {
+    if (!self.linkmicButton.isSelected) {
         BOOL allowLinkmic = [self.delegate allowLinkMicInCell:self];
         if (allowLinkmic) {
-            [self.user.waitUser wantAllowUserJoinLinkMic];
+            if (self.user.waitUser ||
+                (self.user.userType == PLVRoomUserTypeGuest ||
+                 self.user.userType == PLVRoomUserTypeSlice ||
+                 self.user.userType == PLVRoomUserTypeStudent)) {
+                if (self.delegate && [self.delegate respondsToSelector:@selector(didInviteUserJoinLinkMicInCell:)]) {
+                    [self.delegate didInviteUserJoinLinkMicInCell:self.user];
+                }
+            }
+            
             // 刷新按钮状态为等待连麦
-            self.linkmicButton.enabled = NO;
+            [self refreshLinkMicButtonStateWithInviting];
         } else {
             [PLVSAUtils showToastInHomeVCWithMessage:@"当前连麦人数已达上限"];
         }
-    }else if (self.user.onlineUser){
-        __weak typeof(self) weakSelf = self;
-        [PLVSAUtils showAlertWithTitle:@"确定挂断连麦吗？" Message:@"" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
-            [weakSelf.user.onlineUser wantCloseUserLinkMic];
-        }];
+    } else {
+        if (self.user.onlineUser){
+            __weak typeof(self) weakSelf = self;
+            [PLVSAUtils showAlertWithTitle:@"确定挂断连麦吗？" Message:@"" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+                [weakSelf.user.onlineUser wantCloseUserLinkMic];
+            }];
+        }
     }
 }
 

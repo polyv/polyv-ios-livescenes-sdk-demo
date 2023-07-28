@@ -41,6 +41,7 @@ PLVDefaultPageViewDelegate
 @property (nonatomic, assign) PLVLivePlayerQuickLiveNetworkQuality networkQuality;
 @property (nonatomic, assign) NSInteger networkQualityRepeatCount;
 @property (nonatomic, assign) BOOL currentLivePlaybackChangingVid;
+@property (nonatomic, assign) IJKMPMovieScalingMode scalingMode;
 
 #pragma mark UI
 /// view hierarchy
@@ -295,6 +296,16 @@ PLVDefaultPageViewDelegate
     
     self.defaultPageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.defaultPageView.frame = self.backgroundView.bounds;
+}
+
+- (void)setupScalingMode:(IJKMPMovieScalingMode)scalingMode {
+    if (!self.livePlayer && !self.livePlaybackPlayer) {
+        NSLog(@"PLVPlayerPresenter - %s failed, no player exsit",__FUNCTION__);
+        return;
+    }
+    self.scalingMode = scalingMode;
+    [self.livePlayer setupScalingMode:scalingMode];
+    [self.livePlaybackPlayer setupScalingMode:scalingMode];
 }
 
 - (void)cleanPlayer{
@@ -1029,6 +1040,10 @@ PLVDefaultPageViewDelegate
 
 -(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
     [PLVRoomDataManager sharedManager].roomData.playing = playing;
+}
+
+-(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing systemInterrupts:(BOOL)systemInterrupts{
+    
 }
 
 #pragma mark PLVLivePlaybackPlayerDelegate
