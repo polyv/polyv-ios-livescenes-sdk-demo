@@ -12,6 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVECNewMessageView : UIView
 
+/// 点击手势的回调
+@property (nonatomic, copy) void(^tapActionHandler)(void);
+
 /// 显示横幅
 - (void)show;
 

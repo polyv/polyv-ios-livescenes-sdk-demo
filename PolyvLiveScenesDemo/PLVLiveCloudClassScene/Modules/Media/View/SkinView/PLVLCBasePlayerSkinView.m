@@ -202,6 +202,22 @@ UIGestureRecognizerDelegate>
     }else{
         [self.playButton setImage:[self getImageWithName:@"plvlc_media_skin_play"] forState:UIControlStateHighlighted];
     }
+    
+    if (!self.playButton.enabled) {
+        UIImage *buttonImg = self.playButton.selected ? [self getImageWithName:@"plvlc_media_skin_pause"] : [self getImageWithName:@"plvlc_media_skin_play"];
+        [self.playButton setImage:buttonImg forState:UIControlStateNormal];
+    }
+}
+
+- (void)enablePlayControlButtons:(BOOL)enable {
+    self.playButton.enabled = enable;
+    self.refreshButton.enabled = enable;
+    if (enable) {
+        [self.playButton setImage:[self getImageWithName:@"plvlc_media_skin_play"] forState:UIControlStateNormal];
+    } else {
+        UIImage *buttonImg = self.playButton.selected ? [self getImageWithName:@"plvlc_media_skin_pause"] : [self getImageWithName:@"plvlc_media_skin_play"];
+        [self.playButton setImage:buttonImg forState:UIControlStateNormal];
+    }
 }
 
 - (void)setFullScreenButtonShowOnIpad:(BOOL)show {

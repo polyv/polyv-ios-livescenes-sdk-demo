@@ -29,6 +29,7 @@ static CGFloat PLVSALinkMicCellAspectRatio = 1.5;
 static NSString *kCellIdentifier = @"PLVSALinkMicWindowCellID";
 static NSString *kFullScreenOpenCountKey = @"PLVSAFullScreenOpenCount";
 static NSString *kFullScreenCloseCountKey = @"PLVSAFullScreenCloseCount";
+static NSString *kPLVSALMKEYPATH_CONTENTSIZE = @"contentSize";
 
 @interface PLVSALinkMicWindowsView ()<
 UICollectionViewDataSource,
@@ -47,6 +48,7 @@ PLVSALinkMicPreviewViewDelegate
 @property (nonatomic, assign) NSInteger currentSpeakerUserIndex; // 当前主讲用户在数据中的下标
 @property (nonatomic, copy) NSString *fullScreenUserId; // 全屏用户的Id
 @property (nonatomic, assign) BOOL delayDisplayToast; // 是否需要延迟显示toast
+@property (nonatomic, assign) BOOL observingCollectionView;
 
 #pragma mark UI
 /// view hierarchy
@@ -56,6 +58,7 @@ PLVSALinkMicPreviewViewDelegate
 ///    ├─  (PLVSALinkMicSpeakerPlaceholderView) speakerPlaceholderView
 ///    └─  (PLVSALinkMicWindowsSpeakerView) speakerView
 @property (nonatomic, strong) PLVSALinkMicGuideView *linkMicGuideView; // 连麦新手引导
+@property (nonatomic, strong) UIView *collectionBackgroundView; // 连麦窗口背景视图
 @property (nonatomic, strong) UICollectionView *collectionView; // 连麦窗口集合视图
 @property (nonatomic, strong, readonly) UICollectionViewFlowLayout *collectionViewLayout; // 集合视图的布局
 @property (nonatomic, strong) PLVSALinkMicWindowsSpeakerView *speakerView; // 主讲模式下的第一画面
@@ -71,12 +74,17 @@ PLVSALinkMicPreviewViewDelegate
 
 #pragma mark - [ Life Cycle ]
 
+- (void)dealloc {
+    [self removeObserveCollectionView];
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {
         self.linkMicLayoutMode = PLVSALinkMicLayoutModeTiled;
         [self showToastWithFullScreen:YES reset:YES];
         [self setupUI];
+        [self observeCollectionView];
     }
     return self;
 }
@@ -367,7 +375,7 @@ PLVSALinkMicPreviewViewDelegate
     self.speakerPlaceholderView.hidden = YES;
 
     if (self.linkMicUserCount <= 1 && ![self showSpeakerPlaceholderView]) { //连麦人数1人以下,且不需要显示讲师讲师占位图
-        self.collectionView.frame = self.bounds;
+        self.collectionBackgroundView.frame = self.bounds;
     } else if (self.linkMicUserCount <= 1 && [self showSpeakerPlaceholderView]) {
         //连麦人数1人以下,需要显示讲师讲师占位图
         CGFloat placeholderViewWidth = (windowsViewWidth - left - right)/2;
@@ -381,7 +389,7 @@ PLVSALinkMicPreviewViewDelegate
         }
         self.speakerPlaceholderView.hidden = NO;
         self.speakerPlaceholderView.frame = CGRectMake(collectionViewX, collectionViewY, placeholderViewWidth, placeholderViewHeight);
-        self.collectionView.frame = CGRectMake(CGRectGetMaxX(self.speakerPlaceholderView.frame), CGRectGetMinY(self.speakerPlaceholderView.frame), placeholderViewWidth, placeholderViewHeight);
+        self.collectionBackgroundView.frame = CGRectMake(CGRectGetMaxX(self.speakerPlaceholderView.frame), CGRectGetMinY(self.speakerPlaceholderView.frame), placeholderViewWidth, placeholderViewHeight);
     } else {
         CGFloat collectionViewWidth = windowsViewWidth - collectionViewX - right;
         CGFloat collectionViewHeight = windowsViewHeight - collectionViewY - bottom;
@@ -403,11 +411,7 @@ PLVSALinkMicPreviewViewDelegate
         } else { //竖屏布局
             collectionViewY = top + (isPad ? 92 : 78);
             collectionViewHeight = windowsViewHeight - collectionViewY - bottom;
-            if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeTiled) { //平铺模式
-                if (self.linkMicUserCount <= 4) {
-                    collectionViewHeight = MIN(collectionViewWidth * PLVSALinkMicCellAspectRatio, collectionViewHeight);
-                }
-            } else { //主讲模式
+            if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) { //主讲模式
                 collectionViewX = windowsViewWidth * 0.75;
                 collectionViewWidth = windowsViewWidth * 0.25;
                 CGFloat speakerViewWidth = windowsViewWidth - collectionViewWidth;
@@ -415,8 +419,9 @@ PLVSALinkMicPreviewViewDelegate
                 self.speakerView.frame = CGRectMake(0, collectionViewY, speakerViewWidth, speakerViewHeight);
             }
         }
-        self.collectionView.frame = CGRectMake(collectionViewX, collectionViewY, floor(collectionViewWidth), floor(collectionViewHeight));
+        self.collectionBackgroundView.frame = CGRectMake(collectionViewX, collectionViewY, floor(collectionViewWidth), floor(collectionViewHeight));
     }
+    self.collectionView.frame = self.collectionBackgroundView.bounds;
     self.collectionView.contentOffset = CGPointZero;
     [self.collectionView.collectionViewLayout invalidateLayout];
     [self.collectionView setCollectionViewLayout:self.collectionViewLayout animated:YES];
@@ -485,9 +490,10 @@ PLVSALinkMicPreviewViewDelegate
 #pragma mark Initialize
 
 - (void)setupUI {
-    [self addSubview:self.collectionView];
+    [self addSubview:self.collectionBackgroundView];
     [self addSubview:self.speakerView];
     [self addSubview:self.speakerPlaceholderView];
+    [self.collectionBackgroundView addSubview:self.collectionView];
 }
 
 #pragma mark Getter & Setter
@@ -506,6 +512,13 @@ PLVSALinkMicPreviewViewDelegate
     } else {
         return nil;
     }
+}
+
+- (UIView *)collectionBackgroundView {
+    if (!_collectionBackgroundView) {
+        _collectionBackgroundView = [[UIView alloc] init];
+    }
+    return _collectionBackgroundView;
 }
 
 - (UICollectionViewFlowLayout *)collectionViewLayout {
@@ -643,6 +656,37 @@ PLVSALinkMicPreviewViewDelegate
     }
 }
 
+#pragma mark - KVO
+- (void)observeCollectionView {
+    if (!self.observingCollectionView) {
+        self.observingCollectionView = YES;
+        [self.collectionView addObserver:self forKeyPath:kPLVSALMKEYPATH_CONTENTSIZE options:NSKeyValueObservingOptionNew context:nil];
+    }
+}
+
+- (void)removeObserveCollectionView {
+    if (self.observingCollectionView) {
+        self.observingCollectionView = NO;
+        [self.collectionView removeObserver:self forKeyPath:kPLVSALMKEYPATH_CONTENTSIZE];
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([object isKindOfClass:UICollectionView.class] && [keyPath isEqualToString:kPLVSALMKEYPATH_CONTENTSIZE]) {
+        CGFloat contentHeight = self.collectionView.contentSize.height;
+        if (contentHeight < CGRectGetHeight(self.collectionBackgroundView.bounds) && self.linkMicLayoutMode == PLVSALinkMicLayoutModeTiled) {
+            [UIView animateWithDuration:0.2 animations:^{
+                CGFloat relativeScreenOriginY = (PLVScreenHeight - contentHeight)/2 - CGRectGetMinY(self.collectionBackgroundView.frame);
+                CGRect newFrame = CGRectMake(0, MAX(0, relativeScreenOriginY), CGRectGetWidth(self.collectionBackgroundView.bounds), contentHeight);
+                self.collectionView.frame = newFrame;
+            }];
+        } else if (CGRectGetHeight(self.collectionBackgroundView.bounds) > 0) {
+            self.collectionView.scrollEnabled = YES;
+            self.collectionView.frame = self.collectionBackgroundView.bounds;
+        }
+    }
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark UICollectionViewDataSource
@@ -683,8 +727,8 @@ PLVSALinkMicPreviewViewDelegate
   sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    CGFloat collectionViewWidth = self.collectionView.bounds.size.width;
-    CGFloat collectionViewHeigth = self.collectionView.bounds.size.height;
+    CGFloat collectionViewWidth = self.collectionBackgroundView.bounds.size.width;
+    CGFloat collectionViewHeigth = self.collectionBackgroundView.bounds.size.height;
     CGFloat collectionCellWidth = collectionViewWidth;
     CGFloat collectionCellHeigth = collectionViewHeigth;
     if (self.linkMicUserCount <= 1) {

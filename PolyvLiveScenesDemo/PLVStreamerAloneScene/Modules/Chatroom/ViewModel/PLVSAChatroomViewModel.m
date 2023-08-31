@@ -18,9 +18,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 // 登录用户上报
 
-/// 上报登陆用户计时器，间隔2秒触发一次
+/// 上报登录用户计时器，间隔2秒触发一次
 @property (nonatomic, strong) NSTimer *loginTimer;
-/// 暂未上报的登陆用户数组
+/// 暂未上报的登录用户数组
 @property (nonatomic, strong) NSMutableArray <PLVChatUser *> *loginUserArray;
 /// 当前时间段内是否发生当前用户的登录事件
 @property (nonatomic, assign) BOOL isMyselfLogin;
@@ -439,7 +439,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 #pragma mark 定时上报登录用户
 
-/// 有用户登陆
+/// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     if (!self.loginTimer || !self.loginTimer.valid) {// 如果没有上报任务则无需统计登录数据
         return;

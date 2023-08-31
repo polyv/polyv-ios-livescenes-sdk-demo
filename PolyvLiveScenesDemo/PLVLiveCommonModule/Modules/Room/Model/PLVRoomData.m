@@ -182,6 +182,46 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     return streamQuality;
 }
 
++ (PLVMixLayoutType)mixLayoutTypeWithStreamerMixLayoutType:(PLVRTCStreamerMixLayoutType)streamerType {
+    PLVMixLayoutType mixLayoutType = PLVMixLayoutType_Single;
+    if (streamerType == PLVRTCStreamerMixLayoutType_Single) {
+        mixLayoutType = PLVMixLayoutType_Single;
+    }else if (streamerType == PLVRTCStreamerMixLayoutType_Tile){
+        mixLayoutType = PLVMixLayoutType_Tile;
+    }else if (streamerType == PLVRTCStreamerMixLayoutType_MainSpeaker){
+        mixLayoutType = PLVMixLayoutType_MainSpeaker;
+    }
+    return mixLayoutType;
+}
+
++ (PLVRTCStreamerMixLayoutType)streamerMixLayoutTypeWithMixLayoutType:(PLVMixLayoutType)mixLayoutType {
+    PLVRTCStreamerMixLayoutType streamerMixLayoutType = PLVRTCStreamerMixLayoutType_Unknown;
+    if (mixLayoutType == PLVMixLayoutType_Single) {
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_Single;
+    }else if (mixLayoutType == PLVMixLayoutType_Tile){
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_Tile;
+    }else if (mixLayoutType == PLVMixLayoutType_MainSpeaker){
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_MainSpeaker;
+    }
+    return streamerMixLayoutType;
+}
+
++ (NSString * _Nullable)mixLayoutTypeStringWithType:(PLVMixLayoutType)mixLayoutType {
+    NSString *string = nil;
+    switch (mixLayoutType) {
+        case PLVMixLayoutType_Single:
+            string = @"单人模式";
+            break;
+        case PLVMixLayoutType_Tile:
+            string = @"平铺模式";
+            break;
+        case PLVMixLayoutType_MainSpeaker:
+            string = @"主讲模式";
+            break;
+    }
+    return string;
+}
+
 #pragma mark - [ Private Method ]
 
 /// 配置菜单信息

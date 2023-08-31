@@ -26,6 +26,7 @@
 #import "PLVLSBadNetworkTipsView.h"
 #import "PLVLSSwitchSuccessTipsView.h"
 #import "PLVLSBadNetworkSwitchSheet.h"
+#import "PLVLSMixLayoutSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -39,6 +40,8 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+
+static NSString *const kPLVLSSettingMixLayoutKey = @"kPLVLSSettingMixLayoutKey";
 
 @interface PLVLSStreamerViewController ()<
 PLVSocketManagerProtocol,
@@ -54,7 +57,8 @@ PLVMemberPresenterDelegate,
 PLVLSBeautySheetDelegate,
 PLVLSMoreInfoSheetDelegate,
 PLVShareLiveSheetDelegate,
-PLVLSBadNetworkSwitchSheetDelegate
+PLVLSBadNetworkSwitchSheetDelegate,
+PLVLSMixLayoutSheetDelegate
 >
 
 #pragma mark 功能
@@ -79,6 +83,7 @@ PLVLSBadNetworkSwitchSheetDelegate
 @property (nonatomic, strong) PLVLSBadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
 @property (nonatomic, strong) PLVLSBadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
 @property (nonatomic, strong) PLVLSSwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
+@property (nonatomic, strong) PLVLSMixLayoutSheet *mixLayoutSheet; // 混流布局弹层
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -193,6 +198,11 @@ PLVLSBadNetworkSwitchSheetDelegate
         self.switchSuccessTipsView.frame = CGRectMake(self.documentAreaView.center.x - width/2.0, self.documentAreaView.frame.origin.y + 10, width, height);
         [self.view insertSubview:self.switchSuccessTipsView aboveSubview:self.documentAreaView];
     }
+    
+    if(_mixLayoutSheet) {
+        CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
+        [_mixLayoutSheet refreshWithSheetWidth:sheetWidth];
+    }
 }
 
 #pragma mark - Initialize
@@ -208,6 +218,7 @@ PLVLSBadNetworkSwitchSheetDelegate
     // 初始化
     [self.settingSheet initView]; /// 仅用于初始化
     [self.moreInfoSheet initView];
+    [self.mixLayoutSheet initView];
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.menuInfo) {
@@ -229,8 +240,8 @@ PLVLSBadNetworkSwitchSheetDelegate
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     [self.streamerPresenter setDefaultVideoQosPreference:roomData.pushQualityPreference];
-    
-    [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_MainSpeaker];
+    PLVRTCStreamerMixLayoutType type = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:[self getLocalMixLayoutType]];
+    [self.streamerPresenter setupMixLayoutType:type];
     
     self.memberPresenter = [[PLVMemberPresenter alloc] init];
     self.memberPresenter.delegate = self;
@@ -413,6 +424,16 @@ PLVLSBadNetworkSwitchSheetDelegate
     return _badNetworkSwitchSheet;
 }
 
+- (PLVLSMixLayoutSheet *)mixLayoutSheet {
+    if (!_mixLayoutSheet) {
+        CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
+        _mixLayoutSheet = [[PLVLSMixLayoutSheet alloc] initWithSheetWidth:sheetWidth];
+        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:[self getLocalMixLayoutType]];
+        _mixLayoutSheet.delegate = self;
+    }
+    return _mixLayoutSheet;
+}
+
 #pragma mark - Private
 
 - (void)documentFullscreen:(BOOL)fullscreen {
@@ -443,6 +464,24 @@ PLVLSBadNetworkSwitchSheetDelegate
     [self.chatroomAreaView logout];
     
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+/// 保存当前选择的混流布局到本地
+- (void)saveSelectedMixLayoutType:(PLVMixLayoutType)mixLayoutType {
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)mixLayoutType] forKey:kPLVLSSettingMixLayoutKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+/// 读取本地混流布局配置
+- (PLVMixLayoutType)getLocalMixLayoutType {
+    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:kPLVLSSettingMixLayoutKey];
+    if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
+        PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
+        if (saveMixLayout >= 1 && saveMixLayout <=3) {
+            return saveMixLayout;
+        }
+    }
+    return PLVMixLayoutType_MainSpeaker; // 默认混流布局为主讲模式
 }
 
 #pragma mark - Start Class
@@ -849,7 +888,7 @@ PLVLSBadNetworkSwitchSheetDelegate
 
 #pragma mark - PLVSocketManager Protocol
 
-- (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登录成功
     if (![PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
         /// 正常场景下（即非异常退出而临时断流的场景）则正常加入RTC房间
         /// 原因：异常退出场景下，加入RTC房间的操作，应延后至用户确认“是否恢复直播”后
@@ -1045,6 +1084,12 @@ PLVLSBadNetworkSwitchSheetDelegate
     self.statusAreaView.duration = currentRemotePushDuration;
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type {
+    [PLVLSUtils showToastWithMessage:@"网络异常，请恢复网络后重试" inView:[PLVLSUtils sharedUtils].homeVC.view];
+    PLVMixLayoutType currentType = [PLVRoomData mixLayoutTypeWithStreamerMixLayoutType:type];
+    [self.mixLayoutSheet updateMixLayoutType:currentType];
+    [self saveSelectedMixLayoutType:currentType];
+}
 /// sessionId 场次Id发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter sessionIdDidChanged:(NSString *)sessionId{
     [PLVRoomDataManager sharedManager].roomData.sessionId = sessionId;
@@ -1237,6 +1282,10 @@ PLVLSBadNetworkSwitchSheetDelegate
     [self.badNetworkSwitchSheet showInView:self.view currentVideoQosPreference:self.streamerPresenter.videoQosPreference];
 }
 
+- (void)moreInfoSheetDidTapMixLayoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.mixLayoutSheet showInView:self.view];
+}
+
 #pragma mark PLVShareLiveSheetDelegate
 
 - (void)shareLiveSheetCopyLinkFinished:(PLVShareLiveSheet *)shareLiveSheet {
@@ -1265,6 +1314,14 @@ PLVLSBadNetworkSwitchSheetDelegate
     
     [_badNetworkTipsView reset];
     [self.streamerPresenter setupVideoQosPreference:videoQosPreference];
+}
+
+#pragma mark - PLVLSMixLayoutSheetDelegate
+
+- (void)mixLayoutSheet_didChangeMixLayoutType:(PLVMixLayoutType)type {
+    PLVRTCStreamerMixLayoutType mixLayoutType = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
+    [self.streamerPresenter setupMixLayoutType:mixLayoutType];
+    [self saveSelectedMixLayoutType:type];
 }
 
 @end

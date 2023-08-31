@@ -1040,6 +1040,9 @@ PLVDefaultPageViewDelegate
 
 -(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
     [PLVRoomDataManager sharedManager].roomData.playing = playing;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:pictureInPicturePlayerPlayingStateDidChange:)]) {
+        [self.delegate playerPresenter:self pictureInPicturePlayerPlayingStateDidChange:playing];
+    }    
 }
 
 -(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing systemInterrupts:(BOOL)systemInterrupts{
@@ -1075,6 +1078,25 @@ PLVDefaultPageViewDelegate
     } else if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_CodeError] ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_RequestFailed]){
         [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefresh];
+    }
+}
+
+/// 直播回放播放器 需获知外部 ‘当前本地缓存’
+- (PLVPlaybackLocalVideoInfoModel *)plvLivePlaybackPlayerGetPlaybackCache:(PLVLivePlaybackPlayer *)livePlaybackPlayer videoId:(NSString * _Nullable)videoId channelId:(NSString * _Nullable)channelId listType:(NSString * _Nullable)listType isRecord:(BOOL)isRecord {
+    if (![PLVFdUtil checkStringUseable:videoId]) {
+        return nil;
+    }
+    PLVDownloadPlaybackTaskInfo *taskInfo = [[PLVDownloadPlaybackTaskInfo alloc] init];
+    if (isRecord) {
+        taskInfo = [[PLVDownloadDatabaseManager shareManager] checkAndGetPlaybackTaskInfoWithFileId:videoId];
+    } else {
+        taskInfo = [[PLVDownloadDatabaseManager shareManager] checkAndGetPlaybackTaskInfoWithVideoPoolId:videoId];
+    }
+    if (taskInfo && taskInfo.state == PLVDownloadStateSuccess) {
+        PLVPlaybackLocalVideoInfoModel *localPlayerModel = [PLVPlaybackCacheManager toPlaybackPlayerModel:taskInfo];
+        return localPlayerModel;
+    } else {
+        return nil;
     }
 }
 

@@ -25,7 +25,7 @@
 #endif
 
 #if SCENE == 3
-//场景3使用Main.storyboard进入登陆页，所以无需导入登录页ViewController类
+//场景3使用Main.storyboard进入登录页，所以无需导入登录页ViewController类
 #endif
 
 #if SCENE == 4
@@ -65,7 +65,7 @@
     [self.window makeKeyAndVisible];
 #endif
     
-#if SCENE == 3 //场景3使用Main.storyboard进入登陆页
+#if SCENE == 3 //场景3使用Main.storyboard进入登录页
     // HttpDNS默认开启，如需关闭，解开注释
 //    [PLVLiveVideoConfig sharedInstance].enableHttpDNS = NO;
     // 如需启用IPV6，解开注释，启用IPV6之后，将自动选择IP，取消HttpDNS

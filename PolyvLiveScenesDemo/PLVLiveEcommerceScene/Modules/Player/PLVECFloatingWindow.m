@@ -184,11 +184,12 @@
 #pragma mark Notification
 
 - (void)didChangeOrientation:(NSNotification *)notification {
+    if (self.hidden) {
+        return;
+    }
     // 延迟1秒布局优化旋转后画面黑屏的问题
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        self.containerView.frame = self.bounds;
-        self.contentView.frame = self.containerView.bounds;
-        [self layoutIfNeeded];
+        [self resetPositionWithSize:self.windowSize];
     });
 }
 

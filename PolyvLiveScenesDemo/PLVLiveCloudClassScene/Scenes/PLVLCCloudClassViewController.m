@@ -416,6 +416,8 @@ PLVLCLandscapeMessagePopupViewDelegate
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     [self.liveRoomSkinView setTitleLabelWithText:roomData.menuInfo.name];
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
+    self.liveRoomSkinView.guideChatLabel.hidden = !self.menuAreaView.chatVctrl;
+    self.liveRoomSkinView.rewardButton.hidden = !self.menuAreaView.chatVctrl;
     [self.liveRoomSkinView showCommodityButton:self.menuAreaView.showCommodityMenu];
 }
 
@@ -642,9 +644,13 @@ PLVLCLandscapeMessagePopupViewDelegate
     // 全屏播放器皮肤 liveRoomSkinView 的弹幕按钮 danmuButton 为显示状态，且为非选中状态，且当前为横屏时，才显示弹幕
     BOOL danmuEnable = !self.liveRoomSkinView.danmuButton.selected && !self.liveRoomSkinView.danmuButton.hidden;
     [self.mediaAreaView showDanmu:fullScreen && danmuEnable];
-    // 可在此处控制 “横屏聊天区”，是否跟随 “弹幕” 一并显示/隐藏；注释或移除此句，则不跟随；
+    // 可在此处控制 “横屏聊天区”，当竖屏聊天Tab存在时是否跟随 “弹幕” 一并显示/隐藏；注释或移除下方，则不跟随；
     // 其他相关代码，可在此文件中，搜索 “self.chatLandscapeView.hidden = ”
-    self.chatLandscapeView.hidden = !(fullScreen && danmuEnable);
+    if (self.menuAreaView.chatVctrl) {
+        self.chatLandscapeView.hidden = !(fullScreen && danmuEnable);
+    } else {
+        self.chatLandscapeView.hidden = YES;
+    }
     
     if (self.fullScreenDifferent) {
         [self.popoverView hidRewardView];
@@ -699,7 +705,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
 //    dispatch_async(dispatch_get_main_queue(), ^{
-//        [PLVLCUtils showHUDWithTitle:@"登陆成功" detail:@"" view:self.view];
+//        [PLVLCUtils showHUDWithTitle:@"登录成功" detail:@"" view:self.view];
 //    });
 }
 
@@ -770,7 +776,7 @@ PLVLCLandscapeMessagePopupViewDelegate
     
     BOOL listenMain = roomData.listenMain;
     if ([event isEqualToString:@"transmit"]) { // 【双师模式】所需监听event
-        if ([subEvent isEqualToString:@"transmitDoubleMode"]) { // 双师模式小房间登陆聊天室时收到ack
+        if ([subEvent isEqualToString:@"transmitDoubleMode"]) { // 双师模式小房间登录聊天室时收到ack
             if (jsonString &&
                 [jsonString isKindOfClass:[NSString class]]) {
                 if ([jsonString isEqualToString:@"listenMain"]) {
@@ -833,6 +839,9 @@ PLVLCLandscapeMessagePopupViewDelegate
         if (!enabled && _pushView) {
             [ _pushView hide];
         }
+        
+        [self.menuAreaView updateProductMenuTab:contentDict];
+        [self.liveRoomSkinView showCommodityButton:enabled];
     }
 }
 
@@ -843,7 +852,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 }
 
 - (void)chatroomManager_loadRewardEnable:(BOOL)enable payWay:payWay rewardModelArray:(NSArray *)modelArray pointUnit:(NSString *)pointUnit {
-    self.liveRoomSkinView.rewardButton.hidden = !enable;
+    self.liveRoomSkinView.rewardButton.hidden = !enable || !self.menuAreaView.chatVctrl;
     if (enable) {
         [self.popoverView setRewardViewData:payWay rewardModelArray:modelArray pointUnit:pointUnit];
     }
@@ -999,7 +1008,9 @@ PLVLCLandscapeMessagePopupViewDelegate
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playerPlayingDidChange:(BOOL)playing{
-    [self.liveRoomSkinView setPlayButtonWithPlaying:playing];
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [self.liveRoomSkinView setPlayButtonWithPlaying:playing];
+    }
 }
 
 /// 媒体区域的 悬浮视图 出现/隐藏回调
@@ -1142,9 +1153,13 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaShowDanmu:(BOOL)showDanmu{
     [self.mediaAreaView showDanmu:showDanmu];
-    // 可在此处控制 “横屏聊天区”，是否跟随 “弹幕” 一并显示/隐藏；注释或移除此句，则不跟随；
+    // 可在此处控制 “横屏聊天区”，当竖屏聊天Tab存在时是否跟随 “弹幕” 一并显示/隐藏；注释或移除下方代码，则不跟随；
     // 其他相关代码，可在此文件中，搜索 “self.chatLandscapeView.hidden = ”
-    self.chatLandscapeView.hidden = !showDanmu;
+    if (self.menuAreaView.chatVctrl) {
+        self.chatLandscapeView.hidden = !showDanmu;
+    } else {
+        self.chatLandscapeView.hidden = YES;
+    }
 }
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
@@ -1378,6 +1393,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)plvLCMediaAreaViewPictureInPictureDidStart:(PLVLCMediaAreaView *)mediaAreaView {
     // 更多按钮显示控制
     [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:YES];
+    [self.liveRoomSkinView enablePlayControlButtons:NO];
     
     // 画中画占位视图显示控制、播放控制
     if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
@@ -1414,6 +1430,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView {
     // 更多按钮显示控制
     [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:NO];
+    [self.liveRoomSkinView enablePlayControlButtons:YES];
     
     // 画中画展位视图显示控制、播放控制
     if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
@@ -1422,6 +1439,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     
     // 清理恢复逻辑的处理者
     [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
+    [self.liveRoomSkinView setPlayButtonWithPlaying:playing];
 }
 
 #pragma mark PLVPopoverViewDelegate

@@ -339,6 +339,10 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param mediaAreaView 播放器管理器
 - (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView;
 
+/// 画中画播放器播放状态改变
+/// @param mediaAreaView 播放器管理器
+/// @param playing 是否正在播放
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing;
 
 #pragma mark 下载视图的回调
 - (void)plvLCMediaAreaViewClickDownloadListButton:(PLVLCMediaAreaView *)mediaAreaView;

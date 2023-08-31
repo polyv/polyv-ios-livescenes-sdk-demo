@@ -92,6 +92,9 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)setPlayButtonWithPlaying:(BOOL)playing;
 
+/// 是否启用播放控制按钮（播放按钮、刷新按钮）
+- (void)enablePlayControlButtons:(BOOL)enable;
+
 - (void)setFullScreenButtonShowOnIpad:(BOOL)show;
 
 - (void)setCountdownTime:(NSTimeInterval)time;

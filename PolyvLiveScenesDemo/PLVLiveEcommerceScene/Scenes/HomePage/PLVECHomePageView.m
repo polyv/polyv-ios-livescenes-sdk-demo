@@ -459,7 +459,7 @@ PLVECLotteryWidgetViewDelegate
 }
 
 - (void)updateLikeCount:(NSUInteger)likeCount {
-    self.likeButtonView.likeCount = likeCount;
+    [self.likeButtonView setupLikeAnimationWithCount:likeCount];
 }
 
 - (void)updatePlayerState:(BOOL)playing {
@@ -598,6 +598,7 @@ PLVECLotteryWidgetViewDelegate
     } else {
         [self.lotteryWidgetView hideWidgetView];
     }
+    [self updateLikeViewAnimationLeftShift];
 }
 
 #pragma mark - Private
@@ -653,21 +654,20 @@ PLVECLotteryWidgetViewDelegate
         
         { // 右侧悬浮挂件位置
             CGFloat originX = CGRectGetMinX(self.moreButton.frame);
-            CGFloat originY = CGRectGetHeight(self.frame) * 0.55;
+            CGFloat originY = CGRectGetMinY(self.likeButtonView.frame);
             if (!self.redpackButtonView.hidden) { // 倒计时红包挂件
+                originY -= (8 + PLVECRedpackButtonViewHeight);
                 self.redpackButtonView.frame = CGRectMake(originX, originY, PLVECRedpackButtonViewWidth, PLVECRedpackButtonViewHeight);
-                originY -= (12 + PLVECCardPushButtonViewHeight);
-            }
-            
-            // 卡片推送挂件
-            if (!self.cardPushButtonView.hidden) {
-                self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
-                originY -= (12 + PLVECCardPushButtonViewHeight);
             }
             // 抽奖挂件
             if (!self.lotteryWidgetView.hidden) {
+                originY -= (8 + self.lotteryWidgetView.widgetSize.height);
                 self.lotteryWidgetView.frame = CGRectMake(originX, originY, self.lotteryWidgetView.widgetSize.width, self.lotteryWidgetView.widgetSize.height);
-                originY -= (12 + self.lotteryWidgetView.widgetSize.height);
+            }
+            // 卡片推送挂件
+            if (!self.cardPushButtonView.hidden) {
+                originY -= (8 + PLVECCardPushButtonViewHeight);
+                self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
             }
         }
         
@@ -699,20 +699,25 @@ PLVECLotteryWidgetViewDelegate
         self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 41, CGRectGetMaxX(self.moreButton.frame), 41);
         
         CGFloat widgetOriginY = CGRectGetMinY(self.playerContolView.frame);
+        // 抽奖挂件
+        if (!self.lotteryWidgetView.hidden) {
+            widgetOriginY -= (self.lotteryWidgetView.widgetSize.height + 8);
+            self.lotteryWidgetView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - self.lotteryWidgetView.widgetSize.width/2, widgetOriginY, self.lotteryWidgetView.widgetSize.width, self.lotteryWidgetView.widgetSize.height);
+        }
         // 卡片推送挂件
         if (!self.cardPushButtonView.hidden) {
-            widgetOriginY -= PLVECLikeButtonViewHeight;
-            self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, widgetOriginY-PLVECLikeButtonViewHeight, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
-        }
-        if (!self.lotteryWidgetView.hidden) {
-            widgetOriginY -= self.lotteryWidgetView.widgetSize.height - 5;
-            self.lotteryWidgetView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - self.lotteryWidgetView.widgetSize.width/2, widgetOriginY, self.lotteryWidgetView.widgetSize.width, self.lotteryWidgetView.widgetSize.height);
+            widgetOriginY -= (PLVECCardPushButtonViewHeight + 8);
+            self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, widgetOriginY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
         }
     }
     
     CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
     self.moreView.frame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(CGRectGetWidth(self.bounds) - 375, 0, 375, CGRectGetHeight(self.bounds)) : CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height);
     self.switchView.frame = self.moreView.frame;
+}
+
+- (void)updateLikeViewAnimationLeftShift {
+    self.likeButtonView.animationLeftShift = !self.cardPushButtonView.hidden || !self.redpackButtonView.hidden || !self.lotteryWidgetView.hidden;
 }
 
 #pragma mark 快直播
@@ -993,11 +998,13 @@ PLVECLotteryWidgetViewDelegate
     if (showFirst) {
         [self updateUIFrame];
     }
+    [self updateLikeViewAnimationLeftShift];
 }
 
 - (void)chatroomView_hideDelayRedpack {
     [self.redpackButtonView dismiss];
     [self updateUIFrame];
+    [self updateLikeViewAnimationLeftShift];
 }
 
 #pragma mark PLVECMoreViewDelegate
@@ -1190,6 +1197,7 @@ PLVECLotteryWidgetViewDelegate
 }
 
 - (void)cardPushButtonView:(PLVECCardPushButtonView *)pushButtonView showStatusChanged:(BOOL)show {
+    [self updateLikeViewAnimationLeftShift];
     [self updateUIFrame];
 }
 

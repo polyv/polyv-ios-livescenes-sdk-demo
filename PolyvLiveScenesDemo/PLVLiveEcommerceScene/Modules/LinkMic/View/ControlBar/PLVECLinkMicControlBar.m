@@ -425,7 +425,7 @@ static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展�
     if (!_switchCameraButton) {
         _switchCameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_switchCameraButton setImage:[self getImageWithName:@"plvec_linkmic_camera_switch"] forState:UIControlStateNormal];
-        [_switchCameraButton setImage:[self getImageWithName:@"plvec_linkmic_camera_switch_close"] forState:UIControlStateSelected];
+        [_switchCameraButton setImage:[self getImageWithName:@"plvec_linkmic_camera_switch"] forState:UIControlStateSelected];
         [_switchCameraButton addTarget:self action:@selector(switchCameraButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _switchCameraButton;

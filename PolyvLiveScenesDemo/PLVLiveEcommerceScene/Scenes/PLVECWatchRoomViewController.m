@@ -250,6 +250,10 @@ PLVECMessagePopupViewDelegate
         
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
     }
+    
+    /// 适配背景铺满全屏
+    UIImage *image = [PLVECUtils imageForWatchResource:@"plv_background_img"];
+    self.view.layer.contents = (id)image.CGImage;
 }
 
 - (void)setupData{
@@ -495,7 +499,7 @@ PLVECMessagePopupViewDelegate
 #pragma mark PLVSocketManagerProtocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
-//    [PLVECUtils showHUDWithTitle:@"登陆成功" detail:@"" view:self.view];
+//    [PLVECUtils showHUDWithTitle:@"登录成功" detail:@"" view:self.view];
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
@@ -553,7 +557,7 @@ PLVECMessagePopupViewDelegate
 
 #pragma mark socket 数据解析
 
-/// 有用户登陆
+/// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
     [self updateOnlineCount:onlineCount];
@@ -729,6 +733,7 @@ PLVECMessagePopupViewDelegate
         [self.playerVC reload];
     }
     self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
+    self.playerVC.displayView.alpha = inRTCRoom ? 0 : 1;
     self.linkMicAreaView.alpha = inRTCRoom ? 1 : 0;
     
     if (![PLVECFloatingWindow sharedInstance].hidden && !inRTCRoom) {

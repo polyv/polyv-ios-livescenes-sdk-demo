@@ -67,12 +67,12 @@
     if ([eventName isEqualToString:@"CLICK_LOTTERY_PENDANT"]) {
         BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
         self.hidden = !isShow;
-        if (self.delegate && [self.delegate respondsToSelector:@selector(lotteryWidgetView:showStatusChanged:)]) {
-            [self.delegate lotteryWidgetView:self showStatusChanged:isShow];
-        }
         if (!isShow) {
             [self hideWidgetView];
             return;
+        }
+        if (self.delegate && [self.delegate respondsToSelector:@selector(lotteryWidgetView:showStatusChanged:)]) {
+            [self.delegate lotteryWidgetView:self showStatusChanged:isShow];
         }
         
         NSString *iconUrl = PLV_SafeStringForDictKey(dict, @"iconUrl");
@@ -106,6 +106,9 @@
     self.hidden = YES;
     [self stopCountdownTimer];
     [self hidePopupView];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(lotteryWidgetView:showStatusChanged:)]) {
+        [self.delegate lotteryWidgetView:self showStatusChanged:NO];
+    }
 }
 
 - (void)hidePopupView {

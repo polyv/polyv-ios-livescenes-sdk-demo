@@ -638,6 +638,12 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param currentRemotePushDuration 当前远端 已推流时长 (单位秒，带小数，可精确至毫秒；具体解释可见 [currentRemotePushDuration] 属性说明)
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRemotePushDuration:(NSTimeInterval)currentRemotePushDuration;
 
+/// 更新 混流布局 失败回调
+///
+/// @param presenter 推流管理器
+/// @param type 当前混流布局
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type;
+
 #pragma mark 本地用户硬件事件
 /// 本地用户的 ’麦克风开关状态‘ 发生变化
 ///

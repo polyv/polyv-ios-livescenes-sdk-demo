@@ -30,7 +30,7 @@ typedef NS_ENUM(NSInteger, PLVShareLiveButtonType) {
 @property (nonatomic, strong) WKWebView *posterWebView;
 @property (nonatomic, strong) UIView *shareControlsView;// 分享控件视图
 @property (nonatomic, strong) UIVisualEffectView *effectView; // 高斯模糊效果图
-@property (nonatomic, strong) CALayer *buttonSplitLine; // 退出登陆按钮顶部分割线
+@property (nonatomic, strong) CALayer *buttonSplitLine; // 退出登录按钮顶部分割线
 @property (nonatomic, strong) UIButton *cancelButton;
 // 数据
 @property (nonatomic, assign) PLVShareLiveSheetSceneType sceneType;

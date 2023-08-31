@@ -37,6 +37,7 @@
 
 static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
 static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
+static NSString *const kPLVSASettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 
 /// PLVSAStreamerViewController 所处的四种状态，不同状态下，展示不同的页面
 typedef NS_ENUM(NSInteger, PLVSAStreamerViewState) {
@@ -260,6 +261,24 @@ PLVShareLiveSheetDelegate
     }
 }
 
+/// 保存当前选择的混流布局到本地
+- (void)saveSelectedMixLayoutType:(PLVMixLayoutType)mixLayoutType {
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)mixLayoutType] forKey:kPLVSASettingMixLayoutKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+/// 读取本地混流布局配置
+- (PLVMixLayoutType)getLocalMixLayoutType {
+    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:kPLVSASettingMixLayoutKey];
+    if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
+        PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
+        if (saveMixLayout >= 1 && saveMixLayout <=3) {
+            return saveMixLayout;
+        }
+    }
+    return PLVMixLayoutType_Tile; // 默认混流布局为平铺模式
+}
+
 #pragma mark Getter & Setter
 
 - (PLVSALinkMicAreaView *)linkMicAreaView {
@@ -384,7 +403,8 @@ PLVShareLiveSheetDelegate
     [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:roomData.defaultResolution]];
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
-    [self.streamerPresenter setupMixLayoutType:PLVRTCStreamerMixLayoutType_Tile];
+    PLVRTCStreamerMixLayoutType type = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:[self getLocalMixLayoutType]];
+    [self.streamerPresenter setupMixLayoutType:type];
     [self.streamerPresenter setDefaultVideoQosPreference:roomData.pushQualityPreference];
     
     // 初始化美颜
@@ -753,7 +773,7 @@ PLVShareLiveSheetDelegate
 
 #pragma mark PLVSocketManager Protocol
 
-- (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登录成功
     if (![PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
         /// 正常场景下（即非异常退出而临时断流的场景）则正常加入RTC房间
         /// 原因：异常退出场景下，加入RTC房间的操作，应延后至用户确认“是否恢复直播”后
@@ -959,6 +979,14 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
          sessionIdDidChanged:(NSString *)sessionId{
     [PLVRoomDataManager sharedManager].roomData.sessionId = sessionId;
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type {
+    [PLVSAUtils showToastWithMessage:@"网络异常，请恢复网络后重试" inView:[PLVSAUtils sharedUtils].homeVC.view];
+    PLVMixLayoutType currentType = [PLVRoomData mixLayoutTypeWithStreamerMixLayoutType:type];
+    [self.settingView.mixLayoutSheet updateMixLayoutType:currentType];
+    [self.homeView.mixLayoutSheet updateMixLayoutType:currentType];
+    [self saveSelectedMixLayoutType:currentType];
 }
 
 /// 已挂断 某位远端用户的连麦 事件回调
@@ -1185,6 +1213,12 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self.streamerPresenter setupStreamScale:streamScale];
 }
 
+- (void)streamerSettingViewMixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type {
+    PLVRTCStreamerMixLayoutType mixLayoutType = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
+    [self.streamerPresenter setupMixLayoutType:mixLayoutType];
+    [self saveSelectedMixLayoutType:type];
+}
+
 #pragma mark PLVSAStreamerHomeViewProtocol
 
 - (void)bandUsersInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUserId:(NSString *)userId banned:(BOOL)banned {
@@ -1267,6 +1301,11 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     return resolutionType;
 }
 
+- (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView {
+    PLVMixLayoutType mixLayoutType = [PLVRoomData mixLayoutTypeWithStreamerMixLayoutType:self.streamerPresenter.mixLayoutType];
+    return mixLayoutType;
+}
+
 - (BOOL)streamerHomeViewChannelLinkMicOpen:(PLVSAStreamerHomeView *)homeView {
     return self.streamerPresenter.channelLinkMicOpen;
 }
@@ -1305,6 +1344,12 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutType:(PLVMixLayoutType)type {
+    PLVRTCStreamerMixLayoutType streamerMixLayout = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
+    [self.streamerPresenter setupMixLayoutType:streamerMixLayout];
+    [self saveSelectedMixLayoutType:type];
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference {

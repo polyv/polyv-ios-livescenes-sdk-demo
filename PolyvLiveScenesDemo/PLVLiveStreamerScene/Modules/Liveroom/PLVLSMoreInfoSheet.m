@@ -19,11 +19,13 @@
 @property (nonatomic, strong) UIView *titleSplitLine; // 标题底部分割线
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜按钮
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
+@property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局按钮
 @property (nonatomic, strong) UIButton *shareButton; // 分享按钮
 @property (nonatomic, strong) UIButton *badNetworkButton; //  弱网处理按钮
-@property (nonatomic, strong) UIView *buttonSplitLine; // 退出登陆按钮顶部分割线
-@property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登陆按钮背后的文本
-@property (nonatomic, strong) UIButton *logoutButton; // 退出登陆按钮
+@property (nonatomic, strong) UIView *buttonSplitLine; // 退出登录按钮顶部分割线
+@property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登录按钮背后的文本
+@property (nonatomic, strong) UIButton *logoutButton; // 退出登录按钮
+@property (nonatomic, strong) NSArray *buttonArray;
 
 @property (nonatomic, assign) CGFloat sheetWidth; // 父类数据
 @end
@@ -38,17 +40,28 @@
     if (self) {
         [self.contentView addSubview:self.sheetTitleLabel];
         [self.contentView addSubview:self.titleSplitLine];
+        NSMutableArray *muButtonArray = [NSMutableArray array];
         if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
             [self.contentView addSubview:self.beautyButton];
+            [muButtonArray addObject:self.beautyButton];
         }
         [self.contentView addSubview:self.resolutionButton];
+        [muButtonArray addObject:self.resolutionButton];
         if ([self canShareLiveroom]) {
             [self.contentView addSubview:self.shareButton];
+            [muButtonArray addObject:self.shareButton];
         }
         [self.contentView addSubview:self.badNetworkButton];
+        [muButtonArray addObject:self.badNetworkButton];
+        if ([self showMixLayoutButton]) {
+            [self.contentView addSubview:self.mixLayoutButton];
+            [muButtonArray addObject:self.mixLayoutButton];
+        }
         [self.contentView addSubview:self.buttonSplitLine];
         [self.contentView addSubview:self.logoutButtonLabel];
         [self.contentView addSubview:self.logoutButton];
+        
+        self.buttonArray = [muButtonArray copy];
     }
     return self;
 }
@@ -74,32 +87,21 @@
     CGFloat buttonOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 24;
     CGFloat buttonWidth = 48.0;
     CGFloat buttonHeight = 53.0;
-    CGFloat buttonPadding = MIN(ceil((self.sheetWidth - originX * 2 - buttonWidth * 4)/3.0), 28.0);
+    int placeNum = isPad ? 5 : 4;
+    CGFloat buttonPadding = MIN(ceil((self.sheetWidth - originX * 2 - buttonWidth * placeNum)/3.0), 28.0);
+    CGFloat buttonYPadding = 16;
     
-    if (self.beautyButton.superview) {
-        self.beautyButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
-        [self setButtonInsets:self.beautyButton];
+    for (int i = 0; i < self.buttonArray.count ; i++) {
+        UIButton *button = self.buttonArray[i];
+        if (i % placeNum == 0 && i != 0) { // 换行
+            buttonOriginX = originX;
+            buttonOriginY += buttonHeight + buttonYPadding;
+        }
+        button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+        [self setButtonInsets:button];
         buttonOriginX += buttonWidth + buttonPadding;
     }
     
-    if (self.resolutionButton.superview) {
-        self.resolutionButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
-        [self setButtonInsets:self.resolutionButton];
-        buttonOriginX += buttonWidth + buttonPadding;
-    }
-    
-    if (self.shareButton.superview) {
-        self.shareButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
-        [self setButtonInsets:self.shareButton];
-        buttonOriginX += buttonWidth + buttonPadding;
-    }
-    
-    if (self.badNetworkButton.superview) {
-        self.badNetworkButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
-        [self setButtonInsets:self.badNetworkButton];
-        buttonOriginX += buttonWidth + buttonPadding;
-    }
-
     self.buttonSplitLine.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight - 1, self.sheetWidth - originX * 2, 1);
     self.logoutButtonLabel.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
     self.logoutButton.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
@@ -123,6 +125,10 @@
         return YES;
     }
     return NO;
+}
+
+- (BOOL)showMixLayoutButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
 }
 
 #pragma mark Getter
@@ -174,6 +180,14 @@
         [_badNetworkButton addTarget:self action:@selector(badNetworkButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _badNetworkButton;
+}
+
+- (UIButton *)mixLayoutButton {
+    if (!_mixLayoutButton) {
+        _mixLayoutButton = [self buttonWithTitle:@"混流布局" NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
+        [_mixLayoutButton addTarget:self action:@selector(mixLayoutAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _mixLayoutButton;
 }
 
 
@@ -296,6 +310,15 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidBadNetworkButton:)]) {
         [self.delegate moreInfoSheetDidBadNetworkButton:self];
+    }
+}
+
+- (void)mixLayoutAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapMixLayoutButton:)]) {
+        [self.delegate moreInfoSheetDidTapMixLayoutButton:self];
     }
 }
 

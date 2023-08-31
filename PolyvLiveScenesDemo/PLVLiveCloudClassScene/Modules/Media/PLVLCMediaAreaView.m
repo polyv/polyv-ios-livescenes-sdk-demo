@@ -1380,7 +1380,9 @@ PLVLCDocumentPaintModeViewDelegate
 // 通用
 /// 播放器 ‘正在播放状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playerPlayingStateDidChanged:(BOOL)playing{
-    [self.skinView setPlayButtonWithPlaying:playing];
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [self.skinView setPlayButtonWithPlaying:playing];
+    }
     if (playing) {
         [self.marqueeView start];
     }else {
@@ -1596,6 +1598,7 @@ PLVLCDocumentPaintModeViewDelegate
     
     // 更多按钮显示控制
     [self.skinView refreshMoreButtonHiddenOrRestore:YES];
+    [self.skinView enablePlayControlButtons:NO];
     
     // 画中画占位视图显示控制、播放控制
     if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
@@ -1631,6 +1634,7 @@ PLVLCDocumentPaintModeViewDelegate
 - (void)playerPresenterPictureInPictureDidStop:(PLVPlayerPresenter *)playerPresenter {
     // 更多按钮显示控制
     [self.skinView refreshMoreButtonHiddenOrRestore:NO];
+    [self.skinView enablePlayControlButtons:YES];
     
     // 画中画展位视图显示控制、播放控制
     if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
@@ -1644,6 +1648,13 @@ PLVLCDocumentPaintModeViewDelegate
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureDidStop:)]) {
         [self.delegate plvLCMediaAreaViewPictureInPictureDidStop:self];
+    }
+}
+
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
+    [self.skinView setPlayButtonWithPlaying:playing];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:pictureInPicturePlayerPlayingStateDidChange:)]) {
+        [self.delegate plvLCMediaAreaView:self pictureInPicturePlayerPlayingStateDidChange:playing];
     }
 }
 

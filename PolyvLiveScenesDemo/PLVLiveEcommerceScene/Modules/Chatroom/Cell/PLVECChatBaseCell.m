@@ -77,7 +77,8 @@
         [message isKindOfClass:[PLVImageEmotionMessage class]] ||
         [message isKindOfClass:[PLVCustomMessage class]] ||
         [message isKindOfClass:[PLVFileMessage class]] ||
-        [message isKindOfClass:[PLVRedpackMessage class]]) {
+        [message isKindOfClass:[PLVRedpackMessage class]] ||
+        [message isKindOfClass:[NSString class]]) {
         return YES;
     } else {
         return NO;

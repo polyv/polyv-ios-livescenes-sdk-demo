@@ -31,6 +31,7 @@
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜
 @property (nonatomic, strong) UIButton *shareButton; // 分享
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
+@property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局
 @property (nonatomic, strong) NSArray *buttonArray;
 
 @end
@@ -108,11 +109,11 @@
     _currentCameraOpen = currentCameraOpen;
     self.cameraButton.selected = currentCameraOpen;
     // 摄像头关闭，翻转 禁用
-    self.cameraReverseButton.enabled = currentCameraOpen;
+    self.cameraReverseButton.enabled = currentCameraOpen && !self.screenShareButton.selected;
     // 后置摄像头、摄像头：镜像禁用
-    self.mirrorButton.enabled = currentCameraOpen && self.currentCameraFront;
+    self.mirrorButton.enabled = currentCameraOpen && self.currentCameraFront && !self.screenShareButton.selected;
     // 前置摄像头，闪光灯 禁用
-    self.flashButton.enabled = currentCameraOpen && !self.currentCameraFront;
+    self.flashButton.enabled = currentCameraOpen && !self.currentCameraFront && !self.screenShareButton.selected;
 }
 
 /// 本地用户的 摄像头 当前是否前置
@@ -187,6 +188,12 @@
     // 弱网处理
     [buttonSuperView addSubview:self.badNetworkButton];
     [muButtonArray addObject:self.badNetworkButton];
+    
+    // 混流布局
+    if ([PLVSAMoreInfoSheet showMixLayoutButton]) {
+        [buttonSuperView addSubview:self.mixLayoutButton];
+        [muButtonArray addObject:self.mixLayoutButton];
+    }
     
     self.buttonArray = [muButtonArray copy];
 }
@@ -361,6 +368,19 @@
     return _badNetworkButton;
 }
 
+- (UIButton *)mixLayoutButton {
+    if (!_mixLayoutButton) {
+        _mixLayoutButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _mixLayoutButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _mixLayoutButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_mixLayoutButton setTitle:@"混流布局" forState:UIControlStateNormal];
+        [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateNormal];
+        [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateSelected];
+        [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _mixLayoutButton;
+}
+
 #pragma mark setButtonFrame
 
 - (CGSize)getMaxButtonSize {
@@ -525,6 +545,10 @@
     return NO;
 }
 
++ (BOOL)showMixLayoutButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
 #pragma mark - Event
 
 #pragma mark Action
@@ -626,6 +650,14 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapBadNetworkButton:)]) {
         [self.delegate moreInfoSheetDidTapBadNetworkButton:self];
+    }
+}
+
+- (void)mixLayoutButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapMixLayoutButton:)]) {
+        [self.delegate moreInfoSheetDidTapMixLayoutButton:self];
     }
 }
 

@@ -124,6 +124,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     if (self) {
         _sendImageEnable = YES;
         _hideRewardDisplaySwitch = YES;
+        _onlyTeacherEnable = YES;
         
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1.0];
         
@@ -204,9 +205,18 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     [self.collectionView reloadData];
 }
 
+- (void)setOnlyTeacherEnable:(BOOL)onlyTeacherEnable {
+    if (_onlyTeacherEnable == onlyTeacherEnable) {
+        return;
+    }
+    _onlyTeacherEnable = onlyTeacherEnable;
+    [self.collectionView reloadData];
+}
+
 - (NSInteger)getNativeAddButtonCount {
     NSInteger buttonCount = 0;
-    buttonCount += (self.sendImageEnable ? 3 : 1);
+    buttonCount += (self.onlyTeacherEnable ? 1 : 0);
+    buttonCount += (self.sendImageEnable ? 2 : 0);
     buttonCount += (!self.hiddenBulletin ? 1 : 0);
     buttonCount += (!self.hideRewardDisplaySwitch ? 1 : 0);
     
@@ -294,25 +304,45 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 #pragma mark - Private Method
 
 - (PLVLCKeyboardMoreButtonType)typeOfIndex:(NSInteger)index {
-    if (index == 0) {
-        return PLVLCKeyboardMoreButtonTypeOnlyTeacher;
-    }
-    
-    if (self.sendImageEnable) {
-        if (index == 1) {
-            return PLVLCKeyboardMoreButtonTypeOpenAlbum;
-        } else if (index == 2) {
-            return PLVLCKeyboardMoreButtonTypeOpenCamera;
-        } else if (index == 3 && !self.hiddenBulletin) {
-            return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-        } else if (index == 4 && !self.hideRewardDisplaySwitch) {
-            return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+    if (self.onlyTeacherEnable) {
+        if (index == 0) {
+            return PLVLCKeyboardMoreButtonTypeOnlyTeacher;
+        }
+        
+        if (self.sendImageEnable) {
+            if (index == 1) {
+                return PLVLCKeyboardMoreButtonTypeOpenAlbum;
+            } else if (index == 2) {
+                return PLVLCKeyboardMoreButtonTypeOpenCamera;
+            } else if (index == 3 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 4 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            }
+        } else {
+            if (index == 1 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 2 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            }
         }
     } else {
-        if (index == 1 && !self.hiddenBulletin) {
-            return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-        } else if (index == 2 && !self.hideRewardDisplaySwitch) {
-            return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+        if (self.sendImageEnable) {
+            if (index == 0) {
+                return PLVLCKeyboardMoreButtonTypeOpenAlbum;
+            } else if (index == 1) {
+                return PLVLCKeyboardMoreButtonTypeOpenCamera;
+            } else if (index == 2 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 3 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            }
+        } else {
+            if (index == 0 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 1 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            }
         }
     }
     return PLVLCKeyboardMoreButtonTypeUnknow;

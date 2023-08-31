@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h>
 #import "PLVRoomData.h"
 #import "PLVChatUser.h"
+#import "PLVSAMixLayoutSheet.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -34,6 +35,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 改变 清晰度 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type;
+
+/// 获取当前混流布局
+- (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView;
+
+/// 改变 混流布局 触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutType:(PLVMixLayoutType)type;
 
 /// 改变 视频流画质偏好 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference;
@@ -83,6 +90,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// PLVSAStreamerHomeViewDelegate 代理
 @property (nonatomic, weak)id<PLVSAStreamerHomeViewDelegate> delegate;
+
+// 混流布局选择面板，用于更新当前混流布局类型
+@property (nonatomic, strong, readonly) PLVSAMixLayoutSheet *mixLayoutSheet;
 
 - (instancetype)initWithLocalOnlineUser:(PLVLinkMicOnlineUser *)localOnlineUser
                      linkMicWindowsView:(PLVSALinkMicWindowsView *)linkMicWindowsView;

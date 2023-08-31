@@ -14,10 +14,12 @@
 #define TEXT_MAX_LENGTH 50
 
 static NSString *const EnterTips = @"点击输入直播标题";
+static NSString *const kSettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 
 @interface PLVSAStreamerSettingView ()<
 UITextViewDelegate,
-PLVSABitRateSheetDelegate
+PLVSABitRateSheetDelegate,
+PLVSAMixLayoutSheetDelegate
 >
 
 #pragma mark UI
@@ -49,6 +51,8 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, strong) UIButton *orientationButton;
 /// 开播画面比例
 @property (nonatomic, strong) UIButton *streamScaleButton;
+/// 混流布局
+@property (nonatomic, strong) UIButton *mixLayoutButton;
 /// 直播名称
 @property (nonatomic, strong) UILabel *channelNameLable;
 /// 输入框蒙层（负责承载频道名称输入框和频道名称剩余可输入的字符数）
@@ -59,6 +63,8 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, strong) UITextView *channelNameTextView;
 /// 清晰度选择面板
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
+/// 混流布局选择面板
+@property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet;
 /// 文本滚动视图（为了兼容手机端横屏标题太长时，显示不美观的问题）
 @property (nonatomic, strong) UIScrollView *scrollView;
 /// 美颜开关
@@ -69,8 +75,12 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, assign) CGFloat channelNameLableHeight;
 /// 初始化时的默认清晰度
 @property (nonatomic, assign) PLVResolutionType resolutionType;
+/// 初始化时的默认混流布局
+@property (nonatomic, assign) PLVMixLayoutType mixLayoutType;
 /// 当前控制器是否可以进行屏幕旋转
 @property (nonatomic, assign) BOOL canAutorotate;
+/// 当前是否显示混流布局
+@property (nonatomic, assign) BOOL canMixLayout;
 /// 当前是否显示推流画面比例
 @property (nonatomic, assign, readonly) BOOL showStreamScale;
 
@@ -148,6 +158,7 @@ PLVSABitRateSheetDelegate
     [self.configView addSubview:self.bitRateButton];
     [self.configView addSubview:self.orientationButton];
     [self.configView addSubview:self.streamScaleButton];
+    [self.configView addSubview:self.mixLayoutButton];
 }
 
 - (void)updateUI {
@@ -216,7 +227,10 @@ PLVSABitRateSheetDelegate
     self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.scrollView) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
     
     /// 底部按钮
-    NSInteger configButtonCount = self.showStreamScale ? 5 : 4;
+    NSInteger configButtonCount = self.showStreamScale ? 6 : 5;
+    if (!self.showMixLayout) {
+        configButtonCount -= 1;
+    }
     CGSize buttonSize = CGSizeMake(32, 58);
     CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
     CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * configButtonCount)) / (configButtonCount + 1) ;
@@ -226,6 +240,8 @@ PLVSABitRateSheetDelegate
     self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
     self.streamScaleButton.hidden = !self.showStreamScale;
     self.streamScaleButton.frame = CGRectMake(UIViewGetRight(self.orientationButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.mixLayoutButton.hidden = !self.showMixLayout;
+    self.mixLayoutButton.frame = !self.showStreamScale ? self.streamScaleButton.frame : CGRectMake(UIViewGetRight(self.streamScaleButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
 }
 
 /// 初始化默认清晰度
@@ -338,6 +354,18 @@ PLVSABitRateSheetDelegate
 - (void)showConfigView:(BOOL)show {
     self.configView.hidden = !show;
     self.maskView.hidden = show;
+}
+
+/// 读取本地混流布局配置
+- (PLVMixLayoutType)getLocalMixLayoutType {
+    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:kSettingMixLayoutKey];
+    if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
+        PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
+        if (saveMixLayout >= 1 && saveMixLayout <=3) {
+            return saveMixLayout;
+        }
+    }
+    return PLVMixLayoutType_Tile; // 默认混流布局为平铺模式
 }
 
 #pragma mark Callback
@@ -547,6 +575,30 @@ PLVSABitRateSheetDelegate
     return _beautyButton;
 }
 
+- (UIButton *)mixLayoutButton {
+    if (!_mixLayoutButton) {
+        _mixLayoutButton = [self buttonWithTitle:@"混流布局" NormalImageString:@"plvsa_liveroom_btn_mixLayout" selectedImageString:@"plvsa_liveroom_btn_mixLayout"];
+        [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _mixLayoutButton.titleEdgeInsets = UIEdgeInsetsMake(_orientationButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    return _mixLayoutButton;
+}
+
+- (PLVSAMixLayoutSheet *)mixLayoutSheet {
+    if (!_mixLayoutSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.233 : 0.285;
+        CGFloat widthScale = 0.23;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _mixLayoutSheet = [[PLVSAMixLayoutSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:[self getLocalMixLayoutType]]; // 纯视频场景默认为平铺模式
+        _mixLayoutSheet.delegate = self;
+    }
+    return _mixLayoutSheet;
+}
+
 - (BOOL)showStreamScale {
     if ([PLVSAUtils sharedUtils].isLandscape &&
         [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher &&
@@ -554,6 +606,10 @@ PLVSABitRateSheetDelegate
         return YES;
     }
     return NO;
+}
+
+- (BOOL)showMixLayout {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
 }
 
 #pragma mark - [ Event ]
@@ -630,6 +686,10 @@ PLVSABitRateSheetDelegate
     }
 }
 
+- (void)mixLayoutButtonAction:(UIButton *)sender {
+    [self.mixLayoutSheet showInView:self];
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark <UITextViewDelegate>
@@ -686,6 +746,14 @@ PLVSABitRateSheetDelegate
     [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType];
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewBitRateButtonClickWithResolutionType:)]) {
         [self.delegate streamerSettingViewBitRateButtonClickWithResolutionType:bitRate];
+    }
+}
+
+#pragma mark <PLVSAMixLayoutSheetDelegate>
+
+- (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet mixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewMixLayoutButtonClickWithMixLayoutType:)]) {
+        [self.delegate streamerSettingViewMixLayoutButtonClickWithMixLayoutType:type];
     }
 }
 

@@ -22,6 +22,7 @@ typedef NS_ENUM(NSInteger, PLVECLinkMicLayoutMode) {
 //连麦窗口宽高比例 横屏 3:2 竖屏2:3
 static CGFloat PLVECLinkMicCellAspectRatio = 1.5;
 static NSString *kCellIdentifier = @"PLVECLinkMicWindowCellID";
+static NSString *kPLVECLMKEYPATH_CONTENTSIZE = @"contentSize";
 
 @interface PLVECLinkMicWindowsView ()<
 UICollectionViewDataSource,
@@ -35,13 +36,16 @@ UICollectionViewDelegate
 @property (nonatomic, copy) NSString *currentSpeakerLinkMicUserId; //当前显示主讲用户的连麦id[布局模式切换时缓存此id]
 @property (nonatomic, assign) NSInteger currentSpeakerUserIndex; // 当前主讲用户在数据中的下标
 @property (nonatomic, assign) BOOL externalNoDelayPaused;   // 外部的 ‘无延迟播放’ 是否已暂停
+@property (nonatomic, assign) BOOL observingCollectionView;
 
 #pragma mark UI
 /// view hierarchy
 ///
 /// (PLVECLinkMicWindowsView) self
+///    ├─  (UIView) collectionBackgroundView
 ///    ├─  (UICollectionView) collectionView
 ///    └─  (PLVECLinkMicWindowsSpeakerView) speakerView
+@property (nonatomic, strong) UIView *collectionBackgroundView; // 连麦窗口背景视图
 @property (nonatomic, strong) UICollectionView *collectionView; // 连麦窗口集合视图
 @property (nonatomic, strong, readonly) UICollectionViewFlowLayout *collectionViewLayout; // 集合视图的布局
 @property (nonatomic, strong) PLVECLinkMicWindowsSpeakerView *speakerView; // 主讲模式下的第一画面
@@ -54,11 +58,18 @@ UICollectionViewDelegate
 
 #pragma mark - [ Life Cycle ]
 
+- (void)dealloc {
+    [self removeObserveCollectionView];
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {
+        [self addSubview:self.collectionBackgroundView];
         [self addSubview:self.collectionView];
         [self addSubview:self.speakerView];
+        [self.collectionBackgroundView addSubview:self.collectionView];
+        [self observeCollectionView];
     }
     return self;
 }
@@ -71,37 +82,28 @@ UICollectionViewDelegate
     if (@available(iOS 11.0, *)) {
         safeAreaInsets = self.safeAreaInsets;
     }
-    CGFloat top = safeAreaInsets.top;
-    CGFloat bottom = safeAreaInsets.bottom;
+
     CGFloat left = 0;
     CGFloat right = 0;
     CGFloat windowsViewWidth = self.bounds.size.width;
     CGFloat windowsViewHeight = self.bounds.size.height;
     CGFloat collectionViewX = left;
-    CGFloat collectionViewY = top;
-
+    CGFloat collectionViewY = 0.0;
     if (self.linkMicUserCount <= 1) { //连麦人数1人以下,且不需要显示讲师讲师占位图
-        self.collectionView.frame = self.bounds;
+        self.collectionBackgroundView.frame = self.bounds;
     } else {
         CGFloat collectionViewWidth = windowsViewWidth - collectionViewX - right;
-        CGFloat collectionViewHeight = windowsViewHeight - collectionViewY - bottom;
-        
-        collectionViewY = top + (isPad ? 92 : 78);
-        collectionViewHeight = windowsViewHeight - collectionViewY - bottom;
-        if (self.linkMicLayoutMode == PLVECLinkMicLayoutModeTiled) { //平铺模式
-            if (self.linkMicUserCount <= 4) {
-                collectionViewHeight = MIN(collectionViewWidth * PLVECLinkMicCellAspectRatio, collectionViewHeight);
-            }
-        } else { //主讲模式
+        CGFloat collectionViewHeight = windowsViewHeight - collectionViewY;
+        if (self.linkMicLayoutMode == PLVECLinkMicLayoutModeSpeaker) { // 主讲模式
             collectionViewX = windowsViewWidth * 0.75;
             collectionViewWidth = windowsViewWidth * 0.25;
             CGFloat speakerViewWidth = windowsViewWidth - collectionViewWidth;
             CGFloat speakerViewHeight = isPad ? speakerViewWidth * 1.4 :  speakerViewWidth * PLVECLinkMicCellAspectRatio;
             self.speakerView.frame = CGRectMake(0, collectionViewY, speakerViewWidth, speakerViewHeight);
         }
-        
-        self.collectionView.frame = CGRectMake(collectionViewX, collectionViewY, floor(collectionViewWidth), floor(collectionViewHeight));
+        self.collectionBackgroundView.frame = CGRectMake(collectionViewX, collectionViewY, floor(collectionViewWidth), floor(collectionViewHeight));
     }
+    self.collectionView.frame = self.collectionBackgroundView.bounds;
     self.collectionView.contentOffset = CGPointZero;
     [self.collectionView.collectionViewLayout invalidateLayout];
     [self.collectionView setCollectionViewLayout:self.collectionViewLayout animated:YES];
@@ -230,6 +232,7 @@ UICollectionViewDelegate
             }
         };
     }
+    [aOnlineUser.canvasView logoViewShow:aOnlineUser.isRealMainSpeaker]; //真实主讲(即第一画面) 显示播放器LOGO
 }
 
 /// 设置连麦用户model的’即将销毁Block‘，用于在连麦用户退出时及时回收资源
@@ -310,6 +313,14 @@ UICollectionViewDelegate
     return ((UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout);
 }
 
+- (UIView *)collectionBackgroundView {
+    if (!_collectionBackgroundView) {
+        _collectionBackgroundView = [[UIView alloc] init];
+        _collectionBackgroundView.backgroundColor = [UIColor clearColor];
+    }
+    return _collectionBackgroundView;
+}
+
 - (UICollectionView *)collectionView {
     if (!_collectionView) {
         UICollectionViewFlowLayout * layout = [[UICollectionViewFlowLayout alloc] init];
@@ -339,6 +350,36 @@ UICollectionViewDelegate
         _speakerView = [[PLVECLinkMicWindowsSpeakerView alloc] init];
     }
     return _speakerView;
+}
+
+#pragma mark - KVO
+- (void)observeCollectionView {
+    if (!self.observingCollectionView) {
+        self.observingCollectionView = YES;
+        [self.collectionView addObserver:self forKeyPath:kPLVECLMKEYPATH_CONTENTSIZE options:NSKeyValueObservingOptionNew context:nil];
+    }
+}
+
+- (void)removeObserveCollectionView {
+    if (self.observingCollectionView) {
+        self.observingCollectionView = NO;
+        [self.collectionView removeObserver:self forKeyPath:kPLVECLMKEYPATH_CONTENTSIZE];
+    }
+}
+
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([object isKindOfClass:UICollectionView.class] && [keyPath isEqualToString:kPLVECLMKEYPATH_CONTENTSIZE]) {
+        CGFloat contentHeight = self.collectionView.contentSize.height;
+        if (contentHeight < CGRectGetHeight(self.collectionBackgroundView.bounds)) {
+            /// 高度需要相对于整个屏幕居中
+            CGFloat relativeScreenOriginY = (PLVScreenHeight - contentHeight)/2 - P_SafeAreaTopEdgeInsets();
+            CGRect newFrame = CGRectMake(0, MAX(0, relativeScreenOriginY), CGRectGetWidth(self.collectionBackgroundView.bounds), contentHeight);
+            self.collectionView.frame = newFrame;
+        } else if (CGRectGetHeight(self.collectionBackgroundView.bounds) > 0) {
+            self.collectionView.scrollEnabled = YES;
+            self.collectionView.frame = self.collectionBackgroundView.bounds;
+        }
+    }
 }
 
 #pragma mark - [ Delegate ]
@@ -382,8 +423,8 @@ UICollectionViewDelegate
                   layout:(UICollectionViewLayout *)collectionViewLayout
   sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    CGFloat collectionViewWidth = self.collectionView.bounds.size.width;
-    CGFloat collectionViewHeigth = self.collectionView.bounds.size.height;
+    CGFloat collectionViewWidth = self.collectionBackgroundView.bounds.size.width;
+    CGFloat collectionViewHeigth = self.collectionBackgroundView.bounds.size.height;
     CGFloat collectionCellWidth = collectionViewWidth;
     CGFloat collectionCellHeigth = collectionViewHeigth;
     if (self.linkMicUserCount <= 1) {

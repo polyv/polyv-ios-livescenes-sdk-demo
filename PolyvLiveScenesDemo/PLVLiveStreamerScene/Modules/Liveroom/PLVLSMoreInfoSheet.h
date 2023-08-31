@@ -22,6 +22,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidBadNetworkButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheetDidTapMixLayoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 @interface PLVLSMoreInfoSheet : PLVLSSideSheet

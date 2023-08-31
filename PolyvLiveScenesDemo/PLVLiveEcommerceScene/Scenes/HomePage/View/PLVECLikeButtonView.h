@@ -19,6 +19,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy) void(^didTapLikeButton)(void);
 
+@property (nonatomic, assign) BOOL animationLeftShift;
+
 /// 显示点赞动画
 - (void)showLikeAnimation;
 
@@ -27,6 +29,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 取消计时器
 - (void)invalidTimer;
+
+/// 设置点赞动画
+/// @param likeCount 当前点赞数量
+- (void)setupLikeAnimationWithCount:(NSInteger)likeCount;
 
 @end
 

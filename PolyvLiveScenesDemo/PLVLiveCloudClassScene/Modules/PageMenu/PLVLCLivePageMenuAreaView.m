@@ -127,6 +127,32 @@ PLVRoomDataManagerProtocol
     [self.chatVctrl startCardPush:start cardPushInfo:dict callback:callback];
 }
 
+- (void)updateProductMenuTab:(NSDictionary *)dict {
+    PLVLiveVideoChannelMenu *menu = [[PLVLiveVideoChannelMenu alloc] initWithDictionary:dict];
+    if (![PLVFdUtil checkDictionaryUseable:dict] || ![PLVFdUtil checkStringUseable:menu.name]) {
+        return;
+    }
+    
+    NSMutableArray *titleArray = [NSMutableArray arrayWithArray:self.pageController.titles];
+    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.pageController.controllers];
+    BOOL enabled = PLV_SafeBoolForDictKey(dict, @"enabled");
+    if (enabled) {
+        if (![controllers containsObject:self.productVctrl]) {
+            UIViewController *viewController = [self controllerWithMenu:menu];
+            [titleArray addObject:menu.name];
+            [controllers addObject:viewController];
+        }
+    } else {
+        if ([controllers containsObject:self.productVctrl]) {
+            [titleArray removeObject:menu.name];
+            [controllers removeObject:self.productVctrl];
+            self.productVctrl = nil;
+        }
+    }
+
+    [self.pageController setTitles:titleArray.copy controllers:controllers.copy];
+}
+
 - (void)displayProductPageToExternalView:(UIView *)externalView {
     if (self.productVctrl) {
         if (!self.productVctrl.isViewLoaded) {
@@ -157,7 +183,7 @@ PLVRoomDataManagerProtocol
     [channelMenuInfo.channelMenus enumerateObjectsUsingBlock:^(PLVLiveVideoChannelMenu * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         PLVLCLivePageMenuType menuType = PLVLCMenuTypeWithMenuTypeString(obj.menuType);
         if (menuType == PLVLCLivePageMenuTypeBuy) {
-            commodityMenu = YES;
+            commodityMenu = obj.displayEnabled;
             *stop = YES;
         }
     }];
@@ -191,6 +217,9 @@ PLVRoomDataManagerProtocol
         
         for (int i = 0; i < menuCount; i++) {
             PLVLiveVideoChannelMenu *menu = channelMenuInfo.channelMenus[i];
+            if (!menu.displayEnabled) {
+                continue;
+            }
             UIViewController *vctrl = [self controllerWithMenu:menu];
             if (!vctrl) {
                 continue;

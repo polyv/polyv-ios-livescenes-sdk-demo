@@ -254,7 +254,7 @@ PLVHCLinkMicZoomAreaViewDelegate // 连麦放大视图回调
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if ([PLVHiClassManager sharedManager].status == PLVHiClassStatusInClass ||
         roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
-        // 2. 根据业务需要回收摄像头资源（只有讲师登陆未上课的课节需要持有摄像头资源）
+        // 2. 根据业务需要回收摄像头资源（只有讲师登录未上课的课节需要持有摄像头资源）
         [deviceManager releaseVideoResource];
     }
 }

@@ -18,6 +18,8 @@
 
 @property (nonatomic, strong) NSTimer *timer;
 
+@property (nonatomic, assign) NSUInteger localLikeCount; // 本地点赞数量，用于区分自己的点赞还是别人的点赞，控制动画显示。
+
 @end
 
 @implementation PLVECLikeButtonView
@@ -27,6 +29,7 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
+        self.animationLeftShift = NO;
         [self addSubview:self.likeButton];
         [self addSubview:self.likeCountLabel];
     }
@@ -76,42 +79,90 @@
 #pragma mark - Action
 
 - (void)likeAction:(id)sender {
+    self.localLikeCount = [self.likeCountLabel.text integerValue] + 1;
     if (self.didTapLikeButton) {
         self.didTapLikeButton();
     }
-    [self likeAnimation];
+    [self likeAnimationWithLocalTouch:YES];
 }
 
 #pragma mark - Public
 
 - (void)showLikeAnimation {
-    [self likeAnimation];
+    [self likeAnimationWithLocalTouch:NO];
+}
+
+- (void)setupLikeAnimationWithCount:(NSInteger)likeCount {
+    if (likeCount < 0) {
+        return;
+    }
+    
+    if (likeCount > self.localLikeCount) { // 其他人的点赞
+        NSUInteger addLikeCount = MIN(likeCount - self.likeCount, 5); // 新增的点赞（最多显示5次点赞动画）
+        CGFloat duration = addLikeCount > 1 ? 0.3 : 0.0; // 新增的点赞数量超过两个，设一个动画间隔
+        __weak typeof(self) weakSelf = self;
+        for (NSUInteger i = 1; i <= addLikeCount; i++) {
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(i * duration * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [weakSelf likeAnimationWithLocalTouch:NO];
+            });
+        }
+    }
+    self.likeCount = likeCount; // 设置点赞数量
 }
 
 #pragma mark - Private Method
 
-- (void)likeAnimation {
-    UIImage *heartImage = [PLVECUtils imageForWatchResource:[NSString stringWithFormat:@"plv_like_heart%@_img",@(rand()%4)]];
-    if (!heartImage) {
-        return;
+- (void)likeAnimationWithLocalTouch:(BOOL)localTouch {
+    if (localTouch) { // 本地点击按钮动画
+        //放大动画
+        CABasicAnimation *scaleAnimation = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+        // 放大倍率
+        scaleAnimation.toValue = @(1.5);
+        
+        // 动画组
+        CAAnimationGroup *groupAnimation = [CAAnimationGroup animation];
+        groupAnimation.duration = 0.1;
+        scaleAnimation.repeatCount = 0;
+        groupAnimation.autoreverses = YES;
+        groupAnimation.animations = @[scaleAnimation];
+        [self.likeButton.layer addAnimation:groupAnimation forKey:@"rotation-scale-animation"];
     }
+
+    CGRect originRect = self.frame;
+    NSArray *imageNames = @[@"plvec_chatroom_like_icon1",@"plvec_chatroom_like_icon2",@"plvec_chatroom_like_icon3",
+          @"plvec_chatroom_like_icon4",@"plvec_chatroom_like_icon5",@"plvec_chatroom_like_icon6",
+          @"plvec_chatroom_like_icon7",@"plvec_chatroom_like_icon8",@"plvec_chatroom_like_icon9",@"plvec_chatroom_like_icon10"];
+    NSString *imageName = imageNames[rand() % imageNames.count];
+    UIImage *image = [PLVECUtils imageForWatchResource:imageName];
+    UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
+    imageView.frame = CGRectMake(originRect.origin.x + 3, originRect.origin.y + 15, 20, 20);
+    [self.superview insertSubview:imageView belowSubview:self];
     
-    UIImageView *imageView = [[UIImageView alloc] initWithImage:heartImage];
-    imageView.frame = CGRectMake(5.0, 5.0, 18.0, 15.0);
-    [imageView setContentMode:UIViewContentModeCenter];
-    imageView.clipsToBounds = YES;
-    [self.likeButton addSubview:imageView];
+    //放大动画
+    CABasicAnimation *imageScaleAnimation = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+    //结束时的倍率
+    imageScaleAnimation.toValue = @(1.5);
+    imageScaleAnimation.duration = 0.3;
+    imageScaleAnimation.removedOnCompletion = NO;
+    imageScaleAnimation.fillMode = kCAFillModeForwards;
+    [imageView.layer addAnimation:imageScaleAnimation forKey:@"scale-animation"];
     
-    CGFloat finishX = round(random() % 84) - 84 + (CGRectGetWidth(self.bounds) - CGRectGetMinX(self.likeButton.frame));
-    CGFloat speed = 1.0 / round(random() % 900) + 0.6;
-    NSTimeInterval duration = 4.0 * speed;
-    if (duration == INFINITY) {
-        duration = 2.412346;
+    //曲线动画
+    CAKeyframeAnimation *curveAnimation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+    curveAnimation.duration = 1.5;
+    // 设置贝塞尔曲线路径
+    CGFloat finishX = originRect.origin.x - 20 + CGRectGetWidth(originRect) - round(arc4random() % 110);
+    if (self.animationLeftShift) {
+        finishX = originRect.origin.x - 20 - round(arc4random() % 60);
     }
+    CGFloat finishY = originRect.origin.y + 15 - 224;
+    NSValue *startPoint = [NSValue valueWithCGPoint:CGPointMake(originRect.origin.x + 3, originRect.origin.y + 15)];
+    NSValue *endPoint = [NSValue valueWithCGPoint:CGPointMake(finishX, finishY)];
+    curveAnimation.values = @[startPoint, endPoint];
+    [imageView.layer addAnimation:curveAnimation forKey:@"curve-animation"];
     
-    [UIView animateWithDuration:duration animations:^{
+    [UIView animateWithDuration:0.3 delay:1.2 options:UIViewAnimationOptionCurveLinear animations:^{
         imageView.alpha = 0.0;
-        imageView.frame = CGRectMake(finishX, - 180, 30.0, 30.0);
     } completion:^(BOOL finished) {
         [imageView removeFromSuperview];
     }];
@@ -133,9 +184,7 @@
 }
 
 - (void)timerAction {
-    for (int i = 0; i < rand()%4 + 1; i++) {
-        [self likeAnimation];
-    }
+    [self likeAnimationWithLocalTouch:NO];
 }
 
 @end

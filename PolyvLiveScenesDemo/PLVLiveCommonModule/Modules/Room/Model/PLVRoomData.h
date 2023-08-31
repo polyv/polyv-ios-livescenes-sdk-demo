@@ -28,6 +28,13 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
     PLVQualityPreferenceTypeSmooth = 1, // 流畅度优先
 };
 
+/// 混流布局类型
+typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
+    PLVMixLayoutType_Single = 1, // 单人模式
+    PLVMixLayoutType_Tile = 2, // 平铺模式
+    PLVMixLayoutType_MainSpeaker = 3, // 主讲模式
+};
+
 @interface PLVRoomData : NSObject
 
 #pragma mark 通用属性
@@ -191,6 +198,16 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
 
 /// 将枚举 PLVResolutionType 转换为 PLVBLinkMicStreamQuality 枚举
 + (PLVBLinkMicStreamQuality)streamQualityWithResolutionType:(PLVResolutionType)resolution;
+
+/// 将枚举 PLVRTCStreamerMixLayoutType 转换为 PLVMixLayoutType 枚举
++ (PLVMixLayoutType)mixLayoutTypeWithStreamerMixLayoutType:(PLVRTCStreamerMixLayoutType)streamerType;
+
+/// 将枚举 PLVMixLayoutType 转换为 PLVRTCStreamerMixLayoutType 枚举
++ (PLVRTCStreamerMixLayoutType)streamerMixLayoutTypeWithMixLayoutType:(PLVMixLayoutType)mixLayoutType;
+
+/// 将清晰度枚举值转换成字符串
+/// @return 返回值为nil时表示参数resolutionType出错，无法转换
++ (NSString * _Nullable)mixLayoutTypeStringWithType:(PLVMixLayoutType)mixLayoutType;
 
 @end
 

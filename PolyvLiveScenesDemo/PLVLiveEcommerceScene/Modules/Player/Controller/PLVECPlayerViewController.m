@@ -101,7 +101,13 @@ PLVPlayerPresenterDelegate
     // 设置播放器背景图位置、尺寸
     CGSize boundsSize = self.view.bounds.size;
     CGSize playerBgSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
-    self.playerBackgroundView.frame = CGRectMake(0, (boundsSize.height - playerBgSize.height) / 2.0, playerBgSize.width, playerBgSize.height);
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (boundsSize.width > boundsSize.height) {
+        self.playerBackgroundView.frame = CGRectMake(0, (boundsSize.height - playerBgSize.height) / 2.0, playerBgSize.width, playerBgSize.height);
+    } else {
+        CGFloat playerBackgroundViewOriginY = fabs(boundsSize.height * 0.48 - playerBgSize.height);
+        self.playerBackgroundView.frame = CGRectMake(0, playerBackgroundViewOriginY, playerBgSize.width, playerBgSize.height);
+    }
     
     // 设置音频模式背景图位置、尺寸
     self.audioAnimalView.frame = self.playerBackgroundView.frame;
@@ -115,7 +121,6 @@ PLVPlayerPresenterDelegate
     }
     
     self.fullScreenButton.frame = CGRectMake(boundsSize.width - 36, CGRectGetMaxY(self.contentBackgroudView.frame) + 4, 32, 32);
-    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen || (boundsSize.width == 90 && boundsSize.height == 160)) {
         [self fullScreenButtonShowInView:NO];
     } else if (!fullScreen && self.fullScreenButton.alpha == 0 && self.fullScreenEnable) {
@@ -130,7 +135,7 @@ PLVPlayerPresenterDelegate
     // 设置防录屏水印位置、尺寸
     self.watermarkView.frame = self.contentBackgroudView.frame;
     
-    self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, (CGRectGetHeight(self.view.frame) - 72) / 2, 74, 72);
+    self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, CGRectGetMinY(self.playerBackgroundView.frame) +  (CGRectGetHeight(self.playerBackgroundView.frame) - 72) / 2, 74, 72);
     
     // 设置画中画占位图
     self.pictureInPicturePlaceholderView.frame = self.contentBackgroudView.frame;
@@ -146,11 +151,14 @@ PLVPlayerPresenterDelegate
     }
     
     if (self.videoSize.width >= self.videoSize.height) { // 视频源宽大于高时，屏幕等宽，等比缩放居中显示
-        
         CGFloat width = containerSize.width;
         CGFloat height = containerSize.width / self.videoSize.width * self.videoSize.height;
-        return CGRectMake(0, (containerSize.height - height) / 2.0, width, height);
-        
+        CGFloat originY = fabs(containerSize.height * 0.48 - height);
+        if (containerSize.width > containerSize.height) {
+            return CGRectMake(0, (containerSize.height - height) / 2.0, width, height);
+        } else {
+            return CGRectMake(0, originY, width, height);
+        }
     } else {  // 视频源高大于宽时
         CGFloat w_h = self.videoSize.width / self.videoSize.height;
         CGFloat w_h_base = containerSize.width / containerSize.height;
@@ -290,8 +298,7 @@ PLVPlayerPresenterDelegate
 
 - (UIImageView *)backgroundView {
     if (!_backgroundView) {
-        UIImage *image = [PLVECUtils imageForWatchResource:@"plv_background_img"];
-        _backgroundView = [[UIImageView alloc] initWithImage:image];
+        _backgroundView = [[UIImageView alloc] init];
     }
     return _backgroundView;
 }

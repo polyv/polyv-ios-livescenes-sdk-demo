@@ -739,6 +739,10 @@ PLVChannelClassManagerDelegate
     return self.rtcStreamerManager.videoQosPreference;
 }
 
+- (PLVRTCStreamerMixLayoutType)mixLayoutType {
+    return self.rtcStreamerManager.mixLayoutType;
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setup{
     /// 初始化 数据
@@ -1831,7 +1835,8 @@ PLVChannelClassManagerDelegate
                 PLVLinkMicWaitUser * waitUser;
                 for (int i = 0; i < weakSelf.waitUserMuArray.count; i++) {
                     waitUser = weakSelf.waitUserMuArray[i];
-                    if ([waitUser.linkMicUserId isEqualToString:linkMicUserId]) {
+                    if ([waitUser.linkMicUserId isEqualToString:linkMicUserId] ||
+                        [waitUser.userId isEqualToString:linkMicUserId]) {
                         index = i;
                         break;
                     }
@@ -2342,6 +2347,14 @@ PLVChannelClassManagerDelegate
     })
 }
 
+- (void)callbackForUpdateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type {
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:updateMixLayoutDidOccurError:)]) {
+            [self.delegate plvStreamerPresenter:self updateMixLayoutDidOccurError:type];
+        }
+    })
+}
+
 - (void)callbackForLocalUserMicOpenChanged{
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:localUserMicOpenChanged:)]) {
@@ -2702,6 +2715,10 @@ PLVChannelClassManagerDelegate
         [self updateMixUserList];
     }
     [self callbackForCurrentReconnectingThisTimeDuration];
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager updateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type {
+    [self callbackForUpdateMixLayoutDidOccurError:type];
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager * _Nonnull)manager didJoinedOfUid:(NSString *)uid{

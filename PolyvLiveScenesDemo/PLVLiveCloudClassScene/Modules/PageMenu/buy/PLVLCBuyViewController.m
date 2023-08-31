@@ -48,7 +48,7 @@ PLVProductWebViewBridgeDelegate>
     
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {
-        self.webView.frame = CGRectMake(self.contentBackgroudView.bounds.size.width * 0.6, 0, self.contentBackgroudView.bounds.size.width * 0.4, self.contentBackgroudView.bounds.size.height);
+        self.webView.frame = CGRectMake(self.contentBackgroudView.bounds.size.width - 375, 0, 375, self.contentBackgroudView.bounds.size.height);
     } else {
         self.contentBackgroudView.frame = self.view.bounds;
         self.webView.frame = self.contentBackgroudView.bounds;

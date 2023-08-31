@@ -9,6 +9,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVRoomData.h"
+#import "PLVSAMixLayoutSheet.h"
 
 
 @protocol PLVSAStreamerSettingViewDelegate;
@@ -16,6 +17,9 @@
 @interface PLVSAStreamerSettingView : UIView
 
 @property (nonatomic, weak) id<PLVSAStreamerSettingViewDelegate> delegate;
+
+// 混流布局选择面板，用于更新当前混流布局类型
+@property (nonatomic, strong, readonly) PLVSAMixLayoutSheet *mixLayoutSheet;
 
 @property (nonatomic, assign, readonly) BOOL canAutorotate;
 
@@ -70,6 +74,8 @@
 - (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView;
 /// 开播流比例改变
 - (void)streamerSettingViewStreamScaleButtonClickWithStreamScale:(PLVBLinkMicStreamScale)streamScale;;
+/// 混流布局切换
+- (void)streamerSettingViewMixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type;
 
 @end
 

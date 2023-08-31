@@ -46,6 +46,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 商品库按钮，用于外部控制是否显示该按钮
 @property (nonatomic, strong, readonly) UIButton *commodityButton;
 
+/// 横屏聊天室输入框，用于外部控制是否显示该输入框
+@property (nonatomic, strong, readonly) UILabel * guideChatLabel;
+
 /// 隐藏和显示 直播间播放器皮肤视图 控件
 /// @param isHidden YES 隐藏控件，NO显示控件
 - (void)hiddenLiveRoomPlayerSkinView:(BOOL)isHidden;

@@ -417,7 +417,7 @@ PLVSocketManagerProtocol // socket协议
     dispatch_semaphore_signal(_userArrayLock);
 }
 
-/// socket 接收到用户登陆的消息时
+/// socket 接收到用户登录的消息时
 - (void)addUser:(PLVChatUser *)user {
     PLVChatUser *existedUser = [self searchUserInUserArrayWithUserId:user.userId];
     if (existedUser) {
@@ -625,7 +625,7 @@ PLVSocketManagerProtocol // socket协议
 
 #pragma mark socket 事件处理
 
-/// 有用户登陆
+/// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     NSDictionary *userDict = data[@"user"];
     NSString *userSource = PLV_SafeStringForDictKey(userDict, @"userSource");

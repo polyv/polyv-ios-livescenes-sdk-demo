@@ -19,6 +19,28 @@ NS_ASSUME_NONNULL_BEGIN
 
 @optional
 
+#pragma mark 私聊
+
+/// 本地发送了新的私聊消息
+/// 用于刷新列表
+- (void)chatroomManager_didSendQuestionMessage;
+
+/// 通知socket接收到新的私聊（教师回答）消息，每次1条
+/// 用于刷新列表、显示新消息提示
+- (void)chatroomManager_didReceiveAnswerMessage;
+
+/// 获取提问历史聊天记录成功时触发
+/// 用于刷新列表，停止【下拉加载更多】控件的动画
+/// @param noMore 是否还有更多历史消息，YES表示已加载完，此时可隐藏【下拉加载更多】控件
+/// @param first  是否是初次加载历史消息，初次加载需滚动列表到底部
+- (void)chatroomManager_loadQuestionHistorySuccess:(BOOL)noMore firstTime:(BOOL)first;
+
+/// 获取提问历史聊天消息失败时触发
+/// 用于停止【下拉加载更多】控件的动画
+- (void)chatroomManager_loadQuestionHistoryFailure;
+
+#pragma mark 公聊
+
 /// 返回本地发送的公聊消息（包含禁言的情况）
 /// 用于刷新列表、滚动列表到底部
 - (void)chatroomManager_didSendMessage;
@@ -97,13 +119,14 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface PLVECChatroomViewModel : NSObject
 
-@property (nonatomic, weak) id<PLVECChatroomViewModelProtocol> delegate;
-
 /// 聊天室common层presenter，一个scene层只能初始化一个presenter对象
 @property (nonatomic, strong, readonly) PLVChatroomPresenter *presenter;
 
 /// 公聊消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
+
+/// 私聊消息数组
+@property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *privateChatArray;
 
 /// 礼物打赏开关
 @property (nonatomic, assign, readonly) BOOL enableReward;
@@ -122,8 +145,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// 加载历史聊天记录，每次加载条数10条
 - (void)loadHistory;
 
+/// 加载提问消息历史记录
+- (void)loadQuestionHistory;
+
 /// 加载图片表情消息
 - (void)loadImageEmotions;
+
+/// 发送私聊提问消息
+/// @param content 消息文本
+/// @return YES表示数据将有更新，可等待收到回调后刷新列表；NO表示socket未登录或房间关闭，可进行toast提示
+- (BOOL)sendQuesstionMessage:(NSString *)content;
 
 /// 发送文本消息
 /// @param content 消息文本
@@ -157,6 +188,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点赞数的实时更新通过监听roomData的likeCount获得
 - (void)sendLike;
 
+/// 本地生成一条教师消息，作为私聊窗口的第一条消息
+/// 生成后的消息数据模型通过回调 '-chatroomPresenter_didReceiveAnswerChatModel:' 返回
+- (void)createAnswerChatModel;
+
 /// 打开红包前判断红包状态
 - (void)checkRedpackStateWithChatModel:(PLVChatModel *)model;
 
@@ -165,6 +200,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param state 红包状态（字符串类型）
 /// @return 转换为枚举值的红包状态
 - (PLVRedpackState)changeRedpackStateWithRedpackId:(NSString *)redpackId state:(NSString *)state;
+
+/// 增加PLVECChatroomViewModelProtocol协议的监听者
+/// @param delegate 待增加的监听者
+/// @param delegateQueue 执行回调的队列
+- (void)addDelegate:(id<PLVECChatroomViewModelProtocol>)delegate delegateQueue:(dispatch_queue_t)delegateQueue;
 
 @end
 

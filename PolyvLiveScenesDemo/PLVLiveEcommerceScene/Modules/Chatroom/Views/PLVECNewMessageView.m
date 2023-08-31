@@ -28,6 +28,8 @@
         self.layer.masksToBounds = YES;
         
         [self addSubview:self.label];
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction:)];
+        [self addGestureRecognizer:tapGesture];
     }
     return self;
 }
@@ -66,6 +68,10 @@
 }
 
 #pragma mark - Private
-
+#pragma mark - Action
+- (void)tapAction:(UIGestureRecognizer *)gestureRecognizer {
+    [self hidden];
+    _tapActionHandler ? _tapActionHandler() : nil;
+}
 
 @end

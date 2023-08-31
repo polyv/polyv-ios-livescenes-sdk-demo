@@ -360,6 +360,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param playerPresenter 播放器管理器
 - (void)playerPresenterPictureInPictureDidStop:(PLVPlayerPresenter *)playerPresenter;
 
+/// 画中画播放器播放状态改变
+/// @param playerPresenter 播放器管理器
+/// @param playing 是否正在播放
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -105,7 +105,7 @@ PLVRoomDataManagerProtocol
         
         __weak typeof(self) weakSelf = self;
         MJRefreshNormalHeader *mjHeader = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
-            [weakSelf loadDataWithPageNumber:0 pageSize:weakSelf.nextPageNumber];
+            [weakSelf loadDataWithPageNumber:0 pageSize:weakSelf.nextPageNumber * 10];
             [weakSelf.playbackListView.collectionView.mj_header endRefreshing];
         }];
         mjHeader.lastUpdatedTimeLabel.hidden = YES;
@@ -175,6 +175,7 @@ PLVRoomDataManagerProtocol
     [cell setModel:videoModel];
     if ([[PLVRoomDataManager sharedManager].roomData.vid isEqualToString:self.dataArray[indexPath.row].videoPoolId]) {
         self.selectCellIndex = indexPath.row;
+        cell.selected = YES;
         [collectionView selectItemAtIndexPath:indexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     }
     return cell;

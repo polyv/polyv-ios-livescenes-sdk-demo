@@ -60,6 +60,10 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param callback 开始卡片推送的回调，是否显示挂件（YES 显示，NO不显示）
 - (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback;
 
+/// 更新商品库菜单Tab
+/// @param dict 商品菜单参数
+- (void)updateProductMenuTab:(NSDictionary *)dict;
+
 - (void)displayProductPageToExternalView:(UIView *)externalView;
 
 - (void)rollbackProductPageContentView;

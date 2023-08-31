@@ -386,7 +386,7 @@ PLVSocketManagerProtocol // socket回调
 
 #pragma mark PLVSocketManager Protocol
 
-- (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登陆成功
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登录成功
     [PLVHCUtils showToastInWindowWithMessage:@"聊天室登录成功"];
 }
 

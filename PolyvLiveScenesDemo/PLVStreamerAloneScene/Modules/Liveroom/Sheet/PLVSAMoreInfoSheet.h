@@ -47,6 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 弱网处理 按钮 触发回调
 - (void)moreInfoSheetDidTapBadNetworkButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 混流布局 按钮 触发回调
+- (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层

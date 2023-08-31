@@ -44,6 +44,8 @@
 /// 是否隐藏公告按钮，默认 NO；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hiddenBulletin;
 
+/// 是否隐藏只看主持，默认 YES；YES - 显示，NO - 隐藏
+@property (nonatomic, assign) BOOL onlyTeacherEnable;
 /// 更新按钮数据（根据传入的数据动态更新按钮）
 /// @param dataArray 前端传入的按钮数据
 - (void)updateChatButtonDataArray:(NSArray *)dataArray;

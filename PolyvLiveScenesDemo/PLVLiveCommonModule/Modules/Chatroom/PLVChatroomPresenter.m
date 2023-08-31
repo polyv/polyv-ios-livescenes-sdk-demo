@@ -49,7 +49,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 @property (nonatomic, strong) PLVChatUser *loginChatUser;
 
 #pragma mark 内部只读属性
-/// socket处于已连接且登陆成功的状态时为YES，默认为NO
+/// socket处于已连接且登录成功的状态时为YES，默认为NO
 @property (nonatomic, assign, readonly) BOOL online;
 
 #pragma mark 提醒消息历史聊天记录
@@ -57,6 +57,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 @property (nonatomic, assign) BOOL loadingRemindHistory;
 /// 获取提醒消息历史记录成功的次数
 @property (nonatomic, assign) NSInteger getRemindHistoryTime;
+
+#pragma mark 提问消息历史聊天记录
+/// 是否正在获取提问消息历史记录
+@property (nonatomic, assign) BOOL loadingQuestionHistory;
+/// 提问消息历史记录当前的页码
+@property (nonatomic, assign) NSInteger questionHistoryCurrentPage;
 
 @end
 
@@ -82,6 +88,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (self) {
         // 获取聊天消息条数初始化
         self.eachLoadingHistoryCount = MAX(1, count);
+        self.questionHistoryCurrentPage = 0;
         
         // 聊天消息缓冲初始化
         _dataSourceLock = dispatch_semaphore_create(1);
@@ -524,9 +531,19 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 #pragma mark 生成教师回复信息
 
 - (void)createAnswerChatModel {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *content = @"你已进入专属的提问频道，提问内容不会公开";
+    for (PLVLiveVideoChannelMenu *menu in roomData.menuInfo.channelMenus) {
+        if ([menu.menuType isEqualToString:@"quiz"]) {
+            if ([PLVFdUtil checkStringUseable:menu.content]) {
+                content = menu.content;
+            }
+            break;
+        }
+    }
     NSMutableDictionary *jsonDict = [[NSMutableDictionary alloc] init];
-    jsonDict[@"s_userId"] = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
-    jsonDict[@"content"] = @"同学，您好！请问有什么问题吗？";
+    jsonDict[@"s_userId"] = roomData.roomUser.viewerId;
+    jsonDict[@"content"] = content;
     jsonDict[@"user"] = @{@"nick": @"讲师",
                           @"pic" : PLVLiveConstantsChatroomTeacherAvatarURL,
                           @"userType" : @"teacher"};
@@ -630,7 +647,6 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         return;
     }
     self.loadingRemindHistory = YES;
-    
     __weak typeof(self) weakSelf = self;
     NSString *roomId = [PLVSocketManager sharedManager].roomId;
     if (![PLVFdUtil checkStringUseable:roomId]) {
@@ -662,6 +678,50 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     } failure:^(NSError * _Nonnull error) {
         [weakSelf notifyListenerLoadRemindHistoryFailure];
         weakSelf.loadingRemindHistory = NO;
+    }];
+}
+
+- (void)loadQuestionHistory {
+    if (self.loadingQuestionHistory) {
+        return;
+    }
+    self.loadingQuestionHistory = YES;
+    __weak typeof(self) weakSelf = self;
+    NSString *roomId = [PLVSocketManager sharedManager].roomId;
+    if (![PLVFdUtil checkStringUseable:roomId]) {
+        roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    }
+    NSInteger currentPage = self.questionHistoryCurrentPage;
+    NSInteger pageSize = self.eachLoadingHistoryCount;
+    currentPage += 1;
+    [PLVLiveVideoAPI requestChatRoomQuestionHistoryWithRoomId:roomId page:currentPage pageSize:pageSize completion:^(NSDictionary * _Nonnull data) {
+        NSDictionary *dict = PLV_SafeDictionaryForDictKey(data, @"data");
+        NSInteger page = PLV_SafeIntegerForDictKey(dict, @"page");
+        NSInteger totalPage = PLV_SafeIntegerForDictKey(dict, @"totalPage");
+        NSArray *historyList = PLV_SafeArraryForDictKey(dict, @"list");
+        weakSelf.questionHistoryCurrentPage = page;
+        if (historyList && [historyList isKindOfClass:NSArray.class]) {
+            if ([historyList count] > 0) {
+                NSMutableArray *tempArray = [[NSMutableArray alloc] initWithCapacity:[historyList count]];
+                [historyList enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                    PLVChatModel *model = [weakSelf modelQuestionHistoryChatJSONString:obj];
+                    if (model) {
+                        [tempArray addObject:model];
+                    }
+                }];
+                
+                BOOL noMoreHistory = (page >= totalPage);
+                [weakSelf notifyListenerLoadQuestionHistorySuccess:[tempArray copy] noMore:noMoreHistory];
+            } else {
+                [weakSelf notifyListenerLoadQuestionHistorySuccess:@[] noMore:YES];
+            }
+        } else {
+            [weakSelf notifyListenerLoadQuestionHistoryFailure];
+        }
+        weakSelf.loadingQuestionHistory = NO;
+    } failure:^(NSError * _Nonnull error) {
+        [weakSelf notifyListenerLoadQuestionHistoryFailure];
+        weakSelf.loadingQuestionHistory = NO;
     }];
 }
 
@@ -952,6 +1012,40 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     PLVChatModel *model = [[PLVChatModel alloc] init];
     model.user = user;
     model.message = message;
+
+    return model;
+}
+
+- (PLVChatModel *)modelQuestionHistoryChatJSONString:(NSString *)JSONString {
+    if (![PLVFdUtil checkStringUseable:JSONString]) {
+        return nil;
+    }
+    
+    NSData *jsonData = [JSONString dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *error = nil;
+    NSDictionary *data = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+    if (error) {
+        return nil;
+    }
+    
+    PLVChatModel *model = nil;
+    NSDictionary *user = PLV_SafeDictionaryForDictKey(data, @"user");
+    NSString *content = PLV_SafeStringForDictKey(data, @"content");
+    NSString *msgType = PLV_SafeStringForDictKey(data, @"msgType");
+    id message = nil;
+    if ([msgType isEqualToString:@"image"]) {
+        message = [self messageTeacherAnswerImageContent:content];
+    } else {
+        message = [self messageTeacherAnswerSpeakContent:content];
+    }
+    PLVChatUser *userModel = [[PLVChatUser alloc] initWithUserInfo:user];
+    if (!message || !userModel) {
+        return model;
+    }
+    
+    model = [[PLVChatModel alloc] init];
+    model.user = userModel;
+    model.message = message;
     
     return model;
 }
@@ -1077,6 +1171,18 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
 }
 
+- (void)notifyListenerLoadQuestionHistorySuccess:(NSArray <PLVChatModel *> *)modelArray noMore:(BOOL)noMore {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_loadQuestionHistorySuccess:noMore:)]) {
+        [self.delegate chatroomPresenter_loadQuestionHistorySuccess:modelArray noMore:noMore];
+    }
+}
+
+- (void)notifyListenerLoadQuestionHistoryFailure {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_loadQuestionHistoryFailure)]) {
+        [self.delegate chatroomPresenter_loadQuestionHistoryFailure];
+    }
+}
+
 #pragma mark - 更新 RoomData 属性
 
 - (void)updateOnlineCount:(NSInteger)onlineCount {
@@ -1165,7 +1271,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 #pragma mark socket 数据解析
 
-/// 有用户登陆
+/// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
     [self updateOnlineCount:onlineCount];
@@ -1173,7 +1279,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSDictionary *user = PLV_SafeDictionaryForDictKey(data, @"user");
     NSString *userId = PLV_SafeStringForDictKey(user, @"userId");
     if (![self isLoginUser:userId]) {
-        [self increaseWatchCount]; // 他人登陆时，观看热度加1
+        [self increaseWatchCount]; // 他人登录时，观看热度加1
     } else {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         if (roomData.restrictChatEnabled && roomData.maxViewerCount > 0 && onlineCount > roomData.maxViewerCount) {
@@ -1491,6 +1597,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if ([content isKindOfClass:[NSString class]] && content.length > 0) {
         content = [content stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
         content = [content stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
+        content = [content stringByReplacingOccurrencesOfString:@"&nbsp;" withString:@" "];
         return content;
     }else {
         return nil;

@@ -31,6 +31,7 @@
 #import "PLVSABadNetworkTipsView.h"
 #import "PLVSASwitchSuccessTipsView.h"
 #import "PLVSABadNetworkSwitchSheet.h"
+#import "PLVSAMixLayoutSheet.h"
 
 // 模块
 #import "PLVChatModel.h"
@@ -48,9 +49,9 @@ PLVSAChatroomAreaViewDelegate,
 PLVAStatusbarAreaViewDelegate,
 PLVSAToolbarAreaViewDelegate,
 PLVSAMoreInfoSheetDelegate,
-PLVSABitRateSheetDelegate,
 PLVSAMemberSheetDelegate,
 PLVSALinkMicTipViewDelegate,
+PLVSAMixLayoutSheetDelegate,
 PLVSABadNetworkSwitchSheetDelegate
 >
 /// view hierarchy
@@ -83,6 +84,7 @@ PLVSABadNetworkSwitchSheetDelegate
 @property (nonatomic, strong) PLVSAMemberSheet *memberSheet; // 成员列表弹层
 @property (nonatomic, strong) PLVSAManageCommoditySheet *commoditySheet; // 商品库弹层
 @property (nonatomic, strong) PLVSABadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
+@property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet; // 混流布局选择面板
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
 @property (nonatomic, strong) PLVSACameraAndMicphoneStateView *cameraAndMicphoneStateView; // 摄像头与麦克风状态视图
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
@@ -715,6 +717,22 @@ PLVSABadNetworkSwitchSheetDelegate
     return _badNetworkSwitchSheet;
 }
 
+- (PLVSAMixLayoutSheet *)mixLayoutSheet {
+    if (!_mixLayoutSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.233 : 0.285;
+        CGFloat widthScale = 0.23;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _mixLayoutSheet = [[PLVSAMixLayoutSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _mixLayoutSheet.delegate = self;
+        PLVMixLayoutType type = [self.delegate streamerHomeViewCurrentMixLayoutType:self];
+        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:type];
+    }
+    return _mixLayoutSheet;
+}
+
 - (PLVSALinkMicTipView *)linkMicTipView {
     if (!_linkMicTipView) {
         _linkMicTipView = [[PLVSALinkMicTipView alloc] init];
@@ -898,12 +916,6 @@ PLVSABadNetworkSwitchSheetDelegate
 }
 
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeScreenShareOpen:(BOOL)screenShareOpen {
-    if (screenShareOpen && !self.localOnlineUser.currentCameraOpen) {
-        [self.moreInfoSheet changeScreenShareButtonSelectedState:NO];
-        [PLVSAUtils showToastInHomeVCWithMessage:@"请先打开摄像头"];
-        return;
-    }
-    
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeScreenShareOpen:)]) {
         [self.delegate streamerHomeView:self didChangeScreenShareOpen:screenShareOpen];
@@ -934,6 +946,10 @@ PLVSABadNetworkSwitchSheetDelegate
         PLVBRTCVideoQosPreference videoQosPreference =[self.delegate streamerHomeViewCurrentVideoQosPreference:self];
         [self.badNetworkSwitchSheet showInView:self currentVideoQosPreference:videoQosPreference];
     }
+}
+
+- (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.mixLayoutSheet showInView:self];
 }
 
 #pragma mark PLVSABitRateSheetDelegate
@@ -1027,4 +1043,14 @@ PLVSABadNetworkSwitchSheetDelegate
     // 显示成员列表
     [self.memberSheet showInView:self];
 }
+
+#pragma mark PLVSAMixLayoutSheetDelegate
+
+- (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet mixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeMixLayoutType:)]) {
+        [self.delegate streamerHomeView:self didChangeMixLayoutType:type];
+    }
+}
+
 @end
