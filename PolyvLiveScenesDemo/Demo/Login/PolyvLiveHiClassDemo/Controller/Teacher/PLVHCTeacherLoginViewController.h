@@ -4,7 +4,7 @@
 //
 //  Created by jiaweihuang on 2021/7/8.
 //  Copyright © 2021 PLV. All rights reserved.
-//  讲师登陆页
+//  讲师登录页
 
 #import <UIKit/UIKit.h>
 

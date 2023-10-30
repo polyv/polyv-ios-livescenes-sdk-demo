@@ -9,6 +9,7 @@
 #import "PLVLSLinkMicWindowCell.h"
 
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLinkMicOnlineUser+LS.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -85,7 +86,8 @@
                                           cellWidth - 20 - 8,
                                           nicknameLabelHeight);
     
-    self.linkMicStatusLabel.frame = CGRectMake(2, 2, 41, 16);
+    CGSize labelSize = [self.linkMicStatusLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+    self.linkMicStatusLabel.frame = CGRectMake(2, 2, labelSize.width + 8, 16);
     
     CGFloat speakerImageViewOriginX = self.linkMicStatusLabel.isHidden ? 2 : CGRectGetMaxX(self.linkMicStatusLabel.frame) + 8;
     self.speakerAuthImageView.frame = CGRectMake(speakerImageViewOriginX, 2, 16, 16);
@@ -201,10 +203,10 @@
 
 - (void)setLinkMicStatusLabelWithInVoice:(BOOL)inLinkMic{
     if (inLinkMic) {
-        self.linkMicStatusLabel.text = @"连麦中";
+        self.linkMicStatusLabel.text = PLVLocalizedString(@"连麦中");
         self.linkMicStatusLabel.backgroundColor = PLV_UIColorFromRGB(@"#09C5B3");
     }else{
-        self.linkMicStatusLabel.text = @"未连麦";
+        self.linkMicStatusLabel.text = PLVLocalizedString(@"未连麦");
         self.linkMicStatusLabel.backgroundColor = PLV_UIColorFromRGB(@"#F1453D");
     }
 }
@@ -259,7 +261,7 @@
 - (UILabel *)nicknameLabel{
     if (!_nicknameLabel) {
         _nicknameLabel = [[UILabel alloc]init];
-        _nicknameLabel.text = @"连麦人昵称";
+        _nicknameLabel.text = PLVLocalizedString(@"连麦人昵称");
         _nicknameLabel.textColor = [UIColor whiteColor];
         _nicknameLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
     }

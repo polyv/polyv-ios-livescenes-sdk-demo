@@ -9,6 +9,7 @@
 #import "PLVAlbumsViewController.h"
 #import "PLVAlbumTableViewCell.h"
 #import "PLVWebImageDecoder.h"
+#import "PLVMultiLanguageManager.h"
 
 @implementation PLVAlbumsViewController
 
@@ -135,11 +136,11 @@
     cell.imgView.image = albumInfo.albumImg;
     cell.nameLabel.text = albumInfo.assetCollection.localizedTitle;
     if (albumInfo.photoCount > 0 && albumInfo.videoCount > 0) {
-        cell.countLabel.text = [NSString stringWithFormat:@"照片:%d 视频:%d", (int)albumInfo.photoCount, (int)albumInfo.videoCount];
+        cell.countLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"照片:%d 视频:%d"), (int)albumInfo.photoCount, (int)albumInfo.videoCount];
     } else if (albumInfo.photoCount > 0) {
-        cell.countLabel.text = [NSString stringWithFormat:@"照片:%d", (int)albumInfo.photoCount];
+        cell.countLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"照片:%d"), (int)albumInfo.photoCount];
     } else if (albumInfo.videoCount > 0) {
-        cell.countLabel.text = [NSString stringWithFormat:@"视频:%d", (int)albumInfo.videoCount];
+        cell.countLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"视频:%d"), (int)albumInfo.videoCount];
     } else {
         cell.countLabel.text = @"";
     }

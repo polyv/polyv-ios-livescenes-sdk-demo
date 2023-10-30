@@ -7,6 +7,7 @@
 //
 
 #import "PLVLSMemberCellEditView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 typedef NS_ENUM(NSInteger, PLVLSMemberCellState) {
@@ -59,7 +60,7 @@ typedef NS_ENUM(NSInteger, PLVLSMemberCellState) {
 
 - (void)setBanned:(BOOL)banned {
     _banned = banned;
-    NSString *buttonTitle = banned ? @"取消禁言" : @"禁言";
+    NSString *buttonTitle = banned ? PLVLocalizedString(@"取消禁言") : PLVLocalizedString(@"禁言");
     [self.banButton setTitle:buttonTitle forState:UIControlStateNormal];
     [self reset];
 }
@@ -69,8 +70,8 @@ typedef NS_ENUM(NSInteger, PLVLSMemberCellState) {
         _banButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _banButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#474b57"];
         [_banButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [_banButton setTitle:@"禁言" forState:UIControlStateNormal];
-        [_banButton setTitle:@"确定禁言" forState:UIControlStateSelected];
+        [_banButton setTitle:PLVLocalizedString(@"禁言") forState:UIControlStateNormal];
+        [_banButton setTitle:PLVLocalizedString(@"确定禁言") forState:UIControlStateSelected];
         _banButton.titleLabel.font = [UIFont systemFontOfSize:14];
         [_banButton addTarget:self action:@selector(banButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -82,8 +83,8 @@ typedef NS_ENUM(NSInteger, PLVLSMemberCellState) {
         _kickButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _kickButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#ff6363"];
         [_kickButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [_kickButton setTitle:@"踢出" forState:UIControlStateNormal];
-        [_kickButton setTitle:@"确定踢出" forState:UIControlStateSelected];
+        [_kickButton setTitle:PLVLocalizedString(@"踢出") forState:UIControlStateNormal];
+        [_kickButton setTitle:PLVLocalizedString(@"确定踢出") forState:UIControlStateSelected];
         _kickButton.titleLabel.font = [UIFont systemFontOfSize:14];
         [_kickButton addTarget:self action:@selector(kickButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }

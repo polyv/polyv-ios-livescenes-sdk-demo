@@ -10,6 +10,7 @@
 #import "PLVCaptureDeviceManager.h"
 #import "PLVLSUtils.h"
 #import "PLVCLinkMicUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <AudioToolbox/AudioToolbox.h>
@@ -111,7 +112,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
     CGFloat cameraImageViewWidth = CGRectGetWidth(self.cameraDisableImageView.bounds);
     CGFloat cameraImageViewHeight = CGRectGetHeight(self.cameraDisableImageView.bounds);
     self.cameraDisableImageView.frame = CGRectMake((CGRectGetWidth(self.cameraPreView.bounds) - cameraImageViewWidth)/2 , (CGRectGetHeight(self.cameraPreView.bounds) - cameraImageViewHeight)/2, cameraImageViewWidth, cameraImageViewHeight);
-    self.cameraDisableLabel.frame = CGRectMake(CGRectGetMidX(self.cameraDisableImageView.frame) - 40, CGRectGetMaxY(self.cameraDisableImageView.frame), 80, 16);
+    self.cameraDisableLabel.frame = CGRectMake(CGRectGetMidX(self.cameraDisableImageView.frame) - 90, CGRectGetMaxY(self.cameraDisableImageView.frame), 180, 16);
     self.avPreLayer.frame = self.cameraPreView.bounds;
     self.cameraSwitchView.frame = CGRectMake(leftMargin, CGRectGetMaxY(self.cameraPreView.frame) + verticalControlMargin, contentViewWidth - leftMargin * 2, 32);
     CGFloat controlOriginY = self.isOnlyAudio ? CGRectGetMaxY(self.cameraPreView.frame) : CGRectGetMaxY(self.cameraSwitchView.frame);
@@ -122,7 +123,9 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
         controlOriginY = contentViewHeigth - 40 - verticalControlMargin * 6 - 18;
     }
     self.tipsImageView.frame = CGRectMake(leftMargin, controlOriginY, 12, 12);
-    self.tipsLabel.frame = CGRectMake(CGRectGetMaxX(self.tipsImageView.frame) + verticalControlMargin, CGRectGetMidY(self.tipsImageView.frame) - 8, 250, 16);
+    CGFloat tipsLabelWidth = contentViewWidth - (CGRectGetMaxX(self.tipsImageView.frame) + verticalControlMargin + leftMargin);
+    CGSize tipsLabelSize = [self.tipsLabel sizeThatFits:CGSizeMake(tipsLabelWidth, MAXFLOAT)];
+    self.tipsLabel.frame = CGRectMake(CGRectGetMaxX(self.tipsImageView.frame) + verticalControlMargin, CGRectGetMidY(self.tipsImageView.frame) - 8, tipsLabelWidth, tipsLabelSize.height);
     CGFloat buttonWidth = (contentViewWidth - leftMargin * 3)/2;
     controlOriginY = isPad ? (CGRectGetMaxY(self.tipsLabel.frame) + verticalControlMargin * 3) : (CGRectGetHeight(self.contentView.frame) - 40 - 16);
     self.rejectButton.frame = CGRectMake(leftMargin, controlOriginY, buttonWidth, 40);
@@ -309,7 +312,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 - (UILabel *)cameraDisableLabel {
     if (!_cameraDisableLabel) {
         _cameraDisableLabel = [[UILabel alloc] init];
-        _cameraDisableLabel.text = @"已关摄像头";
+        _cameraDisableLabel.text = PLVLocalizedString(@"已关摄像头");
         _cameraDisableLabel.textAlignment = NSTextAlignmentCenter;
         _cameraDisableLabel.textColor = [PLVColorUtil colorFromHexString:@"#757575" alpha:0.4];
         _cameraDisableLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
@@ -320,7 +323,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 - (PLVLSLinkMicPreMediaSwitchView *)cameraSwitchView {
     if (!_cameraSwitchView) {
         _cameraSwitchView = [[PLVLSLinkMicPreMediaSwitchView alloc] init];
-        _cameraSwitchView.titleLabel.text = @"摄像头";
+        _cameraSwitchView.titleLabel.text = PLVLocalizedString(@"摄像头");
         _cameraSwitchView.imageView.image = [PLVLSUtils imageForLinkMicResource:@"plvls_linkmic_pre_camera_icon"];
         [_cameraSwitchView.mediaSwitch addTarget:self action:@selector(cameraSwitchAction:) forControlEvents:UIControlEventValueChanged];
     }
@@ -330,7 +333,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 - (PLVLSLinkMicPreMediaSwitchView *)micSwitchView {
     if (!_micSwitchView) {
         _micSwitchView = [[PLVLSLinkMicPreMediaSwitchView alloc] init];
-        _micSwitchView.titleLabel.text = @"麦克风";
+        _micSwitchView.titleLabel.text = PLVLocalizedString(@"麦克风");
         _micSwitchView.imageView.image = [PLVLSUtils imageForLinkMicResource:@"plvls_linkmic_pre_mic_icon"];
         [_micSwitchView.mediaSwitch addTarget:self action:@selector(micSwitchAction:) forControlEvents:UIControlEventValueChanged];
     }
@@ -358,7 +361,8 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
         _tipsLabel = [[UILabel alloc] init];
         _tipsLabel.textColor = [PLVColorUtil colorFromHexString:@"#ffffff" alpha:0.6];
         _tipsLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
-        _tipsLabel.text = @"连麦将收集人像信息，确认上麦视为同意";
+        _tipsLabel.text = PLVLocalizedString(@"连麦将收集人像信息，确认上麦视为同意");
+        _tipsLabel.numberOfLines = 0;
     }
     return _tipsLabel;
 }
@@ -371,7 +375,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
         _rejectButton.layer.borderWidth = 1.0f;
         _rejectButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
         [_rejectButton setTitleColor:[PLVColorUtil colorFromHexString:@"#3082FE"] forState:UIControlStateNormal];
-        [_rejectButton setTitle:@"暂不连麦" forState:UIControlStateNormal];
+        [_rejectButton setTitle:PLVLocalizedString(@"暂不连麦") forState:UIControlStateNormal];
         [_rejectButton addTarget:self action:@selector(rejectLinkMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _rejectButton;
@@ -384,7 +388,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
         _linkMicButton.layer.cornerRadius = 20.0f;
         _linkMicButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
         [_linkMicButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [_linkMicButton setTitle:@"开始连麦" forState:UIControlStateNormal];
+        [_linkMicButton setTitle:PLVLocalizedString(@"开始连麦") forState:UIControlStateNormal];
         [_linkMicButton addTarget:self action:@selector(linkMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _linkMicButton;
@@ -417,14 +421,14 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 - (void)setIsOnlyAudio:(BOOL)isOnlyAudio {
     _isOnlyAudio = isOnlyAudio;
     if (_isOnlyAudio) {
-        self.titleLabel.text = @"邀请你语音连麦";
+        self.titleLabel.text = PLVLocalizedString(@"邀请你语音连麦");
         self.cameraDisableImageView.image = [PLVLSUtils imageForLinkMicResource:@"plvls_linkmic_pre_onlyaudio_icon"];
         self.cameraPreView.backgroundColor = [PLVColorUtil colorFromHexString:@"#E1EEFF"];
         self.cameraDisableLabel.hidden = YES;
         self.cameraSwitchView.hidden = YES;
         self.cameraDisableImageView.frame = CGRectMake(0, 0, 120, 88);
     } else {
-        self.titleLabel.text = @"邀请你视频连麦";
+        self.titleLabel.text = PLVLocalizedString(@"邀请你视频连麦");
         self.cameraDisableImageView.image = [PLVLSUtils imageForLinkMicResource:@"plvls_linkmic_pre_camera_close"];
         self.cameraPreView.backgroundColor = [PLVColorUtil colorFromHexString:@"#EEEEEE"];
         self.cameraDisableLabel.hidden = NO;
@@ -444,7 +448,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 
 - (void)linkMicButtonAction {
     PLVCaptureDeviceType type = self.isOnlyAudio ? PLVCaptureDeviceTypeMicrophone : PLVCaptureDeviceTypeCameraAndMicrophone;
-    NSString *message = [NSString stringWithFormat:@"参与直播需要%@权限，请前往系统设置开启权限", (self.isOnlyAudio ? @"麦克风" : @"摄像头与麦克风")];
+    NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"参与直播需要%@权限，请前往系统设置开启权限"), (self.isOnlyAudio ? PLVLocalizedString(@"麦克风") : PLVLocalizedString(@"摄像头与麦克风"))];
     __weak typeof(self) weakSelf = self;
     [[PLVCaptureDeviceManager sharedManager] requestAuthorizationWithType:type grantedRefuseTips:message completion:^(BOOL granted) {
         if (granted) {
@@ -462,7 +466,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
         [self saveUserLinkMicPreConfig];
     } else { // 未授权且希望开启摄像头
         __weak typeof(self) weakSelf = self;
-        NSString *message = @"参与直播需要摄像头权限，请前往系统设置开启权限";
+        NSString *message = PLVLocalizedString(@"参与直播需要摄像头权限，请前往系统设置开启权限");
         [[PLVCaptureDeviceManager sharedManager] requestAuthorizationWithType:PLVCaptureDeviceTypeCamera grantedRefuseTips:message completion:^(BOOL granted) {
             if (!granted) {
                 weakSelf.cameraSwitch.on = granted;
@@ -478,7 +482,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
         [self saveUserLinkMicPreConfig];
     } else { // 未授权且希望开启麦克风
         __weak typeof(self) weakSelf = self;
-        NSString *message = @"参与直播需要麦克风权限，请前往系统设置开启权限";
+        NSString *message = PLVLocalizedString(@"参与直播需要麦克风权限，请前往系统设置开启权限");
         [[PLVCaptureDeviceManager sharedManager] requestAuthorizationWithType:PLVCaptureDeviceTypeMicrophone grantedRefuseTips:message completion:^(BOOL granted) {
             if (!granted) {
                 weakSelf.micSwitch.on = granted;
@@ -509,7 +513,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
         }];
     }
     
-    NSString *rejectButtonTitle = [NSString stringWithFormat:@"暂不连麦(%lds)", leftTime];
+    NSString *rejectButtonTitle = [NSString stringWithFormat:PLVLocalizedString(@"暂不连麦(%lds)"), leftTime];
     [self.rejectButton setTitle:rejectButtonTitle forState:UIControlStateNormal];
 }
 
@@ -530,7 +534,7 @@ static NSInteger kPLVLSLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 - (void)layoutSubviews {
     [super layoutSubviews];
     self.imageView.frame = CGRectMake(0, (CGRectGetHeight(self.frame) - 24)/2, 24, 24);
-    self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.imageView.frame) + 8, 0, 80, CGRectGetHeight(self.frame));
+    self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.imageView.frame) + 8, 0, 100, CGRectGetHeight(self.frame));
     self.switchView.frame = CGRectMake(CGRectGetWidth(self.frame) - 32, (CGRectGetHeight(self.frame) - 18)/2, 32, 18);
     self.mediaSwitch.frame = self.switchView.bounds;
 }

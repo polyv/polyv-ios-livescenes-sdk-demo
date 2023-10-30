@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 
 // UI
@@ -449,9 +450,9 @@ static CGFloat kCellTopMargin = 10;
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }
@@ -489,7 +490,7 @@ static CGFloat kCellTopMargin = 10;
     // 只有在发送失败方可触发重发点击事件，避免重复发送
     if (self.msgState == PLVChatMsgStateFail) {
         __weak typeof(self) weakSelf = self;
-        [PLVLSUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"重发该消息？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             weakSelf.model.msgState = PLVChatMsgStateSending;
             if (weakSelf.resendHandler) {
                 weakSelf.resendHandler(weakSelf.model);

@@ -9,6 +9,7 @@
 #import "PLVLCLinkMicWindowCell.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLinkMicOnlineUser+LC.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVRoomDataManager.h"
@@ -249,7 +250,7 @@
 - (UILabel *)nicknameLabel{
     if (!_nicknameLabel) {
         _nicknameLabel = [[UILabel alloc]init];
-        _nicknameLabel.text = @"连麦人昵称";
+        _nicknameLabel.text = PLVLocalizedString(@"连麦人昵称");
         _nicknameLabel.textColor = [UIColor whiteColor];
         _nicknameLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
     }

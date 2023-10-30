@@ -9,12 +9,17 @@
 #import "PLVECRedpackButtonPopupView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
+static CGFloat kLabelContainerHeight = 28.0;
+static CGFloat kArrowWidth = 10.0;
+static CGFloat kArrowHeight = 6.0;
+
 @interface PLVECRedpackButtonPopupView ()
 
 @property (nonatomic, strong) CAGradientLayer *gradientLayer;
 @property (nonatomic, strong) UIView *bgView;
 @property (nonatomic, strong) UILabel *label;
 @property (nonatomic, strong) NSString *labelString;
+@property (nonatomic, assign) CGSize caculateSize;
 
 @end
 
@@ -24,9 +29,9 @@
 
 - (void)layoutSubviews {
     self.bgView.frame = self.gradientLayer.frame = self.bounds;
-    self.label.frame = CGRectMake(0, (self.bounds.size.height - 16) / 2.0, self.bounds.size.width - 6, 16);
+    CGFloat labelWidth = self.caculateSize.width - kArrowHeight;
+    self.label.frame = CGRectMake(0, (kLabelContainerHeight - 16.0) / 2.0, labelWidth, 16.0);
     
-    //UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:bounds byRoundingCorners:corners cornerRadii:CGSizeMake(4, 4)];
     UIBezierPath *maskPath = [PLVECRedpackButtonPopupView bgViewBezierPathWithSize:self.bounds.size];
     CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
     maskLayer.frame = self.bounds;
@@ -47,6 +52,8 @@
         
         [self addSubview:self.bgView];
         [self addSubview:self.label];
+        CGFloat labelWidth = [self.label sizeThatFits:CGSizeMake(MAXFLOAT, kLabelContainerHeight)].width + 14;
+        self.caculateSize = CGSizeMake(labelWidth + kArrowHeight, kLabelContainerHeight);
     }
     return self;
 }
@@ -108,10 +115,9 @@
     if (!_label) {
         _label = [[UILabel alloc] init];
         _label.textColor = [UIColor whiteColor];
-        _label.font = [UIFont systemFontOfSize:14];
+        _label.font = [UIFont systemFontOfSize:12];
         _label.textAlignment = NSTextAlignmentCenter;
         _label.text = self.labelString;
-        _label.adjustsFontSizeToFitWidth = YES;
     }
     return _label;
 }

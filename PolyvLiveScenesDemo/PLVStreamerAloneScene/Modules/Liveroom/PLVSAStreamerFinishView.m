@@ -9,6 +9,7 @@
 #import "PLVSAStreamerFinishView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVSAStreamerFinishView ()
 
@@ -65,13 +66,13 @@
     self.gradientLayer.frame = self.finishButton.bounds;
     
     self.liveEndImageView.frame = CGRectMake((CGRectGetWidth(self.bounds) - 100) / 2, top + liveEndImageViewTop, 100, 84);
-    self.liveEndLable.frame = CGRectMake((CGRectGetWidth(self.bounds) - 120) / 2, UIViewGetBottom(self.liveEndImageView) + 6, 120, 33);
+    self.liveEndLable.frame = CGRectMake((CGRectGetWidth(self.bounds) - 180) / 2, UIViewGetBottom(self.liveEndImageView) + 6, 180, 33);
     self.dividingLineView.frame = CGRectMake((CGRectGetWidth(self.bounds) - 2) / 2, UIViewGetBottom(self.liveEndLable) + liveTimeLineTop, 2, 52);
     self.liveDetailTimeLable.frame = CGRectMake(UIViewGetLeft(self.dividingLineView) - 20 - 150, UIViewGetBottom(self.liveEndLable) + liveTimeLableTop, 150, 22);
     self.liveDurationTimeLable.frame = CGRectMake(UIViewGetRight(self.dividingLineView) + 56, UIViewGetTop(self.liveDetailTimeLable), 80, 22);
     
-    self.detailTimeTitleLable.frame = CGRectMake(CGRectGetMidX(self.liveDetailTimeLable.frame) - 56 / 2, UIViewGetBottom(self.liveDetailTimeLable) + 8, 56, 20);
-    self.durationTimeTitleLable.frame = CGRectMake(CGRectGetMidX(self.liveDurationTimeLable.frame) - 56 / 2, UIViewGetBottom(self.liveDetailTimeLable) + 8, 56, 20);
+    self.detailTimeTitleLable.frame = CGRectMake(CGRectGetMidX(self.liveDetailTimeLable.frame) - 70 / 2, UIViewGetBottom(self.liveDetailTimeLable) + 8, 70, 20);
+    self.durationTimeTitleLable.frame = CGRectMake(CGRectGetMidX(self.liveDurationTimeLable.frame) - 90 / 2, UIViewGetBottom(self.liveDetailTimeLable) + 8, 90, 20);
 }
 
 #pragma mark - [ Private Method ]
@@ -95,7 +96,7 @@
         _finishButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _finishButton.layer.cornerRadius = 25;
         _finishButton.layer.masksToBounds = YES;
-        [_finishButton setTitle:@"确定" forState:UIControlStateNormal];
+        [_finishButton setTitle:PLVLocalizedString(@"确定") forState:UIControlStateNormal];
         [_finishButton addTarget:self action:@selector(finishButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         [_finishButton.layer insertSublayer:self.gradientLayer atIndex:0];
     }
@@ -124,7 +125,7 @@
 - (UILabel *)liveEndLable {
     if (!_liveEndLable) {
         _liveEndLable = [[UILabel alloc] init];
-        _liveEndLable.text = @"直播已结束";
+        _liveEndLable.text = PLVLocalizedString(@"直播已结束");
         _liveEndLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:24];
         _liveEndLable.textAlignment = NSTextAlignmentCenter;
         [_liveEndLable setTextColor:PLV_UIColorFromRGB(@"#F0F1F5")];
@@ -164,7 +165,7 @@
 - (UILabel *)detailTimeTitleLable {
     if (!_detailTimeTitleLable) {
         _detailTimeTitleLable = [[UILabel alloc] init];
-        _detailTimeTitleLable.text = @"直播时间";
+        _detailTimeTitleLable.text = PLVLocalizedString(@"直播时间");
         _detailTimeTitleLable.textAlignment = NSTextAlignmentCenter;
         _detailTimeTitleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
         [_detailTimeTitleLable setTextColor:PLV_UIColorFromRGB(@"#F0F1F5")];
@@ -175,9 +176,10 @@
 - (UILabel *)durationTimeTitleLable {
     if (!_durationTimeTitleLable) {
         _durationTimeTitleLable = [[UILabel alloc] init];
-        _durationTimeTitleLable.text = @"直播时长";
+        _durationTimeTitleLable.text = PLVLocalizedString(@"直播时长");
         _durationTimeTitleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
         [_durationTimeTitleLable setTextColor:PLV_UIColorFromRGB(@"#F0F1F5")];
+        _durationTimeTitleLable.textAlignment = NSTextAlignmentCenter;
     }
     return _durationTimeTitleLable;
 }

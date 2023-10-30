@@ -7,11 +7,8 @@
 //
 
 #import "PLVDefaultPageView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
-
-static NSString * const defaultPageViewTypeErrorCodeString = @"视频加载失败，请退出重进";
-static NSString * const defaultPageViewTypeRefreshString = @"视频加载失败，请检查网络或退出重进";
-static NSString * const defaultPageViewTypeRefreshAndSwitchLineString = @"视频加载缓慢，请切换线路或退出重进";
 
 @interface PLVDefaultPageView ()
 
@@ -63,15 +60,15 @@ static NSString * const defaultPageViewTypeRefreshAndSwitchLineString = @"视频
     self.type = type;
     NSString *messageLabelString;
     if (type == PLVDefaultPageViewTypeErrorCode) {
-        messageLabelString = [PLVFdUtil checkStringUseable:message] ? message : defaultPageViewTypeErrorCodeString;
+        messageLabelString = [PLVFdUtil checkStringUseable:message] ? message : PLVLocalizedString(@"PLVCMVideoLoadFailedErrorCodeTips");
     } else if (type == PLVDefaultPageViewTypeRefresh) {
-        messageLabelString = [PLVFdUtil checkStringUseable:message] ? message : defaultPageViewTypeRefreshString;
+        messageLabelString = [PLVFdUtil checkStringUseable:message] ? message : PLVLocalizedString(@"PLVCMVideoLoadFailedRefreshTips");
     } else if (type == PLVDefaultPageViewTypeRefreshAndSwitchLine) {
-        messageLabelString = [PLVFdUtil checkStringUseable:message] ? message : defaultPageViewTypeRefreshAndSwitchLineString;
+        messageLabelString = [PLVFdUtil checkStringUseable:message] ? message : PLVLocalizedString(@"PLVCMVideoLoadFailedRefreshAndSwitchLineTips");
     }
     
     if (errorCode) {
-        messageLabelString = [NSString stringWithFormat:@"%@(错误码:%ld)",messageLabelString,errorCode];
+        messageLabelString = [NSString stringWithFormat:PLVLocalizedString(@"%@(错误码:%ld)"),messageLabelString,errorCode];
     }
     self.messageLabel.text = messageLabelString;
     [self updateUI];
@@ -129,7 +126,8 @@ static NSString * const defaultPageViewTypeRefreshAndSwitchLineString = @"视频
                 self.refreshButton.frame = CGRectMake(CGRectGetMaxX(self.switchLineButton.frame) + 16, CGRectGetMinY(self.switchLineButton.frame), 80, 24);
             }
         }
-        self.messageLabel.frame = CGRectMake(30, CGRectGetMinY(self.defaultImageView.frame) + 120, self.frame.size.width - 60, 17);
+        CGSize messageLabelSize = [self.messageLabel sizeThatFits:CGSizeMake(self.frame.size.width - 40, MAXFLOAT)];
+        self.messageLabel.frame = CGRectMake(20, CGRectGetMinY(self.defaultImageView.frame) + 120, self.frame.size.width - 40, messageLabelSize.height);
     }
 }
 
@@ -146,10 +144,11 @@ static NSString * const defaultPageViewTypeRefreshAndSwitchLineString = @"视频
 - (UILabel *)messageLabel {
     if (!_messageLabel) {
         _messageLabel = [[UILabel alloc] init];
-        _messageLabel.text = @"视频加载失败，请检查网络或退出重进";
+        _messageLabel.text = PLVLocalizedString(@"PLVCMVideoLoadFailedRefreshTips");
         _messageLabel.textAlignment = NSTextAlignmentCenter;
         _messageLabel.textColor = [PLVColorUtil colorFromHexString:@"#E4E4E4"];
         _messageLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
+        _messageLabel.numberOfLines = 0;
     }
     return _messageLabel;
 }
@@ -158,7 +157,7 @@ static NSString * const defaultPageViewTypeRefreshAndSwitchLineString = @"视频
     if (!_refreshButton) {
         _refreshButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _refreshButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
-        [_refreshButton setTitle:@"刷新" forState:UIControlStateNormal];
+        [_refreshButton setTitle:PLVLocalizedString(@"刷新") forState:UIControlStateNormal];
         [_refreshButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         [_refreshButton setBackgroundColor:[PLVColorUtil colorFromHexString:@"#3082FE"]];
         [_refreshButton addTarget:self action:@selector(refreshButtonAction:) forControlEvents:UIControlEventTouchUpInside];
@@ -172,7 +171,7 @@ static NSString * const defaultPageViewTypeRefreshAndSwitchLineString = @"视频
     if (!_switchLineButton) {
         _switchLineButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _switchLineButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
-        [_switchLineButton setTitle:@"切换线路" forState:UIControlStateNormal];
+        [_switchLineButton setTitle:PLVLocalizedString(@"切换线路") forState:UIControlStateNormal];
         [_switchLineButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         [_switchLineButton addTarget:self action:@selector(switchLineButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _switchLineButton.layer.masksToBounds = YES;

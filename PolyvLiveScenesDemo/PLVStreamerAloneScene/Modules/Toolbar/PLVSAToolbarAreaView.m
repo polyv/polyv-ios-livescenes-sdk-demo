@@ -11,6 +11,7 @@
 
 /// util
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVSASendMessageView.h"
@@ -80,9 +81,10 @@
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL landscape = [PLVSAUtils sharedUtils].landscape;
+    CGSize chatButtonSize = [self.chatButton.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT, 32)];
     
     CGFloat marginLeft = landscape ? 36 : 8;
-    CGFloat chatButtonWidth = landscape ? 150 : 110;
+    CGFloat chatButtonWidth = landscape ? 150 : chatButtonSize.width + 53;
     CGFloat chatButtonTop = 8;
     
     if (isPad) {
@@ -176,7 +178,7 @@
         [_chatButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6] forState:UIControlStateNormal];
         [_chatButton setContentHorizontalAlignment:UIControlContentHorizontalAlignmentLeft];
         [_chatButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_chat"] forState:UIControlStateNormal];
-        [_chatButton setTitle:@"一起聊聊" forState:UIControlStateNormal];
+        [_chatButton setTitle:PLVLocalizedString(@"一起聊聊") forState:UIControlStateNormal];
         [_chatButton addTarget:self action:@selector(chatButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _chatButton;

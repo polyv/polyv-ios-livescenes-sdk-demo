@@ -1,0 +1,12 @@
+/* 
+  InfoPlist.strings
+  PolyvLiveScenesDemo
+
+  Created by Sakya on 2023/9/13.
+  Copyright © 2023 PLV. All rights reserved.
+*/
+
+NSCameraUsageDescription = "请允许我们访问您的摄像头，以便您使用连麦、拍照功能";
+NSMicrophoneUsageDescription = "请允许我们访问您的麦克风，以便您使用连麦功能";
+NSPhotoLibraryAddUsageDescription = "请允许我们访问您的相册，以便您保存图片到相册中";
+NSPhotoLibraryUsageDescription = "请允许我们访问您的相册，以便您使用发送图片消息、保存图片到相册的功能";

@@ -16,14 +16,17 @@
 #import "PLVLoginTextField.h"
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVBugReporter.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSString * const kUserDefaultAgreeUserProtocol = @"UserDefaultAgreeUserProtocol";
 static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
+static NSString * const kPrivacyPolicyAttributeName = @"PrivacyPolicy";
+static NSString * const kUseProtocolAttributeName = @"UseProtocol";
 
-@interface PLVLiveStreamerLoginViewController () <UITextFieldDelegate>
+@interface PLVLiveStreamerLoginViewController () <UITextFieldDelegate, UITextViewDelegate>
 
 @property (nonatomic, strong) UIImageView *backgroundImageView; //背景图
 @property (nonatomic, strong) UILabel *lbTitle;             // 标题
@@ -33,8 +36,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 @property (nonatomic, strong) UIButton *btnLogin;           // 登录按钮
 @property (nonatomic, strong) UIButton *rememberPasswordButton; // 记住密码按钮
 @property (nonatomic, strong) UIButton * btnAgree;          // 协议
-@property (nonatomic, strong) UIButton * btnPrivacyPolicy;  // 隐私协议
-@property (nonatomic, strong) UIButton * btnUserProtocol;   // 使用协议
+@property (nonatomic, strong) UITextView * agreeTextView;    // 协议
 @property (nonatomic, strong) UIButton *backButton;
 
 @end
@@ -86,8 +88,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     [self.view addSubview:self.btnLogin];
     [self.view addSubview:self.rememberPasswordButton];
     [self.view addSubview:self.btnAgree];
-    [self.view addSubview:self.btnPrivacyPolicy];
-    [self.view addSubview:self.btnUserProtocol];
+    [self.view addSubview:self.agreeTextView];
     
     UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction:)];
     [self.view addGestureRecognizer:tapGes];
@@ -140,21 +141,12 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     self.rememberPasswordButton.frame = CGRectMake(uiFrameOriginX + 23, UIViewGetBottom(self.btnLogin) + 24, rememberPasswordAttributedTitle.size.width + 22, 22);
     
     // 协议
-    NSAttributedString *agreeAttributedTitle = [self.btnAgree attributedTitleForState:UIControlStateNormal];
-    self.btnAgree.frame = CGRectMake(UIViewGetLeft(self.rememberPasswordButton), UIViewGetBottom(self.rememberPasswordButton) + 16, 22 + agreeAttributedTitle.size.width, 22);
-    NSAttributedString *attrPrivacyPolicy = [agreeAttributedTitle attributedSubstringFromRange:NSMakeRange(7, 6)];
-    NSAttributedString *attrPrivacyPolicyRight = [agreeAttributedTitle attributedSubstringFromRange:NSMakeRange(13, 7)];
-    
-    NSAttributedString *attrUserProtocol = [agreeAttributedTitle attributedSubstringFromRange:NSMakeRange(14, 6)];
-    
-    uiFrame = self.btnAgree.frame;
-    uiFrame.size.width = attrPrivacyPolicy.size.width;
-    uiFrame.origin.x = UIViewGetRight(self.btnAgree) - attrPrivacyPolicyRight.size.width - uiFrame.size.width;
-    self.btnPrivacyPolicy.frame = uiFrame;
-    
-    uiFrame.size.width = attrUserProtocol.size.width;
-    uiFrame.origin.x = UIViewGetRight(self.btnAgree) - uiFrame.size.width;
-    self.btnUserProtocol.frame = uiFrame;
+    NSAttributedString *agreeAttributedTitle = self.agreeTextView.attributedText;
+    CGFloat btnAgreeMaxWidth = UIViewGetWidth(self.view) - UIViewGetLeft(self.rememberPasswordButton) - uiFrameOriginX  - 22;
+    CGSize btnAgreeSize = [agreeAttributedTitle boundingRectWithSize:CGSizeMake(btnAgreeMaxWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    CGFloat btnAgreeHeight = MAX(22, btnAgreeSize.height);
+    self.btnAgree.frame = CGRectMake(UIViewGetLeft(self.rememberPasswordButton), UIViewGetBottom(self.rememberPasswordButton) + 16, 22, btnAgreeHeight);
+    self.agreeTextView.frame = CGRectMake(UIViewGetLeft(self.rememberPasswordButton) + 22, CGRectGetMidY(self.btnAgree.frame) - btnAgreeSize.height/2, btnAgreeSize.width, btnAgreeSize.height);
     
     self.backButton.frame = CGRectMake(16, 16 + P_SafeAreaTopEdgeInsets(), 44, 44);
 }
@@ -174,13 +166,13 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     if (!self.btnAgree.selected) {
         PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.view animated:YES];
         hud.mode = PLVProgressHUDModeText;
-        hud.label.text = @"请勾选协议";
+        hud.label.text = NSLocalizedString(@"请勾选协议", nil);
         hud.detailsLabel.text = nil;
         [hud hideAnimated:YES afterDelay:2.0];
         return;
     }
     PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
-    [hud.label setText:@"登录中..."];
+    [hud.label setText:NSLocalizedString(@"登录中...", nil)];
     
     __weak typeof(self)weakSelf = self;
     [PLVRoomLoginClient loginStreamerRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone
@@ -224,7 +216,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         _lbTitle = [[UILabel alloc] init];
         _lbTitle.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:30];
         _lbTitle.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _lbTitle.text = @"手机开播";
+        _lbTitle.text = NSLocalizedString(@"手机开播", nil);
         _lbTitle.textAlignment = NSTextAlignmentCenter;
         [self.view addSubview:_lbTitle];
     }
@@ -246,7 +238,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         _tfChannelId.keyboardType = UIKeyboardTypeNumberPad;
         [self.view addSubview:_tfChannelId];
         
-        [self setTFStyle:_tfChannelId placeholder:@"请输入频道号"];
+        [self setTFStyle:_tfChannelId placeholder:NSLocalizedString(@"请输入频道号", nil)];
     }
     
     return _tfChannelId;
@@ -257,7 +249,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         _tfNickName = [[PLVLoginTextField alloc] init];
         [self.view addSubview:_tfNickName];
         
-        [self setTFStyle:_tfNickName placeholder:@"请输入昵称"];
+        [self setTFStyle:_tfNickName placeholder:NSLocalizedString(@"请输入昵称", nil)];
     }
     
     return _tfNickName;
@@ -269,7 +261,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         _tfPassword.secureTextEntry = YES;
         [self.view addSubview:_tfPassword];
         
-        [self setTFStyle:_tfPassword placeholder:@"请输入密码"];
+        [self setTFStyle:_tfPassword placeholder:NSLocalizedString(@"请输入密码", nil)];
     }
     
     return _tfPassword;
@@ -285,7 +277,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         [_btnLogin setBackgroundImage:imgDisabled forState:UIControlStateDisabled];
         _btnLogin.titleLabel.font = [UIFont systemFontOfSize:16];
         [_btnLogin setTitleColor:PLV_UIColorFromRGB(@"#F0F1F5") forState:UIControlStateNormal];
-        [_btnLogin setTitle:@"登录" forState:UIControlStateNormal];
+        [_btnLogin setTitle:NSLocalizedString(@"登录", nil) forState:UIControlStateNormal];
         _btnLogin.layer.cornerRadius = 22;
         _btnLogin.clipsToBounds = YES;
         [_btnLogin addTarget:self action:@selector(loginButtonClickAction) forControlEvents:UIControlEventTouchUpInside];
@@ -305,22 +297,6 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         _btnAgree.imageEdgeInsets = UIEdgeInsetsMake(4, 0, 4, 0);
         _btnAgree.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_btnAgree addTarget:self action:@selector(agreeClickAction) forControlEvents:UIControlEventTouchUpInside];
-        
-        UIFont *font = [UIFont fontWithName:@"PingFangSC-Regular" size: 12];
-        UIColor *normalColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6f);
-        UIColor *linkColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        
-        NSDictionary *normalAttributes = @{NSFontAttributeName:font,
-                                              NSForegroundColorAttributeName:normalColor};
-        NSDictionary *linkAttributes = @{NSFontAttributeName:font,
-                                              NSForegroundColorAttributeName:linkColor};
-        
-        NSString *string = @" 已阅读并同意《隐私政策》和《使用协议》";
-        NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:string];
-        [attributedString addAttributes:normalAttributes range:NSMakeRange(0, string.length)];
-        [attributedString addAttributes:linkAttributes range:NSMakeRange(7, 6)];
-        [attributedString addAttributes:linkAttributes range:NSMakeRange(14, 6)];
-        [_btnAgree setAttributedTitle:attributedString forState:UIControlStateNormal];
         
         NSNumber *agree = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultAgreeUserProtocol];
         if (agree && [agree integerValue] == 1) {
@@ -344,7 +320,7 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
         UIColor *color = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6f);
         NSDictionary *attributes = @{NSFontAttributeName:font,
                                               NSForegroundColorAttributeName:color};
-        NSString *string = @" 记住密码";
+        NSString *string = NSLocalizedString(@" 记住密码", nil);
         NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:string attributes:attributes];
         [_rememberPasswordButton setAttributedTitle:attributedString forState:UIControlStateNormal];
 
@@ -359,22 +335,39 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     return _rememberPasswordButton;
 }
 
-- (UIButton *)btnPrivacyPolicy {
-    if (!_btnPrivacyPolicy) {
-        _btnPrivacyPolicy = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_btnPrivacyPolicy addTarget:self action:@selector(privacyPolicyClickAction)
-                    forControlEvents:UIControlEventTouchUpInside];
+- (UITextView *)agreeTextView {
+    if (!_agreeTextView) {
+        _agreeTextView = [[UITextView alloc] init];
+        _agreeTextView.delegate = self;
+        _agreeTextView.editable = YES;
+        _agreeTextView.scrollEnabled = NO;
+        _agreeTextView.backgroundColor = [UIColor clearColor];
+        _agreeTextView.textContainerInset = UIEdgeInsetsZero;
+        _agreeTextView.textContainer.lineFragmentPadding = 0;
+        UIFont *font = [UIFont fontWithName:@"PingFangSC-Regular" size: 12];
+        UIColor *normalColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6f);
+        UIColor *linkColor = PLV_UIColorFromRGB(@"#F0F1F5");
+        NSDictionary *normalAttributes = @{NSFontAttributeName:font,
+                                              NSForegroundColorAttributeName:normalColor};
+        NSDictionary *privacyPolicyAttributes = @{NSFontAttributeName:font,
+                                                NSForegroundColorAttributeName:linkColor,
+                                                NSLinkAttributeName: [NSString stringWithFormat:@"%@://", kPrivacyPolicyAttributeName]};
+        NSDictionary *useProtocolAttributes = @{NSFontAttributeName:font,
+                                                NSForegroundColorAttributeName:linkColor,
+                                                NSLinkAttributeName: [NSString stringWithFormat:@"%@://", kUseProtocolAttributeName]};
+        NSString *agreeString = NSLocalizedString(@"已阅读并同意", nil);
+        NSString *privacyPolicyString = NSLocalizedString(@"《隐私政策》", nil);
+        NSString *andString = NSLocalizedString(@"和", nil);
+        NSString *useProtocolString = NSLocalizedString(@"《使用协议》", nil);
+        NSString *string = [NSString stringWithFormat:@"%@%@%@%@",agreeString, privacyPolicyString, andString, useProtocolString];
+        NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:string];
+        [attributedString addAttributes:normalAttributes range:NSMakeRange(0, string.length)];
+        [attributedString addAttributes:privacyPolicyAttributes range:NSMakeRange(agreeString.length, privacyPolicyString.length)];
+        [attributedString addAttributes:useProtocolAttributes range:NSMakeRange(agreeString.length + privacyPolicyString.length + andString.length, useProtocolString.length)];
+        _agreeTextView.linkTextAttributes = @{NSForegroundColorAttributeName: linkColor};
+        _agreeTextView.attributedText = attributedString;
     }
-    return _btnPrivacyPolicy;
-}
-
-- (UIButton *)btnUserProtocol {
-    if (!_btnUserProtocol) {
-        _btnUserProtocol = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_btnUserProtocol addTarget:self action:@selector(userProtocolClickAction)
-                   forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _btnUserProtocol;
+    return _agreeTextView;
 }
 
 - (UIButton *)backButton {
@@ -534,6 +527,20 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
     } else {
         return NO;
     }
+}
+
+#pragma mark UITextViewDelegate
+- (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL *)URL inRange:(NSRange)characterRange {
+    if ([[URL scheme] isEqualToString:kPrivacyPolicyAttributeName]) {
+        [self privacyPolicyClickAction];
+    } else if ([[URL scheme] isEqualToString:kUseProtocolAttributeName]) {
+        [self userProtocolClickAction];
+    }
+    return NO;
+}
+
+- (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
+    return NO;
 }
 
 @end

@@ -7,6 +7,7 @@
 //  推送商品
 
 #import "PLVCommodityPushView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -292,7 +293,7 @@
     } else {
         realPriceStr = [NSString stringWithFormat:@"¥ %@", model.realPrice];
         if ([model.realPrice isEqualToString:@"0"]) {
-            realPriceStr = @"免费";
+            realPriceStr = PLVLocalizedString(@"免费");
         }
     }
     

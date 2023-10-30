@@ -8,6 +8,7 @@
 
 #import "PLVLSNewRemindMessageView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSNewRemindMessageView ()
 
@@ -84,11 +85,11 @@
     
     NSString *string = nil;
     if (scroll) {
-        string = @"返回底部";
+        string = PLVLocalizedString(@"返回底部");
     } else {
-        string = [NSString stringWithFormat:@"%zd条新消息 ", self.messageCount];
+        string = [NSString stringWithFormat:PLVLocalizedString(@"%zd条新消息 "), self.messageCount];
         if (self.messageCount > 999) {
-            string = @"999+条新消息 ";
+            string = PLVLocalizedString(@"999+条新消息 ");
         }
     }
     

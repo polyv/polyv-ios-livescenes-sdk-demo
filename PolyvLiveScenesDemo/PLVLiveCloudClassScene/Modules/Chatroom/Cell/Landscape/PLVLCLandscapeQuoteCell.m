@@ -11,6 +11,8 @@
 #import "PLVPhotoBrowser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
+#import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -205,7 +207,7 @@
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
-        quoteUserName = [quoteUserName stringByAppendingString:@"（我）"];
+        quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
@@ -292,6 +294,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview.superview.superview afterDelay:3.0];
 }
 
 - (void)tapImageViewAction {

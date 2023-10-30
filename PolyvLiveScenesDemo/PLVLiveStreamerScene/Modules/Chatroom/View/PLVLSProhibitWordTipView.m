@@ -10,6 +10,7 @@
 
 //utils
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // SDK
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -151,12 +152,12 @@
     
     if (tipType == PLVLSProhibitWordTipTypeText) {
         if (prohibitWord) {
-            text = [NSString stringWithFormat:@"您的聊天信息中含有违规词：%@", prohibitWord];
+            text = [NSString stringWithFormat:PLVLocalizedString(@"您的聊天信息中含有违规词：%@"), prohibitWord];
         } else {
-            text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+            text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
         }
     } else {
-        text = @"图片不合法";
+        text = PLVLocalizedString(@"图片不合法");
     }
     self.tipLabel.text = text;
 }

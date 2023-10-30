@@ -11,6 +11,7 @@
 #import "PLVWebImageDecoder.h"
 #import "PLVAlbumTool.h"
 #import "PLVPicDefine.h"
+#import "PLVMultiLanguageManager.h"
 
 #define NumberOfItemsInSection                  1
 #define PLVPreCollectionViewCellIdentifier        @"PLVPreCollectionViewCell"
@@ -58,7 +59,7 @@
             [self changeSelectStatus:NO index:0];
         }
         
-        self.title = [NSString stringWithFormat:@"预览(%d/%d)", (int)index + 1, (int)self.photoCount];
+        self.title = [NSString stringWithFormat:PLVLocalizedString(@"预览(%d/%d)"), (int)index + 1, (int)self.photoCount];
     }
 }
 
@@ -70,7 +71,7 @@
         [self changeSelectStatus:NO index:0];
     } else {
         if (self.selectedItems.count > 0) {
-            [PLVAlbumTool presentAlertController:@"你只能选择一张图片" inViewController:self];
+            [PLVAlbumTool presentAlertController:PLVLocalizedString(@"你只能选择一张图片") inViewController:self];
             return;
         }
         [self.selectedItems addObject:indexPath];
@@ -112,7 +113,7 @@
     
     CGFloat myToolbarHeight = 0.0;
     if (!self.hiddenToolbar) {
-        [PLVAlbumTool rightBarButtonItem:@"发送" action:@selector(send:) target:self];
+        [PLVAlbumTool rightBarButtonItem:PLVLocalizedString(@"发送") action:@selector(send:) target:self];
         self.navigationItem.rightBarButtonItem.enabled = self.selectedItems.count > 0;
         
         if (self.selectedLabel == nil) {

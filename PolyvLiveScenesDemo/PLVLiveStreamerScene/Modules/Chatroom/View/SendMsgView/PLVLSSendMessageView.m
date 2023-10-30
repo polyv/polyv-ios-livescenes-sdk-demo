@@ -12,6 +12,7 @@
 #import "PLVLSSendMessageTextView.h"
 #import "PLVLSRepliedMsgView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLSChatroomViewModel.h"
 #import "PLVEmoticonManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -155,7 +156,7 @@ UITextViewDelegate
             if (granted) {
                 [[PLVLSUtils sharedUtils].homeVC presentViewController:weakSelf.imagePicker animated:YES completion:nil];
             } else {
-                [PLVLSUtils showAlertWithMessage:@"应用需要获取您的相册权限，请前往设置" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"设置" confirmActionBlock:^{
+                [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"应用需要获取您的相册权限，请前往设置") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"设置") confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
                         [[UIApplication sharedApplication] openURL:url];
@@ -305,7 +306,7 @@ UITextViewDelegate
         }
         
         if (!success) {
-            [PLVLSUtils showToastInHomeVCWithMessage:@"发送消息失败"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"发送消息失败")];
         }
     }
     [self.toolView.textView clearText];
@@ -320,7 +321,7 @@ UITextViewDelegate
         success = [[PLVLSChatroomViewModel sharedViewModel] sendImageMessage:image];
     }
     if (!success) {
-        [PLVLSUtils showToastInHomeVCWithMessage:@"消息发送失败"];
+        [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"消息发送失败")];
     }
 }
 
@@ -373,7 +374,7 @@ UITextViewDelegate
     }
     BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendImageEmotionMessage:emoticon.imageId imageUrl:emoticon.url];
      if (!success) {
-         [PLVLSUtils showToastInHomeVCWithMessage:@"发送消息失败"];
+         [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"发送消息失败")];
      } else {
          //隐藏面板
          [self dismiss];

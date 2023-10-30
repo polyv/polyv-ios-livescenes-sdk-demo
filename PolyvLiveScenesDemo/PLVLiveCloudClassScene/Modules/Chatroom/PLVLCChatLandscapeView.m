@@ -20,6 +20,7 @@
 #import "PLVLCLandscapeFileCell.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -290,7 +291,9 @@ UITableViewDataSource
     if (self.playbackEnable) {
         model = self.playbackViewModel.chatArray[indexPath.row];
     } else {
-        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+        if ([PLVLCChatroomViewModel sharedViewModel].chatArray.count > indexPath.row) {
+            model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+        }
     }
     return model;
 }
@@ -303,7 +306,7 @@ UITableViewDataSource
                 if (content) {
                     model.overLenContent = content;
                     [UIPasteboard generalPasteboard].string = content;
-                    [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+                    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
                 }
             }];
         }
@@ -311,7 +314,7 @@ UITableViewDataSource
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
         }
     }
 }

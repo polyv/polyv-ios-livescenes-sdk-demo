@@ -7,6 +7,7 @@
 //
 
 #import "PLVRoomData.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NSString *PLVLCChatroomFunctionGotNotification = @"PLVLCChatroomFunctionGotNotification";
@@ -64,6 +65,33 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
             self.pushQualityPreference = PLVQualityPreferenceTypeClear;
         }
     }
+}
+
+- (NSDictionary *)nativeAppUserParamsWithExtraParam:(NSDictionary * _Nullable)extraParam {
+    NSDictionary *userInfo = @{
+        @"nick" : [NSString stringWithFormat:@"%@", self.roomUser.viewerName],
+        @"userId" : [NSString stringWithFormat:@"%@", self.roomUser.viewerId],
+        @"pic" : [NSString stringWithFormat:@"%@", self.roomUser.viewerAvatar]
+    };
+    NSDictionary *channelInfo = @{
+        @"channelId" : [NSString stringWithFormat:@"%@", self.channelId],
+        @"roomId" : [NSString stringWithFormat:@"%@", self.channelId]
+    };
+    NSDictionary *sessionDict = @{
+        @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
+        @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
+        @"sessionId" : [NSString stringWithFormat:@"%@", self.sessionId]
+    };
+    
+    NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
+    [mutableDict setObject:userInfo forKey:@"userInfo"];
+    [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    [mutableDict addEntriesFromDictionary:sessionDict];
+    if ([PLVFdUtil checkDictionaryUseable:extraParam]) {
+        [mutableDict addEntriesFromDictionary:extraParam];
+    }
+    
+    return mutableDict;
 }
 
 #pragma mark HTTP Request
@@ -139,16 +167,16 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     NSString *string = nil;
     switch (resolutionType) {
         case PLVResolutionType1080P:
-            string = @"超高清";
+            string = PLVLocalizedString(@"超高清");
             break;
         case PLVResolutionType720P:
-            string = @"超清";
+            string = PLVLocalizedString(@"超清");
             break;
         case PLVResolutionType360P:
-            string = @"高清";
+            string = PLVLocalizedString(@"高清");
             break;
         case PLVResolutionType180P:
-            string = @"标清";
+            string = PLVLocalizedString(@"标清");
             break;
     }
     return string;
@@ -210,13 +238,13 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     NSString *string = nil;
     switch (mixLayoutType) {
         case PLVMixLayoutType_Single:
-            string = @"单人模式";
+            string = PLVLocalizedString(@"单人模式");
             break;
         case PLVMixLayoutType_Tile:
-            string = @"平铺模式";
+            string = PLVLocalizedString(@"平铺模式");
             break;
         case PLVMixLayoutType_MainSpeaker:
-            string = @"主讲模式";
+            string = PLVLocalizedString(@"主讲模式");
             break;
     }
     return string;

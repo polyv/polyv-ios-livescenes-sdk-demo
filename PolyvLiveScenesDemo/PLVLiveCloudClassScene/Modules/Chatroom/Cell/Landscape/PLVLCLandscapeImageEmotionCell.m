@@ -9,6 +9,7 @@
 #import "PLVLCLandscapeImageEmotionCell.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -123,7 +124,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];

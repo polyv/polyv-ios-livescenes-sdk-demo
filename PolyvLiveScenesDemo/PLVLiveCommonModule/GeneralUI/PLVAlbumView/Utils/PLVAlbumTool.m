@@ -9,6 +9,7 @@
 #import "PLVAlbumTool.h"
 #import "PLVWebImageDecoder.h"
 #import "PLVPicDefine.h"
+#import "PLVMultiLanguageManager.h"
 
 @implementation PLVAlbumTool
 
@@ -234,7 +235,7 @@
 
 + (void)presentAlertController:(NSString*)message inViewController:(UIViewController*)vc {
     UIAlertController *alertVC = [UIAlertController alertControllerWithTitle:nil message:message preferredStyle:UIAlertControllerStyleAlert];
-    [alertVC addAction:[UIAlertAction actionWithTitle:@"好的" style:UIAlertActionStyleCancel handler:nil]];
+    [alertVC addAction:[UIAlertAction actionWithTitle:PLVLocalizedString(@"好的") style:UIAlertActionStyleCancel handler:nil]];
     [vc presentViewController:alertVC animated:YES completion:nil];
 }
 

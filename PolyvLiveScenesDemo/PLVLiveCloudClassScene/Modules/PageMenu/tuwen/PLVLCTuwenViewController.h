@@ -20,9 +20,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVLCTuwenDelegate> delegate;
 
-- (instancetype)initWithChannelId:(NSNumber *)channelId;
+/// 直播状态改变时调用
+- (void)updateLiveStatusIsLive:(BOOL)isLive;
 
-- (void)reconnect;
+/// 更新用户信息
+/// 在用户的信息改变后进行通知
+- (void)updateUserInfo;
 
 @end
 

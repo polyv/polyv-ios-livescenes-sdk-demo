@@ -9,6 +9,7 @@
 #import "PLVSABeautyWhitenViewController.h"
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVSABeautyCollectionViewCell.h"
 // 模块
@@ -26,7 +27,7 @@ UICollectionViewDelegate
 
 @end
 
-static CGFloat kItemWidth = 36; // item宽度
+static CGFloat kItemWidth = 46; // item宽度
 static int kItemLineNum = 3; // 每行item数
 
 @implementation PLVSABeautyWhitenViewController
@@ -40,7 +41,9 @@ static int kItemLineNum = 3; // 每行item数
     [self.collectionView reloadData];
     // 默认选中第一个
     self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
+        [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    }
     [[PLVBeautyViewModel sharedViewModel] selectBeautyOption:PLVBBeautyOption_BeautySmooth];
 }
 
@@ -53,9 +56,9 @@ static int kItemLineNum = 3; // 每行item数
 - (void)setupDataArray {
     [super setupDataArray];
     self.dataArray = [NSArray arrayWithObjects:
-                      [[PLVSABeautyCellModel alloc] initWithTitle:@"磨皮" imageName:@"plvsa_beauty_smooth" beautyOption:PLVBBeautyOption_BeautySmooth selected:YES],
-                      [[PLVSABeautyCellModel alloc] initWithTitle:@"美白" imageName:@"plvsa_beauty_whiten" beautyOption:PLVBBeautyOption_BeautyWhiten],
-                      [[PLVSABeautyCellModel alloc] initWithTitle:@"锐化" imageName:@"plvsa_beauty_sharp" beautyOption:PLVBBeautyOption_BeautySharp],nil];
+                      [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"磨皮") imageName:@"plvsa_beauty_smooth" beautyOption:PLVBBeautyOption_BeautySmooth selected:YES],
+                      [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"美白") imageName:@"plvsa_beauty_whiten" beautyOption:PLVBBeautyOption_BeautyWhiten],
+                      [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"锐化") imageName:@"plvsa_beauty_sharp" beautyOption:PLVBBeautyOption_BeautySharp],nil];
 }
 
 - (void)showContentView {
@@ -70,8 +73,8 @@ static int kItemLineNum = 3; // 每行item数
 - (void)beautyOpen:(BOOL)open {
     [super beautyOpen:open];
     [self.collectionView reloadData];
-    if (open &&
-        self.selectedIndexPath) {
+    if (open && self.selectedIndexPath &&
+        self.dataArray.count > self.selectedIndexPath.item) {
         [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     }
 }

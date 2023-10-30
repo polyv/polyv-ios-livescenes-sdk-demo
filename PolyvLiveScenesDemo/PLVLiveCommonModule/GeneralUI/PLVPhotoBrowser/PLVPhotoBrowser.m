@@ -9,7 +9,7 @@
 #import "PLVPhotoBrowser.h"
 #import <PLVFoundationSDK/PLVAuthorizationManager.h>
 #import <PLVFoundationSDK/PLVProgressHUD.h>
-//#import <Masonry/Masonry.h>
+#import "PLVMultiLanguageManager.h"
 
 NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrowserDidShowImageOnScreenNotification"; 
 
@@ -192,14 +192,14 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
             UIImageWriteToSavedPhotosAlbum(self.image, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
         } break;
         case PLVAuthorizationStatusDenied: {
-            [self showHUDWithTitle:@"您无权访问相册，请授权后重新保存" detail:nil];
+            [self showHUDWithTitle:PLVLocalizedString(@"您无权访问相册，请授权后重新保存") detail:nil];
         } break;
         case PLVAuthorizationStatusNotDetermined: {
             [PLVAuthorizationManager requestAuthorizationWithType:PLVAuthorizationTypePhotoLibrary completion:^(BOOL granted) {
                 if (granted) {
                     UIImageWriteToSavedPhotosAlbum(self.image, self, @selector(image:didFinishSavingWithError:contextInfo:), nil);
                 }else {
-                    [self showHUDWithTitle:@"授权失败，无法保存至您的相册" detail:nil];
+                    [self showHUDWithTitle:PLVLocalizedString(@"授权失败，无法保存至您的相册") detail:nil];
                 }
             }];
         } break;
@@ -210,9 +210,9 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
 
 - (void)image:(UIImage *)image didFinishSavingWithError:(NSError *)error contextInfo:(void *)contextInfo {
     if (error) {
-        [self showHUDWithTitle:@"图片保存至相册失败" detail:error.localizedDescription];
+        [self showHUDWithTitle:PLVLocalizedString(@"图片保存至相册失败") detail:error.localizedDescription];
     }else {
-        [self showHUDWithTitle:@"图片已保存到系统相册" detail:nil];
+        [self showHUDWithTitle:PLVLocalizedString(@"图片已保存到系统相册") detail:nil];
     }
 }
 

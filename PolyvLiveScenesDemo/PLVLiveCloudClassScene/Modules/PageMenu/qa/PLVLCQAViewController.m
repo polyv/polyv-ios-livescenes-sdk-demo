@@ -8,7 +8,7 @@
 
 #import "PLVLCQAViewController.h"
 #import "PLVRoomDataManager.h"
-
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @interface PLVLCQAViewController ()<
@@ -78,9 +78,11 @@ PLVSocketManagerProtocol
       @"roomId"  : [NSString stringWithFormat:@"%@", self.roomData.channelId],
       @"sessionId" : [NSString stringWithFormat:@"%@", self.roomData.sessionId]};
     NSDictionary *qaSetting = @{@"theme" : [NSString stringWithFormat:@"%@", self.theme]}; //QA皮肤设置默认白色
+    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
     NSDictionary *params = @{@"userInfo" :  userInfo,
                              @"channelInfo" : channelInfo,
-                             @"qaSetting" : qaSetting };
+                             @"qaSetting" : qaSetting,
+                             @"locale"   : language };
     NSError *jsonErr;
     NSData *arrayData = [NSJSONSerialization dataWithJSONObject:params options:NSJSONWritingPrettyPrinted error:&jsonErr];
     if (jsonErr) {

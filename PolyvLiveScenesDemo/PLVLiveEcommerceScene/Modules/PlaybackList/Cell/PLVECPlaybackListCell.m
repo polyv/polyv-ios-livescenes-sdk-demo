@@ -9,6 +9,7 @@
 #import "PLVECPlaybackListCell.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECPlaybackListCell ()
 
@@ -124,7 +125,7 @@
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc]init];
-        _titleLabel.text = @"标题";
+        _titleLabel.text = PLVLocalizedString(@"标题");
         _titleLabel.numberOfLines = 2;
         _titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         _titleLabel.highlightedTextColor = PLV_UIColorFromRGB(@"#FFD16B");
@@ -142,7 +143,7 @@
                      forState:UIControlStateNormal];
         _playButton.imageView.frame = CGRectMake(12, 8, 16, 16);
         _playButton.imageView.contentMode = UIViewContentModeScaleAspectFill;
-        [_playButton setTitle:@"播放中" forState:UIControlStateNormal];
+        [_playButton setTitle:PLVLocalizedString(@"播放中") forState:UIControlStateNormal];
         
         _playButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:16];;
         [_playButton setBackgroundColor:PLV_UIColorFromRGB(@"#FFA611")];

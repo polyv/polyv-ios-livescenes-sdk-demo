@@ -26,6 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 标题左边间距，默认为2
 @property (nonatomic, assign) CGFloat titlePaddingX;
 
+@property (nonatomic, assign, readonly) CGFloat buttonCalWidth;
+
 #pragma mark 点击事件
 
 /// 点击 触发

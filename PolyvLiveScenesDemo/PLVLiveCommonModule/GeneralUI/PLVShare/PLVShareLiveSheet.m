@@ -8,6 +8,7 @@
 
 #import "PLVShareLiveSheet.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVShareLivePosterModel.h"
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -260,11 +261,7 @@ typedef NS_ENUM(NSInteger, PLVShareLiveButtonType) {
 #pragma mark - Utils
 
 - (UIImage *)createImageWithView:(UIView *)view{
-    CGSize size = view.bounds.size;
-    UIGraphicsBeginImageContextWithOptions(size, YES, [UIScreen mainScreen].scale);
-    [view.layer renderInContext:UIGraphicsGetCurrentContext()];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
+    UIImage *image = [PLVImageUtil imageFromUIView:view opaque:YES scale:[UIScreen mainScreen].scale];
     return image;
 }
 
@@ -333,7 +330,7 @@ typedef NS_ENUM(NSInteger, PLVShareLiveButtonType) {
         _cancelButton.titleLabel.font = [UIFont systemFontOfSize:14.0];
         _cancelButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
         [_cancelButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [_cancelButton setTitle:@"取消" forState:UIControlStateNormal];
+        [_cancelButton setTitle:PLVLocalizedString(@"取消") forState:UIControlStateNormal];
         [_cancelButton addTarget:self action:@selector(cancelButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _cancelButton;
@@ -357,25 +354,25 @@ typedef NS_ENUM(NSInteger, PLVShareLiveButtonType) {
     [button addTarget:self action:@selector(shareButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     switch (shareType) {
         case PLVShareLiveButtonTypeWXSession:
-            [button setTitle:@"微信好友" forState:UIControlStateNormal];
+            [button setTitle:PLVLocalizedString(@"微信好友") forState:UIControlStateNormal];
             [button setImage:[self imageForShareResource:@"plv_share_wxsession_btn"] forState:UIControlStateNormal];
             break;
         case PLVShareLiveButtonTypeWXTimeline:
-            [button setTitle:@"朋友圈" forState:UIControlStateNormal];
+            [button setTitle:PLVLocalizedString(@"朋友圈") forState:UIControlStateNormal];
             [button setImage:[self imageForShareResource:@"plv_share_wxtimeline_btn"] forState:UIControlStateNormal];;
             break;
         case PLVShareLiveButtonTypeSavePicture:
-            [button setTitle:@"保存图片" forState:UIControlStateNormal];
+            [button setTitle:PLVLocalizedString(@"保存图片") forState:UIControlStateNormal];
             [button setImage:[self imageForShareResource:@"plv_share_savepicture_btn"] forState:UIControlStateNormal];
             break;
         case PLVShareLiveButtonTypeCopyLink:
-            [button setTitle:@"复制链接" forState:UIControlStateNormal];
+            [button setTitle:PLVLocalizedString(@"复制链接") forState:UIControlStateNormal];
             [button setImage:[self imageForShareResource:@"plv_share_copylink_btn"] forState:UIControlStateNormal];
             break;
         default:
             break;
     }
-    [button setTitleEdgeInsets:UIEdgeInsetsMake(0, - button.imageView.frame.size.width - 4, - button.imageView.frame.size.height - 8, -4)];
+    [button setTitleEdgeInsets:UIEdgeInsetsMake(0, - button.imageView.frame.size.width - 12, - button.imageView.frame.size.height - 8, - 12)];
     [button setImageEdgeInsets:UIEdgeInsetsMake(- (kShareLiveSheetButtonSizeHeight - kShareLiveSheetButtonSizeWidth), 0, 0, 0)];
     
     return button;

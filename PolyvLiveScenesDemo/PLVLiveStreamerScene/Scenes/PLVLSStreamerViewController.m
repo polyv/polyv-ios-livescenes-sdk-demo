@@ -10,6 +10,7 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVLSChannelInfoSheet.h"
@@ -101,6 +102,9 @@ PLVLSMixLayoutSheetDelegate
 - (instancetype)init {
     self = [super init];
     if (self) {
+        // 设置对语言场景
+        [[PLVMultiLanguageManager sharedManager] setupLocalizedLiveScene:PLVMultiLanguageLiveSceneLS channelId:[PLVRoomDataManager sharedManager].roomData.channelId language:nil];
+        
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
         // 启动聊天室管理器
@@ -188,12 +192,12 @@ PLVLSMixLayoutSheetDelegate
     }
     
     if (_badNetworkTipsView && _badNetworkTipsView.showing) {
-        CGFloat width = kPLVLSBadNetworkTipsViewWidth;
+        CGFloat width = self.badNetworkTipsView.tipsViewWidth;
         CGFloat height = kPLVLSBadNetworkTipsViewHeight;
         self.badNetworkTipsView.frame = CGRectMake(self.documentAreaView.center.x - width/2.0, self.documentAreaView.frame.origin.y + 10, width, height);
         [self.view insertSubview:self.badNetworkTipsView aboveSubview:self.documentAreaView];
     } else if (_switchSuccessTipsView && _switchSuccessTipsView.showing) {
-        CGFloat width = kPLVLSSwitchSuccessTipsViewWidth;
+        CGFloat width = self.switchSuccessTipsView.tipsViewWidth;
         CGFloat height = kPLVLSSwitchSuccessTipsViewHeight;
         self.switchSuccessTipsView.frame = CGRectMake(self.documentAreaView.center.x - width/2.0, self.documentAreaView.frame.origin.y + 10, width, height);
         [self.view insertSubview:self.switchSuccessTipsView aboveSubview:self.documentAreaView];
@@ -403,7 +407,7 @@ PLVLSMixLayoutSheetDelegate
         [_badNetworkTipsView setSwitchButtonActionBlock:^{
             [weakSelf.streamerPresenter setupVideoQosPreference:PLVBRTCVideoQosPreferenceSmooth];
 //            [weakSelf.switchSuccessTipsView showAtView:weakSelf.view aboveSubview:weakSelf.documentAreaView];
-            [PLVLSUtils showToastWithMessage:@"已切换到流畅模式" inView:weakSelf.view];
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"已切换到流畅模式") inView:weakSelf.view];
         }];
     }
     return _badNetworkTipsView;
@@ -506,11 +510,11 @@ PLVLSMixLayoutSheetDelegate
         }
    
         if (!granted) {
-            [PLVLSUtils showAlertWithTitle:@"音视频权限申请"
-                                   message:@"请前往“设置-隐私”开启权限"
-                         cancelActionTitle:@"取消"
+            [PLVLSUtils showAlertWithTitle:PLVLocalizedString(@"音视频权限申请")
+                                   message:PLVLocalizedString(@"请前往“设置-隐私”开启权限")
+                         cancelActionTitle:PLVLocalizedString(@"取消")
                          cancelActionBlock:nil
-                        confirmActionTitle:@"前往设置" confirmActionBlock:^{
+                        confirmActionTitle:PLVLocalizedString(@"前往设置") confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
                         [[UIApplication sharedApplication] openURL:url];
@@ -529,11 +533,11 @@ PLVLSMixLayoutSheetDelegate
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             /// 弹出提示
-            [PLVLSUtils showAlertWithMessage:@"检测到之前异常退出，是否恢复直播" cancelActionTitle:@"结束直播" cancelActionBlock:^{
+            [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"检测到之前异常退出，是否恢复直播") cancelActionTitle:PLVLocalizedString(@"结束直播") cancelActionBlock:^{
                 /// 重置值、结束服务器中该频道上课状态
                 [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving = NO;
                 [weakSelf.streamerPresenter finishClass];
-            } confirmActionTitle:@"恢复直播" confirmActionBlock:^{
+            } confirmActionTitle:PLVLocalizedString(@"恢复直播") confirmActionBlock:^{
                 /// 加入RTC房间、配置加入成功后的自动处理逻辑
                 [weakSelf.streamerPresenter joinRTCChannel];
                 weakSelf.tryResumeClassBlock = ^{
@@ -592,13 +596,13 @@ PLVLSMixLayoutSheetDelegate
         if (retryCount >= 0 && retryCount < 3) {
             retryCount++;
             NSInteger waitTime = (1.5 * retryCount);
-            [PLVLSUtils showToastWithMessage:@"处理中..." inView:self.view afterDelay:waitTime];
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"处理中...") inView:self.view afterDelay:waitTime];
             
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(waitTime * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [weakSelf tryStartClassRetryCount:retryCount callCompletion:callCompletion];
             });
         }else{
-            [PLVLSUtils showAlertWithMessage:@"网络当前不佳，请稍后再试" cancelActionTitle:@"知道了" cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
+            [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"网络当前不佳，请稍后再试") cancelActionTitle:PLVLocalizedString(@"知道了") cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
             if (callCompletion) { callCompletion(NO); }
         }
     }
@@ -631,7 +635,7 @@ PLVLSMixLayoutSheetDelegate
 - (void)closeRoomEvent:(NSDictionary *)jsonDict {
     NSDictionary *value = PLV_SafeDictionaryForDictKey(jsonDict, @"value");
     BOOL closeRoom = PLV_SafeBoolForDictKey(value, @"closed");
-    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
+    NSString *string = closeRoom ? PLVLocalizedString(@"聊天室已经关闭") : PLVLocalizedString(@"聊天室已经打开");
     plv_dispatch_main_async_safe(^{
         [PLVLSUtils showToastInHomeVCWithMessage:string];
     })
@@ -640,7 +644,7 @@ PLVLSMixLayoutSheetDelegate
 #pragma mark 美颜
 - (void)showBeautySheet:(BOOL)show {
     if (![PLVBeautyViewModel sharedViewModel].beautyIsReady) {
-        [PLVLSUtils showToastInHomeVCWithMessage:@"美颜未准备就绪，请退出重新登录"];
+        [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"美颜未准备就绪，请退出重新登录")];
         return;
     }
     
@@ -694,7 +698,7 @@ PLVLSMixLayoutSheetDelegate
         }];
         return YES; /// 先行禁用，由 [tryStartClassRetryCount:callCompletion:] 方法Block，进行最终的状态更新
     } else {
-        [PLVLSUtils showAlertWithMessage:@"点击下课将结束直播，确认下课吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"下课" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"点击下课将结束直播，确认下课吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"下课") confirmActionBlock:^{
             [weakSelf finishClass];
         }];
         return NO;
@@ -703,16 +707,16 @@ PLVLSMixLayoutSheetDelegate
 
 - (BOOL)statusAreaView_didTapVideoLinkMicButton:(BOOL)start{
     if (!self.streamerPresenter.pushStreamStarted) {
-        [PLVLSUtils showToastWithMessage:@"请先上课再开始连麦" inView:self.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请先上课再开始连麦") inView:self.view];
         return NO;
     }else{
         if ([PLVRoomDataManager sharedManager].roomData.interactNumLimit == 0) {
-            [PLVLSUtils showToastWithMessage:@"尚未开通，请联系管理员" inView:self.view];
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"尚未开通，请联系管理员") inView:self.view];
             return NO;
         }
         
-        NSString * suceessTitle = start ? @"已开启视频连麦" : @"已关闭视频连麦";
-        NSString * failTitle = start ? @"开启视频连麦失败，请稍后再试" : @"关闭视频连麦失败，请稍后再试";
+        NSString * suceessTitle = start ? PLVLocalizedString(@"已开启视频连麦") : PLVLocalizedString(@"已关闭视频连麦");
+        NSString * failTitle = start ? PLVLocalizedString(@"开启视频连麦失败，请稍后再试") : PLVLocalizedString(@"关闭视频连麦失败，请稍后再试");
         __weak typeof(self) weakSelf = self;
         [self.streamerPresenter openVideoLinkMic:start emitCompleteBlock:^(BOOL emitSuccess) {
             plv_dispatch_main_async_safe(^{
@@ -731,16 +735,16 @@ PLVLSMixLayoutSheetDelegate
 
 - (BOOL)statusAreaView_didTapAudioLinkMicButton:(BOOL)start{
     if (!self.streamerPresenter.pushStreamStarted) {
-        [PLVLSUtils showToastWithMessage:@"请先上课再开始连麦" inView:self.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请先上课再开始连麦") inView:self.view];
         return NO;
     }else{
         if ([PLVRoomDataManager sharedManager].roomData.interactNumLimit == 0) {
-            [PLVLSUtils showToastWithMessage:@"尚未开通，请联系管理员" inView:self.view];
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"尚未开通，请联系管理员") inView:self.view];
             return NO;
         }
         
-        NSString * suceessTitle = start ? @"已开启音频连麦" : @"已关闭音频连麦";
-        NSString * failTitle = start ? @"开启音频连麦失败，请稍后再试" : @"关闭音频连麦失败，请稍后再试";
+        NSString * suceessTitle = start ? PLVLocalizedString(@"已开启音频连麦") : PLVLocalizedString(@"已关闭音频连麦");
+        NSString * failTitle = start ? PLVLocalizedString(@"开启音频连麦失败，请稍后再试") : PLVLocalizedString(@"关闭音频连麦失败，请稍后再试");
         __weak typeof(self) weakSelf = self;
         [self.streamerPresenter openAudioLinkMic:start emitCompleteBlock:^(BOOL emitSuccess) {
             plv_dispatch_main_async_safe(^{
@@ -808,14 +812,14 @@ PLVLSMixLayoutSheetDelegate
 - (void)didTapCloseAllUserLinkMicInMemberSheet:(PLVLSMemberSheet *)memberSheet
                                    changeBlock:(void(^ _Nullable)(BOOL needChange))changeBlock {
     if (!self.streamerPresenter.pushStreamStarted) {
-        [PLVLSUtils showToastWithMessage:@"请先上课" inView:self.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请先上课") inView:self.view];
         if (changeBlock) { changeBlock(NO); }
     }else{
         __weak typeof(self) weakSelf = self;
-        [PLVLSUtils showAlertWithMessage:@"确认全体下麦？" cancelActionTitle:@"按错了" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"确认全体下麦？") cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             BOOL success = [weakSelf.streamerPresenter closeAllLinkMicUser];
             if (success) {
-                [PLVLSUtils showToastWithMessage:@"已全体下麦" inView:weakSelf.view];
+                [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"已全体下麦") inView:weakSelf.view];
             }
             if (changeBlock) { changeBlock(YES); }
         }];
@@ -826,13 +830,13 @@ PLVLSMixLayoutSheetDelegate
                                      mute:(BOOL)mute
                               changeBlock:(void(^)(BOOL needChange))changeBlock {
     if (!self.streamerPresenter.pushStreamStarted) {
-        [PLVLSUtils showToastWithMessage:@"请先上课" inView:self.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请先上课") inView:self.view];
         if (changeBlock) { changeBlock(NO); }
     }else{
-        NSString * title = mute ? @"确认全体静音？" : @"确认取消全体静音？";
-        NSString * toastTitle = mute ? @"已全体静音" : @"已取消全体静音";
+        NSString * title = mute ? PLVLocalizedString(@"确认全体静音？") : PLVLocalizedString(@"确认取消全体静音？");
+        NSString * toastTitle = mute ? PLVLocalizedString(@"已全体静音") : PLVLocalizedString(@"已取消全体静音");
         __weak typeof(self) weakSelf = self;
-        [PLVLSUtils showAlertWithMessage:title cancelActionTitle:@"按错了" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:title cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             [weakSelf.streamerPresenter muteAllLinkMicUserMic:mute];
             [PLVLSUtils showToastWithMessage:toastTitle inView:weakSelf.view];
             if (changeBlock) { changeBlock(YES); }
@@ -903,7 +907,7 @@ PLVLSMixLayoutSheetDelegate
             [self finishClass]; // 讲师被踢出后立即结束当前课程
         }
         plv_dispatch_main_async_safe(^{
-            [PLVLSUtils showAlertWithMessage:@"当前直播间已被禁止直播" cancelActionTitle:@"确定" cancelActionBlock:^{
+            [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"当前直播间已被禁止直播") cancelActionTitle:PLVLocalizedString(@"确定") cancelActionBlock:^{
                 [weakSelf logout];
             } confirmActionTitle:nil confirmActionBlock:nil];
         })
@@ -911,7 +915,7 @@ PLVLSMixLayoutSheetDelegate
         error.code == PLVSocketLoginErrorCodeRelogin) &&
         error.localizedDescription) {
         plv_dispatch_main_async_safe(^{
-            [PLVLSUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:@"确定" cancelActionBlock:^{
+            [PLVLSUtils showAlertWithMessage:error.localizedDescription cancelActionTitle:PLVLocalizedString(@"确定") cancelActionBlock:^{
                 [weakSelf logout];
             } confirmActionTitle:nil confirmActionBlock:nil];
         })
@@ -935,13 +939,13 @@ PLVLSMixLayoutSheetDelegate
     if (connectStatus == PLVSocketConnectStatusReconnect) {
         self.socketReconnecting = YES;
         plv_dispatch_main_async_safe(^{
-            [PLVLSUtils showToastWithMessage:@"聊天室重连中" inView:self.view];
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"聊天室重连中") inView:self.view];
         })
     } else if(connectStatus == PLVSocketConnectStatusConnected) {
         if (self.socketReconnecting) {
             self.socketReconnecting = NO;
             plv_dispatch_main_async_safe(^{
-                [PLVLSUtils showToastWithMessage:@"聊天室重连成功" inView:self.view];
+                [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"聊天室重连成功") inView:self.view];
             })
         }
     }
@@ -1046,8 +1050,8 @@ PLVLSMixLayoutSheetDelegate
            linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
                  authSpeaker:(BOOL)authSpeaker {
     if (onlineUser.localUser) {
-        NSString *message = authSpeaker ? @"已授予主讲权限" : @"已收回主讲权限";
-        message = onlineUser.isGuestTransferPermission ? @"已移交主讲权限" : message;
+        NSString *message = authSpeaker ? PLVLocalizedString(@"已授予主讲权限") : PLVLocalizedString(@"已收回主讲权限");
+        message = onlineUser.isGuestTransferPermission ? PLVLocalizedString(@"已移交主讲权限") : message;
         [PLVLSUtils showToastWithMessage:message inView:self.view];
         [onlineUser updateUserIsGuestTransferPermission:NO];
         [self.documentAreaView updateDocumentSpeakerAuth:authSpeaker];
@@ -1075,7 +1079,7 @@ PLVLSMixLayoutSheetDelegate
 /// 当前 ’单次重连时长‘ 定时回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     if (reconnectingThisTimeDuration == 20) {
-        [PLVLSUtils showAlertWithMessage:@"网络断开，已停止直播，请更换网络后重试" cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"网络断开，已停止直播，请更换网络后重试") cancelActionTitle:nil cancelActionBlock:nil confirmActionTitle:nil confirmActionBlock:nil];
     }
 }
 
@@ -1085,7 +1089,7 @@ PLVLSMixLayoutSheetDelegate
 }
 
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type {
-    [PLVLSUtils showToastWithMessage:@"网络异常，请恢复网络后重试" inView:[PLVLSUtils sharedUtils].homeVC.view];
+    [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"网络异常，请恢复网络后重试") inView:[PLVLSUtils sharedUtils].homeVC.view];
     PLVMixLayoutType currentType = [PLVRoomData mixLayoutTypeWithStreamerMixLayoutType:type];
     [self.mixLayoutSheet updateMixLayoutType:currentType];
     [self saveSelectedMixLayoutType:currentType];
@@ -1111,7 +1115,7 @@ PLVLSMixLayoutSheetDelegate
     if (nickName.length > 12) {
         nickName = [NSString stringWithFormat:@"%@...",[nickName substringToIndex:12]];
     }
-    NSString * message = [NSString stringWithFormat:@"已挂断%@的连麦",nickName];
+    NSString * message = [NSString stringWithFormat:PLVLocalizedString(@"已挂断%@的连麦"),nickName];
     [PLVLSUtils showToastWithMessage:message inView:self.view];
 }
 
@@ -1124,25 +1128,25 @@ PLVLSMixLayoutSheetDelegate
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserMicOpenChanged:(BOOL)currentMicOpen{
     [self.chatroomAreaView microphoneButtonOpen:currentMicOpen];
     self.showMicTipsTimeInterval = 0;
-    [PLVLSUtils showToastWithMessage:(currentMicOpen ? @"已开启麦克风" : @"已关闭麦克风") inView:self.view];
+    [PLVLSUtils showToastWithMessage:(currentMicOpen ? PLVLocalizedString(@"已开启麦克风") : PLVLocalizedString(@"已关闭麦克风")) inView:self.view];
 }
 
 /// 本地用户的 ’摄像头是否应该显示值‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow{
     [self.chatroomAreaView cameraButtonOpen:currentCameraShouldShow];
-    [PLVLSUtils showToastWithMessage:(currentCameraShouldShow ? @"已开启摄像头" : @"已关闭摄像头") inView:self.view];
+    [PLVLSUtils showToastWithMessage:(currentCameraShouldShow ? PLVLocalizedString(@"已开启摄像头") : PLVLocalizedString(@"已关闭摄像头")) inView:self.view];
 }
 
 /// 本地用户的 ’摄像头前后置状态值‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserCameraFrontChanged:(BOOL)currentCameraFront{
     if (self.isOnlyAudio) return;
     [self.chatroomAreaView cameraSwitchButtonFront:currentCameraFront];
-    [PLVLSUtils showToastWithMessage:(currentCameraFront ? @"摄像头已前置" : @"摄像头已后置") inView:self.view];
+    [PLVLSUtils showToastWithMessage:(currentCameraFront ? PLVLocalizedString(@"摄像头已前置") : PLVLocalizedString(@"摄像头已后置")) inView:self.view];
 }
 
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter waitLinkMicUser:(nonnull PLVLinkMicWaitUser *)waitUser joinAnswer:(BOOL)isAccept {
     if (waitUser && !isAccept) {
-        NSString *message = [NSString stringWithFormat:@"%@没有接受你的邀请", waitUser.nickname];
+        NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"%@没有接受你的邀请"), waitUser.nickname];
         [PLVLSUtils showToastWithMessage:message inView:self.view];
     }
 }
@@ -1151,27 +1155,27 @@ PLVLSMixLayoutSheetDelegate
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter didOccurError:(NSError *)error fullErrorCode:(NSString *)fullErrorCodeString {
     NSString * message = @"";
     if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed) {
-        message = @"上课错误";
+        message = PLVLocalizedString(@"上课错误");
     }else if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedNetError){
-        message = @"推流请求错误，请退出重新登录";
+        message = PLVLocalizedString(@"推流请求错误，请退出重新登录");
     }else if (error.code == PLVStreamerPresenterErrorCode_UpdateRTCTokenFailedNetError){
-        message = @"更新Token错误";
+        message = PLVLocalizedString(@"更新Token错误");
     }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerError){
-        message = @"RTC内部错误";
+        message = PLVLocalizedString(@"RTC内部错误");
     }else if (error.code == PLVStreamerPresenterErrorCode_RTCManagerErrorStartAudioFailed){
-        message = @"RTC内部错误，启动音频模块失败，请退出重新登录";
+        message = PLVLocalizedString(@"RTC内部错误，启动音频模块失败，请退出重新登录");
     }else if (error.code == PLVStreamerPresenterErrorCode_EndClassFailedNetFailed){
-        message = @"下课错误，请直接退出上课页";
+        message = PLVLocalizedString(@"下课错误，请直接退出上课页");
     }else if (error.code >= PLVStreamerPresenterErrorCode_AnswerInvitationFailedStatusIllegal && error.code <= PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited){
-        message = (error.code == PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited) ? @"上麦失败，当前上麦人数已达最大人数" : @"上麦失败";
+        message = (error.code == PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited) ? PLVLocalizedString(@"上麦失败，当前上麦人数已达最大人数") : PLVLocalizedString(@"上麦失败");
     }else if (error.code == PLVStreamerPresenterErrorCode_UnknownError){
-        message = @"未知错误";
+        message = PLVLocalizedString(@"未知错误");
     }else if (error.code == PLVStreamerPresenterErrorCode_NoError){
-        message = @"错误";
+        message = PLVLocalizedString(@"错误");
     }
     message = [message stringByAppendingFormat:@" code:%@",fullErrorCodeString];
     if (error.code == PLVStreamerPresenterErrorCode_StartClassFailedEmitFailed) {
-        [PLVLSUtils showAlertWithMessage:[NSString stringWithFormat:@"检测到%@，是否结束直播", message] cancelActionTitle:@"继续直播" cancelActionBlock:nil confirmActionTitle:@"结束直播" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:[NSString stringWithFormat:PLVLocalizedString(@"检测到%@，是否结束直播"), message] cancelActionTitle:PLVLocalizedString(@"继续直播") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"结束直播") confirmActionBlock:^{
             [self logout];
         }];
     } else {
@@ -1184,7 +1188,7 @@ PLVLSMixLayoutSheetDelegate
     if (!self.streamerPresenter.currentMicOpen && localVoiceValue >= 0.4) {
         NSTimeInterval currentTimeInterval = [[NSDate date] timeIntervalSince1970];
         if (currentTimeInterval - self.showMicTipsTimeInterval > 180) {
-            [PLVLSUtils showToastWithMessage:@"您已静音，请开启麦克风后发言" inView:self.view];
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"您已静音，请开启麦克风后发言") inView:self.view];
             self.showMicTipsTimeInterval = [[NSDate date] timeIntervalSince1970];
         }
     }
@@ -1196,7 +1200,7 @@ PLVLSMixLayoutSheetDelegate
         PLVBeautyManager *beautyManager = [self.streamerPresenter shareBeautyManager];
         [[PLVBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
     } else {
-        [PLVLSUtils showToastInHomeVCWithMessage:[NSString stringWithFormat:@"美颜初始化失败 %d 请重进直播间", result]];
+        [PLVLSUtils showToastInHomeVCWithMessage:[NSString stringWithFormat:PLVLocalizedString(@"美颜初始化失败 %d 请重进直播间"), result]];
     }
 }
 
@@ -1259,7 +1263,7 @@ PLVLSMixLayoutSheetDelegate
     if (self.streamerPresenter.currentCameraOpen) {
         [self showBeautySheet:YES];
     } else {
-        [PLVLSUtils showToastWithMessage:@"请开启摄像头后使用" inView:self.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请开启摄像头后使用") inView:self.view];
     }
 }
 
@@ -1272,7 +1276,7 @@ PLVLSMixLayoutSheetDelegate
 }
 
 - (void)moreInfoSheetDidTapLogoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
-    [PLVLSUtils showAlertWithMessage:@"确认结束直播吗？" cancelActionTitle:@"按错了" cancelActionBlock:nil  confirmActionTitle:@"确定" confirmActionBlock:^{
+    [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"确认结束直播吗？") cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionBlock:nil  confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
         [self logout];
         [self dismissViewControllerAnimated:YES completion:nil];
     }];
@@ -1289,11 +1293,11 @@ PLVLSMixLayoutSheetDelegate
 #pragma mark PLVShareLiveSheetDelegate
 
 - (void)shareLiveSheetCopyLinkFinished:(PLVShareLiveSheet *)shareLiveSheet {
-    [PLVLSUtils showToastWithMessage:@"复制成功" inView:self.view];
+    [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view];
 }
 
 - (void)shareLiveSheet:(PLVShareLiveSheet *)shareLiveSheet savePictureSuccess:(BOOL)success {
-    NSString *message = success ? @"图片已保存到相册" : @"保存失败";
+    NSString *message = success ? PLVLocalizedString(@"图片已保存到相册") : PLVLocalizedString(@"保存失败");
     [PLVLSUtils showToastWithMessage:message inView:self.view];
 }
 

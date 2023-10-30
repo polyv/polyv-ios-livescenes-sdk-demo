@@ -10,6 +10,7 @@
 
 /// 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVLSDocumentListView.h"
@@ -74,9 +75,9 @@ UIDocumentPickerDelegate
         self.firstClick = YES;
         
         if ([[PLVDocumentUploadClient sharedClient].uploadingArray count] > 0) {
-            [PLVLSUtils showAlertWithMessage:@"存在上传中断的任务，是否恢复？" cancelActionTitle:@"恢复上传" cancelActionBlock:^{
+            [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"存在上传中断的任务，是否恢复？") cancelActionTitle:PLVLocalizedString(@"恢复上传") cancelActionBlock:^{
                 [[PLVDocumentUploadClient sharedClient] continueAllUpload];
-            } confirmActionTitle:@"删除" confirmActionBlock:^{
+            } confirmActionTitle:PLVLocalizedString(@"删除") confirmActionBlock:^{
                 [[PLVDocumentUploadClient sharedClient] clearAllUpload];
             }];
         }
@@ -279,7 +280,7 @@ UIDocumentPickerDelegate
 
 - (void)documentListViewUploadDocument:(PLVLSDocumentListView *)documentListView {
     if ([[PLVDocumentUploadClient sharedClient].uploadingArray count] >= 3) {
-        [PLVLSUtils showToastInHomeVCWithMessage:@"最多同时上传3个文件，请稍后重试"];
+        [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"最多同时上传3个文件，请稍后重试")];
     } else {
         UIDocumentPickerViewController *documentPicker = [[UIDocumentPickerViewController alloc] initWithDocumentTypes:[self documentTypes] inMode:UIDocumentPickerModeImport];
         documentPicker.delegate = self;
@@ -330,20 +331,20 @@ UIDocumentPickerDelegate
 
 - (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentAtURL:(NSURL *)url {
     if (![self judgeFileType:url]) {
-        [PLVLSUtils showAlertWithMessage:@"不支持的文档格式" cancelActionTitle:@"确定" cancelActionBlock:nil];
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"不支持的文档格式") cancelActionTitle:PLVLocalizedString(@"确定") cancelActionBlock:nil];
         return;
     }
     
     if (![self judgeFileByte:url]) {
-        [PLVLSUtils showAlertWithMessage:@"上传文档不得超过500M" cancelActionTitle:@"确定" cancelActionBlock:nil];
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"上传文档不得超过500M") cancelActionTitle:PLVLocalizedString(@"确定") cancelActionBlock:nil];
         return;
     }
     
     if ([self fileIsPPT:url] && [PLVDocumentUploadClient sharedClient].pptAnimationEnabled) {
-        NSString *message = @"请选择PPT转码方式\n快速转码：不含PPT动效，速度较快\n动画转码：含PPT动效，速度较慢，仅支持Microsoft Ofiice 保存的PPT";
-        [PLVLSUtils showAlertWithMessage:message cancelActionTitle:@"快速转码" cancelActionBlock:^{
+        NSString *message = PLVLocalizedString(@"请选择PPT转码方式\n快速转码：不含PPT动效，速度较快\n动画转码：含PPT动效，速度较慢，仅支持Microsoft Ofiice 保存的PPT");
+        [PLVLSUtils showAlertWithMessage:message cancelActionTitle:PLVLocalizedString(@"快速转码") cancelActionBlock:^{
             [[PLVDocumentUploadClient sharedClient] uploadDocumentWithFileURL:url convertType:@"common"];
-        } confirmActionTitle:@"动画转码" confirmActionBlock:^{
+        } confirmActionTitle:PLVLocalizedString(@"动画转码") confirmActionBlock:^{
             [[PLVDocumentUploadClient sharedClient] uploadDocumentWithFileURL:url convertType:@"animate"];
         }];
     } else {
@@ -357,13 +358,13 @@ UIDocumentPickerDelegate
     if (PLVFErrorModulCode(error.code) == PLVFErrorCodeModulUpload) {
         if (PLVFErrorDetailCode(error.code) == PLVFUploadErrorCodeDocumentCopyError) {
             // 拷贝文档到沙盒失败
-            [PLVLSUtils showToastInHomeVCWithMessage:@"读取文档失败"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"读取文档失败")];
         } else if (PLVFErrorDetailCode(error.code) == PLVFUploadErrorCodeDocumentUploadingExist) {
             // 文档上传任务已存在
-            [PLVLSUtils showToastInHomeVCWithMessage:@"已存在相同上传任务"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"已存在相同上传任务")];
         } else if (PLVFErrorDetailCode(error.code) == PLVFUploadErrorCodeDocumentUploadedExist) {
             // 文档已存在服务端
-            [PLVLSUtils showToastInHomeVCWithMessage:@"文档已存在服务端"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"文档已存在服务端")];
         } else if (PLVFErrorDetailCode(error.code) == PLVFUploadErrorCodeDocumentOSSTaskError) {
             // 阿里 OSS 上传失败
         } else if (PLVFErrorDetailCode(error.code) == PLVFUploadErrorCodeDocumentOSSTokenRefreshError) {
@@ -372,7 +373,7 @@ UIDocumentPickerDelegate
                    PLVFErrorDetailCode(error.code) == PLVFUploadErrorCodeGetToken_CodeError ||
                    PLVFErrorDetailCode(error.code) == PLVFUploadErrorCodeGetToken_DataError) {
             // 获取文档上传 token 失败
-            [PLVLSUtils showToastInHomeVCWithMessage:@"上传文档失败"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"上传文档失败")];
         }
     }
 }

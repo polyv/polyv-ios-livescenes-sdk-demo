@@ -17,6 +17,7 @@
 #import "PLVECUtils.h"
 #import "PLVToast.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import <MJRefresh/MJRefresh.h>
 
 static NSString *const PLVECKEYPATH_CONTENTSIZE = @"contentSize";
@@ -165,7 +166,7 @@ PLVECChatroomPlaybackViewModelDelegate
                 if (content) {
                     model.overLenContent = content;
                     [UIPasteboard generalPasteboard].string = content;
-                    [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+                    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
                 }
             }];
         }
@@ -173,7 +174,7 @@ PLVECChatroomPlaybackViewModelDelegate
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
         }
     }
 }
@@ -593,7 +594,7 @@ PLVECChatroomPlaybackViewModelDelegate
 
 - (void)chatroomManager_loadHistoryFailure {
     [self.tableView.mj_header endRefreshing];
-    [PLVECUtils showHUDWithTitle:@"聊天记录获取失败" detail:@"" view:self];
+    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"聊天记录获取失败") detail:@"" view:self];
 }
 
 #pragma mark - PLVECChatroomPlaybackViewModelDelegate

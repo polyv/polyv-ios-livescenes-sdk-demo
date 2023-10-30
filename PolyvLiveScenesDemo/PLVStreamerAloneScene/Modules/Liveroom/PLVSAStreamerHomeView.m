@@ -11,6 +11,7 @@
 // 工具类
 #import "PLVSAUtils.h"
 #import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVSAShadowMaskView.h"
@@ -193,7 +194,7 @@ PLVSABadNetworkSwitchSheetDelegate
     CGFloat chatroomHeight = selfSize.height * chatroomHeightScale;
     self.chatroomAreaView.frame = CGRectMake(left, CGRectGetMinY(self.toolbarAreaView.frame) - chatroomHeight, chatroomWidth, chatroomHeight);
     self.slideRightTipsView.frame = self.bounds;
-    self.layoutSwitchGuideView.frame = CGRectMake(selfSize.width - toolbarViewMarginRight - 36 * 4 - 12 * 3 - 50 - right, CGRectGetMinY(self.toolbarAreaView.frame) - 62, 107, 62);
+    self.layoutSwitchGuideView.frame = CGRectMake(selfSize.width - toolbarViewMarginRight - self.layoutSwitchGuideView.viewSize.width - right - 122, CGRectGetMinY(self.toolbarAreaView.frame) - self.layoutSwitchGuideView.viewSize.height, self.layoutSwitchGuideView.viewSize.width,  self.layoutSwitchGuideView.viewSize.height);
     
     UIView *teacherNameButton = (UIView *)self.statusbarAreaView.teacherNameButton;
     CGRect teacherNameRect = [self convertRect:teacherNameButton.frame toView:self.homePageView];
@@ -204,8 +205,8 @@ PLVSABadNetworkSwitchSheetDelegate
     CGFloat originY = 0;
     
     if (_badNetworkTipsView && _badNetworkTipsView.showing) {
-        CGFloat width = kPLVSABadNetworkTipsViewWidth;
-        CGFloat height = kPLVSABadNetworkTipsViewHeight;
+        CGFloat width = self.badNetworkTipsView.viewSize.width;
+        CGFloat height = self.badNetworkTipsView.viewSize.height;
         CGFloat center = self.homePageView.bounds.size.width / 2.0 - width / 2.0;
         if (isLandscape) {
             originX = MAX(behindTeacherName, center);
@@ -217,7 +218,7 @@ PLVSABadNetworkSwitchSheetDelegate
         
         self.badNetworkTipsView.frame = CGRectMake(originX, originY, width, height);
     } else if (_switchSuccessTipsView && _switchSuccessTipsView.showing) {
-        CGFloat width = kPLVSASwitchSuccessTipsViewWidth;
+        CGFloat width = self.switchSuccessTipsView.tipsViewWidth;
         CGFloat height = kPLVSASwitchSuccessTipsViewHeight;
         CGFloat center = self.homePageView.bounds.size.width / 2.0 - width / 2.0;
         if (isLandscape) {
@@ -508,16 +509,16 @@ PLVSABadNetworkSwitchSheetDelegate
 
 - (void)guestLinMicButtonAction {
     if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_NotLive) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"上课前无法发起连麦"];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"上课前无法发起连麦")];
     } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_HandUp) {
         __weak typeof(self) weakSelf = self;
-        [PLVSAUtils showAlertWithMessage:@"等待接听中，是否取消" cancelActionTitle:@"否" cancelActionBlock:nil confirmActionTitle:@"是" confirmActionBlock:^{
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"等待接听中，是否取消") cancelActionTitle:PLVLocalizedString(@"否") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"是") confirmActionBlock:^{
             [weakSelf.localOnlineUser wantUserRequestJoinLinkMic:NO];
             [weakSelf updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
         }];
     } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_Joined) {
         __weak typeof(self) weakSelf = self;
-        [PLVSAUtils showAlertWithMessage:@"确定结束连麦吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"确定结束连麦吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             [weakSelf.localOnlineUser wantCloseUserLinkMic];
             [weakSelf updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
         }];

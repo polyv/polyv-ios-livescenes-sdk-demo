@@ -9,6 +9,7 @@
 #import "PLVLCLinkMicLandscapeControlBar.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
@@ -137,7 +138,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         [self onOffButtonColorChange:PLVColor_OnOffButton_Green];
         [self mediaControlButtonsShow:NO];
 
-        [self textLabelContentChange:@"申请连麦"];
+        [self textLabelContentChange:PLVLocalizedString(@"申请连麦")];
         
         [self resetButtons];
         [self setupData];
@@ -149,7 +150,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         [self onOffButtonColorChange:PLVColor_OnOffButton_Green];
         [self mediaControlButtonsShow:NO];
         
-        NSString *textLabelString = self.barType == PLVLCLinkMicControlBarType_Audio ? @"申请音频连麦": @"申请视频连麦";
+        NSString *textLabelString = self.barType == PLVLCLinkMicControlBarType_Audio ? PLVLocalizedString(@"申请音频连麦"): PLVLocalizedString(@"申请视频连麦");
         [self textLabelContentChange:textLabelString];
         
         [self resetButtons];
@@ -159,7 +160,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         [self onOffButtonRotate:YES];
         [self onOffButtonColorChange:PLVColor_OnOffButton_Red];
         
-        [self textLabelContentChange:@"请求中..."];
+        [self textLabelContentChange:PLVLocalizedString(@"请求中...")];
         
         [self mediaControlButtonsShow:NO];
     }else if (status == PLVLCLinkMicControlBarStatus_Joined){ // 已连麦，显示相关的控制按钮
@@ -235,7 +236,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         self.showRequestIndex = YES;
         
         NSString *numberString = index >= 50 ? @"50+" : [NSString stringWithFormat:@"%zd", index+1];
-        NSString *text = [NSString stringWithFormat:@"排队%@", numberString];
+        NSString *text = [NSString stringWithFormat:PLVLocalizedString(@"排队%@"), numberString];
         self.detailLabel.text = text;
     } else {
         self.detailLabel.alpha = 0;
@@ -351,7 +352,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 - (UILabel *)textLabel{
     if (!_textLabel) {
         _textLabel = [[UILabel alloc] init];
-        _textLabel.text = @"申请连麦";
+        _textLabel.text = PLVLocalizedString(@"申请连麦");
         _textLabel.textAlignment = NSTextAlignmentCenter;
         _textLabel.textColor = [UIColor whiteColor];
         _textLabel.font = [UIFont systemFontOfSize:12];
@@ -486,9 +487,9 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
         if (isSplitView && self.cameraButtonEnable && self.status == PLVLCLinkMicControlBarStatus_Joined && self.barType == PLVLCLinkMicControlBarType_Video) {
             if (!self.cameraButton.selected) {
                 [self cameraButtonAction:self.cameraButton];
-                [PLVLCUtils showHUDWithTitle:nil detail:@"分屏模式下无法使用摄像头，已自动关闭摄像头" view:self.superview afterDelay:3.0];
+                [PLVLCUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"分屏模式下无法使用摄像头，已自动关闭摄像头") view:self.superview afterDelay:3.0];
             } else {
-                [PLVLCUtils showHUDWithTitle:nil detail:@"分屏模式下无法使用摄像头，已自动禁用摄像头" view:self.superview afterDelay:3.0];
+                [PLVLCUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"分屏模式下无法使用摄像头，已自动禁用摄像头") view:self.superview afterDelay:3.0];
             }
             self.cameraButtonEnable = NO;
             self.cameraButton.userInteractionEnabled = NO;
@@ -522,7 +523,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 
 - (void)onOffButtonAction:(UIButton *)button{
     if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-        [PLVLCUtils showHUDWithTitle:@"小窗播放中，不支持连麦" detail:@"" view:self.superview];
+        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"小窗播放中，不支持连麦") detail:@"" view:self.superview];
         return;
     }
     // 防止短时间内重复点击，kLinkMicBtnTouchInterval间隔内的点击会直接忽略

@@ -9,6 +9,7 @@
 #import "PLVLSResolutionSheet.h"
 #import "PLVLSSettingSheetCell.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
@@ -88,7 +89,7 @@ UITableViewDelegate
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _sheetTitleLabel.font = [UIFont boldSystemFontOfSize:16];
-        _sheetTitleLabel.text = @"清晰度";
+        _sheetTitleLabel.text = PLVLocalizedString(@"清晰度");
     }
     return _sheetTitleLabel;
 }
@@ -206,16 +207,16 @@ UITableViewDelegate
     NSString *string = nil;
     switch (resolutionType) {
         case PLVResolutionType1080P:
-            string = @"超高清";
+            string = PLVLocalizedString(@"超高清");
             break;
         case PLVResolutionType720P:
-            string = @"超清";
+            string = PLVLocalizedString(@"超清");
             break;
         case PLVResolutionType360P:
-            string = @"高清";
+            string = PLVLocalizedString(@"高清");
             break;
         case PLVResolutionType180P:
-            string = @"标清";
+            string = PLVLocalizedString(@"标清");
             break;
     }
     return string;

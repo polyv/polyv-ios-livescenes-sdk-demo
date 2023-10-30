@@ -9,6 +9,7 @@
 #import "PLVLSSendMessageToolView.h"
 #import "PLVLSSendMessageTextView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
@@ -91,7 +92,7 @@
         _sendButton.layer.masksToBounds = YES;
         _sendButton.titleLabel.font = [UIFont systemFontOfSize:12];
         [_sendButton setTitleColor:[UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1] forState:UIControlStateNormal];
-        [_sendButton setTitle:@"发送" forState:UIControlStateNormal];
+        [_sendButton setTitle:PLVLocalizedString(@"发送") forState:UIControlStateNormal];
         UIImage *enableImage = [PLVColorUtil createImageWithColor:[UIColor colorWithRed:0x43/255.0 green:0x99/255.0 blue:0xff/255.0 alpha:1]];
         UIImage *disableImage = [PLVColorUtil createImageWithColor:[UIColor colorWithRed:0x73/255.0 green:0xb3/255.0 blue:0xff/255.0 alpha:1]];
         [_sendButton setBackgroundImage:enableImage forState:UIControlStateNormal];

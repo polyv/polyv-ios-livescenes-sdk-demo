@@ -13,8 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVHCChooseCompanyViewController : UIViewController
 
 /// 初始化方法
-/// @param mobile 上一个登陆页输入的手机号
-/// @param password 上一个登陆页输入的密码
+/// @param mobile 上一个登录页输入的手机号
+/// @param password 上一个登录页输入的密码
 /// @param companyArray 公司数组
 - (instancetype)initWithMobile:(NSString *)mobile
                       password:(NSString *)password

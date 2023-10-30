@@ -9,6 +9,7 @@
 #import "PLVLCLinkMicWindowsView.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCLinkMicWindowCell.h"
 #import "PLVLinkMicOnlineUser+LC.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -504,7 +505,7 @@ UICollectionViewDelegate
 - (UILabel *)guideTextLabel{
     if (!_guideTextLabel) {
         _guideTextLabel = [[UILabel alloc]init];
-        _guideTextLabel.text = @"向左滑动试试";
+        _guideTextLabel.text = PLVLocalizedString(@"向左滑动试试");
         _guideTextLabel.font = [UIFont systemFontOfSize:12];
         _guideTextLabel.textColor = [UIColor colorWithRed:255/255.0 green:255/255.0 blue:255/255.0 alpha:1.0];
         _guideTextLabel.textAlignment = NSTextAlignmentCenter;

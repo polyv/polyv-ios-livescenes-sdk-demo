@@ -10,6 +10,7 @@
 
 // utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVSAStreamAlertController.h"
@@ -219,8 +220,8 @@
         _cameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _cameraButton.titleLabel.font = [UIFont systemFontOfSize:14];
         _cameraButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_cameraButton setTitle:@"摄像头" forState:UIControlStateNormal];
-        [_cameraButton setTitle:@"摄像头" forState:UIControlStateSelected];
+        [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateNormal];
+        [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateSelected];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_close"] forState:UIControlStateNormal];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_open"] forState:UIControlStateSelected];
         [_cameraButton addTarget:self action:@selector(cameraButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -233,8 +234,8 @@
         _micphoneButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _micphoneButton.titleLabel.font = [UIFont systemFontOfSize:14];
         _micphoneButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_micphoneButton setTitle:@"麦克风" forState:UIControlStateNormal];
-        [_micphoneButton setTitle:@"麦克风" forState:UIControlStateSelected];
+        [_micphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateNormal];
+        [_micphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateSelected];
         [_micphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
         [_micphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
         [_micphoneButton addTarget:self action:@selector(micphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -249,9 +250,9 @@
         _authSpeakerButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         _authSpeakerButton.titleLabel.numberOfLines = 0;
         _authSpeakerButton.titleLabel.textAlignment = NSTextAlignmentCenter;
-        NSString *buttonTitle = self.viewerType == PLVRoomUserTypeTeacher ? @"授予主讲权限" : @"移交主讲权限";
+        NSString *buttonTitle = self.viewerType == PLVRoomUserTypeTeacher ? PLVLocalizedString(@"授予主讲权限") : PLVLocalizedString(@"移交主讲权限");
         [_authSpeakerButton setTitle:buttonTitle forState:UIControlStateNormal];
-        [_authSpeakerButton setTitle:@"移除主讲权限" forState:UIControlStateSelected];
+        [_authSpeakerButton setTitle:PLVLocalizedString(@"移除主讲权限") forState:UIControlStateSelected];
         [_authSpeakerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_authspeaker"] forState:UIControlStateNormal];
         [_authSpeakerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_authspeaker"] forState:UIControlStateSelected];
         [_authSpeakerButton addTarget:self action:@selector(authSpeakerButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -264,7 +265,7 @@
         _fullScreenButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _fullScreenButton.titleLabel.font = [UIFont systemFontOfSize:14];
         _fullScreenButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_fullScreenButton setTitle:@"全屏" forState:UIControlStateNormal];
+        [_fullScreenButton setTitle:PLVLocalizedString(@"全屏") forState:UIControlStateNormal];
         [_fullScreenButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_fullscreen_open"] forState:UIControlStateNormal];
         [_fullScreenButton addTarget:self action:@selector(fullScreenButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -276,7 +277,7 @@
         _stopLinkMicButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _stopLinkMicButton.titleLabel.font = [UIFont systemFontOfSize:14];
         _stopLinkMicButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_stopLinkMicButton setTitle:@"下麦" forState:UIControlStateNormal];
+        [_stopLinkMicButton setTitle:PLVLocalizedString(@"下麦") forState:UIControlStateNormal];
         [_stopLinkMicButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_linkmic_close"] forState:UIControlStateNormal];
         [_stopLinkMicButton addTarget:self action:@selector(stopLinkMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -307,9 +308,9 @@
         
         [but setTitleEdgeInsets:
                UIEdgeInsetsMake(imageSizeHeight + padding * 2,
-                                -but.imageView.frame.size.width,
+                                - (but.imageView.frame.size.width + 5),
                                 but.titleLabel.intrinsicContentSize.height * 2 - titleSize.height,
-                                0)];
+                                - 5)];
     }
 }
 
@@ -319,7 +320,7 @@
 
     CGFloat lineButtonCount = isLandscape ? 3 : (buttonArray.count == 1 ? (isPad ? 6 : 4) : MIN(buttonArray.count, (isPad ? 6 : 4)));
     CGFloat width = self.contentView.frame.size.width;
-    CGFloat buttonWidth = 60;
+    CGFloat buttonWidth = 70;
     CGFloat buttonHeight = 75;
     CGFloat buttonPadding = (width - buttonWidth * lineButtonCount) / (lineButtonCount + 1);
     CGFloat buttonTop = self.bounds.size.height > 667 ? 32 : 18;
@@ -507,7 +508,7 @@
 
 - (void)stopLinkMicButtonAction {
     __weak typeof(self) weakSelf = self;
-    [PLVSAUtils showAlertWithMessage:@"确定下麦吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+    [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"确定下麦吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
         [weakSelf.user wantCloseUserLinkMic];
         [weakSelf dismiss];
     }];

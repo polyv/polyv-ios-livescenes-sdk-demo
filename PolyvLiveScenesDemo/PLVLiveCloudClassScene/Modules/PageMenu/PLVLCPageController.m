@@ -12,8 +12,8 @@
 #import "PLVLCKeyboardMoreView.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCChatViewController.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
-
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
@@ -167,7 +167,7 @@ UIPageViewControllerDelegate
         _placeholderLabel = [[UILabel alloc] init];
         _placeholderLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
         _placeholderLabel.textColor = PLV_UIColorFromRGBA(@"#FFFFFF",0.4);
-        _placeholderLabel.text = @"暂无菜单";
+        _placeholderLabel.text = PLVLocalizedString(@"暂无菜单");
         _placeholderLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _placeholderLabel;
@@ -404,11 +404,13 @@ willTransitionToViewControllers:(NSArray *)pendingViewControllers {
 -(void)selecteAtIndex:(NSUInteger)index {
     self.selectedIndex = index;
     
-    NSIndexPath *selectedIndexPath = [NSIndexPath indexPathForItem:self.selectedIndex inSection:0];
-    [self.titleCollectionView selectItemAtIndexPath:selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionCenteredHorizontally];
+    if (self.titles && self.titles.count > index) {
+        NSIndexPath *selectedIndexPath = [NSIndexPath indexPathForItem:self.selectedIndex inSection:0];
+        [self.titleCollectionView selectItemAtIndexPath:selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionCenteredHorizontally];
 
-    PLVLCPageViewCell *cell = (PLVLCPageViewCell *)[self.titleCollectionView cellForItemAtIndexPath:selectedIndexPath];
-    [cell setClicked:YES];
+        PLVLCPageViewCell *cell = (PLVLCPageViewCell *)[self.titleCollectionView cellForItemAtIndexPath:selectedIndexPath];
+        [cell setClicked:YES];
+    }
 }
 
 -(void)deselectAtIndex:(NSUInteger)index {

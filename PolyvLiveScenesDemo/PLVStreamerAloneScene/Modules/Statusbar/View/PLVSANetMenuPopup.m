@@ -9,6 +9,7 @@
 #import "PLVSANetMenuPopup.h"
 //utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // SDK
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -87,7 +88,7 @@
         _delayLabel = [[UILabel alloc] init];
         _delayLabel.font = [UIFont systemFontOfSize:12];
         _delayLabel.textColor = [UIColor whiteColor];
-        _delayLabel.text = @"网络延迟:10ms";
+        _delayLabel.text = PLVLocalizedString(@"网络延迟:10ms");
     }
     return _delayLabel;
 }
@@ -97,7 +98,7 @@
         _lossLabel = [[UILabel alloc] init];
         _lossLabel.font = [UIFont systemFontOfSize:12];
         _lossLabel.textColor = [UIColor whiteColor];
-        _lossLabel.text = @"丢包率:2%";
+        _lossLabel.text = PLVLocalizedString(@"丢包率:2%");
     }
     return _lossLabel;
 }

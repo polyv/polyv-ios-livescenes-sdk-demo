@@ -10,6 +10,7 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVPhotoBrowser.h"
@@ -192,7 +193,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -209,7 +210,7 @@
     if ([PLVFdUtil checkStringUseable:source] &&
         [source isEqualToString:@"extend"]) {
         
-        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_tag"];
+        UIImage *image = [PLVLSUtils imageForChatroomResource:PLVLocalizedString(@"plvls_chatroom_remind_tag")];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
         CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
@@ -358,7 +359,7 @@
 }
 
 + (NSString *)prohibitWordTip {
-    return @"图片不合法";
+    return PLVLocalizedString(@"图片不合法");
 }
 
 @end

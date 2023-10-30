@@ -13,6 +13,7 @@
 #import "PLVLCDownloadingViewController.h"
 #import "PLVLCDownloadedViewController.h"
 #import "PLVLCDownloadViewModel.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSString *kTitleCellIdentifier = @"kPageTitleCell";
 
@@ -287,7 +288,7 @@ willTransitionToViewControllers:(NSArray *)pendingViewControllers {
 
 - (NSArray *)titles {
     if (!_titles) {
-        _titles = @[@"下载中", @"已下载"];
+        _titles = @[PLVLocalizedString(@"下载中"), PLVLocalizedString(@"已下载")];
     }
     return _titles;
 }

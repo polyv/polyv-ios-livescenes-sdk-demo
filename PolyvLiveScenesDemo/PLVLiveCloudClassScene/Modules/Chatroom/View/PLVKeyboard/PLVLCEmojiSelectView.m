@@ -12,6 +12,7 @@
 #import "PLVLCEmojiPopupView.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -205,7 +206,7 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
         _sendButton.layer.cornerRadius = 5.0;
         _sendButton.layer.masksToBounds = YES;
         _sendButton.enabled = NO;
-        [_sendButton setTitle:@"发送" forState:UIControlStateNormal];
+        [_sendButton setTitle:PLVLocalizedString(@"发送") forState:UIControlStateNormal];
         [_sendButton addTarget:self action:@selector(sendAction:) forControlEvents:UIControlEventTouchUpInside];
         _sendButton.titleLabel.font = [UIFont systemFontOfSize:14.0f];
         UIImage *bgImage = [self createImageWithColor:[PLVColorUtil colorFromHexString:@"#3E3E4E"] imageSize:CGSizeMake(1, 1) cornerRadius:0];
@@ -233,35 +234,55 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
 - (UIImage *)createImageWithColor:(UIColor *)color
                         imageSize:(CGSize)imageSize
                      cornerRadius:(CGFloat)cornerRadius {
-        
-    UIGraphicsBeginImageContext(imageSize);
-    
-    CGContextRef context = UIGraphicsGetCurrentContext();
-    CGContextSetFillColorWithColor(context, [color CGColor]);
-    
+    /// color 生成 image
+    UIImage *theImage = nil;
     CGRect rect = CGRectMake(0.0f, 0.0f, imageSize.width, imageSize.height);
-    CGContextFillRect(context, rect);
-    
-    UIImage *theImage = UIGraphicsGetImageFromCurrentImageContext();
-    
-    UIGraphicsEndImageContext();
-
-    if (cornerRadius == 0) return  theImage;
-    
-    UIGraphicsBeginImageContext(imageSize);
-
-    UIRectCorner corner = UIRectCornerBottomLeft | UIRectCornerBottomRight;
-    UIBezierPath * path = [UIBezierPath bezierPathWithRoundedRect:rect byRoundingCorners:corner cornerRadii:CGSizeMake(cornerRadius, cornerRadius)];
+    if (@available(iOS 17.0, *)) {
+        UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:imageSize];
+        theImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull ref) {
+            CGContextRef context = ref.CGContext;
+            CGContextSetFillColorWithColor(context, [color CGColor]);
+            CGContextFillRect(context, rect);
+        }];
+    } else {
+        UIGraphicsBeginImageContext(imageSize);
         
-    CGContextRef cornerRadiusContext = UIGraphicsGetCurrentContext();
-    CGContextAddPath(cornerRadiusContext, path.CGPath);
-    CGContextClip(cornerRadiusContext);
+        CGContextRef context = UIGraphicsGetCurrentContext();
+        CGContextSetFillColorWithColor(context, [color CGColor]);
+        CGContextFillRect(context, rect);
+        theImage = UIGraphicsGetImageFromCurrentImageContext();
+        
+        UIGraphicsEndImageContext();
+    }
     
-    [theImage drawInRect:rect];
+    if (cornerRadius == 0) return theImage;
+    
+    /// image 添加 圆角
+    UIImage *cornerRadiusImage = nil;
+    if (@available(iOS 17.0, *)) {
+        UIGraphicsImageRenderer *renderer = [[UIGraphicsImageRenderer alloc] initWithSize:imageSize];
+        cornerRadiusImage = [renderer imageWithActions:^(UIGraphicsImageRendererContext * _Nonnull ref) {
+            UIRectCorner corner = UIRectCornerBottomLeft | UIRectCornerBottomRight;
+            UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:rect byRoundingCorners:corner cornerRadii:CGSizeMake(cornerRadius, cornerRadius)];
+            CGContextRef cornerRadiusContext = ref.CGContext;
+            CGContextAddPath(cornerRadiusContext, path.CGPath);
+            CGContextClip(cornerRadiusContext);
+            [theImage drawInRect:rect];
+        }];
+    } else {
+        UIGraphicsBeginImageContext(imageSize);
 
-    UIImage *cornerRadiusImage = UIGraphicsGetImageFromCurrentImageContext();
+        UIRectCorner corner = UIRectCornerBottomLeft | UIRectCornerBottomRight;
+        UIBezierPath *path = [UIBezierPath bezierPathWithRoundedRect:rect byRoundingCorners:corner cornerRadii:CGSizeMake(cornerRadius, cornerRadius)];
+        CGContextRef cornerRadiusContext = UIGraphicsGetCurrentContext();
+        CGContextAddPath(cornerRadiusContext, path.CGPath);
+        CGContextClip(cornerRadiusContext);
+        
+        [theImage drawInRect:rect];
+        cornerRadiusImage = UIGraphicsGetImageFromCurrentImageContext();
 
-    UIGraphicsEndImageContext();
+        UIGraphicsEndImageContext();
+    }
     
     return cornerRadiusImage;
 }
@@ -514,8 +535,8 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
 }
 - (void)layoutSubviews{
     [super layoutSubviews];
-    self.imageView.center = CGPointMake(self.contentView.bounds.size.width/2, self.imageView.bounds.size.height/2 + 10);
-    self.titleLabel.frame = CGRectMake(0, self.imageView.frame.origin.y + self.imageView.bounds.size.height + 4, CGRectGetWidth(self.contentView.bounds), 20);
+    self.imageView.center = CGPointMake(self.contentView.bounds.size.width/2, self.imageView.bounds.size.height/2 + 8);
+    self.titleLabel.frame = CGRectMake(0, self.imageView.frame.origin.y + self.imageView.bounds.size.height, CGRectGetWidth(self.contentView.bounds), 32);
 }
 
 #pragma mark - Getter & Setter
@@ -541,6 +562,7 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
         titleLabel.textColor = [UIColor colorWithRed:173/255.0 green:173/255.0 blue:192/255.0 alpha:1.0];
         titleLabel.font = [UIFont systemFontOfSize:13];
         titleLabel.textAlignment = NSTextAlignmentCenter;
+        titleLabel.numberOfLines = 0;
         _titleLabel = titleLabel;
     }
     return _titleLabel;
@@ -548,7 +570,7 @@ static CGFloat kLCEmojiToolHeight = 40; //切换表情工具栏高度
 - (void)setImageEmotion:(PLVImageEmotion *)imageEmotion {
     _imageEmotion = imageEmotion;
     [PLVLCUtils setImageView:self.imageView url:[NSURL URLWithString:imageEmotion.url] placeholderImage:nil options:SDWebImageRetryFailed];
-    self.titleLabel.text = imageEmotion.title;
+    self.titleLabel.text = PLVLocalizedString(imageEmotion.title);
 }
 
 #pragma mark - Gesture

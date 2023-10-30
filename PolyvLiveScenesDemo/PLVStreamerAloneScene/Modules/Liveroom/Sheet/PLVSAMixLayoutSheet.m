@@ -8,6 +8,7 @@
 
 #import "PLVSAMixLayoutSheet.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVSAMixLayoutSheet()
 
@@ -126,7 +127,7 @@
         _titleLable = [[UILabel alloc] init];
         _titleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];
         _titleLable.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _titleLable.text = @"混流布局";
+        _titleLable.text = PLVLocalizedString(@"混流布局");
     }
     return _titleLable;
 }
@@ -173,14 +174,14 @@
         sender.selected = YES;
         self.gradientLayer.frame = sender.bounds;
         [sender.layer insertSublayer:self.gradientLayer atIndex:0];
-        [PLVSAUtils showToastWithMessage:[NSString stringWithFormat:@"已切换为%@", sender.titleLabel.text] inView:[PLVSAUtils sharedUtils].homeVC.view];
+        [PLVSAUtils showToastWithMessage:[NSString stringWithFormat:PLVLocalizedString(@"已切换为%@"), sender.titleLabel.text] inView:[PLVSAUtils sharedUtils].homeVC.view];
         [self dismiss];
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvsaMixLayoutSheet:mixLayoutButtonClickWithMixLayoutType:)]) {
             PLVMixLayoutType type = [self.mixLayoutTypeArray[sender.tag] integerValue];
             [self.delegate plvsaMixLayoutSheet:self mixLayoutButtonClickWithMixLayoutType:type];
         }
     } else {
-        [PLVSAUtils showToastWithMessage:@"网络异常，请恢复网络后重试" inView:[PLVSAUtils sharedUtils].homeVC.view];
+        [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"网络异常，请恢复网络后重试") inView:[PLVSAUtils sharedUtils].homeVC.view];
         [self dismiss];
     }
 }

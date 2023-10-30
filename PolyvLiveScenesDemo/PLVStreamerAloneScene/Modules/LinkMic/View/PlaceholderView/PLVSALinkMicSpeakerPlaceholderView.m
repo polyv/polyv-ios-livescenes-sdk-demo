@@ -9,6 +9,7 @@
 #import "PLVSALinkMicSpeakerPlaceholderView.h"
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // 框架
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -48,7 +49,7 @@
     self.placeholderView.frame = CGRectMake(0, 0, placeholderViewWidth, placeholderViewWidth);
     self.placeholderView.center = CGPointMake(CGRectGetMidX(self.bounds), CGRectGetMidY(self.bounds));
     self.imageView.frame = CGRectMake(0, 0, CGRectGetWidth(self.placeholderView.frame), imageViewHeight);
-    self.titleLabel.frame = CGRectMake(0, CGRectGetMaxY(self.imageView.frame), CGRectGetWidth(self.placeholderView.frame), 20);
+    self.titleLabel.frame = CGRectMake(- 25, CGRectGetMaxY(self.imageView.frame), CGRectGetWidth(self.placeholderView.frame) + 50, 20);
 }
 
 #pragma mark - [ Private Method ]
@@ -81,7 +82,7 @@
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
-        _titleLabel.text = @"当前暂无直播";
+        _titleLabel.text = PLVLocalizedString(@"当前暂无直播");
         _titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _titleLabel.textAlignment = NSTextAlignmentCenter;
     }

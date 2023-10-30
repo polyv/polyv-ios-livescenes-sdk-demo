@@ -7,6 +7,7 @@
 //
 
 #import "PLVECSwitchView.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECSwitchView ()
 
@@ -21,7 +22,7 @@
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.titleLable = [[UILabel alloc] initWithFrame:CGRectMake(15, 20, 80, 18)];
+        self.titleLable = [[UILabel alloc] initWithFrame:CGRectMake(15, 20, 100, 18)];
         self.titleLable.textColor = UIColor.whiteColor;
         self.titleLable.font = [UIFont systemFontOfSize:14];
         [self addSubview:self.titleLable];
@@ -55,7 +56,7 @@
         itemBtn.layer.cornerRadius = 13.0;
         itemBtn.layer.masksToBounds = YES;
         itemBtn.tag = 100 + i;
-        [itemBtn setTitle:items[i] forState:UIControlStateNormal];
+        [itemBtn setTitle:PLVLocalizedString(items[i]) forState:UIControlStateNormal];
         itemBtn.titleLabel.font = [UIFont systemFontOfSize:14.0];
         [itemBtn addTarget:self action:@selector(itemButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:itemBtn];
@@ -96,7 +97,7 @@
         }
     }
     if ([self.delegate respondsToSelector:@selector(playerSwitchView:didSelectedIndex:selectedItem:)]) {
-        [self.delegate playerSwitchView:self didSelectedIndex:self.selectedIndex selectedItem:button.titleLabel.text];
+        [self.delegate playerSwitchView:self didSelectedIndex:self.selectedIndex selectedItem:self.items[selectedIndex]];
     }
 }
 

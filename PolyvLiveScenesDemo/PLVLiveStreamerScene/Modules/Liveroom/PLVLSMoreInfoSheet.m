@@ -9,6 +9,7 @@
 #import "PLVLSMoreInfoSheet.h"
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVRoomDataManager.h"
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -137,7 +138,7 @@
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _sheetTitleLabel.font = [UIFont boldSystemFontOfSize:16];
-        _sheetTitleLabel.text = @"更多";
+        _sheetTitleLabel.text = PLVLocalizedString(@"更多");
     }
     return _sheetTitleLabel;
 }
@@ -152,7 +153,7 @@
 
 - (UIButton *)beautyButton {
     if (!_beautyButton) {
-        _beautyButton = [self buttonWithTitle:@"美颜" NormalImageString:@"plvls_beauty_more" selectedImageString:@"plvls_beauty_more"];
+        _beautyButton = [self buttonWithTitle:PLVLocalizedString(@"美颜") NormalImageString:@"plvls_beauty_more" selectedImageString:@"plvls_beauty_more"];
         [_beautyButton addTarget:self action:@selector(beautyButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _beautyButton;
@@ -160,7 +161,7 @@
 
 - (UIButton *)resolutionButton {
     if (!_resolutionButton) {
-        _resolutionButton = [self buttonWithTitle:@"清晰度" NormalImageString:@"plvls_beauty_resolution" selectedImageString:@"plvls_beauty_resolution"];
+        _resolutionButton = [self buttonWithTitle:PLVLocalizedString(@"清晰度") NormalImageString:@"plvls_beauty_resolution" selectedImageString:@"plvls_beauty_resolution"];
         [_resolutionButton addTarget:self action:@selector(resolutionButtonAction) forControlEvents:UIControlEventTouchUpInside];
         }
     return _resolutionButton;
@@ -168,7 +169,7 @@
 
 - (UIButton *)shareButton {
     if (!_shareButton) {
-        _shareButton = [self buttonWithTitle:@"分享" NormalImageString:@"plvls_liveroom_share_btn" selectedImageString:@"plvls_liveroom_share_btn"];
+        _shareButton = [self buttonWithTitle:PLVLocalizedString(@"分享") NormalImageString:@"plvls_liveroom_share_btn" selectedImageString:@"plvls_liveroom_share_btn"];
         [_shareButton addTarget:self action:@selector(shareButtonAction) forControlEvents:UIControlEventTouchUpInside];
         }
     return _shareButton;
@@ -176,7 +177,7 @@
 
 - (UIButton *)badNetworkButton {
     if (!_badNetworkButton) {
-        _badNetworkButton = [self buttonWithTitle:@"弱网处理" NormalImageString:@"plvls_liveroom_badNetwork_switch_btn" selectedImageString:@"plvls_liveroom_badNetwork_switch_btn"];
+        _badNetworkButton = [self buttonWithTitle:PLVLocalizedString(@"弱网处理") NormalImageString:@"plvls_liveroom_badNetwork_switch_btn" selectedImageString:@"plvls_liveroom_badNetwork_switch_btn"];
         [_badNetworkButton addTarget:self action:@selector(badNetworkButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _badNetworkButton;
@@ -184,7 +185,7 @@
 
 - (UIButton *)mixLayoutButton {
     if (!_mixLayoutButton) {
-        _mixLayoutButton = [self buttonWithTitle:@"混流布局" NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
+        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局") NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
         [_mixLayoutButton addTarget:self action:@selector(mixLayoutAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _mixLayoutButton;
@@ -213,7 +214,7 @@
         NSDictionary *attributedDict = @{NSFontAttributeName: [UIFont systemFontOfSize:14],
                                          NSForegroundColorAttributeName:[UIColor colorWithRed:0xff/255.0 green:0x63/255.0 blue:0x63/255.0 alpha:1]
         };
-        NSAttributedString *textAttributedString = [[NSAttributedString alloc] initWithString:@" 退出登录" attributes:attributedDict];
+        NSAttributedString *textAttributedString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@" 退出登录") attributes:attributedDict];
         
         NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
         [muString appendAttributedString:iconAttributedString];
@@ -254,9 +255,9 @@
         
         [button setTitleEdgeInsets:
                UIEdgeInsetsMake(button.frame.size.height/2 + padding,
-                                -button.imageView.frame.size.width,
+                                -button.imageView.frame.size.width - 5,
                                 0,
-                                0)];
+                                - 5)];
         [button setImageEdgeInsets:
                    UIEdgeInsetsMake(
                                0,

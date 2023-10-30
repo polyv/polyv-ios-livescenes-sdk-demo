@@ -11,6 +11,7 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLSDocumentPagesCell.h"
 
 static NSString *DocPagesCellIdentifier = @"DocumentPagesCellIdentifier";
@@ -91,7 +92,7 @@ UICollectionViewDelegate
     [self.docPageDatas removeAllObjects];
     [self.docPageDatas addObjectsFromArray:imageUrls];
     
-    self.lbCount.text = [NSString stringWithFormat:@"共%ld个", (long)self.docPageDatas.count];
+    self.lbCount.text = [NSString stringWithFormat:PLVLocalizedString(@"共%ld个"), (long)self.docPageDatas.count];
     [self.collectionView reloadData];
     
     [self setSelectPageIndex:0];
@@ -99,9 +100,11 @@ UICollectionViewDelegate
 
 - (void)setSelectPageIndex:(NSInteger)index {
     _selectPageIndex = index;
-    [self.collectionView selectItemAtIndexPath:[NSIndexPath indexPathForItem:index inSection:0]
-                                  animated:NO
-                            scrollPosition:UICollectionViewScrollPositionNone];
+    if (self.docPageDatas && self.docPageDatas.count > index) {
+        [self.collectionView selectItemAtIndexPath:[NSIndexPath indexPathForItem:index inSection:0]
+                                      animated:NO
+                                scrollPosition:UICollectionViewScrollPositionNone];
+    }
 }
 
 #pragma mark - [ Private Methods ]
@@ -148,7 +151,7 @@ UICollectionViewDelegate
     [self.btnBackTip setBackgroundImage:imgBg forState:UIControlStateNormal];
     self.btnBackTip.titleLabel.font = [UIFont systemFontOfSize:12];
     [self.btnBackTip setTitleColor:PLV_UIColorFromRGB(@"#F0F1F5") forState:UIControlStateNormal];
-    [self.btnBackTip setTitle:@"返回查看所有文档" forState:UIControlStateNormal];
+    [self.btnBackTip setTitle:PLVLocalizedString(@"返回查看所有文档") forState:UIControlStateNormal];
     self.btnBackTip.titleEdgeInsets = UIEdgeInsetsMake(8, 0, 0, 0);
     self.btnBackTip.userInteractionEnabled = NO;
     

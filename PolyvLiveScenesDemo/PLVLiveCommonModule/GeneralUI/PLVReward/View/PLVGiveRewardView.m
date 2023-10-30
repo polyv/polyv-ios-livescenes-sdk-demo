@@ -7,6 +7,7 @@
 //
 
 #import "PLVGiveRewardView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVGiveRewardGoodsButton.h"
 
@@ -122,7 +123,7 @@
     if (self.fullScreenDifferent) {
         [self refreshGoods:self.modelArray];
     }
-    self.titleLabel.frame = CGRectMake(16, 16, 64, 22);
+    self.titleLabel.frame = CGRectMake(16, 16, 110, 22);
     self.numButtonScrollView.frame = CGRectMake(0, 0, SCREEN_WIDTH - 100, CGRectGetHeight(self.footerView.frame));
     [self refreshFooterView];
 }
@@ -292,7 +293,7 @@
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc]init];
-        _titleLabel.text = @"积分打赏";
+        _titleLabel.text = PLVLocalizedString(@"积分打赏");
         _titleLabel.textColor = [UIColor whiteColor];
         _titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:16.0];
     }
@@ -312,7 +313,7 @@
         _pointsLabel.font = [UIFont systemFontOfSize:12.0];
         _pointsLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12.0];
         _pointsLabel.textColor = [UIColor colorWithRed:173/255.0 green:173/255.0 blue:192/255.0 alpha:1.0];
-        _pointsLabel.text = @"我的积分：0";
+        _pointsLabel.text = PLVLocalizedString(@"我的积分：0");
         _pointsLabel.textAlignment = NSTextAlignmentLeft;
     }
     return _pointsLabel;
@@ -361,7 +362,7 @@
     if (!_sendButton) {
         _sendButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _sendButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
-        [_sendButton setTitle:@"打赏" forState:UIControlStateNormal];
+        [_sendButton setTitle:PLVLocalizedString(@"打赏") forState:UIControlStateNormal];
         [_sendButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         if (self.rewardType == PLVRewardViewTypeLC) {
             [_sendButton setBackgroundColor:[UIColor colorWithRed:255/255.0 green:106/255.0 blue:93/255.0 alpha:1.0]];
@@ -455,7 +456,7 @@
 
 - (void)refreshUserPoint:(NSString *)userPoint{
     if (userPoint && [userPoint isKindOfClass:NSString.class] && userPoint.length > 0) {
-        self.pointsLabel.text = [NSString stringWithFormat:@"我的积分：%@ %@",userPoint,self.pointUnit];
+        self.pointsLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"我的积分：%@"), userPoint];
         CGSize labelSize = [self.pointsLabel.text boundingRectWithSize:CGSizeMake(SCREEN_WIDTH - 20, 40) options:NSStringDrawingUsesLineFragmentOrigin attributes:@{NSFontAttributeName: self.pointsLabel.font} context:nil].size;
         self.pointsLabel.frame = CGRectMake(CGRectGetMaxX(self.titleLabel.frame) + 8, 19, labelSize.width + 10, labelSize.height);
     }
@@ -493,7 +494,7 @@
 
 - (void)setPayWay:(NSString *)payWay {
     _payWay = payWay;
-    self.titleLabel.text = [payWay isEqualToString:@"POINT"] ? @"积分打赏" : @"礼物打赏";
+    self.titleLabel.text = [payWay isEqualToString:@"POINT"] ? PLVLocalizedString(@"积分打赏") : PLVLocalizedString(@"礼物打赏");
 }
 
 #pragma mark - util

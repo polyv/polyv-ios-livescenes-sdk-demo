@@ -11,6 +11,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -249,7 +250,7 @@ static CGFloat kButtonoHeight = 40.0;
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isEqualToString:quoteUserId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSDictionary *attributeDict = @{
@@ -382,7 +383,7 @@ static CGFloat kButtonoHeight = 40.0;
 - (UIButton *)copButton {
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:14.0];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#ADADC0" alpha:0.8] forState:UIControlStateNormal];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#78A7ED"] forState:UIControlStateHighlighted];
@@ -394,7 +395,7 @@ static CGFloat kButtonoHeight = 40.0;
 - (UIButton *)foldButton {
     if (!_foldButton) {
         _foldButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_foldButton setTitle:@"更多" forState:UIControlStateNormal];
+        [_foldButton setTitle:PLVLocalizedString(@"更多") forState:UIControlStateNormal];
         _foldButton.titleLabel.font = [UIFont systemFontOfSize:14.0];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#ADADC0" alpha:0.8] forState:UIControlStateNormal];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#78A7ED"] forState:UIControlStateHighlighted];

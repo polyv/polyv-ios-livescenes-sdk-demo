@@ -16,6 +16,7 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 模块
 #import "PLVRoomDataManager.h"
@@ -108,8 +109,8 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     if (controlsInDemand & PLVLSStatusBarControls_ChannelInfo) {
         self.channelInfoLabel.hidden = NO;
         self.channelInfoButton.hidden = NO;
-        self.channelInfoLabel.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 84, 28);
-        self.channelInfoButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 84, 28);
+        self.channelInfoLabel.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 90, 28);
+        self.channelInfoButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 90, 28);
     }
     
     originX = self.channelInfoLabel.hidden ? originX : CGRectGetMaxX(self.channelInfoButton.frame) + 12;
@@ -123,7 +124,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     self.signalButton.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_SignalButton) {
         self.signalButton.hidden = NO;
-        self.signalButton.frame = CGRectMake(originX, 11, 84, 20);
+        self.signalButton.frame = CGRectMake(originX, 12, self.signalButton.buttonCalWidth, 20);
     }
     
     /// 右侧控件
@@ -131,11 +132,11 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     self.startPushButton.hidden = YES;
     self.stopPushButton.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_PushButton) {
-        originX = self.bounds.size.width - 60;
+        originX = self.bounds.size.width - 80;
         self.startPushButton.hidden = self.inClass;
         self.stopPushButton.hidden = !self.inClass;
-        self.startPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 60, 28);
-        self.stopPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 60, 28);
+        self.startPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 80, 28);
+        self.stopPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 80, 28);
     }
     
     self.settingButton.hidden = YES;
@@ -186,8 +187,8 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     }
     
     if (_networkStatePopup) {
-        CGFloat width = 196.0;
-        CGFloat height = 76.0;
+        CGFloat width = self.networkStatePopup.bubbleSize.width;
+        CGFloat height = self.networkStatePopup.bubbleSize.height;
         CGFloat originX = MAX(0, self.frame.origin.x + self.signalButton.frame.origin.x + self.signalButton.frame.size.width - width); // 弹层与按钮右侧对齐
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
@@ -232,7 +233,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         NSDictionary *attributedDict = @{NSFontAttributeName: [UIFont systemFontOfSize:12],
                                          NSForegroundColorAttributeName:[UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1]
         };
-        NSAttributedString *textAttributedString = [[NSAttributedString alloc] initWithString:@"频道信息" attributes:attributedDict];
+        NSAttributedString *textAttributedString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"频道信息") attributes:attributedDict];
         
         NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
         [muString appendAttributedString:textAttributedString];
@@ -393,8 +394,8 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         UIColor *normalColor = [UIColor colorWithRed:0x43/255.0 green:0x99/255.0 blue:0xff/255.0 alpha:1];
         _startPushButton.layer.borderColor = normalColor.CGColor;
         _startPushButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_startPushButton setTitle:@"上课" forState:UIControlStateNormal];
-        [_startPushButton setTitle:@"下课" forState:UIControlStateSelected];
+        [_startPushButton setTitle:PLVLocalizedString(@"上课") forState:UIControlStateNormal];
+        [_startPushButton setTitle:PLVLocalizedString(@"下课") forState:UIControlStateSelected];
         [_startPushButton setTitleColor:normalColor forState:UIControlStateNormal];
         [_startPushButton addTarget:self action:@selector(startPushButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -409,7 +410,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         UIColor *normalColor = [UIColor colorWithRed:0xff/255.0 green:0x63/255.0 blue:0x63/255.0 alpha:1];
         _stopPushButton.layer.borderColor = normalColor.CGColor;
         _stopPushButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_stopPushButton setTitle:@"下课" forState:UIControlStateNormal];
+        [_stopPushButton setTitle:PLVLocalizedString(@"下课") forState:UIControlStateNormal];
         [_stopPushButton setTitleColor:normalColor forState:UIControlStateNormal];
         [_stopPushButton addTarget:self action:@selector(stopPushButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _stopPushButton.hidden = YES;
@@ -479,28 +480,29 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     
 - (PLVLSLinkMicApplyTipsView *)linkMicApplyView {
     if (!_linkMicApplyView) {
+        _linkMicApplyView = [[PLVLSLinkMicApplyTipsView alloc] init];
         CGFloat centerX = self.memberButton.center.x;// 作为连麦选择弹层中心位置
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         // iPad需要减去头部状态栏的安全距离
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
             originY -= PLVLSUtils.safeTopPad;
         }
-        CGRect rect = CGRectMake(centerX - 136 / 2.0, originY, 136,  52);
-        
-        _linkMicApplyView = [[PLVLSLinkMicApplyTipsView alloc] initWithFrame:rect];
+        CGRect rect = CGRectMake(centerX - _linkMicApplyView.viewWidth / 2.0, originY, _linkMicApplyView.viewWidth,  52);
+        _linkMicApplyView.frame = rect;
     }
     return _linkMicApplyView;
 }
 
 - (PLVLSNetworkStatePopup *)networkStatePopup {
     if (!_networkStatePopup) {
-        CGFloat width = 196.0;
-        CGFloat height = 76.0;
+        _networkStatePopup = [[PLVLSNetworkStatePopup alloc] init];
+        CGFloat width = _networkStatePopup.bubbleSize.width;
+        CGFloat height = _networkStatePopup.bubbleSize.height;
         CGFloat originX = MAX(0, self.frame.origin.x + self.signalButton.frame.origin.x + self.signalButton.frame.size.width - width); // 弹层与按钮右侧对齐
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
         CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
-        _networkStatePopup = [[PLVLSNetworkStatePopup alloc] initWithBubbleFrame:rect buttonFrame:buttonRect];
+        [_networkStatePopup setupBubbleFrame:rect buttonFrame:buttonRect];
     }
     return _networkStatePopup;
 }
@@ -520,31 +522,31 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     
     switch (netState) {
         case PLVLSStatusBarNetworkQuality_Unknown:
-            title = @"检测中";
+            title = PLVLocalizedString(@"检测中");
             imageName = @"plvls_status_signal_good_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Down:
-            title = @"网络断开";
+            title = PLVLocalizedString(@"网络断开");
             imageName = @"plvls_status_signal_bad_icon";
             break;
         case PLVLSStatusBarNetworkQuality_VBad:
-            title = @"网络很差";
+            title = PLVLocalizedString(@"网络很差");
             imageName = @"plvls_status_signal_bad_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Poor:
-            title = @"网络较差";
+            title = PLVLocalizedString(@"网络较差");
             imageName = @"plvls_status_signal_fine_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Bad:
-            title = @"网络一般";
+            title = PLVLocalizedString(@"网络一般");
             imageName = @"plvls_status_signal_fine_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Good:
-            title = @"网络良好";
+            title = PLVLocalizedString(@"网络良好");
             imageName = @"plvls_status_signal_good_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Excellent:
-            title = @"网络优秀";
+            title = PLVLocalizedString(@"网络优秀");
             imageName = @"plvls_status_signal_good_icon";
             break;
     }
@@ -552,6 +554,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     self.signalButton.text = title;
     [self.signalButton setImage:[PLVLSUtils imageForStatusResource:imageName]];
     [self.signalButton enableWarningMode:netState == PLVLSStatusBarNetworkQuality_Down];
+    self.signalButton.frame = CGRectMake(self.signalButton.frame.origin.x, self.signalButton.frame.origin.y, self.signalButton.buttonCalWidth, 20);
 }
 
 - (void)setCurrentLinkMicButtonStatus:(PLVLSStatusLinkMicButtonStatus)linkMicButtonStatus {
@@ -634,7 +637,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     if (self.isGuest &&
         !self.isSpeaker) {
         if (button == self.documentButton) {
-            [PLVLSUtils showToastInHomeVCWithMessage:@"被授权后才可以使用课件功能"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"被授权后才可以使用课件功能")];
         }
         return;
     }
@@ -656,7 +659,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     if (self.isGuest) {
         if (!self.inClass) {
             self.linkmicButton.selected = !self.linkmicButton.selected;
-            [PLVLSUtils showToastInHomeVCWithMessage:@"上课前无法发起连麦"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"上课前无法发起连麦")];
             return;
         }
         

@@ -7,6 +7,7 @@
 //
 
 #import "PLVInteractView.h"
+#import "PLVMultiLanguageManager.h"
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
@@ -223,9 +224,9 @@ didReceiveInteractMessageString:(NSString *)msgString
 - (void)plvJSBridge:(PLVJSBridge *)jsBridge showConfirmPanelWithMessage:(NSString *)message initiatedByFrame:(WKFrameInfo *)frame completionHandler:(void (^)(BOOL))completionHandler{
     UIViewController * vc = [PLVFdUtil getCurrentViewController];
     if ([vc isKindOfClass:UIViewController.class]) {
-        [PLVFdUtil showAlertWithTitle:nil message:message viewController:vc cancelActionTitle:@"取消" cancelActionStyle:UIAlertActionStyleCancel cancelActionBlock:^(UIAlertAction * _Nonnull action) {
+        [PLVFdUtil showAlertWithTitle:nil message:message viewController:vc cancelActionTitle:PLVLocalizedString(@"取消") cancelActionStyle:UIAlertActionStyleCancel cancelActionBlock:^(UIAlertAction * _Nonnull action) {
             completionHandler(NO);
-        } confirmActionTitle:@"好" confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        } confirmActionTitle:PLVLocalizedString(@"好") confirmActionStyle:UIAlertActionStyleDefault confirmActionBlock:^(UIAlertAction * _Nonnull action) {
             completionHandler(YES);
         }];
     }

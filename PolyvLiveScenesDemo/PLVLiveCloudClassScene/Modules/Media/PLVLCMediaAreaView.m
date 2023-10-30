@@ -24,6 +24,7 @@
 
 // 工具
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -36,8 +37,10 @@ static NSString *const PLVLCMediaAreaView_Data_LiveDelayOptionTitle = @"延迟";
 static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 static NSInteger const PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum = 5;
 static NSString * const kUserDefaultDanmuSpeed = @"UserDefaultDanmuSpeed";
+static NSString *const PLVLCMediaSwitchNormalDelayAttributeName = @"switchnormaldelay";
 
 @interface PLVLCMediaAreaView () <
+UITextViewDelegate,
 PLVLCFloatViewDelegate,
 PLVLCMediaMoreViewDelegate,
 PLVDanMuDelegate,
@@ -195,23 +198,25 @@ PLVLCDocumentPaintModeViewDelegate
         viewSafeWidth = viewWidth;
         viewSafeHeight = viewHeight - toppadding;
     }
+    CGFloat middleLableWidth = [self.networkQualityMiddleLable sizeThatFits:CGSizeMake(MAXFLOAT, 28)].width + 20;
+    CGFloat networkPoorViewWidth = CGRectGetWidth(self.networkQualityPoorView.bounds);
     
     if (!fullScreen) {
         // 竖屏
         CGFloat contentBackgroudViewY = self.limitContentViewInSafeArea ? toppadding : 0;
         CGFloat contentBackgroudViewHeight = self.limitContentViewInSafeArea ? viewSafeHeight : viewHeight;
         self.contentBackgroudView.frame = CGRectMake(0, contentBackgroudViewY, viewWidth, contentBackgroudViewHeight);
-        self.networkQualityMiddleLable.frame = CGRectMake(16, viewHeight - 28 - 36, 219, 28);
-        self.networkQualityPoorView.frame = CGRectMake(viewWidth - 275 - 4, contentBackgroudViewY + 39, 275, 28);
-        self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.frame) - 44 - 28, 242, 28);
+        self.networkQualityMiddleLable.frame = CGRectMake(16, viewHeight - 28 - 36, middleLableWidth, 28);
+        self.networkQualityPoorView.frame = CGRectMake(viewWidth - networkPoorViewWidth - 4, contentBackgroudViewY + 39, networkPoorViewWidth, 28);
+        self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.frame) - 44 - 28, CGRectGetWidth(self.memoryPlayTipLabel.frame), 28);
     } else {
         // 横屏
         CGFloat contentBackgroudViewX = self.limitContentViewInSafeArea ? leftpadding : 0;
         CGFloat contentBackgroudViewWidth = self.limitContentViewInSafeArea ? viewSafeWidth : viewWidth;
         self.contentBackgroudView.frame = CGRectMake(contentBackgroudViewX, 0, contentBackgroudViewWidth, viewHeight);
-        self.networkQualityMiddleLable.frame = CGRectMake(contentBackgroudViewX + 16, viewHeight - 28 - 58, 219, 28);
-        self.networkQualityPoorView.frame = CGRectMake(superviewWidth - 275 - 4 - leftpadding, 50, 275, 28);
-        self.memoryPlayTipLabel.frame = CGRectMake(contentBackgroudViewX + 16, CGRectGetMaxY(self.frame) - 92 - 28, 242, 28);
+        self.networkQualityMiddleLable.frame = CGRectMake(contentBackgroudViewX + 16, viewHeight - 28 - 58, middleLableWidth, 28);
+        self.networkQualityPoorView.frame = CGRectMake(superviewWidth - networkPoorViewWidth - 4 - leftpadding, 50, networkPoorViewWidth, 28);
+        self.memoryPlayTipLabel.frame = CGRectMake(contentBackgroudViewX + 16, CGRectGetMaxY(self.frame) - 92 - 28, CGRectGetWidth(self.memoryPlayTipLabel.frame), 28);
     }
     
     [self.danmuView resetFrame:self.contentBackgroudView.frame];
@@ -472,7 +477,7 @@ PLVLCDocumentPaintModeViewDelegate
 - (void)startPictureInPicture {
     if (self.videoType == PLVChannelVideoType_Live) {
         PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.superview animated:YES];
-        [hud.label setText:@"正在开启小窗..."];
+        [hud.label setText:PLVLocalizedString(@"正在开启小窗...")];
         [hud hideAnimated:YES afterDelay:3.0];
         [self.playerPresenter startPictureInPictureFromOriginView:self.pictureInPictureOriginView];
     }
@@ -597,7 +602,7 @@ PLVLCDocumentPaintModeViewDelegate
                 [weakSelf playPPTView];
             });
         } else {
-            [PLVLCUtils showHUDWithTitle:@"" detail:@"加载PPT出错，请重新登录" view:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
+            [PLVLCUtils showHUDWithTitle:@"" detail:PLVLocalizedString(@"加载PPT出错，请重新登录") view:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
         }
     }
 }
@@ -614,10 +619,10 @@ PLVLCDocumentPaintModeViewDelegate
     if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
         PLVLCMediaMoreModel *downloadModel = nil;
         if ([PLVRoomDataManager sharedManager].roomData.playbackVideoInfo.playbackCacheEnabled) {
-            downloadModel = [PLVLCMediaMoreModel modelWithSwitchTitle:PLVLCMediaAreaView_Data_DownloadOptionTitle normalImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selectedImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selected:NO];
+            downloadModel = [PLVLCMediaMoreModel modelWithSwitchTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_DownloadOptionTitle) normalImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selectedImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selected:NO];
         }
         
-        PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_SpeedOptionTitle optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x"] selectedIndex:1];
+        PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x"] selectedIndex:1];
         speedModel.optionSpecifiedWidth = 40.0;
         
         NSMutableArray * modelArray = [[NSMutableArray alloc] init];
@@ -641,23 +646,23 @@ PLVLCDocumentPaintModeViewDelegate
     
     // 无延迟直播和快直播频道支持切换延迟模式
     if (self.channelWatchNoDelay || self.channelWatchQuickLive) {
-        liveDelayModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_LiveDelayOptionTitle optionItemsArray:@[@"无延迟",@"正常延迟"] selectedIndex:!self.noDelayWatchMode];
+        liveDelayModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_LiveDelayOptionTitle) optionItemsArray:@[PLVLocalizedString(@"无延迟"),PLVLocalizedString(@"正常延迟")] selectedIndex:!self.noDelayWatchMode];
     }
 
     // 观看无延迟直播和快直播时不支持切换音视频模式、视频质量和线路
     if (!self.noDelayWatchMode) {
-        NSArray<NSString *> *optionItemsArray = self.isOnlyAudio ? @[@"仅听声音"] : @[@"播放画面",@"仅听声音"];
-        modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_ModeOptionTitle optionItemsArray:optionItemsArray selectedIndex:self.playerPresenter.audioMode];
+        NSArray<NSString *> *optionItemsArray = self.isOnlyAudio ? @[PLVLocalizedString(@"仅听声音")] : @[PLVLocalizedString(@"播放画面"),PLVLocalizedString(@"仅听声音")];
+        modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_ModeOptionTitle) optionItemsArray:optionItemsArray selectedIndex:self.playerPresenter.audioMode];
         
-        qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_QualityOptionTitle optionItemsArray:self.playerPresenter.codeRateNamesOptions];
+        qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_QualityOptionTitle) optionItemsArray:self.playerPresenter.codeRateNamesOptions];
         [qualityModel setSelectedIndexWithOptionItemString:self.playerPresenter.currentCodeRate];
         
         NSMutableArray * routeArray = [[NSMutableArray alloc] init];
         for (int i = 1; i <= self.playerPresenter.lineNum; i++) {
-            NSString * route = [NSString stringWithFormat:@"线路%d",i];
+            NSString * route = [NSString stringWithFormat:PLVLocalizedString(@"线路%d"),i];
             [routeArray addObject:route];
         }
-        routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLCMediaAreaView_Data_RouteOptionTitle optionItemsArray:routeArray selectedIndex:self.playerPresenter.currentLineIndex];
+        routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_RouteOptionTitle) optionItemsArray:routeArray selectedIndex:self.playerPresenter.currentLineIndex];
     }
     
     // 整合数据
@@ -759,7 +764,7 @@ PLVLCDocumentPaintModeViewDelegate
             if (customNick) {
                 channel.marquee = customNick;
             } else {
-                channel.marquee = @"自定义昵称";
+                channel.marquee = PLVLocalizedString(@"自定义昵称");
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
@@ -809,11 +814,14 @@ PLVLCDocumentPaintModeViewDelegate
                                           NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#FFFFFF")};
     NSDictionary *timeAttributes = @{NSFontAttributeName:font,
                                           NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#5C9DFF")};
-    NSString *textString = [NSString stringWithFormat:@"您上次观看至 %@ ，已为您自动续播", playTimeString];
+    NSString *textString = [NSString stringWithFormat:PLVLocalizedString(@"您上次观看至 %@ ，已为您自动续播"), playTimeString];
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:textString];
     [attributedString addAttributes:normalAttributes range:NSMakeRange(0, attributedString.length)];
     [attributedString addAttributes:timeAttributes range:[textString rangeOfString:playTimeString]];
     self.memoryPlayTipLabel.attributedText = attributedString;
+    CGSize memoryTipSize = [self.memoryPlayTipLabel sizeThatFits:CGSizeMake(MAXFLOAT, 28)];
+    CGRect tipLabelFrame = self.memoryPlayTipLabel.frame;
+    self.memoryPlayTipLabel.frame = CGRectMake(tipLabelFrame.origin.x, tipLabelFrame.origin.y, memoryTipSize.width + 10, tipLabelFrame.size.height);
     [UIView animateWithDuration:0.5 animations:^{
         self.memoryPlayTipLabel.alpha = 1.0;
     } completion:^(BOOL finished) {
@@ -931,7 +939,7 @@ PLVLCDocumentPaintModeViewDelegate
 - (UILabel *)networkQualityMiddleLable {
     if (!_networkQualityMiddleLable) {
         _networkQualityMiddleLable = [[UILabel alloc] init];
-        _networkQualityMiddleLable.text = @"您的网络状态不佳，可尝试切换网络";
+        _networkQualityMiddleLable.text = PLVLocalizedString(@"您的网络状态不佳，可尝试切换网络");
         _networkQualityMiddleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _networkQualityMiddleLable.textColor = [UIColor whiteColor];
         _networkQualityMiddleLable.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.6);
@@ -951,27 +959,41 @@ PLVLCDocumentPaintModeViewDelegate
         _networkQualityPoorView.layer.masksToBounds = YES;
         _networkQualityPoorView.layer.cornerRadius = 12;
         
-        UILabel *tipsLable = [[UILabel alloc] init];
-        tipsLable = [[UILabel alloc] init];
-        tipsLable.text = @"您的网络状态糟糕，可尝试";
-        tipsLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
-        tipsLable.textColor = [UIColor whiteColor];
-        [_networkQualityPoorView addSubview:tipsLable];
-        tipsLable.frame = CGRectMake(12, 0, 147, 28);
-
-        UIButton *swithDelayLiveButton = [[UIButton alloc] init];
-        [swithDelayLiveButton setTitle:@"切换到正常延迟" forState:UIControlStateNormal];
-        [swithDelayLiveButton setTitleColor:PLV_UIColorFromRGB(@"#6DA7FF") forState:UIControlStateNormal];
-        [swithDelayLiveButton addTarget:self action:@selector(swithDelayLiveClick:) forControlEvents:UIControlEventTouchUpInside];
-        swithDelayLiveButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
-        [_networkQualityPoorView addSubview:swithDelayLiveButton];
-        swithDelayLiveButton.frame = CGRectMake(161, 0, 86, 28);
+        UITextView *networkQualityTextView = [[UITextView alloc] init];
+        networkQualityTextView.delegate = self;
+        networkQualityTextView.editable = YES;
+        networkQualityTextView.scrollEnabled = NO;
+        networkQualityTextView.backgroundColor = [UIColor clearColor];
+        networkQualityTextView.textContainerInset = UIEdgeInsetsZero;
+        networkQualityTextView.textContainer.lineFragmentPadding = 0;
+        UIFont *font = [UIFont fontWithName:@"PingFangSC-Regular" size: 12];
+        UIColor *normalColor = [UIColor whiteColor];
+        UIColor *linkColor = PLV_UIColorFromRGB(@"#6DA7FF");
+        NSDictionary *normalAttributes = @{NSFontAttributeName:font,
+                                              NSForegroundColorAttributeName:normalColor};
+        NSDictionary *switchAttributes = @{NSFontAttributeName:font,
+                                                NSForegroundColorAttributeName:linkColor,
+                                                NSLinkAttributeName: [NSString stringWithFormat:@"%@://", PLVLCMediaSwitchNormalDelayAttributeName]};
+        NSString *tipsString = PLVLocalizedString(@"您的网络状态糟糕，可尝试");
+        NSString *switchString = PLVLocalizedString(@"切换到正常延迟");
+        NSString *networkQualityString = [NSString stringWithFormat:@"%@ %@",tipsString, switchString];
+        NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:networkQualityString];
+        [attributedString addAttributes:normalAttributes range:NSMakeRange(0, tipsString.length)];
+        [attributedString addAttributes:switchAttributes range:NSMakeRange(tipsString.length + 1, switchString.length)];
+        networkQualityTextView.linkTextAttributes = @{NSForegroundColorAttributeName: linkColor};
+        networkQualityTextView.attributedText = attributedString;
+        [_networkQualityPoorView addSubview:networkQualityTextView];
+        
+        CGFloat viewSizeHeight = 28;
+        CGSize textViewSize = [attributedString boundingRectWithSize:CGSizeMake(self.bounds.size.width - 30, viewSizeHeight) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+        networkQualityTextView.frame = CGRectMake(10, (viewSizeHeight - textViewSize.height)/2, textViewSize.width, textViewSize.height);
         
         UIButton *closeButton = [[UIButton alloc] init];
         [closeButton addTarget:self action:@selector(closeNetworkTipsViewClick:) forControlEvents:UIControlEventTouchUpInside];
         [closeButton setImage:[self getImageWithName:@"plvlc_media_network_tips_close"] forState:UIControlStateNormal];
         [_networkQualityPoorView addSubview:closeButton];
-        closeButton.frame = CGRectMake(250, 6, 16, 16);
+        closeButton.frame = CGRectMake(CGRectGetMaxX(networkQualityTextView.frame) + 6, 6, 16, 16);
+        _networkQualityPoorView.bounds = CGRectMake(0, 0, CGRectGetMaxX(closeButton.frame) + 10, 28);
     }
     return _networkQualityPoorView;
 }
@@ -1097,7 +1119,7 @@ PLVLCDocumentPaintModeViewDelegate
         [PLVFdUtil changeDeviceOrientationToPortrait];
     }else{
         __weak typeof(self) weakSelf = self;
-        [PLVFdUtil showAlertWithTitle:@"确认退出直播间？" message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"按错了" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"退出" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        [PLVFdUtil showAlertWithTitle:PLVLocalizedString(@"确认退出直播间？") message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"退出") confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
             if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(plvLCMediaAreaViewWannaBack:)]) {
                 [weakSelf.delegate plvLCMediaAreaViewWannaBack:weakSelf];
             }
@@ -1282,23 +1304,23 @@ PLVLCDocumentPaintModeViewDelegate
 
 #pragma mark PLVLCMediaMoreViewDelegate
 - (void)plvLCMediaMoreView:(PLVLCMediaMoreView *)moreView optionItemSelected:(PLVLCMediaMoreModel *)model{
-    if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_ModeOptionTitle]) {
+    if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_ModeOptionTitle)]) {
         // 用户点选了”模式“中的选项
         [self switchLiveToAudioMode:model.selectedIndex == 1];
-    } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_QualityOptionTitle]) {
+    } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_QualityOptionTitle)]) {
         // 用户点选了”视频质量“中的选项
         [self.playerPresenter switchLiveToCodeRate:model.currentSelectedItemString];
-    } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_RouteOptionTitle]) {
+    } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_RouteOptionTitle)]) {
         // 用户点选了”线路“中的选项
         [self.playerPresenter switchLiveToLineIndex:model.selectedIndex];
-    } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_SpeedOptionTitle]) {
+    } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle)]) {
         // 用户点选了”倍速“中的选项
         CGFloat speed = [[model.currentSelectedItemString substringToIndex:model.currentSelectedItemString.length - 1] floatValue];
         [self.playerPresenter switchLivePlaybackSpeedRate:speed];
-    } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_LiveDelayOptionTitle]) {
+    } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_LiveDelayOptionTitle)]) {
         // 用户点选了“延迟”中的选项
         [self switchToNoDelayWatchMode:model.selectedIndex == 0];
-    } else if ([model.optionTitle isEqualToString:PLVLCMediaAreaView_Data_DownloadOptionTitle]) {
+    } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_DownloadOptionTitle)]) {
         // 用户点击了“下载”按钮
         [self.downloadSheet showInView:self.superview];
     }
@@ -1594,7 +1616,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// 画中画已经开启
 - (void)playerPresenterPictureInPictureDidStart:(PLVPlayerPresenter *)playerPresenter {
     [PLVProgressHUD hideHUDForView:self.superview animated:YES];
-    [PLVLCUtils showHUDWithTitle:@"小窗播放中，可能存在画面延后的情况" detail:@"" view:self.superview];
+    [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"小窗播放中，可能存在画面延后的情况") detail:@"" view:self.superview];
     
     // 更多按钮显示控制
     [self.skinView refreshMoreButtonHiddenOrRestore:YES];
@@ -1676,13 +1698,26 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 #pragma mark - [ Action ]
-- (void)swithDelayLiveClick:(UIButton *)button {
+- (void)swithDelayLiveClick {
     [self switchToNoDelayWatchMode:NO];
     self.networkQualityPoorView.hidden = YES;
 }
 
 - (void)closeNetworkTipsViewClick:(UIButton *)button {
     self.networkQualityPoorView.hidden = YES;
+}
+
+#pragma mark UITextViewDelegate
+- (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL *)URL inRange:(NSRange)characterRange {
+    if ([[URL scheme] isEqualToString:PLVLCMediaSwitchNormalDelayAttributeName]) {
+        [self swithDelayLiveClick];
+    }
+    
+    return NO;
+}
+
+- (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
+    return NO;
 }
 
 @end

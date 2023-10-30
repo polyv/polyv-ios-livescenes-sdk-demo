@@ -8,6 +8,7 @@
 
 #import "PLVLCIarEntranceView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <SDWebImage/UIButton+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -99,7 +100,7 @@ static CGFloat kCellLabelPadding = 4.0;
         if ([PLVFdUtil checkDictionaryUseable:dict]) {
             BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
             NSString *title = PLV_SafeStringForDictKey(dict, @"title");
-            if (isShow && [PLVFdUtil checkStringUseable:title] && [title isEqualToString:@"问卷"]) {
+            if (isShow && [PLVFdUtil checkStringUseable:title] && [title isEqualToString:PLVLocalizedString(@"问卷")]) {
                 [showDataArray addObject:dict];
             }
         }
@@ -149,7 +150,7 @@ static CGFloat kCellLabelPadding = 4.0;
     [button setTitle:buttonTitle forState:UIControlStateSelected];
     if (![PLVFdUtil checkStringUseable:buttonTitle]) {
         return;
-    } else if ([buttonTitle isEqualToString:@"问卷"]) {
+    } else if ([buttonTitle isEqualToString:PLVLocalizedString(@"问卷")]) {
         [button setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_iarentrance_questionnaire"] forState:UIControlStateNormal];
         [button setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_iarentrance_questionnaire"] forState:UIControlStateNormal];
     }

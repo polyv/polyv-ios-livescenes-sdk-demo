@@ -8,6 +8,7 @@
 
 #import "PLVSAManageCommoditySheet.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
@@ -54,7 +55,13 @@ PLVStreamerCommodityWebViewBridgeDelegate>
 #pragma mark - [ Private Method ]
 
 - (void)loadWebView {
-    NSURL *posterURL = [NSURL URLWithString:PLVLiveConstantsStreamerProductHTML];
+    NSString *urlString = PLVLiveConstantsStreamerProductHTML;
+    PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
+    BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
+    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
+    urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d&lang=%@", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
+
+    NSURL *posterURL = [NSURL URLWithString:urlString];
     NSURLRequest *request = [NSURLRequest requestWithURL:posterURL];
     [self.webView loadRequest:request];
 }

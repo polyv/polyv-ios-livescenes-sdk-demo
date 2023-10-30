@@ -9,6 +9,7 @@
 #import "PLVLSBeautySheet.h"
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVLSBeautySliderView.h"
 #import "PLVLSBeautySwitch.h"
@@ -63,7 +64,7 @@ PLVLSBeautySwitchDelegate
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    CGFloat filterTitleViewX = (self.bounds.size.width - 90) / 2;
+    CGFloat filterTitleViewX = (self.bounds.size.width - 140) / 2;
     CGFloat filterTitleViewY = 56;
     CGFloat beautySwitchX = self.bounds.size.width - 100 - 64;
     CGFloat beautySwitchY = 20;
@@ -85,9 +86,9 @@ PLVLSBeautySwitchDelegate
     self.sliderView.frame = CGRectMake(sliderViewX, sliderViewY, sliderViewWidth, sliderViewHeight);
 
     // 父类为self.contentView
-    self.filterTitleView.frame = CGRectMake(filterTitleViewX, filterTitleViewY, 90, 30);
+    self.filterTitleView.frame = CGRectMake(filterTitleViewX, filterTitleViewY, 140, 32);
     self.beautySwitch.frame = CGRectMake(beautySwitchX, beautySwitchY, 100, 30);
-    self.resetButton.frame = CGRectMake(resetButtonX, resetButtonY, 56, 20);
+    self.resetButton.frame = CGRectMake(resetButtonX, resetButtonY, 60, 20);
     self.beautyTypeTitleView.frame = CGRectMake(beautyTypeTitleViewX, beautyTypeTitleViewY, beautyTypeTitleViewWidth, 24);
     self.beautyContentView.frame = CGRectMake(beautyContentViewX, beautyContentViewY, beautyContentViewWidth, beautyContentViewHeight);
 }
@@ -159,7 +160,7 @@ PLVLSBeautySwitchDelegate
 - (UIButton *)resetButton {
     if (!_resetButton) {
         _resetButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_resetButton setTitle:@"重置" forState:UIControlStateNormal];
+        [_resetButton setTitle:PLVLocalizedString(@"重置") forState:UIControlStateNormal];
         UIImage *image = [PLVLSUtils imageForBeautyResource:@"plvls_beauty_reset"];
         image = [image imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];
         [_resetButton setImage:image forState:UIControlStateNormal];
@@ -215,8 +216,8 @@ PLVLSBeautySwitchDelegate
 #pragma mark Action
 - (void)resetButtonAction:(UIButton *)button {
     __weak typeof(self) weakSelf = self;
-    [PLVLSUtils showAlertWithMessage:@"重置后所有美颜参数将恢复默认值" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
-        [PLVLSUtils showToastInHomeVCWithMessage:@"重置成功"];
+    [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"重置后所有美颜参数将恢复默认值") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
+        [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"重置成功")];
         
         [[PLVBeautyViewModel sharedViewModel] resetBeautyOptionIntensity];
         [weakSelf.beautyContentView resetBeauty];

@@ -12,6 +12,7 @@
 #import "PLVECAudioAnimalView.h"
 #import "PLVLivePictureInPicturePlaceholderView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVWatermarkView.h"
 
@@ -140,7 +141,7 @@ PLVPlayerPresenterDelegate
     // 设置画中画占位图
     self.pictureInPicturePlaceholderView.frame = self.contentBackgroudView.frame;
     
-    self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.contentBackgroudView.frame) - 28 - 30, 242, 28);
+    self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.contentBackgroudView.frame) - 28 - 30, CGRectGetWidth(self.memoryPlayTipLabel.frame), 28);
 }
 
 - (CGRect)getDisplayViewRect {
@@ -217,7 +218,7 @@ PLVPlayerPresenterDelegate
             if (customNick) {
                 channel.marquee = customNick;
             } else {
-                channel.marquee = @"自定义昵称";
+                channel.marquee = PLVLocalizedString(@"自定义昵称");
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
@@ -279,11 +280,14 @@ PLVPlayerPresenterDelegate
                                           NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#FFFFFF")};
     NSDictionary *timeAttributes = @{NSFontAttributeName:font,
                                           NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#5C9DFF")};
-    NSString *textString = [NSString stringWithFormat:@"您上次观看至 %@ ，已为您自动续播", playTimeString];
+    NSString *textString = [NSString stringWithFormat:PLVLocalizedString(@"您上次观看至 %@ ，已为您自动续播"), playTimeString];
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:textString];
     [attributedString addAttributes:normalAttributes range:NSMakeRange(0, attributedString.length)];
     [attributedString addAttributes:timeAttributes range:[textString rangeOfString:playTimeString]];
     self.memoryPlayTipLabel.attributedText = attributedString;
+    CGSize memoryTipSize = [self.memoryPlayTipLabel sizeThatFits:CGSizeMake(MAXFLOAT, 28)];
+    CGRect tipLabelFrame = self.memoryPlayTipLabel.frame;
+    self.memoryPlayTipLabel.frame = CGRectMake(tipLabelFrame.origin.x, tipLabelFrame.origin.y, memoryTipSize.width + 10, tipLabelFrame.size.height);
     [UIView animateWithDuration:0.5 animations:^{
         self.memoryPlayTipLabel.alpha = 1.0;
     } completion:^(BOOL finished) {
@@ -534,7 +538,7 @@ PLVPlayerPresenterDelegate
     PLVProgressHUD *hud = nil;
     if (showHud) {
         hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
-        [hud.label setText:@"加载直播..."];
+        [hud.label setText:PLVLocalizedString(@"加载直播...")];
     }
     */
     [self.playerPresenter switchLiveToLineIndex:Line];

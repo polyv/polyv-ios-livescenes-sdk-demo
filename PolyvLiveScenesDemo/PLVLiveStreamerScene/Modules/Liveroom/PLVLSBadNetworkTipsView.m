@@ -8,6 +8,7 @@
 
 #import "PLVLSBadNetworkTipsView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kBadNetworkTipsViewDismissDuration = 10.0; // 每次显示持续时长
@@ -70,6 +71,11 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     [self stopCooling];
 }
 
+- (CGFloat)tipsViewWidth {
+    CGSize labelSize = [self.label sizeThatFits:CGSizeMake(MAXFLOAT, 15)];
+    return labelSize.width + 46;
+}
+
 #pragma mark - [ Private Methods ]
 
 - (void)initUI {
@@ -84,7 +90,7 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     
     {
-        NSString *string = @"当前网络较差，建议切换为流畅模式 ";
+        NSString *string = PLVLocalizedString(@"当前网络较差，建议切换为流畅模式 ");
         NSDictionary *attributes = @{
             NSFontAttributeName : [UIFont systemFontOfSize:12],
             NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#F0F1F5"]
@@ -94,7 +100,7 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     }
     
     {
-        NSString *string = @"马上切换";
+        NSString *string = PLVLocalizedString(@"马上切换");
         NSDictionary *attributes = @{
             NSFontAttributeName : [UIFont systemFontOfSize:12],
             NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#FF6363"],

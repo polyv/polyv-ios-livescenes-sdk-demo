@@ -10,6 +10,7 @@
 #import "PLVECKeyboardTextView.h"
 #import "PLVECRepliedMsgView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVECKeyboardToolView ()<UITextViewDelegate>
@@ -76,7 +77,7 @@
         self.askQuestionButton.frame = CGRectMake(areaInsets.left + 16, CGRectGetHeight(self.bounds)/2 - 13, buttonWidth, buttonWidth);
     }
     self.placeholderLB.frame = CGRectMake(CGRectGetMaxX(self.leftImageView.frame) + 6, 0, CGRectGetMinX(self.askQuestionButton.frame) - CGRectGetMaxX(self.leftImageView.frame) - 12, CGRectGetHeight(self.inactivatedTextAreaView.bounds));
-    self.sendButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - 46 - areaInsets.right, 0, 30, CGRectGetHeight(self.bounds));
+    self.sendButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - 46 - areaInsets.right, 0, 35, CGRectGetHeight(self.bounds));
     CGFloat textViewWidth = CGRectGetMinX(self.sendButton.frame) -  CGRectGetMaxX(self.askQuestionButton.frame) - 8 - 16;
     [self.textView setupWithFrame:CGRectMake(CGRectGetMaxX(self.askQuestionButton.frame) + 8, CGRectGetHeight(self.bounds)/2 - 18, textViewWidth, 36)];
 }
@@ -136,7 +137,7 @@
 #pragma mark - [ Private Method ]
 - (void)setupUI {
     self.keyboardToolMode = PLVECKeyboardToolModeNormal;
-    self.placeholderText = @"聊点什么吧~";
+    self.placeholderText = PLVLocalizedString(@"聊点什么吧~");
     self.backgroundColor = [PLVColorUtil colorFromHexString:@"#262523"];
     self.hidden = YES;
     self.frame = CGRectMake(0, PLVScreenHeight, PLVScreenWidth, 52);
@@ -252,11 +253,11 @@
 
 - (void)updatePlaceholderLabelText {
     if ((self.keyboardToolMode == PLVECKeyboardToolModeAskQuestion)) {
-        self.placeholderLB.text = @"发起提问";
+        self.placeholderLB.text = PLVLocalizedString(@"发起提问");
     } else if ([PLVFdUtil checkStringUseable:self.placeholderText]) {
         self.placeholderLB.text = self.placeholderText;
     } else {
-        self.placeholderLB.text = @"聊点什么吧~";
+        self.placeholderLB.text = PLVLocalizedString(@"聊点什么吧~");
     }
     [self.textView changePlaceholderText:self.placeholderLB.text];
 }
@@ -296,8 +297,8 @@
 - (UIButton *)askQuestionButton {
     if (!_askQuestionButton) {
         _askQuestionButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        UIImage *defaultImage = [PLVECUtils imageForWatchResource:@"plv_chatroom_askquestion_default_btn"];
-        UIImage *selectedImage = [PLVECUtils imageForWatchResource:@"plv_chatroom_askquestion_selected_btn"];
+        UIImage *defaultImage = [PLVECUtils imageForWatchResource:PLVLocalizedString(@"plv_chatroom_askquestion_default_btn")];
+        UIImage *selectedImage = [PLVECUtils imageForWatchResource:PLVLocalizedString(@"plv_chatroom_askquestion_selected_btn")];
         [_askQuestionButton setImage:defaultImage forState:UIControlStateNormal];
         [_askQuestionButton setImage:selectedImage forState:UIControlStateSelected];
         [_askQuestionButton addTarget:self action:@selector(askQuestionButton:) forControlEvents:UIControlEventTouchUpInside];
@@ -309,7 +310,7 @@
     if (!_sendButton) {
         _sendButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _sendButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_sendButton setTitle:@"发送" forState:UIControlStateNormal];
+        [_sendButton setTitle:PLVLocalizedString(@"发送") forState:UIControlStateNormal];
         [_sendButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFA611"] forState:UIControlStateNormal];
         [_sendButton setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.4] forState:UIControlStateDisabled];
         [_sendButton addTarget:self action:@selector(sendButtonButton:) forControlEvents:UIControlEventTouchUpInside];

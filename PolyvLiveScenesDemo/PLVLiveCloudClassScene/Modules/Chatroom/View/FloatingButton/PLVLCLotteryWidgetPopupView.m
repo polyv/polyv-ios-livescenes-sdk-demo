@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCLotteryWidgetPopupView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @interface PLVLCLotteryWidgetPopupView ()
@@ -75,7 +76,7 @@
         _titleLabel.textAlignment = NSTextAlignmentCenter;
         _titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#FFFFFF"];
         _titleLabel.font = [UIFont systemFontOfSize:14];
-        _titleLabel.text = @"抽奖暂未开始";
+        _titleLabel.text = PLVLocalizedString(@"抽奖暂未开始");
     }
     return _titleLabel;
 }

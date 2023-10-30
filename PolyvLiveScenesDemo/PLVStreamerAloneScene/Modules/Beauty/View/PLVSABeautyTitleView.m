@@ -9,6 +9,7 @@
 #import "PLVSABeautyTitleView.h"
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVSABeautyTitleButton.h"
 // 依赖库
@@ -49,8 +50,8 @@
     if ([PLVSAUtils sharedUtils].isLandscape) {
         paddingX = (self.bounds.size.width - 30 * 2 - 60) /2;
     }
-    self.whitenButton.frame = CGRectMake(0, 0, 30, self.bounds.size.height);
-    self.filterButton.frame = CGRectMake(CGRectGetMaxX(self.whitenButton.frame) + paddingX, 0, 30, self.bounds.size.height);
+    self.whitenButton.frame = CGRectMake(0, 0, 45, self.bounds.size.height);
+    self.filterButton.frame = CGRectMake(CGRectGetMaxX(self.whitenButton.frame) + paddingX, 0, 40, self.bounds.size.height);
     self.faceButton.frame = CGRectMake(CGRectGetMaxX(self.filterButton.frame) + paddingX, 0, 60, self.bounds.size.height);
 }
 
@@ -70,7 +71,7 @@
     if (!_whitenButton) {
         _whitenButton = [[PLVSABeautyTitleButton alloc] init];
         _whitenButton.tag = PLVBeautyTypeWhiten;
-        [_whitenButton setTitle:@"美颜" forState:UIControlStateNormal];
+        [_whitenButton setTitle:PLVLocalizedString(@"美颜") forState:UIControlStateNormal];
         _whitenButton.selected = YES;
         [_whitenButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -81,7 +82,7 @@
     if (!_filterButton) {
         _filterButton = [[PLVSABeautyTitleButton alloc] init];
         _filterButton.tag = PLVBeautyTypeFilter;
-        [_filterButton setTitle:@"滤镜" forState:UIControlStateNormal];
+        [_filterButton setTitle:PLVLocalizedString(@"滤镜") forState:UIControlStateNormal];
         [_filterButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _filterButton;
@@ -91,7 +92,7 @@
     if (!_faceButton) {
         _faceButton = [[PLVSABeautyTitleButton alloc] init];
         _faceButton.tag = PLVBeautyTypeFace;
-        [_faceButton setTitle:@"脸部细节" forState:UIControlStateNormal];
+        [_faceButton setTitle:PLVLocalizedString(@"脸部细节") forState:UIControlStateNormal];
         [_faceButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _faceButton;

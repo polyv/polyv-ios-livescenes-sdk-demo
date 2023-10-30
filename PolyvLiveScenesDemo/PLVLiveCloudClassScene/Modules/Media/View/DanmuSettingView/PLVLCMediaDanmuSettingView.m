@@ -8,6 +8,7 @@
 
 #import "PLVLCMediaDanmuSettingView.h"
 
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCMediaDanmuSettingCell.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -57,8 +58,10 @@
             self.tableView.frame = self.shdowBackgroundView.frame;
             
         } else {
-            self.shdowBackgroundView.frame = self.superview.bounds;
-            self.tableView.frame = self.superview.bounds;
+            // 竖屏时 直接隐藏
+            if (self.danmuSettingViewShow) {
+                [self switchShowStatusWithAnimation];
+            }
         }
         
     } else {
@@ -167,7 +170,7 @@
     }
     
     NSArray <NSNumber *> *scaleValueArray = @[@34, @26, @20, @14, @6];
-    NSArray <NSString *> *scaleTitleArray = @[@"缓慢", @"较慢", @"标准", @"较快", @"快速"];
+    NSArray <NSString *> *scaleTitleArray = @[PLVLocalizedString(@"缓慢"), PLVLocalizedString(@"较慢"), PLVLocalizedString(@"标准"), PLVLocalizedString(@"较快"), PLVLocalizedString(@"快速")];
     NSNumber *index = @2;//默认选择标准
     for (int i = 0; i < scaleValueArray.count; i++) {
         if ([scaleValueArray[i] isEqualToNumber:self.defaultDanmuSpeed]) {
@@ -175,7 +178,7 @@
             break;
         }
     }
-    [cell setDanmuSpeedCellWithTitle:@"弹幕速度" scaleValueArray:scaleValueArray scaleTitleArray:scaleTitleArray defaultScaleIndex:index];
+    [cell setDanmuSpeedCellWithTitle:PLVLocalizedString(@"弹幕速度") scaleValueArray:scaleValueArray scaleTitleArray:scaleTitleArray defaultScaleIndex:index];
     return cell;
 }
 

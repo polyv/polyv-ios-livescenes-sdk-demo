@@ -131,9 +131,10 @@
     
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
 
-    CGFloat labelWidth = 136.0;
     CGFloat labelHeight = 25.0;
     CGFloat rightPadding = 12.0;
+    CGSize labelSize = [self.floatViewShowButtonTipsLabel sizeThatFits:CGSizeMake(MAXFLOAT, labelHeight)];
+    CGFloat labelWidth = labelSize.width + 16;
     
     CGFloat targetY = showTips ? (CGRectGetMinY(self.floatViewShowButton.frame) - labelHeight - 8) : (CGRectGetMinY(self.floatViewShowButton.frame) - labelHeight * 2 - 8);
     

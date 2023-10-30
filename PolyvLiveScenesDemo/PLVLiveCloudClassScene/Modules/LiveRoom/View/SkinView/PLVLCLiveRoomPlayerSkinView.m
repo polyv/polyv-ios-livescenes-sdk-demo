@@ -9,6 +9,7 @@
 #import "PLVLCLiveRoomPlayerSkinView.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCLiveRoomLandscapeInputView.h"
 #import "PLVCommodityPushView.h"
 #import "PLVRoomDataManager.h"
@@ -409,7 +410,7 @@
 
 /// 切换聊天室关闭状态，开启/禁用输入框
 - (void)changeCloseRoomStatus:(BOOL)closeRoom {
-    NSString *guideChatLabelText = closeRoom ? @"聊天室已关闭":@"跟大家聊点什么吧～";
+    NSString *guideChatLabelText = closeRoom ? PLVLocalizedString(@"聊天室已关闭"):PLVLocalizedString(@"跟大家聊点什么吧～");
     [self.guideChatLabel setText:guideChatLabelText];
     self.guideChatLabel.userInteractionEnabled = !closeRoom;
     [self.landscapeInputView showInputView:NO];
@@ -417,7 +418,7 @@
 
 /// 切换聊天室专注模式状态，开启/禁用输入框
 - (void)changeFocusModeStatus:(BOOL)focusMode{
-    NSString *guideChatLabelText = focusMode ? @"当前为专注模式，无法发言":@"跟大家聊点什么吧～";
+    NSString *guideChatLabelText = focusMode ? PLVLocalizedString(@"当前为专注模式，无法发言"):PLVLocalizedString(@"跟大家聊点什么吧～");
     [self.guideChatLabel setText:guideChatLabelText];
     self.guideChatLabel.userInteractionEnabled = !focusMode;
     [self.landscapeInputView showInputView:NO];
@@ -469,9 +470,9 @@
         _guideChatLabel.userInteractionEnabled = YES;
         
         if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
-            _guideChatLabel.text = @"聊天室暂时关闭";
+            _guideChatLabel.text = PLVLocalizedString(@"聊天室暂时关闭");
         } else {
-            _guideChatLabel.text = @"跟大家聊点什么吧～";
+            _guideChatLabel.text = PLVLocalizedString(@"跟大家聊点什么吧～");
             UITapGestureRecognizer * guideChatLabelTapGR = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(guideChatLabelTapGestureAction:)];
             [_guideChatLabel addGestureRecognizer:guideChatLabelTapGR];
         }
@@ -646,7 +647,7 @@
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = @"房间标题";
+        _titleLabel.text = PLVLocalizedString(@"房间标题");
         _titleLabel.textAlignment = NSTextAlignmentLeft;
         _titleLabel.textColor = [UIColor whiteColor];
         _titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:16];
@@ -657,7 +658,7 @@
 - (UILabel *)playTimesLabel{
     if (!_playTimesLabel) {
         _playTimesLabel = [[UILabel alloc] init];
-        _playTimesLabel.text = @"播放量";
+        _playTimesLabel.text = PLVLocalizedString(@"播放量");
         _playTimesLabel.textAlignment = NSTextAlignmentLeft;
         _playTimesLabel.textColor = PLV_UIColorFromRGB(@"D0D0D0");
         _playTimesLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];

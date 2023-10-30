@@ -10,6 +10,7 @@
 #import "PLVChatUser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -236,7 +237,7 @@ static CGFloat kButtonoHeight = 32.0;
 - (UIButton *)copButton {
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];
@@ -248,7 +249,7 @@ static CGFloat kButtonoHeight = 32.0;
 - (UIButton *)foldButton {
     if (!_foldButton) {
         _foldButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_foldButton setTitle:@"更多" forState:UIControlStateNormal];
+        [_foldButton setTitle:PLVLocalizedString(@"更多") forState:UIControlStateNormal];
         _foldButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];

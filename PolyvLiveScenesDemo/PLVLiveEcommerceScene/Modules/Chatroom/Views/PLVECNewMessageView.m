@@ -8,6 +8,7 @@
 
 #import "PLVECNewMessageView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVECNewMessageView ()
@@ -46,7 +47,7 @@
         _label.textColor = [PLVColorUtil colorFromHexString:@"#FFA611"];
         _label.font = [UIFont systemFontOfSize:12];
         _label.textAlignment = NSTextAlignmentCenter;
-        _label.text = @"查看新消息";
+        _label.text = PLVLocalizedString(@"查看新消息");
     }
     return _label;
 }

@@ -9,6 +9,7 @@
 #import "PLVSALinkMicMenuPopup.h"
 //模块
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -112,7 +113,7 @@
 - (UIButton *)videoLinkMicBtn {
     if (!_videoLinkMicBtn) {
         _videoLinkMicBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_videoLinkMicBtn setTitle:@"视频连麦" forState:UIControlStateNormal];
+        [_videoLinkMicBtn setTitle:PLVLocalizedString(@"视频连麦") forState:UIControlStateNormal];
         _videoLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];
@@ -124,7 +125,7 @@
 - (UIButton *)audioLinkMicBtn {
     if (!_audioLinkMicBtn) {
         _audioLinkMicBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_audioLinkMicBtn setTitle:@"语音连麦" forState:UIControlStateNormal];
+        [_audioLinkMicBtn setTitle:PLVLocalizedString(@"语音连麦") forState:UIControlStateNormal];
         _audioLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];

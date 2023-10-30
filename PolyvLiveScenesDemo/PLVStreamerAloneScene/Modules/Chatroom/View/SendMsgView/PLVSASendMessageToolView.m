@@ -13,6 +13,7 @@
 
 // Utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // SDK
 #import <PLVFoundationSDK/PLVFdUtil.h>
@@ -101,7 +102,7 @@
         _sendButton.layer.masksToBounds = YES;
         _sendButton.titleLabel.font = [UIFont systemFontOfSize:12];
         [_sendButton setTitleColor:PLV_UIColorFromRGB(@"#F0F1F5") forState:UIControlStateNormal];
-        [_sendButton setTitle:@"发送" forState:UIControlStateNormal];
+        [_sendButton setTitle:PLVLocalizedString(@"发送") forState:UIControlStateNormal];
         [_sendButton.layer insertSublayer:self.sendButtonLayer atIndex:0];
         [_sendButton addTarget:self action:@selector(sendButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }

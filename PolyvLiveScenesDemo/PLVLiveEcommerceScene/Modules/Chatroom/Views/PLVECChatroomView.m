@@ -13,6 +13,7 @@
 #import "PLVECUtils.h"
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVToast.h"
 #import "PLVRewardDisplayManager.h"
 #import "PLVECChatroomPlaybackViewModel.h"
@@ -162,7 +163,7 @@ PLVECChatroomMessageViewDelegate
         messageLabel.font = [UIFont systemFontOfSize:8];
         messageLabel.textColor = [UIColor whiteColor];
         messageLabel.textAlignment = NSTextAlignmentCenter;
-        messageLabel.text = @"新消息";
+        messageLabel.text = PLVLocalizedString(@"新消息");
         [_receiveAQMessageImgView addSubview:messageLabel];
         _receiveAQMessageImgView.hidden = YES;
     }
@@ -255,14 +256,14 @@ PLVECChatroomMessageViewDelegate
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.keyboardToolView.enabledKeyboardTool = !closeRoom;
-        [self.keyboardToolView changePlaceholderText:closeRoom ? @"聊天室已关闭" : @"聊点什么吧~"];
+        [self.keyboardToolView changePlaceholderText:closeRoom ? PLVLocalizedString(@"聊天室已关闭") : PLVLocalizedString(@"聊点什么吧~")];
     });
 }
 
 - (void)chatroomManager_focusMode:(BOOL)focusMode {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.keyboardToolView.enabledKeyboardTool = !focusMode;
-        [self.keyboardToolView changePlaceholderText:focusMode ? @"当前为专注模式" : @"聊点什么吧~"];
+        [self.keyboardToolView changePlaceholderText:focusMode ? PLVLocalizedString(@"当前为专注模式") : PLVLocalizedString(@"聊点什么吧~")];
     });
 }
 
@@ -284,7 +285,7 @@ PLVECChatroomMessageViewDelegate
 
 #pragma mark - PLVECChatroomPlaybackViewModelDelegate
 - (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
-    NSString *content = success ? @"聊天室重放功能已开启，将会显示历史消息" : @"回放消息正在准备中，可稍等刷新查看";
+    NSString *content = success ? PLVLocalizedString(@"聊天室重放功能已开启，将会显示历史消息") : PLVLocalizedString(@"回放消息正在准备中，可稍等刷新查看");
     [PLVToast showToastWithMessage:content inView:self afterDelay:5.0];
 }
 
@@ -306,7 +307,7 @@ PLVECChatroomMessageViewDelegate
             }
             if (mutableString.length > 1) {
                 string = [[mutableString copy] substringToIndex:mutableString.length - 1];
-                string = [NSString stringWithFormat:@"%@等%zd人", string, [userArray count]];
+                string = [NSString stringWithFormat:PLVLocalizedString(@"%@等%zd人"), string, [userArray count]];
             }
         } else {
             PLVChatUser *user = userArray[0];
@@ -315,7 +316,7 @@ PLVECChatroomMessageViewDelegate
     }
     
     if (string.length > 0) {
-        NSString *welcomeMessage = [NSString stringWithFormat:@"欢迎 %@ 进入直播间", string];
+        NSString *welcomeMessage = [NSString stringWithFormat:PLVLocalizedString(@"欢迎 %@ 进入直播间"), string];
         [self showWelcomeWithMessage:welcomeMessage];
     }
 }
@@ -367,12 +368,12 @@ PLVECChatroomMessageViewDelegate
     if (self.keyboardToolView.keyboardToolMode == PLVECKeyboardToolModeNormal) {
         BOOL success = [[PLVECChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:replyModel];
         if (!success) {
-            [PLVECUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self];
+            [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self];
         }
     } else if (self.keyboardToolView.keyboardToolMode == PLVECKeyboardToolModeAskQuestion) {
         BOOL success = [[PLVECChatroomViewModel sharedViewModel] sendQuesstionMessage:text];
         if (!success) {
-            [PLVECUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self];
+            [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self];
         }
     }
 }

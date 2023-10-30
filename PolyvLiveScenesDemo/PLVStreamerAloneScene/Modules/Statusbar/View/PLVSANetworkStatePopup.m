@@ -7,6 +7,7 @@
 //
 
 #import "PLVSANetworkStatePopup.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSANetworkStatePopup ()
@@ -27,30 +28,25 @@
 
 #pragma mark - [ Life Cycle ]
 
-- (instancetype)initWithBubbleFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame {
+- (instancetype)init {
     self = [super init];
     if (self) {
         self.frame = [UIScreen mainScreen].bounds;
         self.backgroundColor = [UIColor clearColor];
         
-        self.bubbleSize = frame.size;
-        self.bubbleView.frame = frame;
         [self addSubview:self.bubbleView];
-        
-        self.outsideButtonMask.frame = buttonFrame;
         [self addSubview:self.outsideButtonMask];
+        [self.bubbleView addSubview:self.firstLineLabel];
+        [self.bubbleView addSubview:self.secondLineLabel];
         
         CGFloat labelXPadding = 12.0;
-        CGFloat labelHeight = 16.0;
-        CGFloat labelWidth = frame.size.width - labelXPadding * 2;
-        
-        self.firstLabelRect = CGRectMake(labelXPadding, 20, labelWidth, labelHeight);
-        self.firstLineLabel.frame = self.firstLabelRect;
-        [self.bubbleView addSubview:self.firstLineLabel];
-        
-        self.secondLabelRect = CGRectMake(labelXPadding, CGRectGetMaxY(self.firstLineLabel.frame) + 8, labelWidth, labelHeight);
-        self.secondLineLabel.frame = self.secondLabelRect;
-        [self.bubbleView addSubview:self.secondLineLabel];
+        CGFloat viewHeight = 20.0 * 2 + 2;
+        CGFloat width = 200.0;
+        CGSize labelSize = [self.firstLineLabel sizeThatFits:CGSizeMake(width - labelXPadding * 2, MAXFLOAT)];
+        viewHeight += labelSize.height;
+        labelSize = [self.secondLineLabel sizeThatFits:CGSizeMake(width - labelXPadding * 2, MAXFLOAT)];
+        viewHeight += labelSize.height;
+        self.bubbleSize = CGSizeMake(width, viewHeight);
     }
     return self;
 }
@@ -74,6 +70,28 @@
 
 #pragma mark UI
 
+- (void)setupBubbleFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame {
+    self.bubbleSize = frame.size;
+    self.bubbleView.frame = frame;
+    
+    self.outsideButtonMask.frame = buttonFrame;
+    
+    CGFloat labelXPadding = 12.0;
+    CGFloat labelHeight = 16.0;
+    CGFloat labelWidth = frame.size.width - labelXPadding * 2;
+    
+    self.firstLabelRect = CGRectMake(labelXPadding, 20, labelWidth, labelHeight);
+    self.firstLineLabel.frame = self.firstLabelRect;
+    
+    self.secondLabelRect = CGRectMake(labelXPadding, CGRectGetMaxY(self.firstLineLabel.frame) + 8, labelWidth, frame.size.height - CGRectGetMaxY(self.firstLabelRect) - 20);
+    self.secondLineLabel.frame = self.secondLabelRect;
+    
+    UIBezierPath *bezierPath = [[self class] BezierPathWithSize:self.bubbleSize];
+    CAShapeLayer* shapeLayer = [CAShapeLayer layer];
+    shapeLayer.path = bezierPath.CGPath;
+    _bubbleView.layer.mask = shapeLayer;
+}
+
 - (void)showAtView:(UIView *)superView {
     self.showing = YES;
     [superView addSubview:self];
@@ -94,8 +112,8 @@
 }
 
 - (void)updateRTT:(NSInteger)rtt upLoss:(NSInteger)upLoss downLoss:(NSInteger)downLoss {
-    self.firstLineLabel.text = [NSString stringWithFormat:@"网络延迟：%zdms", rtt];
-    self.secondLineLabel.text = [NSString stringWithFormat:@"丢包率：↑%zd.0%% ↓%zd.0%%", upLoss, downLoss];
+    self.firstLineLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"网络延迟：%zdms"), rtt];
+    self.secondLineLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"丢包率：↑%zd.0%% ↓%zd.0%%"), upLoss, downLoss];
 }
 
 #pragma mark - [ Private Method ]
@@ -114,11 +132,6 @@
         _bubbleView = [[UIView alloc] init];
         _bubbleView.backgroundColor = [PLVColorUtil colorFromHexString:@"#212121"];
         _bubbleView.layer.masksToBounds = YES;
-
-        UIBezierPath *bezierPath = [[self class] BezierPathWithSize:self.bubbleSize];
-        CAShapeLayer* shapeLayer = [CAShapeLayer layer];
-        shapeLayer.path = bezierPath.CGPath;
-        _bubbleView.layer.mask = shapeLayer;
     }
     return _bubbleView;
 }
@@ -128,7 +141,7 @@
         _firstLineLabel = [[UILabel alloc] init];
         _firstLineLabel.font = [UIFont systemFontOfSize:14];
         _firstLineLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
-        _firstLineLabel.text = @"网络延迟：ms";
+        _firstLineLabel.text = PLVLocalizedString(@"网络延迟：ms");
     }
     return _firstLineLabel;
 }
@@ -138,7 +151,8 @@
         _secondLineLabel = [[UILabel alloc] init];
         _secondLineLabel.font = [UIFont systemFontOfSize:14];
         _secondLineLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
-        _secondLineLabel.text = @"丢包率：↑0.0% ↓0.0%";
+        _secondLineLabel.text = PLVLocalizedString(@"丢包率：↑0.0% ↓0.0%");
+        _secondLineLabel.numberOfLines = 0;
     }
     return _secondLineLabel;
 }

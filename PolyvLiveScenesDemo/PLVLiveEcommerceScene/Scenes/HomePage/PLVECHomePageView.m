@@ -30,6 +30,8 @@
 
 // 工具
 #import "PLVECUtils.h"
+#import "PLVActionSheet.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
 static NSString *const PLVECHomePageView_Data_AudioModeItemTitle = @"音频模式";
@@ -37,6 +39,9 @@ static NSString *const PLVECHomePageView_Data_RouteItemTitle     = @"线路";
 static NSString *const PLVECHomePageView_Data_QualityItemTitle   = @"清晰度";
 static NSString *const PLVECHomePageView_Data_DelayModeItemTitle = @"模式";
 static NSString *const PLVECHomePageView_Data_PictureInPictureItemTitle = @"小窗播放";
+static NSString *const PLVECHomePageView_Data_SwitchLanguageItemTitle = @"PLVLiveLanguageSwitchTitle";
+static NSString *const PLVECHomePageView_Data_PlaySpeedItemTitle = @"播放速度";
+static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
 
 /// SwitchView类型
 typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
@@ -53,6 +58,7 @@ typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
 };
 
 @interface PLVECHomePageView ()<
+UITextViewDelegate,
 PLVPlayerContolViewDelegate,
 PLVECMoreViewDelegate,
 PLVPlayerSwitchViewDelegate,
@@ -286,7 +292,7 @@ PLVECLotteryWidgetViewDelegate
 - (UIButton *)questionnaireButton {
     if (!_questionnaireButton) {
         _questionnaireButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_questionnaireButton setTitle:@"问卷" forState:UIControlStateNormal];
+        [_questionnaireButton setTitle:PLVLocalizedString(@"问卷") forState:UIControlStateNormal];
         _questionnaireButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_questionnaireButton setBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.16)];
         [_questionnaireButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
@@ -344,7 +350,7 @@ PLVECLotteryWidgetViewDelegate
 - (UILabel *)networkQualityMiddleLable {
     if (!_networkQualityMiddleLable) {
         _networkQualityMiddleLable = [[UILabel alloc] init];
-        _networkQualityMiddleLable.text = @"您的网络状态不佳，可尝试切换网络";
+        _networkQualityMiddleLable.text = PLVLocalizedString(@"您的网络状态不佳，可尝试切换网络");
         _networkQualityMiddleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _networkQualityMiddleLable.textColor = PLV_UIColorFromRGB(@"#333333");
         _networkQualityMiddleLable.backgroundColor = PLV_UIColorFromRGB(@"#FFFFFF");
@@ -363,33 +369,48 @@ PLVECLotteryWidgetViewDelegate
         _networkQualityPoorView.hidden = YES;
         _networkQualityPoorView.backgroundColor =  PLV_UIColorFromRGB(@"#FFFFFF");
         [self addSubview:_networkQualityPoorView];
-        UIBezierPath *bezierPath = [self BezierPathWithSize:CGSizeMake(207, 56)];
-        CAShapeLayer *shapeLayer = [CAShapeLayer layer];
-        shapeLayer.path = bezierPath.CGPath;
-        self.networkQualityPoorView.layer.mask = shapeLayer;
         
-        UILabel *tipsLable = [[UILabel alloc] init];
-        tipsLable = [[UILabel alloc] init];
-        tipsLable.text = @"您的网络状态糟糕，可尝试在更多>模式";
-        tipsLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
-        tipsLable.textColor = PLV_UIColorFromRGB(@"#333333");
-        tipsLable.numberOfLines = 0;
-        [_networkQualityPoorView addSubview:tipsLable];
-        tipsLable.frame = CGRectMake(16, 8, 159, 36);
-
-        UIButton *swithDelayLiveButton = [[UIButton alloc] init];
-        [swithDelayLiveButton setTitle:@"切换到正常延迟" forState:UIControlStateNormal];
-        [swithDelayLiveButton setTitleColor:PLV_UIColorFromRGB(@"#6DA7FF") forState:UIControlStateNormal];
-        [swithDelayLiveButton addTarget:self action:@selector(swithDelayLiveClick:) forControlEvents:UIControlEventTouchUpInside];
-        swithDelayLiveButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
-        [_networkQualityPoorView addSubview:swithDelayLiveButton];
-        swithDelayLiveButton.frame = CGRectMake(77, 28, 86, 14);
+        UITextView *networkQualityTextView = [[UITextView alloc] init];
+        networkQualityTextView.delegate = self;
+        networkQualityTextView.editable = YES;
+        networkQualityTextView.scrollEnabled = NO;
+        networkQualityTextView.backgroundColor = [UIColor clearColor];
+        networkQualityTextView.textContainerInset = UIEdgeInsetsZero;
+        networkQualityTextView.textContainer.lineFragmentPadding = 0;
+        UIFont *font = [UIFont fontWithName:@"PingFangSC-Regular" size: 12];
+        UIColor *normalColor = PLV_UIColorFromRGB(@"#333333");
+        UIColor *linkColor = PLV_UIColorFromRGB(@"#6DA7FF");
+        NSDictionary *normalAttributes = @{NSFontAttributeName:font,
+                                              NSForegroundColorAttributeName:normalColor};
+        NSDictionary *switchAttributes = @{NSFontAttributeName:font,
+                                                NSForegroundColorAttributeName:linkColor,
+                                                NSLinkAttributeName: [NSString stringWithFormat:@"%@://", PLVECHomeSwitchNormalDelayAttributeName]};
+        NSString *tipsString = PLVLocalizedString(@"您的网络状态糟糕，可尝试在更多>模式");
+        NSString *switchString = PLVLocalizedString(@"切换到正常延迟");
+        NSString *networkQualityString = [NSString stringWithFormat:@"%@ %@",tipsString, switchString];
+        NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:networkQualityString];
+        [attributedString addAttributes:normalAttributes range:NSMakeRange(0, tipsString.length)];
+        [attributedString addAttributes:switchAttributes range:NSMakeRange(tipsString.length + 1, switchString.length)];
+        networkQualityTextView.linkTextAttributes = @{NSForegroundColorAttributeName: linkColor};
+        networkQualityTextView.attributedText = attributedString;
+        [_networkQualityPoorView addSubview:networkQualityTextView];
+        
+        CGFloat viewSizeHeight = 56;
+        CGSize textViewSize = [attributedString boundingRectWithSize:CGSizeMake(self.bounds.size.width * 0.6, 36) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+        networkQualityTextView.frame = CGRectMake(16, (viewSizeHeight - textViewSize.height)/2 - 2, textViewSize.width, textViewSize.height);
         
         UIButton *closeButton = [[UIButton alloc] init];
         [closeButton addTarget:self action:@selector(closeNetworkTipsViewClick:) forControlEvents:UIControlEventTouchUpInside];
         [closeButton setImage:[PLVECUtils imageForWatchResource:@"plv_network_tips_close"] forState:UIControlStateNormal];
         [_networkQualityPoorView addSubview:closeButton];
-        closeButton.frame = CGRectMake(183, 8, 16, 16);
+        closeButton.frame = CGRectMake(CGRectGetMaxX(networkQualityTextView.frame) + 8, 8, 16, 16);
+        
+        CGFloat viewSizeWidth = CGRectGetMaxX(closeButton.frame) + 16;
+        UIBezierPath *bezierPath = [self BezierPathWithSize:CGSizeMake(viewSizeWidth, viewSizeHeight)];
+        CAShapeLayer *shapeLayer = [CAShapeLayer layer];
+        shapeLayer.path = bezierPath.CGPath;
+        self.networkQualityPoorView.layer.mask = shapeLayer;
+        self.networkQualityPoorView.bounds = CGRectMake(0, 0, viewSizeWidth, viewSizeHeight);
     }
     return _networkQualityPoorView;
 }
@@ -443,12 +464,13 @@ PLVECLotteryWidgetViewDelegate
         [self.moreView reloadData];
         self.moreView.hidden = NO;
     } else if (self.type == PLVECHomePageType_Playback) {
-        [self updateSwitchView:PLVECSwitchViewType_Speed];
+        [self.moreView reloadData];
+        self.moreView.hidden = NO;
     }
 }
 
 - (void)updateChannelInfo:(NSString *)publisher coverImage:(NSString *)coverImage {
-    self.liveRoomInfoView.publisherLB.text = publisher;
+    self.liveRoomInfoView.publisherLB.text = PLVLocalizedString(publisher);
     [PLVFdUtil setImageWithURL:[NSURL URLWithString:coverImage]
                    inImageView:self.liveRoomInfoView.coverImageView
                      completed:nil];
@@ -577,7 +599,7 @@ PLVECLotteryWidgetViewDelegate
         if ([PLVFdUtil checkDictionaryUseable:dict]) {
             BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
             NSString *title = PLV_SafeStringForDictKey(dict, @"title");
-            if ([PLVFdUtil checkStringUseable:title] && [title isEqualToString:@"问卷"]) {
+            if ([PLVFdUtil checkStringUseable:title] && [title isEqualToString:PLVLocalizedString(@"问卷")]) {
                 self.questionnaireEventName = PLV_SafeStringForDictKey(dict, @"event");
                 self.questionnaireButton.hidden = !isShow;
             }
@@ -672,8 +694,9 @@ PLVECLotteryWidgetViewDelegate
         }
         
         // 网络提示
-        self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - 219 - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, 219, 28);
-        self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - 207 - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, 207, 56);
+        CGFloat middleLableWidth = [self.networkQualityMiddleLable sizeThatFits:CGSizeMake(MAXFLOAT, 28)].width + 20;
+        self.networkQualityMiddleLable.frame = CGRectMake(CGRectGetWidth(self.bounds) - middleLableWidth - 16, CGRectGetMinY(self.giftButton.frame) - 28 - 8, middleLableWidth, 28);
+        self.networkQualityPoorView.frame = CGRectMake(CGRectGetWidth(self.bounds) - CGRectGetWidth(self.networkQualityPoorView.bounds) - 8, CGRectGetMinY(self.giftButton.frame) - 56 - 8, CGRectGetWidth(self.networkQualityPoorView.bounds), 56);
         
         // 判断是否有公告控件 有则适配问卷控件按钮位置
         PLVECBulletinView *bulletinView;
@@ -782,7 +805,7 @@ PLVECLotteryWidgetViewDelegate
     }
 }
 
-- (void)swithDelayLiveClick:(UIButton *)button {
+- (void)swithDelayLiveClick {
     [self switchToNoDelayWatchMode:NO];
     self.networkQualityPoorView.hidden = YES;
 }
@@ -1021,8 +1044,8 @@ PLVECLotteryWidgetViewDelegate
     if (!inLinkMic && self.isPlaying) {
         if (!self.noDelayWatchMode) {
             PLVECMoreViewItem *item1 = [[PLVECMoreViewItem alloc] init];
-            item1.title = PLVECHomePageView_Data_AudioModeItemTitle;
-            item1.selectedTitle = @"视频模式";
+            item1.title = PLVLocalizedString(PLVECHomePageView_Data_AudioModeItemTitle);
+            item1.selectedTitle = PLVLocalizedString(@"视频模式");
             item1.iconImageName = @"plv_audioSwitch_btn";
             item1.selectedIconImageName = @"plv_videoSwitch_btn";
             item1.selected = self.audioMode;
@@ -1031,21 +1054,21 @@ PLVECLotteryWidgetViewDelegate
         
         if (!self.noDelayWatchMode && self.lineCount > 1) {
             PLVECMoreViewItem *item2 = [[PLVECMoreViewItem alloc] init];
-            item2.title = PLVECHomePageView_Data_RouteItemTitle;
+            item2.title = PLVLocalizedString(PLVECHomePageView_Data_RouteItemTitle);
             item2.iconImageName = @"plv_lineSwitch_btn";
             [muArray addObject:item2];
         }
         
         if (!self.noDelayWatchMode && !self.hiddenCodeRateSwitch) {
             PLVECMoreViewItem *item3 = [[PLVECMoreViewItem alloc] init];
-            item3.title = PLVECHomePageView_Data_QualityItemTitle;
+            item3.title = PLVLocalizedString(PLVECHomePageView_Data_QualityItemTitle);
             item3.iconImageName = @"plv_codeRateSwitch_btn";
             [muArray addObject:item3];
         }
         
         if (!self.hiddenDelayModeSwitch) {
             PLVECMoreViewItem *item4 = [[PLVECMoreViewItem alloc] init];
-            item4.title = PLVECHomePageView_Data_DelayModeItemTitle;
+            item4.title = PLVLocalizedString(PLVECHomePageView_Data_DelayModeItemTitle);
             item4.iconImageName = @"plv_delayModeSwitch_btn";
             [muArray addObject:item4];
         }
@@ -1053,11 +1076,26 @@ PLVECLotteryWidgetViewDelegate
         if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive &&
             [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
             PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
-            item5.title = PLVECHomePageView_Data_PictureInPictureItemTitle;
+            item5.title = PLVLocalizedString(PLVECHomePageView_Data_PictureInPictureItemTitle);
             item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
             [muArray addObject:item5];
         }
     }
+    
+    if (self.type == PLVECHomePageType_Playback) {
+        PLVECMoreViewItem *speedItem = [[PLVECMoreViewItem alloc] init];
+        speedItem.title = PLVLocalizedString(PLVECHomePageView_Data_PlaySpeedItemTitle);
+        speedItem.iconImageName = @"plvec_live_playspeed_btn";
+        speedItem.selectedIconImageName = @"plvec_live_playspeed_btn";
+        [muArray addObject:speedItem];
+    }
+    
+    PLVECMoreViewItem *item6 = [[PLVECMoreViewItem alloc] init];
+    item6.title = PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle);
+    item6.iconImageName = @"plvec_live_languageswitch_btn";
+    item6.selectedIconImageName = @"plvec_live_languageswitch_btn";
+    item6.selected = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN);
+    [muArray addObject:item6];
     
     if ([PLVFdUtil checkArrayUseable:self.interactButtonArray]) {
         for (NSInteger index = 0; index < self.interactButtonArray.count; index++) {
@@ -1079,31 +1117,47 @@ PLVECLotteryWidgetViewDelegate
 
 - (void)moreView:(PLVECMoreView *)moreView didSelectItem:(PLVECMoreViewItem *)item {
     NSString *title = item.title;
-    if ([title isEqualToString:PLVECHomePageView_Data_AudioModeItemTitle]) {
+    if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_AudioModeItemTitle)]) {
         if ([self.delegate respondsToSelector:@selector(homePageView:switchAudioMode:)]) {
             [self.delegate homePageView:self switchAudioMode:item.isSelected];
         }
         self.audioMode = item.isSelected;
         [self updateCodeRateSwitchViewHiddenState];
         [self updateDelayModeSwitchViewHiddenState];
-    } else if ([title isEqualToString:PLVECHomePageView_Data_RouteItemTitle] ||
-               [title isEqualToString:PLVECHomePageView_Data_QualityItemTitle] ||
-               [title isEqualToString:PLVECHomePageView_Data_DelayModeItemTitle] ) {
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_RouteItemTitle)] ||
+               [title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_QualityItemTitle)] ||
+               [title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_DelayModeItemTitle)] ) {
         moreView.hidden = YES;
         PLVECSwitchViewType switchViewType = PLVECSwitchViewType_Unknown;
-        if ([title isEqualToString:PLVECHomePageView_Data_RouteItemTitle]) {
+        if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_RouteItemTitle)]) {
             switchViewType = PLVECSwitchViewType_Line;
-        } else if ([title isEqualToString:PLVECHomePageView_Data_QualityItemTitle]) {
+        } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_QualityItemTitle)]) {
             switchViewType = PLVECSwitchViewType_CodeRate;
-        } else if ([title isEqualToString:PLVECHomePageView_Data_DelayModeItemTitle]) {
+        } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_DelayModeItemTitle)]) {
             switchViewType = PLVECSwitchViewType_DelayMode;
         }
         [self updateSwitchView:switchViewType];
-    } else if ([title isEqualToString:PLVECHomePageView_Data_PictureInPictureItemTitle]) {
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_PictureInPictureItemTitle)]) {
         moreView.hidden = YES;
         if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewClickPictureInPicture:)]) {
             [self.delegate homePageViewClickPictureInPicture:self];
         }
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_PlaySpeedItemTitle)]) {
+        moreView.hidden = YES;
+        [self updateSwitchView:PLVECSwitchViewType_Speed];
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle)]) {
+        moreView.hidden = YES;
+        __weak typeof(self) weakSelf = self;
+        [PLVActionSheet showActionSheetWithTitle:nil cancelBtnTitle:PLVLocalizedString(@"取消") destructiveBtnTitle:nil otherBtnTitles:@[@"简体中文-ZH", @"English-EN"] handler:^(PLVActionSheet * _Nonnull actionSheet, NSInteger index) {
+            if (index > 0) {
+                PLVMultiLanguageMode selectedLanguage = (index == 1 ?PLVMultiLanguageModeZH : PLVMultiLanguageModeEN);
+                if (selectedLanguage != [PLVMultiLanguageManager sharedManager].currentLanguage) {
+                    if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(homePageView:switchLanguageMode:)]) {
+                        [weakSelf.delegate homePageView:weakSelf switchLanguageMode:selectedLanguage];
+                    }
+                }
+            }
+        }];
     } else {
         __block NSString *eventName;
         [self.interactButtonArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -1127,16 +1181,16 @@ PLVECLotteryWidgetViewDelegate
     }
     self.switchViewType = switchViewType;
     if (switchViewType == PLVECSwitchViewType_Line) {
-        self.switchView.titleLable.text = @"切换线路";
+        self.switchView.titleLable.text = PLVLocalizedString(@"切换线路");
         self.switchView.selectedIndex = self.curlineIndex;
     } else if (switchViewType == PLVECSwitchViewType_CodeRate) {
-        self.switchView.titleLable.text = @"切换清晰度";
+        self.switchView.titleLable.text = PLVLocalizedString(@"切换清晰度");
         self.switchView.selectedIndex = self.curCodeRateIndex;
     } else if (switchViewType == PLVECSwitchViewType_Speed) {
-        self.switchView.titleLable.text = @"播放速度";
+        self.switchView.titleLable.text = PLVLocalizedString(PLVECHomePageView_Data_PlaySpeedItemTitle);
         self.switchView.selectedIndex = self.curSpeedIndex;
     } else if (switchViewType == PLVECSwitchViewType_DelayMode) {
-        self.switchView.titleLable.text = @"模式";
+        self.switchView.titleLable.text = PLVLocalizedString(@"模式");
         self.switchView.selectedIndex = self.curDelayModeIndex;
     }
     [self.switchView reloadData];
@@ -1148,7 +1202,7 @@ PLVECLotteryWidgetViewDelegate
     if (self.switchViewType == PLVECSwitchViewType_Line) {
         NSMutableArray *mArr = [NSMutableArray array];
         for (int i = 1; i <= self.lineCount; i ++) {
-            [mArr addObject:[NSString stringWithFormat:@"线路%d",i]];
+            [mArr addObject:[NSString stringWithFormat:PLVLocalizedString(@"线路%d"),i]];
         }
         return [mArr copy];
     } else if (self.switchViewType == PLVECSwitchViewType_CodeRate) {
@@ -1156,7 +1210,7 @@ PLVECLotteryWidgetViewDelegate
     } else if (self.switchViewType == PLVECSwitchViewType_Speed) {
         return @[@"0.5x", @"1.0x", @"1.25x", @"1.5x", @"2.0x"];
     } else if (self.switchViewType == PLVECSwitchViewType_DelayMode) {
-        return @[@"无延迟", @"正常延迟"];
+        return @[PLVLocalizedString(@"无延迟"), PLVLocalizedString(@"正常延迟")];
     } else {
         return @[];
     }
@@ -1218,6 +1272,19 @@ PLVECLotteryWidgetViewDelegate
 
 - (void)lotteryWidgetViewPopupViewDidShow:(PLVECLotteryWidgetView *)lotteryWidgetView {
     [self.cardPushButtonView hidePopupView];
+}
+
+#pragma mark UITextViewDelegate
+- (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL *)URL inRange:(NSRange)characterRange {
+    if ([[URL scheme] isEqualToString:PLVECHomeSwitchNormalDelayAttributeName]) {
+        [self swithDelayLiveClick];
+    }
+    
+    return NO;
+}
+
+- (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
+    return NO;
 }
 
 @end

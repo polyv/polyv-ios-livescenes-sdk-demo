@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVSAChatroomGiftView ()
 
@@ -66,7 +67,7 @@
     self.numLabel.hidden = NO;
     
     self.nameLabel.text = userName;
-    self.messageLable.text = [NSString stringWithFormat:@"赠送 %@",giftContent];
+    self.messageLable.text = [NSString stringWithFormat:PLVLocalizedString(@"赠送 %@"),giftContent];
     self.numLabel.text = [NSString stringWithFormat:@"x %zd", giftNum];
     // 设置礼物图片
     self.giftImgView.hidden = !giftImageUrl;
@@ -93,7 +94,7 @@
     self.hidden = NO;
     self.numLabel.hidden = YES;
     self.nameLabel.text = userName;
-    self.messageLable.text = [NSString stringWithFormat:@"打赏 %@元",cashGiftContent];
+    self.messageLable.text = [NSString stringWithFormat:PLVLocalizedString(@"打赏 %@元"),cashGiftContent];
     
     // 设置礼物图片
     self.giftImgView.image = [PLVSAUtils imageForChatroomResource:@"plvsa_chatroom_gift_icon_cash"];

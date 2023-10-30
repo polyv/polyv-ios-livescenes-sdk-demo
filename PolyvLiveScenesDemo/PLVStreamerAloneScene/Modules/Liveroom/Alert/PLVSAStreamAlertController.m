@@ -7,6 +7,7 @@
 //
 
 #import "PLVSAStreamAlertController.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 /**
@@ -291,7 +292,7 @@ static CGFloat kAlertButtonHeight = 36.0; // 按钮的高度
         self.alertClickStyle = PLVSAAlertClickStyleOneButton;
     }
     if (![confirmTitle isKindOfClass:[NSString class]] || confirmTitle.length == 0) {
-        confirmTitle = @"确定";
+        confirmTitle = PLVLocalizedString(@"确定");
         self.alertClickStyle = PLVSAAlertClickStyleOneButton;
     }
     

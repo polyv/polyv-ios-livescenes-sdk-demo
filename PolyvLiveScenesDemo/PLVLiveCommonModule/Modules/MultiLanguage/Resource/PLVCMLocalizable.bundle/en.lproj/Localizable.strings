@@ -1,0 +1,556 @@
+/* 
+  Localizable.strings
+  MultiLanguage
+
+  Created by Sakya on 2023/8/25.
+  
+*/
+
+/* 场景登录 */
+
+"登录成功" = "Login successful";
+
+/* Common */
+
+"%@ (我)" = "%@ (me)";
+
+"%@(错误码:%ld)" = "%1$@(Error code:%2$ld)";
+
+"%d张照片" = "%d photos";
+
+"%d部视频" = "%d videos";
+
+"0点" = "0 points";
+
+"PLV跑马灯" = "PLV Marquee";
+
+"preview" = "preview";
+
+"下载iCloud的图片失败，请保证网络正常，重新再试" = "Failed to download iCloud pictures, please ensure the network is normal and try again";
+
+"主讲模式" = "Speaker";
+
+"你只能选择一张图片" = "You can only choose one picture";
+
+"你已进入专属的提问频道，提问内容不会公开" = "You have entered the exclusive question channel, and the content of the question will not be made public";
+
+"你没开通访问%@的权限，如要开通，请移步到设置进行开通" = "You do not have the permission to access %@. If you want to activate it, please go to the settings to activate it";
+
+"你没开通访问相册的权限，如要开通，请移步到:设置->隐私->照片 开启" = "You do not have permission to access the photo album. If you want to activate it, please go to: Settings->Privacy ->Photos On";
+
+"保存图片" = "Save picture";
+
+"免费" = "free";
+
+"切换线路" = "Switch Line";
+
+"刷新" = "Refresh";
+
+"单人模式" = "Single";
+
+"原图" = "Original";
+
+"发送" = "Send";
+
+"取消" = "Cancel";
+
+"回放方式暂不支持" = "The playback method is not currently supported";
+
+"回放方式获取失败" = "Failed to obtain playback method";
+
+"回放类型暂不支持" = "The playback type is not currently supported";
+
+"回放类型获取失败" = "Failed to obtain playback type";
+
+"回放视频为空" = "Playback video is empty";
+
+"回放设置为空" = "Playback settings are empty";
+
+"图片保存至相册失败" = "Failed to save image to album";
+
+"图片已保存到系统相册" = "The picture has been saved to the system album";
+
+"复制链接" = "Copy link";
+
+"好" = "Good";
+
+"好的" = "OK";
+
+"存在观看限制，暂不支持进入" = "Viewing restrictions exist, currently does not support access";
+
+"密码不可为空" = "Password cannot be empty";
+
+"小窗播放中..." = "This video is playing in picture in picture";
+
+"平铺模式" = "Tile";
+
+"广告：%lds" = "Advertising time:%lds";
+
+"当前无网络！" = "No network available at the moment!";
+
+"微信好友" = "WeChat Friends";
+
+"您无权访问相册，请授权后重新保存" = "You do not have permission to access the album, please authorize and save again";
+
+"我的积分：%@" = "My points: %1$@";
+
+"我的积分：0" = "My points: 0";
+
+"房间已开启双师功能，限制学生登录" = "The room has activated dual-teacher mode, restricting student logins";
+
+"打赏" = "Reward";
+
+"授权失败，无法保存至您的相册" = "Authorization failed, unable to save to your album";
+
+"提示" = "Tips";
+
+"摄像头" = "Camera";
+
+"暂不支持该频道" = "This channel is not supported";
+
+"朋友圈" = "Moments";
+
+"没有访问相册的权限" = "No permission to access photo album";
+
+"点播列表获取为空" = "VOD playlist is empty";
+
+"点播列表获取失败" = "Failed to obtain VOD playlist";
+
+"照片:%d" = "Photo:%d";
+
+"照片:%d 视频:%d" = "Photo:%1$d Video:%2$d";
+
+"用户ID、用户昵称不可为空" = "User ID and user nickname cannot be empty";
+
+"登录校验失败" = "Login verification failed";
+
+"直播暂存为空" = "Live broadcast temporary storage is empty";
+
+"礼物" = "Gift";
+
+"礼物打赏" = "Gifts Reward";
+
+"礼物打赏功能未开启" = "The gift reward function is not enabled";
+
+"积分打赏" = "Points Reward";
+
+"纯视频场景暂时不支持双师" = "streamer alone scene do not currently support dual teachers";
+
+"聊天室已开启" = "Chatroom is open";
+
+"聊天室暂时关闭" = "Chatroom temporarily closed";
+
+"获取回放列表设置失败" = "Failed to obtain playback list settings";
+
+"获取频道类型失败" = "Failed to get channel type";
+
+"观众%@" = "Viewer%@";
+
+"观众名" = "Viewer name";
+
+"视频:%d" = "Video:%d";
+
+"视频vid不可为空" = "Video vid cannot be empty";
+
+"PLVCMVideoLoadFailedRefreshTips" = "The video failed to load, please check the network or exit and re-enter";
+
+"PLVCMVideoLoadFailedErrorCodeTips" = "Video loading failed, please exit and re-enter";
+
+"PLVCMVideoLoadFailedRefreshAndSwitchLineTips" = "The video is loading slowly, please switch the line or exit and re-enter";
+
+"视频加载缓慢，请刷新或退出重进" = "The video is loading slowly, please refresh or exit and re-enter";
+
+"视频播放失败，请尝试手动刷新，或退出重新登录" = "Video playback failed, please try to refresh manually, or log out and log in again";
+
+"讲师" = "Teacher";
+
+"课节ID不可为空" = "Course ID cannot be empty";
+
+"账号信息不可为空" = "Account information cannot be empty";
+
+"赠送    礼物" = "Given   Gift";
+
+"赠送  %@" = "Given  %@";
+
+"标清" = "SD";
+
+"流畅" = "SD";
+
+"高清" = "HD";
+
+"超清" = "FHD";
+
+"超高清" = "UHD";
+
+"预览(%d/%d)" = "Preview(%1$d/%2$d)";
+
+"频道号不可为空" = "Channel number cannot be empty";
+
+"频道未开启回放功能" = "The playback is not enabled on the channel";
+
+"PLVCMLoginWrongChannelTypeTips" = "Wrong Channel Type";
+
+"频道类型无效" = "Invalid channel type";
+
+"麦克风" = "Microphone";
+
+"麦克风或摄像头" = "Microphone or Camera";
+
+/**  表情图片打赏  */
+"收到" = "Received";
+"涨知识" = "Increase Knowledge";
+"牛" = "Awesome";
+"满分" = "Full Marks";
+"划重点" = "To Highlight";
+"比心" = "Finger Heart";
+"打call" = "Support";
+"冲冲冲" = "Go Go Go";
+"谢谢" = "Thanks";
+"难上加难" = "Extremely Difficult";
+"柠檬鲸" = "So Jealous!";
+"打工人" = "Office Worker";
+"我爱工作" = "love my job!";
+"买买买" = "Buy Buy Buy";
+"发红包" = "Send Red Envelopes";
+"红红火火" = "Booming";
+"666" = "666";
+"小熊" = "Bear";
+"麦克风" = "Microphone";
+"别墅" = "Villa";
+"咖啡" = "Coffee";
+"奖杯" = "Trophy";
+"小星星" = "Star";
+"掌声" = "Applause";
+"游艇" = "Yacht";
+"火箭" = "Rocket";
+"点赞" = "Like";
+"烟火" = "Fireworks";
+"皇冠" = "Crown";
+"跑车" = "Sportscar";
+"金蛋" = "Golden Eggs";
+"钻石" = "Diamonds";
+"飞机" = "Plane";
+"鲜花" = "Flower";
+"点" = " Point";
+
+/**  聊天室  */
+"新消息" = "News";
+"查看新消息" = "News";
+"%zd条新消息 " = "%zd new messages ";
+"999+条新消息 " = "999+ new messages ";
+"聊点什么吧~" = "Join the chat";
+"有话要说..." = "Join the chat";
+"聊天室已经关闭" = "Chatroom is closed";
+"聊天室已经打开" = "Chatroom has been opened";
+"聊天室已关闭" = "Chatroom is closed";
+"聊天室重连中" = "Chatroom reconnecting";
+"聊天室重连成功" = "Chatroom reconnected successfully";
+"重发该消息？" = "Resend this message?";
+"重新加载" = "Reload";
+"重新发送" = "Resend";
+"（我）" = "（me）";
+"(我)" = "(Me)";
+"禁言" = "Ban";
+"踢出" = "Kick out";
+"自定义昵称" = "Custom nickname";
+"当前为专注模式" = "In focus mode";
+"取消禁言" = "Unban";
+"您已被管理员踢出聊天室！" = "You have been kicked out of the chatroom by the administrator!";
+"提问历史记录获取失败" = "Question history request failed";
+"聊天记录获取失败" = "Chat history request failed";
+"消息发送失败" = "Message sending failed";
+"消息发送超时，请稍后再试 %ld" = "Message sending timed out, please try again later %ld";
+"消息暂时无法发送，请稍后再试 %ld" = "The message cannot be sent temporarily, please try again later %ld";
+"聊天室重放功能已开启，将会显示历史消息" = "The chatroom replay is turned on, and historical messages will be displayed";
+"你的聊天信息中含有违规词：%@" = "Your chat message contains illegal words: %@";
+"发送消息失败" = "Failed to send message";
+"图片表情资源加载失败" = "Image emoticon resource failed to load";
+"您的聊天信息中含有违规词：%@" = "Your chat message contains illegal words: %@";
+"您的聊天消息中含有违规词语，已全部作***代替处理" = "Your chat messages contain illegal words and all have been replaced by ***";
+
+"口令" = "password";
+"口令红包即将来袭" = "Password red envelope coming soon";
+" %@ 发了一个%@红包，" = " %1$@ sent a %2$@ red envelope，";
+"%@等%zd人" = "%1$@ and %2$zd people";
+"已开奖" = "Lottery over";
+"开奖中" = "In lottery";
+"抽奖即将开始" = "The lottery is about to begin";
+"抽奖暂未开始" = "The lottery has not yet started";
+"点击领取" = "Click to receive";
+"问卷" = "Questionnaire";
+
+/**  直播间  */
+"直播介绍" = "Intro";
+"直播间太过火爆了，请稍后再来(2050407)" = "The live room is too hot, please come back later(2050407)";
+"当前直播间已被禁止直播" = "The current live room has been banned from live";
+"欢迎 %@ 进入直播间" = "welcome %@ join";
+"暂无直播" = "Not Live";
+"暂无直播介绍～" = "No live broadcast introduction~";
+"频道信息" = "Channel Info";
+"主持人" = "Anchor";
+"当前暂无直播" = "No live streaming at the moment";
+"确认结束直播吗？" = "Confirm to end the live stream?";
+"进入直播间" = "Enter the live room";
+"退出直播间" = "Exit the live room";
+"开始时间：" = "Starting time: ";
+"回放列表" = "Playback";
+"播放速度" = "Rate";
+"正常延迟" = "Normal";
+"线路" = "Line";
+"线路%d" = "Line %d";
+"音频模式" = "Audio mode";
+"视频模式" = "Video mode";
+"音频直播中" = "Audio playing";
+"播放中" = "Playing";
+"无延迟" = "No Delay";
+"连续观看有奖励哦" = "Continuous viewing rewards";
+"回放消息正在准备中，可稍等刷新查看" = "The playback message is in preparation, refresh to view";
+"您上次观看至 %@ ，已为您自动续播" = "You last viewed on %@, Auto resumed playback for you";
+"清晰度" = "Quality";
+"小窗播放" = "Floating mode";
+"PLVLiveLanguageSwitchTitle" = "Language";
+"正在开启小窗..." = "Opening picture in picture";
+"小窗播放中，不支持连麦" = "Playing in picture in picture, call is not supported";
+"小窗播放中，可能存在画面延后的情况" = "Playing in picture in picture, there may be a delay in the video";
+"重试" = "Retry";
+"按错了" = "Cancel";
+"[图片]" = "[Picture]";
+"[图片表情]" = "[Picture Emoticon]";
+"全文" = "Full Text";
+"公告" = "Bulletin";
+"切换到正常延迟" = "switch to normal delay";
+
+"参与直播需要%@权限，请前往系统设置开启权限" = "%@ permission is required to join the call. Please enable it in your system settings";
+"参与直播需要摄像头权限，请前往系统设置开启权限" = "Camera permission is required to join the call. Please enable it in your system settings";
+"参与直播需要麦克风权限，请前往系统设置开启权限" = "Microphone permission is required to join the call. Please enable it in your system settings";
+
+/**  连麦  */
+"尚未开通，请联系管理员" = "Not activated yet, please contact the administrator";
+"未连麦" = "Not in a call";
+"请求中..." = "Requesting";
+"申请连麦" = "Apply for a call";
+"申请视频连麦" = "Apply video call";
+"申请音频连麦" = "Apply audio call";
+"邀请你视频连麦" = "Inviting video call";
+"邀请你语音连麦" = "Inviting voice call";
+"退出连麦失败" = "Failed to exit call";
+"排队%@" = "In queue %@";
+"连麦中" = "In a call";
+"连麦人昵称" = "Caller nickname";
+"已关摄像头" = "The camera has been off";
+"暂不连麦" = "Not Now";
+"暂不连麦(%lds)" = "Not Now (%lds)";
+"视频连麦" = "Video call";
+"语音连麦" = "Audio call";
+"开始连麦" = "Accept";
+"结束连麦" = "Hang up";
+"挂断" = "Hang up";
+"下麦" = "Hang up";
+"全体下麦" = "Hang up all";
+"全体静音" = "Mute all";
+"取消全体静音" = "Unmute all";
+"已全体下麦" = "The call has ended";
+"已全体静音" = "Mute all enabled";
+"已关闭摄像头" = "Camera turned off";
+"已开启视频连麦" = "Video call has been enabled";
+"已关闭视频连麦" = "Video call turned off";
+"已开启音频连麦" = "Audio call enabled";
+"已关闭音频连麦" = "Audio call turned off";
+"已开启摄像头" = "Camera turned on";
+"已开启麦克风" = "Microphone turned on";
+"已关闭麦克风" = "Microphone turned off";
+"摄像头已前置" = "The camera is front-facing";
+"摄像头已后置" = "The camera is rear-facing";
+"你的摄像头和麦克风已关闭" = "Your camera and microphone are turned off";
+"你的摄像头已关闭" = "Your camera is off";
+"你的麦克风已关闭" = "Your microphone is off";
+"确认取消申请连麦吗？" = "Are you sure to cancel the call request?";
+"确认挂断连麦吗？" = "Are you sure you want to hang up?";
+"已挂断%@的连麦" = "Has hung up on %@'s call";
+"已切换到流畅模式" = "Switched to fluency mode";
+"已取消全体静音" = "Unmuted all";
+"确认全体下麦？" = "Confirm hang up everyone?";
+"确认全体静音？" = "Confirm mute all?";
+"确认取消全体静音？" = "Confirm unmute all?";
+"当前连麦人数已达上限" = "No more connections available";
+"您已静音，请开启麦克风后发言" = "You are muted, please turn on the microphone and speak";
+"当前连麦状态不匹配 %ld 请稍后再试或重进直播间" = "The current call status doesn't match %ld, Please try again later or re-enter the live stream room";
+"当前连麦状态不匹配 %ld,%ld 请稍后再试或重进直播间" = "The current call status doesn't match %1$ld, %2$ld Please try again later or re-enter the live stream room";
+"连麦 Token 更新失败，请稍后再试 %ld" = "Call token update failed, please try again later %ld";
+"连麦引擎创建错误 %ld,%ld" = "Call engine creation error %1$ld,%2$ld";
+"连麦将收集人像信息，确认上麦视为同意" = "Video Call will collect portrait information, confirm on the microphone as consent";
+"连麦需要获取您的音视频权限，请前往设置 %ld" = "Call needs your audio and video permissions, please go to settings %ld";
+"%@没有接受你的邀请" = "%@ did not accept your invitation";
+"关闭视频连麦失败，请稍后再试" = "Failed to close video call, please try again later";
+"关闭音频连麦失败，请稍后再试" = "Failed to close audio call, please try again later";
+"开启视频连麦失败，请稍后再试" = "Failed to enable video call. Please try again later";
+"开启音频连麦失败，请稍后再试" = "Failed to enable audio call, please try again later.";
+
+/**  推流  */
+"继续直播" = "Continue";
+"结束直播" = "End live";
+"检测中" = "Detecting";
+"检测到%@，是否结束直播" = "%@ is detected, should you end the live?";
+"检测到之前异常退出，是否恢复直播" = "Abnormal exit before detection, Resume live stream?";
+"马上切换" = "Switch now";
+"上课前无法发起连麦" = "Unable to start call before class begins";
+"上课错误" = "Error in class";
+"下课错误，请直接退出上课页" = "Error in ending get out of class. Please exit the class page directly";
+"RTC内部错误" = "RTC internal error";
+"RTC内部错误，启动音频模块失败，请退出重新登录" = "RTC internal error, failed to start the audio module, please log out and log in again";
+"丢包率：↑%zd.0%% ↓%zd.0%%" = "Packet loss rate:↑%1$zd.0%% ↓%2$zd.0%%";
+"丢包率：↑0.0% ↓0.0%" = "Packet loss rate:↑0.0%1$ ↓0.0%2$";
+"处理中..." = "Processing...";
+"弱网处理" = "Weak net";
+"恢复直播" = "Resume live";
+"流畅优先" = "Fluency priority";
+"画质优先" = "Quality priority";
+"混流布局" = "Mix layout";
+"网络延迟：%zdms" = "Network latency: %zdms";
+"网络延迟：ms" = "Network latency: ms";
+"已授予主讲权限" = "The lecture permission has been granted";
+"已收回主讲权限" = "The lecture permission has been withdrawn";
+"已移交主讲权限" = "The lecture permission has been transferred";
+"网络一般" = "Network poor";
+"网络优秀" = "Network excellent";
+"网络很差" = "Network very bad";
+"网络断开" = "Network disconnected";
+"网络良好" = "Network good";
+"网络较差" = "Network bad";
+"网络异常，请恢复网络后重试" = "Network abnormality, please restore the network and try again";
+"网络当前不佳，请稍后再试" = "The network is currently poor, please try again later";
+"网络断开，已停止直播，请更换网络后重试" = "Lost connection. Live class ended. Please restore network and retry streaming";
+"当前网络较差，建议切换为流畅模式 " = "The current network is poor, it is recommended to switch to fluency mode ";
+"当网络状态差时，优先保证画面流畅度，但清晰度会下降" = "When network condition is poor, video fluency is prioritized but may cause lower clarity";
+"当网络状态差时，优先保证画面清晰度，但会造成观看画面卡顿" = "When network condition is poor, video quality is prioritized but may cause lagging";
+"推流请求错误，请退出重新登录" = "Push request error, please log out and log in again";
+"更新Token错误" = "Update Token error";
+"错误" = "Error";
+"音视频权限申请" = "Audio and video permission application";
+
+/**  美颜  */
+"下颌" = "Jaw";
+"亮眼" = "Eye Shine";
+"嘴巴" = "Mouth";
+"大眼" = "Eye Size";
+"滤镜" = "Filters";
+"瘦脸" = "Slim face";
+"瘦鼻" = "Nose";
+"磨皮" = "Buffing";
+"美牙" = "Teeth";
+"美白" = "Toning";
+"美颜" = "Beauty";
+"锐化" = "Sharpen";
+"额头" = "Forehead";
+
+"冷氧" = "Cool";
+"初见" = "First Sight";
+"加州" = "California";
+"北海道" = "Hokkaido";
+"夕阳" = "Sunset";
+"夜色" = "Night";
+"奶油" = "Cream";
+"奶茶" = "Milk Tea";
+"川味" = "Sichuan flavor";
+"恋爱超甜" = "Super Sweet";
+"慕斯" = "Mousse";
+"旅途" = "Journey";
+"日杂" = "J-fashion";
+"旧日" = "Old Days";
+"暖阳" = "Warm Sun";
+"暖黄" = "Warm Yellow";
+"暗调" = "Dark Tone";
+"桔梗" = "Platycodon";
+"樱花" = "Sakura";
+"橘蓝调" = "Orange Blues";
+"氧气" = "Oxygen";
+"泡沫" = "Foam";
+"洛丽塔" = "Lolita";
+"浅夏" = "Light Summer";
+"海岛" = "Island";
+"海边人像" = "Seaside Portrait";
+"清透" = "Clean Pure";
+"温柔" = "Gentle";
+"物语" = "Story";
+"白皙" = "Fair";
+"红唇" = "Red Lips";
+"红棕" = "Red Brown";
+"红色复古" = "Red Retro";
+"美式胶片" = "American Film";
+"胶片" = "Film";
+"自然" = "Nature";
+"苏打" = "Soda";
+"蓝调胶片" = "Blues Film";
+"蜜桃" = "Peachy";
+"褪色" = "fade";
+"西雅图" = "Seattle";
+"静谧" = "Quiet";
+"食色" = "Food Color";
+"马卡龙" = "Macaron";
+"高级灰" = "Elegant Gray";
+"黑白" = "Black White";
+
+"重置" = "Reset";
+"重置成功" = "Reset successful";
+"重置后所有美颜参数将恢复默认值" = "After resetting, all beauty parameters will return to their default values";
+"美颜初始化失败 %d 请重进直播间" = "Beauty initialization failed %d Please re-enter the live room";
+"美颜开关" = "Switch";
+"美颜未准备就绪，请退出重新登录" = "Beauty is not ready, please log out and log in again";
+"脸部细节" = "Details";
+"请开启摄像头后使用" = "Please turn on the camera before use";
+
+/**  文档  */
+"清屏后画笔痕迹将无法恢复，确认清屏吗？" = "Clearing will delete all strokes. Confirm clear?";
+"清屏" = "Clear";
+
+/** 通用 */
+"完成" = "Done";
+"回复" = "Reply";
+"复制" = "Copy";
+"复制成功" = "Copy success";
+"分享" = "Share";
+"删除" = "Delete";
+"前往设置" = "Go to settings";
+"帮助" = "Help";
+"确定" = "Sure";
+"设置" = "Setting";
+"更多" = "More";
+"标题" = "title";
+"模式" = "Mode";
+"无" = "None";
+"知道了" = "knew";
+"PLVAlertConfirmTitle" = "OK";
+"请前往“设置-隐私”开启权限" = "Please go to 'Settings-Privacy' to enable permissions";
+"已复制" = "Copied";
+"我知道了" = "OK";
+"PLVAlertSwitchLanguageTips" = "Switching the language will re-enter the live room, please click 'OK' to switch";
+"摄像头与麦克风" = "Camera and microphone";
+
+// tips
+"rtcType 非法，请尝试重进直播间 %ld" = "rtcType is invalid, please try to re-enter the live room %ld";
+"RTC遇到错误" = "RTC encountered an error";
+"上麦失败" = "Failed to call";
+"上麦失败，当前上麦人数已达最大人数" = "Failed to register. The number of people currently registered has reached the maximum";
+"主播已结束您的连麦" = "The host has hung up your call";
+"加入连麦失败" = "Failed to call";
+"举手失败" = "Raise hand failed";
+"取消申请连麦" = "Retract your request";
+"取消举手失败" = "Failed to cancel raising hand";
+"启动音频模块失败，请确认音频模块未被占用后再试 %ld,%ld" = "Failed to start the audio. Please confirm that the audio is not occupied and try again %1$ld,%2$ld";
+"接口请求失败，请稍后再试 %ld" = "The interface request failed, please try again later %ld";
+"失败" = "fail";
+"未知错误" = "Unknown error";
+
+"分屏模式下无法使用摄像头，已自动关闭摄像头" = "The camera cannot be used in split-screen mode, and the camera has been automatically turned off";
+"分屏模式下无法使用摄像头，已自动禁用摄像头" = "The camera cannot be used in split screen mode, the camera has been automatically disabled";
+"倒计时红包即将来袭" = "Countdown red packets are coming soon";
+
+"请检查网络设置" = "Please check your network";
+"您的网络状态不佳，可尝试切换网络" = "Network bad, try to switch your local network";
+"您的网络状态糟糕，可尝试在更多>模式" = "Your network status is bad, you can try More>Mode";
+"当前无网络，请设置网络再参与互动" = "There is currently no network, please set up the network before participating in the interaction";
+
+"保存失败" = "Save failed";
+"图片不合法" = "Illegal image";
+"图片已保存到相册" = "Picture saved to photo album";
+"应用需要获取您的相册权限，请前往设置" = "The app needs to obtain your photo album permissions, please go to settings";

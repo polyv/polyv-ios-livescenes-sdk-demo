@@ -10,6 +10,8 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
+#import "PLVToast.h"
 
 // UI
 #import "PLVChatTextView.h"
@@ -303,7 +305,7 @@
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
-        quoteUserName = [quoteUserName stringByAppendingString:@"（我）"];
+        quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
@@ -410,6 +412,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 - (void)tapImageViewAction {
@@ -452,9 +455,9 @@
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }

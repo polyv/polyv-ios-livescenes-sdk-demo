@@ -7,10 +7,12 @@
 //
 
 #import "PLVECAskQuestionChatCell.h"
+#import "PLVToast.h"
 // 模块
 #import "PLVChatUser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 @implementation PLVECAskQuestionChatCell
 
@@ -46,6 +48,7 @@
     if ([message isKindOfClass:[NSString class]]) {
         pasteboard.string = (NSString *)message;
     }
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
 }
 
 #pragma mark - [ Public Methods ]
@@ -223,11 +226,7 @@
 
 // 将UIView转换为UIImage对象
 + (UIImage *)imageFromUIView:(UIView *)view {
-    UIGraphicsBeginImageContext(view.bounds.size);
-    CGContextRef ctxRef = UIGraphicsGetCurrentContext();
-    [view.layer renderInContext:ctxRef];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
+    UIImage *image = [PLVImageUtil imageFromUIView:view];
     return image;
 }
 

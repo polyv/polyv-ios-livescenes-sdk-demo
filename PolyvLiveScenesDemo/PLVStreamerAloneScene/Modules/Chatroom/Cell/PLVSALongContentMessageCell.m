@@ -9,6 +9,7 @@
 #import "PLVSALongContentMessageCell.h"
 
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 #import "PLVPhotoBrowser.h"
 
@@ -312,7 +313,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     content = [content stringByAppendingString:@"："];
     
@@ -352,7 +353,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
-        quoteUserName = [quoteUserName stringByAppendingString:@"（我）"];
+        quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
@@ -383,9 +384,9 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }
@@ -503,7 +504,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 - (UIButton *)copButton {
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateNormal];
         [_copButton addTarget:self action:@selector(copButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -514,7 +515,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 - (UIButton *)foldButton {
     if (!_foldButton) {
         _foldButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_foldButton setTitle:@"更多" forState:UIControlStateNormal];
+        [_foldButton setTitle:PLVLocalizedString(@"更多") forState:UIControlStateNormal];
         _foldButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateNormal];
         [_foldButton addTarget:self action:@selector(foldButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -607,7 +608,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         self.msgState == PLVChatMsgStateFail) {  // 只有在发送失败方可触发重发点击事件，避免重复发送
         if ([self.model content]) {
             __weak typeof(self) weakSelf = self;
-            [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+            [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"重发该消息？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
                 weakSelf.model.msgState = PLVChatMsgStateSending;
                 weakSelf.resendHandler(weakSelf.model);
             }];

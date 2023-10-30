@@ -9,6 +9,7 @@
 #import "PLVSABitRateSheet.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVSABitRateSheet()
 
@@ -122,7 +123,7 @@
         _titleLable = [[UILabel alloc] init];
         _titleLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];
         _titleLable.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _titleLable.text = @"清晰度设置";
+        _titleLable.text = PLVLocalizedString(@"清晰度设置");
     }
     return _titleLable;
 }
@@ -200,7 +201,7 @@
     sender.selected = YES;
     self.gradientLayer.frame = sender.bounds;
     [sender.layer insertSublayer:self.gradientLayer atIndex:0];
-    [PLVSAUtils showToastWithMessage:[NSString stringWithFormat:@"已切换为%@", sender.titleLabel.text] inView:[PLVSAUtils sharedUtils].homeVC.view];
+    [PLVSAUtils showToastWithMessage:[NSString stringWithFormat:PLVLocalizedString(@"已切换为%@"), sender.titleLabel.text] inView:[PLVSAUtils sharedUtils].homeVC.view];
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvsaBitRateSheet:bitRateButtonClickWithBitRate:)]) {
         PLVResolutionType bitRate = [self.resolutionTypeArray[sender.tag] integerValue];

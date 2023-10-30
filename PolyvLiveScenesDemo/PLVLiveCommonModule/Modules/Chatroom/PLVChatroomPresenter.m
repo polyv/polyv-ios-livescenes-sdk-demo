@@ -10,6 +10,7 @@
 #import "PLVChatUser.h"
 #import "PLVRedpackResult.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
 static NSString *kPLVChatroomRedpackReceiveKey = @"kPLVChatroomRedpackReceiveKey";
@@ -423,7 +424,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
             if (message.prohibitWordReplaced) {
                 if (weakSelf.delegate &&
                     [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_receiveWarning:prohibitWord:)]) {
-                    NSString *warning = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+                    NSString *warning = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
                     [weakSelf.delegate chatroomPresenter_receiveWarning:warning prohibitWord:nil];
                 }
             }
@@ -435,7 +436,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
             if (message.prohibitWordReplaced) {
                 if (weakSelf.delegate &&
                     [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_receiveWarning:prohibitWord:)]) {
-                    NSString *warning = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+                    NSString *warning = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
                     [weakSelf.delegate chatroomPresenter_receiveWarning:warning prohibitWord:nil];
                 }
             }
@@ -532,7 +533,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 - (void)createAnswerChatModel {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    NSString *content = @"你已进入专属的提问频道，提问内容不会公开";
+    NSString *content = PLVLocalizedString(@"你已进入专属的提问频道，提问内容不会公开");
     for (PLVLiveVideoChannelMenu *menu in roomData.menuInfo.channelMenus) {
         if ([menu.menuType isEqualToString:@"quiz"]) {
             if ([PLVFdUtil checkStringUseable:menu.content]) {

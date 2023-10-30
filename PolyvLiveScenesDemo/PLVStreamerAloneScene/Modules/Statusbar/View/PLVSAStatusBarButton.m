@@ -75,6 +75,12 @@
     }
 }
 
+- (CGFloat)buttonCalWidth {
+    CGSize titleLabelWidth = [self.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT, self.titleLabel.font.lineHeight)];
+    CGFloat buttonWidth = titleLabelWidth.width + self.imageView.image.size.width + self.indicatorImageView.image.size.width + 19 + self.titlePaddingX;
+    return buttonWidth;
+}
+
 #pragma mark - [ Private Method ]
 #pragma mark Getter
 

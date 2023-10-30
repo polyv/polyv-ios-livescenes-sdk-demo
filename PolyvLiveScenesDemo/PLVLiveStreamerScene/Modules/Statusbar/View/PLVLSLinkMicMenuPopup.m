@@ -12,6 +12,7 @@
 #import "PLVRoomDataManager.h"
 
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVLSLinkMicMenuPopup ()
@@ -166,8 +167,8 @@
         UIImage *selectedImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_camera_icon_selected"];
         [_videoLinkMicBtn setImage:normalImage forState:UIControlStateNormal];
         [_videoLinkMicBtn setImage:selectedImage forState:UIControlStateSelected];
-        [_videoLinkMicBtn setTitle:@"视频连麦" forState:UIControlStateNormal];
-        [_videoLinkMicBtn setTitle:@"结束连麦" forState:UIControlStateSelected];
+        [_videoLinkMicBtn setTitle:PLVLocalizedString(@"视频连麦") forState:UIControlStateNormal];
+        [_videoLinkMicBtn setTitle:PLVLocalizedString(@"结束连麦") forState:UIControlStateSelected];
         _videoLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];
@@ -183,8 +184,8 @@
         UIImage *selectedImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_micro_icon_selected"];
         [_audioLinkMicBtn setImage:normalImage forState:UIControlStateNormal];
         [_audioLinkMicBtn setImage:selectedImage forState:UIControlStateSelected];
-        [_audioLinkMicBtn setTitle:@"语音连麦" forState:UIControlStateNormal];
-        [_audioLinkMicBtn setTitle:@"结束连麦" forState:UIControlStateSelected];
+        [_audioLinkMicBtn setTitle:PLVLocalizedString(@"语音连麦") forState:UIControlStateNormal];
+        [_audioLinkMicBtn setTitle:PLVLocalizedString(@"结束连麦") forState:UIControlStateSelected];
         _audioLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];

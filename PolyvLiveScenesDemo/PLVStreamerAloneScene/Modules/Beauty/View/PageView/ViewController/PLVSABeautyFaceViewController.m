@@ -9,6 +9,7 @@
 #import "PLVSABeautyFaceViewController.h"
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVSABeautyCollectionViewCell.h"
 // 模块
@@ -26,7 +27,7 @@ UICollectionViewDelegate
 
 @end
 
-static CGFloat kItemWidth = 36; // item宽度
+static CGFloat kItemWidth = 46; // item宽度
 static int kItemLineNum = 3; // 每行item数
 
 @implementation PLVSABeautyFaceViewController
@@ -40,7 +41,9 @@ static int kItemLineNum = 3; // 每行item数
     [self.collectionView reloadData];
     
     self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
+        [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    }
     [[PLVBeautyViewModel sharedViewModel] selectBeautyOption:PLVBBeautyOption_ReshapeDeformEye];
 }
 
@@ -53,14 +56,14 @@ static int kItemLineNum = 3; // 每行item数
 - (void)setupDataArray {
     [super setupDataArray];
     self.dataArray = [NSArray arrayWithObjects:
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"大眼" imageName:@"plvsa_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"瘦脸" imageName:@"plvsa_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"下颌" imageName:@"plvsa_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"额头" imageName:@"plvsa_beauty_face_head" beautyOption:PLVBBeautyOption_ReshapeDeformForeHead],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"亮眼" imageName:@"plvsa_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"瘦鼻" imageName:@"plvsa_beauty_face_nose" beautyOption:PLVBBeautyOption_ReshapeDeformNose],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"嘴巴" imageName:@"plvsa_beauty_face_mouth" beautyOption:PLVBBeautyOption_ReshapeDeformZoomMouth],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:@"美牙" imageName:@"plvsa_beauty_face_whitenTeeth" beautyOption:PLVBBeautyOption_ReshapeBeautyWhitenTeeth],nil];
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvsa_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvsa_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"下颌") imageName:@"plvsa_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"额头") imageName:@"plvsa_beauty_face_head" beautyOption:PLVBBeautyOption_ReshapeDeformForeHead],
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvsa_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦鼻") imageName:@"plvsa_beauty_face_nose" beautyOption:PLVBBeautyOption_ReshapeDeformNose],
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"嘴巴") imageName:@"plvsa_beauty_face_mouth" beautyOption:PLVBBeautyOption_ReshapeDeformZoomMouth],
+                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"美牙") imageName:@"plvsa_beauty_face_whitenTeeth" beautyOption:PLVBBeautyOption_ReshapeBeautyWhitenTeeth],nil];
 }
 
 - (void)showContentView {
@@ -75,8 +78,8 @@ static int kItemLineNum = 3; // 每行item数
 - (void)beautyOpen:(BOOL)open {
     [super beautyOpen:open];
     [self.collectionView reloadData];
-    if (open &&
-        self.selectedIndexPath) {
+    if (open && self.selectedIndexPath &&
+        self.dataArray.count > self.selectedIndexPath.item) {
         [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     }
 }

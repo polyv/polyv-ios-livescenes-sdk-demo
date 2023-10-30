@@ -11,6 +11,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVChatUser.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import "PLVLinkMicOnlineUser.h"
@@ -446,7 +447,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
             // 刷新按钮状态为等待连麦
             [self refreshLinkMicButtonStateWithWait];
         } else {
-            [PLVLSUtils showToastInHomeVCWithMessage:@"当前连麦人数已达上限"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"当前连麦人数已达上限")];
         }
     }else {
         if (self.user.onlineUser) {
@@ -795,11 +796,11 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         if (granted) {
             completion();
         } else {
-            [PLVLSUtils showAlertWithTitle:@"音视频权限申请"
-                                   message:@"请前往“设置-隐私”开启权限"
-                         cancelActionTitle:@"取消"
+            [PLVLSUtils showAlertWithTitle:PLVLocalizedString(@"音视频权限申请")
+                                   message:PLVLocalizedString(@"请前往“设置-隐私”开启权限")
+                         cancelActionTitle:PLVLocalizedString(@"取消")
                          cancelActionBlock:nil
-                        confirmActionTitle:@"前往设置" confirmActionBlock:^{
+                        confirmActionTitle:PLVLocalizedString(@"前往设置") confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
                         [[UIApplication sharedApplication] openURL:url];

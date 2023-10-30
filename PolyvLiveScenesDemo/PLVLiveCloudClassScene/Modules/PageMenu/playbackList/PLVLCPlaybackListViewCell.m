@@ -10,6 +10,7 @@
 #import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCPlaybackListViewCell ()
 
@@ -92,7 +93,7 @@
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc]init];
-        _titleLabel.text = @"标题";
+        _titleLabel.text = PLVLocalizedString(@"标题");
         _titleLabel.numberOfLines = 2;
         _titleLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         _titleLabel.highlightedTextColor = PLV_UIColorFromRGB(@"#78A7ED");
@@ -109,7 +110,7 @@
         [_playButton setImage:[PLVLCUtils imageForMenuResource:@"plvlc_menu_playback_playing"]
                      forState:UIControlStateNormal];
         _playButton.imageView.frame = CGRectMake(10, 8, 16, 16);
-        [_playButton setTitle:@"播放中" forState:UIControlStateNormal];
+        [_playButton setTitle:PLVLocalizedString(@"播放中") forState:UIControlStateNormal];
         
         _playButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:16];;
         [_playButton setBackgroundColor:PLV_UIColorFromRGB(@"#3082FE")];
@@ -123,7 +124,7 @@
 - (UILabel *)startTimeLabel{
     if (!_startTimeLabel) {
         _startTimeLabel = [[UILabel alloc]init];
-        _startTimeLabel.text = @"开始时间：";
+        _startTimeLabel.text = PLVLocalizedString(@"开始时间：");
         _startTimeLabel.numberOfLines = 1;
         _startTimeLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         _startTimeLabel.highlightedTextColor = PLV_UIColorFromRGB(@"#78A7ED");
@@ -134,7 +135,7 @@
 }
 
 - (NSString *)startTimeExchangeWithString:(NSString *)string {
-    NSString *startTimeText = @"开始时间：";
+    NSString *startTimeText = PLVLocalizedString(@"开始时间：");
     if ([PLVFdUtil checkStringUseable:string] && string.length >= 12) {
         NSString *year = [string substringWithRange:NSMakeRange(0, 4)];
         NSString *month = [string substringWithRange:NSMakeRange(4, 2)];

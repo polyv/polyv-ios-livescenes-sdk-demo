@@ -9,6 +9,7 @@
 #import "PLVLCLotteryWidgetView.h"
 #import "PLVLCLotteryWidgetPopupView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 
@@ -50,7 +51,7 @@
         self.widgetPopupView.frame = CGRectMake((CGRectGetWidth(self.frame) - popupViewWidth)/2, - popupViewHeight - 3, popupViewWidth, popupViewHeight);
     }
     [self.widgetPopupView setPopupViewDirection:fullScreen ? PLVLCLotteryWidgetPopupDirectionTop : PLVLCLotteryWidgetPopupDirectionLeft];
-    self.titleLabel.frame = CGRectMake(-3, CGRectGetMaxY(self.lotteryImageView.frame) + 2, self.widgetSize.width + 6, 12);
+    self.titleLabel.frame = CGRectMake(-10, CGRectGetMaxY(self.lotteryImageView.frame) + 2, self.widgetSize.width + 20, 12);
 }
 
 - (instancetype)init {
@@ -87,7 +88,7 @@
         if ([PLVFdUtil checkStringUseable:iconUrl]) {
             [self.lotteryImageView sd_setImageWithURL:[NSURL URLWithString:iconUrl]];
         } else {
-            UIImage *image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_lottery_widget_icon"];
+            UIImage *image = [PLVLCUtils imageForChatroomResource:PLVLocalizedString(@"plvlc_chatroom_lottery_widget_icon")];
             [self.lotteryImageView setImage:image];
         }
         if ([status isEqualToString:@"delayTime"]) {
@@ -101,9 +102,9 @@
             [self stopCountdownTimer];
             self.countdownInterval = 0;
             if ([status isEqualToString:@"running"]) {
-                self.titleLabel.text = @"开奖中";
+                self.titleLabel.text = PLVLocalizedString(@"开奖中");
             } else if ([status isEqualToString:@"over"]) {
-                self.titleLabel.text = @"已开奖";
+                self.titleLabel.text = PLVLocalizedString(@"已开奖");
             }
         }
     }
@@ -187,7 +188,7 @@
         return;
     }
     if (self.countdownInterval <= 3) {
-        [self showWidgetPopupViewWithTitle:@"抽奖即将开始"];
+        [self showWidgetPopupViewWithTitle:PLVLocalizedString(@"抽奖即将开始")];
     }
     self.titleLabel.text = [PLVFdUtil secondsToString2:self.countdownInterval];
 }
@@ -195,7 +196,7 @@
 #pragma mark Action
 - (void)widgetTapAction {
     if (self.countdownInterval > 3) {
-        [self showWidgetPopupViewWithTitle:@"抽奖暂未开始"];
+        [self showWidgetPopupViewWithTitle:PLVLocalizedString(@"抽奖暂未开始")];
     }
     if (self.delegate && [self.delegate respondsToSelector:@selector(lotteryWidgetViewDidClickAction:eventName:)]) {
         [self.delegate lotteryWidgetViewDidClickAction:self eventName:self.eventName];

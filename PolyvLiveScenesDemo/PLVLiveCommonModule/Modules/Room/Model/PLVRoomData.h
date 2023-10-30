@@ -189,6 +189,9 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 /// 配置pushQualityPreference枚举值
 - (void)setupPushQualityPreference:(NSString *)pushQualityPreferenceString;
 
+/// 前端获取原生用户信息参数
+- (NSDictionary *)nativeAppUserParamsWithExtraParam:(NSDictionary * _Nullable)extraParam;
+
 /// 将清晰度枚举值转换成字符串
 /// @return 返回值为nil时表示参数resolutionType出错，无法转换
 + (NSString * _Nullable)resolutionStringWithType:(PLVResolutionType)resolutionType;

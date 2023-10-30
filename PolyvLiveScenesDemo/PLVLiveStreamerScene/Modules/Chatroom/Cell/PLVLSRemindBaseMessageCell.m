@@ -93,12 +93,8 @@
         size.width += 10;
     }
     label.frame = CGRectMake(0, 0, size.width, 14);
-    UIGraphicsBeginImageContextWithOptions(label.frame.size, NO, [UIScreen mainScreen].scale);
-    CGContextRef ctx = UIGraphicsGetCurrentContext();
-    [label.layer renderInContext:ctx];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-   
+    UIImage *image = [PLVImageUtil imageFromUIView:label opaque:NO scale:[UIScreen mainScreen].scale];
+    
     return image;
 }
 

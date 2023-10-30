@@ -9,6 +9,7 @@
 #import "PLVLSDocumentWaitLiveView.h"
 
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLSDocumentWaitLiveView ()
@@ -44,7 +45,7 @@
     
     CGFloat tipsLabelYScale = 321.0 / 218.0;
     CGFloat tipsLabelY = viewHeight / tipsLabelYScale;
-    CGFloat tipsLabelWidth = 200.0;
+    CGFloat tipsLabelWidth = 284.0;
     self.tipsLabel.frame = CGRectMake((viewWidth - tipsLabelWidth) / 2.0, tipsLabelY, tipsLabelWidth, 17);
 }
 
@@ -70,7 +71,7 @@
 - (UILabel *)tipsLabel {
     if (!_tipsLabel) {
         _tipsLabel = [[UILabel alloc] init];
-        _tipsLabel.text = @"直播尚未开始，请稍作等待";
+        _tipsLabel.text = PLVLocalizedString(@"直播尚未开始，请稍作等待");
         _tipsLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
         _tipsLabel.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
         _tipsLabel.textAlignment = NSTextAlignmentCenter;

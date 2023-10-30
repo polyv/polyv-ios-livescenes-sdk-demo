@@ -70,6 +70,7 @@
     PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:view animated:YES];
     hud.mode = PLVProgressHUDModeText;
     hud.label.text = title;
+    hud.label.numberOfLines = 0;
     hud.detailsLabel.text = detail;
     [hud hideAnimated:YES afterDelay:delay];
 }

@@ -8,6 +8,7 @@
 
 #import "PLVLinkMicOnlineUser.h"
 #import "PLVChatUser.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLinkMicOnlineUser ()
 
@@ -194,7 +195,7 @@
         PLVLinkMicOnlineUser * user = [[PLVLinkMicOnlineUser alloc]init];
         user.userId = userId;
         user.linkMicUserId = linkMicUserId;
-        user.nickname = [NSString stringWithFormat:@"%@ (我)",nickname];
+        user.nickname = [NSString stringWithFormat:PLVLocalizedString(@"%@ (我)"),nickname];
         user.avatarPic = avatarPic;
         user.userType = userType;
         user.localUser = YES;

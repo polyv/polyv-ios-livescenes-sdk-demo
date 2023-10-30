@@ -8,6 +8,7 @@
 
 #import "PLVLCLandscapeNewMessageView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVLCLandscapeNewMessageView ()
@@ -85,9 +86,9 @@
 - (NSAttributedString *)labelText {
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     
-    NSString *string = [NSString stringWithFormat:@"%zd条新消息 ", self.messageCount];
+    NSString *string = [NSString stringWithFormat:PLVLocalizedString(@"%zd条新消息 "), self.messageCount];
     if (self.messageCount > 999) {
-        string = @"999+条新消息 ";
+        string = PLVLocalizedString(@"999+条新消息 ");
     }
     NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:string];
     

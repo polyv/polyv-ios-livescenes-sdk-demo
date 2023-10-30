@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCNewMessageView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVLCNewMessageView ()
@@ -83,7 +84,7 @@
 #pragma mark - Private
 
 - (NSString *)labelText {
-    NSString *string = [NSString stringWithFormat:@"有%zd条新消息，点击查看", self.messageCount];
+    NSString *string = [NSString stringWithFormat:PLVLocalizedString(@"有%zd条新消息，点击查看"), self.messageCount];
     return string;
 }
 

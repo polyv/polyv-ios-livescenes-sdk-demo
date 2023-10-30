@@ -57,6 +57,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)c;
 /// 点击【屏蔽特效】或【展示特效】
 - (void)keyboardToolView_switchRewardDisplay:(PLVLCKeyboardToolView *)moreView on:(BOOL)on;
+/// 点击语言切换
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)moreView switchLanguageMode:(NSInteger)languageMode;
 /// 键盘显示互动功能入口
 - (void)keyboardToolView_showIarEntranceView:(PLVLCKeyboardToolView *)iarEntranceView show:(BOOL)show;
 

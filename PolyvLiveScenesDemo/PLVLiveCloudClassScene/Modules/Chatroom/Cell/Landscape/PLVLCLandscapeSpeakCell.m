@@ -9,6 +9,8 @@
 #import "PLVLCLandscapeSpeakCell.h"
 #import "PLVChatTextView.h"
 #import "PLVEmoticonManager.h"
+#import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -116,7 +118,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -151,6 +153,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVSpeakMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview.superview.superview afterDelay:3.0];
 }
 
 @end

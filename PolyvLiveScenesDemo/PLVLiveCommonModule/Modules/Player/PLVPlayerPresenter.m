@@ -9,6 +9,7 @@
 #import "PLVPlayerPresenter.h"
 
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImageDownloader.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -676,7 +677,7 @@ PLVDefaultPageViewDelegate
     if (self.countDownTime == 0) {
         [self stopCountDownTimer];
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
-            [self.defaultPageView showWithErrorMessage:@"视频加载缓慢，请刷新或退出重进" type:PLVDefaultPageViewTypeRefresh];
+            [self.defaultPageView showWithErrorMessage:PLVLocalizedString(@"视频加载缓慢，请刷新或退出重进") type:PLVDefaultPageViewTypeRefresh];
         } else {
             if (!self.quickLiveWatching) {
                 [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefreshAndSwitchLine];
@@ -825,10 +826,10 @@ PLVDefaultPageViewDelegate
             }
         }
     } else if (finishReson == IJKMPMovieFinishReasonPlaybackError) {
-        errorMessage = @"视频播放失败，请尝试手动刷新，或退出重新登录";
+        errorMessage = PLVLocalizedString(@"视频播放失败，请尝试手动刷新，或退出重新登录");
         [self.activityView stopAnimating];
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
-            [self.defaultPageView showWithErrorMessage:@"视频加载缓慢，请刷新或退出重进" type:PLVDefaultPageViewTypeRefresh];
+            [self.defaultPageView showWithErrorMessage:PLVLocalizedString(@"视频加载缓慢，请刷新或退出重进") type:PLVDefaultPageViewTypeRefresh];
         } else {
             if (!self.quickLiveWatching) {
                 [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefreshAndSwitchLine];
@@ -921,7 +922,7 @@ PLVDefaultPageViewDelegate
     }
     
     if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_PlayRestrict]) {
-        [self.defaultPageView showWithErrorCode:error.code message:@"存在观看限制，暂不支持进入" type:PLVDefaultPageViewTypeErrorCode];
+        [self.defaultPageView showWithErrorCode:error.code message:PLVLocalizedString(@"存在观看限制，暂不支持进入") type:PLVDefaultPageViewTypeErrorCode];
     } else if ((error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_RequestFailed] &&
                 error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_CodeError]) ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_RequestFailed] ||

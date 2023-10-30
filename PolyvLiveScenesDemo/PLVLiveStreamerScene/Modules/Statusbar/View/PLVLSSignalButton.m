@@ -7,6 +7,7 @@
 //
 
 #import "PLVLSSignalButton.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSSignalButton()
 
@@ -64,6 +65,12 @@
     }
 }
 
+- (CGFloat)buttonCalWidth {
+    CGSize titleLabelWidth = [self.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT, self.titleLabel.font.lineHeight)];
+    CGFloat buttonWidth = titleLabelWidth.width + self.imageView.image.size.width + 18;
+    return buttonWidth;
+}
+
 #pragma mark - [ Private Method ]
 #pragma mark Getter
 
@@ -79,7 +86,7 @@
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.font = [UIFont systemFontOfSize:12];
         _titleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
-        _titleLabel.text = @"检测中";
+        _titleLabel.text = PLVLocalizedString(@"检测中");
     }
     return _titleLabel;
 }

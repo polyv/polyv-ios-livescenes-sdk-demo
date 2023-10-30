@@ -18,6 +18,7 @@
 #import "PLVLCBuyViewController.h"
 #import "PLVLCNoNetworkDescViewController.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 
@@ -67,6 +68,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCSectionViewController *sectionVctrl;
 /// 商品列表页
 @property (nonatomic, strong) PLVLCBuyViewController *productVctrl;
+/// 图文直播页
+@property (nonatomic, strong) PLVLCTuwenViewController *tuwenVctrl;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
@@ -110,11 +113,17 @@ PLVRoomDataManagerProtocol
     if (self.descVctrl) {
         [self.descVctrl updateLiveStatus:liveStatus];
     }
+    if (self.tuwenVctrl) {
+        [self.tuwenVctrl updateLiveStatusIsLive:(liveStatus == PLVLCLiveStatusLiving || liveStatus == PLVLCLiveStatusStop)];
+    }
 }
 
 - (void)updateLiveUserInfo {
     if (self.productVctrl) {
         [self.productVctrl updateUserInfo];
+    }
+    if (self.tuwenVctrl) {
+        [self.tuwenVctrl updateUserInfo];
     }
 }
 
@@ -139,12 +148,12 @@ PLVRoomDataManagerProtocol
     if (enabled) {
         if (![controllers containsObject:self.productVctrl]) {
             UIViewController *viewController = [self controllerWithMenu:menu];
-            [titleArray addObject:menu.name];
+            [titleArray addObject:PLVLocalizedString(menu.name)];
             [controllers addObject:viewController];
         }
     } else {
         if ([controllers containsObject:self.productVctrl]) {
-            [titleArray removeObject:menu.name];
+            [titleArray removeObject:PLVLocalizedString(menu.name)];
             [controllers removeObject:self.productVctrl];
             self.productVctrl = nil;
         }
@@ -203,7 +212,7 @@ PLVRoomDataManagerProtocol
         // 即没有网络，又播放离线缓存视频的情况，展示无网络直播介绍
         PLVLCNoNetworkDescViewController *vctrl = [[PLVLCNoNetworkDescViewController alloc]init];
         self.noNetworkDescVctrl = vctrl;
-        [titleArray addObject:@"直播介绍"];
+        [titleArray addObject:PLVLocalizedString(@"直播介绍")];
         [ctrlArray addObject:vctrl];
     }
     else {
@@ -224,14 +233,14 @@ PLVRoomDataManagerProtocol
             if (!vctrl) {
                 continue;
             }
-            [titleArray addObject:menu.name];
+            [titleArray addObject:PLVLocalizedString(menu.name)];
             [ctrlArray addObject:vctrl];
         }
         
         if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
             PLVLCPlaybackListViewController *vctrl = [[PLVLCPlaybackListViewController alloc] initWithPlaybackList:[PLVRoomDataManager sharedManager].roomData.playbackList];
             self.playbackListVctrl = vctrl;
-            [titleArray addObject:@"往期"];
+            [titleArray addObject:PLVLocalizedString(@"往期")];
             [ctrlArray addObject:vctrl];
         }
         
@@ -239,7 +248,7 @@ PLVRoomDataManagerProtocol
             PLVLCSectionViewController *vctrl = [[PLVLCSectionViewController alloc] initWithSectionList:[PLVRoomDataManager sharedManager].roomData.sectionList];
             self.sectionVctrl = vctrl;
             self.sectionVctrl.delegate = self;
-            [titleArray addObject:@"章节"];
+            [titleArray addObject:PLVLocalizedString(@"章节")];
             [ctrlArray addObject:vctrl];
         }
     }
@@ -266,9 +275,9 @@ PLVRoomDataManagerProtocol
         self.quizVctrl = vctrl;
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeTuwen) {
-        NSInteger channelIdInt = [[PLVRoomDataManager sharedManager].roomData.channelId integerValue];
-        PLVLCTuwenViewController *vctrl = [[PLVLCTuwenViewController alloc] initWithChannelId:@(channelIdInt)];
+        PLVLCTuwenViewController *vctrl = [[PLVLCTuwenViewController alloc] init];
         vctrl.delegate = self;
+        self.tuwenVctrl = vctrl;
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeText) {
         PLVLCTextViewController *vctrl = [[PLVLCTextViewController alloc] init];

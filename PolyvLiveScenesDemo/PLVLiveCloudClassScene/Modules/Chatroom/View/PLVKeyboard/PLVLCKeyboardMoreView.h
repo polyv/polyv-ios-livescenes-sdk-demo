@@ -28,6 +28,9 @@
 /// @param on YES - 屏蔽特效；NO - 展示特效
 - (void)keyboardMoreView_switchRewardDisplay:(PLVLCKeyboardMoreView *)moreView on:(BOOL)on;
 
+/// 点击 语言切换
+- (void)keyboardMoreView:(PLVLCKeyboardMoreView *)moreView switchLanguageMode:(NSInteger)languageMode;
+
 /// 点击【查看全部】或【只看讲师】按钮
 /// @param on YES - 只看教师；NO - 查看全部
 - (void)keyboardMoreView_onlyTeacher:(PLVLCKeyboardMoreView *)moreView on:(BOOL)on;
@@ -58,5 +61,8 @@
 
 /// 切换聊天室专注模式状态
 - (void)changeFocusModeStatus:(BOOL)focusMode;
+
+/// 是否禁用聊天室的交互、启用状态正常逻辑显示按钮，禁用状态只显示多语言按钮。默认不会仅用
+- (void)disableRoomInteraction:(BOOL)disable;
 
 @end

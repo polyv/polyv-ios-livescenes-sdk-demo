@@ -7,6 +7,7 @@
 //
 
 #import "PLVSASwitchSuccessTipsView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kBadNetworkTipsViewDismissDuration = 10.0;
@@ -53,6 +54,11 @@ static CGFloat kBadNetworkTipsViewDismissDuration = 10.0;
     [self removeFromSuperview];
 }
 
+- (CGFloat)tipsViewWidth {
+    CGSize labelSize = [self.label sizeThatFits:CGSizeMake(MAXFLOAT, 15)];
+    return labelSize.width + 22;
+}
+
 #pragma mark - [ Private Methods ]
 
 - (void)initUI {
@@ -67,7 +73,7 @@ static CGFloat kBadNetworkTipsViewDismissDuration = 10.0;
         _label.textAlignment = NSTextAlignmentCenter;
         _label.font = [UIFont systemFontOfSize:12];
         _label.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
-        _label.text = @"已切换到流畅模式";
+        _label.text = PLVLocalizedString(@"已切换到流畅模式");
     }
     return _label;
 }

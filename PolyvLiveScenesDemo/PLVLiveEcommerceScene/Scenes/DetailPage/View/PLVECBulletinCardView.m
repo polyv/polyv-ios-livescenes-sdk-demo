@@ -8,6 +8,7 @@
 
 #import "PLVECBulletinCardView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECBulletinCardView () <UITextViewDelegate>
 
@@ -21,7 +22,7 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        self.titleLB.text = @"公告";
+        self.titleLB.text = PLVLocalizedString(@"公告");
         self.iconImgView.image = [PLVECUtils imageForWatchResource:@"plv_bulletin_bg_icon"];
         
         self.contentTextView = [[UITextView alloc] init];

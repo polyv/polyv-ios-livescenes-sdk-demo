@@ -10,6 +10,7 @@
 #import "PLVLSChannelInfoTopView.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVPhotoBrowser.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 #import <WebKit/WebKit.h>
@@ -85,7 +86,7 @@ WKNavigationDelegate
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _sheetTitleLabel.font = [UIFont boldSystemFontOfSize:16];
-        _sheetTitleLabel.text = @"频道信息";
+        _sheetTitleLabel.text = PLVLocalizedString(@"频道信息");
     }
     return _sheetTitleLabel;
 }
@@ -141,7 +142,7 @@ WKNavigationDelegate
         
     NSString *dateString = menuInfo.startTime;
     if (!dateString || ![dateString isKindOfClass:[NSString class]] || dateString.length == 0) {
-        dateString = @"无";
+        dateString = PLVLocalizedString(@"无");
     }
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;

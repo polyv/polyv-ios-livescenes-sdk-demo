@@ -8,6 +8,7 @@
 
 #import "PLVECAudioAnimalView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECAudioAnimalView ()
 
@@ -40,7 +41,7 @@
         self.contentLable.textColor = UIColor.whiteColor;
         self.contentLable.font = [UIFont systemFontOfSize:14];
         self.contentLable.textAlignment = NSTextAlignmentCenter;
-        self.contentLable.text = @"音频直播中";
+        self.contentLable.text = PLVLocalizedString(@"音频直播中");
         [self addSubview:self.contentLable];
     }
     return self;

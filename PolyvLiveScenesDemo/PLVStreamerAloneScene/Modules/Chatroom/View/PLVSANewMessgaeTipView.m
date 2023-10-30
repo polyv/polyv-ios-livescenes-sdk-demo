@@ -10,6 +10,7 @@
 
 // Utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVSANewMessgaeTipView ()
 
@@ -62,7 +63,7 @@
         _label.textColor = [UIColor colorWithRed:3/255.0 green:130/255.0 blue:255/255.0 alpha:1/1.0];
         _label.font = [UIFont systemFontOfSize:14];
         _label.textAlignment = NSTextAlignmentCenter;
-        _label.text = @"查看新消息";
+        _label.text = PLVLocalizedString(@"查看新消息");
     }
     return _label;
 }

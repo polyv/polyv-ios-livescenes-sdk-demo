@@ -8,6 +8,7 @@
 
 #import "PLVECCardPushButtonView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVECCardPushButtonPopupView.h"
 #import <SDWebImage/UIButton+WebCache.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -107,7 +108,7 @@
     // 设置 button 图片
     NSString *imageType = PLV_SafeStringForDictKey(cardDict, @"imageType");
     if ([imageType isEqualToString:@"redpack"] || [imageType isEqualToString:@"giftbox"]) {
-        NSString *imageName = [imageType isEqualToString:@"redpack"] ? @"plvec_home_redpack_btn" : @"plvec_home_giftbox_btn";
+        NSString *imageName = [imageType isEqualToString:@"redpack"] ? PLVLocalizedString(@"plvec_home_redpack_btn") : PLVLocalizedString(@"plvec_home_giftbox_btn");
         UIImage *image = [PLVECUtils imageForWatchResource:imageName];
         [self.cardPushButton setImage:image forState:UIControlStateNormal];
     } else if ([imageType isEqualToString:@"custom"]) {
@@ -222,7 +223,7 @@
     if (!_cardPushButton) {
         _cardPushButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_cardPushButton addTarget:self action:@selector(cardPushAction:) forControlEvents:UIControlEventTouchUpInside];
-        UIImage *image = [PLVECUtils imageForWatchResource:@"plvec_home_redpack_btn"];
+        UIImage *image = [PLVECUtils imageForWatchResource:PLVLocalizedString(@"plvec_home_redpack_btn")];
         [_cardPushButton setImage:image forState:UIControlStateNormal];
     }
     return _cardPushButton;

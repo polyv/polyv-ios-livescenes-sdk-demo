@@ -10,6 +10,8 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
+#import "PLVToast.h"
 
 // UI
 #import "PLVChatTextView.h"
@@ -201,7 +203,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -218,7 +220,7 @@
     
     // 提醒消息
     if (isRemindMsg) {
-        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_tag"];
+        UIImage *image = [PLVLSUtils imageForChatroomResource:PLVLocalizedString(@"plvls_chatroom_remind_tag")];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
         CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
@@ -288,6 +290,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVSpeakMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 - (void)tapGestureAction {
@@ -325,9 +328,9 @@
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }

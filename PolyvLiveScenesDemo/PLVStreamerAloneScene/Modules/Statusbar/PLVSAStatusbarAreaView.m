@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 模块
 #import "PLVRoomDataManager.h"
@@ -79,7 +80,8 @@
         marginTop = 16;
         marginX = 24;
     }
-    self.channelInfoButton.frame = CGRectMake(marginX, marginTop, 106, 36);
+    
+    self.channelInfoButton.frame = CGRectMake(marginX, marginTop, self.channelInfoButton.buttonCalWidth, 36);
     
     CGFloat width = self.memberButton.frame.size.width;
     self.memberButton.frame = CGRectMake(CGRectGetMaxX(self.channelInfoButton.frame) + padding, marginTop, width, 36);
@@ -90,17 +92,17 @@
     self.teacherNameButton.frame = CGRectMake(marginX, CGRectGetMaxY(self.channelInfoButton.frame) + padding, width, 20);
         
     if (landscape) {
-        signalControlX = self.bounds.size.width - 32 - marginX - 14 - 84;
+        signalControlX = self.bounds.size.width - 32 - marginX - 14 - self.signalButton.buttonCalWidth;
         signalControlY = 22;
     } else {
-        signalControlX = self.bounds.size.width - 84 - marginX;
+        signalControlX = self.bounds.size.width - self.signalButton.buttonCalWidth - marginX;
         signalControlY = CGRectGetMaxY(self.channelInfoButton.frame) + padding;
     }
-    self.signalButton.frame = CGRectMake(signalControlX, signalControlY, 84, 20);
+    self.signalButton.frame = CGRectMake(signalControlX, signalControlY, self.signalButton.buttonCalWidth, 20);
     
     if (_networkStatePopup) {
-        CGFloat width = 196.0;
-        CGFloat height = 76.0;
+        CGFloat width = self.networkStatePopup.bubbleSize.width;
+        CGFloat height = self.networkStatePopup.bubbleSize.height;
         CGFloat originX = MAX(0, self.frame.origin.x + CGRectGetMaxX(self.signalButton.frame) - width); // 弹层与按钮右侧对齐
         CGFloat originY = self.frame.origin.y + CGRectGetMaxY(self.signalButton.frame) + 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
@@ -156,8 +158,7 @@
     if (!_channelInfoButton) {
         _channelInfoButton = [[PLVSAStatusBarButton alloc] init];
         _channelInfoButton.layer.cornerRadius = 18;
-        
-        _channelInfoButton.text = @"频道信息";
+        _channelInfoButton.text = PLVLocalizedString(@"频道信息");
         _channelInfoButton.font = [UIFont systemFontOfSize:14];
         [_channelInfoButton setImage:[PLVSAUtils imageForStatusbarResource:@"plvsa_statusbar_btn_channel"] indicatorImage:[PLVSAUtils imageForStatusbarResource:@"plvsa_statusbar_btn_channel_right"]];
         
@@ -207,7 +208,7 @@
         _signalButton.userInteractionEnabled = NO;
         _signalButton.layer.cornerRadius = 10;
         _signalButton.titlePaddingX = 6;
-        _signalButton.text = @"检测中";
+        _signalButton.text = PLVLocalizedString(@"检测中");
         _signalButton.font = [UIFont systemFontOfSize:12];
         _signalButton.hidden = YES;
         [_signalButton setImage:[PLVSAUtils imageForStatusbarResource:@"plvsa_statusbar_signal_icon_good"]];
@@ -225,13 +226,14 @@
 
 - (PLVSANetworkStatePopup *)networkStatePopup {
     if (!_networkStatePopup) {
-        CGFloat width = 196.0;
-        CGFloat height = 76.0;
+        _networkStatePopup = [[PLVSANetworkStatePopup alloc] init];
+        CGFloat width = _networkStatePopup.bubbleSize.width;
+        CGFloat height = _networkStatePopup.bubbleSize.height;
         CGFloat originX = MAX(0, self.frame.origin.x + CGRectGetMaxX(self.signalButton.frame) - width); // 弹层与按钮右侧对齐
         CGFloat originY = self.frame.origin.y + CGRectGetMaxY(self.signalButton.frame) + 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
         CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
-        _networkStatePopup = [[PLVSANetworkStatePopup alloc] initWithBubbleFrame:rect buttonFrame:buttonRect];
+        [_networkStatePopup setupBubbleFrame:rect buttonFrame:buttonRect];
     }
     return _networkStatePopup;
 }
@@ -253,9 +255,9 @@
     
     PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
     if (viewerType == PLVRoomUserTypeTeacher) {
-        teacherName = [NSString stringWithFormat:@"讲师-%@", teacherName];
+        teacherName = [NSString stringWithFormat:PLVLocalizedString(@"讲师-%@"), teacherName];
     } else if (viewerType == PLVRoomUserTypeGuest) {
-        teacherName = [NSString stringWithFormat:@"嘉宾-%@", teacherName];
+        teacherName = [NSString stringWithFormat:PLVLocalizedString(@"嘉宾-%@"), teacherName];
     }
     self.teacherNameButton.text = teacherName;
     
@@ -276,37 +278,38 @@
 
     switch (netState) {
         case PLVSAStatusBarNetworkQuality_Unknown:
-            title = @"检测中";
+            title = PLVLocalizedString(@"检测中");
             imageName = @"plvsa_statusbar_signal_icon_good";
             break;
         case PLVSAStatusBarNetworkQuality_Down:
-            title = @"网络断开";
+            title = PLVLocalizedString(@"网络断开");
             imageName = @"plvsa_statusbar_signal_icon_bad";
             break;
         case PLVSAStatusBarNetworkQuality_VBad:
-            title = @"网络很差";
+            title = PLVLocalizedString(@"网络很差");
             imageName = @"plvsa_statusbar_signal_icon_bad";
             break;
         case PLVSAStatusBarNetworkQuality_Poor:
-            title = @"网络较差";
+            title = PLVLocalizedString(@"网络较差");
             imageName = @"plvsa_statusbar_signal_icon_fine";
             break;
         case PLVSAStatusBarNetworkQuality_Bad:
-            title = @"网络一般";
+            title = PLVLocalizedString(@"网络一般");
             imageName = @"plvsa_statusbar_signal_icon_fine";
             break;
         case PLVSAStatusBarNetworkQuality_Good:
-            title = @"网络良好";
+            title = PLVLocalizedString(@"网络良好");
             imageName = @"plvsa_statusbar_signal_icon_good";
             break;
         case PLVSAStatusBarNetworkQuality_Excellent:
-            title = @"网络优秀";
+            title = PLVLocalizedString(@"网络优秀");
             imageName = @"plvsa_statusbar_signal_icon_good";
             break;
     }
     self.signalButton.text = title;
     [self.signalButton setImage:[PLVSAUtils imageForStatusbarResource:imageName]];
     [self.signalButton enableWarningMode:netState == PLVSAStatusBarNetworkQuality_Down];
+    self.signalButton.frame = CGRectMake(CGRectGetMaxX(self.signalButton.frame) - self.signalButton.buttonCalWidth, CGRectGetMinY(self.signalButton.frame), self.signalButton.buttonCalWidth, 20);
 }
 
 - (void)setCurrentMicOpen:(BOOL)currentMicOpen {
@@ -352,7 +355,7 @@
     CGFloat maxNameWidth;
     CGFloat nameWidth;
     
-    NSAttributedString *singleAttr = [[NSAttributedString alloc] initWithString:@"讲" attributes:@{NSFontAttributeName:font}];
+    NSAttributedString *singleAttr = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"讲") attributes:@{NSFontAttributeName:font}];
     CGFloat singleWidth = ceilf([singleAttr boundingRectWithSize:CGSizeMake(MAXFLOAT, font.lineHeight) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size.width);
     maxNameWidth = singleWidth * maxTextNum + iconWidth;
     

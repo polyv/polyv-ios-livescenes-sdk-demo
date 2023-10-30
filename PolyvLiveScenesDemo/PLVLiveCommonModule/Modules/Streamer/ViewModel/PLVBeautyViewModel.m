@@ -7,6 +7,7 @@
 //
 
 #import "PLVBeautyViewModel.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVBeautyViewModel()
 
@@ -332,7 +333,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(beautyViewModel:didChangeFilterName:)]) {
         plv_dispatch_main_async_safe(^{
-            [self.delegate beautyViewModel:self didChangeFilterName:self.currentFilterOption.filterName];
+            [self.delegate beautyViewModel:self didChangeFilterName:PLVLocalizedString(self.currentFilterOption.filterName)];
         })
     }
 }

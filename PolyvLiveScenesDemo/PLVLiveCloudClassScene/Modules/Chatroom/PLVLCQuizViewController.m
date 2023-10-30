@@ -13,6 +13,7 @@
 #import "PLVLCQuitSpeakMessageCell.h"
 #import "PLVLCChatroomViewModel.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCImageMessageCell.h"
 #import <MJRefresh/MJRefresh.h>
 
@@ -185,7 +186,7 @@ UITableViewDataSource
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text replyModel:(PLVChatModel *)replyModel {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendQuesstionMessage:text];
     if (!success) {
-        [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self.view];
     }
 }
 
@@ -229,7 +230,7 @@ UITableViewDataSource
 
 - (void)chatroomManager_loadQuestionHistoryFailure {
     [self.refresher endRefreshing];
-    [PLVLCUtils showHUDWithTitle:@"提问历史记录获取失败" detail:@"" view:self.view];
+    [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"提问历史记录获取失败") detail:@"" view:self.view];
 }
 
 #pragma mark - UITableView DataSource

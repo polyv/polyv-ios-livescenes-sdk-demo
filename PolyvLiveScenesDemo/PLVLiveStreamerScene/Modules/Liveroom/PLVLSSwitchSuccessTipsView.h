@@ -10,12 +10,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#define kPLVLSSwitchSuccessTipsViewWidth (120.0)
 #define kPLVLSSwitchSuccessTipsViewHeight (25.0)
 
 @interface PLVLSSwitchSuccessTipsView : UIView
 
 @property (nonatomic, assign, readonly) BOOL showing;
+
+@property (nonatomic, assign, readonly) CGFloat tipsViewWidth;
 
 - (void)showAtView:(UIView *)superView aboveSubview:(UIView *)aboveView;
 

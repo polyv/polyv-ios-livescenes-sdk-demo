@@ -11,6 +11,7 @@
 // Utils
 #import "PLVPhotoBrowser.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVSAProhibitWordTipView.h"
@@ -343,7 +344,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
         _resendButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _resendButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         
-        [_resendButton setTitle:@"重新发送" forState:UIControlStateNormal];
+        [_resendButton setTitle:PLVLocalizedString(@"重新发送") forState:UIControlStateNormal];
         [_resendButton setImage:[PLVSAUtils imageForChatroomResource:@"plvsa_chatroom_cell_image_resend"] forState:UIControlStateNormal];
         _resendButton.hidden = YES;
         [_resendButton addTarget:self action:@selector(resendButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -359,7 +360,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
         _reloadButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _reloadButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         
-        [_reloadButton setTitle:@"重新加载" forState:UIControlStateNormal];
+        [_reloadButton setTitle:PLVLocalizedString(@"重新加载") forState:UIControlStateNormal];
         [_reloadButton setImage:[PLVSAUtils imageForChatroomResource:@"plvsa_chatroom_cell_image_reload"] forState:UIControlStateNormal];
         _reloadButton.hidden = YES;
         [_reloadButton addTarget:self action:@selector(reloadButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -438,7 +439,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     content = [content stringByAppendingString:@"："];
     
@@ -513,7 +514,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
 }
 
 + (NSString *)prohibitWordTip {
-    return @"图片不合法";
+    return PLVLocalizedString(@"图片不合法");
 }
 
 - (void)setButtonInsets:(UIButton *) button {
@@ -547,7 +548,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
         PLVImageMessage *message = (PLVImageMessage *)[self.model message];
         if (message) {
             __weak typeof(self) weakSelf = self;
-            [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+            [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"重发该消息？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
                 weakSelf.model.msgState = (PLVChatMsgState)PLVImageMessageSendStateReady;
                 weakSelf.resendImageHandler(weakSelf.model);
             }];

@@ -8,6 +8,7 @@
 
 #import "PLVECLiveIntroductionCardView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECLiveIntroductionCardView () <WKNavigationDelegate>
 
@@ -19,11 +20,11 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        self.titleLB.text = @"直播介绍";
+        self.titleLB.text = PLVLocalizedString(@"直播介绍");
         self.iconImgView.image = [PLVECUtils imageForWatchResource:@"plv_liveInfo_icon"];
         
         self.backgroundLable = [[UILabel alloc] init];
-        self.backgroundLable.text = @"暂无直播介绍～";
+        self.backgroundLable.text = PLVLocalizedString(@"暂无直播介绍～");
         self.backgroundLable.textColor = UIColor.blackColor;
         self.backgroundLable.textAlignment = NSTextAlignmentCenter;
         self.backgroundLable.font = [UIFont systemFontOfSize:14];

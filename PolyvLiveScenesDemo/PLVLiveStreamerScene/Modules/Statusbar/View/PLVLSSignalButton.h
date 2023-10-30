@@ -23,6 +23,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 标题字体，默认为[UIFont systemFontOfSize:12]
 @property (nonatomic, strong) UIFont *font;
 
+@property (nonatomic, assign, readonly) CGFloat buttonCalWidth;
+
 #pragma mark 点击事件
 
 /// 点击 触发

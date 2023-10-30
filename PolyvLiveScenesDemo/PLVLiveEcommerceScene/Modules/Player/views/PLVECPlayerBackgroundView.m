@@ -8,6 +8,7 @@
 
 #import "PLVECPlayerBackgroundView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECPlayerBackgroundView ()
 
@@ -56,7 +57,7 @@
 - (UILabel *)label {
     if (!_label) {
         _label = [[UILabel alloc] init];
-        _label.text = @"暂无直播";
+        _label.text = PLVLocalizedString(@"暂无直播");
         _label.textColor = UIColor.whiteColor;
         _label.textAlignment = NSTextAlignmentCenter;
         _label.font = [UIFont systemFontOfSize:14.0];

@@ -7,6 +7,7 @@
 //
 
 #import "PLVLSLinkMicApplyTipsView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVLSLinkMicApplyTipsView ()
@@ -17,21 +18,23 @@
 
 @implementation PLVLSLinkMicApplyTipsView
 
-- (instancetype)initWithFrame:(CGRect)frame {
-    self = [super initWithFrame:frame];
+- (instancetype)init {
+    self = [super init];
     if (self) {
         self.backgroundColor = [PLVColorUtil colorFromHexString:@"#1B202D" alpha:0.75];
         self.layer.masksToBounds = YES;
-
-        UIBezierPath *bezierPath = [[self class] BezierPathWithSize:self.frame.size];
-        CAShapeLayer* shapeLayer = [CAShapeLayer layer];
-        shapeLayer.path = bezierPath.CGPath;
-        self.layer.mask = shapeLayer;
-        
-        self.label.frame = CGRectMake(0, 8, self.frame.size.width, 44);
         [self addSubview:self.label];
     }
     return self;
+}
+
+- (void)layoutSubviews {
+    UIBezierPath *bezierPath = [[self class] BezierPathWithSize:self.frame.size];
+    CAShapeLayer* shapeLayer = [CAShapeLayer layer];
+    shapeLayer.path = bezierPath.CGPath;
+    self.layer.mask = shapeLayer;
+    
+    self.label.frame = CGRectMake(0, 8, self.frame.size.width, 44);
 }
 
 #pragma mark - Getter
@@ -42,7 +45,7 @@
         _label.font = [UIFont systemFontOfSize:14];
         _label.textAlignment = NSTextAlignmentCenter;
         _label.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
-        _label.text = @"收到新的连麦申请";
+        _label.text = PLVLocalizedString(@"收到新的连麦申请");
     }
     return _label;
 }
@@ -58,6 +61,11 @@
 - (void)dismiss {
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(dismissInter) object:nil];
     [self dismissInter];
+}
+
+- (CGFloat)viewWidth {
+    CGSize labelSize = [self.label sizeThatFits:CGSizeMake(MAXFLOAT, 44)];
+    return labelSize.width + 22;
 }
 
 #pragma mark - Private

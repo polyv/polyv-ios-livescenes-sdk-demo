@@ -12,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVLSLinkMicApplyTipsView : UIView
 
+@property (nonatomic, assign, readonly) CGFloat viewWidth;
+
 - (void)showAtView:(UIView *)view;
 
 - (void)dismiss;

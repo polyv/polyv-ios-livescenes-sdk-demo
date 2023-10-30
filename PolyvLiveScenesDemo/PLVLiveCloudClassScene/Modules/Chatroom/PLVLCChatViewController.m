@@ -32,6 +32,7 @@
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVToast.h"
 #import <PLVFoundationSDK/PLVAuthorizationManager.h>
 #import "PLVImagePickerViewController.h"
@@ -97,7 +98,7 @@ UITableViewDataSource
     if (roomData.menuInfo.transmitMode &&
         roomData.menuInfo.mainRoom) {
         [self.view addSubview:self.notifyView];
-        [self.notifyView showNotifyhMessage:@"已关联其他房间，仅可观看直播内容"];
+        [self.notifyView showNotifyhMessage:PLVLocalizedString(@"已关联其他房间，仅可观看直播内容")];
     } else {
         [self.view addSubview:self.tableView];
         [self.view addSubview:self.likeButtonView];
@@ -239,7 +240,7 @@ UITableViewDataSource
         _keyboardToolView.delegate = self;
         _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback);
         if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
-            [_keyboardToolView changePlaceholderText:@"聊天室暂时关闭"];
+            [_keyboardToolView changePlaceholderText:PLVLocalizedString(@"聊天室暂时关闭")];
         }
     }
     return _keyboardToolView;
@@ -510,7 +511,7 @@ UITableViewDataSource
                 if (content) {
                     model.overLenContent = content;
                     [UIPasteboard generalPasteboard].string = content;
-                    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
+                    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
                 }
             }];
         }
@@ -518,7 +519,7 @@ UITableViewDataSource
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
+            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
         }
     }
 }
@@ -664,7 +665,7 @@ UITableViewDataSource
 
 - (void)chatroomManager_loadHistoryFailure {
     [self.refresher endRefreshing];
-    [PLVLCUtils showHUDWithTitle:@"历史记录获取失败" detail:@"" view:self.view];
+    [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"历史记录获取失败") detail:@"" view:self.view];
 }
 
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray {
@@ -688,7 +689,7 @@ UITableViewDataSource
             }
             if (mutableString.length > 1) {
                 string = [[mutableString copy] substringToIndex:mutableString.length - 1];
-                string = [NSString stringWithFormat:@"%@等%zd人", string, [userArray count]];
+                string = [NSString stringWithFormat:PLVLocalizedString(@"%@等%zd人"), string, [userArray count]];
             }
         } else {
             PLVChatUser *user = userArray[0];
@@ -713,7 +714,7 @@ UITableViewDataSource
 }
 
 - (void)chatroomManager_loadImageEmotionFailure {
-    [PLVLCUtils showHUDWithTitle:@"图片表情数据获取失败" detail:@"" view:self.view];
+    [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"图片表情数据获取失败") detail:@"" view:self.view];
 }
 
 - (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict {
@@ -769,7 +770,7 @@ UITableViewDataSource
 }
 
 - (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
-    NSString *content = success ? @"聊天室重放功能已开启，将会显示历史消息" : @"回放消息正在准备中，可稍等刷新查看";
+    NSString *content = success ? PLVLocalizedString(@"聊天室重放功能已开启，将会显示历史消息") : PLVLocalizedString(@"回放消息正在准备中，可稍等刷新查看");
     [self.notifyView showNotifyhMessage:content];
 }
 
@@ -983,7 +984,7 @@ UITableViewDataSource
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text replyModel:(PLVChatModel *)replyModel {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:replyModel];
     if (!success) {
-        [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self.view];
     }
 }
 
@@ -994,7 +995,7 @@ UITableViewDataSource
                     sendImageEmotionId:imageId
                     imageUrl:imageUrl];
     if (!success) {
-        [PLVLCUtils showHUDWithTitle:@"图片表情消息发送失败" detail:@"" view:self.view];
+        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"图片表情消息发送失败") detail:@"" view:self.view];
     }
 }
 
@@ -1010,7 +1011,7 @@ UITableViewDataSource
         if ([photos isKindOfClass:NSArray.class]) {
             BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendImageMessage:photos.firstObject];
             if (!success) {
-                [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+                [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self.view];
             }
         }
     }];
@@ -1027,14 +1028,14 @@ UITableViewDataSource
         case PLVAuthorizationStatusDenied:
         case PLVAuthorizationStatusRestricted:
         {
-            [weakSelf performSelector:@selector(presentAlertController:) withObject:@"你没开通访问相机的权限，如要开通，请移步到:设置->隐私->相机 开启" afterDelay:0.1];
+            [weakSelf performSelector:@selector(presentAlertController:) withObject:PLVLocalizedString(@"你没开通访问相机的权限，如要开通，请移步到:设置->隐私->相机 开启") afterDelay:0.1];
         } break;
         case PLVAuthorizationStatusNotDetermined: {
             [PLVAuthorizationManager requestAuthorizationWithType:PLVAuthorizationTypeMediaVideo completion:^(BOOL granted) {
                 if (granted) {
                     [weakSelf openCamera];
                 }else {
-                    [weakSelf performSelector:@selector(presentAlertController:) withObject:@"你没开通访问相机的权限，如要开通，请移步到:设置->隐私->相机 开启" afterDelay:0.1];
+                    [weakSelf performSelector:@selector(presentAlertController:) withObject:PLVLocalizedString(@"你没开通访问相机的权限，如要开通，请移步到:设置->隐私->相机 开启") afterDelay:0.1];
                 }
             }];
         } break;
@@ -1055,6 +1056,20 @@ UITableViewDataSource
 
 - (void)keyboardToolView_openReward:(PLVLCKeyboardToolView *)toolView {
     [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenRewardViewNotification object:nil];
+}
+
+- (void)keyboardToolView:(PLVLCKeyboardToolView *)moreView switchLanguageMode:(NSInteger)languageMode {
+    [PLVFdUtil showAlertWithTitle:nil 
+                          message:PLVLocalizedString(@"PLVAlertSwitchLanguageTips")
+                   viewController:[PLVFdUtil getCurrentViewController]
+                cancelActionTitle:PLVLocalizedString(@"取消")
+                cancelActionStyle:UIAlertActionStyleDefault
+                cancelActionBlock:nil
+               confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle")
+               confirmActionStyle:UIAlertActionStyleDestructive
+               confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        [[PLVMultiLanguageManager sharedManager] updateLanguage:MAX(MIN(languageMode, PLVMultiLanguageModeEN), PLVMultiLanguageModeSyetem)];
+    }];
 }
 
 - (void)keyboardToolView_showIarEntranceView:(PLVLCKeyboardToolView *)iarEntranceView show:(BOOL)show {

@@ -23,6 +23,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVLSChatroomViewModel.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVToast.h"
 
 /// 依赖库
@@ -245,14 +246,14 @@ UITableViewDataSource
             if (content) {
                 model.overLenContent = content;
                 [UIPasteboard generalPasteboard].string = content;
-                [PLVToast showToastWithMessage:@"复制成功" inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+                [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
             }
         }];
     } else {
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:@"复制成功" inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
         }
     }
 }

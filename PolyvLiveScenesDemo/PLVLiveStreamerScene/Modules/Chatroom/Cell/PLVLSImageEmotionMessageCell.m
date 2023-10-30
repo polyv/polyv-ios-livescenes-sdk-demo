@@ -10,6 +10,7 @@
 #import "PLVChatModel.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLSImageEmotionMessageCell ()
@@ -180,7 +181,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -265,7 +266,7 @@
 }
 
 + (NSString *)prohibitWordTip {
-    return @"图片不合法";
+    return PLVLocalizedString(@"图片不合法");
 }
 
 @end

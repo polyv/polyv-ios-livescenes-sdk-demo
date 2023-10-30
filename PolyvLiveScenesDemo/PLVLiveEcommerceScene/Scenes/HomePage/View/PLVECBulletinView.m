@@ -8,6 +8,7 @@
 
 #import "PLVECBulletinView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECBulletinView ()
 
@@ -33,9 +34,11 @@
         [self addSubview:self.iconImgView];
         
         self.titleLB = [[UILabel alloc] initWithFrame:CGRectMake(24, 6, 37, 12)];
-        self.titleLB.text = @"公告：";
+        self.titleLB.text = PLVLocalizedString(@"公告：");
         self.titleLB.textColor = UIColor.whiteColor;
         self.titleLB.font = [UIFont systemFontOfSize:12];
+        CGSize titleLBSize = [self.titleLB sizeThatFits:CGSizeMake(MAXFLOAT, 12)];
+        self.titleLB.frame = CGRectMake(24, 6, titleLBSize.width, 12);
         [self addSubview:self.titleLB];
         
         self.contentView = [[UIView alloc] init];

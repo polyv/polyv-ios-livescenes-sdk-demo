@@ -9,6 +9,7 @@
 #import "PLVECMessagePopupView.h"
 #import "PLVEmoticonManager.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kMaxContainerHeightScale = 0.64; // 弹窗最大高度为屏幕高度的0.64倍
@@ -309,7 +310,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
         _titleLable.font = [UIFont systemFontOfSize:16];
         _titleLable.textColor = [PLVColorUtil colorFromHexString:@"#333333"];
         _titleLable.textAlignment = NSTextAlignmentLeft;
-        _titleLable.text = @"全文";
+        _titleLable.text = PLVLocalizedString(@"全文");
     }
     return _titleLable;
 }
@@ -359,7 +360,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_copButton addTarget:self action:@selector(copButtonAction) forControlEvents:UIControlEventTouchUpInside];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:14];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#333333"] forState:UIControlStateNormal];
         _copButton.layer.masksToBounds = YES;

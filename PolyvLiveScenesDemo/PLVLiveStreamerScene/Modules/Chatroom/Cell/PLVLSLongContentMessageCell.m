@@ -12,6 +12,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -284,7 +285,7 @@ static CGFloat kButtonoHeight = 34.0;
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -301,7 +302,7 @@ static CGFloat kButtonoHeight = 34.0;
     
     // 提醒消息
     if (isRemindMsg) {
-        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_tag"];
+        UIImage *image = [PLVLSUtils imageForChatroomResource:PLVLocalizedString(@"plvls_chatroom_remind_tag")];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
         CGFloat paddingTop = font.lineHeight - font.pointSize;
@@ -323,7 +324,7 @@ static CGFloat kButtonoHeight = 34.0;
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
-        quoteUserName = [quoteUserName stringByAppendingString:@"（我）"];
+        quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
@@ -389,9 +390,9 @@ static CGFloat kButtonoHeight = 34.0;
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }
@@ -466,7 +467,7 @@ static CGFloat kButtonoHeight = 34.0;
 - (UIButton *)copButton {
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];
@@ -478,7 +479,7 @@ static CGFloat kButtonoHeight = 34.0;
 - (UIButton *)foldButton {
     if (!_foldButton) {
         _foldButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_foldButton setTitle:@"更多" forState:UIControlStateNormal];
+        [_foldButton setTitle:PLVLocalizedString(@"更多") forState:UIControlStateNormal];
         _foldButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];

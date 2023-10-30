@@ -9,6 +9,7 @@
 #import "PLVLSLinkMicGuestMenuPopup.h"
 
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVLSLinkMicGuestMenuPopup ()
@@ -114,7 +115,7 @@
     if (!_cancelRequestLinkMicBtn) {
         _cancelRequestLinkMicBtn = [UIButton buttonWithType:UIButtonTypeCustom];
         _cancelRequestLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_cancelRequestLinkMicBtn setTitle:@"取消申请连麦" forState:UIControlStateNormal];
+        [_cancelRequestLinkMicBtn setTitle:PLVLocalizedString(@"取消申请连麦") forState:UIControlStateNormal];
         [_cancelRequestLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateNormal];
         [_cancelRequestLinkMicBtn addTarget:self action:@selector(cancelRequestLinkMicBtnAction:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -127,7 +128,7 @@
         _closeLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         UIImage *normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_camera_icon_selected"];
         [_closeLinkMicBtn setImage:normalImage forState:UIControlStateNormal];
-        [_closeLinkMicBtn setTitle:@"结束连麦" forState:UIControlStateNormal];
+        [_closeLinkMicBtn setTitle:PLVLocalizedString(@"结束连麦") forState:UIControlStateNormal];
         [_closeLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateNormal];
         [_closeLinkMicBtn addTarget:self action:@selector(closeLinkMicBtnAction:) forControlEvents:UIControlEventTouchUpInside];
     }

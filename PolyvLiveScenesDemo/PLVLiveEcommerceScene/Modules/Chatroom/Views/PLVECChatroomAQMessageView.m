@@ -13,6 +13,7 @@
 #import "PLVECAskQuestionChatCell.h"
 #import "PLVECNewMessageView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVToast.h"
 #import "PLVRoomDataManager.h"
 #import <MJRefresh/MJRefresh.h>
@@ -67,7 +68,8 @@ PLVECChatroomViewModelProtocol
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    self.askQuestionButton.frame = CGRectMake(0, 0, 89, 28);
+    CGSize buttonSize = [self.askQuestionButton sizeThatFits:CGSizeMake(MAXFLOAT, 28)];
+    self.askQuestionButton.frame = CGRectMake(0, 0, buttonSize.width + 18, 28);
     self.tableViewBackgroundView.frame = CGRectMake(0, 28 + 6, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds) - CGRectGetMaxY(self.askQuestionButton.frame) - 6);
     self.tableView.frame = self.tableViewBackgroundView.bounds;
     self.gradientLayer.frame = self.tableViewBackgroundView.bounds;
@@ -115,7 +117,7 @@ PLVECChatroomViewModelProtocol
         _askQuestionButton.layer.cornerRadius = 14.0f;
         _askQuestionButton.titleLabel.font = [UIFont systemFontOfSize:14];
         [_askQuestionButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF"] forState:UIControlStateNormal];
-        [_askQuestionButton setTitle:@"提问频道" forState:UIControlStateNormal];
+        [_askQuestionButton setTitle:PLVLocalizedString(@"提问频道") forState:UIControlStateNormal];
         [_askQuestionButton setTitleEdgeInsets:UIEdgeInsetsMake(0, 3, 0, -3)];
         UIImage *askQuestionImage = [PLVECUtils imageForWatchResource:@"plvec_chatroom_message_askquestion_icon"];
         [_askQuestionButton setImage:askQuestionImage forState:UIControlStateNormal];
@@ -239,7 +241,7 @@ PLVECChatroomViewModelProtocol
 
 - (void)chatroomManager_loadQuestionHistoryFailure {
     [self.tableView.mj_header endRefreshing];
-    [PLVECUtils showHUDWithTitle:@"提问历史记录获取失败" detail:@"" view:self];
+    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"提问历史记录获取失败") detail:@"" view:self];
 }
 
 #pragma mark - UITableView DataSource

@@ -11,6 +11,7 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSDocumentListUploadCell ()
 
@@ -80,7 +81,7 @@
         [_btnTip setImage:[self getImageWithName:@"plvls_doc_upload_tip"] forState:UIControlStateNormal];
         _btnTip.titleLabel.font = [UIFont systemFontOfSize:14];
         [_btnTip setTitleColor:PLV_UIColorFromRGB(@"#CFD1D6") forState:UIControlStateNormal];
-        [_btnTip setTitle:@"上传须知" forState:UIControlStateNormal];
+        [_btnTip setTitle:PLVLocalizedString(@"上传须知") forState:UIControlStateNormal];
         _btnTip.titleEdgeInsets = UIEdgeInsetsMake(0, 2, 0, 0);
     }
     

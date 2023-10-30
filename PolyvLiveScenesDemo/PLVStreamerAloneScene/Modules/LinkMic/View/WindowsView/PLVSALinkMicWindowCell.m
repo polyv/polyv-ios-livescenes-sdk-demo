@@ -9,8 +9,8 @@
 #import "PLVSALinkMicWindowCell.h"
 
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLinkMicOnlineUser+SA.h"
-
 
 @interface PLVSALinkMicWindowCell ()
 
@@ -68,10 +68,12 @@
     self.contentBackgroudView.frame = self.contentView.bounds;
     self.micButton.frame = CGRectMake(leftPadding, contentViewHeight - 14 - bottomPadding, 14, 14);
     self.linkMicStatusLabel.frame = CGRectMake(statusLabelLeftPadding, statusLabelTopPadding, 41, 16);
+    [self layoutLinkMicStatusLabel];
     CGFloat speakerImageViewLeft = self.linkMicStatusLabel.isHidden ? statusLabelLeftPadding : CGRectGetMaxX(self.linkMicStatusLabel.frame) + 8;
     self.speakerImageView.frame = CGRectMake(speakerImageViewLeft, statusLabelTopPadding, 16, 16);
     self.screenSharingImageView.frame = CGRectMake((contentViewWidth - 44)/2, (contentViewHeight - 44)/2 - 20, 44, 44);
-    self.screenSharingLabel.frame = CGRectMake((contentViewWidth - 100)/2, CGRectGetMaxY(self.screenSharingImageView.frame) + 4, 100, 18);
+    CGFloat sharingLabelWidth = [self.screenSharingLabel sizeThatFits:CGSizeMake(MAXFLOAT, 18)].width;
+    self.screenSharingLabel.frame = CGRectMake((contentViewWidth - sharingLabelWidth)/2, CGRectGetMaxY(self.screenSharingImageView.frame) + 4, sharingLabelWidth, 18);
     
     CGFloat nickNameLabelWidth = contentViewWidth -  CGRectGetMaxX(self.micButton.frame) - leftPadding - 8;
     self.nickNameLabel.frame = CGRectMake(CGRectGetMaxX(self.micButton.frame) + 8, CGRectGetMinY(self.micButton.frame), nickNameLabelWidth, 14);
@@ -89,9 +91,9 @@
     // 设置昵称文本
     NSString *nickName = self.onlineUser.nickname;
     if (aOnlineUser.userType == PLVSocketUserTypeTeacher) {
-        nickName = [NSString stringWithFormat:@"讲师头衔-%@", nickName];
+        nickName = [NSString stringWithFormat:PLVLocalizedString(@"讲师头衔-%@"), nickName];
     } else if (aOnlineUser.userType == PLVSocketUserTypeGuest) {
-        nickName = [NSString stringWithFormat:@"嘉宾-%@", nickName];
+        nickName = [NSString stringWithFormat:PLVLocalizedString(@"嘉宾-%@"), nickName];
     }
     self.nickNameLabel.text = nickName;
     
@@ -231,12 +233,13 @@
 
 - (void)setLinkMicStatusLabelWithInVoice:(BOOL)inLinkMic{
     if (inLinkMic) {
-        self.linkMicStatusLabel.text = @"连麦中";
+        self.linkMicStatusLabel.text = PLVLocalizedString(@"连麦中");
         self.linkMicStatusLabel.backgroundColor = PLV_UIColorFromRGB(@"#09C5B3");
     }else{
-        self.linkMicStatusLabel.text = @"未连麦";
+        self.linkMicStatusLabel.text = PLVLocalizedString(@"未连麦");
         self.linkMicStatusLabel.backgroundColor = PLV_UIColorFromRGB(@"#F1453D");
     }
+    [self layoutLinkMicStatusLabel];
 }
 
 - (void)updateScreenShareViewWithOnlineUser:(PLVLinkMicOnlineUser *)onlineUser {
@@ -245,6 +248,12 @@
     self.screenSharingImageView.hidden = !localUserScreenShareOpen;
     [onlineUser.canvasView rtcViewShow:!localUserScreenShareOpen && onlineUser.currentCameraShouldShow];
     onlineUser.canvasView.placeholderImageView.hidden = localUserScreenShareOpen;
+}
+
+- (void)layoutLinkMicStatusLabel {
+    CGRect labelRect = self.linkMicStatusLabel.frame;
+    CGSize labelSize = [self.linkMicStatusLabel sizeThatFits:CGSizeMake(MAXFLOAT, labelRect.size.height)];
+    self.linkMicStatusLabel.frame = CGRectMake(labelRect.origin.x, labelRect.origin.y, labelSize.width + 8, labelRect.size.height);
 }
 
 #pragma mark Callback
@@ -348,7 +357,7 @@
 - (UILabel *)screenSharingLabel{
     if (!_screenSharingLabel) {
         _screenSharingLabel = [[UILabel alloc]init];
-        _screenSharingLabel.text = @"您正在共享屏幕";
+        _screenSharingLabel.text = PLVLocalizedString(@"您正在共享屏幕");
         _screenSharingLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
         _screenSharingLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
         _screenSharingLabel.textAlignment = NSTextAlignmentCenter;

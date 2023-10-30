@@ -54,14 +54,14 @@
         item.tag = 200 + i;
 
         UIButton *itemBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        itemBtn.frame = CGRectMake(12 + 72*i, 46, 50, 54);
+        itemBtn.frame = CGRectMake(12 + 72*i, 46, 70, 54);
         itemBtn.tag = item.tag;
         itemBtn.selected = item.isSelected;
         [itemBtn setTitle:item.title forState:UIControlStateNormal];
         if (item.selectedTitle) {
             [itemBtn setTitle:item.selectedTitle forState:UIControlStateSelected];
         }
-        [itemBtn setTitleEdgeInsets:UIEdgeInsetsMake(42, -35, 0, 0)];
+        [itemBtn setTitleEdgeInsets:UIEdgeInsetsMake(42, -38, 0, -5)];
         
         if (item.iconURLString) {
             NSURL *iconURL = [NSURL URLWithString:item.iconURLString];
@@ -74,7 +74,7 @@
                 [itemBtn setImage:selectImage forState:UIControlStateSelected];
             }
         }
-        [itemBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 9, 22, 9)];
+        [itemBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 19, 22, 9)];
         
         itemBtn.titleLabel.font = [UIFont systemFontOfSize:12.0];
         itemBtn.titleLabel.textColor = [UIColor colorWithWhite:205/255.0 alpha:1];

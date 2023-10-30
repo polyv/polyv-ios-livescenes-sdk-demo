@@ -10,6 +10,7 @@
 
 // Manager
 #import "PLVEmoticonManager.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSInteger kFontSize = 12.0;
 static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeName";
@@ -129,7 +130,7 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 
 - (NSAttributedString *)placeholderText {
     NSDictionary *placeholderrAttribute = [self placeholderrAttribute];
-    NSMutableAttributedString *placeholderString = [[NSMutableAttributedString alloc] initWithString:@"有话要说..." attributes:placeholderrAttribute];
+    NSMutableAttributedString *placeholderString = [[NSMutableAttributedString alloc] initWithString:PLVLocalizedString(@"有话要说...") attributes:placeholderrAttribute];
     return placeholderString;
 }
 

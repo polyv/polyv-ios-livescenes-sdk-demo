@@ -44,8 +44,8 @@ static NSString *kUserDefaultsLastSelectedIndex = @"UserDefaultsLastSelectedInde
 
 #pragma mark 数据
 
-@property (nonatomic, copy) NSString *mobileString; // 上个登陆页输入的手机号
-@property (nonatomic, copy) NSString *passwordString; // 上个登陆页输入的密码
+@property (nonatomic, copy) NSString *mobileString; // 上个登录页输入的手机号
+@property (nonatomic, copy) NSString *passwordString; // 上个登录页输入的密码
 @property (nonatomic, strong) NSArray *companyArray; // 公司列表
 @property (nonatomic, assign) NSInteger selectedIndex; // 选中公司的index，一开始初始值设置为-1
 @property (nonatomic, assign) BOOL isSelectedCompany; // 是否已经选中上一次选择的公司

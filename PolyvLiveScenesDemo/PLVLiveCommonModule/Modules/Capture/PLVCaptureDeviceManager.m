@@ -7,6 +7,7 @@
 //
 
 #import "PLVCaptureDeviceManager.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static const BOOL kCameraDefaultFront = YES; // 摄像头 默认前置值
@@ -77,23 +78,23 @@ static const BOOL kCameraDefaultFront = YES; // 摄像头 默认前置值
 }
 
 - (void)requestAuthorizationWithType:(PLVCaptureDeviceType)type grantedRefuseTips:(NSString *)refuseTips completion:(void (^)(BOOL granted))completion {
-    NSString *device = @"麦克风或摄像头";
+    NSString *device = PLVLocalizedString(@"麦克风或摄像头");
     if (type == PLVCaptureDeviceTypeCamera) {
-        device = @"摄像头";
+        device = PLVLocalizedString(@"摄像头");
     } else if (type == PLVCaptureDeviceTypeMicrophone) {
-        device = @"麦克风";
+        device = PLVLocalizedString(@"麦克风");
     }
-    NSString *tips = refuseTips ?: [NSString stringWithFormat:@"你没开通访问%@的权限，如要开通，请移步到设置进行开通", device];
+    NSString *tips = refuseTips ?: [NSString stringWithFormat:PLVLocalizedString(@"你没开通访问%@的权限，如要开通，请移步到设置进行开通"), device];
     PLVAuthorizationType authorType = (PLVAuthorizationType)type;
     [PLVAuthorizationManager requestAuthorizationWithType:authorType completion:^(BOOL granted) {
         if (!granted) {
-            [PLVFdUtil showAlertWithTitle:@"提示"
+            [PLVFdUtil showAlertWithTitle:PLVLocalizedString(@"提示")
                                   message:tips
                            viewController:[PLVFdUtil getCurrentViewController]
-                        cancelActionTitle:@"取消"
+                        cancelActionTitle:PLVLocalizedString(@"取消")
                         cancelActionStyle:UIAlertActionStyleDefault
                         cancelActionBlock:nil
-                       confirmActionTitle:@"前往设置"
+                       confirmActionTitle:PLVLocalizedString(@"前往设置")
                        confirmActionStyle:UIAlertActionStyleDestructive
                        confirmActionBlock:^(UIAlertAction * _Nonnull action) {
                 NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];

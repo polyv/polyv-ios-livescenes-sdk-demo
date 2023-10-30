@@ -12,6 +12,7 @@
 #import "PLVWebImageDecoder.h"
 #import "PLVAlbumTool.h"
 #import "PLVPicDefine.h"
+#import "PLVMultiLanguageManager.h"
 
 #define PLVPhotoCollectionViewCellIdentifier      @"PLVPhotoCollectionViewCell"
 #define ZPhotoCollectionHeaderViewIdentifier    @"ZPhotoCollectionHeaderView"
@@ -167,11 +168,11 @@
                         });
                     }
                 } else {
-                    [self performSelector:@selector(presentAlertController:) withObject:@"你没开通访问相册的权限，如要开通，请移步到:设置->隐私->照片 开启" afterDelay:0.1];
+                    [self performSelector:@selector(presentAlertController:) withObject:PLVLocalizedString(@"你没开通访问相册的权限，如要开通，请移步到:设置->隐私->照片 开启") afterDelay:0.1];
                 }
             }];
         } else if (status == PHAuthorizationStatusRestricted || status == PHAuthorizationStatusDenied) {
-            [self performSelector:@selector(presentAlertController:) withObject:@"你没开通访问相册的权限，如要开通，请移步到:设置->隐私->照片 开启" afterDelay:0.1];
+            [self performSelector:@selector(presentAlertController:) withObject:PLVLocalizedString(@"你没开通访问相册的权限，如要开通，请移步到:设置->隐私->照片 开启") afterDelay:0.1];
         } else {
             [self accessAlbum];
         }
@@ -346,7 +347,7 @@
 
 - (void)changeAlbumsBtnTitleFrame {
     CGRect titleRect = self.albumsBtn.frame;
-    NSString *str = @"没有访问相册的权限";
+    NSString *str = PLVLocalizedString(@"没有访问相册的权限");
     if (self.assetCollection != nil) {
         str = self.assetCollection.localizedTitle;
     }
@@ -446,7 +447,7 @@
         CGRect sendRect = CGRectMake(self.toolBar.bounds.size.width - ToolbarBtnWidth - dx, 0.0, ToolbarBtnWidth, h);
         if (self.pickerModer == PickerModerOfNormal) {
            self.sendBtn = [PLVAlbumTool createBtn:nil selectedImgStr:nil disabledImgStr:nil action:@selector(sendAction:) frame:sendRect target:self inView:self.toolBar];
-            [self.sendBtn setTitle:@"发送" forState:UIControlStateNormal];
+            [self.sendBtn setTitle:PLVLocalizedString(@"发送") forState:UIControlStateNormal];
         }
     }
     
@@ -622,10 +623,10 @@
         PLVPhotoCollectionFooterView *footer = [self.collectionView dequeueReusableSupplementaryViewOfKind:kind withReuseIdentifier:PLVPhotoCollectionFooterViewIdentifier forIndexPath:indexPath];
         if (indexPath.section == (self.photoCount + PickerNumberOfItemsInSection - 1) / PickerNumberOfItemsInSection - 1) {
             footer.label.frame = footer.bounds;
-            footer.label.text = [NSString stringWithFormat:@"%d张照片", (int)self.photoCount];
+            footer.label.text = [NSString stringWithFormat:PLVLocalizedString(@"%d张照片"), (int)self.photoCount];
         } else if (indexPath.section == (self.photos.count + PickerNumberOfItemsInSection - 1) / PickerNumberOfItemsInSection - 1) {
             footer.label.frame = footer.bounds;
-            footer.label.text = [NSString stringWithFormat:@"%d部视频", (int)self.videoCount];
+            footer.label.text = [NSString stringWithFormat:PLVLocalizedString(@"%d部视频"), (int)self.videoCount];
         } else {
             footer.label.frame = CGRectZero;
             footer.label.text = nil;
@@ -737,7 +738,7 @@
                 } else if (flag) {
                     dispatch_async(dispatch_get_main_queue(), ^{
                         weak_self.sendBtn.enabled = YES;
-                        [PLVAlbumTool presentAlertController:@"下载iCloud的图片失败，请保证网络正常，重新再试" inViewController:weak_self];
+                        [PLVAlbumTool presentAlertController:PLVLocalizedString(@"下载iCloud的图片失败，请保证网络正常，重新再试") inViewController:weak_self];
                     });
                 }
             } dataHandler:nil errorHandler:^(NSDictionary *info) {
@@ -747,7 +748,7 @@
                 } else if (flag) {
                     dispatch_async(dispatch_get_main_queue(), ^{
                         weak_self.sendBtn.enabled = YES;
-                        [PLVAlbumTool presentAlertController:@"下载iCloud的图片失败，请保证网络正常，重新再试" inViewController:weak_self];
+                        [PLVAlbumTool presentAlertController:PLVLocalizedString(@"下载iCloud的图片失败，请保证网络正常，重新再试") inViewController:weak_self];
                     });
                 }
             }];
@@ -775,7 +776,7 @@
         [self showOrHiddenSelectLabelOfVisibleCells];
     } else {
         if (self.selectedItems.count > 0) {
-            [PLVAlbumTool presentAlertController:@"你只能选择一张图片" inViewController:self];
+            [PLVAlbumTool presentAlertController:PLVLocalizedString(@"你只能选择一张图片") inViewController:self];
             return;
         }
         [self addItemAtIndexPath:indexPath];

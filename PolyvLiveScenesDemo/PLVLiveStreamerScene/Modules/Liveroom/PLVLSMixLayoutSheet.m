@@ -9,6 +9,7 @@
 #import "PLVLSMixLayoutSheet.h"
 #import "PLVLSSettingSheetCell.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
@@ -128,7 +129,7 @@
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _sheetTitleLabel.font = [UIFont boldSystemFontOfSize:16];
-        _sheetTitleLabel.text = @"混流布局";
+        _sheetTitleLabel.text = PLVLocalizedString(@"混流布局");
     }
     return _sheetTitleLabel;
 }
@@ -189,7 +190,7 @@
             [self.delegate mixLayoutSheet_didChangeMixLayoutType:type];
         }
     } else {
-        [PLVLSUtils showToastWithMessage:@"网络异常，请恢复网络后重试" inView:[PLVLSUtils sharedUtils].homeVC.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"网络异常，请恢复网络后重试") inView:[PLVLSUtils sharedUtils].homeVC.view];
         __weak typeof(self) weakSelf = self;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [weakSelf dismiss];

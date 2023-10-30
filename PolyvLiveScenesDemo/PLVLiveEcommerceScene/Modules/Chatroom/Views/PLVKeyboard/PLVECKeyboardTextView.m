@@ -8,6 +8,7 @@
 
 #import "PLVECKeyboardTextView.h"
 #import "PLVEmoticonManager.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSInteger kPLVECKeyboardFontSize = 16.0;
 static NSString *kPLVECTextBackedStringAttributeName = @"kTextBackedStringAttributeName";
@@ -172,7 +173,7 @@ static NSString *kPLVECTextBackedStringAttributeName = @"kTextBackedStringAttrib
 - (UILabel *)placeholderLabel {
     if (!_placeholderLabel) {
         _placeholderLabel = [[UILabel alloc] init];
-        _placeholderLabel.text = @"聊点什么～";
+        _placeholderLabel.text = PLVLocalizedString(@"聊点什么～");
         _placeholderLabel.font = [UIFont systemFontOfSize:kPLVECKeyboardFontSize];
         _placeholderLabel.textColor = [UIColor colorWithWhite:1 alpha:0.2];
     }

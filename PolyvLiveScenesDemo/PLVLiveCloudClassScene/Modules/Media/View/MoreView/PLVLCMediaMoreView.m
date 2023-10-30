@@ -9,6 +9,7 @@
 #import "PLVLCMediaMoreView.h"
 
 #import "PLVLCMediaMoreCell.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCMediaMoreView () <UITableViewDataSource, UITableViewDelegate, PLVLCMediaMoreCellDelegate>
@@ -249,7 +250,7 @@
     if (indexPath.row == 0 && [PLVFdUtil checkArrayUseable:self.switchesDataArray]) {
         [cell setSwitchesDataArray:self.switchesDataArray];
         for (int i = 0; i < self.switchesDataArray.count; i++) {
-            if ([self.switchesDataArray[i].optionTitle isEqualToString:@"弹幕"]) {
+            if ([self.switchesDataArray[i].optionTitle isEqualToString:PLVLocalizedString(@"弹幕")]) {
                 self.danmuCell = cell;
             }
         }

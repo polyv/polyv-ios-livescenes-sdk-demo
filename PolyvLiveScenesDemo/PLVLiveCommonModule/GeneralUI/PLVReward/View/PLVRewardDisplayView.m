@@ -7,6 +7,7 @@
 //
 
 #import "PLVRewardDisplayView.h"
+#import "PLVMultiLanguageManager.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImageDownloader.h>
 
@@ -108,7 +109,7 @@
         _nameLabel.textAlignment = NSTextAlignmentLeft;
         _nameLabel.textColor = [UIColor colorWithRed:252/255.0 green:242/255.0 blue:166/255.0 alpha:1.0];
         _nameLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:14];
-        _nameLabel.text = @"观众名";
+        _nameLabel.text = PLVLocalizedString(@"观众名");
     }
     return _nameLabel;
 }
@@ -119,7 +120,7 @@
         _prizeNameLabel.textAlignment = NSTextAlignmentLeft;
         _prizeNameLabel.textColor = [UIColor whiteColor];
         _prizeNameLabel.font = [UIFont fontWithName:@"PingFang SC" size:10];
-        _prizeNameLabel.text = @"赠送    礼物";
+        _prizeNameLabel.text = PLVLocalizedString(@"赠送    礼物");
     }
     return _prizeNameLabel;
 }
@@ -173,7 +174,7 @@
     if ([model isKindOfClass:PLVRewardGoodsModel.class]) {
         PLVRewardDisplayView * view = [[PLVRewardDisplayView alloc]init];
         [view.prizeImageView sd_setImageWithURL:[NSURL URLWithString:model.goodImgFullURL]];
-        view.prizeNameLabel.text = [NSString stringWithFormat:@"赠送  %@",model.goodName];
+        view.prizeNameLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"赠送  %@"),model.goodName];
         
         view.nameLabel.text = personName;
         view.numLabel.text = [NSString stringWithFormat:@"%ld",goodsNum];

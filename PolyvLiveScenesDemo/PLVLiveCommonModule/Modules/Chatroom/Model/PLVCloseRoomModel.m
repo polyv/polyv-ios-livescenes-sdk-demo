@@ -7,15 +7,16 @@
 //
 
 #import "PLVCloseRoomModel.h"
+#import "PLVMultiLanguageManager.h"
 
 @implementation PLVCloseRoomModel
 
 - (NSString *)closeRoomString {
     NSString *string;
     if (self.closeRoom) {
-        string = @"聊天室暂时关闭";
+        string = PLVLocalizedString(@"聊天室暂时关闭");
     }else {
-        string = @"聊天室已开启";
+        string = PLVLocalizedString(@"聊天室已开启");
     }
     return string;
 }

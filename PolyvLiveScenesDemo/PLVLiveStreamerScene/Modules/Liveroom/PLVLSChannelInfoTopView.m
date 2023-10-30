@@ -8,6 +8,7 @@
 
 #import "PLVLSChannelInfoTopView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSChannelInfoTopView ()
 
@@ -124,7 +125,7 @@
         _detailLabel = [[UILabel alloc] init];
         _detailLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _detailLabel.font = [UIFont systemFontOfSize:14];
-        _detailLabel.text = @"直播介绍";
+        _detailLabel.text = PLVLocalizedString(@"直播介绍");
     }
     return _detailLabel;
 }

@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCPlaybackListEmptyView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCPlaybackListEmptyView ()
@@ -29,16 +30,17 @@
 
 - (void)layoutSubviews{
     [super layoutSubviews];
-    self.titleLabel.frame = CGRectMake((CGRectGetWidth(self.bounds) - 171) / 2, 36, 171, 12);
+    self.titleLabel.frame = CGRectMake(0, 36, CGRectGetWidth(self.bounds), 12);
 }
 
 #pragma mark Getter
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
-        _titleLabel = [[UILabel alloc]init];
-        _titleLabel.text = @"内容加载失败，请下拉刷新重试";
+        _titleLabel = [[UILabel alloc] init];
+        _titleLabel.text = PLVLocalizedString(@"内容加载失败，请下拉刷新重试");
         _titleLabel.textColor = PLV_UIColorFromRGB(@"#ADADC0");
         _titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
+        _titleLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _titleLabel;
 }

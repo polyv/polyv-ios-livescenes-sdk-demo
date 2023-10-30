@@ -9,6 +9,7 @@
 #import "PLVLCMediaPlayerCanvasView.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVLivePictureInPicturePlaceholderView.h"
 
@@ -88,7 +89,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
                                                  placeholderImageViewWidth,
                                                  placeholderImageViewHeight);
     
-    CGFloat tipsLabelWidth = 150;
+    CGFloat tipsLabelWidth = 200;
     CGFloat tipsLabelHeight = 17.0;
     self.tipsLabel.frame = CGRectMake((viewWidth - tipsLabelWidth) / 2.0,
                                       CGRectGetMaxY(self.placeholderImageView.frame) - 16 - tipsLabelHeight,
@@ -270,7 +271,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 - (UILabel *)tipsLabel{
     if (!_tipsLabel) {
         _tipsLabel = [[UILabel alloc] init];
-        _tipsLabel.text = @"当前暂无直播";
+        _tipsLabel.text = PLVLocalizedString(@"当前暂无直播");
         _tipsLabel.textAlignment = NSTextAlignmentCenter;
         _tipsLabel.textColor = PLV_UIColorFromRGB(@"E4E4E4");
         _tipsLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
@@ -282,7 +283,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 - (UIImageView *)restImageView{
     if (!_restImageView) {
         _restImageView = [UIImageView new];
-        _restImageView.image = [self getImageWithName:@"plvlc_media_video_rest"];
+        _restImageView.image = [self getImageWithName:PLVLocalizedString(@"plvlc_media_video_rest")];
         _restImageView.hidden = YES;
         _restImageView.contentMode = UIViewContentModeScaleAspectFill;
     }
@@ -299,7 +300,7 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
 - (UIButton *)playCanvasButton{
     if (!_playCanvasButton) {
         _playCanvasButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_playCanvasButton setTitle:@"播放画面" forState:UIControlStateNormal];
+        [_playCanvasButton setTitle:PLVLocalizedString(@"播放画面") forState:UIControlStateNormal];
         [_playCanvasButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         _playCanvasButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
         _playCanvasButton.backgroundColor = [UIColor colorWithWhite:1 alpha:0.1];

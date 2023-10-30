@@ -10,6 +10,7 @@
 
 /// 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVLSMemberCell.h"
@@ -85,7 +86,8 @@ UITableViewDataSource
         buttonMargin = 12;
     }
     
-    self.titleLabel.frame = CGRectMake(16, titleLabelTop, 70, 22);
+    CGSize titleLabelSize = [self.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT, 22)];
+    self.titleLabel.frame = CGRectMake(16, titleLabelTop, titleLabelSize.width, 22);
     
     CGFloat buttonWidth = 88.0;
     if (self.bounds.size.width <= 667) {  // iphone小屏适配
@@ -93,7 +95,7 @@ UITableViewDataSource
     }
     CGFloat buttonOriginX = self.sheetWidth - PLVLSUtils.safeSidePad - buttonWidth * 2 - buttonMargin;
     
-    self.countLabel.frame = CGRectMake(84, countLabelTop, buttonOriginX - 84 - 4, 17);
+    self.countLabel.frame = CGRectMake(CGRectGetMaxX(self.titleLabel.frame) + 4, countLabelTop, buttonOriginX - CGRectGetMaxX(self.titleLabel.frame) - 4, 17);
     self.leaveMicButton.frame = CGRectMake(buttonOriginX, buttonTop, buttonWidth, 28);
     self.muteButton.frame = CGRectMake(buttonOriginX + buttonWidth + buttonMargin, buttonTop, buttonWidth, 28);
     self.titleLine.frame = CGRectMake(16, titleLineTop, self.sheetWidth - 16 - PLVLSUtils.safeSidePad, 1);
@@ -143,7 +145,7 @@ UITableViewDataSource
 
 - (void)updateUI {
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.countLabel.text = [NSString stringWithFormat:@"(%zd人)", self.userCount];
+        self.countLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"(%zd人)"), self.userCount];
         
         if (self.tableViewEditing) {
             self.delayReload = YES;
@@ -159,7 +161,7 @@ UITableViewDataSource
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.font = [UIFont systemFontOfSize:16];
-        _titleLabel.text = @"成员列表";
+        _titleLabel.text = PLVLocalizedString(@"成员列表");
         _titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#f0f1f5"];
     }
     return _titleLabel;
@@ -170,7 +172,7 @@ UITableViewDataSource
         _countLabel = [[UILabel alloc] init];
         _countLabel.font = [UIFont systemFontOfSize:12];
         _countLabel.textColor = [PLVColorUtil colorFromHexString:@"#cfd1d6"];
-        _countLabel.text = [NSString stringWithFormat:@"(%zd人)", self.userCount];
+        _countLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"(%zd人)"), self.userCount];
     }
     return _countLabel;
 }
@@ -184,7 +186,7 @@ UITableViewDataSource
         _leaveMicButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
         _leaveMicButton.layer.masksToBounds = YES;
         _leaveMicButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        [_leaveMicButton setTitle:@"全体下麦" forState:UIControlStateNormal];
+        [_leaveMicButton setTitle:PLVLocalizedString(@"全体下麦") forState:UIControlStateNormal];
         [_leaveMicButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_leaveMicButton addTarget:self action:@selector(leaveMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _leaveMicButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
@@ -201,8 +203,8 @@ UITableViewDataSource
         _muteButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
         _muteButton.layer.masksToBounds = YES;
         _muteButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        [_muteButton setTitle:@"全体静音" forState:UIControlStateNormal];
-        [_muteButton setTitle:@"取消全体静音" forState:UIControlStateSelected];
+        [_muteButton setTitle:PLVLocalizedString(@"全体静音") forState:UIControlStateNormal];
+        [_muteButton setTitle:PLVLocalizedString(@"取消全体静音") forState:UIControlStateSelected];
         [_muteButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_muteButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateSelected];
         [_muteButton addTarget:self action:@selector(muteButtonAction) forControlEvents:UIControlEventTouchUpInside];

@@ -18,6 +18,7 @@
 #import "PLVLinkMicOnlineUser+SA.h"
 #import "PLVSAUtils.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 typedef NS_ENUM(NSInteger, PLVSALinkMicLayoutMode) {
     PLVSALinkMicLayoutModeTiled = 0, //平铺模式
@@ -630,7 +631,7 @@ PLVSALinkMicPreviewViewDelegate
     NSString *fullScreenCountKey = fullScreen ? kFullScreenCloseCountKey : kFullScreenOpenCountKey;
     NSInteger fullScreenCount = [userDefaults integerForKey:fullScreenCountKey];
     NSInteger maxCount = fullScreen ? 1 : 0;
-    NSString *message = fullScreen ? @"双击退出全屏" : @"双击窗口放大";
+    NSString *message = fullScreen ? PLVLocalizedString(@"双击退出全屏") : PLVLocalizedString(@"双击窗口放大");
     if (fullScreenCount > maxCount) {
         return;
     }
@@ -794,9 +795,9 @@ PLVSALinkMicPreviewViewDelegate
     // 远端用户 屏幕共享 开启关闭 状态改变
     NSString *message = nil;
     if (onlineUser.userType == PLVRoomUserTypeTeacher) {
-        message = onlineUser.currentScreenShareOpen ? @"主持人开始共享" : @"主持人结束共享";
+        message = onlineUser.currentScreenShareOpen ? PLVLocalizedString(@"主持人开始共享") : PLVLocalizedString(@"主持人结束共享");
     } else if (onlineUser.userType == PLVSocketUserTypeGuest) {
-        message = onlineUser.currentScreenShareOpen ? [NSString stringWithFormat:@"%@开始共享",onlineUser.nickname] : [NSString stringWithFormat:@"%@结束共享",onlineUser.nickname];
+        message = onlineUser.currentScreenShareOpen ? [NSString stringWithFormat:PLVLocalizedString(@"%@开始共享"),onlineUser.nickname] : [NSString stringWithFormat:PLVLocalizedString(@"%@结束共享"),onlineUser.nickname];
     }
     
     self.delayDisplayToast = YES;

@@ -8,6 +8,7 @@
 
 #import "PLVLSDocumentDeleteView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSDocumentDeleteView ()
 
@@ -29,7 +30,7 @@
         _deleteButton = [UIButton buttonWithType:UIButtonTypeSystem];
         [_deleteButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         _deleteButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_deleteButton setTitle:@"删除" forState:UIControlStateNormal];
+        [_deleteButton setTitle:PLVLocalizedString(@"删除") forState:UIControlStateNormal];
         [_deleteButton setTitleEdgeInsets:UIEdgeInsetsMake(-7.5, 0, 0, 0)];
         [_deleteButton addTarget:self action:@selector(deleteAction:) forControlEvents:UIControlEventTouchUpInside];
         

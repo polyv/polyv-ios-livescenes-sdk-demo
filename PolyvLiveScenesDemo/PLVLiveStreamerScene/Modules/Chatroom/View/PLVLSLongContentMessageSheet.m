@@ -9,6 +9,7 @@
 #import "PLVLSLongContentMessageSheet.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVToast.h"
 
 static NSString *kChatAdminLinkTextColor = @"#0092FA";
@@ -151,7 +152,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.font = [UIFont systemFontOfSize:16];
-        _titleLabel.text = @"全文";
+        _titleLabel.text = PLVLocalizedString(@"全文");
         _titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#f0f1f5"];
     }
     return _titleLabel;
@@ -181,7 +182,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_copButton addTarget:self action:@selector(copButtonAction) forControlEvents:UIControlEventTouchUpInside];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateNormal];
         _copButton.layer.masksToBounds = YES;
@@ -200,7 +201,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
     [self dismiss];
     
     [UIPasteboard generalPasteboard].string = self.content;
-    [PLVToast showToastWithMessage:@"复制成功" inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 @end

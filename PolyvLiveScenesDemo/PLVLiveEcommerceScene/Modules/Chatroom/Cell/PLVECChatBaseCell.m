@@ -7,6 +7,8 @@
 //
 
 #import "PLVECChatBaseCell.h"
+#import "PLVMultiLanguageManager.h"
+#import "PLVToast.h"
 
 @implementation PLVECChatBaseCell
 
@@ -156,6 +158,7 @@
         PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)message;
         pasteboard.string = quoteMessage.content;
     }
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
 }
 
 #pragma mark Gesture
@@ -164,8 +167,8 @@
     if (self.allowCopy || (self.allowReply && self.quoteReplyEnabled)) {
         [self becomeFirstResponder];
         
-        UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
-        UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
+        UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"复制") action:@selector(customCopy:)];
+        UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"回复") action:@selector(reply:)];
         UIMenuController *menuController = [UIMenuController sharedMenuController];
         if (self.model.isProhibitMsg && self.model.prohibitWord) { // 含有严禁词并且发送失败时
             [menuController setMenuItems:@[copyMenuItem]];

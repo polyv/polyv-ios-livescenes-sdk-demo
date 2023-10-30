@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVPhotoBrowser.h"
@@ -123,11 +124,9 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
         bubbleWidth = MIN(chatLabelSize.width + originX * 2, self.cellWidth);
     } else { // 其他消息布局
         CGFloat labelWidth = self.cellWidth - originX * 2;
-        CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
-                                                                           options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
-                                                                           context:nil].size;
-        CGFloat chatLabelHeight = ceil(chatLabelSize.height) + 8; // 修复可能出现文字显示不全的情况
-        CGFloat chatLabelWidth = ceil(chatLabelSize.width) + 2; // 修复可能出现文字显示不全的情况
+        CGSize chatLabelSize = [self.chatLabel sizeThatFits:CGSizeMake(labelWidth, MAXFLOAT)];
+        CGFloat chatLabelHeight = ceil(chatLabelSize.height);
+        CGFloat chatLabelWidth = ceil(chatLabelSize.width);
         self.chatLabel.frame = CGRectMake(originX, originY, chatLabelWidth, chatLabelHeight);
         
         originY += chatLabelHeight + 4;
@@ -410,7 +409,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     if ([user.userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]) { // 自己的赠送记录
         NSString *giftName = PLV_SafeStringForDictKey(dataDic, @"giftName");
         giftName = [PLVFdUtil checkStringUseable:giftName] ? giftName : @"";
-        tip = [NSString stringWithFormat:@"%@(我) 赠送了 %@", user.userName, giftName];
+        tip = [NSString stringWithFormat:PLVLocalizedString(@"%@(我) 赠送了 %@"), user.userName, giftName];
     }
     NSMutableAttributedString *conentString = [[NSMutableAttributedString alloc] initWithString:tip attributes:contentAttDict];
     
@@ -447,9 +446,9 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     // 白色文本
     NSString *redpackTypeString = @"";
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
-        redpackTypeString = @"口令";
+        redpackTypeString = PLVLocalizedString(@"口令");
     }
-    NSString *contentString = [NSString stringWithFormat:@" %@ 发了一个%@红包，", chatModel.user.userName, redpackTypeString];
+    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), chatModel.user.userName, redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
                                     NSForegroundColorAttributeName:[UIColor whiteColor],
                                     NSBaselineOffsetAttributeName:@(4.0)};
@@ -460,7 +459,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
                                        kRedpackMessageTapKey:@(1),
                                        NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FF5959"],
                                        NSBaselineOffsetAttributeName:@(4.0)};
-    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:@"点击领取" attributes:redAttributeDict];
+    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"点击领取") attributes:redAttributeDict];
     
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     [muString appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
@@ -528,11 +527,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
 
 // 将UIView转换为UIImage对象
 + (UIImage *)imageFromUIView:(UIView *)view {
-    UIGraphicsBeginImageContext(view.bounds.size);
-    CGContextRef ctxRef = UIGraphicsGetCurrentContext();
-    [view.layer renderInContext:ctxRef];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
+    UIImage *image = [PLVImageUtil imageFromUIView:view];
     return image;
 }
 

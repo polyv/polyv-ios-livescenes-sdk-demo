@@ -10,6 +10,7 @@
 
 // Utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 
 // Model
@@ -190,7 +191,7 @@
     }
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     content = [content stringByAppendingString:@"："];
     
@@ -200,9 +201,9 @@
     NSString *rewardContent = message.rewardContent;
     // 礼物打赏为礼物图片，现金打赏为空
     if ([PLVFdUtil checkStringUseable:gimg]) {
-        rewardContent = [NSString stringWithFormat:@"赠送了 %@", rewardContent];
+        rewardContent = [NSString stringWithFormat:PLVLocalizedString(@"赠送了 %@"), rewardContent];
     } else {
-        rewardContent = [NSString stringWithFormat:@"打赏 %@元", rewardContent];
+        rewardContent = [NSString stringWithFormat:PLVLocalizedString(@"打赏 %@元"), rewardContent];
     }
     
     NSAttributedString *conentString = [[NSAttributedString alloc] initWithString:rewardContent attributes:contentAttDict];

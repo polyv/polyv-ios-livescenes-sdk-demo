@@ -10,6 +10,7 @@
 #import "PLVChatUser.h"
 #import "PLVRoomDataManager.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSAMemberCell ()
@@ -445,12 +446,12 @@
             // 刷新按钮状态为等待连麦
             [self refreshLinkMicButtonStateWithInviting];
         } else {
-            [PLVSAUtils showToastInHomeVCWithMessage:@"当前连麦人数已达上限"];
+            [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"当前连麦人数已达上限")];
         }
     } else {
         if (self.user.onlineUser){
             __weak typeof(self) weakSelf = self;
-            [PLVSAUtils showAlertWithTitle:@"确定挂断连麦吗？" Message:@"" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+            [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"确定挂断连麦吗？") Message:@"" cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
                 [weakSelf.user.onlineUser wantCloseUserLinkMic];
             }];
         }

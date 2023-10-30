@@ -11,6 +11,7 @@
 #import "PLVSAMemberPopup.h"
 #import "PLVChatUser.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // 模块
 #import "PLVRoomDataManager.h"
 // 依赖库
@@ -107,9 +108,9 @@ PLVSAMemberCellDelegate
 
 - (void)setOnlineUserCount:(NSInteger)count {
     if (count >= 0) {
-        self.titleLabel.text = [NSString stringWithFormat:@"在线人数（%zd）", count];
+        self.titleLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"在线人数（%zd）"), count];
     } else {
-        self.titleLabel.text = @"在线人数（）";
+        self.titleLabel.text = PLVLocalizedString(@"在线人数（）");
     }
 }
 
@@ -167,8 +168,8 @@ PLVSAMemberCellDelegate
 - (void)banUserWitUserId:(NSString *)userId userName:(NSString *)userName banned:(BOOL)banned {
     __weak typeof(self) weakSelf = self;
     if (banned) {
-        NSString *title = [NSString stringWithFormat:@"确定禁言%@吗？", userName];
-        [PLVSAUtils showAlertWithTitle:title cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        NSString *title = [NSString stringWithFormat:PLVLocalizedString(@"确定禁言%@吗？"), userName];
+        [PLVSAUtils showAlertWithTitle:title cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:YES bannedUserId:userId];
             if (success) {
                 if (weakSelf.delegate &&
@@ -190,8 +191,8 @@ PLVSAMemberCellDelegate
 
 - (void)kickUserWitUserId:(NSString *)userId userName:(NSString *)userName {
     __weak typeof(self) weakSelf = self;
-    NSString *title = [NSString stringWithFormat:@"确定踢出%@吗？", userName];
-    [PLVSAUtils showAlertWithTitle:title Message:@"踢出后24小时内无法进入" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+    NSString *title = [NSString stringWithFormat:PLVLocalizedString(@"确定踢出%@吗？"), userName];
+    [PLVSAUtils showAlertWithTitle:title Message:PLVLocalizedString(@"踢出后24小时内无法进入") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
         BOOL success = [[PLVChatroomManager sharedManager] sendKickMessageWithUserId:userId];
         if (success) {
             if (weakSelf.delegate &&
@@ -216,10 +217,10 @@ PLVSAMemberCellDelegate
     
     if ((auth && speakerUser) ||
         (!auth && user.onlineUser.currentScreenShareOpen)) {
-        NSString *titlePrefix = auth ? @"确定授予ta" : @"确定移除ta的";
-        NSString *message = auth ? @"当前已有主讲人，确定后将替换为新的主讲人" : @"移除后主讲人的屏幕共享将会自动结束";
-        NSString *alertTitle = [NSString stringWithFormat:@"%@主讲权限吗？", titlePrefix];
-        [PLVSAUtils showAlertWithTitle:alertTitle Message:message cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        NSString *titlePrefix = auth ? PLVLocalizedString(@"确定授予ta") : PLVLocalizedString(@"确定移除ta的");
+        NSString *message = auth ? PLVLocalizedString(@"当前已有主讲人，确定后将替换为新的主讲人") : PLVLocalizedString(@"移除后主讲人的屏幕共享将会自动结束");
+        NSString *alertTitle = [NSString stringWithFormat:PLVLocalizedString(@"%@主讲权限吗？"), titlePrefix];
+        [PLVSAUtils showAlertWithTitle:alertTitle Message:message cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             [user.onlineUser wantAuthUserSpeaker:auth];
         }];
     } else {

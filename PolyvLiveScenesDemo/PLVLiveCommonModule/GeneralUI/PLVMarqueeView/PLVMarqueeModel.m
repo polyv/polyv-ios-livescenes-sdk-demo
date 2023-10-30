@@ -7,6 +7,7 @@
 //
 
 #import "PLVMarqueeModel.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVMarqueeModel ()
 
@@ -45,7 +46,7 @@ static float FloatValueWithJsonValue(id obj) {
 - (instancetype)init {
     if (self = [super init]) {
         _style = PLVMarqueeModelStyleRoll;
-        _content = @"PLV跑马灯";
+        _content = PLVLocalizedString(@"PLV跑马灯");
         _fontSize = 30;
         _fontColor = @"#000000";
         _outline = NO;

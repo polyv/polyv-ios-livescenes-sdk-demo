@@ -11,6 +11,8 @@
 #import "PLVPhotoBrowser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
+#import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
@@ -222,7 +224,7 @@
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isEqualToString:quoteUserId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSDictionary *attributeDict = @{
@@ -362,6 +364,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview.superview afterDelay:3.0];
 }
 
 @end

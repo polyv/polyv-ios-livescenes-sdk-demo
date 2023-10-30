@@ -10,6 +10,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVSAUtils.h"
 #import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 
 static CGFloat kMaxHeightScale = 0.72; // 竖屏时，弹窗最大高度为屏幕高度的0.72倍
 static CGFloat kMaxLanscapeHeightScale = 0.46; // 横屏时，弹窗最大高度为屏幕高度的0.72倍
@@ -209,12 +210,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
         size.width += 10;
     }
     label.frame = CGRectMake(0, 0, size.width, 14);
-    UIGraphicsBeginImageContextWithOptions(label.frame.size, NO, [UIScreen mainScreen].scale);
-    CGContextRef ctx = UIGraphicsGetCurrentContext();
-    [label.layer renderInContext:ctx];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-   
+    UIImage *image = [PLVImageUtil imageFromUIView:label opaque:NO scale:[UIScreen mainScreen].scale];
     return image;
 }
 /// 获得字符串中 https、http 链接所在位置，并将这些结果放入数组中返回
@@ -238,7 +234,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.font = [UIFont systemFontOfSize:18];
         _titleLabel.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _titleLabel.text = @"全文";
+        _titleLabel.text = PLVLocalizedString(@"全文");
     }
     return _titleLabel;
 }
@@ -250,7 +246,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _copButton.backgroundColor = [UIColor colorWithRed:0/255.0 green:128/255.0 blue:255/255.0 alpha:1/1.0];
         _copButton.layer.cornerRadius = 14;
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         [_copButton addTarget:self action:@selector(copButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _copButton;
@@ -275,7 +271,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
 - (void)copButtonAction {
     if (self.content && self.content.length > 0) {
         [UIPasteboard generalPasteboard].string = self.content;
-        [PLVToast showToastWithMessage:@"复制成功" inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
+        [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
     }
 }
 

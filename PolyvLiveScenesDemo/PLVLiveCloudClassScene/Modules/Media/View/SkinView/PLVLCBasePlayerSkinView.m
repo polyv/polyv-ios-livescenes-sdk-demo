@@ -15,6 +15,7 @@
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCMediaBrightnessView.h"
 
 typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
@@ -187,7 +188,7 @@ UIGestureRecognizerDelegate>
 
 - (void)setPlayTimesLabelWithTimes:(NSInteger)times{
     NSString * timesString = (times > 10000) ? [NSString stringWithFormat:@"%0.1fw", times / 10000.0] : [NSString stringWithFormat:@"%ld",times];
-    self.playTimesLabel.text = [NSString stringWithFormat:@"%@次播放",timesString];
+    self.playTimesLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"%@次播放"),timesString];
     [self refreshPlayTimesLabelFrame];
 }
 
@@ -464,7 +465,7 @@ UIGestureRecognizerDelegate>
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = @"房间标题";
+        _titleLabel.text = PLVLocalizedString(@"房间标题");
         _titleLabel.textAlignment = NSTextAlignmentLeft;
         _titleLabel.textColor = [UIColor whiteColor];
         _titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
@@ -475,7 +476,7 @@ UIGestureRecognizerDelegate>
 - (UILabel *)playTimesLabel{
     if (!_playTimesLabel && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _playTimesLabel = [[UILabel alloc] init];
-        _playTimesLabel.text = @"播放量";
+        _playTimesLabel.text = PLVLocalizedString(@"播放量");
         _playTimesLabel.textAlignment = NSTextAlignmentCenter;
         _playTimesLabel.textColor = PLV_UIColorFromRGB(@"D0D0D0");
         _playTimesLabel.font = [UIFont fontWithName:@"PingFang SC" size:10];
@@ -551,7 +552,7 @@ UIGestureRecognizerDelegate>
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (!_floatViewShowButtonTipsLabel && roomData.channelType != PLVChannelTypeAlone) {
         _floatViewShowButtonTipsLabel = [[UILabel alloc] init];
-        _floatViewShowButtonTipsLabel.text = @"可从此处重新打开浮窗";
+        _floatViewShowButtonTipsLabel.text = PLVLocalizedString(@"可从此处重新打开浮窗");
         _floatViewShowButtonTipsLabel.textAlignment = NSTextAlignmentCenter;
         _floatViewShowButtonTipsLabel.textColor = PLV_UIColorFromRGB(@"FFFFFF");
         _floatViewShowButtonTipsLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];

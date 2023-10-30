@@ -31,6 +31,7 @@
 
 // 工具
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFdUtil.h>
@@ -80,6 +81,10 @@ PLVECMessagePopupViewDelegate
 - (instancetype)init {
     self = [super init];
     if (self) {
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        // 设置多语言场景
+        [[PLVMultiLanguageManager sharedManager] setupLocalizedLiveScene:PLVMultiLanguageLiveSceneEC channelId:roomData.channelId language:roomData.menuInfo.watchLangType];
+        
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         [[PLVRoomDataManager sharedManager].roomData requestChannelFunctionSwitch];
         
@@ -191,6 +196,27 @@ PLVECMessagePopupViewDelegate
     if (@available(iOS 11, *)) {
         [[PLVECUtils sharedUtils] setupAreaInsets:self.view.safeAreaInsets];
     }
+}
+
+#pragma mark - [ Public Method ]
+
+- (void)exitCleanCurrentLiveController {
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+        [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+    }
+
+    [PLVRoomLoginClient logout];
+    [[PLVSocketManager sharedManager] logout];
+    [self.homePageView destroy];
+
+    if (self.navigationController) {
+        [self.navigationController popViewControllerAnimated:YES];
+    } else {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
+    
+    [PLVECFloatingWindow sharedInstance].delegate = nil;
 }
 
 #pragma mark - [ Private Methods ]
@@ -413,21 +439,20 @@ PLVECMessagePopupViewDelegate
 
 - (void)addObserver {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interactUpdateMoreButtonCallback:) name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForUpdateIarEntrance:) name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interactUpdateMoreButtonCallback:) name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
-        
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     }
 }
 
 - (void)removeObserver {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     }
 }
@@ -499,14 +524,14 @@ PLVECMessagePopupViewDelegate
 #pragma mark PLVSocketManagerProtocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
-//    [PLVECUtils showHUDWithTitle:@"登录成功" detail:@"" view:self.view];
+//    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"登录成功") detail:@"" view:self.view];
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
     __weak typeof(self) weakSelf = self;
     if (error.code == PLVSocketLoginErrorCodeKick) {
         plv_dispatch_main_async_safe(^{
-            [PLVECUtils showHUDWithTitle:nil detail:@"您已被管理员踢出聊天室！" view:self.view afterDelay:3.0];
+            [PLVECUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"您已被管理员踢出聊天室！") view:self.view afterDelay:3.0];
         })
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
@@ -543,13 +568,13 @@ PLVECMessagePopupViewDelegate
     if (connectStatus == PLVSocketConnectStatusReconnect) {
         self.socketReconnecting = YES;
         plv_dispatch_main_async_safe(^{
-            [PLVECUtils showHUDWithTitle:@"聊天室重连中" detail:@"" view:self.view];
+            [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"聊天室重连中") detail:@"" view:self.view];
         })
     } else if(connectStatus == PLVSocketConnectStatusConnected) {
         if (self.socketReconnecting) {
             self.socketReconnecting = NO;
             plv_dispatch_main_async_safe(^{
-                [PLVECUtils showHUDWithTitle:@"聊天室重连成功" detail:@"" view:self.view];
+                [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"聊天室重连成功") detail:@"" view:self.view];
             })
         }
     }
@@ -573,7 +598,7 @@ PLVECMessagePopupViewDelegate
 - (void)closeRoomEvent:(NSDictionary *)jsonDict {
     NSDictionary *value = PLV_SafeDictionaryForDictKey(jsonDict, @"value");
     BOOL closeRoom = PLV_SafeBoolForDictKey(value, @"closed");
-    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
+    NSString *string = closeRoom ? PLVLocalizedString(@"聊天室已经关闭") : PLVLocalizedString(@"聊天室已经打开");
     plv_dispatch_main_async_safe(^{
         [PLVECUtils showHUDWithTitle:string detail:@"" view:self.view];
     })
@@ -666,7 +691,7 @@ PLVECMessagePopupViewDelegate
 /// 画中画已经开启
 -(void)playerControllerPictureInPictureDidStart:(PLVECPlayerViewController *)playerController {
     [self.homePageView updateMoreButtonShow:NO];
-    [PLVECUtils showHUDWithTitle:@"小窗播放中，可能存在画面延后的情况" detail:@"" view:self.view];
+    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"小窗播放中，可能存在画面延后的情况") detail:@"" view:self.view];
     
     if (self.playerVC.noDelayLiveWatching) {
         [self.linkMicAreaView pauseWatchNoDelay:YES];
@@ -746,7 +771,7 @@ PLVECMessagePopupViewDelegate
     if (inLinkMic && [PLVECUtils sharedUtils].isLandscape) {
         [PLVFdUtil changeDeviceOrientationToPortrait];
         [[PLVECUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
-        [PLVECUtils showHUDWithTitle:nil detail:@"连麦成功，已为你切换到竖屏模式" view:self.view afterDelay:3.0];
+        [PLVECUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"连麦成功，已为你切换到竖屏模式") view:self.view afterDelay:3.0];
     }
 }
 
@@ -829,7 +854,7 @@ PLVECMessagePopupViewDelegate
 - (void)homePageView_didLoginRestrict {
     __weak typeof(self) weakSelf = self;
     plv_dispatch_main_async_safe(^{
-        [PLVECUtils showHUDWithTitle:nil detail:@"直播间太过火爆了，请稍后再来(2050407)" view:self.view afterDelay:3.0];
+        [PLVECUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"直播间太过火爆了，请稍后再来(2050407)") view:self.view afterDelay:3.0];
     })
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
@@ -852,10 +877,16 @@ PLVECMessagePopupViewDelegate
         [self.playerVC stopPictureInPicture];
     }else {
         PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.view animated:YES];
-        [hud.label setText:@"正在开启小窗..."];
+        [hud.label setText:PLVLocalizedString(@"正在开启小窗...")];
         [hud hideAnimated:YES afterDelay:3.0];
         [self.playerVC startPictureInPicture];
     }
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView switchLanguageMode:(NSInteger)languageMode {
+    [PLVFdUtil showAlertWithTitle:nil message:PLVLocalizedString(@"PLVAlertSwitchLanguageTips") viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"取消") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle") confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        [[PLVMultiLanguageManager sharedManager] updateLanguage:MAX(MIN(languageMode, PLVMultiLanguageModeEN), PLVMultiLanguageModeSyetem)];
+    }];
 }
 
 - (void)homePageViewWannaBackToVerticalScreen:(PLVECHomePageView *)homePageView {
@@ -957,7 +988,7 @@ PLVECMessagePopupViewDelegate
 
 - (void)messagePopupViewWillCopy:(PLVECMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
-    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
 }
 
 @end

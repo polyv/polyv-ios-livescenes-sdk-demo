@@ -9,6 +9,7 @@
 #import "PLVLCDownloadingCell.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCDownloadingCell ()
 
@@ -126,17 +127,17 @@
     if (state == PLVDownloadStateDownloading ||
         state == PLVDownloadStateUnzipping ||
         state == PLVDownloadStateUnzipped) {
-        content = @"下载中";
+        content = PLVLocalizedString(@"下载中");
     }
     else if (state == PLVDownloadStateDefault ||
              state == PLVDownloadStatePreparing ||
              state == PLVDownloadStatePrepared ||
              state == PLVDownloadStateWaiting) {
-        content = @"等待中";
+        content = PLVLocalizedString(@"等待中");
     }else if (state == PLVDownloadStateStopped) {
-        content = @"已暂停";
+        content = PLVLocalizedString(@"已暂停");
     }else if (state == PLVDownloadStateFailed) {
-        content = @"下载失败";
+        content = PLVLocalizedString(@"下载失败");
     }
     return content;
 }
