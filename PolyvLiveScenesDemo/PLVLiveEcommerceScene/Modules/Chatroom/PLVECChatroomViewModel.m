@@ -418,6 +418,16 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
+            if ([PLVECChatCell isModelValid:model]) {
+                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
+                model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+            } else if ([PLVECQuoteChatCell isModelValid:model]) {
+                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell contentAttributedStringWithChatModel:model]];
+                model.cellHeightForV = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+            } else if ([PLVECLongContentChatCell isModelValid:model]) {
+                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
+                model.cellHeightForV = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+            }
             [self.publicChatArray insertObject:model atIndex:0];
             PLVChatUser *user = model.user;
             if (user.specialIdentity) {
