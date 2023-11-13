@@ -117,6 +117,7 @@ PLVECChatroomPlaybackViewModelDelegate
     self.gradientLayer.frame = self.tableViewBackgroundView.bounds;
     self.scrollView.contentSize = scrollViewContentSize;
     self.receiveNewMessageView.frame = CGRectMake(0, CGRectGetHeight(self.tableViewBackgroundView.frame) - 25, 86, 25);
+    [PLVECChatroomViewModel sharedViewModel].tableViewWidth = self.tableView.frame.size.width;
 }
 
 #pragma mark - [ Public Method ]
@@ -446,11 +447,20 @@ PLVECChatroomPlaybackViewModelDelegate
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     CGFloat cellHeight = 0;
     if ([PLVECChatCell isModelValid:model]) {
-        cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVECQuoteChatCell isModelValid:model]) {
-        cellHeight = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVECLongContentChatCell isModelValid:model]) {
-        cellHeight = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     }
     return cellHeight;
 }

@@ -198,6 +198,8 @@ UITableViewDataSource
 - (void)refreshTableViewFrame {
     CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
     self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
+    
+    [PLVLCChatroomViewModel sharedViewModel].tableViewWidthForV = self.tableView.frame.size.width;
 }
 
 - (void)refreshReceiveNewMessageViewFrame {
@@ -459,6 +461,9 @@ UITableViewDataSource
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView hidden];
 }
@@ -496,9 +501,13 @@ UITableViewDataSource
 - (PLVChatModel *)modelAtIndexPath:(NSIndexPath *)indexPath {
     PLVChatModel *model = nil;
     if (self.playbackEnable) {
-        model = self.playbackViewModel.chatArray[indexPath.row];
+        if (self.playbackViewModel.chatArray.count > indexPath.row) {
+            model = self.playbackViewModel.chatArray[indexPath.row];
+        }
     } else {
-        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+        if ([[PLVLCChatroomViewModel sharedViewModel] chatArray].count > indexPath.row) {
+            model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+        }
     }
     return model;
 }
@@ -937,21 +946,45 @@ UITableViewDataSource
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVLCLongContentMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCLongContentMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCLongContentMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVLCImageMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVLCImageEmotionMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVLCRewardMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVLCFileMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     }
     
     return cellHeight;

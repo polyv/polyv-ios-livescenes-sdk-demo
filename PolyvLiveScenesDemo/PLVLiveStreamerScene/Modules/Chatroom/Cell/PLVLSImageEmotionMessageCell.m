@@ -147,8 +147,14 @@
     }
     
     // 设置昵称文本
-    NSAttributedString *nickLabelString = [PLVLSImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user
-                                                                                         loginUserId:self.loginUserId];
+    NSMutableAttributedString *nickLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.attributeString;
+    } else {
+        nickLabelString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user
+                                                                                                                                          loginUserId:self.loginUserId]];
+        model.attributeString = nickLabelString;
+    }
     self.nickLabel.attributedText = nickLabelString;
     
     PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
@@ -171,7 +177,7 @@
 
 #pragma mark UI - ViewModel
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
                                               loginUserId:(NSString *)loginUserId {
     if (!user.userName || ![user.userName isKindOfClass:[NSString class]] || user.userName.length == 0) {

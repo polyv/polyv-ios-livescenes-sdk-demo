@@ -174,7 +174,14 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     [self addObserveMsgState];
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     NSAttributedString *quoteLabelString = [PLVSAQuoteMessageCell quoteContentAttributedStringWithMessage:message
@@ -228,7 +235,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     
     CGFloat maxTextViewWidth = cellWidth - bubbleXPadding * 2 - resendWidth;
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
     NSAttributedString *quoteLabelString = [PLVSAQuoteMessageCell quoteContentAttributedStringWithMessage:message loginUserId:loginUserId];
@@ -431,7 +444,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 }
 
 #pragma mark AttributedString
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVQuoteMessage *)message
                                                                   user:(PLVChatUser *)user
                                                           prohibitWord:(NSString *)prohibitWord{

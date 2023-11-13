@@ -22,6 +22,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 根据消息数据模型、cell宽度计算cell高度
 + (CGFloat)cellHeightWithModel:(PLVChatModel *)model cellWidth:(CGFloat)cellWidth;
 
+/// 生成消息多属性文本
++ (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model;
+
 @end
 
 NS_ASSUME_NONNULL_END

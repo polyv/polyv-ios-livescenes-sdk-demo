@@ -160,7 +160,14 @@ static CGFloat kButtonoHeight = 34.0;
     }
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSLongContentMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId isRemindMsg:model.isRemindMsg];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSLongContentMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId isRemindMsg:model.isRemindMsg];
+        model.attributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     if ([model.message isKindOfClass:[PLVQuoteMessage class]]) {
@@ -216,7 +223,14 @@ static CGFloat kButtonoHeight = 34.0;
     }
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSLongContentMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId isRemindMsg:model.isRemindMsg];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSLongContentMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId isRemindMsg:model.isRemindMsg];
+        model.attributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     
@@ -267,7 +281,7 @@ static CGFloat kButtonoHeight = 34.0;
 
 #pragma mark - [ Private Method ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId

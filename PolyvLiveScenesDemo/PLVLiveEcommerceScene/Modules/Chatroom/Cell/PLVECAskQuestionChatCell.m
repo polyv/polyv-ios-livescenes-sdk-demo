@@ -66,7 +66,13 @@
     self.model = model;
     
     // 设置 "昵称：文本（如果有的话）"
-    NSAttributedString *chatLabelString = [PLVECAskQuestionChatCell chatLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECAskQuestionChatCell chatLabelAttributedStringWithModel:model]];
+    }
+    
     self.chatLabel.attributedText = chatLabelString;
 }
 
@@ -79,7 +85,13 @@
     CGFloat bubbleHeight = 4.0;
     
     // 内容文本高度
-    NSAttributedString *chatLabelString = [PLVECAskQuestionChatCell chatLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECAskQuestionChatCell chatLabelAttributedStringWithModel:model]];
+    }
+    
     CGRect chatLabelRect = CGRectZero;
     if (chatLabelString) {
         CGFloat labelWidth = cellWidth - originX * 2;

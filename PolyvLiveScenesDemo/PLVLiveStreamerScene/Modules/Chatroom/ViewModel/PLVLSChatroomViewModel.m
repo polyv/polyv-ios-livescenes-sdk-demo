@@ -8,6 +8,13 @@
 
 #import "PLVLSChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
+#import "PLVLSSpeakMessageCell.h"
+#import "PLVLSImageMessageCell.h"
+#import "PLVLSImageEmotionMessageCell.h"
+#import "PLVLSQuoteMessageCell.h"
+#import "PLVLSLongContentMessageCell.h"
+#import "PLVLSRemindSpeakMessageCell.h"
+#import "PLVLSRemindImageMessageCell.h"
 
 @interface PLVLSChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -214,6 +221,35 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         return;
     }
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+    
+    // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if ([PLVLSSpeakMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+        model.cellHeightForH = [PLVLSSpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVLSLongContentMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId isRemindMsg:model.isRemindMsg];
+        model.cellHeightForH = [PLVLSLongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSImageMessageCell isModelValid:model]) {
+        PLVImageMessage *message = (PLVImageMessage *)model.message;
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId source:message.source]];
+        model.cellHeightForH = [PLVLSImageMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+        model.cellHeightForH = [PLVLSImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+        model.attributeString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];;
+        model.cellHeightForH = [PLVLSQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    }
+    
     [self.chatArray addObject:model];
     dispatch_semaphore_signal(_chatArrayLock);
     
@@ -228,6 +264,35 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         return;
     }
     dispatch_semaphore_wait(_chatRemindArrayLock, DISPATCH_TIME_FOREVER);
+    
+    // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if ([PLVLSSpeakMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+        model.cellHeightForH = [PLVLSSpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVLSLongContentMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId isRemindMsg:model.isRemindMsg];
+        model.cellHeightForH = [PLVLSLongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSImageMessageCell isModelValid:model]) {
+        PLVImageMessage *message = (PLVImageMessage *)model.message;
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId source:message.source]];
+        model.cellHeightForH = [PLVLSImageMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+        model.cellHeightForH = [PLVLSImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+        model.attributeString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];;
+        model.cellHeightForH = [PLVLSQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    }
+    
     [self.chatRemindArray addObject:model];
     dispatch_semaphore_signal(_chatRemindArrayLock);
     
@@ -240,6 +305,35 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
+            
+            // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+            PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+            if ([PLVLSSpeakMessageCell isModelValid:model]) {
+                PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+                model.attributeString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+                model.cellHeightForH = [PLVLSSpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+                
+            } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
+                PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+                model.attributeString = [PLVLSLongContentMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId isRemindMsg:model.isRemindMsg];
+                model.cellHeightForH = [PLVLSLongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+                
+            } else if ([PLVLSImageMessageCell isModelValid:model]) {
+                PLVImageMessage *message = (PLVImageMessage *)model.message;
+                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId source:message.source]];
+                model.cellHeightForH = [PLVLSImageMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+                
+            } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {
+                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+                model.cellHeightForH = [PLVLSImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+                
+            } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
+                PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+                model.attributeString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];;
+                model.cellHeightForH = [PLVLSQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+                
+            }
+            
             [self.chatArray addObject:model];
             if ([model isRemindMsg]) { // 提醒消息
                 [remindModelArray addObject:model];

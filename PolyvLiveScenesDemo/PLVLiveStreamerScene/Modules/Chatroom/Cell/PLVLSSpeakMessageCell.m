@@ -159,7 +159,13 @@
     }
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else { // 如果 不存在 ，就 需要计算 ；但同时，把 计算结果 存下来，以备下次使用；
+        contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+        model.attributeString = contentLabelString;
+    }
     
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
@@ -186,7 +192,7 @@
 
 #pragma mark UI - ViewModel
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord isRemindMsg:(BOOL)isRemindMsg {
@@ -262,7 +268,15 @@
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+    
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else { // 如果 不存在 ，就 需要计算 ；但同时，把 计算结果 存下来，以备下次使用；
+        contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+        model.attributeString = contentLabelString;
+    }
+    
     if (model.isProhibitMsg) {
         maxTextViewWidth = maxTextViewWidth - 6 - 16;
     }

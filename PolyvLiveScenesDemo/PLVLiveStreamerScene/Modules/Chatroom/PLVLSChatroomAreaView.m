@@ -335,6 +335,9 @@ PLVLSChatroomViewModelProtocol
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView updateMessageCount:0];
 }

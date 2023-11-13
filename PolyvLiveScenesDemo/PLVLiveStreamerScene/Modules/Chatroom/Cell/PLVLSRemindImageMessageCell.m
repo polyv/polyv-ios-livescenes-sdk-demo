@@ -219,7 +219,13 @@ static CGFloat kCellTopMargin = 10;
     }
 
     // 设置昵称文本
-    NSMutableAttributedString *nickLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+    NSMutableAttributedString *nickLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.attributeString;
+    } else {
+        nickLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+        model.attributeString = nickLabelString;
+    }
     
     self.nickNameLabel.attributedText = nickLabelString;
     
@@ -318,7 +324,13 @@ static CGFloat kCellTopMargin = 10;
     
     if (![PLVFdUtil checkStringUseable:previousUserId] ||
         ![model.user.userId isEqualToString:previousUserId]) {
-        NSMutableAttributedString *nickNameLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+        NSMutableAttributedString *nickNameLabelString;
+        if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+            nickNameLabelString = model.attributeString;
+        } else {
+            nickNameLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+            model.attributeString = nickNameLabelString;
+        }
         CGSize nickNameLabelSize = [nickNameLabelString boundingRectWithSize:CGSizeMake(maxViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
         originY += nickNameLabelSize.height + 4;
     }
@@ -473,7 +485,7 @@ static CGFloat kCellTopMargin = 10;
 
 #pragma mark AttributedString
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSMutableAttributedString *)nickNameLabelAttributedStringWithUser:(PLVChatUser *)user {
  
     UIFont *font = [UIFont systemFontOfSize:12.0];

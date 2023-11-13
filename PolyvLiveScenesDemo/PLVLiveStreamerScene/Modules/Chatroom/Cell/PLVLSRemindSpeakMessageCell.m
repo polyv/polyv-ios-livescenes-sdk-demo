@@ -223,7 +223,13 @@ static CGFloat kCellTopMargin = 10;
     self.previousUserId = previousUserId;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
     
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     // 重发按钮是否隐藏
@@ -266,7 +272,14 @@ static CGFloat kCellTopMargin = 10;
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2 - resendWidth - headerWidth - xPadding;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
     // 严禁词高度
@@ -405,7 +418,7 @@ static CGFloat kCellTopMargin = 10;
     return nickNameAttributedString;
 }
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord{

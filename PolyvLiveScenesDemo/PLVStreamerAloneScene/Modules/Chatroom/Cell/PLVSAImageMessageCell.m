@@ -171,8 +171,14 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     }
 
     // 设置昵称文本
-    NSMutableAttributedString *nickLabelString = [PLVSAImageMessageCell nickLabelAttributedStringWithUser:model.user
-                                                                                         loginUserId:self.loginUserId];
+    NSMutableAttributedString *nickLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.attributeString;
+    } else {
+        nickLabelString = [PLVSAImageMessageCell nickLabelAttributedStringWithUser:model.user
+                                                                          loginUserId:self.loginUserId];
+        model.attributeString = nickLabelString;
+    }
     self.nickLabel.attributedText = nickLabelString;
     
     self.prohibitImageView.hidden = ![model isProhibitMsg];
@@ -239,10 +245,15 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     CGFloat bubbleXPadding = 8.0; // 气泡与nickLabel的左右内间距
     CGFloat maxViewWidth = cellWidth - bubbleXPadding * 2;
     
-    
-    NSMutableAttributedString *nickAttributeString = [PLVSAImageMessageCell nickLabelAttributedStringWithUser:model.user
-                                                                                              loginUserId:loginUserId];
-    
+    // 设置昵称文本
+    NSMutableAttributedString *nickAttributeString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        nickAttributeString = model.attributeString;
+    } else {
+        nickAttributeString = [PLVSAImageMessageCell nickLabelAttributedStringWithUser:model.user
+                                                                       loginUserId:loginUserId];
+        model.attributeString = nickAttributeString;
+    }
     CGSize nickLabelSize = [nickAttributeString boundingRectWithSize:CGSizeMake(maxViewWidth, CGFLOAT_MAX) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
     CGFloat nickLabelHeight = MAX(16, ceil(nickLabelSize.height));
@@ -429,7 +440,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
 
 #pragma mark AttributedString
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSMutableAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
                                               loginUserId:(NSString *)loginUserId {
     if (!user.userName || ![user.userName isKindOfClass:[NSString class]] || user.userName.length == 0) {

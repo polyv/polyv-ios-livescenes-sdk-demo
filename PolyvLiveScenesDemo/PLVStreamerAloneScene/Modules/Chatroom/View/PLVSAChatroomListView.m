@@ -84,6 +84,7 @@ UITableViewDataSource
         self.tableView.frame = self.bounds;
         self.tableView.scrollEnabled = YES;
     }
+    [PLVSAChatroomViewModel sharedViewModel].tableViewWidth = self.tableView.frame.size.width;
 }
 
 #pragma mark - [ Public Method ]
@@ -421,17 +422,35 @@ UITableViewDataSource
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     PLVChatModel *model = [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVSASpeakMessageCell isModelValid:model]) {
-        cellHeight = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSALongContentMessageCell isModelValid:model]) {
-        cellHeight = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSAImageMessageCell isModelValid:model]) {
-        cellHeight = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
-        cellHeight = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
-        cellHeight = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSARewardMessageCell isModelValid:model]) {
-        cellHeight = [PLVSARewardMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSARewardMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else {
         cellHeight = 0;
     }

@@ -78,7 +78,15 @@
     self.model = model;
     
     PLVFileMessage *message = (PLVFileMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:NO];
     UIImage *fileImageView = [PLVLCLandscapeFileCell imageWithMessage:model.message];
     [self.fileImageView setImage:fileImageView];
@@ -96,7 +104,14 @@
     CGFloat maxTextViewWidth = cellWidth - imageViewWidth - xPadding * 3;
     
     PLVFileMessage *message = (PLVFileMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
     
     PLVChatTextView *textView = [[PLVChatTextView alloc]init];
     textView.textContainer.maximumNumberOfLines = 3;
@@ -122,7 +137,7 @@
 
 #pragma mark - [ Private Methods ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVFileMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId {

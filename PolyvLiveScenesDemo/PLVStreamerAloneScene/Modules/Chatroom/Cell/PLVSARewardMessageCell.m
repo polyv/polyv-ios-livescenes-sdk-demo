@@ -101,7 +101,13 @@
 
     
     PLVRewardMessage *message = (PLVRewardMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVSARewardMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSARewardMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId];
+        model.attributeString = contentLabelString;
+    }
     
     self.contentLabel.attributedText = contentLabelString;
     self.contentLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
@@ -171,7 +177,7 @@
 
 #pragma mark AttributedString
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVRewardMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId {

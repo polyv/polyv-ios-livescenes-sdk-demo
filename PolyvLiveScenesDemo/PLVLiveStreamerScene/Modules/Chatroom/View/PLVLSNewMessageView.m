@@ -16,6 +16,8 @@
 
 @property (nonatomic, strong) UILabel *label;
 
+@property (nonatomic, strong) NSAttributedString *attachmentString;
+
 @end
 
 @implementation PLVLSNewMessageView
@@ -54,6 +56,17 @@
     return _label;
 }
 
+- (NSAttributedString *)attachmentString {
+    if (!_attachmentString) {
+        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_newmsg_arrow"];
+        NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
+        [attachment setImage:image];
+        attachment.bounds = CGRectMake(0, -2, image.size.width, image.size.height);
+        _attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
+    }
+    return _attachmentString;
+}
+
 #pragma mark - Action
 
 - (void)tapAction {
@@ -90,14 +103,8 @@
     }
     NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:string];
     
-    UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_newmsg_arrow"];
-    NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
-    [attachment setImage:image];
-    attachment.bounds = CGRectMake(0, -2, image.size.width, image.size.height);
-    NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
-    
     [muString appendAttributedString:attributedString];
-    [muString appendAttributedString:attachmentString];
+    [muString appendAttributedString:self.attachmentString];
     return [muString copy];
 }
 

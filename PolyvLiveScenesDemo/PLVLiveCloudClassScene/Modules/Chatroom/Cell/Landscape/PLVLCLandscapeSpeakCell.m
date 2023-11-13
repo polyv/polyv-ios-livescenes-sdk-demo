@@ -65,7 +65,15 @@
     self.model = model;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
 }
 
@@ -78,7 +86,15 @@
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat bubbleHeight = 4 + contentLabelSize.height + 4; // content文本与气泡的内部有上下间距4
     
@@ -101,7 +117,7 @@
 
 #pragma mark - [ Private Methods ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId {

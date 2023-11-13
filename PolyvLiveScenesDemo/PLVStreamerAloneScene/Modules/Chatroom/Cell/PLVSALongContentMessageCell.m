@@ -232,7 +232,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         self.prohibitWordTipView.hidden = YES;
     }
     
-    NSMutableAttributedString *contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:self.loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:self.loginUserId];
+        model.attributeString = contentLabelString;
+    }
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     self.resendButton.hidden = (self.msgState != PLVChatMsgStateFail) && (!model.prohibitWord || model.prohibitWord.length == 0);
@@ -246,8 +252,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     CGFloat xPadding = 8.0; // 气泡与textView的左右内间距
     CGFloat resendWidth = 8 + 16;
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2 - resendWidth;
-    
-    NSMutableAttributedString *contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+        model.attributeString = contentLabelString;
+    }
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     
@@ -296,7 +307,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 
 #pragma mark - [ Private Method ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model
                                                            loginUserId:(NSString *)loginUserId {
     PLVChatUser *user = model.user;

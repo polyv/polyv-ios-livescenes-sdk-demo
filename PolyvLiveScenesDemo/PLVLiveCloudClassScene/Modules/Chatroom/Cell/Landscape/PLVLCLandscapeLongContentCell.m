@@ -88,8 +88,15 @@ static CGFloat kButtonoHeight = 34.0;
     
     self.cellWidth = cellWidth;
     self.model = model;
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
     
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
 }
 
@@ -101,7 +108,15 @@ static CGFloat kButtonoHeight = 34.0;
     CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     CGFloat bubbleHeight = 4 + contentHeight + 4 + kButtonoHeight; // content文本与气泡的内部有上下间距4
@@ -124,7 +139,7 @@ static CGFloat kButtonoHeight = 34.0;
 
 #pragma mark - [ Private Method ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId {
     PLVChatUser *user = model.user;
     UIFont *font = [UIFont systemFontOfSize:14.0];

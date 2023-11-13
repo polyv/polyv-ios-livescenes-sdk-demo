@@ -17,6 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface PLVLCSpeakMessageCell : PLVLCMessageCell
 
+/// 生成消息多属性文本
++ (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(id)message user:(PLVChatUser *)user;
+
 @end
 
 NS_ASSUME_NONNULL_END

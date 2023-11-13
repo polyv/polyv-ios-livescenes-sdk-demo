@@ -171,7 +171,13 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     self.chatLabel.lineBreakMode = !fileImage ? NSLineBreakByTruncatingTail : NSLineBreakByTruncatingMiddle;
     
     // 设置 "昵称：文本（如果有的话）"
-    NSAttributedString *chatLabelString = [PLVECChatCell chatLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
+    }
+    
     self.chatLabel.attributedText = chatLabelString;
 }
 
@@ -184,7 +190,13 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     CGFloat bubbleHeight = 4.0;
     
     // 内容文本高度
-    NSAttributedString *chatLabelString = [PLVECChatCell chatLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
+    }
+    
     CGRect chatLabelRect = CGRectZero;
     if (chatLabelString) {
         BOOL isFileMessage = model.message && [model.message isKindOfClass:[PLVFileMessage class]];

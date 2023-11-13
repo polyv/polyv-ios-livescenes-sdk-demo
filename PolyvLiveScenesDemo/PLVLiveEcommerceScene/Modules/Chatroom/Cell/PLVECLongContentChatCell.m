@@ -80,7 +80,13 @@ static CGFloat kButtonoHeight = 32.0;
     self.cellWidth = cellWidth;
     self.model = model;
     
-    NSAttributedString *chatLabelString = [PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
+    }
+    
     self.chatLabel.attributedText = chatLabelString;
 }
 
@@ -90,7 +96,12 @@ static CGFloat kButtonoHeight = 32.0;
     }
     
     // 内容文本高度
-    NSAttributedString *chatLabelString = [PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
+    }
     
     CGFloat labelOriginX = 8.0;
     CGFloat labelMaxWidth = cellWidth - labelOriginX * 2;

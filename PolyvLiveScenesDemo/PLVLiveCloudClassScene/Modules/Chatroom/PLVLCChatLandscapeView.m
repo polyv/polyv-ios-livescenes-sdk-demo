@@ -95,6 +95,8 @@ UITableViewDataSource
         self.tableView.scrollEnabled = YES;
     }
     
+    [PLVLCChatroomViewModel sharedViewModel].tableViewWidthForH = self.tableView.frame.size.width;
+    
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {
         return;
@@ -270,6 +272,9 @@ UITableViewDataSource
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView hidden];
 }
@@ -614,19 +619,40 @@ UITableViewDataSource
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeLongContentCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeQuoteCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeFileCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight =  model.cellHeightForH;
     } else if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     }
     
     return cellHeight;

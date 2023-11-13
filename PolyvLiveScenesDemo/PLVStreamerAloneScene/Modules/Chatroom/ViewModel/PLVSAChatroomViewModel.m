@@ -8,6 +8,12 @@
 
 #import "PLVSAChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
+#import "PLVSASpeakMessageCell.h"
+#import "PLVSAQuoteMessageCell.h"
+#import "PLVSAImageMessageCell.h"
+#import "PLVSAImageEmotionMessageCell.h"
+#import "PLVSALongContentMessageCell.h"
+#import "PLVSARewardMessageCell.h"
 
 @interface PLVSAChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -203,6 +209,38 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         return;
     }
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+    
+    // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if ([PLVSASpeakMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVSASpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId prohibitWord:model.prohibitWord];
+        model.cellHeightForV = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSALongContentMessageCell isModelValid:model]) {
+        model.attributeString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSAImageMessageCell isModelValid:model]) {
+        model.attributeString = [PLVSAImageMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
+        model.attributeString = [PLVSAImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+        model.attributeString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.cellHeightForV = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSARewardMessageCell isModelValid:model]) {
+        PLVRewardMessage *message = (PLVRewardMessage *)model.message;
+        model.attributeString = [PLVSARewardMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSARewardMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    }
+    
     [self.chatArray addObject:model];
     dispatch_semaphore_signal(_chatArrayLock);
     
@@ -216,6 +254,38 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         return;
     }
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+    
+    // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if ([PLVSASpeakMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVSASpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId prohibitWord:model.prohibitWord];
+        model.cellHeightForV = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSALongContentMessageCell isModelValid:model]) {
+        model.attributeString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSAImageMessageCell isModelValid:model]) {
+        model.attributeString = [PLVSAImageMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
+        model.attributeString = [PLVSAImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+        model.attributeString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.cellHeightForV = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    } else if ([PLVSARewardMessageCell isModelValid:model]) {
+        PLVRewardMessage *message = (PLVRewardMessage *)model.message;
+        model.attributeString = [PLVSARewardMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVSARewardMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+        
+    }
+    
     [self.chatArray addObject:model];
     dispatch_semaphore_signal(_chatArrayLock);
     
@@ -226,6 +296,38 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)addPublicChatModels:(NSArray <PLVChatModel *> *)modelArray {
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
+        
+        // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+        PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+        if ([PLVSASpeakMessageCell isModelValid:model]) {
+            PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+            model.attributeString = [PLVSASpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId prohibitWord:model.prohibitWord];
+            model.cellHeightForV = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+            
+        } else if ([PLVSALongContentMessageCell isModelValid:model]) {
+            model.attributeString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:roomUser.viewerId];
+            model.cellHeightForV = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+            
+        } else if ([PLVSAImageMessageCell isModelValid:model]) {
+            model.attributeString = [PLVSAImageMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId];
+            model.cellHeightForV = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+            
+        } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
+            model.attributeString = [PLVSAImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId];
+            model.cellHeightForV = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+            
+        } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
+            PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+            model.attributeString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+            model.cellHeightForV = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+            
+        } else if ([PLVSARewardMessageCell isModelValid:model]) {
+            PLVRewardMessage *message = (PLVRewardMessage *)model.message;
+            model.attributeString = [PLVSARewardMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+            model.cellHeightForV = [PLVSARewardMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidth];
+            
+        }
+        
         if ([model isKindOfClass:[PLVChatModel class]]) {
             [self.chatArray addObject:model];
         }

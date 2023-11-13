@@ -224,7 +224,14 @@
     }
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     NSAttributedString *quoteLabelString = [PLVLSQuoteMessageCell quoteContentAttributedStringWithMessage:message
@@ -261,7 +268,7 @@
 
 #pragma mark UI - ViewModel
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVQuoteMessage *)message
                                                                   user:(PLVChatUser *)user
                                                           prohibitWord:(NSString *)prohibitWord{
@@ -355,7 +362,14 @@
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
+    
     CGFloat contentMaxWidth = maxTextViewWidth;
     if (model.isProhibitMsg) {
         contentMaxWidth = maxTextViewWidth - 6 - 16;

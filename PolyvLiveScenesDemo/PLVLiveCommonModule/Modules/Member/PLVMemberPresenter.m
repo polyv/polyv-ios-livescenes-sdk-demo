@@ -17,6 +17,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 static NSInteger kMemberCountPerLoading = 500;
+static NSInteger kMemberCountMax = 1000;
 static NSInteger kLoadUserListInterval = 20;
 static NSInteger kLoadKickedUserListInterval = 20;
 
@@ -27,8 +28,10 @@ PLVSocketManagerProtocol // socket协议
 @property (nonatomic, assign) NSInteger userCount;
 /// 移出人数
 @property (nonatomic, assign) NSInteger kickedCount;
-/// 在线用户数组
-@property (nonatomic, strong) NSMutableArray <PLVChatUser *> *userArray;
+/// 在线成员字典
+@property (nonatomic, strong) NSMutableDictionary<NSString *, PLVChatUser *> *localUserMDic;
+/// 在线用户数组（对外UI展示用）
+@property (nonatomic, strong) NSArray <PLVChatUser *> *userArrayForUI;
 /// 移出用户数组
 @property (nonatomic, strong) NSMutableArray <PLVChatUser *> *kickedUserArray;
 /// 是否自动间隔获取在线成员列表，默认为NO，调用start方法后为YES
@@ -38,11 +41,16 @@ PLVSocketManagerProtocol // socket协议
 /// 只读，等待连麦在线用户数组
 @property (nonatomic, strong, readonly) NSArray <PLVLinkMicWaitUser *> * currentWaitUserArray;
 
+///  间隔刷新UI的定时器
+@property (nonatomic, strong) NSTimer *timer;
+///  是否需要刷新UI
+@property (nonatomic, assign) BOOL needRefreshUI;
+
 @end
 
 @implementation PLVMemberPresenter {
     /// 操作数组的信号量，防止多线程读写数组
-    dispatch_semaphore_t _userArrayLock;
+    dispatch_semaphore_t _localUserMDicLock;
     
     /// 操作移出用户数组的信号量，防止多线程读写数组
     dispatch_semaphore_t _kickedUserArrayLock;
@@ -59,6 +67,10 @@ PLVSocketManagerProtocol // socket协议
         [self setup];
     }
     return self;
+}
+
+- (void)dealloc {
+    [self.timer invalidate];
 }
 
 #pragma mark - [ Public Method ]
@@ -88,10 +100,7 @@ PLVSocketManagerProtocol // socket协议
 }
 
 - (NSArray <PLVChatUser *> *)userList {
-    dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
-    NSArray *userList = [self.userArray copy];
-    dispatch_semaphore_signal(_userArrayLock);
-    return userList;
+    return self.userArrayForUI;
 }
 
 - (NSArray <PLVChatUser *> *)kickedUserList {
@@ -106,13 +115,7 @@ PLVSocketManagerProtocol // socket协议
         return nil;
     }
     
-    __block PLVChatUser *chatUser = nil;
-    [self.userList enumerateObjectsUsingBlock:^(PLVChatUser * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-        if ([obj.userId isEqualToString:userId]) {
-            chatUser = obj;
-            *stop = YES;
-        }
-    }];
+    PLVChatUser *chatUser = self.localUserMDic[userId];
     return chatUser;
 }
 
@@ -147,120 +150,120 @@ PLVSocketManagerProtocol // socket协议
         return;
     }
     user.banned = banned;
-    
-    // 数据变更通知
-    [self notifyUserArrayChanged];
+    self.needRefreshUI = YES;
 }
 
 #pragma mark 连麦业务相关
-
-- (void)refreshUserListWithLinkMicWaitUserArray:(NSArray <PLVLinkMicWaitUser *>*)linkMicWaitUserArray {
-    if (!linkMicWaitUserArray ||
-        ![linkMicWaitUserArray isKindOfClass:[NSArray class]]) {
+// 时间复杂度：O(N) ~
+//     N 是 本地用户localUserMDic 的长度。  N 可以很大很大。
+//     M 是 新用户 newLinkMicWaitUserArray 的长度。 连麦人数最多16人，也就是说，M 最大值是 16。也就是说，可以忽略不计；
+- (void)refreshUserListWithLinkMicWaitUserArray:(NSArray <PLVLinkMicWaitUser *>*)newLinkMicWaitUserArray {
+    if (!newLinkMicWaitUserArray || ![newLinkMicWaitUserArray isKindOfClass:[NSArray class]] || newLinkMicWaitUserArray.count==0) {
         return;
     }
-    BOOL isNotified = NO; // 兼容个别角色取消举手时不会通知
-    NSArray *originUserArray = [self.userArray copy];
-    NSArray <NSString *> *userIdArray = [originUserArray valueForKeyPath:@"userId"];
-    for (int i = 0; i < linkMicWaitUserArray.count; i++) {
-        PLVLinkMicWaitUser *waitUser = linkMicWaitUserArray[i];
-        if ([userIdArray containsObject:waitUser.userId]) { // 原本已经存在对应聊天室UserId的对象
-            for (int j = 0; j < originUserArray.count; j++) {
-                PLVChatUser *chatUser = originUserArray[j];
-                if ([chatUser.userId isEqualToString:waitUser.userId]) {
-                    chatUser.onlineUser = nil;
-                    chatUser.waitUser = waitUser;
-                    isNotified = YES;
-                    [self sortUsers];
-                    [self notifyUserArrayChanged];
-                    break;
-                }
-            }
-        } else {
-            if ([PLVFdUtil checkDictionaryUseable:waitUser.originalUserDict]) { // 原本不存在对应聊天室UserId的对象
-                PLVChatUser * chatUser = [[PLVChatUser alloc] initWithUserInfo:waitUser.originalUserDict];
-                chatUser.onlineUser = nil;
-                chatUser.waitUser = waitUser;
-                isNotified = YES;
-                [self addUser:chatUser];
-                [self notifyUserArrayChanged];
-            }else{
-                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, waitUser.originalUserDict illegal %@",waitUser.userId);
-            }
-        }
+    
+    // 定义 originUsers 为 本地成员数组的一个copy，长度为 N；这里的 originUsers 不涉及数据的插入和删除，所以只需要 不可变的copy；
+    dispatch_semaphore_wait(_localUserMDicLock, DISPATCH_TIME_FOREVER);
+    NSArray<PLVChatUser *> *localUsersArrayCopy = self.localUserMDic.allValues;
+    dispatch_semaphore_signal(_localUserMDicLock);
+    
+    // 定义 waitUserDic 为 等待连麦成员字典，key 是 等待连麦成员id，value 是 等待连麦成员对象；长度为 M；
+    NSMutableDictionary<NSString *, PLVLinkMicWaitUser *> *waitUserDic = [[NSMutableDictionary alloc] init];
+    for (PLVLinkMicWaitUser *waitUser in newLinkMicWaitUserArray) {
+        [waitUserDic setValue:waitUser forKey:waitUser.userId];
     }
     
-    NSArray <NSString *> *waitUserIdArray = [linkMicWaitUserArray valueForKeyPath:@"userId"];
-    for (int i = 0; i < originUserArray.count; i++) { // 确保linkMicOnlineUserArray数组之外，不存在任何chatUser对象持有waitUser属性
-        PLVChatUser *chatUser = originUserArray[i];
-        if (![PLVFdUtil checkStringUseable:chatUser.userId]) {
-            NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, chatUser.userId illegal %@", chatUser.userId);
+    // 对于 本地成员列表 中存在的 成员， 更新其 等待连麦状态
+    for (PLVChatUser* localUser in localUsersArrayCopy) { // 遍历 本地成员列表拷贝（N）
+        NSString *userId = localUser.userId;
+        if (![PLVFdUtil checkStringUseable:userId]) {
             continue;
         }
-        if (![waitUserIdArray containsObject:chatUser.userId] && ![waitUserIdArray containsObject:chatUser.micId] &&
-            chatUser.waitUser) {
-            chatUser.waitUser = nil;
-            isNotified = YES;
-            [self sortUsers];
-            [self notifyUserArrayChanged];
+        PLVLinkMicWaitUser *waitUser = waitUserDic[userId];// 尝试 使用userId 从 等待连麦成员字典 中获取 等待连麦成员对象
+        if (waitUser) { // 如果 等待连麦成员对象 不为空，表示 当前本地成员 在 等待连麦列表字典 中
+            localUser.waitUser = waitUser; // 更新 当前本地成员 的 等待连麦信息
+            [waitUserDic removeObjectForKey:userId]; // 在 等待连麦列表字典 中删除 等待连麦成员对象
+        } else { // 否则 等待连麦成员对象 为空，表示 当前本地成员 不在 等待连麦列表字典 中
+            if (localUser.waitUser) { // 如果 当前本地成员 之前是 等待连麦状态
+                localUser.waitUser = nil; // 清空 当前本地成员 的 等待连麦信息
+            }
         }
+        self.needRefreshUI = YES;
     }
     
-    if (!isNotified) {
-        [self notifyUserArrayChanged];
+    // 对于 本地成员列表 中不存在的 成员， 把 该等待连麦成员 添加到 本地成员列表
+    if (waitUserDic.count > 0) { // 如果 等待连麦成员字典 不为空，表示 部分等待连麦成员 不在 本地成员列表 中，需要 插入到 本地成员列表
+        for (NSString *waitUserId in waitUserDic) { // 遍历 等待连麦成员字典
+            PLVLinkMicWaitUser *waitUser = waitUserDic[waitUserId];
+            if (![PLVFdUtil checkDictionaryUseable:waitUser.originalUserDict]) {
+                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, waitUser.originalUserDict illegal %@",waitUser.userId);
+                continue;
+            }
+            
+            // 根据 等待连麦成员对象 创建 新增成员对象，并设置其 等待连麦状态
+            PLVChatUser * chatUser = [[PLVChatUser alloc] initWithUserInfo:waitUser.originalUserDict];
+            chatUser.onlineUser = nil;
+            chatUser.waitUser = waitUser;
+            
+            // 把创建的 新增成员对象 插入到 新增成员列表 中
+            [self addUser:chatUser andForce:YES];
+        }
     }
 }
 
-- (void)refreshUserListWithLinkMicOnlineUserArray:(NSArray <PLVLinkMicOnlineUser *>*)linkMicOnlineUserArray{
-    if (!linkMicOnlineUserArray ||
-        ![linkMicOnlineUserArray isKindOfClass:[NSArray class]]) {
+// 时间复杂度：O(N) ~
+//     N 是 本地用户localUserMDic 的长度。  N 可以很大很大。
+//     M 是 新用户 linkMicOnlineUserArray 的长度。 连麦人数最多16人，也就是说，M 最大值是 16。也就是说，可以忽略不计；
+- (void)refreshUserListWithLinkMicOnlineUserArray:(NSArray <PLVLinkMicOnlineUser *>*)linkMicOnlineUserArray {
+    if (!linkMicOnlineUserArray || ![linkMicOnlineUserArray isKindOfClass:[NSArray class]] || linkMicOnlineUserArray.count==0) {
         return;
     }
     
-    NSArray *originUserArray = [self.userArray copy];
-    NSArray <NSString *> *userIdArray = [originUserArray valueForKeyPath:@"userId"];
-    for (int i = 0; i < linkMicOnlineUserArray.count; i++) {
-        PLVLinkMicOnlineUser *onlineUser = linkMicOnlineUserArray[i];
-        if (![PLVFdUtil checkStringUseable:onlineUser.userId]) {
-            NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.userId illegal %@", onlineUser.userId);
-            continue;
-        }
-        if ([userIdArray containsObject:onlineUser.userId]) { // 原本已经存在对应聊天室UserId的对象
-            for (int j = 0; j < originUserArray.count; j++) {
-                PLVChatUser *chatUser = originUserArray[j];
-                if ([chatUser.userId isEqualToString:onlineUser.userId]) {
-                    chatUser.waitUser = nil;
-                    chatUser.onlineUser = onlineUser;
-                    [self sortUsers];
-                    [self notifyUserArrayChanged];
-                    break;
-                }
-            }
-        } else {
-            if ([PLVFdUtil checkDictionaryUseable:onlineUser.originalUserDict]) { // 原本不存在对应聊天室UserId的对象
-                PLVChatUser * chatUser = [[PLVChatUser alloc] initWithUserInfo:onlineUser.originalUserDict];
-                chatUser.waitUser = nil;
-                chatUser.onlineUser = onlineUser;
-                [self addUser:chatUser];
-                [self notifyUserArrayChanged];
-            }else{
-                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.originalUserDict illegal %@", onlineUser.userId);
-            }
-        }
+    // 定义 originUsers 为 本地成员列表 的一个copy，长度为 N； 这里的 originUsers 不涉及数据的插入和删除，所以只需要 不可变的copy；
+    dispatch_semaphore_wait(_localUserMDicLock, DISPATCH_TIME_FOREVER);
+    NSArray<PLVChatUser *> *localUsersArrayCopy = self.localUserMDic.allValues;
+    dispatch_semaphore_signal(_localUserMDicLock);
+    
+    // 定义 onlieUserDic 为 已连麦成员字典 ，key 是 已连麦成员id，value 是 已连麦成员对象；长度为 M；
+    NSMutableDictionary<NSString*, PLVLinkMicOnlineUser*> *onlineUserDic = [[NSMutableDictionary alloc] init];
+    for (PLVLinkMicOnlineUser *onlineUser in linkMicOnlineUserArray) {
+        [onlineUserDic setValue:onlineUser forKey:onlineUser.userId];
     }
     
-    NSArray <NSString *> *onlineUserIdArray = [linkMicOnlineUserArray valueForKeyPath:@"userId"];
-    for (int i = 0; i < originUserArray.count; i++) { // 确保linkMicOnlineUserArray数组之外，不存在任何chatUser对象持有onlineUser属性
-        PLVChatUser *chatUser = originUserArray[i];
-        if (![PLVFdUtil checkStringUseable:chatUser.userId]) {
-            NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, chatUser.userId illegal %@", chatUser.userId);
+    // 对于 本地成员列表 中存在的 成员， 更新其 已连麦状态
+    for (PLVChatUser *localUser in localUsersArrayCopy) { // 遍历 本地成员列表拷贝（N）
+        NSString *userId = localUser.userId;
+        if (![PLVFdUtil checkStringUseable:userId]) {
             continue;
         }
-        if (![onlineUserIdArray containsObject:chatUser.userId] &&
-            chatUser.onlineUser) {
-            chatUser.onlineUser = nil;
-            [self sortUsers];
-            [self notifyUserArrayChanged];
+        PLVLinkMicOnlineUser *onlineUser = onlineUserDic[userId]; // 尝试 使用userId 从 已连麦成员字典 中获取 已连麦成员对象
+        if (onlineUser) { // 如果 已连麦成员对象 不为空，表示 当前本地成员 在 已连麦成员字典 中
+            localUser.onlineUser = onlineUser; // 更新 当前本地成员 的 已连麦信息
+            [onlineUserDic removeObjectForKey:userId]; // 在 已连麦成员字典 中删除 该已连麦成员对象
+        } else { // 否则 已连麦成员对象 为空，表示 当前本地成员 不在 已连麦成员字典 中
+            if (localUser.onlineUser) { // 如果 当前本地成员 之前是 已连麦状态
+                localUser.onlineUser = nil; // 清空 当前本地成员 的 已连麦信息；
+            }
+        }
+        self.needRefreshUI = YES;
+    }
+    
+    // 对于 本地成员列表 中不存在的 成员， 把 该已连麦成员 添加到 本地成员列表
+    if (onlineUserDic.count > 0) { // 如果 已连麦成员字典 不为空，表示 部分已连麦成员 不在 本地成员列表 中，需要 插入到 本地成员列表
+        for (NSString *onlineUserId in onlineUserDic) { // 遍历 已连麦成员字典
+            PLVLinkMicOnlineUser *onlineUser = onlineUserDic[onlineUserId];
+            if (![PLVFdUtil checkDictionaryUseable:onlineUser.originalUserDict]) {
+                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.originalUserDict illegal %@", onlineUser.userId);
+                continue;
+            }
+            
+            // 根据 已连麦成员对象 创建 新增成员对象，并设置其 已连麦状态
+            PLVChatUser * chatUser = [[PLVChatUser alloc] initWithUserInfo:onlineUser.originalUserDict];
+            chatUser.waitUser = nil;
+            chatUser.onlineUser = onlineUser;
+            
+            // 把创建的 新本地成员对象 插入到 本地列表 中
+            [self addUser:chatUser andForce:YES];
         }
     }
 }
@@ -271,16 +274,29 @@ PLVSocketManagerProtocol // socket协议
 
 - (void)setup {
     // 初始化信号量
-    _userArrayLock = dispatch_semaphore_create(1);
+    _localUserMDicLock = dispatch_semaphore_create(1);
     _kickedUserArrayLock = dispatch_semaphore_create(1);
     
     // 初始化消息数组，预设初始容量
-    self.userArray = [[NSMutableArray alloc] initWithCapacity:kMemberCountPerLoading];
+    self.localUserMDic = [[NSMutableDictionary alloc] initWithCapacity:kMemberCountPerLoading];
+    self.userArrayForUI = [[NSArray alloc] init];
     self.kickedUserArray = [[NSMutableArray alloc] initWithCapacity:20];
     
     // 监听socket消息
     socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
+    
+    // 间隔刷新UI的定时器
+    self.needRefreshUI = NO;
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSTimer *timer = [NSTimer timerWithTimeInterval:0.5
+                                                 target:self
+                                               selector:@selector(refreshUITimerBlock:)
+                                               userInfo:nil
+                                                repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+        [[NSRunLoop currentRunLoop] run];
+    });
 }
 
 #pragma mark Getter
@@ -328,29 +344,31 @@ PLVSocketManagerProtocol // socket协议
                                               sessionId:sessionId
                                                streamer:streamer
                                                 success:^(NSDictionary *data) {
-        NSInteger count = [data[@"count"] integerValue];
-        weakSelf.userCount = count;
-        
-        if (count > 0) {
-            NSArray *userArray = data[@"userlist"];
-            if ([userArray count] > 0) {
-                NSMutableArray *userMuArray = [[NSMutableArray alloc] initWithCapacity:[userArray count]];
-                for (NSDictionary *userDict in userArray) {
-                    PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
-                    [userMuArray addObject:user];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0), dispatch_get_global_queue(0, 0), ^{
+            NSLog(@"loadOnlineUserListAutoly success");
+            NSInteger count = [data[@"count"] integerValue];
+            weakSelf.userCount = count;
+            
+            if (count > 0) {
+                NSArray *userArray = data[@"userlist"];
+                if ([userArray count] > 0) {
+                    NSMutableDictionary<NSString *, PLVChatUser *> *tempDic = [[NSMutableDictionary alloc] initWithCapacity:[userArray count]];
+                    for (NSDictionary *userDict in userArray) {
+                        PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+                        tempDic[user.userId] = user;
+                    }
+                    [weakSelf updateUsers:tempDic];
                 }
-                [weakSelf updateUserArray:[userMuArray copy]];
+            } else {
+                [self removeAllUser];
             }
-        } else {
-            [self removeAllUser];
-        }
-        
-        // 数据变更通知
-        [weakSelf notifyUserArrayChanged];
-        
-        if (autoly) {
-            [weakSelf loadOnlineUserListLater];
-        }
+            
+            self.needRefreshUI = YES;
+            
+            if (autoly) {
+                [weakSelf loadOnlineUserListLater];
+            }
+        });
     } failure:^(NSError * _Nonnull error) {
         if (autoly) {
             [weakSelf loadOnlineUserListLater];
@@ -367,123 +385,105 @@ PLVSocketManagerProtocol // socket协议
     });
 }
 
-/// 获取接口返回的在线用户列表时
-- (void)updateUserArray:(NSArray <PLVChatUser *> *)userArray {
-    dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
-    // 删除用户
-    NSArray * currentUserArray = [self.userArray copy];
-    for (PLVChatUser * exsitUser in currentUserArray) {
-        BOOL inCurrentList = NO;
-        for (PLVChatUser * userInNewest in userArray) {
-            if ([userInNewest.userId isEqualToString:exsitUser.userId]) {
-                inCurrentList = YES;
-                break;
-            }
-        }
-        
-        if (!inCurrentList) {
-            [self.userArray removeObject:exsitUser];
-        }
-    }
-    
-    // 添加用户
-    for (PLVChatUser * userInNewest in userArray) {
-        PLVChatUser *enumChatUser = nil;
-        for (PLVChatUser * existUser in currentUserArray) {
-            if ([existUser.userId isEqualToString:userInNewest.userId]) {
-                enumChatUser = existUser;
-                break;
-            }
-        }
-        
-        if (enumChatUser) { // 若已存在，则更新权限字段即可
-            enumChatUser.banned = userInNewest.banned;
-            enumChatUser.cupCount = userInNewest.cupCount;
-            enumChatUser.currentBrushAuth = userInNewest.currentBrushAuth;
-        } else { // 否则，新增用户
-            [self.userArray addObject:userInNewest];
-        }
-    }
-    dispatch_semaphore_signal(_userArrayLock);
-    
-    // 数据变更通知
-    [self notifyUserArrayChanged];
+- (void)updateUsers:(NSDictionary<NSString *, PLVChatUser *> *)newUserDic {
+    [self replaceAllUsers:newUserDic];
     [self refreshUserListWithLinkMicOnlineUserArray:self.currentOnlineUserArray];
+    self.needRefreshUI = YES;
 }
 
+#pragma mark 涉及数据容器直接写操作的大并发操作
+// 时间复杂度：O(1)
+// 增加了 force 参数。当用户数量超过 kMemberCountMax（1000）后，只有 force为YES 才会进行真正的插入，否则只是自增 userCount 数值
+- (void)addUser:(PLVChatUser *)newUser andForce:(BOOL)force {
+    if (!newUser || ![newUser isKindOfClass:[PLVChatUser class]] || ![PLVFdUtil checkStringUseable:newUser.userId]) {
+        return ;
+    }
+    NSString *userId = newUser.userId;
+    PLVChatUser *localUser = self.localUserMDic[userId];
+    if (localUser) {
+        // 从旧代码复制多来的逻辑，不确定为什么要对 waitUser 属性进行复制
+        if (!localUser.waitUser && localUser.onlineUser) {
+            localUser.waitUser = newUser.waitUser;
+        }
+        self.needRefreshUI = YES;
+    } else {
+        if (self.localUserMDic.count<kMemberCountMax || force) {
+            dispatch_semaphore_wait(_localUserMDicLock, DISPATCH_TIME_FOREVER);
+            self.localUserMDic[userId] = newUser;
+            self.userCount++;
+            self.needRefreshUI = YES;
+            dispatch_semaphore_signal(_localUserMDicLock);
+        } else {
+            self.userCount++;
+        }
+    }
+}
+
+// 时间复杂度：O(N + M)
+//     N 是 本地用户localUserMDic 的长度。  N 可以很大很大。
+//     M是 新用户 newUserDic 的长度。 newUserDic 是 Http请求返回的 新用户，最大长度是 kMemberCountPerLoading（500）
+- (void)replaceAllUsers:(NSDictionary<NSString *, PLVChatUser *> *)newUserDic {
+    dispatch_semaphore_wait(_localUserMDicLock, DISPATCH_TIME_FOREVER);
+    [self.localUserMDic removeAllObjects];
+    [self.localUserMDic addEntriesFromDictionary:newUserDic];
+    dispatch_semaphore_signal(_localUserMDicLock);
+}
+
+// 时间复杂度：O(N)
+//     N 是 本地用户localUserMDic 的长度。  N 可以很大很大。
 - (void)removeAllUser {
-    dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
-    [self.userArray removeAllObjects];
-    dispatch_semaphore_signal(_userArrayLock);
+    dispatch_semaphore_wait(_localUserMDicLock, DISPATCH_TIME_FOREVER);
+    [self.localUserMDic removeAllObjects];
+    dispatch_semaphore_signal(_localUserMDicLock);
 }
 
-/// socket 接收到用户登录的消息时
-- (void)addUser:(PLVChatUser *)user {
-    PLVChatUser *existedUser = [self searchUserInUserArrayWithUserId:user.userId];
-    if (existedUser) {
-        if (!existedUser.waitUser && !existedUser.onlineUser) {
-            existedUser.waitUser = user.waitUser;
-        }
-        return;
-    }
-    
-    dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
-    if ([user isKindOfClass:[PLVChatUser class]]) {
-        [self.userArray addObject:user];
-        self.userCount++;
-    }
-    dispatch_semaphore_signal(_userArrayLock);
-    
-    // 往数组加用户数据之后均要重新排序
-    [self sortUsers];
-    [self refreshUserListWithLinkMicOnlineUserArray:self.currentOnlineUserArray];
-}
-
+// 时间复杂度：O(1)
 - (void)removeUserWithUserId:(NSString *)userId {
-    PLVChatUser *user = [self searchUserInUserArrayWithUserId:userId];
+    PLVChatUser *user = self.localUserMDic[userId];
     if (!user) {
         return;
     }
-    dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
-    [self.userArray removeObject:user];
+    dispatch_semaphore_wait(_localUserMDicLock, DISPATCH_TIME_FOREVER);
+    [self.localUserMDic removeObjectForKey:userId];
     self.userCount--;
-    dispatch_semaphore_signal(_userArrayLock);
+    self.needRefreshUI = YES;
+    dispatch_semaphore_signal(_localUserMDicLock);
 }
 
 /// socket 接收到用户修改昵称的消息时
+// 时间复杂度：O(1)
 - (void)setNickNameWithUserId:(NSString *)userId nickName:(NSString *)nickName {
     if (![PLVFdUtil checkStringUseable:userId] ||
         ![PLVFdUtil checkStringUseable:nickName]) {
         return;
     }
-    PLVChatUser *user = [self searchUserInUserArrayWithUserId:userId];
+    PLVChatUser *user = self.localUserMDic[userId];
     if (!user) {
         return;
     }
     user.userName = nickName;
+    self.needRefreshUI = YES;
 }
 
+// 时间复杂度：O(1)
 - (PLVChatUser *)searchUserInUserArrayWithUserId:(NSString *)userId {
     if (![PLVFdUtil checkStringUseable:userId]) {
         return nil;
     }
-    dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
-    PLVChatUser *searchedUser = nil;
-    for (PLVChatUser *user in self.userArray) {
-        if ([user.userId isEqualToString:userId]) {
-            searchedUser = user;
-            break;
-        }
-    }
-    dispatch_semaphore_signal(_userArrayLock);
-    return searchedUser;
+    PLVChatUser *user = self.localUserMDic[userId];
+    return user;
 }
 
 /// 对数组 userArray 进行排序
+// 时间复杂度：O( N * log(N) )
+//     N 是 本地用户localUserMDic 的长度。  N 可以很大很大。
 - (void)sortUsers {
-    dispatch_semaphore_wait(_userArrayLock, DISPATCH_TIME_FOREVER);
+    dispatch_semaphore_wait(_localUserMDicLock, DISPATCH_TIME_FOREVER);
+    NSArray<PLVChatUser *> *userArrayCopy = self.localUserMDic.allValues;
+    dispatch_semaphore_signal(_localUserMDicLock);
+    
     __weak typeof(self) weakSelf = self;
-    NSArray *sortedArray = [self.userArray sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+    self.userArrayForUI = [userArrayCopy sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
         PLVChatUser *user1 = (PLVChatUser *)obj1;
         PLVChatUser *user2 = (PLVChatUser *)obj2;
         PLVMemberOrderIndex orderIndex1 = [weakSelf memberOrderIndexWithUserType:user1];
@@ -496,9 +496,6 @@ PLVSocketManagerProtocol // socket协议
         }
         return NSOrderedSame;
     }];
-    [self.userArray removeAllObjects];
-    self.userArray = [NSMutableArray arrayWithArray:sortedArray];
-    dispatch_semaphore_signal(_userArrayLock);
 }
 
 #pragma mark 踢出用户
@@ -603,6 +600,16 @@ PLVSocketManagerProtocol // socket协议
     dispatch_semaphore_signal(_kickedUserArrayLock);
 }
 
+#pragma mark UI刷新定时器回调
+- (void)refreshUITimerBlock:(NSTimer *)timer {
+    if (!self.needRefreshUI) {
+        return ;
+    }
+    [self sortUsers];
+    [self notifyUserArrayChanged];
+    self.needRefreshUI = NO;
+}
+
 #pragma mark 触发回调
 
 - (void)notifyUserArrayChanged {
@@ -634,18 +641,13 @@ PLVSocketManagerProtocol // socket协议
     }
     
     PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
-    [self addUser:user];
-    // 数据变更通知
-    [self notifyUserArrayChanged];
+    [self addUser:user andForce:NO];
 }
 
 /// 有用户登出
 - (void)logoutEvent:(NSDictionary *)data {
     NSString *userId = data[@"userId"];
     [self removeUserWithUserId:userId];
-    
-    // 数据变更通知
-    [self notifyUserArrayChanged];
 }
 
 /// 有用户被踢出
@@ -667,10 +669,8 @@ PLVSocketManagerProtocol // socket协议
         NSString *userId = data[@"userId"];
         NSString *userName = data[@"nick"];
         [self setNickNameWithUserId:userId nickName:userName];
+        self.needRefreshUI = YES;
     }
-    
-    // 数据变更通知
-    [self notifyUserArrayChanged];
 }
 
 #pragma mark Utils

@@ -19,6 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) void (^copButtonHandler)(void);
 @property (nonatomic, copy) void (^foldButtonHandler)(void);
 
+/// 生成消息多属性文本
++ (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId;
+
 @end
 
 NS_ASSUME_NONNULL_END

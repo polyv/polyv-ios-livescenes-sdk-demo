@@ -131,6 +131,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 礼物打赏开关
 @property (nonatomic, assign, readonly) BOOL enableReward;
 
+/// tableview的宽度
+@property (nonatomic, assign) CGFloat tableViewWidth;
+
 #pragma mark API
 
 /// 单例方法

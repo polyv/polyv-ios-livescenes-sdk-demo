@@ -10,6 +10,21 @@
 #import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVGiveRewardPresenter.h"
+#import "PLVLCSpeakMessageCell.h"
+#import "PLVLCLongContentMessageCell.h"
+#import "PLVLCQuoteMessageCell.h"
+#import "PLVLCFileMessageCell.h"
+#import "PLVLCImageMessageCell.h"
+#import "PLVLCImageEmotionMessageCell.h"
+#import "PLVLCRedpackMessageCell.h"
+#import "PLVLCRewardMessageCell.h"
+#import "PLVLCLandscapeSpeakCell.h"
+#import "PLVLCLandscapeLongContentCell.h"
+#import "PLVLCLandscapeImageCell.h"
+#import "PLVLCLandscapeImageEmotionCell.h"
+#import "PLVLCLandscapeQuoteCell.h"
+#import "PLVLCLandscapeFileCell.h"
+#import "PLVLCLandscapeRedpackMessageCell.h"
 
 @interface PLVLCChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -421,6 +436,47 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+    
+    // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if ([PLVLCSpeakMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.landscapeAttributeString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCLongContentMessageCell isModelValid:model]) {
+        model.attributeString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+        model.landscapeAttributeString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVLCLongContentMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+        model.attributeString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:message];
+        model.landscapeAttributeString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.cellHeightForV = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCFileMessageCell isModelValid:model]) {
+        PLVFileMessage *message = (PLVFileMessage *)model.message;
+        model.attributeString = [PLVLCFileMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.landscapeAttributeString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
+        model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+        model.cellHeightForV = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
+        model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+        model.cellHeightForV = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCRewardMessageCell isModelValid:model]) {
+        model.cellHeightForV = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+    } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
+        model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    }
+    
     [self.publicChatArray addObject:model];
     [self.partOfPublicChatArray addObject:model];
     dispatch_semaphore_signal(_publicChatArrayLock);
@@ -433,6 +489,46 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
+            // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+            PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+            if ([PLVLCSpeakMessageCell isModelValid:model]) {
+                PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+                model.attributeString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+                model.landscapeAttributeString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+                model.cellHeightForV = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCLongContentMessageCell isModelValid:model]) {
+                model.attributeString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+                model.landscapeAttributeString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:roomUser.viewerId];
+                model.cellHeightForV = [PLVLCLongContentMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
+                PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+                model.attributeString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:message];
+                model.landscapeAttributeString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+                model.cellHeightForV = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCFileMessageCell isModelValid:model]) {
+                PLVFileMessage *message = (PLVFileMessage *)model.message;
+                model.attributeString = [PLVLCFileMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+                model.landscapeAttributeString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+                model.cellHeightForV = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
+                model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+                model.cellHeightForV = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
+                model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+                model.cellHeightForV = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCRewardMessageCell isModelValid:model]) {
+                model.cellHeightForV = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+            } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
+                model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            }
+            
             [self.publicChatArray addObject:model];
             if (model.user.specialIdentity) {
                 [self.partOfPublicChatArray addObject:model];

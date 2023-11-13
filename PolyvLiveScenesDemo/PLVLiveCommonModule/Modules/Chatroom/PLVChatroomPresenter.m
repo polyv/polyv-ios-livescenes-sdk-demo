@@ -94,11 +94,15 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         // 聊天消息缓冲初始化
         _dataSourceLock = dispatch_semaphore_create(1);
         self.chatCacheQueue = [NSMutableArray arrayWithCapacity:100];
-        self.chatCachTimer = [NSTimer scheduledTimerWithTimeInterval:0.5
-                                                              target:self
-                                                            selector:@selector(chatCachTimerAction)
-                                                            userInfo:nil
-                                                             repeats:YES];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            self.chatCachTimer = [NSTimer timerWithTimeInterval:0.5
+                                                     target:self
+                                                   selector:@selector(chatCachTimerAction)
+                                                   userInfo:nil
+                                                    repeats:YES];
+            [[NSRunLoop currentRunLoop] addTimer:self.chatCachTimer forMode:NSRunLoopCommonModes];
+            [[NSRunLoop currentRunLoop] run];
+        });
         
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         
@@ -1689,6 +1693,10 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 }
 
 - (void)chatCachTimerAction {
+    if (self.chatCacheQueue.count == 0) {
+        return ;
+    }
+
     dispatch_semaphore_wait(_dataSourceLock, DISPATCH_TIME_FOREVER);
     NSArray *tempArray = [self.chatCacheQueue copy];
     [self.chatCacheQueue removeAllObjects];

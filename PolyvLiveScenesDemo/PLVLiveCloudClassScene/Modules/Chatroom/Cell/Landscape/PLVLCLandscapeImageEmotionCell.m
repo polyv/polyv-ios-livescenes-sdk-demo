@@ -74,8 +74,17 @@
     self.model = model;
     
     // 设置昵称文本
-    NSAttributedString *nickLabelString = [PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user
-                                                                                         loginUserId:loginUserId];
+    // 设置昵称文本
+    NSMutableAttributedString *nickLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.landscapeAttributeString;
+    } else {
+        nickLabelString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user
+                                                                                                                                            loginUserId:loginUserId]];
+        model.landscapeAttributeString = nickLabelString;
+    }
+    
     self.nickLabel.attributedText = nickLabelString;
     
     PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
@@ -114,7 +123,7 @@
 
 #pragma mark - [ Private Methods ]
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
                                               loginUserId:(NSString *)loginUserId {
     if (!user.userName || ![user.userName isKindOfClass:[NSString class]] || user.userName.length == 0) {

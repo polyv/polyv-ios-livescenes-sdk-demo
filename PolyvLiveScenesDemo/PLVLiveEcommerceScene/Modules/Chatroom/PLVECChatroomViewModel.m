@@ -9,6 +9,9 @@
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
 #import "PLVGiveRewardPresenter.h"
+#import "PLVECChatCell.h"
+#import "PLVECQuoteChatCell.h"
+#import "PLVECLongContentChatCell.h"
 
 @interface PLVECChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -331,6 +334,20 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         return;
     }
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+    
+    // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if ([PLVECChatCell isModelValid:model]) {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
+        model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+    } else if ([PLVECQuoteChatCell isModelValid:model]) {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell contentAttributedStringWithChatModel:model]];
+        model.cellHeightForV = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+    } else if ([PLVECLongContentChatCell isModelValid:model]) {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
+        model.cellHeightForV = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+    }
+    
     [self.publicChatArray addObject:model];
     dispatch_semaphore_signal(_publicChatArrayLock);
     
@@ -341,6 +358,19 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)addPublicChatModels:(NSArray <PLVChatModel *> *)modelArray {
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
+        // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+        PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+        if ([PLVECChatCell isModelValid:model]) {
+            model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
+            model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        } else if ([PLVECQuoteChatCell isModelValid:model]) {
+            model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell contentAttributedStringWithChatModel:model]];
+            model.cellHeightForV = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        } else if ([PLVECLongContentChatCell isModelValid:model]) {
+            model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
+            model.cellHeightForV = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        }
+        
         if ([model isKindOfClass:[PLVChatModel class]]) {
             [self.publicChatArray addObject:model];
             if (model.user.specialIdentity) {

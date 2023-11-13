@@ -114,7 +114,15 @@
     self.model = model;
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.landscapeAttributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     NSAttributedString *quoteLabelString = [PLVLCLandscapeQuoteCell quoteContentAttributedStringWithMessage:message
@@ -138,7 +146,15 @@
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.landscapeAttributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
     NSAttributedString *quoteLabelString = [PLVLCLandscapeQuoteCell quoteContentAttributedStringWithMessage:message loginUserId:loginUserId];
@@ -171,7 +187,7 @@
 
 #pragma mark - [ Private Methods ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVQuoteMessage *)message
                                                                   user:(PLVChatUser *)user {
     UIFont *font = [UIFont systemFontOfSize:14.0];

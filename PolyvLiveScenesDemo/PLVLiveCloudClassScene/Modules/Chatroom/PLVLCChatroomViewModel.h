@@ -160,6 +160,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 图片表情数组
 @property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 
+/// tableview 在手机竖屏模式下的宽度
+@property (nonatomic, assign) CGFloat tableViewWidthForV;
+
+/// tableview 的宽度
+@property (nonatomic, assign) CGFloat tableViewWidthForH;
+
 #pragma mark API
 
 /// 单例方法

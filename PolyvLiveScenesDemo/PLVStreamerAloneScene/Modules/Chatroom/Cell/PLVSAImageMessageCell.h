@@ -33,6 +33,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param model 数据模型
 + (BOOL)isModelValid:(PLVChatModel *)model;
 
+/// 生成昵称多属性文本
++ (NSMutableAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
+                                                     loginUserId:(NSString *)loginUserId;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -57,6 +57,18 @@ typedef NS_ENUM(NSInteger, PLVChatMsgContentLength) {
 /// @note message为PLVSpeakMessage或PLVQuoteMessage，且overLen字段为YES时有效
 @property (nonatomic, copy) NSString *overLenContent;
 
+/// cell 显示 所需要生成的 消息多属性文本
+@property (nonatomic, copy) NSMutableAttributedString *attributeString;
+
+/// 横屏cell 显示 所需要生成的 消息多属性文本
+@property (nonatomic, copy) NSMutableAttributedString *landscapeAttributeString;
+
+/// cell 在手机横屏模式下计算出来的高度
+@property (nonatomic, assign) CGFloat cellHeightForH;
+
+/// cell 在手机竖屏模式下计算出来的高度
+@property (nonatomic, assign) CGFloat cellHeightForV;
+
 /// 获取 message 属性的 msgId
 /// 如果为文本消息、引用消息、图片消息、打赏消息，msgId 不为空，否则为 nil
 - (NSString *)msgId;

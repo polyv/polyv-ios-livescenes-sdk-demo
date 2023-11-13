@@ -102,7 +102,14 @@ static CGFloat kButtonoHeight = 40.0;
     
     CGSize textViewSize = [self.textView sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
     
-    NSMutableAttributedString *contentLabelString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:self.model];
+    NSMutableAttributedString *contentLabelString;
+    if (self.model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = self.model.attributeString;
+    } else {
+        contentLabelString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:self.model];
+        self.model.attributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [[contentLabelString copy] boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     
@@ -169,7 +176,14 @@ static CGFloat kButtonoHeight = 40.0;
         self.quoteLine.hidden = YES;
     }
     
-    NSMutableAttributedString *contentLabelString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+        model.attributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
 }
 
@@ -185,7 +199,14 @@ static CGFloat kButtonoHeight = 40.0;
     CGFloat bubbleXPadding = 12;//textView与bubble的内部左右间距均为12
     CGFloat maxTextViewWidth = cellWidth - originX - xPadding - bubbleXPadding * 2;
     
-    NSMutableAttributedString *contentLabelString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+        model.attributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [[contentLabelString copy] boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     CGFloat textViewHeight = 8 + contentHeight + 8; // textView文本与textView的内部有上下间距8
@@ -225,7 +246,7 @@ static CGFloat kButtonoHeight = 40.0;
 
 #pragma mark - [ Private Method ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model {
     NSString *content = model.content;
     NSString *colorHexString = [model.user isUserSpecial] ? @"#78A7ED" : @"#ADADC0";
