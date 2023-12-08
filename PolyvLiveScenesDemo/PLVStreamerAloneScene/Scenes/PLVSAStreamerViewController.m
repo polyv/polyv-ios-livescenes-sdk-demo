@@ -267,20 +267,24 @@ PLVShareLiveSheetDelegate
 
 /// 保存当前选择的混流布局到本地
 - (void)saveSelectedMixLayoutType:(PLVMixLayoutType)mixLayoutType {
-    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)mixLayoutType] forKey:kPLVSASettingMixLayoutKey];
+    NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kPLVSASettingMixLayoutKey, self.channelId];
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)mixLayoutType] forKey:mixLayoutKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 /// 读取本地混流布局配置
 - (PLVMixLayoutType)getLocalMixLayoutType {
-    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:kPLVSASettingMixLayoutKey];
+    // 如果本地有记录优先读取
+    NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kPLVSASettingMixLayoutKey, self.channelId];
+    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:mixLayoutKey];
     if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
         PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
         if (saveMixLayout >= 1 && saveMixLayout <=3) {
             return saveMixLayout;
         }
     }
-    return PLVMixLayoutType_Tile; // 默认混流布局为平铺模式
+    // 默认混流配置
+    return [PLVRoomDataManager sharedManager].roomData.defaultMixLayoutType;
 }
 
 #pragma mark Getter & Setter
@@ -407,8 +411,10 @@ PLVShareLiveSheetDelegate
     [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:roomData.defaultResolution]];
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
-    PLVRTCStreamerMixLayoutType type = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:[self getLocalMixLayoutType]];
+    PLVMixLayoutType localMixLayout = [self getLocalMixLayoutType];
+    PLVRTCStreamerMixLayoutType type = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:localMixLayout];
     [self.streamerPresenter setupMixLayoutType:type];
+    [self saveSelectedMixLayoutType:localMixLayout];
     [self.streamerPresenter setDefaultVideoQosPreference:roomData.pushQualityPreference];
     
     // 初始化美颜

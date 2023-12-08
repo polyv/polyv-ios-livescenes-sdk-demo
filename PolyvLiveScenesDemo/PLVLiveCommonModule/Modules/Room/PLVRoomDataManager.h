@@ -47,6 +47,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 直播回放vid改变
 - (void)roomDataManager_didVidChanged:(NSString *)vid;
 
+/// SIP入会信息密码 更新
+- (void)roomDataManager_didSipPasswordChanged:(NSString *)sipPassword;
+
 @end
 
 @interface PLVRoomDataManager : NSObject

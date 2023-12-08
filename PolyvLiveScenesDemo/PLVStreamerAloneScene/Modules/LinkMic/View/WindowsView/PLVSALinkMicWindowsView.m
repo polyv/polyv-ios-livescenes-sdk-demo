@@ -447,7 +447,7 @@ PLVSALinkMicPreviewViewDelegate
 
     if (!fullScreen) { // 取消全屏
         if (collectionViewCell) { // 恢复 Cell 数据
-            BOOL hideCanvasView = [self isLocalUserPreviewView] || (self.linkMicUserCount == 1 && ![self showSpeakerPlaceholderView]);
+            BOOL hideCanvasView = [self isLocalUserPreviewView];
             [collectionViewCell setUserModel:onlineUser hideCanvasViewWhenCameraClose:hideCanvasView];
         }
         
@@ -713,8 +713,8 @@ PLVSALinkMicPreviewViewDelegate
     PLVSALinkMicWindowCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kCellIdentifier forIndexPath:indexPath];
     cell.delegate = self;
     if (![onlineUser.linkMicUserId isEqualToString:self.fullScreenUserId]) {
-        // 设备检测页或者连麦人数为1时不显示占位图的情况下，不显示昵称且关闭摄像头时不显示canvasView
-        BOOL hideCanvasView = [self isLocalUserPreviewView] || (self.linkMicUserCount == 1 && ![self showSpeakerPlaceholderView]);
+        // 设备检测页，不显示昵称且关闭摄像头时不显示canvasView
+        BOOL hideCanvasView = [self isLocalUserPreviewView];
         [cell setUserModel:onlineUser hideCanvasViewWhenCameraClose:hideCanvasView];
     }
     

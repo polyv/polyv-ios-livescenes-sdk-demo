@@ -53,6 +53,9 @@ typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
 
 @property (nonatomic, assign, readonly) PLVSAToolbarLinkMicButtonStatus linkMicButtonStatus;
 
+// 连麦布局切换(默认平铺，选中为主讲模式)
+@property (nonatomic, strong, readonly) UIButton *layoutSwitchButton;
+
 /// 人员按钮右上角红点显示或隐藏
 /// @param show YES: 显示；NO：隐藏
 - (void)showMemberBadge:(BOOL)show;

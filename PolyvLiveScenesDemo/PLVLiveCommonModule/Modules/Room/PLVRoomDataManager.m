@@ -19,6 +19,7 @@ extern NSString *PLVRoomDataKeyPathChannelInfo;
 extern NSString *PLVRoomDataKeyPathMenuInfo;
 extern NSString *PLVRoomDataKeyPathLiveState;
 extern NSString *PLVRoomDataKeyPathVid;
+extern NSString *PLVRoomDataKeyPathSipPassword;
 
 @interface PLVRoomDataManager ()
 
@@ -103,6 +104,7 @@ extern NSString *PLVRoomDataKeyPathVid;
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathLiveState options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathVid options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
+    [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathSipPassword options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)removeRoomDataObserver {
@@ -140,6 +142,8 @@ extern NSString *PLVRoomDataKeyPathVid;
         [self notifyDelegatesDidLiveStateChanged:self.roomData.liveState];
     } else if ([keyPath isEqualToString:PLVRoomDataKeyPathVid]) {
         [self notifyDelegatesDidVidChanged:self.roomData.vid];
+    } else if ([keyPath isEqualToString:PLVRoomDataKeyPathSipPassword]) {
+        [self notifyDelegatesDidVidChanged:self.roomData.sipPassword];
     }
 }
 
@@ -196,6 +200,12 @@ extern NSString *PLVRoomDataKeyPathVid;
 - (void)notifyDelegatesDidVidChanged:(NSString *)vid {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate roomDataManager_didVidChanged:vid];
+    });
+}
+
+- (void)notifyDelegatesDidSipPasswordChanged:(NSString *)sipPassword {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate roomDataManager_didSipPasswordChanged:sipPassword];
     });
 }
 

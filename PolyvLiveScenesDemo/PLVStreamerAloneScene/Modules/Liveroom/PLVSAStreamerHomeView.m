@@ -194,7 +194,8 @@ PLVSABadNetworkSwitchSheetDelegate
     CGFloat chatroomHeight = selfSize.height * chatroomHeightScale;
     self.chatroomAreaView.frame = CGRectMake(left, CGRectGetMinY(self.toolbarAreaView.frame) - chatroomHeight, chatroomWidth, chatroomHeight);
     self.slideRightTipsView.frame = self.bounds;
-    self.layoutSwitchGuideView.frame = CGRectMake(selfSize.width - toolbarViewMarginRight - self.layoutSwitchGuideView.viewSize.width - right - 122, CGRectGetMinY(self.toolbarAreaView.frame) - self.layoutSwitchGuideView.viewSize.height, self.layoutSwitchGuideView.viewSize.width,  self.layoutSwitchGuideView.viewSize.height);
+    CGRect buttonRelativeFrame = [self.toolbarAreaView convertRect:self.toolbarAreaView.layoutSwitchButton.frame toView:self.homePageView];
+    self.layoutSwitchGuideView.frame = CGRectMake(CGRectGetMidX(buttonRelativeFrame) - self.layoutSwitchGuideView.viewSize.width * 0.65, CGRectGetMinY(self.toolbarAreaView.frame) - self.layoutSwitchGuideView.viewSize.height, self.layoutSwitchGuideView.viewSize.width,  self.layoutSwitchGuideView.viewSize.height);
     
     UIView *teacherNameButton = (UIView *)self.statusbarAreaView.teacherNameButton;
     CGRect teacherNameRect = [self convertRect:teacherNameButton.frame toView:self.homePageView];

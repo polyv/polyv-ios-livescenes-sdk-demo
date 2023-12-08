@@ -12,12 +12,13 @@
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
-@interface PLVECLiveDetailPageView () <PLVECCardViewDelegate, PLVECLiveIntroductionCardViewDelegate>
+@interface PLVECLiveDetailPageView () <PLVECBulletinCardViewDelegate, PLVECLiveIntroductionCardViewDelegate>
 
 @property (nonatomic, strong) UIScrollView *scrollView;
 @property (nonatomic, strong) PLVECBulletinCardView *bulletinCardView;
 @property (nonatomic, strong) PLVECLiveIntroductionCardView *liveInfoCardView;
 @property (nonatomic, assign) CGFloat liveInfoCardViewHeight;
+@property (nonatomic, assign) CGFloat bulletinCardViewHeight;
 
 @end
 
@@ -34,7 +35,7 @@
         [self addSubview:self.scrollView];
         
         self.bulletinCardView = [[PLVECBulletinCardView alloc] init];
-        self.bulletinCardView.delegate = self;
+        self.bulletinCardView.bulletinDelegate = self;
         self.bulletinCardView.hidden = YES;
         [self.scrollView addSubview:self.bulletinCardView];
         
@@ -53,9 +54,14 @@
     
     self.scrollView.frame = CGRectMake(15, CGRectGetHeight(self.bounds)*ratioY, CGRectGetWidth(self.bounds)-30, CGRectGetHeight(self.bounds)*(1-ratioY)-10);
     if (self.liveInfoCardViewHeight == 0) {
+        self.liveInfoCardViewHeight = liveInfoHeight;
         self.liveInfoCardView.frame = CGRectMake(0, CGRectGetHeight(self.scrollView.bounds)-liveInfoHeight, CGRectGetWidth(self.scrollView.bounds), liveInfoHeight);
     }
-    [self refreshBulletinCardView];
+    if (self.bulletinCardViewHeight == 0) {
+        CGFloat bulletinHeight = 66;
+        self.bulletinCardViewHeight = bulletinHeight;
+        self.bulletinCardView.frame = CGRectMake(0, CGRectGetMinY(self.liveInfoCardView.frame)- bulletinHeight -8, CGRectGetWidth(self.scrollView.bounds), bulletinHeight);
+    }
 }
 
 #pragma mark - Public
@@ -69,8 +75,8 @@
 
 - (void)addBulletinCardView:(NSString *)content {
     self.bulletinCardView.hidden = NO;
+    self.bulletinCardViewHeight = 0;
     self.bulletinCardView.content = content;
-    [self refreshBulletinCardView];
 }
 
 - (void)removeBulletinCardView {
@@ -80,10 +86,19 @@
 
 #pragma mark - Pravite
 
-- (void)refreshBulletinCardView {
-    CGSize newSize = [self.bulletinCardView.contentTextView sizeThatFits:CGSizeMake(CGRectGetWidth(self.scrollView.bounds)-30, MAXFLOAT)];
-    CGFloat bulletinHeight =  newSize.height + 66;
-    self.bulletinCardView.frame = CGRectMake(0, CGRectGetMinY(self.liveInfoCardView.frame)-bulletinHeight-8, CGRectGetWidth(self.scrollView.bounds), bulletinHeight);
+- (void)layoutCardViews {
+    CGRect bulletinNewFrame = self.bulletinCardView.frame;
+    CGFloat bulletinNewFrameY = CGRectGetMinY(self.liveInfoCardView.frame) - self.bulletinCardViewHeight - 8;
+    bulletinNewFrame.size.height = self.bulletinCardViewHeight;
+    bulletinNewFrame.origin.y = MAX(0, bulletinNewFrameY);
+    self.bulletinCardView.frame = bulletinNewFrame;
+   
+    CGRect infoNewFrame = self.liveInfoCardView.frame;
+    infoNewFrame.size.height = self.liveInfoCardViewHeight;
+    infoNewFrame.origin.y = bulletinNewFrameY > 0 ? infoNewFrame.origin.y : CGRectGetMaxY(bulletinNewFrame) + 8;
+    self.liveInfoCardView.frame = infoNewFrame;
+    
+    self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.scrollView.bounds), CGRectGetMaxY(self.liveInfoCardView.frame));
 }
 
 #pragma mark - <PLVECCardViewDelegate>
@@ -101,12 +116,21 @@
 
 - (void)cardView:(PLVECLiveIntroductionCardView *)cardView didLoadWebViewHeight:(CGFloat)height {
     if (height > CGRectGetHeight(cardView.webView.bounds)) {
-        CGRect newFrame = self.liveInfoCardView.frame;
-        newFrame.size.height = CGRectGetMinY(self.liveInfoCardView.webView.frame) + height + 10;
-        self.liveInfoCardViewHeight = newFrame.size.height;
-        self.liveInfoCardView.frame = newFrame;
+        self.liveInfoCardViewHeight = CGRectGetMinY(self.liveInfoCardView.webView.frame) + height + 10;
+        plv_dispatch_main_async_safe(^{
+            [self layoutCardViews];
+        })
+    }
+}
 
-        self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.scrollView.bounds), CGRectGetMaxY(cardView.frame));
+#pragma mark - <PLVECBulletinCardViewDelegate>
+
+- (void)bulletinCardView:(PLVECBulletinCardView *)cardView didLoadWebViewHeight:(CGFloat)height {
+    if (height > 0) {
+        self.bulletinCardViewHeight = CGRectGetMinY(self.bulletinCardView.webView.frame) + height + 5;
+        plv_dispatch_main_async_safe(^{
+            [self layoutCardViews];
+        })
     }
 }
 

@@ -43,6 +43,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param user 邀请用户的数据
 - (void)inviteUserJoinLinkMicInMemberSheet:(PLVLSMemberSheet *)memberSheet chatUser:(PLVChatUser *)user;
 
+/// 拨号入会列表已更新
+- (void)sipUserListDidChangedInMemberSheet:(PLVLSMemberSheet *)memberSheet;
+
 @end
 
 @interface PLVLSMemberSheet : PLVLSSideSheet
@@ -73,6 +76,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否开启音视频连麦
 /// @param enable YES 开启，NO关闭
 - (void)enableAudioVideoLinkMic:(BOOL)enable;
+
+/// 显示SIP来电提醒
+- (void)showNewIncomingTelegramView;
 
 @end
 

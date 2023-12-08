@@ -204,7 +204,7 @@
     NSAttributedString *nickNameString = [[NSAttributedString alloc] initWithString:content attributes:nickNameAttDict];
     
     NSString *gimg = message.gimg;
-    NSString *rewardContent = message.rewardContent;
+    NSString *rewardContent = PLVLocalizedString(message.rewardContent);
     // 礼物打赏为礼物图片，现金打赏为空
     if ([PLVFdUtil checkStringUseable:gimg]) {
         rewardContent = [NSString stringWithFormat:PLVLocalizedString(@"赠送了 %@"), rewardContent];

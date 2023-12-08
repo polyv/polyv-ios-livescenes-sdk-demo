@@ -146,7 +146,17 @@ WKNavigationDelegate
     }
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    [self.topView setTitle:titleString date:dateString channelId:roomData.channelId];
+    NSString *sipNumber = roomData.sipNumber;
+    if (!sipNumber || ![sipNumber isKindOfClass:[NSString class]]) {
+        sipNumber = PLVLocalizedString(@"暂无");
+    }
+    
+    NSString *sipPassword = roomData.sipPassword;
+    if (!sipPassword || ![sipPassword isKindOfClass:[NSString class]]) {
+        sipPassword = PLVLocalizedString(@"暂无");
+    }
+    
+    [self.topView setTitle:titleString date:dateString channelId:roomData.channelId sipNumber:sipNumber sipPassword:sipPassword];
     
     NSArray<PLVLiveVideoChannelMenu*> *channelMenus = menuInfo.channelMenus;
     if (!menuInfo.channelMenus || ![menuInfo.channelMenus isKindOfClass:[NSArray class]] ||

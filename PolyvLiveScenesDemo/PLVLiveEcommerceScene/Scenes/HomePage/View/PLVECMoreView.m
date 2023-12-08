@@ -24,9 +24,27 @@
 
 @property (nonatomic, copy) NSArray<PLVECMoreViewItem *> *items;
 
+@property (nonatomic, strong) UIScrollView *scrollView;
+
 @end
 
 @implementation PLVECMoreView
+
+#pragma mark - Life Cycle
+
+- (instancetype)initWithFrame:(CGRect)frame {
+    self = [super initWithFrame:frame];
+    if (self) {
+        [self addSubview:self.scrollView];
+    }
+    return self;
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    
+    self.scrollView.frame = CGRectMake(0, 46, self.bounds.size.width, 60);
+}
 
 #pragma mark - Public
 
@@ -39,7 +57,7 @@
 
 - (void)removeMoreViewItems {
     for (PLVECMoreViewItem *item in self.items) {
-        UIView *subView = [self viewWithTag:item.tag];
+        UIView *subView = [self.scrollView viewWithTag:item.tag];
         [subView removeFromSuperview];
     }
 }
@@ -49,12 +67,13 @@
 - (void)setupUIWithItems:(NSArray<PLVECMoreViewItem *> *)item {
     [self removeMoreViewItems];
     self.items = item;
+    self.scrollView.contentSize = CGSizeMake(12 + 72*self.items.count, CGRectGetHeight(self.scrollView.bounds));
     for (int i = 0; i < self.items.count; i++) {
         PLVECMoreViewItem *item = self.items[i];
         item.tag = 200 + i;
 
         UIButton *itemBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        itemBtn.frame = CGRectMake(12 + 72*i, 46, 70, 54);
+        itemBtn.frame = CGRectMake(12 + 72*i, 0, 70, 54);
         itemBtn.tag = item.tag;
         itemBtn.selected = item.isSelected;
         [itemBtn setTitle:item.title forState:UIControlStateNormal];
@@ -79,7 +98,7 @@
         itemBtn.titleLabel.font = [UIFont systemFontOfSize:12.0];
         itemBtn.titleLabel.textColor = [UIColor colorWithWhite:205/255.0 alpha:1];
         [itemBtn addTarget:self action:@selector(switchItemButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:itemBtn];
+        [self.scrollView addSubview:itemBtn];
     }
 }
 
@@ -93,6 +112,16 @@
     if ([self.delegate respondsToSelector:@selector(moreView:didSelectItem:)]) {
         [self.delegate moreView:self didSelectItem:item];
     }
+}
+
+#pragma mark - Getter & Setter
+- (UIScrollView *)scrollView {
+    if (!_scrollView) {
+        _scrollView = [[UIScrollView alloc] init];
+        _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.showsHorizontalScrollIndicator = NO;
+    }
+    return _scrollView;
 }
 
 @end

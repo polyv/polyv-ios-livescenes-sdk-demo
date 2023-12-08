@@ -664,6 +664,11 @@ PLVLSMixLayoutSheetDelegate
     [_channelInfoSheet updateChannelInfoWithData:menuInfo];
 }
 
+- (void)roomDataManager_didSipPasswordChanged:(NSString *)sipPassword {
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    [self.channelInfoSheet updateChannelInfoWithData:menuInfo];
+}
+
 #pragma mark - PLVLSStatusAreaView Protocol
 
 - (void)statusAreaView_didTapChannelInfoButton {
@@ -861,6 +866,10 @@ PLVLSMixLayoutSheetDelegate
         waitUser = [PLVLinkMicWaitUser modelWithChatUser:user];
     }
     [self.streamerPresenter inviteRemoteUserJoinLinkMic:waitUser emitCompleteBlock:nil];
+}
+
+- (void)sipUserListDidChangedInMemberSheet:(PLVLSMemberSheet *)memberSheet {
+    [self.statusAreaView hasNewMember];
 }
 
 #pragma mark - PLVSDocumentAreaView Delegate
@@ -1103,6 +1112,7 @@ PLVLSMixLayoutSheetDelegate
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter classStartedDidChanged:(BOOL)classStarted startClassInfoDict:(NSDictionary *)startClassInfoDict{
     [PLVRoomDataManager sharedManager].roomData.startTimestamp = presenter.startPushStreamTimestamp;
     [PLVRoomDataManager sharedManager].roomData.liveDuration = presenter.pushStreamValidDuration;
+    [[PLVRoomDataManager sharedManager].roomData updateSipInfo];
     if (classStarted) {
         [self startClass:startClassInfoDict];
         self.showMicTipsTimeInterval = 0;

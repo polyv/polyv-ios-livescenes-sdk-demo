@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVLSChannelInfoTopView : UIView
 
 /// 设置频道信息摘要
-- (void)setTitle:(NSString *)titleString date:(NSString *)dateString channelId:(NSString *)channelIdString;
+- (void)setTitle:(NSString *)titleString date:(NSString *)dateString channelId:(NSString *)channelIdString sipNumber:(NSString *)sipNumberString sipPassword:(NSString *)sipPasswordString;
 
 @end
 

@@ -346,6 +346,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     if (content && [content isKindOfClass:[NSString class]] && content.length > 0) {
         content = [content stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
         content = [content stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
+        content = [content stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
     }
     
     PLVChatModel *model = [[PLVChatModel alloc] init];
@@ -1603,6 +1604,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         content = [content stringByReplacingOccurrencesOfString:@"&lt;" withString:@"<"];
         content = [content stringByReplacingOccurrencesOfString:@"&gt;" withString:@">"];
         content = [content stringByReplacingOccurrencesOfString:@"&nbsp;" withString:@" "];
+        content = [content stringByReplacingOccurrencesOfString:@"&amp;" withString:@"&"];
         return content;
     }else {
         return nil;

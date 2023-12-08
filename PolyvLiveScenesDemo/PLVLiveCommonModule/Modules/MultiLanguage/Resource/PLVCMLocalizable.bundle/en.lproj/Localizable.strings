@@ -168,9 +168,9 @@
 
 "账号信息不可为空" = "Account information cannot be empty";
 
-"赠送    礼物" = "Given   Gift";
+"赠送    礼物" = "given   Gift";
 
-"赠送  %@" = "Given  %@";
+"赠送  %@" = "given  %@";
 
 "标清" = "SD";
 
@@ -268,9 +268,9 @@
 "您的聊天信息中含有违规词：%@" = "Your chat message contains illegal words: %@";
 "您的聊天消息中含有违规词语，已全部作***代替处理" = "Your chat messages contain illegal words and all have been replaced by ***";
 
-"口令" = "password";
+"支付宝口令" = "Alipay password";
 "口令红包即将来袭" = "Password red envelope coming soon";
-" %@ 发了一个%@红包，" = " %1$@ sent a %2$@ red envelope，";
+" %@ 发了一个%@红包，" = " %1$@ sent a %2$@ red envelope, ";
 "%@等%zd人" = "%1$@ and %2$zd people";
 "已开奖" = "Lottery over";
 "开奖中" = "In lottery";
@@ -518,6 +518,7 @@
 "标题" = "title";
 "模式" = "Mode";
 "无" = "None";
+"暂无" = "None";
 "知道了" = "knew";
 "PLVAlertConfirmTitle" = "OK";
 "请前往“设置-隐私”开启权限" = "Please go to 'Settings-Privacy' to enable permissions";

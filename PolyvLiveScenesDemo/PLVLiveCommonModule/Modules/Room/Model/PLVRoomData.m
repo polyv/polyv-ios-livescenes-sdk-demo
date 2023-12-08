@@ -22,6 +22,7 @@ NSString *PLVRoomDataKeyPathMenuInfo    = @"menuInfo";
 NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 NSString *PLVRoomDataKeyPathHiClassStatus   = @"hiClassStatus";
 NSString *PLVRoomDataKeyPathVid   = @"vid";
+NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
 
 @interface PLVRoomData ()
 
@@ -161,6 +162,16 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     }];
 }
 
+- (void)updateSipInfo {
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestSIPInfoWithChannelId:self.channelId completion:^(NSDictionary *data) {
+        weakSelf.sipNumber = PLV_SafeStringForDictKey(data, @"ucSipPhone");
+        weakSelf.sipPassword = PLV_SafeStringForDictKey(data, @"ucSipId");
+    } failure:^(NSError *error) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request SIP Info failed with 【%@】", __FUNCTION__, error);
+    }];
+}
+
 #pragma mark Utils
 
 + (NSString * _Nullable)resolutionStringWithType:(PLVResolutionType)resolutionType {
@@ -289,6 +300,17 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
         return _streamScale;
     }
     return PLVBLinkMicStreamScale16_9;
+}
+
+- (PLVMixLayoutType)defaultMixLayoutType {
+    if ([PLVFdUtil checkStringUseable:self.menuInfo.mobileAlonePushMixMode]) {
+        if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"flatten"]) {
+            return PLVMixLayoutType_Tile;
+        } else if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"lecture"]) {
+            return PLVMixLayoutType_MainSpeaker;
+        }
+    }
+    return PLVMixLayoutType_Tile; // 默认混流布局为平铺模式;
 }
 
 - (void)setAppWebStartResolutionRatio:(NSString *)appWebStartResolutionRatio {

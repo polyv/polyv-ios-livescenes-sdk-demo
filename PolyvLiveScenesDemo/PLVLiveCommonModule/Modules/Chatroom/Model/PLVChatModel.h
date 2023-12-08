@@ -58,10 +58,10 @@ typedef NS_ENUM(NSInteger, PLVChatMsgContentLength) {
 @property (nonatomic, copy) NSString *overLenContent;
 
 /// cell 显示 所需要生成的 消息多属性文本
-@property (nonatomic, copy) NSMutableAttributedString *attributeString;
+@property (nonatomic, strong) NSMutableAttributedString *attributeString;
 
 /// 横屏cell 显示 所需要生成的 消息多属性文本
-@property (nonatomic, copy) NSMutableAttributedString *landscapeAttributeString;
+@property (nonatomic, strong) NSMutableAttributedString *landscapeAttributeString;
 
 /// cell 在手机横屏模式下计算出来的高度
 @property (nonatomic, assign) CGFloat cellHeightForH;

@@ -358,14 +358,17 @@ PLVSAMixLayoutSheetDelegate
 
 /// 读取本地混流布局配置
 - (PLVMixLayoutType)getLocalMixLayoutType {
-    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:kSettingMixLayoutKey];
+    // 如果本地有记录优先读取
+    NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kSettingMixLayoutKey, [PLVRoomDataManager sharedManager].roomData.channelId];
+    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:mixLayoutKey];
     if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
         PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
         if (saveMixLayout >= 1 && saveMixLayout <=3) {
             return saveMixLayout;
         }
     }
-    return PLVMixLayoutType_Tile; // 默认混流布局为平铺模式
+    // 默认混流配置
+    return [PLVRoomDataManager sharedManager].roomData.defaultMixLayoutType;
 }
 
 #pragma mark Callback

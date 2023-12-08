@@ -171,8 +171,18 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign) BOOL appDefaultLandScapeEnabled;
 /// 支持默认开启后置摄像头，YES默认开启后置摄像头，NO不开启（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL appDefaultPureViewEnabled;
+/// 支持默认混流布局类型（仅适用于纯视频开播）
+@property (nonatomic, assign, readonly) PLVMixLayoutType defaultMixLayoutType;
 /// 推流画质优先/流畅优先，默认画质优先
 @property (nonatomic, assign, readonly) PLVQualityPreferenceType pushQualityPreference;
+
+#pragma mark SIP独有属性
+/// 支持SIP模式
+@property (nonatomic, assign) BOOL sipEnabled;
+/// SIP入会号码
+@property (nonatomic, copy) NSString *sipNumber;
+/// SIP入会密码
+@property (nonatomic, copy) NSString *sipPassword;
 
 /// 设置 roomUser
 - (void)setupRoomUser:(PLVRoomUser *)roomUser;
@@ -191,6 +201,9 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 
 /// 前端获取原生用户信息参数
 - (NSDictionary *)nativeAppUserParamsWithExtraParam:(NSDictionary * _Nullable)extraParam;
+
+///  更新入会信息
+- (void)updateSipInfo;
 
 /// 将清晰度枚举值转换成字符串
 /// @return 返回值为nil时表示参数resolutionType出错，无法转换

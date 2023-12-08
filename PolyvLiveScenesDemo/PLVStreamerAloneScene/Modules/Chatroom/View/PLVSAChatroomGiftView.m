@@ -67,7 +67,7 @@
     self.numLabel.hidden = NO;
     
     self.nameLabel.text = userName;
-    self.messageLable.text = [NSString stringWithFormat:PLVLocalizedString(@"赠送 %@"),giftContent];
+    self.messageLable.text = [NSString stringWithFormat:PLVLocalizedString(@"赠送 %@"), PLVLocalizedString(giftContent)];
     self.numLabel.text = [NSString stringWithFormat:@"x %zd", giftNum];
     // 设置礼物图片
     self.giftImgView.hidden = !giftImageUrl;

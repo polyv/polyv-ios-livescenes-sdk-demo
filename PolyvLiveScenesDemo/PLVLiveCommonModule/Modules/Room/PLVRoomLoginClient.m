@@ -502,6 +502,7 @@
         roomData.appWebStartResolutionRatio = PLV_SafeStringForDictKey(data, @"appWebStartResolutionRatio");
         roomData.appWebStartResolutionRatioEnabled = PLV_SafeBoolForDictKey(data, @"appWebStartResolutionRatioEnabled");
         roomData.appDefaultLandScapeEnabled = PLV_SafeBoolForDictKey(data, @"appDefaultLandScapeEnabled");
+        roomData.sipEnabled = PLV_SafeBoolForDictKey(data, @"sipEnabled");
         roomData.appDefaultPureViewEnabled = PLV_SafeBoolForDictKey(data, @"appDefaultPureViewEnabled");
         NSString *preferenceString = PLV_SafeStringForDictKey(data, @"pushQualityPreference");
         [roomData setupPushQualityPreference:preferenceString];
@@ -557,6 +558,15 @@
         [[PLVLiveVideoConfig sharedInstance] configWithUserId:userId appId:appId appSecret:appSecret];
         // 注册日志管理器
         [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:roomData.channelId productType:PLVProductTypeStreamer];
+        
+        if (roomData.sipEnabled) {
+            [PLVLiveVideoAPI requestSIPInfoWithChannelId:PLV_SafeStringForDictKey(data, @"channelId") completion:^(NSDictionary *data) {
+                roomData.sipNumber = PLV_SafeStringForDictKey(data, @"ucSipPhone");
+                roomData.sipPassword = PLV_SafeStringForDictKey(data, @"ucSipId");
+            } failure:^(NSError *error) {
+                PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request SIP Info failed with 【%@】", __FUNCTION__, error);
+            }];
+        }
         
         // 将当前的roomData配置到PLVRoomDataManager进行管理
         [[PLVRoomDataManager sharedManager] configRoomData:roomData];

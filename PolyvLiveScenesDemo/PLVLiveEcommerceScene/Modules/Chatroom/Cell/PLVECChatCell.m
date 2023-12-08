@@ -105,6 +105,24 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
         }
         originY += imageViewSize.height + 4;
         bubbleWidth = lineBreak ? self.cellWidth : MIN(imageViewSize.width + chatLabelSize.width + originX * 3, self.cellWidth);
+    } else if ([self.model.message isKindOfClass:[PLVImageEmotionMessage class]]) { // 图片表情消息布局
+        CGFloat labelWidth = self.cellWidth - originX * 2;
+        CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
+                                                                           options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
+                                                                           context:nil].size;
+        CGFloat chatLabelHeight = ceil(chatLabelSize.height) + 12; // 修复可能出现文字显示不全的情况
+        self.chatLabel.frame = CGRectMake(originX, originY, chatLabelSize.width, chatLabelHeight);
+        PLVImageEmotionMessage *imageMessage = (PLVImageEmotionMessage *)self.model.message;
+        CGSize imageViewSize = [PLVECChatCell calculateImageViewSizeWithImageSize:imageMessage.imageSize];
+        BOOL lineBreak = chatLabelSize.width + imageViewSize.width + 4 * 3 > self.cellWidth;
+        if (lineBreak) { // 图片需要换行
+            originY += chatLabelHeight + 4;
+            self.chatImageView.frame = CGRectMake(originX, originY, imageViewSize.width, imageViewSize.height);
+        } else {
+            self.chatImageView.frame = CGRectMake(CGRectGetMaxX(self.chatLabel.frame) + 4, originY, imageViewSize.width, imageViewSize.height);
+        }
+        originY += imageViewSize.height + 4;
+        bubbleWidth = lineBreak ? self.cellWidth : MIN(imageViewSize.width + chatLabelSize.width + originX * 3, self.cellWidth);
     } else if ([self.model.message isKindOfClass:[PLVRedpackMessage class]]) { // 红包消息布局
         CGFloat labelWidth = self.cellWidth - originX * 2;
         CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
@@ -241,7 +259,9 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     
     if ([model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
         imageViewSize = [PLVECChatCell calculateImageViewSizeWithImageSize:CGSizeMake(60.0, 60.0)];
-        bubbleHeight += imageViewSize.height + 4;
+        BOOL lineBreak = chatLabelRect.size.width + imageViewSize.width + 4 * 3 > cellWidth; // 换行
+        CGFloat chatLabelHeigt = ceil(chatLabelRect.size.height) + 12;
+        bubbleHeight += (lineBreak ? imageViewSize.height + 8 : (- chatLabelHeigt + MAX(chatLabelHeigt, imageViewSize.height + 4)));
     }
     
     return bubbleHeight + 4;
@@ -458,7 +478,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     // 白色文本
     NSString *redpackTypeString = @"";
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
-        redpackTypeString = PLVLocalizedString(@"口令");
+        redpackTypeString = PLVLocalizedString(@"支付宝口令");
     }
     NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), chatModel.user.userName, redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],

@@ -135,7 +135,7 @@ static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
     // 白色文本
     NSString *redpackTypeString = @"";
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
-        redpackTypeString = PLVLocalizedString(@"口令");
+        redpackTypeString = PLVLocalizedString(@"支付宝口令");
     }
     NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), chatModel.user.userName, redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],

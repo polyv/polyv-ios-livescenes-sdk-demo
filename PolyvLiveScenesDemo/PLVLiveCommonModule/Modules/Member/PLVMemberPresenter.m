@@ -227,14 +227,21 @@ PLVSocketManagerProtocol // socket协议
     // 定义 onlieUserDic 为 已连麦成员字典 ，key 是 已连麦成员id，value 是 已连麦成员对象；长度为 M；
     NSMutableDictionary<NSString*, PLVLinkMicOnlineUser*> *onlineUserDic = [[NSMutableDictionary alloc] init];
     for (PLVLinkMicOnlineUser *onlineUser in linkMicOnlineUserArray) {
-        [onlineUserDic setValue:onlineUser forKey:onlineUser.userId];
+        if ([PLVFdUtil checkStringUseable:onlineUser.userId]) {
+            [onlineUserDic setValue:onlineUser forKey:onlineUser.userId];
+        } else if ([PLVFdUtil checkStringUseable:onlineUser.linkMicUserId]) { // userId为空时，使用连麦id记录
+            [onlineUserDic setValue:onlineUser forKey:onlineUser.linkMicUserId];
+        }
     }
     
     // 对于 本地成员列表 中存在的 成员， 更新其 已连麦状态
     for (PLVChatUser *localUser in localUsersArrayCopy) { // 遍历 本地成员列表拷贝（N）
         NSString *userId = localUser.userId;
         if (![PLVFdUtil checkStringUseable:userId]) {
-            continue;
+            userId = localUser.micId; // userId为空时，使用连麦id
+            if (![PLVFdUtil checkStringUseable:userId]) {
+                continue;
+            }
         }
         PLVLinkMicOnlineUser *onlineUser = onlineUserDic[userId]; // 尝试 使用userId 从 已连麦成员字典 中获取 已连麦成员对象
         if (onlineUser) { // 如果 已连麦成员对象 不为空，表示 当前本地成员 在 已连麦成员字典 中

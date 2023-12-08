@@ -10,8 +10,6 @@
 
 " 退出登录" = " Sign Out";
 
-"(%zd人)" = "(%zd people)";
-
 "PLVLSDocumentUploadTips" = "1. 18:00-19:00 is the peak upload period, and the queue time is long. Please upload during the off-peak period;\n2. The maximum document size is 500M, no more than 1000 pages;\n3. Only supports unencrypted ppt, pptx, pdf, doc, docx, xls, xlsx, wps, jpg, jpeg, png formats without audio and video;\n4. For wps or documents containing special fonts or paid fonts, please convert them to pdf first and then upload them";
 
 "PPT 加载失败" = "PPT load failed";
@@ -56,7 +54,7 @@
 
 "成功" = "success";
 
-"成员列表" = "Member list";
+"成员(%zd)" = "Member(%zd)"
 
 "所有文档" = "All documents";
 
@@ -99,6 +97,28 @@
 "返回底部" = "Return to bottom";
 
 "返回查看所有文档" = "Back to view all documents";
+
+"电话连麦号码" = "Phone linkmic number";
+
+"直播时间 %@" = "Live Time %@";
+
+"频道号 %@" = "Channel ID %@";
+
+"电话连麦号码 %@" = "Phone linkmic number %@";
+
+"%@，入会密码 %@" = "%@，Join Password %@";
+
+"复制电话连麦号码成功" = "Copy phone linkmic number success"
+
+"待接通(%zd)" = "Calling In(%zd)";
+
+"呼叫中(%zd)" = "Calling Out(%zd)";
+
+"已接通(%zd)" = "Connected(%zd)";
+
+"去接听" = "Pick Up";
+
+"忽略" = "Ignore";
 
 
 /** icon */

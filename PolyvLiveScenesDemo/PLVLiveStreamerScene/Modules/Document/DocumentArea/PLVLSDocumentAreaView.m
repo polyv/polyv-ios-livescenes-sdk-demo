@@ -531,6 +531,14 @@ UIGestureRecognizerDelegate
     }
 }
 
+- (void)documentView_teacherSetPaintPermission:(BOOL)permission userId:(NSString *)userId {
+    NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    if ([userId isEqualToString:viewerId]) {
+        [self.pptView setDocumentUserInteractionEnabled:permission];
+        [self updateDocumentBrushAuth:permission];
+    }
+}
+
 #pragma mark - PLVSControlToolsView Delegate
 
 - (BOOL)controlToolsView:(PLVLSDocumentToolView *)controlToolsView openBrush:(BOOL)isOpen {
