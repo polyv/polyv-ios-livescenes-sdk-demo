@@ -16,12 +16,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 退出按钮 退出直播时 回调
 - (void)streamerViewControllerLogout:(PLVSAStreamerViewController *)stramerViewController;
 
+/// 嘉宾需要退出重进 回调
+- (void)saStreamerViewControllerGuestNeedReLogin:(PLVSAStreamerViewController *)streamerViewController;
+
 @end
 
 @interface PLVSAStreamerViewController : UIViewController
 
 /// 代理
 @property (nonatomic, weak)id<PLVSAStreamerViewControllerDelegate> delegate;
+
+/// 嘉宾登出页面
+- (void)guestLogout;
 
 @end
 

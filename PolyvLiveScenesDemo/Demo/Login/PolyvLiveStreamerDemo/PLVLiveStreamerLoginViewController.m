@@ -26,7 +26,11 @@ static NSString * const kUserDefaultUserInfo = @"UserDefaultUserInfo";
 static NSString * const kPrivacyPolicyAttributeName = @"PrivacyPolicy";
 static NSString * const kUseProtocolAttributeName = @"UseProtocol";
 
-@interface PLVLiveStreamerLoginViewController () <UITextFieldDelegate, UITextViewDelegate>
+@interface PLVLiveStreamerLoginViewController ()
+<PLVSAStreamerViewControllerDelegate,
+PLVLSStreamerViewControllerDelegate,
+UITextFieldDelegate,
+UITextViewDelegate>
 
 @property (nonatomic, strong) UIImageView *backgroundImageView; //背景图
 @property (nonatomic, strong) UILabel *lbTitle;             // 标题
@@ -429,11 +433,13 @@ static NSString * const kUseProtocolAttributeName = @"UseProtocol";
 
             if (roomData.channelType == PLVChannelTypePPT) {
                 PLVLSStreamerViewController *vctrl = [[PLVLSStreamerViewController alloc] init];
+                vctrl.delegate = weakSelf;
                 vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
                 [weakSelf presentViewController:vctrl animated:YES completion:nil];
             } else if (roomData.channelType == PLVChannelTypeAlone) {
                 PLVSAStreamerViewController *vctrl = [[PLVSAStreamerViewController alloc] init];
                 vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
+                vctrl.delegate = weakSelf;
                 [weakSelf presentViewController:vctrl animated:YES completion:nil];
             }
         }];
@@ -541,6 +547,18 @@ static NSString * const kUseProtocolAttributeName = @"UseProtocol";
 
 - (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
     return NO;
+}
+
+#pragma mark PLVSAStreamerViewControllerDelegate
+- (void)saStreamerViewControllerGuestNeedReLogin:(nonnull PLVSAStreamerViewController *)streamerViewController {
+    [streamerViewController guestLogout];
+    [self loginButtonClickAction];
+}
+
+#pragma mark PLVLSStreamerViewControllerDelegate
+- (void)lsStreamerViewControllerGuestNeedReLogin:(nonnull PLVLSStreamerViewController *)streamerViewController {
+    [streamerViewController logout];
+    [self loginButtonClickAction];
 }
 
 @end

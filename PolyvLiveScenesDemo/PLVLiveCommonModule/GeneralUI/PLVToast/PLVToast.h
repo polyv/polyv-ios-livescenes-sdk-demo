@@ -24,6 +24,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param delay toast 显示时间
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay;
 
+/// 显示 倒计时toast
+/// @param message toast 文本
+/// @param view toast 在视图
+/// @param countdown toast 显示倒计时时间，内部会向下取整
+/// @param finishHandler 倒计时结束执行响应
++ (void)showToastWithCountMessage:(NSString *)message inView:(UIView *)view afterCountdown:(CGFloat)countdown finishHandler:(void(^)(void))finishHandler;
+
 @end
 
 NS_ASSUME_NONNULL_END

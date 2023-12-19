@@ -955,6 +955,20 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
     [onlineUser updateUserIsGuestTransferPermission:NO];
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter wantForceCloseOnlineUserLinkMic:(PLVLinkMicOnlineUser *)onlineUser lastFailed:(BOOL)lastFailed {
+    if (!lastFailed) {
+        [PLVSAUtils showAlertWithTitle:@"" Message:[NSString stringWithFormat:PLVLocalizedString(@"【%@】因网络不稳定，导致下麦失败，可采用强制下麦，用户会自动重新进入房间、也可再次发起正常下麦"), onlineUser.nickname] cancelActionTitle:PLVLocalizedString(@"正常下麦") cancelActionBlock:^{
+            [onlineUser wantCloseUserLinkMic];
+        }  confirmActionTitle:PLVLocalizedString(@"强制下麦") confirmActionBlock:^{
+            [onlineUser wantForceCloseUserLinkMic:!lastFailed];
+        }];
+    } else {
+        [PLVSAUtils showAlertWithTitle:@"" Message:[NSString stringWithFormat:PLVLocalizedString(@"【%@】因网络不稳定，强制下麦失败，可再次尝试 强制下麦"), onlineUser.nickname] cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"强制下麦") confirmActionBlock:^{
+            [onlineUser wantForceCloseUserLinkMic:!lastFailed];
+        }];
+    }
+}
+
 /// ‘是否上课已开始’ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
       classStartedDidChanged:(BOOL)classStarted
@@ -1056,6 +1070,14 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"%@没有接受你的邀请"), waitUser.nickname];
         [PLVSAUtils showToastWithMessage:message inView:self.view];
     }
+}
+
+- (void)plvStreamerPresenterLocalUserLeaveRTCChannelByServerComplete:(PLVStreamerPresenter *)presenter {
+    [PLVSAUtils showToastWithCountMessage:PLVLocalizedString(@"网络加载有误，即将重新进入直播间") inView:self.view afterCountdown:3 finishHandler:^{
+        if ([self.delegate respondsToSelector:@selector(saStreamerViewControllerGuestNeedReLogin:)]) {
+            [self.delegate saStreamerViewControllerGuestNeedReLogin:self];
+        }
+    }];
 }
 
 /// 推流管理器 ‘发生错误’ 回调

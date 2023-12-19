@@ -45,6 +45,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param delay toast 显示时间
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay;
 
+/// 显示自定义倒计时 toast
+/// @param message toast 文本
+/// @param view toast 在视图
+/// @param countdown toast 倒计时显示时间
+/// @param finishHandler 倒计时结束执行响应
++ (void)showToastWithCountMessage:(NSString *)message inView:(UIView *)view afterCountdown:(CGFloat)countdown finishHandler:(void(^ _Nullable)(void))finishHandler;
+
 /// 显示自定义 alert 弹窗便捷方法1
 /// @param message 弹窗文本
 /// @param cancelActionTitle 取消按钮的文本（若传nil，则默认为‘取消’）

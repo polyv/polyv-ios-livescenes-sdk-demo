@@ -65,6 +65,10 @@ static float _safeTopPad = 0;
     [PLVToast showToastWithMessage:message inView:view afterDelay:delay];
 }
 
++ (void)showToastWithCountMessage:(NSString *)message inView:(UIView *)view afterCountdown:(CGFloat)countdown finishHandler:(void(^)(void))finishHandler {
+    [PLVToast showToastWithCountMessage:message inView:view afterCountdown:countdown finishHandler:finishHandler];
+}
+
 + (void)showAlertWithMessage:(NSString *)message
            cancelActionTitle:(NSString *)cancelActionTitle
            cancelActionBlock:(void(^)(void))cancelActionBlock {

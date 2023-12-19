@@ -45,6 +45,8 @@ typedef void (^PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)(PLVLinkMicOnl
 typedef void (^PLVLinkMicOnlineUserScreenShareOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’连麦状态‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserLinkMicStatusChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户的 ‘强制下麦状态’ 改变Block
+typedef void (^PLVLinkMicOnlineUserForceCloseLinkMicChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 
 ///
 /// [事件] 希望用户申请加入连麦 回调Block
@@ -59,6 +61,10 @@ typedef void (^PLVLinkMicOnlineUserWantOpenCameraBlock)(PLVLinkMicOnlineUser * o
 typedef void (^PLVLinkMicOnlineUserWantSwitchFrontCameraBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantFront);
 /// [事件] 希望挂断该用户的连麦 回调Block
 typedef void (^PLVLinkMicOnlineUserWantCloseLinkMicBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [事件] 希望强制挂断该用户的连麦 回调Block
+typedef void (^PLVLinkMicOnlineUserWantForceCloseLinkMicBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL callbackIfFailed);
+/// [事件] 希望强制挂断该用户的连麦失败时再次强制挂断 回调Block
+typedef void (^PLVLinkMicOnlineUserForceCloseLinkMicWhenFailedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [事件] 希望授权用户画笔 回调Block
 typedef void (^PLVLinkMicOnlineUserWantBrushAuthBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL auth);
 /// [事件] 希望授予用户奖杯 回调Block
@@ -166,6 +172,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 仅在 linkMicStatus 状态 有改变时会触发；不保证在主线程回调
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserLinkMicStatusChangedBlock linkMicStatusBlock;
 
+/// [状态] 用户的 ‘强制下麦状态改变’ 回调Block
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserForceCloseLinkMicChangedBlock forceCloseLinkMicChangedBlock;
+
 /// [事件] 希望用户申请加入连麦 回调Block
 ///
 /// @note 由 [wantUserRequestJoinLinkMic] 方法直接触发；
@@ -200,6 +209,15 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 由 [wantCloseUserLinkMic] 方法直接触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantCloseLinkMicBlock wantCloseLinkMicBlock;
+
+/// [事件] 希望强制挂断该用户的连麦 回调Block
+///
+/// @note 由 [wantForceCloseUserLinkMic] 方法直接触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantForceCloseLinkMicBlock wantForceCloseLinkMicBlock;
+
+/// [状态] 用户的 ‘强制下麦失败状态’ 回调Block
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserForceCloseLinkMicWhenFailedBlock forceCloseLinkMicWhenFailedBlock;
 
 /// [事件] 希望授权该用户画笔的 回调Block
 ///
@@ -335,6 +353,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 当前用户已订阅的流类型
 @property (nonatomic, assign) PLVBRTCSubscribeStreamSourceType subscribeStreamType;
 
+/// 当前用户下麦时是否需要强制下麦
+@property (nonatomic, assign, readonly) BOOL forceCloseLinkMicIfNeed;
+
 #pragma mark - [ 方法 ]
 #pragma mark 创建
 
@@ -424,6 +445,12 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 仅在 本地用户为嘉宾时，调用此方法生效；
 - (void)updateUserCurrentLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
 
+/// 启动用户的强制下麦定时器
+- (void)startForceCloseLinkTimer;
+
+/// 取消用户的强制下麦定时器，该方法会重置强制下麦状态
+- (void)cancelForceCloseLinkTimer;
+
 #pragma mark 通知机制
 /// 希望该用户申请加入连麦
 ///
@@ -462,6 +489,18 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 不直接改变该模型内部的任何值；
 ///       而是作为通知机制，直接触发 [wantCloseLinkMicBlock]，由Block实现方去执行相关逻辑
 - (void)wantCloseUserLinkMic;
+
+/// 希望强制挂断该用户的连麦
+///
+/// @note 不直接改变该模型内部的任何值；
+///       而是作为通知机制，直接触发 [wantForceCloseLinkMicBlock]，由Block实现方去执行相关逻辑
+/// @param callbackIfFailed 是否希望回调强制挂断该用户的连麦失败（YES:触发[forceCloseLinkMicWhenFailedBlock]，NO:不触发）
+- (void)wantForceCloseUserLinkMic:(BOOL)callbackIfFailed;
+
+/// 希望强制挂断连麦失败时再次强制挂断该用户连麦
+/// @note 不直接改变该模型内部的任何值
+///       而是作为通知机制，直接触发 [forceCloseLinkMicWhenFailedBlock]，由Block实现方去执行相关逻辑
+- (void)wantForceCloseUserLinkMicWhenFailed;
 
 /// 希望授权该用户画笔
 ///

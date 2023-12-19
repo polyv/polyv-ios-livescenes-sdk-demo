@@ -385,6 +385,12 @@
 "关闭音频连麦失败，请稍后再试" = "Failed to close audio call, please try again later";
 "开启视频连麦失败，请稍后再试" = "Failed to enable video call. Please try again later";
 "开启音频连麦失败，请稍后再试" = "Failed to enable audio call, please try again later.";
+"【%@】因网络不稳定，导致下麦失败，可采用强制下麦，用户会自动重新进入房间、也可再次发起正常下麦" = "Due to an unstable network connection, 【%@】 failed to disconnect from the microphone. The forced mic disconnection can be used, and the user will automatically re-enter the room. Alternatively, you can initiate a normal mic disconnection again.";
+"【%@】因网络不稳定，强制下麦失败，可再次尝试 强制下麦" = "Due to an unstable network connection, 【%@】 failed to disconnect from the microphone . You can try to force mic disconnection again.";
+"网络加载有误，即将重新进入直播间" = "Network loading error, about to re-enter the live broadcast room";
+"下麦提醒" = "Reminder";
+"强制下麦" = "force disconnect";
+"正常下麦" = "normal termination";
 
 /**  推流  */
 "继续直播" = "Continue";

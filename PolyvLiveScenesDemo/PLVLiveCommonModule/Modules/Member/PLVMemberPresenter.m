@@ -395,6 +395,7 @@ PLVSocketManagerProtocol // socket协议
 - (void)updateUsers:(NSDictionary<NSString *, PLVChatUser *> *)newUserDic {
     [self replaceAllUsers:newUserDic];
     [self refreshUserListWithLinkMicOnlineUserArray:self.currentOnlineUserArray];
+    [self refreshUserListWithLinkMicWaitUserArray:self.currentWaitUserArray];
     self.needRefreshUI = YES;
 }
 
@@ -409,7 +410,7 @@ PLVSocketManagerProtocol // socket协议
     PLVChatUser *localUser = self.localUserMDic[userId];
     if (localUser) {
         // 从旧代码复制多来的逻辑，不确定为什么要对 waitUser 属性进行复制
-        if (!localUser.waitUser && localUser.onlineUser) {
+        if (!localUser.waitUser && !localUser.onlineUser) {
             localUser.waitUser = newUser.waitUser;
         }
         self.needRefreshUI = YES;

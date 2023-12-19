@@ -22,6 +22,8 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock> * currentStatusVoiceChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock> * currentSpeakerAuthChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserScreenShareOpenChangedBlock> * currentScreenShareOpenChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSTimer *forceStopLinkMicTimer;
+@property (nonatomic, assign) NSUInteger forceStopLinkMicTimerCount;
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * userId;
@@ -61,6 +63,7 @@
 @property (nonatomic, assign) BOOL isRealMainSpeaker;
 @property (nonatomic, assign) BOOL currentScreenShareOpen;
 @property (nonatomic, assign) PLVLinkMicUserLinkMicStatus linkMicStatus;
+@property (nonatomic, assign) BOOL forceCloseLinkMicIfNeed;
 
 @end
 
@@ -84,6 +87,8 @@
     _volumeChangedBlock = nil;
     _micOpenChangedBlock = nil;
     _cameraOpenChangedBlock = nil;
+    
+    [self stopForceCloseLinkTimer];
 }
 
 
@@ -586,6 +591,42 @@
     }
 }
 
+- (void)startForceCloseLinkTimer {
+    if (self.forceCloseLinkMicIfNeed) {
+        [self stopForceCloseLinkTimer];
+        [self wantForceCloseLinkMicChange];
+        return;
+    }
+    if (!_forceStopLinkMicTimer) {
+        _forceStopLinkMicTimerCount = 40;
+        _forceStopLinkMicTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(forceCloseLinkTimerEvent:) userInfo:nil repeats:YES];
+        [[NSRunLoop currentRunLoop] addTimer:self.forceStopLinkMicTimer forMode:NSRunLoopCommonModes];
+    }
+}
+
+- (void)cancelForceCloseLinkTimer {
+    [self stopForceCloseLinkTimer];
+    self.forceCloseLinkMicIfNeed = NO;
+}
+
+- (void)stopForceCloseLinkTimer {
+    if (_forceStopLinkMicTimer) {
+        [_forceStopLinkMicTimer invalidate];
+        _forceStopLinkMicTimer = nil;
+    }
+    _forceStopLinkMicTimerCount = 40;
+}
+
+- (void)forceCloseLinkTimerEvent:(NSTimer *)timer {
+    if (_forceStopLinkMicTimerCount > 0) {
+        _forceStopLinkMicTimerCount --;
+    } else {
+        [self stopForceCloseLinkTimer];
+        self.forceCloseLinkMicIfNeed = YES;
+        [self wantForceCloseLinkMicChange];
+    }
+}
+
 #pragma mark 通知机制
 - (void)wantUserRequestJoinLinkMic:(BOOL)request{
     if (self.wantRequestJoinLinkMicBlock) {
@@ -628,6 +669,33 @@
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.wantCloseLinkMicBlock(weakSelf); }
+        })
+    }
+}
+
+- (void)wantForceCloseUserLinkMic:(BOOL)callbackIfFailed {
+    if (self.wantForceCloseLinkMicBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantForceCloseLinkMicBlock(weakSelf,callbackIfFailed); }
+        })
+    }
+}
+
+- (void)wantForceCloseLinkMicChange {
+    if (self.forceCloseLinkMicChangedBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.forceCloseLinkMicChangedBlock(weakSelf); }
+        })
+    }
+}
+
+- (void)wantForceCloseUserLinkMicWhenFailed {
+    if (self.forceCloseLinkMicWhenFailedBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.forceCloseLinkMicWhenFailedBlock(weakSelf); }
         })
     }
 }

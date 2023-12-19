@@ -737,6 +737,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
            linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
                  authSpeaker:(BOOL)authSpeaker;
 
+/// 连麦在线用户需要强制下麦
+///
+/// @param presenter 推流管理器
+/// @param onlineUser 连麦在线用户
+/// @param lastFailed 上次强制连麦是否失败
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter wantForceCloseOnlineUserLinkMic:(PLVLinkMicOnlineUser *)onlineUser lastFailed:(BOOL)lastFailed;
+
 /// 已挂断 某位远端连麦用户 事件回调
 ///
 /// @param presenter 推流管理器
@@ -765,6 +772,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param onlineUser 远端用户RTC在线模型
 /// @param screenShareOpen 当前正在讲话的连麦用户数组
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter   remoteOnlineUser:(PLVLinkMicOnlineUser *)onlineUser screenShareOpenChanged:(BOOL)screenShareOpen;
+
+/// 强制挂断 当前连麦用户
+///
+/// @param presenter 推流管理器
+- (void)plvStreamerPresenterLocalUserLeaveRTCChannelByServerComplete:(PLVStreamerPresenter *)presenter;
 
 #pragma mark 管理器状态事件
 /// 推流管理器 ‘发生错误’ 回调

@@ -179,6 +179,7 @@ UICollectionViewDelegate
     __weak typeof(self) weakSelf = self;
     if (!CGRectGetHeight(self.bounds) && finalCellNum > 0) {
         self.collectionReloadBlock = ^{
+            [weakSelf.collectionView layoutIfNeeded];
             [weakSelf.collectionView reloadData];
             [weakSelf showGuideView];
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -187,6 +188,7 @@ UICollectionViewDelegate
             });
         };
     } else {
+        [self.collectionView layoutIfNeeded];
         [self.collectionView reloadData];
         [self showGuideView];
         dispatch_async(dispatch_get_main_queue(), ^{

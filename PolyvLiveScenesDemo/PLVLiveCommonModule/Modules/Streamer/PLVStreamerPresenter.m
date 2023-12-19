@@ -462,12 +462,34 @@ PLVChannelClassManagerDelegate
     __weak typeof(self) weakSelf = self;
     [self.rtcStreamerManager closeRemoteUserLinkMic:onlineUser.originalUserDict emitCompleteBlock:^(BOOL emitSuccess) {
         if (emitCompleteBlock) { emitCompleteBlock(emitSuccess); }
-        [weakSelf callbackForDidCloseRemoteUserLinkMic:onlineUser];
+        if (emitSuccess) {
+            [weakSelf callbackForDidCloseRemoteUserLinkMic:onlineUser];
+        }
+    }];
+}
+
+/// 强制挂断某位远端用户的连麦
+- (void)forceCloseRemoteUserLinkMic:(PLVLinkMicOnlineUser *)onlineUser emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock{
+    __weak typeof(self) weakSelf = self;
+    [self.rtcStreamerManager forceCloseRemoteUserLinkMic:onlineUser.originalUserDict emitCompleteBlock:^(BOOL emitSuccess) {
+        if (emitCompleteBlock) { emitCompleteBlock(emitSuccess); }
+        if (emitSuccess) {
+            [weakSelf callbackForDidCloseRemoteUserLinkMic:onlineUser];
+        }
     }];
 }
 
 /// 挂断全部连麦用户
 - (BOOL)closeAllLinkMicUser{
+    if (self.arraySafeQueue) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_async(self.arraySafeQueue, ^{
+            for (PLVLinkMicOnlineUser * user in  weakSelf.onlineUserMuArray) {
+                [user startForceCloseLinkTimer];
+            }
+            PLVLinkMicOnlineUser * user;
+        });
+    }
     BOOL success = [[PLVSocketManager sharedManager] emitPermissionMessageForCloseAllLinkMicWithTimeout:5.0 callback:nil];
     return success;
 }
@@ -1636,7 +1658,33 @@ PLVChannelClassManagerDelegate
         };
         
         onlineUser.wantCloseLinkMicBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-            [weakSelf closeRemoteUserLinkMic:onlineUser emitCompleteBlock:nil];
+            [weakSelf closeRemoteUserLinkMic:onlineUser emitCompleteBlock:^(BOOL emitSuccess) {
+                if (!emitSuccess) {
+                    [onlineUser startForceCloseLinkTimer];
+                }
+            }];
+        };
+        
+        onlineUser.wantForceCloseLinkMicBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL callbackIfFailed) {
+            [weakSelf forceCloseRemoteUserLinkMic:onlineUser emitCompleteBlock:^(BOOL emitSuccess) {
+                if (!emitSuccess && callbackIfFailed) {
+                    [onlineUser wantForceCloseUserLinkMicWhenFailed];
+                }
+            }];
+        };
+        
+        onlineUser.forceCloseLinkMicChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if (onlineUser.userType == PLVSocketUserTypeGuest) {
+                [weakSelf callbackForWantForceCloseLinkMicUser:onlineUser lastFailed:NO];
+            } else {
+                [onlineUser wantForceCloseUserLinkMic:NO];
+            }
+        };
+        
+        onlineUser.forceCloseLinkMicWhenFailedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if (onlineUser.userType == PLVSocketUserTypeGuest) {
+                [weakSelf callbackForWantForceCloseLinkMicUser:onlineUser lastFailed:YES];
+            }
         };
 
         onlineUser.wantAuthSpeakerBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL wantAuth) {
@@ -2307,6 +2355,14 @@ PLVChannelClassManagerDelegate
     })
 }
 
+- (void)callbackForWantForceCloseLinkMicUser:(PLVLinkMicOnlineUser *)linkMicOnlineUser lastFailed:(BOOL)lastFailed{
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:wantForceCloseOnlineUserLinkMic:lastFailed:)]) {
+            [self.delegate plvStreamerPresenter:self wantForceCloseOnlineUserLinkMic:linkMicOnlineUser lastFailed:lastFailed];
+        }
+    })
+}
+
 - (void)callbackForPushStreamStartedDidChanged{
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:pushStreamStartedDidChanged:)]) {
@@ -2393,6 +2449,12 @@ PLVChannelClassManagerDelegate
             [self.delegate plvStreamerPresenter:self didCloseRemoteUserLinkMic:onlineUser];
         }
     })
+}
+
+- (void)callbackForLocalUserLeaveRTCChannelByServerComplete {
+    if ([self.delegate respondsToSelector:@selector(plvStreamerPresenterLocalUserLeaveRTCChannelByServerComplete:)]) {
+        [self.delegate plvStreamerPresenterLocalUserLeaveRTCChannelByServerComplete:self];
+    }
 }
 
 - (void)callbackForSessionIdDidChanged{
@@ -2680,6 +2742,10 @@ PLVChannelClassManagerDelegate
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager localUserLeaveRTCChannelComplete:(NSString *)channelId{
     [self changeRoomJoinStatusAndCallback:PLVStreamerPresenterRoomJoinStatus_NotJoin];
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager localUserLeaveRTCChannelByServerComplete:(NSString *)channelId {
+    [self callbackForLocalUserLeaveRTCChannelByServerComplete];
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager sessionIdDidChanged:(NSString *)sessionId{
