@@ -30,11 +30,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取当前清晰度
 - (PLVResolutionType)streamerHomeViewCurrentQuality:(PLVSAStreamerHomeView *)homeView;
 
+/// 获取当前推流质量等级
+- (NSString *)streamerHomeViewCurrentStreamQualityLevel:(PLVSAStreamerHomeView *)homeView;
+
 /// 获取连麦开启状态
 - (BOOL)streamerHomeViewChannelLinkMicOpen:(PLVSAStreamerHomeView *)homeView;
 
 /// 改变 清晰度 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type;
+
+/// 改变 清晰度 触发回调（模版中推流质量等级）
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeStreamQualityLevel:(NSString *)streamQualityLevel;
 
 /// 获取当前混流布局
 - (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView;

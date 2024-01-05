@@ -189,6 +189,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// 当前 流清晰度 (默认值:PLVBLinkMicStreamQuality180P)
 @property (nonatomic, assign, readonly) PLVBLinkMicStreamQuality streamQuality;
 
+/// 当前 推流质量等级
+@property (nonatomic, copy, readonly) NSString *streamQualityLevel;
+
 /// 当前 混流布局模式 (值不为 1、2、3 的情况下，默认以 PLVRTCStreamerMixLayoutType_Single 作替代使用)
 @property (nonatomic, assign, readonly) PLVRTCStreamerMixLayoutType mixLayoutType;
 
@@ -339,6 +342,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///
 /// @param streamQuality 流清晰度
 - (void)setupStreamQuality:(PLVBLinkMicStreamQuality)streamQuality;
+
+/// 配置推流模版中的推流质量等级
+///
+/// @note 支持在 未推流、正在推流 期间进行调用
+///
+/// @param streamQualityLevel 推流质量等级
+- (void)setupStreamQualityLevel:(NSString *)streamQualityLevel;
 
 /// 配置视频流画质偏好
 - (void)setupVideoQosPreference:(PLVBRTCVideoQosPreference)qosPreference;

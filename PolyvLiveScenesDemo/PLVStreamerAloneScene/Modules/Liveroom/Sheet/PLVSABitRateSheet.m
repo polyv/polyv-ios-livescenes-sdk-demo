@@ -10,22 +10,28 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVSABitRateTableViewCell.h"
 
-@interface PLVSABitRateSheet()
+@interface PLVSABitRateSheet()<
+UITableViewDataSource,
+UITableViewDelegate
+>
 
 // UI
 @property (nonatomic, strong) UILabel *titleLable;
 // 渐变
 @property (nonatomic, strong) CAGradientLayer *gradientLayer;
-
+@property (nonatomic, strong) UITableView *tableView;
 
 /// 数据
 // 可选清晰度枚举值数组
 @property (nonatomic, strong) NSArray *resolutionTypeArray;
+@property (nonatomic, strong) NSArray<PLVClientPushStreamTemplateVideoParams *> *resolutionDataArray;
 // 可选清晰度字符串数组
 @property (nonatomic, strong) NSArray <NSString *>*resolutionStringArray;
 // 选项按钮数组，只初始化一次
 @property (nonatomic, strong) NSArray <UIButton *> *optionsButtonArray;
+@property (nonatomic, assign, readonly) BOOL isPushStreamTemplateEnable;
 
 @end
 
@@ -43,8 +49,10 @@
 
 - (void)initUI {
     [self.contentView addSubview:self.titleLable];
+    if (self.isPushStreamTemplateEnable) {
+        [self.contentView addSubview:self.tableView];
+    }
 }
-
 
 #pragma mark - [ Override ]
 
@@ -56,6 +64,7 @@
     CGFloat buttonHeight = 36;
     CGFloat buttonY = 83;
     CGFloat contentViewWidth = self.contentView.bounds.size.width;
+    CGFloat contentViewHeight = self.contentView.bounds.size.height;
     CGFloat paddingX = (contentViewWidth - self.optionsButtonArray.count * buttonWidth) / (self.optionsButtonArray.count + 1);
     // iPad时的中间和两边边距
     CGFloat middlePadding = 0;
@@ -68,51 +77,65 @@
         middlePadding = contentViewWidth * 0.052;
         margin = (contentViewWidth - middlePadding * (self.optionsButtonArray.count - 1) - buttonWidth * self.optionsButtonArray.count) / 2;
     }
-    self.titleLable.frame = CGRectMake(titleLableLeft, 32, 90, 18);
     
-    for (int i = 0; i < self.optionsButtonArray.count; i ++) {
-        UIButton *button = self.optionsButtonArray[i];
-        CGFloat buttonX = (i * buttonWidth) + (i + 1) * paddingX;
-        CGFloat paddingY = 24;
-        if (isPad) {
-            buttonX = (i * buttonWidth) + margin + (i * middlePadding);
-            paddingY = 88;
-        }
-        if (isLandscape) {
-            buttonX = titleLableLeft;
-            buttonY = CGRectGetMaxY(self.titleLable.frame) + 31 + (i * buttonHeight) + (i + 1) * paddingY;
-        }
-        button.frame = CGRectMake(buttonX , buttonY, buttonWidth, buttonHeight);
-        
-        if (button.selected) {
-            self.gradientLayer.frame = button.bounds;
+    self.titleLable.frame = CGRectMake(titleLableLeft, 32, 90, 18);
+    if (self.isPushStreamTemplateEnable) {
+        self.tableView.frame = CGRectMake(6, CGRectGetMaxY(self.titleLable.frame) + 32, contentViewWidth - 12, contentViewHeight - CGRectGetMaxY(self.titleLable.frame) - 32);
+    } else {
+        for (int i = 0; i < self.optionsButtonArray.count; i ++) {
+            UIButton *button = self.optionsButtonArray[i];
+            CGFloat buttonX = (i * buttonWidth) + (i + 1) * paddingX;
+            CGFloat paddingY = 24;
+            if (isPad) {
+                buttonX = (i * buttonWidth) + margin + (i * middlePadding);
+                paddingY = 88;
+            }
+            if (isLandscape) {
+                buttonX = titleLableLeft;
+                buttonY = CGRectGetMaxY(self.titleLable.frame) + 31 + (i * buttonHeight) + (i + 1) * paddingY;
+            }
+            button.frame = CGRectMake(buttonX , buttonY, buttonWidth, buttonHeight);
+            
+            if (button.selected) {
+                self.gradientLayer.frame = button.bounds;
+            }
         }
     }
 }
 
-
 #pragma mark - [ Public Method ]
 
-- (void)setupBitRateOptionsWithCurrentBitRate:(PLVResolutionType)currentBitRate {
-    NSMutableArray *buttonMuArray = [[NSMutableArray alloc] initWithCapacity:[self.resolutionStringArray count]];
-    for (int i = 0; i < self.resolutionStringArray.count; i ++) {
-        UIButton *button = [[UIButton alloc] init];
-        button.layer.masksToBounds = YES;
-        button.layer.cornerRadius = 18;
-        button.tag = i;
-        button.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:14];
-        button.backgroundColor = PLV_UIColorFromRGBA(@"#FFFFFF", 0.2);
-        [button setTitleColor:PLV_UIColorFromRGB(@"#FFFFFF") forState:UIControlStateNormal];
-        [button setTitle:self.resolutionStringArray[i] forState:UIControlStateNormal];
-        [button addTarget:self action:@selector(bitRateButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        if ([self.resolutionTypeArray[i] integerValue] == currentBitRate) {
-            button.selected = YES;
-            [button.layer insertSublayer:self.gradientLayer atIndex:0];
+- (void)setupBitRateOptionsWithCurrentBitRate:(PLVResolutionType)currentBitRate streamQualityLevel:(NSString *)streamQualityLevel {
+    if (self.isPushStreamTemplateEnable) {
+        if ([PLVFdUtil checkStringUseable:streamQualityLevel]) {
+            [self.resolutionDataArray enumerateObjectsUsingBlock:^(PLVClientPushStreamTemplateVideoParams * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+                if ([streamQualityLevel isEqualToString:obj.qualityLevel]) {
+                    [self.tableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:idx inSection:0] animated:NO scrollPosition:UITableViewScrollPositionNone];
+                    *stop = YES;
+                }
+            }];
         }
-        [self.contentView addSubview:button];
-        [buttonMuArray addObject:button];
+    } else {
+        NSMutableArray *buttonMuArray = [[NSMutableArray alloc] initWithCapacity:[self.resolutionStringArray count]];
+        for (int i = 0; i < self.resolutionStringArray.count; i ++) {
+            UIButton *button = [[UIButton alloc] init];
+            button.layer.masksToBounds = YES;
+            button.layer.cornerRadius = 18;
+            button.tag = i;
+            button.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:14];
+            button.backgroundColor = PLV_UIColorFromRGBA(@"#FFFFFF", 0.2);
+            [button setTitleColor:PLV_UIColorFromRGB(@"#FFFFFF") forState:UIControlStateNormal];
+            [button setTitle:self.resolutionStringArray[i] forState:UIControlStateNormal];
+            [button addTarget:self action:@selector(bitRateButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+            if ([self.resolutionTypeArray[i] integerValue] == currentBitRate) {
+                button.selected = YES;
+                [button.layer insertSublayer:self.gradientLayer atIndex:0];
+            }
+            [self.contentView addSubview:button];
+            [buttonMuArray addObject:button];
+        }
+        self.optionsButtonArray = [buttonMuArray copy];
     }
-    self.optionsButtonArray = [buttonMuArray copy];
 }
 
 
@@ -163,6 +186,41 @@
     return _resolutionTypeArray;
 }
 
+- (NSArray *)resolutionDataArray {
+    if (!_resolutionDataArray) {
+        NSArray *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+        _resolutionDataArray = [videoParams sortedArrayUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
+            PLVClientPushStreamTemplateVideoParams *videoParams1 = obj1;
+            PLVClientPushStreamTemplateVideoParams *videoParams2 = obj2;
+            if (videoParams2.videoResolution.height != videoParams1.videoResolution.height) {
+                return [@(videoParams2.videoResolution.height) compare:@(videoParams1.videoResolution.height)];
+            } else if (videoParams2.videoBitrate != videoParams1.videoBitrate) {
+                return [@(videoParams2.videoBitrate) compare:@(videoParams1.videoBitrate)];
+            } else {
+                return [@(videoParams2.videoFrameRate) compare:@(videoParams1.videoFrameRate)];
+            }
+        }];
+    }
+    return _resolutionDataArray;
+}
+
+- (UITableView *)tableView {
+    if (!_tableView) {
+        _tableView = [[UITableView alloc] initWithFrame:self.bounds style:UITableViewStylePlain];
+        _tableView.backgroundColor = [UIColor clearColor];
+        _tableView.indicatorStyle = UIScrollViewIndicatorStyleWhite;
+        _tableView.tableFooterView = [UIView new];
+        _tableView.dataSource = self;
+        _tableView.delegate = self;
+        _tableView.showsHorizontalScrollIndicator = NO;
+        _tableView.estimatedRowHeight = 0;
+        _tableView.estimatedSectionFooterHeight = 0;
+        _tableView.estimatedSectionHeaderHeight = 0;
+        _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    }
+    return _tableView;
+}
+
 - (NSArray <NSString *> *)resolutionStringArray {
     if (!_resolutionStringArray) {
         NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:self.resolutionTypeArray.count];
@@ -177,6 +235,10 @@
         _resolutionStringArray = [muArray copy];
     }
     return _resolutionStringArray;
+}
+
+- (BOOL)isPushStreamTemplateEnable {
+    return [PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled;
 }
 
 #pragma mark - Private
@@ -209,5 +271,42 @@
     }
 }
 
+#pragma mark - [ Delegate ]
+
+#pragma mark - UITableView DataSource
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.resolutionDataArray.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    static NSString *cellIdentifier = @"PLVSABitRateTableViewCellID";
+    PLVSABitRateTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
+    if (!cell) {
+        cell = [[PLVSABitRateTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
+    }
+    if (self.resolutionDataArray.count > indexPath.row) {
+        [cell setupVideoParams:self.resolutionDataArray[indexPath.row]];
+    }
+    
+    return cell;
+}
+
+#pragma mark - UITableViewDelegate
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if ([PLVSAUtils sharedUtils].isLandscape) {
+        return 96;
+    }
+    return 80;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    PLVClientPushStreamTemplateVideoParams *videoParams = self.resolutionDataArray[indexPath.row];
+    NSString *message = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH ? videoParams.qualityName : videoParams.qualityEnName;
+    [PLVSAUtils showToastWithMessage:[NSString stringWithFormat:PLVLocalizedString(@"已切换为%@"), message] inView:[PLVSAUtils sharedUtils].homeVC.view];
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvsaBitRateSheet:didSelectStreamQualityLevel:)]) {
+        [self.delegate plvsaBitRateSheet:self didSelectStreamQualityLevel:videoParams.qualityLevel];
+    }
+}
 
 @end

@@ -75,6 +75,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前 流分辨率 (清晰度)
 @property (nonatomic, assign) PLVResolutionType streamQuality;
 
+/// 当前 推流质量等级 (清晰度)
+@property (nonatomic, copy) NSString *streamQualityLevel;
+
 /// 当前 全体禁言 当前是否开启
 @property (nonatomic, assign) BOOL closeRoom;
 

@@ -264,6 +264,10 @@ PLVChannelClassManagerDelegate
     [self.rtcStreamerManager setupStreamQuality:streamQuality];
 }
 
+- (void)setupStreamQualityLevel:(NSString *)streamQualityLevel {
+    [self.rtcStreamerManager setupStreamQualityLevel:streamQualityLevel];
+}
+
 - (void)setupVideoQosPreference:(PLVBRTCVideoQosPreference)qosPreference {
     [self.rtcStreamerManager setupVideoQosPreference:qosPreference];
 }
@@ -751,6 +755,10 @@ PLVChannelClassManagerDelegate
 
 - (PLVBLinkMicStreamQuality)streamQuality{
     return self.rtcStreamerManager.streamQuality;
+}
+
+- (NSString *)streamQualityLevel{
+    return self.rtcStreamerManager.streamQualityLevel;
 }
 
 - (PLVChannelLiveStreamState)currentStreamState{

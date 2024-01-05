@@ -239,8 +239,13 @@ PLVLSMixLayoutSheetDelegate
     self.streamerPresenter.cameraDefaultOpen = self.isOnlyAudio ? NO : YES;
     self.streamerPresenter.cameraDefaultFront = YES;
     
-    PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:self.settingSheet.resolution];
-    [self.streamerPresenter setupStreamQuality:streamQuality];
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+        NSString *streamQualityLevel = self.settingSheet.defaultQualityLevel;
+        [self.streamerPresenter setupStreamQualityLevel:streamQualityLevel];
+    } else {
+        PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:self.settingSheet.resolution];
+        [self.streamerPresenter setupStreamQuality:streamQuality];
+    }
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     [self.streamerPresenter setDefaultVideoQosPreference:roomData.pushQualityPreference];
@@ -796,6 +801,10 @@ PLVLSMixLayoutSheetDelegate
 - (void)settingSheet_didChangeResolution:(PLVResolutionType)resolution {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:resolution];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+}
+
+- (void)settingSheet_didSelectStreamQualityLevel:(NSString *)streamQualityLevel {
+    [self.streamerPresenter setupStreamQualityLevel:streamQualityLevel];
 }
 
 #pragma mark - PLVLSChatroomAreaView Protocol

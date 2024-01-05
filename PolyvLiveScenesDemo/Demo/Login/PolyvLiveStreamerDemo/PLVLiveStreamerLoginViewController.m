@@ -63,6 +63,12 @@ UITextViewDelegate>
     [self updateUI];
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    
+    [self updateUI];
+}
+
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     [PLVNetworkAccessibility stop];

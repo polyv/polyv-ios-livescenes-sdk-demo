@@ -18,6 +18,7 @@ static NSString *const kSettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 
 @interface PLVSAStreamerSettingView ()<
 UITextViewDelegate,
+UIGestureRecognizerDelegate,
 PLVSABitRateSheetDelegate,
 PLVSAMixLayoutSheetDelegate
 >
@@ -101,6 +102,7 @@ PLVSAMixLayoutSheetDelegate
         // 初始化设备方向为 竖屏
         [[PLVSAUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
         UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(endEditingAction:)];
+        tapGes.delegate = self;
         [self addGestureRecognizer:tapGes];
     }
     return self;
@@ -248,7 +250,7 @@ PLVSAMixLayoutSheetDelegate
 - (void)initBitRate:(PLVResolutionType)resolutionType {
     PLVResolutionType maxResolution = [PLVRoomDataManager sharedManager].roomData.maxResolution;
     self.resolutionType = resolutionType > maxResolution ? maxResolution : resolutionType;
-    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType];
+    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType streamQualityLevel:self.defaultQualityLevel];
 }
 
 /// 初始化直播间标题
@@ -311,11 +313,34 @@ PLVSAMixLayoutSheetDelegate
 }
 
 /// 根据当前清晰度改变清晰度按钮标题和icon
-- (void)changeBitRateButtonTitleAndImageWithBitRate:(PLVResolutionType)resolutionType {
-    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
-    int i = (int)resolutionType / 4.0;
-    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
-        [self.bitRateButton setTitle:videoParams[i].qualityName forState:UIControlStateNormal];
+- (void)changeBitRateButtonTitleAndImageWithBitRate:(PLVResolutionType)resolutionType streamQualityLevel:(NSString * _Nullable)streamQualityLevel {
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParamsArray = [PLVLiveVideoConfig sharedInstance].videoParams;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled &&
+        [PLVFdUtil checkArrayUseable:videoParamsArray] &&
+        [PLVFdUtil checkStringUseable:streamQualityLevel]) {
+        __block PLVClientPushStreamTemplateVideoParams *videoParam;
+        [videoParamsArray enumerateObjectsUsingBlock:^(PLVClientPushStreamTemplateVideoParams * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([streamQualityLevel isEqualToString:obj.qualityLevel]) {
+                videoParam = obj;
+                *stop = YES;
+            }
+        }];
+        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) {
+            [self.bitRateButton setTitle:videoParam.qualityName forState:UIControlStateNormal];
+        } else {
+            [self.bitRateButton setTitle:videoParam.qualityEnName forState:UIControlStateNormal];
+        }
+        if ([videoParam.qualityLevel containsString:@"FHD"]) {
+            resolutionType = PLVResolutionType1080P;
+        } else if ([videoParam.qualityLevel containsString:@"SHD"]) {
+            resolutionType = PLVResolutionType720P;
+        } else if ([videoParam.qualityLevel containsString:@"HSD"]) {
+            resolutionType = PLVResolutionType480P;
+        } else if ([videoParam.qualityLevel containsString:@"LSD"]) {
+            resolutionType = PLVResolutionType360P;
+        } else {
+            resolutionType = PLVResolutionType180P;
+        }
     } else {
         switch (resolutionType) {
             case PLVResolutionType1080P:{
@@ -339,16 +364,17 @@ PLVSAMixLayoutSheetDelegate
         }
     }
     
-    if (i == 0) {
+    if (resolutionType == PLVResolutionType180P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sd"]  forState:UIControlStateNormal];
-    } else if (i == 1) {
+    } else if (resolutionType == PLVResolutionType360P) {
+        [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sd"]  forState:UIControlStateNormal];
+    } else if (resolutionType == PLVResolutionType480P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_hd"]  forState:UIControlStateNormal];
-    } else if (i == 2) {
+    } else if (resolutionType == PLVResolutionType720P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_fhd"]  forState:UIControlStateNormal];
-    } else if (i >= 3) {
+    } else if (resolutionType == PLVResolutionType1080P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_uhd"]  forState:UIControlStateNormal];
     }
-    
 }
 
 - (void)showConfigView:(BOOL)show {
@@ -550,13 +576,13 @@ PLVSAMixLayoutSheetDelegate
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat heightScale = isPad ? 0.233 : 0.285;
-        CGFloat widthScale = 0.23;
+        CGFloat heightScale = isPad ? 0.233 : ([PLVFdUtil checkStringUseable:self.defaultQualityLevel] ? 0.50 : 0.285);
+        CGFloat widthScale = [PLVFdUtil checkStringUseable:self.defaultQualityLevel] ? 0.40 : 0.23;
         CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = maxWH * widthScale;
         _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
-        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:self.resolutionType];
+        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:self.resolutionType streamQualityLevel:self.defaultQualityLevel];
         _bitRateSheet.delegate = self;
     }
     return _bitRateSheet;
@@ -614,6 +640,18 @@ PLVSAMixLayoutSheetDelegate
 
 - (BOOL)showMixLayout {
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
+- (NSString *)defaultQualityLevel {
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+        PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+        if (viewerType == PLVRoomUserTypeTeacher) {
+            return [PLVLiveVideoConfig sharedInstance].teacherDefaultQualityLevel;
+        } else if (viewerType == PLVRoomUserTypeGuest) {
+            return [PLVLiveVideoConfig sharedInstance].guestDefaultQualityLevel;
+        }
+    }
+    return nil;
 }
 
 #pragma mark - [ Event ]
@@ -743,13 +781,28 @@ PLVSAMixLayoutSheetDelegate
     }
 }
 
+#pragma mark <UIGestureRecognizerDelegate>
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    if ([NSStringFromClass([touch.view class]) isEqualToString:@"UITableViewCellContentView"] ||
+        [NSStringFromClass([touch.view.superview class]) isEqualToString:@"UITableViewCellContentView"]) {
+        return NO;
+    }
+    return  YES;
+}
 
 #pragma mark <PLVSABitRateSheetDelegate>
 - (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet bitRateButtonClickWithBitRate:(PLVResolutionType)bitRate {
     self.resolutionType = bitRate;
-    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType];
+    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType streamQualityLevel:nil];
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewBitRateButtonClickWithResolutionType:)]) {
         [self.delegate streamerSettingViewBitRateButtonClickWithResolutionType:bitRate];
+    }
+}
+
+- (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet didSelectStreamQualityLevel:(NSString *)streamQualityLevel {
+    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType streamQualityLevel:streamQualityLevel];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewBitRateSheetDidSelectStreamQualityLevel:)]) {
+        [self.delegate streamerSettingViewBitRateSheetDidSelectStreamQualityLevel:streamQualityLevel];
     }
 }
 

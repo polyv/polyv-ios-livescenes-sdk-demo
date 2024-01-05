@@ -170,7 +170,6 @@ PLVECLotteryWidgetViewDelegate
         [self addSubview:self.likeButtonView];
         [self addSubview:self.giftButton];
         [self addSubview:self.questionnaireButton];
-        [self addSubview:self.backButton];
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.chatroomView];
         [self addSubview:self.playerContolView];
@@ -183,6 +182,7 @@ PLVECLotteryWidgetViewDelegate
     [self addSubview:self.lotteryWidgetView];
     [self addSubview:self.moreButton];
     [self addSubview:self.shoppingCartButton];
+    [self addSubview:self.backButton];
 }
 
 #pragma mark - Getter & Setter
@@ -656,13 +656,13 @@ PLVECLotteryWidgetViewDelegate
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     
     self.liveRoomInfoView.frame = CGRectMake(15, 10, 118, 36);
-
+    self.backButton.hidden = ![PLVECUtils sharedUtils].isLandscape || (isPad && !self.backButtonShowOnIpad);
+    if (fullScreen && !self.backButton.hidden) {
+        self.backButton.frame = CGRectMake(15, 16, 24, 24);
+        self.liveRoomInfoView.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame) + 8 , 10, 118, 36);
+    }
+    
     if (self.type == PLVECHomePageType_Live) {
-        self.backButton.hidden = ![PLVECUtils sharedUtils].isLandscape || (isPad && !self.backButtonShowOnIpad);
-        if (fullScreen && !self.backButton.hidden) {
-            self.backButton.frame = CGRectMake(15, 16, 24, 24);
-            self.liveRoomInfoView.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame) + 8 , 10, 118, 36);
-        }
         CGFloat bottomMargin = [PLVECUtils sharedUtils].isLandscape ? 0 : P_SafeAreaBottomEdgeInsets();
         CGFloat rightMargin = [PLVECUtils sharedUtils].isLandscape ? 15 + P_SafeAreaRightEdgeInsets() : 15 ;
         // 聊天室布局
@@ -710,7 +710,7 @@ PLVECLotteryWidgetViewDelegate
         if (fullScreen) {
             self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 120, 308, 114);
         } else {
-            [self.pushView showOnView:self initialFrame:CGRectMake(-(CGRectGetWidth(self.frame)), CGRectGetMinY(self.shoppingCartButton.frame) - 120, CGRectGetWidth(self.bounds) - 110, 114)];
+            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 120, CGRectGetWidth(self.bounds) - 110, 114);
         }
     } else if (self.type == PLVECHomePageType_Playback) {
         // 聊天室布局
@@ -732,7 +732,15 @@ PLVECLotteryWidgetViewDelegate
             widgetOriginY -= (PLVECCardPushButtonViewHeight + 8);
             self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, widgetOriginY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
         }
+        
+        if (fullScreen) {
+            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 120, 308, 114);
+        } else {
+            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 120, CGRectGetWidth(self.bounds) - 110, 114);
+        }
+        [self.playbackListVC viewWillLayoutSubviews];
     }
+    [self.commodityVC viewWillLayoutSubviews];
     
     CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
     self.moreView.frame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(CGRectGetWidth(self.bounds) - 375, 0, 375, CGRectGetHeight(self.bounds)) : CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height);

@@ -183,6 +183,9 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
         case PLVResolutionType720P:
             string = PLVLocalizedString(@"超清");
             break;
+        case PLVResolutionType480P:
+            string = PLVLocalizedString(@"高标清");
+            break;
         case PLVResolutionType360P:
             string = PLVLocalizedString(@"高清");
             break;

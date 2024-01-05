@@ -31,6 +31,8 @@ UITableViewDelegate
 @property (nonatomic, strong) NSArray *resolutionTypeArray; // 可选清晰度枚举值数组
 @property (nonatomic, strong) NSArray <NSString *>*resolutionStringArray; // 可选清晰度字符串数组
 @property (nonatomic, assign) CGFloat sheetWidth; // 父类数据
+@property (nonatomic, strong) NSArray<PLVClientPushStreamTemplateVideoParams *> *resolutionDataArray;
+@property (nonatomic, assign, readonly) BOOL isPushStreamTemplateEnable;
 
 @end
 
@@ -46,6 +48,7 @@ UITableViewDelegate
         [self.contentView addSubview:self.sheetTitleLabel];
         [self.contentView addSubview:self.titleSplitLine];
         [self.contentView addSubview:self.tableView];
+        [self setupDefaultSelectQuality];
     }
     return self;
 }
@@ -68,7 +71,7 @@ UITableViewDelegate
     self.titleSplitLine.frame = CGRectMake(originX, titleSplitLineTop, self.sheetWidth - originX * 2, 1);
     
     CGFloat tableViewOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 35;
-    CGFloat tableViewHeight = self.contentView.frame.size.height - tableViewOriginY - 35;
+    CGFloat tableViewHeight = self.contentView.frame.size.height - tableViewOriginY - 30;
     CGFloat rightPad = PLVLSUtils.safeSidePad;
     self.tableView.frame = CGRectMake(originX, tableViewOriginY, self.sheetWidth - originX - rightPad, tableViewHeight);
 }
@@ -106,8 +109,7 @@ UITableViewDelegate
     if (!_tableView) {
         _tableView = [[UITableView alloc] init];
         _tableView.backgroundColor = [UIColor clearColor];
-        _tableView.allowsSelection = NO;
-        _tableView.scrollEnabled = NO;
+        _tableView.allowsSelection = self.isPushStreamTemplateEnable;
         _tableView.showsVerticalScrollIndicator = NO;
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
         _tableView.tableFooterView = [UIView new];
@@ -162,14 +164,61 @@ UITableViewDelegate
     return _resolutionStringArray;
 }
 
+- (NSArray *)resolutionDataArray {
+    if (!_resolutionDataArray) {
+        NSArray *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
+        _resolutionDataArray = [videoParams sortedArrayUsingComparator:^NSComparisonResult(id  _Nonnull obj1, id  _Nonnull obj2) {
+            PLVClientPushStreamTemplateVideoParams *videoParams1 = obj1;
+            PLVClientPushStreamTemplateVideoParams *videoParams2 = obj2;
+            if (videoParams2.videoResolution.height != videoParams1.videoResolution.height) {
+                return [@(videoParams2.videoResolution.height) compare:@(videoParams1.videoResolution.height)];
+            } else if (videoParams2.videoBitrate != videoParams1.videoBitrate) {
+                return [@(videoParams2.videoBitrate) compare:@(videoParams1.videoBitrate)];
+            } else {
+                return [@(videoParams2.videoFrameRate) compare:@(videoParams1.videoFrameRate)];
+            }
+        }];
+    }
+    return _resolutionDataArray;
+}
+
+- (BOOL)isPushStreamTemplateEnable {
+    return [PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled;
+}
+
+- (NSString *)defaultQualityLevel {
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+        PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+        if (viewerType == PLVRoomUserTypeTeacher) {
+            return [PLVLiveVideoConfig sharedInstance].teacherDefaultQualityLevel;
+        } else if (viewerType == PLVRoomUserTypeGuest) {
+            return [PLVLiveVideoConfig sharedInstance].guestDefaultQualityLevel;
+        }
+    }
+    return nil;
+}
+
 #pragma mark - UITableView DataSource & Delegate
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (self.isPushStreamTemplateEnable) {
+        return self.resolutionDataArray.count;
+    }
     return 1; // 目前只有一个清晰度设置，所以为1
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row == 0) { // 清晰度设置
+    if (self.isPushStreamTemplateEnable) {
+        static NSString *cellIdentifier = @"PLVLSResolutionLevelSheetCellID";
+        PLVLSResolutionLevelSheetCell *cell = [tableView dequeueReusableCellWithIdentifier:cellIdentifier];
+        if (!cell) {
+            cell = [[PLVLSResolutionLevelSheetCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
+        }
+        if (self.resolutionDataArray.count > indexPath.row) {
+            [cell setupVideoParams:self.resolutionDataArray[indexPath.row]];
+        }
+        return cell;
+    } else if (indexPath.row == 0) { // 清晰度设置
         PLVLSSettingSheetCell *cell = (PLVLSSettingSheetCell *)[tableView dequeueReusableCellWithIdentifier:kResolutionCellIdentifier];
         NSInteger selectedIndex = [self selectedResolutionIndex];
         [cell setOptionsArray:self.resolutionStringArray selectedIndex:selectedIndex];
@@ -187,8 +236,21 @@ UITableViewDelegate
     }
 }
 
+#pragma mark - UITableViewDelegate
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (self.isPushStreamTemplateEnable) {
+        return 96;        
+    }
     return [PLVLSSettingSheetCell cellHeight];
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (self.isPushStreamTemplateEnable) {
+        PLVClientPushStreamTemplateVideoParams *videoParams = self.resolutionDataArray[indexPath.row];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(settingSheet_didSelectStreamQualityLevel:)]) {
+            [self.delegate settingSheet_didSelectStreamQualityLevel:videoParams.qualityLevel];
+        }
+    }
 }
 
 #pragma mark - Public
@@ -202,6 +264,18 @@ UITableViewDelegate
 
 #pragma mark - Private
 
+- (void)setupDefaultSelectQuality {
+    if (self.isPushStreamTemplateEnable &&
+        [PLVFdUtil checkStringUseable:self.defaultQualityLevel]) {
+        [self.resolutionDataArray enumerateObjectsUsingBlock:^(PLVClientPushStreamTemplateVideoParams * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([self.defaultQualityLevel isEqualToString:obj.qualityLevel]) {
+                [self.tableView selectRowAtIndexPath:[NSIndexPath indexPathForRow:idx inSection:0] animated:NO scrollPosition:UITableViewScrollPositionNone];
+                *stop = YES;
+            }
+        }];
+    }
+}
+
 /// 将清晰度枚举值转换成字符串
 - (NSString *)stringWithResolutionType:(PLVResolutionType)resolutionType {
     NSString *string = nil;
@@ -211,6 +285,9 @@ UITableViewDelegate
             break;
         case PLVResolutionType720P:
             string = PLVLocalizedString(@"超清");
+            break;
+        case PLVResolutionType480P:
+            string = PLVLocalizedString(@"高标清");
             break;
         case PLVResolutionType360P:
             string = PLVLocalizedString(@"高清");
@@ -263,7 +340,6 @@ UITableViewDelegate
 
 /// 保存当前选择的清晰度到本地
 - (void)saveSelectedResolution:(PLVResolutionType)resolutionType {
-    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
     if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
         [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)resolutionType] forKey:kSettingResolutionLevelKey];
         [[NSUserDefaults standardUserDefaults] synchronize];

@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)settingSheet_didChangeResolution:(PLVResolutionType)resolution;
 
+- (void)settingSheet_didSelectStreamQualityLevel:(NSString *)streamQualityLevel;
+
 @end
 
 /// 清晰度弹层
@@ -24,6 +26,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) PLVResolutionType resolution;
 
 @property (nonatomic, weak) id<PLVLSResolutionSheetDelegate> delegate;
+
+/// 推流视频模版默认清晰度（已区分讲师和嘉宾）
+@property (nonatomic, copy, readonly) NSString *defaultQualityLevel;
 
 @end
 

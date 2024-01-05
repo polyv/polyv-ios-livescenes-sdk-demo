@@ -18,8 +18,9 @@ extern NSString *PLVLCChatroomFunctionGotNotification;
 typedef NS_ENUM (NSInteger, PLVResolutionType) {
     PLVResolutionType180P = 0, // 180p（标清）
     PLVResolutionType360P = 4, // 360p（高清）
-    PLVResolutionType720P = 8, // 720p（超清）
-    PLVResolutionType1080P = 12, // 1080p（超高清）
+    PLVResolutionType480P = 8, // 480p（高标清）
+    PLVResolutionType720P = 12, // 720p（超清）
+    PLVResolutionType1080P = 16, // 1080p（超高清）
 };
 
 /// 推流画质优先设置

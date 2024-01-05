@@ -178,6 +178,8 @@
 
 "高清" = "HD";
 
+"高标清" = "HSD";
+
 "超清" = "FHD";
 
 "超高清" = "UHD";
@@ -406,6 +408,7 @@
 "RTC内部错误，启动音频模块失败，请退出重新登录" = "RTC internal error, failed to start the audio module, please log out and log in again";
 "丢包率：↑%zd.0%% ↓%zd.0%%" = "Packet loss rate:↑%1$zd.0%% ↓%2$zd.0%%";
 "丢包率：↑0.0% ↓0.0%" = "Packet loss rate:↑0.0%1$ ↓0.0%2$";
+"码率：%ldkbps，帧率：%ldfps" = "Bitrate: %ldkbps, Frame Rate: %ldfps";
 "处理中..." = "Processing...";
 "弱网处理" = "Weak net";
 "恢复直播" = "Resume live";
@@ -433,6 +436,7 @@
 "更新Token错误" = "Update Token error";
 "错误" = "Error";
 "音视频权限申请" = "Audio and video permission application";
+"暂不支持" = "Not supported";
 
 /**  美颜  */
 "下颌" = "Jaw";

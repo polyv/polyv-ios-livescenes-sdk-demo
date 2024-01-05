@@ -445,7 +445,11 @@ PLVSABadNetworkSwitchSheetDelegate
     
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentQuality:)]) {
-        self.moreInfoSheet.streamQuality = [self.delegate streamerHomeViewCurrentQuality:self];
+        if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+            self.moreInfoSheet.streamQualityLevel = [self.delegate streamerHomeViewCurrentStreamQualityLevel:self];
+        } else {
+            self.moreInfoSheet.streamQuality = [self.delegate streamerHomeViewCurrentQuality:self];
+        }
     }
 }
 
@@ -661,15 +665,17 @@ PLVSABadNetworkSwitchSheetDelegate
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat heightScale = isPad ? 0.233 : 0.285;
-        CGFloat widthScale = 0.23;
+        BOOL isStreamTemplateEnabled = [PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled;
+        CGFloat heightScale = isPad ? 0.233 : (isStreamTemplateEnabled ? 0.50 : 0.285);
+        CGFloat widthScale = isStreamTemplateEnabled ? 0.40 : 0.23;
         CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = maxWH * widthScale;
         _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
         _bitRateSheet.delegate = self;
         PLVResolutionType type = [self.delegate streamerHomeViewCurrentQuality:self];
-        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:type];
+        NSString *qualityLevel = [self.delegate streamerHomeViewCurrentStreamQualityLevel:self];
+        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:type streamQualityLevel:qualityLevel];
     }
     return _bitRateSheet;
 }
@@ -961,6 +967,14 @@ PLVSABadNetworkSwitchSheetDelegate
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeResolutionType:)]) {
         [self.delegate streamerHomeView:self didChangeResolutionType:bitRate];
         self.moreInfoSheet.streamQuality = bitRate;
+    }
+}
+
+- (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet didSelectStreamQualityLevel:(NSString *)streamQualityLevel {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeStreamQualityLevel:)]) {
+        [self.delegate streamerHomeView:self didChangeStreamQualityLevel:streamQualityLevel];
+        self.moreInfoSheet.streamQualityLevel = streamQualityLevel;
     }
 }
 

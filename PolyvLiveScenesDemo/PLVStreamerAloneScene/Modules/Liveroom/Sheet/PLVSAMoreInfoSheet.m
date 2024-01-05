@@ -103,7 +103,12 @@
 
 - (void)setStreamQuality:(PLVResolutionType)streamQuality {
     _streamQuality = streamQuality;
-    [self setCameraBitRateButtonTitleAndImageWithType:streamQuality];
+    [self setCameraBitRateButtonTitleAndImageWithType:streamQuality streamQualityLevel:self.streamQualityLevel];
+}
+
+- (void)setStreamQualityLevel:(NSString *)streamQualityLevel {
+    _streamQualityLevel = streamQualityLevel;
+    [self setCameraBitRateButtonTitleAndImageWithType:self.streamQuality streamQualityLevel:self.streamQualityLevel];
 }
 
 - (void)setCurrentCameraOpen:(BOOL)currentCameraOpen {
@@ -474,7 +479,7 @@
     return type;
 }
 
-- (void)setCameraBitRateButtonTitleAndImageWithType:(PLVResolutionType)type {
+- (void)setCameraBitRateButtonTitleAndImageWithType:(PLVResolutionType)type streamQualityLevel:(NSString *)streamQualityLevel  {
     NSString *title = @"";
     NSString *imageName = @"";
     switch (type) {
@@ -498,8 +503,33 @@
             break;
     }
     title = [NSString stringWithFormat:@"%@\n  ", title];
-    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
-        title = [NSString stringWithFormat:@"%@\n  ",[self qualityNameWithResolutionType:type]];
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParamsArray = [PLVLiveVideoConfig sharedInstance].videoParams;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled &&
+        [PLVFdUtil checkStringUseable:streamQualityLevel] &&
+        [PLVFdUtil checkArrayUseable:videoParamsArray]) {
+        __block PLVClientPushStreamTemplateVideoParams *videoParam;
+        [videoParamsArray enumerateObjectsUsingBlock:^(PLVClientPushStreamTemplateVideoParams * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([streamQualityLevel isEqualToString:obj.qualityLevel]) {
+                videoParam = obj;
+                *stop = YES;
+            }
+        }];
+        
+        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) {
+            title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityName];
+        } else {
+            title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityEnName];
+        }
+        
+        if ([videoParam.qualityLevel containsString:@"FHD"]) {
+            imageName = @"plvsa_liveroom_btn_uhd";
+        } else if ([videoParam.qualityLevel containsString:@"SHD"]) {
+            imageName = @"plvsa_liveroom_btn_fhd";
+        } else if ([videoParam.qualityLevel containsString:@"HSD"]) {
+            imageName = @"plvsa_liveroom_btn_hd";
+        } else {
+            imageName = @"plvsa_liveroom_btn_sd";
+        }
     }
     
     // iPad时，文案去掉换行
@@ -512,17 +542,6 @@
 
     [self.cameraBitRateButton setTitle:title forState:UIControlStateNormal];
     [self.cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:imageName] forState:UIControlStateNormal];
-}
-
-/// 将清晰度枚举值转换成字符串
-- (NSString *)qualityNameWithResolutionType:(PLVResolutionType)resolutionType {
-    NSString *string = nil;
-    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
-    int i = (int)resolutionType / 4.0;
-    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
-        string = videoParams[i].qualityName;
-    }
-    return string;
 }
 
 /// 讲师、助教、管理员可以禁言操作

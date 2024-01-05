@@ -1115,11 +1115,11 @@ PLVDefaultPageViewDelegate
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer channelInfoDidUpdated:(PLVChannelInfoModel *)channelInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     roomData.playerChannelInfo = channelInfo;
-    /// 设置播放器LOGO
-    [self setupPlayerLogoImage];
     if ([self.delegate respondsToSelector:@selector(playerPresenter:channelInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self channelInfoDidUpdated:channelInfo];
     }
+    /// 设置播放器LOGO
+    [self setupPlayerLogoImage];
 }
 
 /// 直播回放播放器 ‘回放视频信息’ 发生改变

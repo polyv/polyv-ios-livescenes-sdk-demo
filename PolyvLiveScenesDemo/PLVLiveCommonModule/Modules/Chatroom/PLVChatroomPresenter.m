@@ -550,7 +550,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSMutableDictionary *jsonDict = [[NSMutableDictionary alloc] init];
     jsonDict[@"s_userId"] = roomData.roomUser.viewerId;
     jsonDict[@"content"] = content;
-    jsonDict[@"user"] = @{@"nick": @"讲师",
+    jsonDict[@"user"] = @{@"nick": [PLVFdUtil checkStringUseable:roomData.menuInfo.teacherNickname] ? roomData.menuInfo.teacherNickname : @"讲师",
+                          @"actor" : [PLVFdUtil checkStringUseable:roomData.menuInfo.teacherActor] ? roomData.menuInfo.teacherActor : @"讲师",
                           @"pic" : PLVLiveConstantsChatroomTeacherAvatarURL,
                           @"userType" : @"teacher"};
     [self teacherAnswerEvent:jsonDict];

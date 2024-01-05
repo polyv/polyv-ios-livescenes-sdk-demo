@@ -10,6 +10,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVECPlaybackListCell.h"
 #import "PLVECPlaybackListView.h"
+#import "PLVECUtils.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
 #import <MJRefresh/MJRefresh.h>
 
@@ -48,6 +49,16 @@ PLVRoomDataManagerProtocol
 - (void)viewDidLoad {
     [super viewDidLoad];
     [self setupUI];
+}
+
+- (void)viewWillLayoutSubviews {
+    [super viewWillLayoutSubviews];
+    if ([PLVECUtils sharedUtils].landscape) {
+        self.playbackListView.frame = CGRectMake(CGRectGetWidth(self.view.bounds) - 375, 0, 375, CGRectGetMaxY(self.view.bounds));
+    } else {
+        CGFloat height = 410 + P_SafeAreaBottomEdgeInsets();
+        self.playbackListView.frame = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
+    }
 }
 
 #pragma mark - [ Private Methods ]

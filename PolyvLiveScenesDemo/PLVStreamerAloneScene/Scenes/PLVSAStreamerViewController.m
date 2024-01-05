@@ -408,7 +408,11 @@ PLVShareLiveSheetDelegate
     self.streamerPresenter.cameraDefaultFront = !roomData.appDefaultPureViewEnabled;
     
     self.streamerPresenter.previewType = PLVStreamerPresenterPreviewType_UserArray;
-    [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:roomData.defaultResolution]];
+    if ([PLVFdUtil checkStringUseable:self.settingView.defaultQualityLevel]) {
+        [self.streamerPresenter setupStreamQualityLevel:self.settingView.defaultQualityLevel];
+    } else {
+        [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:roomData.defaultResolution]];
+    }
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
     PLVMixLayoutType localMixLayout = [self getLocalMixLayoutType];
@@ -1200,7 +1204,11 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     PLVBLinkMicStreamScale currentStreamScale =[PLVSAUtils sharedUtils].isLandscape ? self.streamScale : PLVBLinkMicStreamScale9_16;
     [self.streamerPresenter setupStreamScale:currentStreamScale];
-    [self.streamerPresenter setupStreamQuality:streamQuality];
+    if ([PLVFdUtil checkStringUseable:self.settingView.defaultQualityLevel]) {
+        [self.streamerPresenter setupStreamQualityLevel:self.streamerPresenter.streamQualityLevel];
+    } else {
+        [self.streamerPresenter setupStreamQuality:streamQuality];
+    }
     if (self.viewerType == PLVRoomUserTypeGuest) {
         [self.streamerPresenter joinRTCChannel];
         [self updateViewState:PLVSAStreamerViewStateSteaming];
@@ -1221,6 +1229,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 - (void)streamerSettingViewBitRateButtonClickWithResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+}
+
+- (void)streamerSettingViewBitRateSheetDidSelectStreamQualityLevel:(NSString *)streamQualityLevel {
+    [self.streamerPresenter setupStreamQualityLevel:streamQualityLevel];
 }
 
 - (void)streamerSettingViewDidClickBeautyButton:(PLVSAStreamerSettingView *)streamerSettingView {
@@ -1333,6 +1345,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     return resolutionType;
 }
 
+- (NSString *)streamerHomeViewCurrentStreamQualityLevel:(PLVSAStreamerHomeView *)homeView {
+    return self.streamerPresenter.streamQualityLevel;
+}
+
 - (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView {
     PLVMixLayoutType mixLayoutType = [PLVRoomData mixLayoutTypeWithStreamerMixLayoutType:self.streamerPresenter.mixLayoutType];
     return mixLayoutType;
@@ -1376,6 +1392,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     [self.streamerPresenter setupStreamQuality:streamQuality];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeStreamQualityLevel:(NSString *)streamQualityLevel {
+    [self.streamerPresenter setupStreamQualityLevel:streamQualityLevel];
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutType:(PLVMixLayoutType)type {

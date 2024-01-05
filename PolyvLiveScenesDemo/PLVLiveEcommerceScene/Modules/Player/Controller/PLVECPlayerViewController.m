@@ -174,6 +174,9 @@ PLVPlayerPresenterDelegate
             displayerRect.size.width = containerSize.width;
             displayerRect.size.height = containerSize.width / self.videoSize.width * self.videoSize.height;
             displayerRect.origin.y = (containerSize.height - displayerRect.size.height) / 2.0;
+            if (displayerRect.origin.y < 0) { // 超出视频高度时，按照屏幕大小
+                displayerRect = self.view.bounds;
+            }
         }
         return displayerRect;
     }
@@ -599,7 +602,7 @@ PLVPlayerPresenterDelegate
         return;
     }
     
-    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live || [PLVRoomDataManager sharedManager].roomData.liveState != PLVChannelLiveStreamState_Live) {
+    if (!((self.playerPresenter.currentVideoType == PLVChannelVideoType_Live && self.playerPresenter.currentStreamState == PLVChannelLiveStreamState_Live) || self.playerPresenter.currentVideoType == PLVChannelVideoType_Playback)) {
         self.fullScreenButton.alpha = 0.0;
         return;
     }
@@ -647,7 +650,7 @@ PLVPlayerPresenterDelegate
     
     self.displayRect = [self getDisplayViewRect];
     self.contentBackgroudView.frame = self.displayRect;
-    self.fullScreenEnable = self.playerPresenter.currentVideoType == PLVChannelVideoType_Live && self.videoSize.width > self.videoSize.height && self.playerPresenter.currentStreamState == PLVChannelLiveStreamState_Live;
+    self.fullScreenEnable = ((self.playerPresenter.currentVideoType == PLVChannelVideoType_Live && self.playerPresenter.currentStreamState == PLVChannelLiveStreamState_Live) || self.playerPresenter.currentVideoType == PLVChannelVideoType_Playback) && self.videoSize.width > self.videoSize.height;
     [self fullScreenButtonShowInView:self.fullScreenEnable];
     self.fullScreenButton.frame = CGRectMake(self.view.bounds.size.width - 36, CGRectGetMaxY(self.contentBackgroudView.frame) + 4, 32, 32);
     self.watermarkView.frame = self.contentBackgroudView.frame;

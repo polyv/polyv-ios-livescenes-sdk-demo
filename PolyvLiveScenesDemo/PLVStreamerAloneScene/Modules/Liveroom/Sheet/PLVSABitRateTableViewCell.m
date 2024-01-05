@@ -1,155 +1,17 @@
 //
-//  PLVLSSettingSheetCell.m
-//  PLVLiveStreamerDemo
+//  PLVSABitRateTableViewCell.m
+//  PolyvLiveScenesDemo
 //
-//  Created by MissYasiky on 2021/3/5.
-//  Copyright © 2021 PLV. All rights reserved.
+//  Created by Sakya on 2023/12/26.
+//  Copyright © 2023 PLV. All rights reserved.
 //
 
-#import "PLVLSSettingSheetCell.h"
-#import "PLVLSUtils.h"
+#import "PLVSABitRateTableViewCell.h"
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
 
-// 选项按钮 tag 常量
-static int kOptionButtonTagConst = 100;
-// 选项按钮最大宽度，屏幕尺寸不足时根据屏幕尺寸进行缩减
-static float kOptionButtonMaxWidth = 78.0;
-
-@interface PLVLSSettingSheetCell ()
-
-@property (nonatomic, strong) NSArray <UIButton *> *optionsButton; // 选项按钮数组，只初始化一次
-@property (nonatomic, strong) UIView *selectedView; // 选中选项底下蓝色圆点
-
-@property (nonatomic, assign) NSInteger selectedIndex; // 选中索引，初始值为 -1
-
-@end
-
-@implementation PLVLSSettingSheetCell
-
-#pragma mark - Life Cycle
-
-- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
-    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
-    if (self) {
-        self.backgroundColor = [UIColor clearColor];
-        self.contentView.backgroundColor = [UIColor clearColor];
-        
-        self.selectedIndex = -1;
-    }
-    return self;
-}
-
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    
-    CGFloat originX = 0;
-    CGFloat buttonWidth = kOptionButtonMaxWidth;
-    CGFloat leftWidth = self.contentView.bounds.size.width - originX;
-    if (leftWidth < [self.optionsButton count] * kOptionButtonMaxWidth) {
-        buttonWidth = floor(leftWidth / self.optionsButton.count);
-    }
-    CGFloat buttonHeight = 30;
-    for (int i = 0; i < [self.optionsButton count]; i++) {
-        CGFloat buttonOriginX = originX + i * buttonWidth;
-        UIButton *button = self.optionsButton[i];
-        button.frame = CGRectMake(buttonOriginX, 0, buttonWidth, buttonHeight);
-    }
-    
-    if (self.selectedIndex != -1) {
-        self.selectedView.frame = CGRectMake(originX + self.selectedIndex * buttonWidth + (buttonWidth - 4) / 2.0, 25, 4, 4);
-    }
-}
-
-#pragma mark - Getter
-
-- (UIView *)selectedView {
-    if (!_selectedView) {
-        _selectedView = [[UIView alloc] init];
-        _selectedView.layer.cornerRadius = 2;
-        _selectedView.layer.masksToBounds = YES;
-        _selectedView.backgroundColor = [UIColor colorWithRed:0x43/255.0 green:0x99/255.0 blue:0xff/255.0 alpha:1];
-    }
-    return _selectedView;
-}
-
-#pragma mark - Action
-
-- (void)optionButtonAction:(id)sender {
-    UIButton *button = (UIButton *)sender;
-    if (button.selected) {
-        return;
-    }
-    
-    NSInteger buttonIndex = button.tag - kOptionButtonTagConst;
-    if (self.didSelectedAtIndex) {
-        self.didSelectedAtIndex(buttonIndex);
-    }
-    
-    for (int i = 0; i < [self.optionsButton count]; i++) {
-        UIButton *button = self.optionsButton[i];
-        button.selected = (i == buttonIndex);
-    }
-    self.selectedIndex = buttonIndex;
-    
-    if (!self.selectedView.superview) {
-        [self.contentView addSubview:self.selectedView];
-    }
-    CGFloat buttonWidth = button.frame.size.width;
-    self.selectedView.frame = CGRectMake(button.frame.origin.x + (buttonWidth - 4) / 2.0, 25, 4, 4);
-}
-
-#pragma mark - Public
-
-- (void)setOptionsArray:(NSArray <NSString *> *)optionsArray selectedIndex:(NSInteger)selectedIndex {
-    [self updateOptions:optionsArray selectedIndex:selectedIndex];
-}
-
-- (void)updateOptions:(NSArray <NSString *> *)options selectedIndex:(NSInteger)selectedIndex {
-    if (!options || ![options isKindOfClass:[NSArray class]]) {
-        return;
-    }
-    
-    if (!self.optionsButton) { // 设置选项只初始化一次就不再改变，cell不做复用
-        NSMutableArray *buttonMuArray = [[NSMutableArray alloc] initWithCapacity:[options count]];
-        for (int i = 0; i < [options count]; i++) {
-            NSString *option = options[i];
-            UIButton *button = [UIButton buttonWithType:UIButtonTypeCustom];
-            button.tag = i + kOptionButtonTagConst;
-            button.titleLabel.font = [UIFont systemFontOfSize:14];
-            [button setTitle:option forState:UIControlStateNormal];
-            UIColor *normalColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
-            UIColor *selectedColor = [UIColor colorWithRed:0x43/255.0 green:0x99/255.0 blue:0xff/255.0 alpha:1];
-            [button setTitleColor:normalColor forState:UIControlStateNormal];
-            [button setTitleColor:selectedColor forState:UIControlStateSelected];
-            [button addTarget:self action:@selector(optionButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-            [buttonMuArray addObject:button];
-            [self.contentView addSubview:button];
-        }
-        self.optionsButton = [buttonMuArray copy];
-    }
-    
-    if (selectedIndex < 0 || selectedIndex >= [self.optionsButton count] ||
-        self.selectedIndex == selectedIndex) {
-        return;
-    }
-    
-    if (self.selectedIndex == -1) {
-        [self.contentView addSubview:self.selectedView];
-    }
-    
-    for (int i = 0; i < [self.optionsButton count]; i++) {
-        UIButton *button = self.optionsButton[i];
-        button.selected = (i == selectedIndex);
-    }
-    self.selectedIndex = selectedIndex;
-}
-
-+ (CGFloat)cellHeight {
-    return 30 + 15;
-}
-@end
-
-@interface PLVLSResolutionLevelSheetCell()
+@interface PLVSABitRateTableViewCell()
 
 @property (nonatomic, strong) UIView *backgroundContentView;
 @property (nonatomic, strong) UILabel *resolutionTitleLabel;
@@ -159,7 +21,7 @@ static float kOptionButtonMaxWidth = 78.0;
 
 @end
 
-@implementation PLVLSResolutionLevelSheetCell
+@implementation PLVSABitRateTableViewCell
 
 #pragma mark - [ Life Cycle ]
 
@@ -253,7 +115,7 @@ static float kOptionButtonMaxWidth = 78.0;
 - (UIImageView *)selectedImageView {
     if (!_selectedImageView) {
         _selectedImageView = [[UIImageView alloc] init];
-        _selectedImageView.image = [PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_selected_icon"];
+        _selectedImageView.image = [PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_selected_icon"];
         _selectedImageView.hidden = YES;
     }
     return _selectedImageView;
@@ -271,7 +133,6 @@ static float kOptionButtonMaxWidth = 78.0;
     }
     resolutionDetails = [resolutionDetails stringByAppendingFormat:PLVLocalizedString(@"码率：%ldkbps，帧率：%ldfps"), videoParams.videoBitrate, videoParams.videoFrameRate];
     self.resolutionDetailsLabel.text = resolutionDetails;
-    
     if (videoParams.isSupportVideoParams) {
         self.notSupportedLabel.hidden = YES;
         self.userInteractionEnabled = YES;
