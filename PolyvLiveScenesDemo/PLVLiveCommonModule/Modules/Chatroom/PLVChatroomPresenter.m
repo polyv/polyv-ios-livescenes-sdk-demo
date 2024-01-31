@@ -14,6 +14,8 @@
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
 static NSString *kPLVChatroomRedpackReceiveKey = @"kPLVChatroomRedpackReceiveKey";
+// 观看次数刷新间隔，单位'秒'
+static NSInteger kPageViewIntervalTime = 60;
 
 @interface PLVChatroomPresenter ()<
 PLVSocketManagerProtocol, // socket协议
@@ -48,6 +50,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 @property (nonatomic, strong) NSArray *imageEmotionArray;
 /// 当前聊天室消息登录用户模型
 @property (nonatomic, strong) PLVChatUser *loginChatUser;
+/// 观看次数定时器
+@property (nonatomic, strong) NSTimer *pageViewTimer;
 
 #pragma mark 内部只读属性
 /// socket处于已连接且登录成功的状态时为YES，默认为NO
@@ -174,6 +178,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     self.getHistoryTime = 0;
     self.getRemindHistoryTime = 0;
+    
+    [self destroyPageViewTimer];
 }
 
 #pragma mark - [ Public Method ]
@@ -235,6 +241,17 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [[NSUserDefaults standardUserDefaults] setObject:[muDict copy] forKey:key];
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
+}
+
+- (void)startPageViewTimer {
+    if (_pageViewTimer) {
+        [self destroyPageViewTimer];
+    }
+    _pageViewTimer = [NSTimer scheduledTimerWithTimeInterval:kPageViewIntervalTime
+                                              target:[PLVFWeakProxy proxyWithTarget:self]
+                                            selector:@selector(pageViewTimerAction:)
+                                            userInfo:nil
+                                             repeats:YES];
 }
 
 #pragma mark - [ Private Method ]
@@ -306,6 +323,11 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [[NSUserDefaults standardUserDefaults] setObject:self.cacheRedpackNoneDict forKey:noneKey];
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
+}
+
+- (void)destroyPageViewTimer {
+    [_pageViewTimer invalidate];
+    _pageViewTimer = nil;
 }
 
 #pragma mark - Getter & Setter
@@ -1743,6 +1765,19 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 - (void)chatroomManager_sendImageMessage:(PLVImageMessage *)message updateProgress:(CGFloat)progress {
     
+}
+
+#pragma mark - [ Event ]
+
+#pragma mark Timer
+- (void)pageViewTimerAction:(NSTimer *)timer {
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    [PLVLiveVideoAPI requestPageViewWithChannelId:channelId completion:^(NSDictionary * _Nonnull data) {
+        NSInteger pageView = PLV_SafeIntegerForDictKey(data, @"pageView");
+        [PLVRoomDataManager sharedManager].roomData.watchCount = pageView;
+    } failure:^(NSError * _Nonnull error) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeChatRoom, @"pageView request failed");
+    }];
 }
 
 #pragma mark - Utils

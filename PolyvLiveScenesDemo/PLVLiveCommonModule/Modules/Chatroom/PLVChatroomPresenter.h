@@ -199,6 +199,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送点赞消息
 - (void)sendLike;
 
+/// 开启观看次数刷新计时器
+- (void)startPageViewTimer;
+
 /// 发送修改昵称消息
 - (void)sendChangeNickname:(NSString *)nickname;
 

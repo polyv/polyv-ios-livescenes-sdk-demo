@@ -521,6 +521,14 @@ PLVECMessagePopupViewDelegate
     [self.homePageView updatePlayerState:liveState == PLVChannelLiveStreamState_Live];
 }
 
+- (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    // 在回放时 更新观看次数
+    if (roomData.videoType == PLVChannelVideoType_Playback){
+        [self.homePageView updateRoomInfoCount:roomData.watchCount];
+    }
+}
+
 #pragma mark PLVSocketManagerProtocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {

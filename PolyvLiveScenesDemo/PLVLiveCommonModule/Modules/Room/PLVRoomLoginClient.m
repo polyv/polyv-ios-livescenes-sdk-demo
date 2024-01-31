@@ -157,7 +157,7 @@
                     
                     // 选择回放列表 默认按点播列表播放
                     if (vodList) {
-                        [PLVLiveVideoAPI requestPlaybackList:channelId listType:@"vod" page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
+                        [PLVLiveVideoAPI requestPlaybackListWithChannelId:channelId listType:@"vod" page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
                             if (error) {
                                 !failure ?: failure(PLVLocalizedString(@"点播列表获取失败"));
                                 PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get channel playbackList failed with【点播列表获取失败】", __FUNCTION__);
@@ -318,7 +318,7 @@
                                         sectionList = list;
                                     }];
                                 }
-                                [PLVLiveVideoAPI requestPlaybackList:channelId listType:channelPlaybackInfo.playbackOrigin page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
+                                [PLVLiveVideoAPI requestPlaybackListWithChannelId:channelId listType:channelPlaybackInfo.playbackOrigin page:1 pageSize:10 appId:appId appSecret:appSecret completion:^(PLVPlaybackListModel * _Nonnull list, NSError * _Nonnull error) {
                                     playbackList = list;
                                 }];
                                 [self playbackLoginWithChannelType:channelType channelId:channelId vid:videoPoolId userId:userId appId:appId appSecret:appSecret completion:^(PLVRoomData *roomData) {

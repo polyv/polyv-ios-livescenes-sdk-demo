@@ -147,6 +147,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:20];
     self.presenter.delegate = self;
     [self.presenter login];
+    [self.presenter startPageViewTimer];
     
     // 监听socket消息
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];

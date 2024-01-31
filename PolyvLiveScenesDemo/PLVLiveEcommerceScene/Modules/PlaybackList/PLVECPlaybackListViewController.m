@@ -87,7 +87,7 @@ PLVRoomDataManagerProtocol
     __weak typeof(self) weakSelf = self;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     NSString *listType = roomData.vodList ? @"vod" : @"playback";
-    [PLVLiveVideoAPI requestPlaybackList:roomData.channelId listType:listType page:pageNumber pageSize:pageSize appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
+    [PLVLiveVideoAPI requestPlaybackListWithChannelId:roomData.channelId listType:listType page:pageNumber pageSize:pageSize appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
         if (!error && playbackList) {
             if (!playbackList.firstPage) {
                 NSMutableArray<PLVPlaybackVideoModel *> *tempDataArray = [weakSelf.dataArray mutableCopy];
