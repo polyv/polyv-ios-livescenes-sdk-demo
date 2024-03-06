@@ -267,6 +267,9 @@ PLVSABadNetworkSwitchSheetDelegate
     [self.memberSheet startClass:start];
     PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = start ? PLVSAToolbarLinkMicButtonStatus_Default : PLVSAToolbarLinkMicButtonStatus_NotLive;
     [self updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
+    if (start) {
+        [self.toolbarAreaView autoOpenMicLinkIfNeed];
+    }
 }
 
 - (void)setPushStreamDuration:(NSTimeInterval)duration {

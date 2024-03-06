@@ -18,6 +18,8 @@
 
 static NSString * const kUserDefaultPlaybackLastTimeInfo = @"UserDefaultPlaybackLastTimeInfo";
 
+static NSString * const kUserDefaultPlaybackMaxPositionInfo = @"UserDefaultPlaybackMaxPositionInfo";
+
 @interface PLVPlayerPresenterBackgroundView : UIView /// 仅 PLVPlayerPresenter 内部使用的背景视图类
 
 /// 子视图布局时机回调
@@ -393,6 +395,16 @@ PLVDefaultPageViewDelegate
         return;
     }
     
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if ([menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) { // 对进度拖拽进行部分限制
+        NSTimeInterval max = MAX(self.playbackMaxPosition, self.livePlaybackPlayer.currentPlaybackTime);
+        if (toTime > max) { // 不符合允许拖拽的条件
+            return;
+        }
+    } else if ([menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) {
+        return;
+    }
+    
     [self.livePlaybackPlayer seekLivePlaybackToTime:toTime];
 }
 
@@ -540,6 +552,53 @@ PLVDefaultPageViewDelegate
     if (lastTime != 0 && (self.livePlaybackPlayer.duration - lastTime) > 1) {
         [self seekLivePlaybackToTime:lastTime];
     }
+}
+
+- (NSTimeInterval)playbackMaxPosition {
+    NSTimeInterval maxPosition = 0.0;
+    NSString *viewerId = self.currentExternalRoomData.roomUser.viewerId;
+    NSMutableDictionary *infoDict = [[[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackMaxPositionInfo] mutableCopy];
+    NSMutableDictionary *maxPositionDict = [infoDict[viewerId] mutableCopy];
+    if (maxPositionDict.count) {
+        if (self.recordEnable && [PLVFdUtil checkStringUseable:self.fileId]) {
+            maxPosition = [maxPositionDict[self.fileId] doubleValue];
+        } else if ([PLVFdUtil checkStringUseable:self.vodId]) {
+            maxPosition = [maxPositionDict[self.vodId] doubleValue];
+        }
+        if (isnan(maxPosition))
+            maxPosition = 0.0;
+    }
+    return maxPosition;
+}
+
+- (void)setPlaybackMaxPosition:(NSTimeInterval)maxPosition {
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if ([menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"]) {
+        return;
+    }
+    
+    if (maxPosition <= 0 || maxPosition <= self.playbackMaxPosition) {
+        return;
+    }
+    
+    NSString *viewerId = self.currentExternalRoomData.roomUser.viewerId;
+    NSMutableDictionary *infoDict = [[[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackMaxPositionInfo] mutableCopy];
+    NSMutableDictionary *maxPositionDict = [infoDict[viewerId] mutableCopy];
+    if (!infoDict) {
+        infoDict = [NSMutableDictionary dictionary];
+    }
+    if (!maxPositionDict) {
+        maxPositionDict = [NSMutableDictionary dictionary];
+    }
+    if (self.recordEnable && [PLVFdUtil checkStringUseable:self.fileId]) {
+        [maxPositionDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:self.fileId];
+    } else if ([PLVFdUtil checkStringUseable:self.vodId]) {
+        [maxPositionDict setObject:@(self.livePlaybackPlayer.currentPlaybackTime) forKey:self.vodId];
+    }
+    if ([PLVFdUtil checkStringUseable:viewerId]) {
+        [infoDict setObject:maxPositionDict forKey:viewerId];
+    }
+    [[NSUserDefaults standardUserDefaults] setObject:infoDict forKey:kUserDefaultPlaybackMaxPositionInfo];
 }
 
 - (void)startCountDownTimer{
@@ -1108,6 +1167,7 @@ PLVDefaultPageViewDelegate
     }
     if (!self.currentLivePlaybackChangingVid) {
         [self savePlaybackLastTime];
+        [self setPlaybackMaxPosition:self.livePlaybackPlayer.currentPlaybackTime];
     }
 }
 

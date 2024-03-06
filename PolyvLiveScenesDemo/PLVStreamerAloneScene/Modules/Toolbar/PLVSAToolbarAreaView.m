@@ -165,6 +165,17 @@
     [self layoutIfNeeded];
 }
 
+- (void)autoOpenMicLinkIfNeed {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVFdUtil checkStringUseable:roomData.userDefaultOpenMicLinkEnabled]) {
+        if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"audio"]) {
+            [self.linkMicMenu audioLinkMicBtnAction];
+        } else if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"video"]) {
+            [self.linkMicMenu videoLinkMicBtnAction];
+        }
+    }
+}
+
 #pragma mark - [ Private Method ]
 
 #pragma mark Getter

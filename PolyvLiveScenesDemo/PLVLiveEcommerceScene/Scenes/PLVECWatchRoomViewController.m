@@ -799,6 +799,10 @@ PLVECMessagePopupViewDelegate
     return self.linkMicAreaView.inLinkMic;
 }
 
+- (NSTimeInterval)homePageView_playbackMaxPosition:(PLVECHomePageView *)homePageView {
+    return self.playerVC.playbackMaxPosition;
+}
+
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPlayLine:(NSUInteger)line {
     [self.playerVC switchPlayLine:line showHud:NO];
 }

@@ -161,7 +161,7 @@ UITableViewDataSource
                 CGRect newFrame = CGRectMake(0, self.bounds.size.height - contentHeight, self.bounds.size.width, contentHeight);
                 self.tableView.frame = newFrame;
                 [self scrollsToBottom:NO];
-                self.tableView.scrollEnabled = NO;
+                self.tableView.scrollEnabled = YES;
             }];
         } else if (CGRectGetHeight(self.bounds) > 0) {
             self.tableView.frame = self.bounds;

@@ -505,6 +505,7 @@
         roomData.sipEnabled = PLV_SafeBoolForDictKey(data, @"sipEnabled");
         roomData.appDefaultPureViewEnabled = PLV_SafeBoolForDictKey(data, @"appDefaultPureViewEnabled");
         NSString *preferenceString = PLV_SafeStringForDictKey(data, @"pushQualityPreference");
+        roomData.userDefaultOpenMicLinkEnabled = PLV_SafeStringForDictKey(data, @"userDefaultOpenMicLinkEnabled");
         [roomData setupPushQualityPreference:preferenceString];
         
         // 初始化直播间用户数据

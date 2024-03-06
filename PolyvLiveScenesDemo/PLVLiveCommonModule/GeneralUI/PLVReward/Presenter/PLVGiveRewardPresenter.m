@@ -46,11 +46,13 @@
                 model.cashReward = cashReward;
                 model.goodId = goodId;
                 if (model.cashReward) {
-                    if (model.goodPrice == 0) {
+                    if (model.goodPrice == 0 && model.goodEnabled) {
                         [modelArray addObject:model];
                     }
                 } else {
-                    [modelArray addObject:model];
+                    if (model.goodEnabled) {
+                        [modelArray addObject:model];
+                    }
                 }
             }
             completion(donateEnabled,payWay,modelArray,pointUnit);

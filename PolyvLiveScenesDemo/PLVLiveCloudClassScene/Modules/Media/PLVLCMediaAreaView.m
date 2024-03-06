@@ -627,7 +627,9 @@ PLVLCDocumentPaintModeViewDelegate
         
         NSMutableArray * modelArray = [[NSMutableArray alloc] init];
         if (downloadModel) { [modelArray addObject:downloadModel]; }
-        [modelArray addObject:speedModel];
+        if ([PLVRoomDataManager sharedManager].roomData.menuInfo.playbackMultiplierEnabled) {
+            [modelArray addObject:speedModel];
+        }
         
         return modelArray;
     }
@@ -1153,6 +1155,10 @@ PLVLCDocumentPaintModeViewDelegate
         return; //暂无直播时，不响应双击播放事件
     }
     
+    if (![PLVRoomDataManager sharedManager].roomData.menuInfo.showPlayButtonEnabled && self.videoType == PLVChannelVideoType_Playback) {
+        return; //回放播放按钮要求隐藏时，不响应双击播放事件
+    }
+    
     if (self.noDelayLiveWatching) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
             [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:wannaPlay];
@@ -1237,6 +1243,15 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (void)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView sliderDragEnd:(CGFloat)currentSliderProgress{
     NSTimeInterval currentTime = self.playerPresenter.duration * currentSliderProgress;
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if ([menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) { // 对进度拖拽进行部分限制
+        NSTimeInterval max = MAX(self.playerPresenter.playbackMaxPosition, self.playerPresenter.currentPlaybackTime);
+        if (currentTime > max) { // 不符合允许拖拽的条件
+            return;
+        }
+    } else if ([menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"]) {
+        return;
+    }
     
     // 拖动进度条后，同步当前进度时间
     [self playerPresenter:self.playerPresenter downloadProgress:0 playedProgress:currentSliderProgress playedTimeString:[PLVFdUtil secondsToString:currentTime] durationTimeString:[PLVFdUtil secondsToString:self.playerPresenter.duration]];

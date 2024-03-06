@@ -28,6 +28,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)refreshWithMenuFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame;
 
+- (void)videoLinkMicBtnAction;
+
+- (void)audioLinkMicBtnAction;
+
 @end
 
 NS_ASSUME_NONNULL_END

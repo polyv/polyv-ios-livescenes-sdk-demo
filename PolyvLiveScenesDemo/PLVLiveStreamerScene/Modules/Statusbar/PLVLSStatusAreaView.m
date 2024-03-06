@@ -752,9 +752,16 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     self.signalButton.userInteractionEnabled = self.inClass;
     self.timeLabel.text = @"00:00:00";
     
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (!start) {
         [self.linkMicMenu resetStatus];
         [self setCurrentLinkMicButtonStatus:PLVLSStatusLinkMicButtonStatus_Default];
+    } else if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVFdUtil checkStringUseable:roomData.userDefaultOpenMicLinkEnabled]) {
+        if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"audio"]) {
+            [self.linkMicMenu audioLinkMicBtnAction];
+        } else if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"video"]) {
+            [self.linkMicMenu videoLinkMicBtnAction];
+        }
     }
     
     [self layoutSubviews];

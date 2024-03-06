@@ -173,6 +173,12 @@ PLVECLotteryWidgetViewDelegate
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.chatroomView];
         [self addSubview:self.playerContolView];
+        if (![PLVRoomDataManager sharedManager].roomData.menuInfo.showPlayButtonEnabled) {
+            self.playerContolView.playButton.hidden = YES;
+        }
+        if (![PLVRoomDataManager sharedManager].roomData.menuInfo.playbackProgressBarEnabled) {
+            self.playerContolView.progressSlider.hidden = YES;
+        }
         if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
             [self addSubview:self.playbackListButton];
         }
@@ -949,6 +955,20 @@ PLVECLotteryWidgetViewDelegate
 
 - (void)playerContolViewSeeking:(PLVECPlayerContolView *)playerContolView {
     NSTimeInterval interval = self.duration * playerContolView.progressSlider.value;
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if ([menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) { // 对进度拖拽进行部分限制
+        NSTimeInterval playbackMaxPosition = 0.0;
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(homePageView_playbackMaxPosition:)]) {
+            playbackMaxPosition = [self.delegate homePageView_playbackMaxPosition:self];
+        }
+        NSTimeInterval max = MAX(playbackMaxPosition, self.currentPlaybackTime);
+        if (interval > max) { // 不符合允许拖拽的条件
+            return;
+        }
+    } else if ([menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"]) {
+        return;
+    }
     
     // 拖动进度条后，同步当前进度时间
     [self updateDowloadProgress:0
@@ -1090,7 +1110,7 @@ PLVECLotteryWidgetViewDelegate
         }
     }
     
-    if (self.type == PLVECHomePageType_Playback) {
+    if (self.type == PLVECHomePageType_Playback && [PLVRoomDataManager sharedManager].roomData.menuInfo.playbackMultiplierEnabled) {
         PLVECMoreViewItem *speedItem = [[PLVECMoreViewItem alloc] init];
         speedItem.title = PLVLocalizedString(PLVECHomePageView_Data_PlaySpeedItemTitle);
         speedItem.iconImageName = @"plvec_live_playspeed_btn";

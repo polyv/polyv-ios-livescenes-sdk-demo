@@ -176,6 +176,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign, readonly) PLVMixLayoutType defaultMixLayoutType;
 /// 推流画质优先/流畅优先，默认画质优先
 @property (nonatomic, assign, readonly) PLVQualityPreferenceType pushQualityPreference;
+/// 连麦默认打开 开关，audio默认开启语音连麦，video默认打开视频连麦，N连麦默认不打开，默认值为N
+@property (nonatomic, copy) NSString *userDefaultOpenMicLinkEnabled;
 
 #pragma mark SIP独有属性
 /// 支持SIP模式

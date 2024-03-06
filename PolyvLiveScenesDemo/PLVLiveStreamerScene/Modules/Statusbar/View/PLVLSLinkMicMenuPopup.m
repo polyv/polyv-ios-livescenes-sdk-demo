@@ -172,7 +172,7 @@
         _videoLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_videoLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];
-        [_videoLinkMicBtn addTarget:self action:@selector(videoLinkMicBtnAction:) forControlEvents:UIControlEventTouchUpInside];
+        [_videoLinkMicBtn addTarget:self action:@selector(videoLinkMicBtnAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _videoLinkMicBtn;
 }
@@ -189,7 +189,7 @@
         _audioLinkMicBtn.titleLabel.font = [UIFont systemFontOfSize:14];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#F0F1F5"] forState:UIControlStateNormal];
         [_audioLinkMicBtn setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateSelected];
-        [_audioLinkMicBtn addTarget:self action:@selector(audioLinkMicBtnAction:) forControlEvents:UIControlEventTouchUpInside];
+        [_audioLinkMicBtn addTarget:self action:@selector(audioLinkMicBtnAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _audioLinkMicBtn;
 }
@@ -243,7 +243,7 @@
 #pragma mark - [ Event ]
 #pragma mark Action
 
-- (void)videoLinkMicBtnAction:(id)sender {
+- (void)videoLinkMicBtnAction {
     if (self.videoLinkMicButtonHandler) {
         BOOL needChange = self.videoLinkMicButtonHandler(!self.videoLinkMicBtn.selected);
         if (needChange) {
@@ -257,7 +257,7 @@
     [self dismiss];
 }
 
-- (void)audioLinkMicBtnAction:(id)sender {
+- (void)audioLinkMicBtnAction {
     if (self.audioLinkMicButtonHandler) {
         BOOL needChange = self.audioLinkMicButtonHandler(!self.audioLinkMicBtn.selected);
         if (needChange) {

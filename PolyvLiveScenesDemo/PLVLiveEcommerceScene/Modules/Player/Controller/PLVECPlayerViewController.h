@@ -136,6 +136,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///       当项目未适配分屏时，建议设置为YES
 @property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
 
+/// 当前直播回放的 最大播放时间点 (单位:秒；仅非直播场景下有值)
+@property (nonatomic, readonly) NSTimeInterval playbackMaxPosition;
+
 /// 播放直播/回放
 - (void)play;
 

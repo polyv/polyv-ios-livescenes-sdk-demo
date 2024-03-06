@@ -27,6 +27,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 @optional
 
+- (NSTimeInterval)homePageView_playbackMaxPosition:(PLVECHomePageView *)homePageView;
+
 /// 切换线路
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPlayLine:(NSUInteger)line;
 

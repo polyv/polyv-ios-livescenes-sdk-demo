@@ -69,6 +69,9 @@ typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
 /// @param status 连麦按钮状态
 - (void)updateLinkMicButtonStatus:(PLVSAToolbarLinkMicButtonStatus)status;
 
+/// 检测是否自动开启连麦
+- (void)autoOpenMicLinkIfNeed;
+
 @end
 
 NS_ASSUME_NONNULL_END

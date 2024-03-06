@@ -449,11 +449,18 @@ PLVPlayerPresenterDelegate
     [singleGestureRecognizer requireGestureRecognizerToFail:doubleGestureRecognizer];
 }
 
+- (NSTimeInterval)playbackMaxPosition {
+    return self.playerPresenter.playbackMaxPosition;
+}
+
 #pragma mark - [ Action ]
 - (void)displayViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
     PLVRoomData *roomData = self.roomData;
     if (roomData.videoType == PLVChannelVideoType_Live &&
         roomData.liveState != PLVChannelLiveStreamState_Live) { // 直播时未开播，不响应播放
+        return;
+    } else if (roomData.videoType == PLVChannelVideoType_Playback &&
+               !roomData.menuInfo.showPlayButtonEnabled) { // 回放时不显示播放按钮，不响应手势
         return;
     }
     

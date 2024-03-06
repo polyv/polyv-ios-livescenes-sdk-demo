@@ -64,6 +64,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前直播回放的 播放时间点 (单位:秒；仅非直播场景下有值)
 @property (nonatomic, readonly) NSTimeInterval currentPlaybackTime;
 
+/// 当前直播回放的 最大播放时间点 (单位:秒；仅非直播场景下有值)
+@property (nonatomic, readonly) NSTimeInterval playbackMaxPosition;
+
 /// 当前直播回放的 视频总时长 (单位:秒；仅非直播场景下有值)
 @property (nonatomic, readonly) NSTimeInterval duration;
 

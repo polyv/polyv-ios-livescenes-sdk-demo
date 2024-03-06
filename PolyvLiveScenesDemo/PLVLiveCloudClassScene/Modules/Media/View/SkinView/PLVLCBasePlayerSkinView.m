@@ -533,7 +533,7 @@ UIGestureRecognizerDelegate>
         [_playButton setImage:[self getImageWithName:@"plvlc_media_skin_play"] forState:UIControlStateNormal];
         [_playButton setImage:[self getImageWithName:@"plvlc_media_skin_pause"] forState:UIControlStateSelected];
         [_playButton addTarget:self action:@selector(playButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _playButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback ? YES : NO);
+        _playButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback || (self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback && ![PLVRoomDataManager sharedManager].roomData.menuInfo.showPlayButtonEnabled) ? YES : NO);
     }
     return _playButton;
 }
@@ -633,7 +633,7 @@ UIGestureRecognizerDelegate>
 }
 
 - (PLVProgressSlider *)progressSlider{
-    if (!_progressSlider && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+    if (!_progressSlider && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback && [PLVRoomDataManager sharedManager].roomData.menuInfo.playbackProgressBarEnabled) {
         _progressSlider = [[PLVProgressSlider alloc] init];
         _progressSlider.delegate = self;
         _progressSlider.userInteractionEnabled = NO;
@@ -644,7 +644,7 @@ UIGestureRecognizerDelegate>
 }
 
 - (PLVLCDocumentToolView *)documentToolView {
-    if (!_documentToolView) {
+    if (!_documentToolView && [PLVRoomDataManager sharedManager].roomData.menuInfo.viewerPptTurningEnabled) {
         _documentToolView = [[PLVLCDocumentToolView alloc] init];
         _documentToolView.delegate = self;
     }
@@ -675,6 +675,7 @@ UIGestureRecognizerDelegate>
 - (void)controlMedia:(UIPanGestureRecognizer *)gestureRecognizer {
     CGPoint p = [gestureRecognizer locationInView:self];
     CGPoint velocty = [gestureRecognizer velocityInView:self];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (gestureRecognizer.state == UIGestureRecognizerStateBegan) {
         self.lastPoint = p;
         if (fabs(velocty.x) <= fabs(velocty.y)) { //在屏幕右边，上下滑动调整声音
@@ -685,6 +686,9 @@ UIGestureRecognizerDelegate>
                 [PLVLCMediaBrightnessView sharedBrightnessView];
             }
         } else {
+            if (!roomData.menuInfo.playbackProgressBarEnabled || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"] || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) {
+                return;
+            }
             self.panType = PLVBasePlayerSKinViewTyoeAdjustProgress;
             self.scrubTime = self.currentPlaybackTime;
             [self setProgressLabelWithCurrentTime:self.currentPlaybackTime durationTime:self.duration];
@@ -705,6 +709,9 @@ UIGestureRecognizerDelegate>
                 break;
             }
             case PLVBasePlayerSKinViewTyoeAdjustProgress: {
+                if (!roomData.menuInfo.playbackProgressBarEnabled || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"] || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) {
+                    break;
+                }
                 if (gestureRecognizer.state == UIGestureRecognizerStateChanged) {
                     self.scrubTime += velocty.x / 200;
                     if (self.scrubTime > self.duration) {

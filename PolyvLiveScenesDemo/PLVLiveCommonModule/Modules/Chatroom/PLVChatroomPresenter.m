@@ -34,10 +34,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 @property (nonatomic, assign) NSUInteger eachLoadingHistoryCount;
 /// 是否正在获取历史记录
 @property (nonatomic, assign) BOOL loadingHistory;
-/// 是否需要延迟请求历史记录，分房间开关为开且房间号为0时为YES
+/// 是否需要延迟请求历史记录，分房间开关为开且房间号为0时为YES 或者当聊天室未登录时为YES
 @property (nonatomic, assign) BOOL delayRequestHistory;
 /// 获取历史记录成功的次数
 @property (nonatomic, assign) NSInteger getHistoryTime;
+/// 获取历史记录中最早的消息时间
+@property (nonatomic, assign) NSTimeInterval lastTime;
+/// 获取历史记录中最早消息时间所包含的消息数量
+@property (nonatomic, assign) NSInteger lastTimeMessageIndex;
 /// 本地缓存的领取红包记录，以红包时间为key，红包id为value，该属性里所记录的红包UI表现为不响应触碰事件
 /// @note 后续程序运行途中无需更新，只用于加载历史聊天消息时更新状态到列表数据源中
 @property (nonatomic, strong) NSDictionary *cacheRedpackReceiveDict;
@@ -94,6 +98,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         // 获取聊天消息条数初始化
         self.eachLoadingHistoryCount = MAX(1, count);
         self.questionHistoryCurrentPage = 0;
+        self.lastTimeMessageIndex = 1;
         
         // 聊天消息缓冲初始化
         _dataSourceLock = dispatch_semaphore_create(1);
@@ -178,6 +183,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     self.getHistoryTime = 0;
     self.getRemindHistoryTime = 0;
+    self.lastTime = 0;
+    self.lastTimeMessageIndex = 1;
     
     [self destroyPageViewTimer];
 }
@@ -608,6 +615,8 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 - (void)changeRoom {
     self.getHistoryTime = 0;
     self.getRemindHistoryTime = 0;
+    self.lastTime = 0;
+    self.lastTimeMessageIndex = 1;
     self.loadingHistory = NO;
     self.loadingRemindHistory = NO;
     [self loadHistory];
@@ -637,10 +646,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
     }
     
-    NSInteger startIndex = self.getHistoryTime * self.eachLoadingHistoryCount;
-    NSInteger endIndex = (self.getHistoryTime + 1) * self.eachLoadingHistoryCount - 1;
-    [PLVLiveVideoAPI requestChatRoomHistoryWithRoomId:roomId startIndex:startIndex endIndex:endIndex completion:^(NSArray * _Nonnull historyList) {
-        
+    if (self.getHistoryTime == 0 && ![PLVSocketManager sharedManager].login) {
+        self.delayRequestHistory = YES;
+        self.loadingHistory = NO;
+        return;
+    }
+    
+    NSString *timestamp = (self.getHistoryTime == 0 || self.lastTime == 0) ? [PLVFdUtil curTimeStamp] : [NSString stringWithFormat:@"%ld", (long)self.lastTime];
+    [PLVLiveVideoAPI requestChatRoomHistoryWithRoomId:roomId index:self.lastTimeMessageIndex size:self.eachLoadingHistoryCount timestamp:timestamp order:NO completion:^(NSArray * _Nonnull historyList) {
         BOOL success = (historyList && [historyList isKindOfClass:[NSArray class]]);
         if (success) {
             if (weakSelf.getHistoryTime == 0) {
@@ -649,9 +662,18 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
             
             if ([historyList count] > 0) {
                 NSMutableArray *tempArray = [[NSMutableArray alloc] initWithCapacity:[historyList count]];
-                for (NSDictionary *dict in historyList) {
+                for (int i = 0; i < [historyList count]; i++) {
+                    NSDictionary *dict = historyList[i];
                     PLVChatModel *model = [weakSelf modelWithHistoryDict:dict];
                     if (model) {
+                        if (model.time > 0) {
+                            if (model.time < weakSelf.lastTime || weakSelf.lastTime == 0) {
+                                weakSelf.lastTime = model.time;
+                                weakSelf.lastTimeMessageIndex = 1;
+                            } else if (model.time == weakSelf.lastTime) {
+                                weakSelf.lastTimeMessageIndex++;
+                            }
+                        }
                         [tempArray addObject:model];
                     }
                 }
