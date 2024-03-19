@@ -17,12 +17,6 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 清晰度 按钮 触发回调
 - (void)moreInfoSheetDidTapCameraBitRateButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
-/// 点击 摄像头 按钮 触发回调
-- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeCameraOpen:(BOOL)cameraOpen;
-
-/// 点击 麦克风 按钮 触发回调
-- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeMicOpen:(BOOL)micOpen;
-
 /// 点击 翻转 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeCameraFront:(BOOL)cameraFront;
 
@@ -50,15 +44,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 混流布局 按钮 触发回调
 - (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 转播布局 按钮 触发回调
+- (void)moreInfoSheetDidTapBroadcastLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层
 @interface PLVSAMoreInfoSheet : PLVSABottomSheet
 
 @property (nonatomic, weak) id<PLVSAMoreInfoSheetDelegate> delegate;
-
-/// 本地用户的 麦克风 当前是否开启
-@property (nonatomic, assign) BOOL currentMicOpen;
 
 /// 本地用户的 摄像头 当前是否开启
 @property (nonatomic, assign) BOOL currentCameraOpen;
@@ -80,6 +74,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 当前 全体禁言 当前是否开启
 @property (nonatomic, assign) BOOL closeRoom;
+
 
 /// 开始上课/结束上课
 /// @param start YES - 开始上课 NO - 结束上课

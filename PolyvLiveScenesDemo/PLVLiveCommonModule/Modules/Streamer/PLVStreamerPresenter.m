@@ -41,6 +41,9 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, weak) PLVLinkMicOnlineUser * realMainSpeakerUser;  // 注意: 弱引用
 @property (nonatomic, weak) PLVLinkMicOnlineUser * localMainSpeakerUser; // 注意: 弱引用
 @property (nonatomic, weak) PLVLinkMicOnlineUser * localOnlineUser; // 注意: 弱引用
+@property (nonatomic, strong) PLVLinkMicOnlineUser *masterRoomUser;
+@property (nonatomic, strong) NSMutableArray <PLVLinkMicOnlineUser *> * masterRoomUserArray;
+
 @property (nonatomic, weak) PLVLinkMicOnlineUser * teacherUser; // 注意: 弱引用 讲师用户
 @property (nonatomic, copy) NSArray <PLVLinkMicWaitUser *> * waitUserArray; // 提供外部读取的数据数组，保存最新的用户数据
 @property (nonatomic, copy) NSArray <PLVLinkMicOnlineUser *> * onlineUserArray; // 提供外部读取的数据数组，保存最新的用户数据
@@ -55,6 +58,10 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, copy, readonly) NSString * channelId;
 @property (nonatomic, copy, readonly) NSString * channelAccountId;
 @property (nonatomic, copy, readonly) NSString * userId;
+@property (nonatomic, copy, readonly) NSString *masterRoomId;
+@property (nonatomic, copy, readonly) NSString *masterRoomMixUserId;
+@property (nonatomic, copy, readonly) NSString *masterRoomMixRoomId;
+@property (nonatomic, copy, readonly) NSString *splashImg;
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 @property (nonatomic, copy, readonly) NSString * linkMicUserNickname;
 @property (nonatomic, copy, readonly) NSString * linkMicUserAvatar;
@@ -132,6 +139,7 @@ PLVChannelClassManagerDelegate
     if (canvasView && [canvasView isKindOfClass:UIView.class]) {
         __weak typeof(self) weakSelf = self;
         [self updateRTCTokenWithCompletion:^(BOOL updateResult) {
+            // 调用一次更新RtcToken
             if (updateResult) {
                 if (!weakSelf.rtcStreamerManager.currentLocalPreviewCanvasModel) {
                     PLVBRTCVideoViewCanvasModel * model = [[PLVBRTCVideoViewCanvasModel alloc]init];
@@ -212,6 +220,10 @@ PLVChannelClassManagerDelegate
     [self resetWaitUserList];
 }
 
+//- (int)joinSubRTCChannelWithChannelId:(NSString *)channelId userId:(NSString *)userId {
+//    return 0;
+//}
+
 #pragma mark 课程事件管理
 - (int)startClass{
     if (self.viewerType != PLVRoomUserTypeTeacher) { return -1; }
@@ -243,6 +255,13 @@ PLVChannelClassManagerDelegate
     if (self.viewerType == PLVRoomUserTypeTeacher) {
         // 讲师下课需要清除用户的主讲权限
         [self cancelAllGuestSpeakerAuth];
+    }
+    
+    //Todo: 销毁逻辑存在问题
+    if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
+        /// 母房间用户
+        [self.rtcStreamerManager unsubscribeSubRTCStreamWithRTCUserId:self.masterRoomMixUserId];
+        self.masterRoomUser = nil;
     }
     
     [self resetOnlineUserListInFinishClass:YES];
@@ -281,6 +300,19 @@ PLVChannelClassManagerDelegate
     }
 }
 
+- (void)setupBroadcastLayoutType:(PLVRTCStreamerBroadcastLayoutType)layoutType {
+    //TODO: 判断是否是主讲且是否是大房间
+    [self.rtcStreamerManager setupBroadcastLayoutType:layoutType];
+}
+
+- (void)setupBroadcastPicture:(BOOL)open {
+    [self.rtcStreamerManager setupMasterRoomMixEnabled:open];
+}
+
+- (void)setupBroadcastSound:(BOOL)open {
+    [self.rtcStreamerManager setupMasterRoomAudioEnabled:open];
+}
+
 #pragma mark CDN流管理
 - (int)startPushStream{
     if (self.micCameraGranted) {
@@ -315,6 +347,15 @@ PLVChannelClassManagerDelegate
 - (void)openLocalUserCamera:(BOOL)openCamera{
     [self.rtcStreamerManager openLocalUserCamera:openCamera completion:nil];
     [self.localOnlineUser updateUserCurrentCameraOpen:openCamera];
+    [self updateMixUserList];
+    self.cameraDefaultOpen = openCamera;
+}
+
+- (void)openLocalUserCamera:(BOOL)openCamera sourceFromImage:(BOOL)imageSource image:(UIImage *)image imageUrl:( NSString *)imageUrl {
+   
+    [self.rtcStreamerManager openLocalUserCamera:openCamera sourceFromImage:imageSource image:image imageUrl:imageUrl completion:nil];
+    [self.localOnlineUser updateUserCurrentCameraOpen:openCamera];
+    [self.localOnlineUser updateUserAvatarUrl:openCamera && imageSource ? imageUrl : @"" image:openCamera && imageSource ? image : nil];
     [self updateMixUserList];
     self.cameraDefaultOpen = openCamera;
 }
@@ -639,6 +680,17 @@ PLVChannelClassManagerDelegate
     return nil;
 }
 
+#pragma mark 转推
+
+- (void)startMatrixPlayback {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [self.rtcStreamerManager startMatrixPlaybackWithVid:roomData.matrixPlaybackVid origin:roomData.matrixPlaybackOrigin skipSeconds:roomData.matrixPlaybackStartPosition completeBlock:^(BOOL success) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvStreamerPresenter:startMatrixPlayback:)]) {
+            [self.delegate plvStreamerPresenter:self startMatrixPlayback:success];
+        }
+    }];
+}
+
 #pragma mark Setter
 - (void)setMicDefaultOpen:(BOOL)micDefaultOpen{
     self.rtcStreamerManager.micDefaultOpen = micDefaultOpen;
@@ -943,6 +995,14 @@ PLVChannelClassManagerDelegate
         _rtcStreamerManager.delegate = self;
         /// 屏幕共享设置
         [_rtcStreamerManager setupAppGroup:PLVStreamerPresenter_AppGroup rtcType:self.rtcType];
+        /// 子房间转播母房间设置
+        if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
+            [_rtcStreamerManager setupMasterRoomId:self.masterRoomId masterRoomMixUserId:self.masterRoomMixUserId masterRoomMixRoomId:self.masterRoomMixRoomId masterRoomWatchStatus:self.supportMatrixPlayback];
+        }
+        /// 母房间设置
+        if ([PLVRoomDataManager sharedManager].roomData.isMasterRoom) {
+            [_rtcStreamerManager setupFeedbackMasterRoom];
+        }
     }
     return _rtcStreamerManager;
 }
@@ -951,13 +1011,12 @@ PLVChannelClassManagerDelegate
     if (!self.rtcStreamerManager.hadJoinedRTC && self.rtcRoomJoinStatus != PLVStreamerPresenterRoomJoinStatus_Joining) {
         __weak typeof(self) weakSelf = self;
         [self updateRTCTokenWithCompletion:^(BOOL updateResult) {
+            // 调用两次更新RtcToken
             if (updateResult) {
                 [weakSelf changeRoomJoinStatusAndCallback:PLVStreamerPresenterRoomJoinStatus_Joining];
                 [weakSelf.rtcStreamerManager joinRTCChannelWithUserRTCId:weakSelf.linkMicUserId];
-                /// 讲师角色，则默认为 ‘主播’ 类型；
-                /// 否则，默认为‘观众’ 类型
-                PLVBLinkMicRoleType roleType = (weakSelf.viewerType == PLVRoomUserTypeTeacher ? PLVBLinkMicRoleBroadcaster : PLVBLinkMicRoleAudience);
-                [weakSelf.rtcStreamerManager switchRoleTypeTo:roleType];
+                /// 所有角色都以听众方式进房，讲师在开始推流后内部切换为讲师角色
+                [weakSelf.rtcStreamerManager switchRoleTypeTo:PLVBLinkMicRoleAudience];
             }else{
                 PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"joinRTCChannel failed, update RTC Token failed");
             }
@@ -1378,6 +1437,18 @@ PLVChannelClassManagerDelegate
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"createLocalOnlineUser failed, localOnlineUser exist %p",_localOnlineUser);
     }
     return localOnlineUser;
+}
+
+- (PLVLinkMicOnlineUser *)createMasterRoomUser {
+    PLVLinkMicOnlineUser * masterRoomUser;
+    if (!_masterRoomUser) {
+        masterRoomUser = [PLVLinkMicOnlineUser masterRoomUserModelWithUserId:self.userId linkMicUserId:self.linkMicUserId masterRoomMixUserId:self.masterRoomMixUserId masterRoomMixRoomId:self.masterRoomMixRoomId splashImg:self.splashImg];
+        _masterRoomUser = masterRoomUser;
+    } else {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"createLocalOnlineUser failed, localOnlineUser exist %p",_localOnlineUser);
+    }
+    
+    return masterRoomUser;
 }
 
 - (void)addOnlineUserIntoOnlineUserArray:(PLVLinkMicOnlineUser *)onlineUser completion:(nullable void (^)(BOOL added))completion{
@@ -2546,6 +2617,22 @@ PLVChannelClassManagerDelegate
     })
 }
 
+- (void)callbackForLocalUserStartRemoteMasterRoomView {
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:waitLinkMicUser:joinAnswer:)]) {
+            [self.delegate plvStreamerPresenter:self startRemoteMasterRoomView:self.masterRoomUser];
+        }
+    })
+}
+
+- (void)callbackForMasterRoomVideoMuted:(BOOL)videoMuted{
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:masterRoomViewVideoMuted:)]) {
+            [self.delegate plvStreamerPresenter:self masterRoomViewVideoMuted:videoMuted];
+        }
+    })
+}
+
 #pragma mark Getter
 - (NSString *)linkMicUserId{
     if (!_linkMicUserId) {
@@ -2584,6 +2671,32 @@ PLVChannelClassManagerDelegate
 
 - (NSString *)channelAccount{
     return [PLVRoomDataManager sharedManager].roomData.channelAccountId;
+}
+
+- (NSString *)masterRoomId {
+    return [PLVRoomDataManager sharedManager].roomData.masterRoomId;
+}
+
+- (NSString *)masterRoomMixUserId {
+    if (self.supportMatrixPlayback) {
+        return [PLVRoomDataManager sharedManager].roomData.matrixPlaybackMixUserId;
+    }
+    return [PLVRoomDataManager sharedManager].roomData.masterRoomMixUserId;
+}
+
+- (NSString *)masterRoomMixRoomId {
+    if (self.supportMatrixPlayback) {
+        return [PLVRoomDataManager sharedManager].roomData.matrixPlaybackMixRoomId;
+    }
+    return [PLVRoomDataManager sharedManager].roomData.masterRoomMixRoomId;
+}
+
+- (BOOL)supportMatrixPlayback {
+    return [PLVRoomDataManager sharedManager].roomData.supportMatrixPlayback;
+}
+
+- (NSString *)splashImg {
+    return [PLVRoomDataManager sharedManager].roomData.splashImg;
 }
 
 - (NSString *)userId{
@@ -2646,6 +2759,7 @@ PLVChannelClassManagerDelegate
     }
     return _teacherUser;
 }
+
 
 
 #pragma mark - [ Event ]
@@ -2748,6 +2862,23 @@ PLVChannelClassManagerDelegate
     }];
 }
 
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager localUserJoinSubRTCChannelComplete:(NSString *)channelId {
+    PLVLinkMicOnlineUser *masterRoomUser = [self createMasterRoomUser];
+    PLVBRTCSubscribeStreamMediaType mediaType = PLVBRTCSubscribeStreamMediaType_Audio | PLVBRTCSubscribeStreamMediaType_Video;
+    __weak typeof(self) weakSelf = self;
+    plv_dispatch_main_async_safe(^{
+        UIView * rtcView = masterRoomUser.rtcView;
+        if (!rtcView.superview) {
+            [weakSelf.preRenderContainer insertSubview:rtcView atIndex:0];
+        }
+        [weakSelf.rtcStreamerManager subscribeSubRTCStreamWithRTCUserId:masterRoomUser.masterRoomMixUserId renderOnView:rtcView mediaType:mediaType];
+        [weakSelf setupBroadcastSound:YES];
+        [weakSelf setupBroadcastPicture:YES];
+        [weakSelf callbackForLocalUserStartRemoteMasterRoomView];
+        [weakSelf callbackForMasterRoomVideoMuted:YES];
+    })
+}
+
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager localUserLeaveRTCChannelComplete:(NSString *)channelId{
     [self changeRoomJoinStatusAndCallback:PLVStreamerPresenterRoomJoinStatus_NotJoin];
 }
@@ -2767,6 +2898,14 @@ PLVChannelClassManagerDelegate
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager rtcStatistics:(PLVRTCStatistics *)statistics {
     [self callbackForStatistics:statistics];
+}
+
+- (void)plvRTCStreamerManager:(PLVLinkMicManager *)manager videoSizeChangedOfUid:(NSString *)uid width:(int)width height:(int)height {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvStreamerPresenter:linkMicUserId:videoSizeChanged:)]) {
+        plv_dispatch_main_async_safe(^{
+            [self.delegate plvStreamerPresenter:self linkMicUserId:uid videoSizeChanged:CGSizeMake(width, height)];
+        });
+    }
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager pushStreamStartedDidChanged:(BOOL)pushStreamStarted{
@@ -2810,6 +2949,17 @@ PLVChannelClassManagerDelegate
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager remoteUser:(NSString *)userRTCId videoMuted:(BOOL)videoMuted{
+    if ([PLVFdUtil checkStringUseable:userRTCId] && [PLVFdUtil checkStringUseable:self.masterRoomMixUserId] && [userRTCId isEqualToString:self.masterRoomMixUserId]) {
+        // 修复母房间可能存在拉流黑屏的问题
+        if (!videoMuted && self.masterRoomUser) {
+            PLVBRTCSubscribeStreamMediaType mediaType = PLVBRTCSubscribeStreamMediaType_Audio | PLVBRTCSubscribeStreamMediaType_Video;
+            __weak typeof(self) weakSelf = self;
+            plv_dispatch_main_async_safe(^{
+                [weakSelf.rtcStreamerManager subscribeSubRTCStreamWithRTCUserId:weakSelf.masterRoomUser.masterRoomMixUserId renderOnView:weakSelf.masterRoomUser.rtcView mediaType:mediaType];
+            });
+        }
+        [self callbackForMasterRoomVideoMuted:videoMuted];
+    }
     [self muteUser:userRTCId mediaType:@"video" mute:videoMuted];
 }
 

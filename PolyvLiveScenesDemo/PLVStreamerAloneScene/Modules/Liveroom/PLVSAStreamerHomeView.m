@@ -33,6 +33,8 @@
 #import "PLVSASwitchSuccessTipsView.h"
 #import "PLVSABadNetworkSwitchSheet.h"
 #import "PLVSAMixLayoutSheet.h"
+#import "PLVSABroadcastLayoutSwitchSheet.h"
+#import "PLVSACameraSettingSheet.h"
 
 // 模块
 #import "PLVChatModel.h"
@@ -53,7 +55,9 @@ PLVSAMoreInfoSheetDelegate,
 PLVSAMemberSheetDelegate,
 PLVSALinkMicTipViewDelegate,
 PLVSAMixLayoutSheetDelegate,
-PLVSABadNetworkSwitchSheetDelegate
+PLVSABadNetworkSwitchSheetDelegate,
+PLVSABroadcastLayoutSwitchSheetDelegate,
+PLVSACameraSettingSheetDelegate
 >
 /// view hierarchy
 ///
@@ -86,11 +90,13 @@ PLVSABadNetworkSwitchSheetDelegate
 @property (nonatomic, strong) PLVSAManageCommoditySheet *commoditySheet; // 商品库弹层
 @property (nonatomic, strong) PLVSABadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
 @property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet; // 混流布局选择面板
+@property (nonatomic, strong) PLVSABroadcastLayoutSwitchSheet *broadcastLayoutSwitchSheet; // 转播布局选择面板
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
 @property (nonatomic, strong) PLVSACameraAndMicphoneStateView *cameraAndMicphoneStateView; // 摄像头与麦克风状态视图
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
 @property (nonatomic, strong) PLVSABadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
 @property (nonatomic, strong) PLVSASwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
+@property (nonatomic, strong) PLVSACameraSettingSheet *cameraSettingSheet; //摄像头设置弹层
 
 /// 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser *localOnlineUser; // 本地用户模型，使用弱引用
@@ -102,6 +108,12 @@ PLVSABadNetworkSwitchSheetDelegate
 @property (nonatomic, assign) NSTimeInterval requestLinkMicLimitTs; // 请求连麦的限制时间
 @property (nonatomic, assign, readonly) BOOL isGuest; // 是否为嘉宾
 @property (nonatomic, assign, readonly) BOOL isGuestManualLinkMic; // 本地嘉宾手动连麦模式
+@property (nonatomic, assign) PLVBroadcastLayoutType broadcastLayoutType;
+@property (nonatomic, strong) NSMutableDictionary *videoSizeDict; // 本地保存的连麦用户的视频尺寸
+@property (nonatomic, assign) BOOL localCameraOpen; // 本地摄像头是否打开
+@property (nonatomic, assign) BOOL masterRoomInFloating; // 母房间用户是否在小屏
+@property (nonatomic, assign) BOOL localUserCameraSourceFromPicture; // 本地摄像头设置是否来源图片
+@property (nonatomic, strong) UIImage *localUserPlaceholderImage; // 本地摄像头设置图片
 
 @end
 
@@ -115,6 +127,7 @@ PLVSABadNetworkSwitchSheetDelegate
     if (self) {
         self.hadShowedLayoutSwitchGuide = NO;
         self.showingLayoutSwitchGuide = NO;
+        self.broadcastLayoutType = PLVBroadcastLayoutType_BottomRight;
         [self setupLocalOnlineUser:localOnlineUser];
         [self setupUIWithLinkMicWindowsView:linkMicWindowsView];
         [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_NotLive];
@@ -186,7 +199,12 @@ PLVSABadNetworkSwitchSheetDelegate
     }
    
     self.linkMicWindowsView.fullScreenContentView.frame = self.bounds;
-    self.statusbarAreaView.frame = CGRectMake(left, top, selfSize.width - left - right, 72);
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (!(roomData.supportMasterRoom && roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) || isLandscape) {
+        self.statusbarAreaView.frame = CGRectMake(left, top, selfSize.width - left - right, 80);
+    } else {
+        self.statusbarAreaView.frame = CGRectMake(left, top, selfSize.width - left - right, 102);
+    }
     self.cameraAndMicphoneStateView.frame = CGRectMake(left, CGRectGetMaxY(self.statusbarAreaView.frame) + cameraAndMicphoneStateViewTop, selfSize.width - left - right, 36);
     self.toolbarAreaView.frame = CGRectMake(left, selfSize.height - bottom - toolbarAreaViewHeight, selfSize.width - left - right, toolbarAreaViewHeight);
    
@@ -232,6 +250,26 @@ PLVSABadNetworkSwitchSheetDelegate
         
         self.switchSuccessTipsView.frame = CGRectMake(originX, originY, width, height);
     }
+    
+    CGFloat marginX = 8;
+    CGSize contentSize = [self currentFloatingWindowsViewSize];
+    CGFloat contentViewWidth = contentSize.width; // 宽
+    CGFloat contentViewHeight = contentSize.height; // 高
+    // 根据横竖屏和位置算出frame数据
+    switch (self.broadcastLayoutType) {
+        case PLVBroadcastLayoutType_BottomRight:
+            self.linkMicWindowsView.floatingContentView.frame = CGRectMake(self.scrollView.contentOffset.x + selfSize.width - contentViewWidth - marginX, selfSize.height - contentViewHeight - 8 , contentViewWidth, contentViewHeight);
+            break;
+        case PLVBroadcastLayoutType_BottomLeft:
+            self.linkMicWindowsView.floatingContentView.frame = CGRectMake(self.scrollView.contentOffset.x + marginX, selfSize.height - contentViewHeight - 8 , contentViewWidth, contentViewHeight);
+            break;
+        case PLVBroadcastLayoutType_TopRight:
+            self.linkMicWindowsView.floatingContentView.frame = CGRectMake(self.scrollView.contentOffset.x + selfSize.width - contentViewWidth - marginX, marginX, contentViewWidth, contentViewHeight);
+            break;
+        case PLVBroadcastLayoutType_TopLeft:
+            self.linkMicWindowsView.floatingContentView.frame = CGRectMake(self.scrollView.contentOffset.x + marginX, marginX , contentViewWidth, contentViewHeight);
+            break;
+    }
 }
 
 #pragma mark - [ Override ]
@@ -241,7 +279,13 @@ PLVSABadNetworkSwitchSheetDelegate
         UIView *childView = self.subviews[i];
         CGPoint childPoint = [self convertPoint:point toView:childView]; // 把当前控件上的坐标系转换成子控件上的坐标系
         UIView *fitView = [childView hitTest:childPoint withEvent:event];
-        if (fitView == self.homePageView) { // homePageView会阻挡底下了连麦视图的手势，所以绕过homePageView把响应链交给底下的连麦视图
+        if (fitView == self.homePageView) { // homePageView会阻挡底下了连麦视图和悬浮窗的手势，所以绕过homePageView把响应链交给底下的连麦视图
+            UIView *grandChildren = self.linkMicWindowsView.floatingContentView;
+            CGPoint grandChildrenPoint = [self convertPoint:point toView:grandChildren];
+            fitView = [grandChildren hitTest:grandChildrenPoint withEvent:event];
+            if (fitView) {
+                return fitView;
+            }
             for (NSInteger j = self.linkMicWindowsView.subviews.count - 1; j >= 0; j--) {
                 UIView *grandChildren = self.linkMicWindowsView.subviews[j];
                 CGPoint grandChildrenPoint = [self convertPoint:point toView:grandChildren];
@@ -286,6 +330,10 @@ PLVSABadNetworkSwitchSheetDelegate
     self.userCount = userCount;
     [_memberSheet updateUserList:userList userCount:userCount onlineCount:onlineCount];
     
+}
+
+- (void)updateVideoSourceType:(PLVVideoSourceType)videoSourceType image:(UIImage *)image imageSourceUrl:(NSString *)imageSourceUrl {
+    [self.cameraSettingSheet updateCameraSetting:videoSourceType == PLVVideoSourceType_Picture placeholderImage:image placeholderImageUrl:imageSourceUrl];
 }
 
 - (void)setLocalMicVolume:(CGFloat)micVolume {
@@ -346,6 +394,7 @@ PLVSABadNetworkSwitchSheetDelegate
 
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState{
     [self.moreInfoSheet changeScreenShareButtonSelectedState:selectedState];
+    [self.toolbarAreaView changeCameraButtonEnableState:!selectedState];
 }
 
 - (void)showBeautySheet:(BOOL)show {
@@ -357,17 +406,42 @@ PLVSABadNetworkSwitchSheetDelegate
     [self.statusbarAreaView updateRTT:statistics.rtt upLoss:statistics.upLoss downLoss:statistics.downLoss];
 }
 
+- (void)updateLinkMicUserId:(NSString *)linkMicUserId VideoSize:(CGSize)videoSize {
+    NSValue *videoSizeValue = [self.videoSizeDict valueForKey:linkMicUserId];
+    CGSize saveVideoSize = videoSizeValue ? videoSizeValue.CGSizeValue : CGSizeZero;
+    if (CGSizeEqualToSize(saveVideoSize, videoSize)) {
+        return;
+    }
+    [self.videoSizeDict setObject:[NSValue valueWithCGSize:videoSize] forKey:linkMicUserId];
+    if ([PLVFdUtil checkStringUseable:linkMicUserId] && [PLVFdUtil checkStringUseable:[PLVRoomDataManager sharedManager].roomData.masterRoomMixUserId] && [linkMicUserId isEqualToString:[PLVRoomDataManager sharedManager].roomData.masterRoomMixUserId]) {
+        [self setNeedsLayout];
+        [self layoutIfNeeded];
+    }
+}
+
 - (void)dismissBottomSheet {
     [self.memberSheet dismiss];
     [self.channelInfoSheet dismiss];
     [self.moreInfoSheet dismiss];
     [self.bitRateSheet dismiss];
     [self.commoditySheet dismiss];
+    [self.broadcastLayoutSwitchSheet dismiss];
+    [self.cameraSettingSheet dismiss];
 }
 
 - (void)showBadNetworkTipsView {
     [self.badNetworkTipsView showAtView:self.homePageView aboveSubview:self.statusbarAreaView];
     
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+}
+
+- (void)switchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating {
+    [self.linkMicWindowsView switchShowMasterRoom:showMasterRoom masterRoomInFloating:inFloating];
+}
+
+- (void)updateFloatingWindowsWithShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating {
+    self.masterRoomInFloating = showMasterRoom && inFloating;
     [self setNeedsLayout];
     [self layoutIfNeeded];
 }
@@ -384,6 +458,8 @@ PLVSABadNetworkSwitchSheetDelegate
     // 迁移连麦窗口到homeView上
     [self.linkMicWindowsView removeFromSuperview];
     [self.scrollView insertSubview:self.linkMicWindowsView atIndex:0];
+
+    [self.scrollView  insertSubview:self.linkMicWindowsView.floatingContentView atIndex:1];
     
     [self.linkMicWindowsView addSubview:self.shadowMaskView];
     [self.scrollView addSubview:self.homePageView];
@@ -402,6 +478,10 @@ PLVSABadNetworkSwitchSheetDelegate
     
     [self.cameraAndMicphoneStateView updateCameraOpen:localOnlineUser.currentCameraOpen micphoneOpen:localOnlineUser.currentMicOpen];
     
+    self.toolbarAreaView.currentMicOpen = localOnlineUser.currentMicOpen;
+    self.toolbarAreaView.currentCameraOpen = localOnlineUser.currentCameraOpen;
+    self.cameraSettingSheet.currentCameraOpen = localOnlineUser.currentCameraOpen;
+    
     __weak typeof(self) weakSelf = self;
     self.localOnlineUser.volumeChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         [weakSelf setLocalMicVolume:onlineUser.currentVolume];
@@ -409,11 +489,12 @@ PLVSABadNetworkSwitchSheetDelegate
     
     self.localOnlineUser.cameraOpenChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         weakSelf.moreInfoSheet.currentCameraOpen = onlineUser.currentCameraOpen;
+        weakSelf.toolbarAreaView.currentCameraOpen = onlineUser.currentCameraOpen;
         [weakSelf.cameraAndMicphoneStateView updateCameraOpen:onlineUser.currentCameraOpen micphoneOpen:onlineUser.currentMicOpen];
     };
     
     self.localOnlineUser.micOpenChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-        weakSelf.moreInfoSheet.currentMicOpen = onlineUser.currentMicOpen;
+        weakSelf.toolbarAreaView.currentMicOpen = onlineUser.currentMicOpen;
         [weakSelf.cameraAndMicphoneStateView updateCameraOpen:onlineUser.currentCameraOpen micphoneOpen:onlineUser.currentMicOpen];
     };
     
@@ -437,7 +518,6 @@ PLVSABadNetworkSwitchSheetDelegate
 - (void)setupMoreInfoSheetData {
     // 初始化
     self.moreInfoSheet.currentCameraOpen = self.localOnlineUser.currentCameraOpen;
-    self.moreInfoSheet.currentMicOpen = self.localOnlineUser.currentMicOpen;
     self.moreInfoSheet.currentCameraFront = self.localOnlineUser.currentCameraFront;
     self.moreInfoSheet.closeRoom = self.chatroomAreaView.closeRoom;
     self.moreInfoSheet.currentCameraMirror = self.localOnlineUser.localVideoMirrorMode == PLVBRTCVideoMirrorMode_Auto;
@@ -454,7 +534,7 @@ PLVSABadNetworkSwitchSheetDelegate
 }
 
 - (void)showLayoutSwitchGuideWithUserCount:(NSInteger)userCount {
-    if (self.isGuest || userCount < 2) {
+    if (self.isGuest || userCount < 2 || [PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
         self.showingLayoutSwitchGuide = NO;
         [self.layoutSwitchGuideView showLinkMicLayoutSwitchGuide:NO];
         return;
@@ -558,6 +638,35 @@ PLVSABadNetworkSwitchSheetDelegate
         [_requestLinkMicTimer invalidate];
         _requestLinkMicTimer = nil;
     }
+}
+
+// 获取实际子母直播间模式悬浮窗的尺寸
+- (CGSize)currentFloatingWindowsViewSize {
+    CGSize size = CGSizeZero;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentFloatingContentSize:)]) {
+        size = [self.delegate streamerHomeViewCurrentFloatingContentSize:self];
+    }
+
+    if (size.width == 0 || size.height == 0) {
+        size = [PLVSAUtils sharedUtils].isLandscape ? CGSizeMake(16, 9):CGSizeMake(9, 16);
+    }
+    
+    CGFloat aspectRatio = size.height / size.width;
+    CGFloat scaleSize = 0.333333;
+    if (roomData.subRoomScaleSize > 0 && roomData.subRoomScaleSize < 0.333333) {
+        scaleSize = roomData.subRoomScaleSize;
+    }
+    CGFloat contentViewWidth;
+    CGFloat contentViewHeight;
+    if (self.bounds.size.width * aspectRatio > self.bounds.size.height) {
+        contentViewHeight = self.bounds.size.height * scaleSize;
+        contentViewWidth = contentViewHeight / aspectRatio;
+    } else {
+        contentViewWidth = self.bounds.size.width * scaleSize;
+        contentViewHeight = contentViewWidth * aspectRatio;
+    }
+    return CGSizeMake(contentViewWidth, contentViewHeight);
 }
 
 #pragma mark Getter & Setter
@@ -741,6 +850,21 @@ PLVSABadNetworkSwitchSheetDelegate
     return _mixLayoutSheet;
 }
 
+- (PLVSABroadcastLayoutSwitchSheet *)broadcastLayoutSwitchSheet {
+    if (!_broadcastLayoutSwitchSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.295 : 0.446;
+        CGFloat widthScale = 0.37;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _broadcastLayoutSwitchSheet = [[PLVSABroadcastLayoutSwitchSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _broadcastLayoutSwitchSheet.delegate = self;
+        [_broadcastLayoutSwitchSheet setupBroadcastLayoutTypeOptionsWithCurrentBroadcastLayoutType:PLVBroadcastLayoutType_BottomRight];// 默认右下角
+    }
+    return _broadcastLayoutSwitchSheet;
+}
+
 - (PLVSALinkMicTipView *)linkMicTipView {
     if (!_linkMicTipView) {
         _linkMicTipView = [[PLVSALinkMicTipView alloc] init];
@@ -809,6 +933,27 @@ PLVSABadNetworkSwitchSheetDelegate
     return _switchSuccessTipsView;
 }
 
+- (PLVSACameraSettingSheet *)cameraSettingSheet {
+    if (!_cameraSettingSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.395 : 0.477;
+        CGFloat widthScale = 0.37;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _cameraSettingSheet = [[PLVSACameraSettingSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _cameraSettingSheet.delegate = self;
+    }
+    return _cameraSettingSheet;
+}
+
+- (NSMutableDictionary *)videoSizeDict {
+    if (!_videoSizeDict) {
+        _videoSizeDict = [NSMutableDictionary dictionary];
+    }
+    return _videoSizeDict;
+}
+
 #pragma mark - [ Event ]
 
 #pragma mark Action
@@ -837,6 +982,21 @@ PLVSABadNetworkSwitchSheetDelegate
     CGRect linkMicWindowFrame = self.linkMicWindowsView.frame;
     linkMicWindowFrame.origin.x = scrollView.contentOffset.x;
     self.linkMicWindowsView.frame = linkMicWindowFrame;
+    
+    CGRect floatingContentViewFrame = self.linkMicWindowsView.floatingContentView.frame;
+    CGFloat marginX = 8;
+    // 根据横竖屏和位置算出frame数据
+    switch (self.broadcastLayoutType) {
+        case PLVBroadcastLayoutType_TopRight:
+        case PLVBroadcastLayoutType_BottomRight:
+            floatingContentViewFrame.origin.x = scrollView.contentOffset.x + self.bounds.size.width - floatingContentViewFrame.size.width - marginX;
+            break;
+        case PLVBroadcastLayoutType_TopLeft:
+        case PLVBroadcastLayoutType_BottomLeft:
+            floatingContentViewFrame.origin.x = scrollView.contentOffset.x + marginX;
+            break;
+    }
+    self.linkMicWindowsView.floatingContentView.frame = floatingContentViewFrame;
 }
 
 #pragma mark PLVAStatusbarAreaViewDelegate
@@ -844,6 +1004,22 @@ PLVSABadNetworkSwitchSheetDelegate
 - (void)statusbarAreaViewDidTapChannelInfoButton:(PLVSAStatusbarAreaView *)statusBarAreaView {
     [self.channelInfoSheet updateChannelInfoWithData:[PLVRoomDataManager sharedManager].roomData];
     [self.channelInfoSheet showInView:self];
+}
+
+- (void)statusbarAreaView:(PLVSAStatusbarAreaView *)statusBarAreaView didChangeBroadcastPicture:(BOOL)broadcastPicture {
+    // 转播画面优先显示在主屏画面
+    [self switchShowMasterRoom:broadcastPicture masterRoomInFloating:NO];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeBroadcastPicture:)]) {
+        [self.delegate streamerHomeView:self didChangeBroadcastPicture:broadcastPicture];
+    }
+}
+
+- (void)statusbarAreaView:(PLVSAStatusbarAreaView *)statusBarAreaView didChangeBroadcastSound:(BOOL)broadcastSound {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeBroadcastSound:)]) {
+        [self.delegate streamerHomeView:self didChangeBroadcastSound:broadcastSound];
+    }
 }
 
 #pragma mark PLVSAToolbarAreaViewDelegate
@@ -882,24 +1058,28 @@ PLVSABadNetworkSwitchSheetDelegate
     [self linkMicButtonSelected:selected videoLinkMic:NO];
 }
 
-#pragma mark PLVSAMoreInfoSheetDelegate
-
-- (void)moreInfoSheetDidTapCameraBitRateButton:(PLVSAMoreInfoSheet *)moreInfoSheet{
-    [self.bitRateSheet showInView:self];
-}
-
-- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeMicOpen:(BOOL)micOpen {
+- (void)toolbarAreaView:(PLVSAToolbarAreaView *)toolbarAreaView didChangeMicOpen:(BOOL)micOpen {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeMicOpen:)]) {
         [self.delegate streamerHomeView:self didChangeMicOpen:micOpen];
     }
 }
 
-- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeCameraOpen:(BOOL)cameraOpen {
+- (void)toolbarAreaView:(PLVSAToolbarAreaView *)toolbarAreaView didChangeCameraOpen:(BOOL)cameraOpen {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeCameraOpen:)]) {
         [self.delegate streamerHomeView:self didChangeCameraOpen:cameraOpen];
     }
+}
+
+- (void)toolbarAreaViewDidTapCameraSettingButton:(PLVSAToolbarAreaView *)toolbarAreaView {
+    [self.cameraSettingSheet showInView:self];
+}
+
+#pragma mark PLVSAMoreInfoSheetDelegate
+
+- (void)moreInfoSheetDidTapCameraBitRateButton:(PLVSAMoreInfoSheet *)moreInfoSheet{
+    [self.bitRateSheet showInView:self];
 }
 
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeCameraFront:(BOOL)cameraFront {
@@ -958,6 +1138,10 @@ PLVSABadNetworkSwitchSheetDelegate
 
 - (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
     [self.mixLayoutSheet showInView:self];
+}
+
+- (void)moreInfoSheetDidTapBroadcastLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.broadcastLayoutSwitchSheet showInView:self];
 }
 
 #pragma mark PLVSABitRateSheetDelegate
@@ -1067,6 +1251,31 @@ PLVSABadNetworkSwitchSheetDelegate
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeMixLayoutType:)]) {
         [self.delegate streamerHomeView:self didChangeMixLayoutType:type];
     }
+}
+
+#pragma mark PLVSABroadcastLayoutSwitchSheetDelegate
+
+- (void)plvsaBroadcastLayoutSwitchSheet:(PLVSABroadcastLayoutSwitchSheet *)broadcastLayoutLayoutSheet broadcastLayoutButtonClickWithMixLayoutType:(PLVBroadcastLayoutType)type {
+    self.broadcastLayoutType = type;
+    [self layoutIfNeeded];
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeBroadcastLayoutType:)]) {
+        [self.delegate streamerHomeView:self didChangeBroadcastLayoutType:type];
+    }
+}
+
+#pragma mark PLVSACameraSettingSheetDelegate
+
+- (void)plvsaCameraSettingSheet:(PLVSACameraSettingSheet *)cameraSettingSheet didTapCameraOpen:(BOOL)cameraOpen cameraSetting:(BOOL)isPicture placeholderImage:(UIImage * _Nullable)image placeholderImageUrl:(NSString * _Nullable)url {
+    self.localCameraOpen = cameraOpen;
+    self.localUserCameraSourceFromPicture = isPicture;
+    self.localUserPlaceholderImage = image;
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapCameraSettingButton:didTapCameraOpen:cameraSetting:placeholderImage:placeholderImageUrl:)]) {
+        [self.delegate streamerHomeViewDidTapCameraSettingButton:self didTapCameraOpen:cameraOpen cameraSetting:isPicture placeholderImage:image placeholderImageUrl:url];
+    }
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
 }
 
 @end

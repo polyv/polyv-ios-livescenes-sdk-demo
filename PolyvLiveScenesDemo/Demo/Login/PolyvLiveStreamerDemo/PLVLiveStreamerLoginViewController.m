@@ -42,6 +42,11 @@ UITextViewDelegate>
 @property (nonatomic, strong) UIButton * btnAgree;          // 协议
 @property (nonatomic, strong) UITextView * agreeTextView;    // 协议
 @property (nonatomic, strong) UIButton *backButton;
+@property (nonatomic, assign) BOOL userDefaultMicEnable; // 用户设置的麦克风开关
+@property (nonatomic, assign) PLVVideoSourceType userDefaultVideoSourceType; // 用户设置的摄像头类型
+@property (nonatomic, copy) NSString *userDefaultImageSourceUrl;// 用户设置的图片地址类型
+@property (nonatomic, assign) BOOL userDefaultAllowChangeDefaultImageSource; // 用户设置的麦克风开关
+@property (nonatomic, assign) NSTimeInterval userDefaultMatrixPlaybackStartPosition; // 用户设置的播放母流开始时间
 
 @end
 
@@ -436,6 +441,14 @@ UITextViewDelegate>
 
             PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
             [PLVBugReporter setUserIdentifier:roomData.roomUser.viewerId];
+            if (roomData.supportMasterRoom) {
+                // 支持子母直播间模式修改摄像头来源和麦克风设置
+                roomData.userDefaultMicEnable = self.userDefaultMicEnable;
+                roomData.userDefaultVideoSourceType = self.userDefaultVideoSourceType;
+                roomData.userDefaultImageSourceUrl = self.userDefaultImageSourceUrl; // 建议使用[PLVFdUtil packageURLStringWithHTTPS:]补齐https协议头
+                roomData.userDefaultAllowChangeDefaultImageSource = self.userDefaultAllowChangeDefaultImageSource;
+                roomData.matrixPlaybackStartPosition = self.userDefaultMatrixPlaybackStartPosition;
+            }
 
             if (roomData.channelType == PLVChannelTypePPT) {
                 PLVLSStreamerViewController *vctrl = [[PLVLSStreamerViewController alloc] init];

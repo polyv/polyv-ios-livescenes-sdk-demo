@@ -70,6 +70,36 @@
 
 "已切换为%@" = "Switched to %@";
 
+"转播布局" = "Broadcast\n layout";
+
+"开启源画面" = "Open broadcast video";
+
+"关闭源画面" = "Close broadcast video";
+
+"开启源声音" = "Open broadcast voice";
+
+"关闭源声音" = "Close broadcast voice";
+
+"左上角" = "Top left";
+
+"左下角" = "Bottom left";
+
+"右上角" = "Top right";
+
+"右下角" = "Bottom right";
+
+"画面来源" = "Video source";
+
+"本地摄像头" = "Local camera";
+
+"画面" = "Picture";
+
+"上传图片" = "Upload picture";
+
+"支持不超过2M的png、jpg格式，建议尺寸200*200px" = "Supports PNG and JPG formats with a maximum size of 2MB, recommended dimensions of 200*200px";
+
+"更换" = "Change";
+
 "已开启%@连麦，观众可以申请连麦" = "%@ calling has been enabled. Viewers can request to call in";
 
 "已开启全体禁言" = "Mute all enabled";

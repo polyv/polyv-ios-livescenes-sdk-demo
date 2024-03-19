@@ -38,6 +38,12 @@
     self.hidden = NO;
     self.linkMicWindowCell.delegate = delegate;
     [self.linkMicWindowCell setUserModel:aOnlineUser hideCanvasViewWhenCameraClose:NO];
+//    [self.linkMicWindowCell switchToShowRtcContentView:aOnlineUser.rtcView];
+}
+
+- (void)showSpeakerViewWithExternalView:(UIView *)externalView {
+    self.hidden = NO;
+    [self.linkMicWindowCell switchToShowExternalContentView:externalView];
 }
 
 - (void)hideSpeakerView {

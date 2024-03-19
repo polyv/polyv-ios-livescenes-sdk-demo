@@ -25,6 +25,8 @@ typedef void (^PLVLinkMicOnlineUserMicOpenChangedBlock)(PLVLinkMicOnlineUser * o
 typedef void (^PLVLinkMicOnlineUserCameraOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’摄像头是否应该显示值‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserCameraShouldShowChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户的 ’摄像头画面来源‘ 改变Block
+typedef void (^PLVLinkMicOnlineUserCameraSourceChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’摄像头前后置状态值‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserCameraFrontChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’闪光灯开关状态‘ 改变Block
@@ -118,6 +120,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 仅在 currentCameraFront开关值 有改变时会触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCameraFrontChangedBlock cameraFrontChangedBlock;
+
+/// [状态] 用户的 ’摄像头画面来源‘ 改变Block
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCameraSourceChangedBlock cameraSourceChangedBlock;
 
 /// [状态] 用户的 ’闪光灯开关状态‘ 改变Block
 ///
@@ -278,11 +283,29 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 用户头像
 @property (nonatomic, copy, nullable, readonly) NSString * avatarPic;
 
+/// 用户占位图链接
+@property (nonatomic, copy, nullable, readonly) NSString * avatarUrl;
+
+/// 用户占位图链接
+@property (nonatomic, strong, readonly) UIImage *image;
+
 /// 用户类型
 @property (nonatomic, assign, readonly) PLVSocketUserType userType;
 
 /// 是否为本地用户 (即‘当前用户自己’)
 @property (nonatomic, assign, readonly) BOOL localUser;
+
+/// 是否为主房间用户 (即‘主房间用户’)
+@property (nonatomic, assign, readonly) BOOL masterRoomUser;
+
+/// 母房间混流用户Id
+@property (nonatomic, copy, nullable, readonly) NSString * masterRoomMixUserId;
+
+/// 母房间混流房间号
+@property (nonatomic, copy, nullable, readonly) NSString * masterRoomMixRoomId;
+
+/// 母房间封面图
+@property (nonatomic, copy, nullable, readonly) NSString * splashImg;
 
 /// 原始的 用户数据字典
 @property (nonatomic, strong, readonly) NSDictionary * originalUserDict;
@@ -368,6 +391,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 通过 传值 创建模型 (适用于本地用户)
 + (instancetype)localUserModelWithUserId:(NSString *)userId linkMicUserId:(NSString *)linkMicUserId nickname:(NSString *)nickname avatarPic:(NSString *)avatarPic userType:(PLVSocketUserType)userType actor:(NSString *)actor;
 
+/// 通过 传值 创建模型 (适用于母房间用户)
++ (instancetype)masterRoomUserModelWithUserId:(NSString *)userId linkMicUserId:(NSString *)linkMicUserId masterRoomMixUserId:(NSString *)masterRoomMixUserId masterRoomMixRoomId:(NSString *)masterRoomMixRoomId splashImg:(NSString * _Nullable)splashImg;
+
 #pragma mark 状态更新
 
 /// 通过 数据字典 更新用户所有属性
@@ -387,6 +413,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 ///
 /// @note 若最终 摄像头开关状态值 有所改变，则将触发 [cameraOpenChangedBlock]、[cameraShouldShowChangedBlock]；
 - (void)updateUserCurrentCameraOpen:(BOOL)cameraOpen;
+
+/// 更新用户的 ‘当前摄像头占位图链接 和 图像’
+- (void)updateUserAvatarUrl:(NSString * _Nullable)avatarUrl image:(UIImage * _Nullable)image;
 
 /// 更新用户的 ‘当前摄像头前后置状态值’
 ///

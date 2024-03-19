@@ -76,6 +76,18 @@ PLVSALinkMicWindowsViewDelegate
     [self.windowsView removeFromSuperview];
 }
 
+- (void)showMatrixPlaybackButton:(BOOL)show {
+    [self.windowsView showMatrixPlaybackButton:show];
+}
+
+- (void)showMatrixPlaybackLoadingView:(BOOL)show {
+    if (show) {
+        [self.windowsView startMatrixPlaybackLoadingAnimating];
+    } else {
+        [self.windowsView stopMatrixPlaybackLoadingAnimating];
+    }
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupUI {
@@ -142,6 +154,14 @@ PLVSALinkMicWindowsViewDelegate
 - (PLVLinkMicOnlineUser *)localUserInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView {
     if (self.delegate) {
         return [self.delegate localUserInLinkMicAreaView:self];
+    } else {
+        return nil;
+    }
+}
+
+- (PLVLinkMicOnlineUser *)masterRoomUserInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView {
+    if (self.delegate) {
+        return [self.delegate masterRoomUserInLinkMicAreaView:self];
     } else {
         return nil;
     }
@@ -240,6 +260,18 @@ PLVSALinkMicWindowsViewDelegate
 - (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicAreaView:inviteLinkMicTTL:)]) {
         [self.delegate plvSALinkMicAreaView:self inviteLinkMicTTL:callback];
+    }
+}
+
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView hadSwitchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicAreaView:hadSwitchShowMasterRoom:masterRoomInFloating:)]) {
+        [self.delegate plvSALinkMicAreaView:self hadSwitchShowMasterRoom:showMasterRoom masterRoomInFloating:inFloating];
+    }
+}
+
+- (void)plvSALinkMicWindowsViewDidClickMatrixPlaybackButton:(PLVSALinkMicWindowsView *)windowsView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicAreaViewDidClickMatrixPlaybackButton:)]) {
+        [self.delegate plvSALinkMicAreaViewDidClickMatrixPlaybackButton:self];
     }
 }
 

@@ -13,6 +13,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 手机开播通用 toast
 @interface PLVToast : UIView
 
+@property (nonatomic, strong, readonly) UILabel *label;
+
 /// 显示 toast
 /// @param message toast 文本
 /// @param view toast 在视图
@@ -23,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param view toast 在视图
 /// @param delay toast 显示时间
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay;
+
+/// 主动隐藏
+- (void)hide;
 
 /// 显示 倒计时toast
 /// @param message toast 文本

@@ -25,6 +25,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param delegate 连麦 cell 的 delegate
 - (void)showSpeakerViewWithUserModel:(PLVLinkMicOnlineUser *)onlineUser delegate:(id<PLVSALinkMicWindowCellDelegate>)delegate;
 
+/// 显示外部视图
+- (void)showSpeakerViewWithExternalView:(UIView *)externalView;
+
 /// 隐藏主讲的第一画面
 - (void)hideSpeakerView;
 

@@ -565,17 +565,7 @@ PLVLSMixLayoutSheetDelegate
     __weak typeof(self) weakSelf = self;
     if (self.streamerPresenter.micCameraGranted &&
         self.streamerPresenter.inRTCRoom) {
-        if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) {
-            // 麦克风和摄像头当前全部关闭时
-            if (!self.streamerPresenter.currentMicOpen &&
-                !self.streamerPresenter.currentCameraOpen) {
-                /// 开始上课倒数
-                [self.coutBackView startCountDownOnView:self.view];
-                if (callCompletion) { callCompletion(YES); }
-            }else{
-                needRetry = YES;
-            }
-        } else if(self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
+        if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
             needRetry = YES;
         }else{
             /// 开始上课倒数

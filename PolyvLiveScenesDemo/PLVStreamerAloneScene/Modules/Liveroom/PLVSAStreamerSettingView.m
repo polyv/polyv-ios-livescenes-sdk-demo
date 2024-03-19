@@ -11,6 +11,7 @@
 #import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVSABitRateSheet.h"
+#import "PLVSAMasterPlaybackSettingSheet.h"
 
 #define TEXT_MAX_LENGTH 50
 
@@ -20,7 +21,9 @@ static NSString *const kSettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 UITextViewDelegate,
 UIGestureRecognizerDelegate,
 PLVSABitRateSheetDelegate,
-PLVSAMixLayoutSheetDelegate
+PLVSAMixLayoutSheetDelegate,
+PLVSACameraSettingSheetDelegate,
+PLVSAMasterPlaybackSettingSheetDelegate
 >
 
 #pragma mark UI
@@ -42,6 +45,12 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, strong) UIView *configView;
 /// 分割线
 @property (nonatomic, strong) UIView *lineView;
+/// 摄像头
+@property (nonatomic, strong) UIButton *cameraButton;
+/// 摄像头设置
+@property (nonatomic, strong) UIButton *cameraSettingButton;
+/// 麦克风
+@property (nonatomic, strong) UIButton *microphoneButton;
 /// 摄像头切换
 @property (nonatomic, strong) UIButton *cameraReverseButton;
 /// 镜像开关
@@ -54,6 +63,8 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, strong) UIButton *streamScaleButton;
 /// 混流布局
 @property (nonatomic, strong) UIButton *mixLayoutButton;
+/// 母流设置
+@property (nonatomic, strong) UIButton *masterPlaybackSettingButton;
 /// 直播名称
 @property (nonatomic, strong) UILabel *channelNameLable;
 /// 输入框蒙层（负责承载频道名称输入框和频道名称剩余可输入的字符数）
@@ -66,6 +77,11 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
 /// 混流布局选择面板
 @property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet;
+/// 摄像头设置面板
+@property (nonatomic, strong) PLVSACameraSettingSheet *cameraSettingSheet;
+/// 母流设置面板
+@property (nonatomic, strong) PLVSAMasterPlaybackSettingSheet *masterPlaybackSettingSheet;
+
 /// 文本滚动视图（为了兼容手机端横屏标题太长时，显示不美观的问题）
 @property (nonatomic, strong) UIScrollView *scrollView;
 /// 美颜开关
@@ -84,6 +100,8 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, assign) BOOL canMixLayout;
 /// 当前是否显示推流画面比例
 @property (nonatomic, assign, readonly) BOOL showStreamScale;
+/// 横屏时需要右移显示
+@property (nonatomic, assign) BOOL shouldShiftRight;
 
 @end
 
@@ -147,7 +165,7 @@ PLVSAMixLayoutSheetDelegate
     [self.maskView addSubview:self.channelNameTextView];
     
     /// 初始化高度
-    self.configViewHeight = 195;
+    self.configViewHeight = 269;
     self.channelNameLableHeight = 26;
     
     [self addSubview:self.configView];
@@ -155,6 +173,15 @@ PLVSAMixLayoutSheetDelegate
     [self.scrollView addSubview:self.channelNameLable];
     
     [self.configView addSubview:self.lineView];
+    if ([PLVRoomDataManager sharedManager].roomData.supportMatrixPlayback) {
+        [self.configView addSubview:self.masterPlaybackSettingButton];
+    }
+    if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
+        [self.configView addSubview:self.cameraSettingButton];
+    } else {
+        [self.configView addSubview:self.cameraButton];
+    }
+    [self.configView addSubview:self.microphoneButton];
     [self.configView addSubview:self.cameraReverseButton];
     [self.configView addSubview:self.mirrorButton];
     [self.configView addSubview:self.bitRateButton];
@@ -176,6 +203,12 @@ PLVSAMixLayoutSheetDelegate
     startButtonWidth += (self.showStreamScale ? 75 : 0);
     CGFloat beautyButtonWidth = [PLVRoomDataManager sharedManager].roomData.appBeautyEnabled ? 114 : 0;
     CGFloat configViewWidth = startButtonWidth + 8 + beautyButtonWidth;
+    if (isLandscape) {
+        configViewWidth += 160;
+        if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
+            configViewWidth -= 80;
+        }
+    }
     CGFloat channelNameLableLeft = 28;
     CGFloat lineViewLeft = 24;
     
@@ -197,10 +230,11 @@ PLVSAMixLayoutSheetDelegate
     self.maskView.frame = self.bounds;
     /// 初始化时默认收起输入框
     [self takeBackTextView];
+    CGFloat shiftRight = self.shouldShiftRight && isLandscape ? (![PLVRoomDataManager sharedManager].roomData.supportMasterRoom ? 147.5 : 107.5) : 0;
     
     if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
         /// 美颜按钮
-        CGFloat beautyX = (CGRectGetWidth(self.bounds) - startButtonWidth - beautyButtonWidth - 8) / 2;
+        CGFloat beautyX = (CGRectGetWidth(self.bounds) - startButtonWidth - beautyButtonWidth - 8) / 2 + shiftRight;
         self.beautyButton.frame = CGRectMake(beautyX, self.bounds.size.height - startButtonBottom - 50, beautyButtonWidth, 50);
         
         /// 开始直播按钮
@@ -209,14 +243,14 @@ PLVSAMixLayoutSheetDelegate
     }
     else {
         /// 开始直播按钮
-        CGFloat startX = (CGRectGetWidth(self.bounds) - startButtonWidth) / 2;
+        CGFloat startX = (CGRectGetWidth(self.bounds) - startButtonWidth) / 2 + shiftRight;
         self.startButton.frame = CGRectMake(startX, self.bounds.size.height - startButtonBottom - 50, startButtonWidth, 50);
         self.gradientLayer.frame = self.startButton.bounds;
     }
     
     /// 设置控件
     CGFloat configViewHeight = isLandscape && !isPad ? 195 : self.configViewHeight;
-    self.configView.frame = CGRectMake((CGRectGetWidth(self.bounds) - configViewWidth) / 2.0, self.bounds.size.height - startButtonBottom - 50 - 24 - configViewHeight, configViewWidth, configViewHeight);
+    self.configView.frame = CGRectMake((CGRectGetWidth(self.bounds) - configViewWidth) / 2.0 + shiftRight, self.bounds.size.height - startButtonBottom - 50 - 24 - configViewHeight, configViewWidth, configViewHeight);
     
     /// 频道名称 (手机端横屏状态时，最多显示两行文本)
     CGFloat textHeight = self.channelNameLableHeight > 48 ? 51 : self.channelNameLableHeight;
@@ -229,19 +263,47 @@ PLVSAMixLayoutSheetDelegate
     self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.scrollView) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
     
     /// 底部按钮
-    NSInteger configButtonCount = self.showStreamScale ? 6 : 5;
+    NSInteger configButtonCount = self.showStreamScale ? 8 : 7;
     if (!self.showMixLayout) {
         configButtonCount -= 1;
     }
+    if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
+        configButtonCount -= 1;
+    }
+    
     CGSize buttonSize = CGSizeMake(32, 58);
-    CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
-    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * configButtonCount)) / (configButtonCount + 1) ;
-    self.cameraReverseButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    CGFloat buttonTop = (isLandscape || isPad) ? (CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33) : (CGRectGetMaxY(self.configView.bounds) - buttonSize.height * 2 - 15 - 33);
+    CGFloat buttonPadding = (isLandscape || isPad) ? ((CGRectGetWidth(self.configView.bounds) - (buttonSize.width * configButtonCount)) / (configButtonCount + 1)) : (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * 4)) / 5 ;
+    BOOL showMasterPlaybackSettingButton = [PLVRoomDataManager sharedManager].roomData.supportMatrixPlayback;
+    self.masterPlaybackSettingButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.masterPlaybackSettingButton.hidden = !showMasterPlaybackSettingButton;
+    self.cameraButton.frame = showMasterPlaybackSettingButton ? CGRectMake(UIViewGetRight(self.masterPlaybackSettingButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height) : CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.cameraSettingButton.frame = showMasterPlaybackSettingButton ? CGRectMake(UIViewGetRight(self.masterPlaybackSettingButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height) : CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.microphoneButton.frame = CGRectMake(UIViewGetRight(self.cameraButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.cameraReverseButton.frame = CGRectMake(UIViewGetRight(self.microphoneButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
     self.mirrorButton.frame = CGRectMake(UIViewGetRight(self.cameraReverseButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.bitRateButton.frame = CGRectMake(UIViewGetRight(self.mirrorButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    
+    if (!isLandscape && !isPad) {
+        buttonTop += buttonSize.height + 15;// 竖屏换行
+        if (showMasterPlaybackSettingButton) {
+            self.mirrorButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+        } else {
+            self.bitRateButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+        }
+    } else {
+        if (showMasterPlaybackSettingButton) {
+            self.mirrorButton.frame = CGRectMake(UIViewGetRight(self.cameraReverseButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+        } else {
+            self.bitRateButton.frame = CGRectMake(UIViewGetRight(self.mirrorButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+        }
+    }
+    if (showMasterPlaybackSettingButton) {
+        self.bitRateButton.frame = CGRectMake(UIViewGetRight(self.mirrorButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    }
     self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.orientationButton.hidden = [PLVRoomDataManager sharedManager].roomData.supportMasterRoom;
     self.streamScaleButton.hidden = !self.showStreamScale;
-    self.streamScaleButton.frame = CGRectMake(UIViewGetRight(self.orientationButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.streamScaleButton.frame = ![PLVRoomDataManager sharedManager].roomData.supportMasterRoom ? CGRectMake(UIViewGetRight(self.orientationButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height) : self.orientationButton.frame;
     self.mixLayoutButton.hidden = !self.showMixLayout;
     self.mixLayoutButton.frame = !self.showStreamScale ? self.streamScaleButton.frame : CGRectMake(UIViewGetRight(self.streamScaleButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
 }
@@ -464,6 +526,38 @@ PLVSAMixLayoutSheetDelegate
     return _configView;
 }
 
+- (UIButton *)cameraButton {
+    if (!_cameraButton) {
+        _cameraButton = [self buttonWithTitle:PLVLocalizedString(@"摄像头") NormalImageString:@"plvsa_liveroom_btn_camera_close" selectedImageString:@"plvsa_liveroom_btn_camera_open"];
+        [_cameraButton addTarget:self action:@selector(cameraButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _cameraButton.titleEdgeInsets = UIEdgeInsetsMake(_cameraButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    
+    return _cameraButton;
+}
+
+- (UIButton *)cameraSettingButton {
+    if (!_cameraSettingButton) {
+        _cameraSettingButton = [self buttonWithTitle:PLVLocalizedString(@"摄像头设置") NormalImageString:@"plvsa_liveroom_btn_camera_close" selectedImageString:@"plvsa_liveroom_btn_camera_open"];
+        _cameraSettingButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _cameraSettingButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        _cameraSettingButton.titleLabel.numberOfLines = 0;
+        [_cameraSettingButton addTarget:self action:@selector(cameraSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _cameraSettingButton.titleEdgeInsets = UIEdgeInsetsMake(_cameraSettingButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    
+    return _cameraSettingButton;
+}
+
+- (UIButton *)microphoneButton {
+    if (!_microphoneButton) {
+        _microphoneButton = [self buttonWithTitle:PLVLocalizedString(@"麦克风") NormalImageString:@"plvsa_liveroom_btn_micphone_close" selectedImageString:@"plvsa_liveroom_btn_micphone_open"];
+        [_microphoneButton addTarget:self action:@selector(microphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _microphoneButton.titleEdgeInsets = UIEdgeInsetsMake(_microphoneButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    return _microphoneButton;
+}
+
 - (UIButton *)cameraReverseButton {
     if (!_cameraReverseButton) {
         _cameraReverseButton = [self buttonWithTitle:PLVLocalizedString(@"翻转") NormalImageString:@"plvsa_liveroom_btn_cameraReverse" selectedImageString:@"plvsa_liveroom_btn_cameraReverse"];
@@ -609,7 +703,7 @@ PLVSAMixLayoutSheetDelegate
     if (!_mixLayoutButton) {
         _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局") NormalImageString:@"plvsa_liveroom_btn_mixLayout" selectedImageString:@"plvsa_liveroom_btn_mixLayout"];
         [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _mixLayoutButton.titleEdgeInsets = UIEdgeInsetsMake(_orientationButton.imageView.frame.size.height + 14, - 67, 0, -38);
+        _mixLayoutButton.titleEdgeInsets = UIEdgeInsetsMake(_mixLayoutButton.imageView.frame.size.height + 14, - 67, 0, -38);
     }
     return _mixLayoutButton;
 }
@@ -629,6 +723,44 @@ PLVSAMixLayoutSheetDelegate
     return _mixLayoutSheet;
 }
 
+- (UIButton *)masterPlaybackSettingButton {
+    if (!_masterPlaybackSettingButton) {
+        _masterPlaybackSettingButton = [self buttonWithTitle:PLVLocalizedString(@"母流设置") NormalImageString:@"plvsa_liveroom_btn_masterPlaybackSetting" selectedImageString:@"plvsa_liveroom_btn_masterPlaybackSetting"];
+        [_masterPlaybackSettingButton addTarget:self action:@selector(masterPlaybackSettingButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _masterPlaybackSettingButton.titleEdgeInsets = UIEdgeInsetsMake(_masterPlaybackSettingButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    return _masterPlaybackSettingButton;
+}
+
+- (PLVSAMasterPlaybackSettingSheet *)masterPlaybackSettingSheet {
+    if (!_masterPlaybackSettingSheet) {
+        CGFloat heightScale = 0.56;
+        CGFloat widthScale = 0.462;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _masterPlaybackSettingSheet = [[PLVSAMasterPlaybackSettingSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        [_masterPlaybackSettingSheet setupPreviewUrl:roomData.matrixPlaybackUrl startPosition:roomData.matrixPlaybackStartPosition];
+        _masterPlaybackSettingSheet.delegate = self;
+    }
+    return _masterPlaybackSettingSheet;
+}
+
+- (PLVSACameraSettingSheet *)cameraSettingSheet {
+    if (!_cameraSettingSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.395 : 0.477;
+        CGFloat widthScale = 0.37;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _cameraSettingSheet = [[PLVSACameraSettingSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _cameraSettingSheet.delegate = self;
+    }
+    return _cameraSettingSheet;
+}
+
 - (BOOL)showStreamScale {
     if ([PLVSAUtils sharedUtils].isLandscape &&
         [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher &&
@@ -639,7 +771,17 @@ PLVSAMixLayoutSheetDelegate
 }
 
 - (BOOL)showMixLayout {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && ![PLVRoomDataManager sharedManager].roomData.supportMasterRoom;
+}
+
+- (void)setCurrentCameraOpen:(BOOL)currentCameraOpen {
+    self.cameraButton.selected = currentCameraOpen;
+    self.cameraSettingButton.selected = currentCameraOpen;
+    self.cameraSettingSheet.currentCameraOpen = currentCameraOpen;
+}
+
+- (void)setCurrentMicOpen:(BOOL)currentMicOpen {
+    self.microphoneButton.selected = currentMicOpen;
 }
 
 - (NSString *)defaultQualityLevel {
@@ -671,6 +813,24 @@ PLVSAMixLayoutSheetDelegate
         }
     } else {
         [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"直播标题不能为空")];
+    }
+}
+
+- (void)cameraButtonAction {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerSettingViewDidChangeCameraOpen:)]) {
+        [self.delegate streamerSettingViewDidChangeCameraOpen:!self.cameraButton.selected];
+    }
+}
+
+- (void)cameraSettingButtonAction {
+    [self.cameraSettingSheet showInView:self];
+}
+
+- (void)microphoneButtonAction {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerSettingViewDidChangeMicOpen:)]) {
+        [self.delegate streamerSettingViewDidChangeMicOpen:!self.microphoneButton.selected];
     }
 }
 
@@ -730,6 +890,10 @@ PLVSAMixLayoutSheetDelegate
 
 - (void)mixLayoutButtonAction:(UIButton *)sender {
     [self.mixLayoutSheet showInView:self];
+}
+
+- (void)masterPlaybackSettingButtonAction:(UIButton *)sender {
+    [self.masterPlaybackSettingSheet showInView:self];
 }
 
 #pragma mark - [ Delegate ]
@@ -814,6 +978,18 @@ PLVSAMixLayoutSheetDelegate
     }
 }
 
+#pragma mark PLVSACameraSettingSheetDelegate
+- (void)plvsaCameraSettingSheet:(PLVSACameraSettingSheet *)cameraSettingSheet didTapCameraOpen:(BOOL)cameraOpen cameraSetting:(BOOL)isPicture placeholderImage:(UIImage * _Nullable)image placeholderImageUrl:(NSString * _Nullable)url {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidTapCameraSettingButton:didTapCameraOpen:cameraSetting:placeholderImage:placeholderImageUrl:)]) {
+        [self.delegate streamerSettingViewDidTapCameraSettingButton:self didTapCameraOpen:cameraOpen cameraSetting:isPicture placeholderImage:image placeholderImageUrl:url];
+    }
+}
+
+#pragma mark PLVSAMasterPlaybackSettingSheetDelegate
+- (void)masterPlaybackSettingSheet:(PLVSAMasterPlaybackSettingSheet *)playbackSetting didChangedStartPosition:(NSTimeInterval)startPosition {
+    [PLVRoomDataManager sharedManager].roomData.matrixPlaybackStartPosition = startPosition;
+}
+
 #pragma mark - [ Event ]
 #pragma mark Notification
 - (void)keyboardWillShow:(NSNotification *)notification {
@@ -841,6 +1017,7 @@ PLVSAMixLayoutSheetDelegate
 - (void)cameraAuthorizationGranted:(BOOL)prepareSuccess {
     self.cameraReverseButton.enabled = prepareSuccess;
     self.mirrorButton.enabled = prepareSuccess;
+    self.cameraButton.enabled = prepareSuccess;
 }
 
 - (void)enableMirrorButton:(BOOL)enable{
@@ -882,6 +1059,16 @@ PLVSAMixLayoutSheetDelegate
         self.streamScaleButton.selected = YES;
     }
     [self callbackPushStreamScaleChanged:streamScale];
+}
+
+- (void)landscapeShouldShiftRight:(BOOL)shouldShiftRight {
+    _shouldShiftRight = shouldShiftRight;
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+}
+
+- (void)updateVideoSourceType:(PLVVideoSourceType)videoSourceType image:(UIImage *)image imageSourceUrl:(NSString *)imageSourceUrl {
+    [self.cameraSettingSheet updateCameraSetting:videoSourceType == PLVVideoSourceType_Picture placeholderImage:image placeholderImageUrl:imageSourceUrl];
 }
 
 @end

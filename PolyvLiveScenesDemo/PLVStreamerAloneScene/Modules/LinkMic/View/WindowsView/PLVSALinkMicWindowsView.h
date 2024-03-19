@@ -20,6 +20,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 全屏展示视图的容器
 @property (nonatomic, strong, readonly) UIView *fullScreenContentView;
 
+@property (nonatomic, strong, readonly) UIView *floatingContentView;
+@property (nonatomic, assign) BOOL supportMasterRoom; // 是否支持子母直播间模式
+
 /// 刷新连麦窗口
 - (void)reloadLinkMicUserWindows;
 
@@ -31,6 +34,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 本地用户连麦状态发生改变
 /// @param linkMicStatus 连麦状态
 - (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
+
+- (void)switchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating;
 
 /// 切换连麦窗口布局和主讲人
 /// @note 切换连麦窗口的布局【仅当 speakerMode为YES时linkMicUserId有效】
@@ -45,6 +50,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 下课（直播结束）
 - (void)finishClass;
 
+/// 显示播放母流按钮
+- (void)showMatrixPlaybackButton:(BOOL)show;
+
+/// 母流播放加载提示开始动画
+- (void)startMatrixPlaybackLoadingAnimating;
+
+/// 母流播放加载提示结束动画
+- (void)stopMatrixPlaybackLoadingAnimating;
+
 @end
 
 @protocol PLVSALinkMicWindowsViewDelegate <NSObject>
@@ -55,6 +69,11 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param windowsView 连麦窗口列表视图
 - (PLVLinkMicOnlineUser *)localUserInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView;
+
+/// 连麦窗口列表视图 需要获取母用户数据
+///
+/// @param windowsView 连麦窗口列表视图
+- (PLVLinkMicOnlineUser *)masterRoomUserInLinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView;
 
 /// 连麦窗口列表视图 需要获取当前用户数组
 ///
@@ -114,6 +133,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param windowsView 连麦窗口列表视图
 /// @param callback 获取剩余时间的回调
 - (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback;
+
+/// 子母直播间模式切换主副屏回调
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView hadSwitchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating;
+
+/// 点击母流播放按钮回调
+- (void)plvSALinkMicWindowsViewDidClickMatrixPlaybackButton:(PLVSALinkMicWindowsView *)windowsView;
 
 @end
 

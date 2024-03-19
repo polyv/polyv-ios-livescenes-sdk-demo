@@ -21,6 +21,7 @@
 /// └── (UISlider) slider
 @property (nonatomic, strong) UIProgressView * progressView; /// 进度条
 @property (nonatomic, strong) UISlider * slider; /// 滑杆条
+@property (nonatomic, strong) UITapGestureRecognizer *tapGestureSlider; // 进度条点击事件
 
 @end
 
@@ -67,6 +68,9 @@
 - (void)setupUI{
     [self addSubview:self.progressView];
     [self addSubview:self.slider];
+    
+    self.tapGestureSlider = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureAction:)];
+    [self addGestureRecognizer:self.tapGestureSlider];
 }
 
 
@@ -107,12 +111,23 @@
         [self.delegate plvProgressSlider:self sliderDragEnd:self.slider.value];
     }
     self.sliderDragging = NO;
+    self.tapGestureSlider.enabled = YES;
 }
 
 - (IBAction)sliderValueChangedAction:(UISlider *)sender {
     if ([self.delegate respondsToSelector:@selector(plvProgressSlider:sliderDragingProgressChange:)]) {
         [self.delegate plvProgressSlider:self sliderDragingProgressChange:self.slider.value];
     }
+    self.tapGestureSlider.enabled = NO;
+}
+
+- (void)tapGestureAction:(UITapGestureRecognizer *)tap{
+    CGPoint point = [tap locationInView:self];
+    
+    CGFloat value = (self.slider.maximumValue - self.slider.minimumValue) * (point.x / self.slider.frame.size.width);
+    self.slider.value = value;
+    [self.slider sendActionsForControlEvents:UIControlEventValueChanged];
+    [self.slider sendActionsForControlEvents:UIControlEventTouchUpInside];
 }
 
 @end

@@ -21,8 +21,7 @@
 
 // UI
 @property (nonatomic, strong) UILabel *titleLabel; // 标题
-@property (nonatomic, strong) UIButton *cameraButton; // 摄像头
-@property (nonatomic, strong) UIButton *microphoneButton; // 麦克风
+@property (nonatomic, strong) UIButton *broadcastLayoutButton; // 转播布局
 @property (nonatomic, strong) UIButton *cameraReverseButton; // 翻转
 @property (nonatomic, strong) UIButton *mirrorButton; // 镜像
 @property (nonatomic, strong) UIButton *screenShareButton; // 屏幕共享
@@ -34,6 +33,7 @@
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
 @property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局
 @property (nonatomic, strong) NSArray *buttonArray;
+@property (nonatomic, strong) UIScrollView *scrollView; // 按钮承载视图
 
 @end
 
@@ -52,7 +52,7 @@
         [self initUI];
         
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        if (!isPad && [self.buttonArray count] > 10) { // 超过两行
+        if ((!isPad && [self.buttonArray count] > 10) || (isPad && [self.buttonArray count] > 14)) { // 超过两行
             self.sheetHight += (28 + 12 + 14 + 16);
         }
     }
@@ -69,6 +69,7 @@
     CGFloat titleX = isLandscape ? 32 : (isPad ? 56 :16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
+    self.scrollView.frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame) + 8, CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - CGRectGetMaxY(self.titleLabel.frame));
     
     CGSize buttonSize = [self getMaxButtonSize];
     
@@ -90,16 +91,11 @@
 
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState {
     self.screenShareButton.selected = selectedState;
-    self.cameraButton.enabled = !selectedState;
     self.cameraReverseButton.enabled = !selectedState;
     self.mirrorButton.enabled = !selectedState && self.currentCameraOpen && self.currentCameraFront;
 }
 
 #pragma mark 当前用户配置
-- (void)setCurrentMicOpen:(BOOL)currentMicOpen {
-    _currentMicOpen = currentMicOpen;
-    self.microphoneButton.selected = currentMicOpen;
-}
 
 - (void)setStreamQuality:(PLVResolutionType)streamQuality {
     _streamQuality = streamQuality;
@@ -113,7 +109,6 @@
 
 - (void)setCurrentCameraOpen:(BOOL)currentCameraOpen {
     _currentCameraOpen = currentCameraOpen;
-    self.cameraButton.selected = currentCameraOpen;
     // 摄像头关闭，翻转 禁用
     self.cameraReverseButton.enabled = currentCameraOpen && !self.screenShareButton.selected;
     // 后置摄像头、摄像头：镜像禁用
@@ -147,18 +142,23 @@
 
 - (void)initUI {
     [self.contentView addSubview:self.titleLabel];
+    [self.contentView addSubview:self.scrollView];
     
-    UIView *buttonSuperView = self.contentView;
-        
-    // 摄像头、麦克风、前后摄像头、镜像
-    [buttonSuperView addSubview:self.cameraButton];
-    [buttonSuperView addSubview:self.microphoneButton];
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    UIView *buttonSuperView = self.scrollView;
+    NSMutableArray *muButtonArray = [NSMutableArray array];
+    
+    if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
+        [buttonSuperView addSubview:self.broadcastLayoutButton];
+        [muButtonArray addObject:self.broadcastLayoutButton];
+    }
+    
+    // 前后摄像头、镜像
+    
     [buttonSuperView addSubview:self.cameraReverseButton];
+    [muButtonArray addObject:self.cameraReverseButton];
     [buttonSuperView addSubview:self.mirrorButton];
-    NSMutableArray *muButtonArray = [NSMutableArray arrayWithArray:@[self.cameraButton,
-                                                                   self.microphoneButton,
-                                                                   self.cameraReverseButton,
-                                                                   self.mirrorButton]];
+    [muButtonArray addObject:self.mirrorButton];
     
     // 美颜按钮
     if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
@@ -214,36 +214,34 @@
     }
     return _titleLabel;
 }
-- (UIButton *)cameraButton {
-    if (!_cameraButton) {
-        _cameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        _cameraButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        _cameraButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateNormal];
-        [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateSelected];
-        [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_close"] forState:UIControlStateNormal];
-        [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_open"] forState:UIControlStateSelected];
-        [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_disabled"] forState:UIControlStateSelected|UIControlStateDisabled];
-        [_cameraButton addTarget:self action:@selector(cameraButtonAction) forControlEvents:UIControlEventTouchUpInside];
+
+- (UIScrollView *)scrollView {
+    if (!_scrollView) {
+        _scrollView = [[UIScrollView alloc] init];
+        _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.pagingEnabled = YES;
     }
-    
-    return _cameraButton;
+    return _scrollView;
 }
 
-- (UIButton *)microphoneButton {
-    if (!_microphoneButton) {
-        _microphoneButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        _microphoneButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        _microphoneButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        _microphoneButton.titleLabel.textAlignment = NSTextAlignmentCenter;
-        _microphoneButton.titleLabel.numberOfLines = 0;
-        [_microphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateNormal];
-        [_microphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateSelected];
-        [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
-        [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
-        [_microphoneButton addTarget:self action:@selector(microphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
+
+- (UIButton *)broadcastLayoutButton {
+    if (!_broadcastLayoutButton) {
+        _broadcastLayoutButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _broadcastLayoutButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _broadcastLayoutButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _broadcastLayoutButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _broadcastLayoutButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        _mixLayoutButton.titleLabel.numberOfLines = 0;
+        NSString *normalTitle = PLVLocalizedString(@"转播布局");
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            normalTitle = [normalTitle stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+        }
+        [_broadcastLayoutButton setTitle:normalTitle forState:UIControlStateNormal];
+        [_broadcastLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_broadcast_layout"] forState:UIControlStateNormal];
+        [_broadcastLayoutButton addTarget:self action:@selector(broadcastLayoutButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
-    return _microphoneButton;
+    return _broadcastLayoutButton;
 }
 
 - (UIButton *)cameraReverseButton {
@@ -419,11 +417,11 @@
     
     NSInteger buttonCount = isLandscape ? 3 : (isPad ? 7 : 5); // 竖屏时（iphone）每行5个按钮、横屏时（iphone & ipad）每行3个按钮
     CGFloat buttonOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
-    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : 46;
-    CGFloat buttonXPadding = (self.contentView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
+    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ?  4 : 38;
+    CGFloat buttonXPadding = (self.scrollView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
     CGFloat buttonYPadding = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
     if (isPad && !isLandscape) {
-        buttonOriginY = CGRectGetMaxY(self.titleLabel.frame) + 28.0;
+        buttonOriginY =  28.0;
         buttonYPadding = 30.0;
     }
     
@@ -438,6 +436,9 @@
         button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonSize.width, buttonSize.height);
         buttonOriginX += buttonSize.width + buttonXPadding;
     }
+    
+    // 设置超出视图范围可滚动选择按钮
+    self.scrollView.contentSize = CGSizeMake(self.contentView.frame.size.width, buttonOriginY + buttonSize.height);
 }
 
 - (void)setButtonInsets {
@@ -575,26 +576,12 @@
 }
 
 + (BOOL)showMixLayoutButton {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && ![PLVRoomDataManager sharedManager].roomData.supportMasterRoom;
 }
 
 #pragma mark - Event
 
 #pragma mark Action
-
-- (void)cameraButtonAction {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeCameraOpen:)]) {
-        [self.delegate moreInfoSheet:self didChangeCameraOpen:!self.cameraButton.selected];
-    }
-}
-
-- (void)microphoneButtonAction {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeMicOpen:)]) {
-        [self.delegate moreInfoSheet:self didChangeMicOpen:!self.microphoneButton.selected];
-    }
-}
 
 - (void)cameraReverseButtonAction {
     __weak typeof(self) weakSelf = self;
@@ -687,6 +674,14 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapMixLayoutButton:)]) {
         [self.delegate moreInfoSheetDidTapMixLayoutButton:self];
+    }
+}
+
+- (void)broadcastLayoutButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapBroadcastLayoutButton:)]) {
+        [self.delegate moreInfoSheetDidTapBroadcastLayoutButton:self];
     }
 }
 

@@ -36,6 +36,7 @@
 @property (nonatomic, strong) UIButton *closeFullScreenButton; // 关闭全屏 按钮
 @property (nonatomic, strong) UIImageView *screenSharingImageView; // 屏幕共享时 背景图
 @property (nonatomic, strong) UILabel *screenSharingLabel; // 屏幕共享时 文本框
+@property (nonatomic, assign) BOOL showExternalContent;
 
 @end
 
@@ -133,9 +134,14 @@
     };
     
     // 摄像画面
-    [aOnlineUser.canvasView rtcViewShow:aOnlineUser.currentCameraShouldShow];
+    [aOnlineUser.canvasView rtcViewShow:aOnlineUser.currentCameraShouldShow placeHolderImage:aOnlineUser.image imageShouldFill:!(aOnlineUser.userType == PLVSocketUserTypeTeacher && [PLVSAUtils sharedUtils].isLocalUserPreviewView && aOnlineUser.localUser)];
+    
+    aOnlineUser.cameraSourceChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow placeHolderImage:onlineUser.image imageShouldFill:!(onlineUser.userType == PLVSocketUserTypeTeacher && [PLVSAUtils sharedUtils].isLocalUserPreviewView && onlineUser.localUser)];
+    };
+    
     aOnlineUser.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-        [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
+        [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow placeHolderImage:onlineUser.image imageShouldFill:!(onlineUser.userType == PLVSocketUserTypeTeacher && [PLVSAUtils sharedUtils].isLocalUserPreviewView && onlineUser.localUser)];
         if (hide) {
             if (onlineUser.currentCameraShouldShow) {
                 onlineUser.canvasView.frame = weakSelf.contentBackgroudView.bounds;
@@ -181,6 +187,31 @@
             [weakSelf callbackForRemoteUserDidScreenShare:onlineUser];
         }
     } blockKey:self];
+}
+
+/// 切换至 显示默认内容视图
+- (void)switchToShowRtcContentView:(UIView *)rtcCanvasView{
+    // 移除 contentBackgroudView 上的外部视图
+    [self removeSubview:self.contentBackgroudView];
+    
+    // contentBackgroudView 移至 contentView 的最底层
+    [self.contentView sendSubviewToBack:self.contentBackgroudView];
+    
+    // contentBackgroudView 承载 rtcCanvasView
+    [self contentBackgroudViewAddView:rtcCanvasView];
+    
+    self.showExternalContent = NO;
+}
+
+/// 切换至 显示外部内容视图
+- (void)switchToShowExternalContentView:(UIView *)externalContentView{
+    // contentBackgroudView 移至 contentView 的最顶层
+    [self.contentView bringSubviewToFront:self.contentBackgroudView];
+    
+    // contentBackgroudView 承载外部未知具体类型的视图
+    [self contentBackgroudViewAddView:externalContentView];
+    
+    self.showExternalContent = YES;
 }
 
 #pragma mark - [ Private Method ]
@@ -246,8 +277,18 @@
     BOOL localUserScreenShareOpen = onlineUser.localUser ? onlineUser.currentScreenShareOpen : NO;
     self.screenSharingLabel.hidden = !localUserScreenShareOpen;
     self.screenSharingImageView.hidden = !localUserScreenShareOpen;
-    [onlineUser.canvasView rtcViewShow:!localUserScreenShareOpen && onlineUser.currentCameraShouldShow];
+    [onlineUser.canvasView rtcViewShow:!localUserScreenShareOpen && onlineUser.currentCameraShouldShow placeHolderImage:onlineUser.image imageShouldFill:!(onlineUser.userType == PLVSocketUserTypeTeacher && [PLVSAUtils sharedUtils].isLocalUserPreviewView && onlineUser.localUser)];
     onlineUser.canvasView.placeholderImageView.hidden = localUserScreenShareOpen;
+}
+
+- (void)removeSubview:(UIView *)superview{
+    for (UIView * subview in superview.subviews) { [subview removeFromSuperview]; }
+}
+
+- (void)contentBackgroudViewAddView:(UIView *)contentView{
+    contentView.frame = self.contentBackgroudView.bounds;
+    contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.contentBackgroudView addSubview:contentView];
 }
 
 - (void)layoutLinkMicStatusLabel {
@@ -387,7 +428,9 @@
 
 - (void)handleDoubleTap {
     if (!(self.onlineUser.localUser && self.onlineUser.currentScreenShareOpen)) {
-        [self callbackForCellDidFullScreen:(self.contentView.superview == self)];
+        if (!self.showExternalContent) {
+            [self callbackForCellDidFullScreen:(self.contentView.superview == self)];
+        }
     }
 }
 

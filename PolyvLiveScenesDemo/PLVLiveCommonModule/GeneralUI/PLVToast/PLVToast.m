@@ -125,6 +125,14 @@ typedef void (^PLVToastCountdownAction)(void);
     }
 }
 
+- (void)hide {
+    if (self.hideDelayTimer) {
+        [self handleHideTimer];
+    } else {
+        [self removeFromSuperview];
+    }
+}
+
 - (void)showCountdownMessage {
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat maxWidth = isPad ? kToastPadMaxWidth : kToastMaxWidth;

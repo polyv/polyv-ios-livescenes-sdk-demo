@@ -29,6 +29,15 @@ typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
 /// 点击人员按钮回调
 - (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView;;
 
+// 点击 麦克风 按钮 触发回调
+- (void)toolbarAreaView:(PLVSAToolbarAreaView *)toolbarAreaView didChangeMicOpen:(BOOL)micOpen;
+
+// 点击 摄像头 按钮 触发回调
+- (void)toolbarAreaView:(PLVSAToolbarAreaView *)toolbarAreaView didChangeCameraOpen:(BOOL)cameraOpen;
+
+// 点击 摄像头设置 按钮 触发回调
+- (void)toolbarAreaViewDidTapCameraSettingButton:(PLVSAToolbarAreaView *)toolbarAreaView;
+
 /// 点击商品库按钮回调
 - (void)toolbarAreaViewDidTapCommodityButton:(PLVSAToolbarAreaView *)toolbarAreaView;
 
@@ -51,6 +60,12 @@ typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
 /// 同时更改连麦按钮状态，enbale设为YES
 @property (nonatomic, assign) BOOL channelLinkMicOpen;
 
+/// 本地用户的 摄像头 当前是否开启
+@property (nonatomic, assign) BOOL currentCameraOpen;
+
+/// 本地用户的 麦克风 当前是否开启
+@property (nonatomic, assign) BOOL currentMicOpen;
+
 @property (nonatomic, assign, readonly) PLVSAToolbarLinkMicButtonStatus linkMicButtonStatus;
 
 // 连麦布局切换(默认平铺，选中为主讲模式)
@@ -68,6 +83,9 @@ typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
 /// 更新当前连麦按钮状态【本地嘉宾用户有效】
 /// @param status 连麦按钮状态
 - (void)updateLinkMicButtonStatus:(PLVSAToolbarLinkMicButtonStatus)status;
+
+/// 改变摄像头/摄像头按钮选中状态
+- (void)changeCameraButtonEnableState:(BOOL)enable;
 
 @end
 

@@ -28,11 +28,15 @@
 #pragma mark 数据
 @property (nonatomic, copy) NSString * userId;
 @property (nonatomic, copy) NSString * linkMicUserId;
+@property (nonatomic, copy) NSString *masterRoomMixUserId;
+@property (nonatomic, copy) NSString *masterRoomMixRoomId;
+@property (nonatomic, copy) NSString *splashImg;
 @property (nonatomic, copy, nullable) NSString * actor;
 @property (nonatomic, copy, nullable) NSString * nickname;
 @property (nonatomic, copy, nullable) NSString * avatarPic;
 @property (nonatomic, assign) PLVSocketUserType userType;
 @property (nonatomic, assign) BOOL localUser;
+@property (nonatomic, assign) BOOL masterRoomUser;
 @property (nonatomic, strong) NSDictionary * originalUserDict;
 
 #pragma mark 状态
@@ -210,6 +214,20 @@
     return nil;
 }
 
++ (instancetype)masterRoomUserModelWithUserId:(NSString *)userId linkMicUserId:(NSString *)linkMicUserId masterRoomMixUserId:(NSString *)masterRoomMixUserId masterRoomMixRoomId:(NSString *)masterRoomMixRoomId splashImg:(NSString * _Nullable)splashImg {
+    if ([PLVFdUtil checkStringUseable:masterRoomMixUserId]) {
+        PLVLinkMicOnlineUser * user = [[PLVLinkMicOnlineUser alloc]init];
+        user.userId = userId;
+        user.linkMicUserId = linkMicUserId;
+        user.masterRoomMixUserId = masterRoomMixUserId;
+        user.masterRoomMixRoomId = masterRoomMixRoomId;
+        user.splashImg = splashImg;
+        user.masterRoomUser = YES;
+        return user;
+    }
+    return nil;
+}
+
 #pragma mark 状态更新
 
 - (void)updateWithDictionary:(NSDictionary *)dictionary {
@@ -356,6 +374,18 @@
         __weak typeof(self) weakSelf = self;
         plv_dispatch_main_async_safe(^{
             if (weakSelf) { weakSelf.cameraOpenChangedBlock(weakSelf); }
+        })
+    }
+}
+
+- (void)updateUserAvatarUrl:(NSString * _Nullable)avatarUrl image:(UIImage * _Nullable)image {
+    _avatarUrl = avatarUrl;
+    _image = image;
+    
+    if (self.cameraSourceChangedBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.cameraSourceChangedBlock(weakSelf); }
         })
     }
 }

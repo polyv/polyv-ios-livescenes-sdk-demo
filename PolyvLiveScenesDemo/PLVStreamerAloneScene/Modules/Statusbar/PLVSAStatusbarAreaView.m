@@ -39,6 +39,8 @@
 @property (nonatomic, strong) PLVSAStatusBarButton *teacherNameButton; // 讲师按钮
 @property (nonatomic, strong) PLVSAStatusBarButton *signalButton; // 信号视图
 @property (nonatomic, strong) PLVSANetworkStatePopup *networkStatePopup;
+@property (nonatomic, strong) UIButton *broadcastPictureButton; // 转播源画面
+@property (nonatomic, strong) UIButton *broadcastSoundButton; // 转播源声音
 
 #pragma mark 数据
 @property (nonatomic, assign) BOOL inClass;
@@ -59,6 +61,10 @@
         [self addSubview:self.timeButton];
         [self addSubview:self.signalButton];
         [self addSubview:self.teacherNameButton];
+        if ([self supportMasterRoom]) {
+            [self addSubview:self.broadcastPictureButton];
+            [self addSubview:self.broadcastSoundButton];
+        }
     }
     return self;
 }
@@ -90,6 +96,19 @@
 
     width = self.teacherNameButton.frame.size.width;
     self.teacherNameButton.frame = CGRectMake(marginX, CGRectGetMaxY(self.channelInfoButton.frame) + padding, width, 20);
+    
+    if (landscape) {
+        CGSize requiredSize = [self.broadcastPictureButton sizeThatFits:CGSizeMake(MAXFLOAT, 20)];
+        self.broadcastPictureButton.frame = CGRectMake(CGRectGetMaxX(self.teacherNameButton.frame) + padding, CGRectGetMaxY(self.channelInfoButton.frame) + padding, requiredSize.width, 20);
+        
+        requiredSize = [self.broadcastSoundButton sizeThatFits:CGSizeMake(MAXFLOAT, 20)];
+        self.broadcastSoundButton.frame = CGRectMake(CGRectGetMaxX(self.broadcastPictureButton.frame) + padding, CGRectGetMaxY(self.channelInfoButton.frame) + padding, requiredSize.width, 20);
+    } else {
+        CGSize requiredSize = [self.broadcastPictureButton sizeThatFits:CGSizeMake(MAXFLOAT, 20)];
+        self.broadcastPictureButton.frame = CGRectMake(marginX, CGRectGetMaxY(self.teacherNameButton.frame) + padding, requiredSize.width, 20);
+        requiredSize = [self.broadcastSoundButton sizeThatFits:CGSizeMake(MAXFLOAT, 20)];
+        self.broadcastSoundButton.frame = CGRectMake(CGRectGetMaxX(self.broadcastPictureButton.frame) + padding, CGRectGetMaxY(self.teacherNameButton.frame) + padding, requiredSize.width, 20);
+    }
         
     if (landscape) {
         signalControlX = self.bounds.size.width - 32 - marginX - 14 - self.signalButton.buttonCalWidth;
@@ -237,6 +256,48 @@
     }
     return _networkStatePopup;
 }
+- (UIButton *)broadcastPictureButton {
+    if (!_broadcastPictureButton) {
+        _broadcastPictureButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _broadcastPictureButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _broadcastPictureButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _broadcastPictureButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        _broadcastPictureButton.backgroundColor = [UIColor colorWithRed:0/255.0 green:0/255.0 blue:0/255.0 alpha:0.2];
+        _broadcastPictureButton.layer.cornerRadius = 4;
+        [_broadcastPictureButton setTitle:PLVLocalizedString(@"关闭源画面") forState:UIControlStateNormal];
+        [_broadcastPictureButton setTitle:PLVLocalizedString(@"开启源画面") forState:UIControlStateSelected];
+        [_broadcastPictureButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_broadcast_picture_open"] forState:UIControlStateNormal];
+        [_broadcastPictureButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_broadcast_picture_close"] forState:UIControlStateSelected];
+        [_broadcastPictureButton addTarget:self action:@selector(broadcastPictureButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _broadcastPictureButton;
+}
+
+- (UIButton *)broadcastSoundButton {
+    if (!_broadcastSoundButton) {
+        _broadcastSoundButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _broadcastSoundButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _broadcastSoundButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _broadcastSoundButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        _broadcastSoundButton.backgroundColor = [UIColor colorWithRed:0/255.0 green:0/255.0 blue:0/255.0 alpha:0.2];
+        _broadcastSoundButton.layer.cornerRadius = 4;
+        [_broadcastSoundButton setTitle:PLVLocalizedString(@"关闭源声音") forState:UIControlStateNormal];
+        [_broadcastSoundButton setTitle:PLVLocalizedString(@"开启源声音") forState:UIControlStateSelected];
+        [_broadcastSoundButton setTitle:PLVLocalizedString(@"开启源声音") forState:UIControlStateDisabled|UIControlStateNormal];
+        [_broadcastSoundButton setTitle:PLVLocalizedString(@"开启源声音") forState:UIControlStateDisabled|UIControlStateSelected];
+        [_broadcastSoundButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_broadcast_sound_open"] forState:UIControlStateNormal];
+        [_broadcastSoundButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_broadcast_sound_close"] forState:UIControlStateSelected];
+        [_broadcastSoundButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_broadcast_sound_close"] forState:UIControlStateDisabled|UIControlStateSelected];
+        [_broadcastSoundButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_broadcast_sound_close"] forState:UIControlStateDisabled|UIControlStateNormal];
+        [_broadcastSoundButton addTarget:self action:@selector(broadcastSoundButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _broadcastSoundButton;
+}
+
+- (BOOL)supportMasterRoom {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.supportMasterRoom && roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
 
 #pragma mark Setter
 
@@ -328,6 +389,19 @@
     [self.teacherNameButton setImage:[PLVSAUtils imageForStatusbarResource:imageName]];
 }
 
+- (void)setCurrentBroadcastPicture:(BOOL)currentBroadcastPicture {
+    _currentBroadcastPicture = currentBroadcastPicture;
+    self.broadcastPictureButton.selected = !currentBroadcastPicture;
+    self.broadcastSoundButton.enabled = currentBroadcastPicture;
+    self.broadcastSoundButton.alpha = currentBroadcastPicture ? 1 : 0.6;
+    [self broadcastSoundButtonAction];
+}
+
+- (void)setCurrentBroadcastSound:(BOOL)currentBroadcastSound {
+    _currentBroadcastSound = currentBroadcastSound;
+    self.broadcastSoundButton.selected = !currentBroadcastSound;
+}
+
 #pragma mark 更新UI
 
 - (void)updateMemberButtonFrameWithOnlineNumString:(NSString *)onlineNumString {
@@ -378,6 +452,24 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(statusbarAreaViewDidTapChannelInfoButton:)]) {
         [self.delegate statusbarAreaViewDidTapChannelInfoButton:self];
+    }
+}
+
+- (void)broadcastPictureButtonAction {
+    self.broadcastPictureButton.selected = !self.broadcastPictureButton.selected;
+    self.currentBroadcastPicture = !self.broadcastPictureButton.selected;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(statusbarAreaView:didChangeBroadcastPicture:)]) {
+        [self.delegate statusbarAreaView:self didChangeBroadcastPicture:!self.broadcastPictureButton.selected];
+    }
+}
+
+- (void)broadcastSoundButtonAction {
+    self.broadcastSoundButton.selected = !self.broadcastSoundButton.selected || !self.broadcastSoundButton.enabled;
+    self.currentBroadcastSound = !self.broadcastSoundButton.selected;
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(statusbarAreaView:didChangeBroadcastSound:)]) {
+        [self.delegate statusbarAreaView:self didChangeBroadcastSound:!self.broadcastSoundButton.selected];
     }
 }
 

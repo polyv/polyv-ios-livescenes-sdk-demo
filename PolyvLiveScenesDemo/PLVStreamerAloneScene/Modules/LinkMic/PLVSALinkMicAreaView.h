@@ -39,6 +39,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 退出直播时调用
 - (void)clear;
 
+/// 显示播放母流按钮
+- (void)showMatrixPlaybackButton:(BOOL)show;
+
+/// 显示播放母流加载视图
+- (void)showMatrixPlaybackLoadingView:(BOOL)show;
+
 @end
 
 /// 连麦区域视图Delegate
@@ -50,6 +56,11 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param areaView 连麦窗口列表视图
 - (PLVLinkMicOnlineUser *)localUserInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView;
+
+/// 连麦窗口列表视图 需要获取本地用户数据
+///
+/// @param areaView 连麦窗口列表视图
+- (PLVLinkMicOnlineUser *)masterRoomUserInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView;
 
 /// 连麦窗口列表视图 需要获取当前用户数组
 ///
@@ -107,6 +118,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param areaView 连麦窗口列表视图
 /// @param callback 获取剩余时间的回调
 - (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback;
+
+/// 子母直播间模式切换主副屏回调
+- (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView hadSwitchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating;
+
+- (void)plvSALinkMicAreaViewDidClickMatrixPlaybackButton:(PLVSALinkMicAreaView *)areaView;
 
 @end
 

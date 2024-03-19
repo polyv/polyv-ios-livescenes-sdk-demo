@@ -106,6 +106,8 @@
 
 "摄像头" = "Camera";
 
+"摄像头设置" = "Camera\n setting";
+
 "暂不支持该频道" = "This channel is not supported";
 
 "朋友圈" = "Moments";
@@ -288,6 +290,7 @@
 "欢迎 %@ 进入直播间" = "welcome %@ join";
 "暂无直播" = "Not Live";
 "暂无直播介绍～" = "No live broadcast introduction~";
+"母流暂无直播" = "Master Room Not Live";
 "频道信息" = "Channel Info";
 "主持人" = "Anchor";
 "当前暂无直播" = "No live streaming at the moment";
@@ -400,6 +403,8 @@
 "检测中" = "Detecting";
 "检测到%@，是否结束直播" = "%@ is detected, should you end the live?";
 "检测到之前异常退出，是否恢复直播" = "Abnormal exit before detection, Resume live stream?";
+"观众将无法看到直播内容，确认结束直播？" = "Audience will be unable to see live content. Confirm ending the live?";
+"直播托管中，请在30分钟内返回" = "The live is being hosted. Please get back within 30 minutes.";
 "马上切换" = "Switch now";
 "上课前无法发起连麦" = "Unable to start call before class begins";
 "上课错误" = "Error in class";

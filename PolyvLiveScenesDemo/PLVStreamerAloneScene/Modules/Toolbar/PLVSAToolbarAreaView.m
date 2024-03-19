@@ -43,6 +43,9 @@
 @property (nonatomic, strong) UIButton *layoutSwitchButton; // 连麦布局切换(默认平铺，选中为主讲模式)
 @property (nonatomic, strong) UIButton *linkMicButton; // 连麦按钮
 @property (nonatomic, strong) UIButton *memberButton; // 人员列表
+@property (nonatomic, strong) UIButton *cameraButton; // 摄像头
+@property (nonatomic, strong) UIButton *cameraSettingButton; // 摄像头设置
+@property (nonatomic, strong) UIButton *microphoneButton; // 麦克风
 @property (nonatomic, strong) UIView *memberBadgeView; // 等待连麦提示红点
 @property (nonatomic, strong) UIButton *commodityButton; // 商品库按钮
 @property (nonatomic, strong) UIButton *moreButton; // 更多弹层按钮
@@ -71,6 +74,12 @@
         [self addSubview:self.memberBadgeView];
         [self addSubview:self.commodityButton];
         [self addSubview:self.moreButton];
+        [self addSubview:self.microphoneButton];
+        if ([self supportCameraSetting]) {
+            [self addSubview:self.cameraSettingButton];
+        } else {
+            [self addSubview:self.cameraButton];
+        }
     }
     return self;
 }
@@ -99,18 +108,23 @@
     
     self.chatButton.titleEdgeInsets = UIEdgeInsetsMake(0, 15, 0, 0);
     
-    self.moreButton.frame = CGRectMake(self.bounds.size.width - 36 - marginLeft, 8, 36, 36);
-
-    self.commodityButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 12 - 36, 8, 36, 36);
-
-    self.memberButton.frame = CGRectMake(([self canManageCommodity] ? CGRectGetMinX(self.commodityButton.frame) : CGRectGetMinX(self.moreButton.frame)) - 12 - 36, 8, 36, 36);
-
+    self.moreButton.frame = CGRectMake(self.bounds.size.width - 36 - marginLeft, 8, 32, 32);
+    
+    self.memberButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 8 - 32, 8, 32, 32);
+    
     self.memberBadgeView.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) - 10, 8, 10, 10);
     
-    CGFloat originX = CGRectGetMinX(self.memberButton.frame);
-    self.linkMicButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
+    self.microphoneButton.frame = CGRectMake(CGRectGetMinX(self.memberButton.frame) - 8 - 32, 8, 32, 32);
+    
+    self.cameraSettingButton.frame = CGRectMake(CGRectGetMinX(self.microphoneButton.frame) - 8 - 32, 8, 32, 32);
+    self.cameraButton.frame = self.cameraSettingButton.frame = CGRectMake(CGRectGetMinX(self.microphoneButton.frame) - 8 - 32, 8, 32, 32);
+    
+    self.commodityButton.frame = CGRectMake(CGRectGetMinX(self.cameraButton.frame) - 8 - 32, 8, 32, 32);
+    
+    CGFloat originX = [self canManageCommodity] ? CGRectGetMinX(self.commodityButton.frame) : CGRectGetMinX(self.cameraButton.frame);
+    self.linkMicButton.frame = CGRectMake(originX - 8 - 32, 8, 32, 32);
     originX = self.linkMicButton.isHidden ? originX : CGRectGetMinX(self.linkMicButton.frame);
-    self.layoutSwitchButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
+    self.layoutSwitchButton.frame = CGRectMake(originX - 8 - 32, 8, 32, 32);
 }
 
 #pragma mark - [ Public Method ]
@@ -128,7 +142,7 @@
 }
 
 - (void)updateOnlineUserCount:(NSInteger)onlineUserCount {
-    self.layoutSwitchButton.hidden = (onlineUserCount <= 1);
+    self.layoutSwitchButton.hidden = (onlineUserCount <= 1 || [PLVRoomDataManager sharedManager].roomData.supportMasterRoom);
 }
 
 - (void)updateLinkMicButtonStatus:(PLVSAToolbarLinkMicButtonStatus)status {
@@ -163,6 +177,11 @@
     
     [self setNeedsLayout];
     [self layoutIfNeeded];
+}
+
+- (void)changeCameraButtonEnableState:(BOOL)enable {
+    self.cameraButton.enabled = enable;
+    self.cameraSettingButton.enabled = enable;
 }
 
 #pragma mark - [ Private Method ]
@@ -202,7 +221,7 @@
         [_linkMicButton setImage:[PLVSAUtils imageForMemberResource:@"plvsa_member_join_request"] forState:UIControlStateNormal];
         [_linkMicButton setImage:[PLVSAUtils imageForMemberResource:@"plvsa_member_join_leave"] forState:UIControlStateSelected];
         [_linkMicButton addTarget:self action:@selector(linkMicButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _linkMicButton.hidden = self.isGuest;
+        _linkMicButton.hidden = self.isGuest || [PLVRoomDataManager sharedManager].roomData.supportMasterRoom;
     }
     return _linkMicButton;
 }
@@ -243,6 +262,40 @@
         [_commodityButton addTarget:self action:@selector(commodityButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _commodityButton;
+}
+
+//TODO: 摄像头 摄像头设置 麦克风开关
+- (UIButton *)cameraButton {
+    if (!_cameraButton) {
+        _cameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_cameraButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_camera_close"] forState:UIControlStateNormal];
+        [_cameraButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_camera_open"] forState:UIControlStateSelected];
+        [_cameraButton addTarget:self action:@selector(cameraButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    
+    return _cameraButton;
+}
+
+- (UIButton *)cameraSettingButton {
+    if (!_cameraSettingButton) {
+        _cameraSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_cameraSettingButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_camera_close"] forState:UIControlStateNormal];
+        [_cameraSettingButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_camera_open"] forState:UIControlStateSelected];
+        [_cameraSettingButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_camera_disabled"] forState:UIControlStateSelected|UIControlStateDisabled];
+        [_cameraSettingButton addTarget:self action:@selector(cameraSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    
+    return _cameraSettingButton;
+}
+
+- (UIButton *)microphoneButton {
+    if (!_microphoneButton) {
+        _microphoneButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_microphoneButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_micphone_close"] forState:UIControlStateNormal];
+        [_microphoneButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_micphone_open"] forState:UIControlStateSelected];
+        [_microphoneButton addTarget:self action:@selector(microphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _microphoneButton;
 }
 
 - (PLVSASendMessageView *)sendMessageView {
@@ -297,7 +350,20 @@
     return userType == PLVRoomUserTypeGuest;;
 }
 
+- (BOOL)supportCameraSetting {
+    return [PLVRoomDataManager sharedManager].roomData.supportMasterRoom;
+}
+
 #pragma mark Setter
+
+- (void)setCurrentCameraOpen:(BOOL)currentCameraOpen {
+    self.cameraButton.selected = currentCameraOpen;
+    self.cameraSettingButton.selected = currentCameraOpen;
+}
+
+- (void)setCurrentMicOpen:(BOOL)currentMicOpen {
+    self.microphoneButton.selected = currentMicOpen;
+}
 
 #pragma mark Data Mode
 #pragma mark Net Request
@@ -355,6 +421,27 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapMoreButton:)]) {
         [self.delegate toolbarAreaViewDidTapMoreButton:self];
+    }
+}
+
+- (void)cameraButtonAction {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(toolbarAreaView:didChangeCameraOpen:)]) {
+        [self.delegate toolbarAreaView:self didChangeCameraOpen:!self.cameraButton.selected];
+    }
+}
+
+- (void)cameraSettingButtonAction {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapCameraSettingButton:)]) {
+        [self.delegate toolbarAreaViewDidTapCameraSettingButton:self];
+    }
+}
+
+- (void)microphoneButtonAction {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(toolbarAreaView:didChangeMicOpen:)]) {
+        [self.delegate toolbarAreaView:self didChangeMicOpen:!self.microphoneButton.selected];
     }
 }
 

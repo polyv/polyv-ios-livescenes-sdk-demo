@@ -28,6 +28,11 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 /// 点击直播信息回调
 - (void)statusbarAreaViewDidTapChannelInfoButton:(PLVSAStatusbarAreaView *)statusBarAreaView;
 
+/// 点击 转播源画面 按钮 触发回调
+- (void)statusbarAreaView:(PLVSAStatusbarAreaView *)statusBarAreaView didChangeBroadcastPicture:(BOOL)broadcastPicture;
+
+/// 点击 转播源声音 按钮 触发回调
+- (void)statusbarAreaView:(PLVSAStatusbarAreaView *)statusBarAreaView didChangeBroadcastSound:(BOOL)broadcastSound;
 @end
 
 @interface PLVSAStatusbarAreaView : UIView
@@ -60,6 +65,13 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 
 /// 本地用户的 麦克风 当前是否开启
 @property (nonatomic, assign) BOOL currentMicOpen;
+
+/// 当前 转播画面 当前是否开启
+@property (nonatomic, assign) BOOL currentBroadcastPicture;
+
+/// 当前 转播声音 当前是否开启
+@property (nonatomic, assign) BOOL currentBroadcastSound;
+
 
 /// 开始上课/结束上课
 /// @param start YES - 开始上课 NO - 结束上课

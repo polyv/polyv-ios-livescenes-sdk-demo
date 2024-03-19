@@ -491,10 +491,27 @@
         roomData.stream = PLV_SafeStringForDictKey(data, @"stream");
         roomData.currentStream = PLV_SafeStringForDictKey(data, @"currentStream");
         roomData.channelName = PLV_SafeStringForDictKey(data, @"nickname");
+        roomData.masterRoomId = PLV_SafeStringForDictKey(data, @"masterRoomId");
+        roomData.masterRoomMixRoomId = PLV_SafeStringForDictKey(data, @"masterRoomMixRoomId");
+        roomData.masterRoomMixUserId = PLV_SafeStringForDictKey(data, @"masterRoomMixUserId");
+        roomData.matrixPlaybackMixRoomId = PLV_SafeStringForDictKey(data, @"matrixPlaybackMixRoomId");
+        roomData.matrixPlaybackMixUserId = PLV_SafeStringForDictKey(data, @"matrixPlaybackMixUserId");
+        roomData.isMasterRoom = PLV_SafeBoolForDictKey(data, @"isMasterRoom");
+        roomData.subRoomScaleSize = PLV_SafeFloatForDictKey(data, @"subRoomScaleSize");
+        roomData.splashImg = PLV_SafeStringForDictKey(data, @"splashImg");
+        if ([roomData.splashImg isEqualToString:@"null"]) {
+            roomData.splashImg = @"";
+        } else if ([roomData.splashImg hasPrefix:@"//"]) {
+            roomData.splashImg = [@"https:" stringByAppendingString:roomData.splashImg];
+        }
+        
         roomData.rtmpUrl = rtmpUrl;
         roomData.multiplexingEnabled = PLV_SafeBoolForDictKey(data, @"multiplexingEnabled");
         roomData.channelGuestManualJoinLinkMic = [PLV_SafeStringForDictKey(data, @"colinMicType") isEqualToString:@"manual"];
         roomData.interactNumLimit = PLV_SafeIntegerForDictKey(data, @"InteractNumLimit");
+        if (roomData.supportMasterRoom) {
+            roomData.interactNumLimit = 0;
+        }
         roomData.isOnlyAudio = PLV_SafeBoolForDictKey(data, @"isOnlyAudio");
         roomData.liveStatusIsLiving = PLV_SafeBoolForDictKey(data, @"liveStatus");
         roomData.appBeautyEnabled = PLV_SafeBoolForDictKey(data, @"appBeautyEnabled");
@@ -505,6 +522,7 @@
         roomData.sipEnabled = PLV_SafeBoolForDictKey(data, @"sipEnabled");
         roomData.appDefaultPureViewEnabled = PLV_SafeBoolForDictKey(data, @"appDefaultPureViewEnabled");
         NSString *preferenceString = PLV_SafeStringForDictKey(data, @"pushQualityPreference");
+        roomData.masterRoomWatchLayout = PLV_SafeStringForDictKey(data, @"masterRoomWatchLayout");
         [roomData setupPushQualityPreference:preferenceString];
         
         // 初始化直播间用户数据
@@ -576,7 +594,21 @@
         [[PLVDocumentUploadClient sharedClient] setupWithChannelId:roomData.channelId pptAnimationEnable:pptAnimationEnable];
         
         [roomData requestChannelDetail:^(PLVLiveVideoChannelMenuInfo * channelMenuInfo) {
-            !completion ?: completion();
+            if (roomData.supportMasterRoom) {
+                [PLVLiveVideoAPI requestMatrixPlaybackWithChannelId:channelId completion:^(NSDictionary *data) {
+                    roomData.matrixRoomWatchStatus = PLV_SafeStringForDictKey(data, @"watchStatus");
+                    NSDictionary *video = PLV_SafeDictionaryForDictKey(data, @"video");
+                    roomData.matrixPlaybackVid = PLV_SafeStringForDictKey(video, @"vid");
+                    roomData.matrixPlaybackOrigin = PLV_SafeStringForDictKey(video, @"origin");
+                    roomData.matrixPlaybackUrl = PLV_SafeStringForDictKey(video, @"url");
+                    !completion ?: completion();
+                } failure:^(NSError *error) {
+                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request MatrixPlayback Info failed with 【%@】", __FUNCTION__, error);
+                    !completion ?: completion();
+                }];
+            } else {
+                !completion ?: completion();
+            }
         }];
     } failure:^(NSError * _Nonnull error) {
         NSString *errorDes = error.userInfo[NSLocalizedDescriptionKey];

@@ -264,6 +264,45 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
     return string;
 }
 
++ (PLVBroadcastLayoutType)broadcastLayoutTypWithStreamerBroadcastLayoutType:(PLVRTCStreamerBroadcastLayoutType)streamerType {
+    PLVBroadcastLayoutType layoutType = PLVBroadcastLayoutType_BottomRight;
+    switch (streamerType) {
+        case PLVRTCStreamerBroadcastLayoutType_BottomRight:
+            layoutType = PLVBroadcastLayoutType_BottomRight;
+            break;
+        case PLVRTCStreamerBroadcastLayoutType_BottomLeft:
+            layoutType = PLVBroadcastLayoutType_BottomLeft;
+            break;
+        case PLVRTCStreamerBroadcastLayoutType_TopRight:
+            layoutType = PLVBroadcastLayoutType_TopRight;
+            break;
+        case PLVRTCStreamerBroadcastLayoutType_TopLeft:
+            layoutType = PLVBroadcastLayoutType_TopLeft;
+            break;
+    }
+    return layoutType;
+}
+
++ (PLVRTCStreamerBroadcastLayoutType)streamerBroadcastLayoutTypWithBroadcastLayoutType:(PLVBroadcastLayoutType)layoutType {
+    PLVRTCStreamerBroadcastLayoutType streamerType = PLVRTCStreamerBroadcastLayoutType_BottomRight;
+    switch (layoutType) {
+            
+        case PLVBroadcastLayoutType_BottomRight:
+            streamerType = PLVRTCStreamerBroadcastLayoutType_BottomRight;
+            break;
+        case PLVBroadcastLayoutType_BottomLeft:
+            streamerType = PLVRTCStreamerBroadcastLayoutType_BottomLeft;
+            break;
+        case PLVBroadcastLayoutType_TopRight:
+            streamerType = PLVRTCStreamerBroadcastLayoutType_TopRight;
+            break;
+        case PLVBroadcastLayoutType_TopLeft:
+            streamerType = PLVRTCStreamerBroadcastLayoutType_TopLeft;
+            break;
+    }
+    return streamerType;
+}
+
 #pragma mark - [ Private Method ]
 
 /// 配置菜单信息
@@ -327,6 +366,31 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
     } else if ([appWebStartResolutionRatio isEqualToString:@"4:3"]) {
         _streamScale = PLVBLinkMicStreamScale4_3;
     }
+}
+
+- (BOOL)supportMasterRoom {
+    PLVRoomUserType userType = _roomUser.viewerType;
+    if (userType == PLVRoomUserTypeTeacher ||
+        userType == PLVRoomUserTypeGuest) {
+        if ([PLVFdUtil checkStringUseable:_masterRoomId] &&
+            [PLVFdUtil checkStringUseable:_masterRoomMixRoomId] &&
+            [PLVFdUtil checkStringUseable:_masterRoomMixUserId]) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+- (BOOL)supportMatrixPlayback {
+    if (self.supportMasterRoom &&
+        [PLVFdUtil checkStringUseable:_matrixRoomWatchStatus] &&
+        [PLVFdUtil checkStringUseable:_matrixPlaybackUrl] &&
+        [PLVFdUtil checkStringUseable:_matrixPlaybackVid] &&
+        [PLVFdUtil checkStringUseable:_matrixPlaybackOrigin] &&
+        [_matrixRoomWatchStatus isEqualToString:@"playback"]) {
+        return YES;
+    }
+    return NO;
 }
 
 @end

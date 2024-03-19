@@ -48,6 +48,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 改变 混流布局 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutType:(PLVMixLayoutType)type;
 
+/// 改变 转播布局 触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeBroadcastLayoutType:(PLVBroadcastLayoutType)type;
+
 /// 改变 视频流画质偏好 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference;
 
@@ -62,6 +65,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 点击 摄像头 按钮 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeCameraOpen:(BOOL)cameraOpen;
+
+/// 点击 摄像头设置 按钮 触发回调
+- (void)streamerHomeViewDidTapCameraSettingButton:(PLVSAStreamerHomeView *)homeView didTapCameraOpen:(BOOL)cameraOpen cameraSetting:(BOOL)isPicture placeholderImage:(UIImage * _Nullable)image placeholderImageUrl:(NSString * _Nullable)url;
 
 /// 点击 麦克风 按钮 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMicOpen:(BOOL)micOpen;
@@ -78,6 +84,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 闪光灯 按钮触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeFlashOpen:(BOOL)flashOpen;
 
+/// 点击 转播画面 按钮触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeBroadcastPicture:(BOOL)broadcastPicture;
+
+/// 点击 转播声音 按钮触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeBroadcastSound:(BOOL)broadcastSound;
+
 /// 点击 关闭 按钮触发回调
 - (void)streamerHomeViewDidTapCloseButton:(PLVSAStreamerHomeView *)homeView;
 
@@ -89,6 +101,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 获取当前频道连麦媒体类型
 - (PLVChannelLinkMicMediaType)streamerHomeViewCurrentChannelLinkMicMediaType:(PLVSAStreamerHomeView *)homeView;
+
+/// 获取外部合适的悬浮窗尺寸
+-  (CGSize)streamerHomeViewCurrentFloatingContentSize:(PLVSAStreamerHomeView *)homeView;
+
 
 @end
 
@@ -158,11 +174,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param show YES: 显示；NO：隐藏
 - (void)showBeautySheet:(BOOL)show;
 
+/// 更新摄像头来源，摄像头图片地址
+- (void)updateVideoSourceType:(PLVVideoSourceType)videoSourceType image:(UIImage * _Nullable)image imageSourceUrl:(NSString * _Nullable)imageSourceUrl;
+
 - (void)updateStatistics:(PLVRTCStatistics *)statistics;
+
+- (void)updateLinkMicUserId:(NSString *)linkMicUserId VideoSize:(CGSize)videoSize;
 
 - (void)dismissBottomSheet;
 
 - (void)showBadNetworkTipsView;
+
+- (void)switchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating;
+
+- (void)updateFloatingWindowsWithShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating;
 
 @end
 

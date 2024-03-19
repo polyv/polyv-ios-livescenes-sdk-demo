@@ -7,6 +7,7 @@
 //
 
 #import "PLVSAStreamerViewController.h"
+#import <UserNotifications/UserNotifications.h>
 
 // 工具类
 #import "PLVSAUtils.h"
@@ -39,6 +40,7 @@
 static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
 static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
 static NSString *const kPLVSASettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
+static NSString *const PLVSAStreamerViewControllerLivingNotification = @"PLVSAStreamerViewControllerLivingNotification";
 
 /// PLVSAStreamerViewController 所处的四种状态，不同状态下，展示不同的页面
 typedef NS_ENUM(NSInteger, PLVSAStreamerViewState) {
@@ -118,6 +120,12 @@ PLVShareLiveSheetDelegate
 @property (nonatomic, assign) BOOL localUserScreenShareOpen; // 本地用户是否开启了屏幕共享
 @property (nonatomic, assign) BOOL otherUserFullScreen; // 非本地用户开启了全屏
 @property (nonatomic, assign, readonly) PLVBLinkMicStreamScale streamScale; // 当前直播流比例
+@property (nonatomic, assign) BOOL showMasterRoomVideoMutedToast; // 是否显示过“母流暂无直播”的提示
+@property (nonatomic, strong) UIImage *currentUserImage; // 用户当前配置头像
+@property (nonatomic, assign) PLVVideoSourceType currentVideoSourceType;
+@property (nonatomic, copy) NSString *currentImageSourceUrl;// 用户当前配置默认图片地址
+@property (nonatomic, assign) BOOL hadStartMatrixPlayback;
+@property (nonatomic, assign) BOOL matrixPlaybackLoading;
 
 @end
 
@@ -403,7 +411,11 @@ PLVShareLiveSheetDelegate
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     
     // 设置麦克风、摄像头默认配置
-    self.streamerPresenter.micDefaultOpen = YES;
+    if (roomData.supportMasterRoom) {
+        self.streamerPresenter.micDefaultOpen = roomData.userDefaultMicEnable;
+    } else {
+        self.streamerPresenter.micDefaultOpen = YES;
+    }
     self.streamerPresenter.cameraDefaultOpen = YES;
     self.streamerPresenter.cameraDefaultFront = !roomData.appDefaultPureViewEnabled;
     
@@ -429,11 +441,26 @@ PLVShareLiveSheetDelegate
         [self setupLiveroomStreamScale];
     }
     // 设置默认开播方向
-    if (roomData.appDefaultLandScapeEnabled) {
+    if (roomData.appDefaultLandScapeEnabled) { //优先响应默认横屏设置
+        [self.settingView changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+    } else if (roomData.supportMasterRoom && [PLVFdUtil checkStringUseable:roomData.masterRoomWatchLayout] && [roomData.masterRoomWatchLayout isEqualToString:@"normal"]) {
         [self.settingView changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
     }
     
+    if (roomData.supportMasterRoom) {
+        [[SDWebImageDownloader sharedDownloader]downloadImageWithURL:[NSURL URLWithString:roomData.userDefaultImageSourceUrl] options:SDWebImageDownloaderUseNSURLCache progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
+            if (finished) {
+                [self.streamerPresenter openLocalUserCamera:YES sourceFromImage:roomData.userDefaultVideoSourceType == PLVVideoSourceType_Picture image:image imageUrl:roomData.userDefaultImageSourceUrl];
+                [self.settingView landscapeShouldShiftRight:roomData.userDefaultVideoSourceType == PLVVideoSourceType_Picture];
+                [self.settingView updateVideoSourceType:roomData.userDefaultVideoSourceType image:image imageSourceUrl:roomData.userDefaultImageSourceUrl];
+                self.currentUserImage = image;
+                self.currentImageSourceUrl = roomData.userDefaultImageSourceUrl;
+                self.currentVideoSourceType = roomData.userDefaultVideoSourceType;
+            }
+        }];
+    }
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
+    [PLVSAUtils sharedUtils].isLocalUserPreviewView = YES;
 }
 
 - (void)setupNotification {
@@ -447,6 +474,15 @@ PLVShareLiveSheetDelegate
             }
         }
     }];
+    
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+        [center requestAuthorizationWithOptions:(UNAuthorizationOptionSound | UNAuthorizationOptionAlert | UNAuthorizationOptionBadge) completionHandler:^(BOOL granted, NSError * _Nullable error) {
+            if (!granted) {
+                NSLog(@"用户未授权使用通知");
+            }
+        }];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didEnterBackground:) name:UIApplicationDidEnterBackgroundNotification object:nil];
 }
 
 /// 设置直播间 流比例
@@ -474,6 +510,7 @@ PLVShareLiveSheetDelegate
         return;
     }
     self.viewState = viewState;
+    [PLVSAUtils sharedUtils].isLocalUserPreviewView = (self.viewState == PLVSAStreamerViewStateBeforeSteam);
     
     if (_settingView && _settingView.superview) {
         [_settingView removeFromSuperview];
@@ -510,9 +547,13 @@ PLVShareLiveSheetDelegate
     self.homeView = [[PLVSAStreamerHomeView alloc] initWithLocalOnlineUser:self.streamerPresenter.localOnlineUser
                                                         linkMicWindowsView:self.linkMicAreaView.windowsView];
     self.homeView.delegate = self;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     [self.homeView updateUserList:[self.memberPresenter userList]
                         userCount:self.memberPresenter.userCount
                       onlineCount:[self.streamerPresenter.onlineUserArray count]];
+    if (roomData.supportMasterRoom) {
+        [self.homeView updateVideoSourceType:self.currentVideoSourceType image:self.currentUserImage imageSourceUrl:self.currentImageSourceUrl];
+    }
 }
 
 #pragma mark Start Class
@@ -533,6 +574,22 @@ PLVShareLiveSheetDelegate
                     [weakSelf.streamerPresenter enableBeautyProcess:[PLVBeautyViewModel sharedViewModel].beautyIsOpen];
                     
                     [weakSelf.settingView enableMirrorButton:weakSelf.streamerPresenter.currentCameraFront];
+ 
+                    weakSelf.settingView.currentMicOpen = weakSelf.streamerPresenter.currentMicOpen;
+                    weakSelf.settingView.currentCameraOpen = weakSelf.streamerPresenter.currentCameraOpen;
+                    
+                    [weakSelf.streamerPresenter.localOnlineUser addMicOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+                        if (weakSelf.viewState >= PLVSAStreamerViewStateSteaming) {
+                            return;
+                        }
+                        weakSelf.settingView.currentMicOpen = onlineUser.currentMicOpen;
+                    } blockKey:weakSelf];
+                    [weakSelf.streamerPresenter.localOnlineUser addCameraShouldShowChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+                        if (weakSelf.viewState >= PLVSAStreamerViewStateSteaming) {
+                            return;
+                        }
+                        weakSelf.settingView.currentCameraOpen = onlineUser.currentCameraOpen;
+                    } blockKey:weakSelf];
                 }
             }];
         }
@@ -580,16 +637,7 @@ PLVShareLiveSheetDelegate
     __weak typeof(self) weakSelf = self;
     if (self.streamerPresenter.micCameraGranted &&
         self.streamerPresenter.inRTCRoom) {
-        if (self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Unknown) {
-            // 麦克风和摄像头当前全部关闭时
-            if (!self.streamerPresenter.currentMicOpen &&
-                !self.streamerPresenter.currentCameraOpen) {
-                /// 开始上课倒数
-                [self updateViewState:PLVSAStreamerViewStateBeginSteam];
-            }else{
-                needRetry = YES;
-            }
-        } else if(self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Down) {
+       if (self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Down) {
             needRetry = YES;
         }else{
             /// 开始上课倒数
@@ -761,6 +809,37 @@ PLVShareLiveSheetDelegate
     }
 }
 
+#pragma mark - [Notification]
+/// 回到前台
+- (void)didBecomeActive:(NSNotification *)notification {
+    UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+    [center removePendingNotificationRequestsWithIdentifiers:@[PLVSAStreamerViewControllerLivingNotification]];
+    [center removeDeliveredNotificationsWithIdentifiers:@[PLVSAStreamerViewControllerLivingNotification]];
+}
+
+/// 退至后台
+- (void)didEnterBackground:(NSNotification *)notification {
+    if (self.viewState >= PLVSAStreamerViewStateBeginSteam && self.viewState <= PLVSAStreamerViewStateSteaming && self.viewerType == PLVRoomUserTypeTeacher) {
+        // 创建本地通知内容
+            UNMutableNotificationContent *content = [[UNMutableNotificationContent alloc] init];
+            content.title = PLVLocalizedString(@"直播托管中，请在30分钟内返回");
+            
+            // 创建触发器，立即触发通知
+            UNTimeIntervalNotificationTrigger *trigger = [UNTimeIntervalNotificationTrigger triggerWithTimeInterval:1 repeats:NO];
+            
+            // 创建通知请求
+            UNNotificationRequest *request = [UNNotificationRequest requestWithIdentifier:PLVSAStreamerViewControllerLivingNotification content:content trigger:trigger];
+            
+            // 将通知请求添加到通知中心
+            UNUserNotificationCenter *center = [UNUserNotificationCenter currentNotificationCenter];
+            [center addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
+                if (error) {
+                    NSLog(@"添加本地通知失败: %@", error);
+                }
+            }];
+    }
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark PLVMemberPresenterDelegate
@@ -886,6 +965,10 @@ PLVShareLiveSheetDelegate
     if (presenter.videoQosPreference == PLVBRTCVideoQosPreferenceClear && statistics.upLoss > 30) {
         [self.homeView showBadNetworkTipsView];
     }
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicUserId:(NSString *)linkMicUserId videoSizeChanged:(CGSize)videoSize {
+    [self.homeView updateLinkMicUserId:linkMicUserId VideoSize:videoSize];
 }
 
 /// ’等待连麦用户数组‘ 发生改变
@@ -1147,10 +1230,59 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter startMatrixPlayback:(BOOL)success {
+    if (!success) {
+        if ([PLVRoomDataManager sharedManager].roomData.supportMatrixPlayback) {
+            [self.linkMicAreaView showMatrixPlaybackButton:YES];
+        }
+    } else {
+        self.matrixPlaybackLoading = YES;
+        [self.linkMicAreaView showMatrixPlaybackLoadingView:YES];
+    }
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter startRemoteMasterRoomView:(PLVLinkMicOnlineUser *)masterRoomUser {
+    [self.homeView switchShowMasterRoom:YES masterRoomInFloating:NO];
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter masterRoomViewVideoMuted:(BOOL)videoMuted {
+    if (!self.showMasterRoomVideoMutedToast && videoMuted) {
+        [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"母流暂无直播") inView:self.view afterDelay:5.0];
+        self.showMasterRoomVideoMutedToast = YES;
+    } else if (!videoMuted){
+        self.showMasterRoomVideoMutedToast = NO;
+        for (UIView *view in self.view.subviews) {
+            if ([view isKindOfClass:PLVToast.class]) {
+                PLVToast *toast = (PLVToast *)view;
+                if (toast.label && [PLVFdUtil checkStringUseable:toast.label.text] && [toast.label.text isEqualToString:PLVLocalizedString(@"母流暂无直播")]) {
+                    [toast hide];
+                    break;
+                }
+            }
+        }
+    }
+    BOOL supportMatrixPlayback = [PLVRoomDataManager sharedManager].roomData.supportMatrixPlayback;
+    if (supportMatrixPlayback && !videoMuted) {
+        self.hadStartMatrixPlayback = YES;
+    }
+    
+    if (self.hadStartMatrixPlayback && supportMatrixPlayback) {
+        [self.linkMicAreaView showMatrixPlaybackButton:NO];
+        if (self.matrixPlaybackLoading) {
+            [self.linkMicAreaView showMatrixPlaybackLoadingView:NO];
+            self.matrixPlaybackLoading = NO;
+        }
+    }
+}
+
 #pragma mark PLVSALinkMicAreaViewDelegate
 
 - (PLVLinkMicOnlineUser *)localUserInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
     return self.streamerPresenter.localOnlineUser;
+}
+
+- (PLVLinkMicOnlineUser *)masterRoomUserInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
+    return self.streamerPresenter.masterRoomUser;
 }
 
 - (NSArray *)currentOnlineUserListInLinkMicAreaView:(PLVSALinkMicAreaView *)areaView {
@@ -1194,6 +1326,14 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self.streamerPresenter requestLocalUserInviteLinkMicTTLCallback:callback];
 }
 
+- (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView hadSwitchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating {
+    [self.homeView updateFloatingWindowsWithShowMasterRoom:showMasterRoom masterRoomInFloating:inFloating];
+}
+
+- (void)plvSALinkMicAreaViewDidClickMatrixPlaybackButton:(PLVSALinkMicAreaView *)areaView {
+    [self.streamerPresenter startMatrixPlayback];
+}
+
 #pragma mark PLVSAStreamerSettingViewDelegate
 
 - (void)streamerSettingViewBackButtonClick {
@@ -1215,6 +1355,22 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     } else {
         [self tryStartClassRetryCount:0];
     }
+}
+
+- (void)streamerSettingViewDidChangeCameraOpen:(BOOL)cameraOpen {
+    [self.streamerPresenter openLocalUserCamera:cameraOpen];
+}
+
+- (void)streamerSettingViewDidTapCameraSettingButton:(PLVSAStreamerSettingView *)streamerSettingView didTapCameraOpen:(BOOL)cameraOpen cameraSetting:(BOOL)isPicture placeholderImage:(UIImage *)image placeholderImageUrl:(NSString *)url {
+    [self.streamerPresenter openLocalUserCamera:cameraOpen sourceFromImage:isPicture image:image imageUrl:url];
+    self.currentImageSourceUrl = url;
+    self.currentVideoSourceType = isPicture ? PLVVideoSourceType_Picture : PLVVideoSourceType_Camera;
+    self.currentUserImage = image;
+    [self.settingView landscapeShouldShiftRight:cameraOpen && image];
+}
+
+- (void)streamerSettingViewDidChangeMicOpen:(BOOL)micOpen {
+    [self.streamerPresenter openLocalUserMic:micOpen];
 }
 
 - (void)streamerSettingViewCameraReverseButtonClick {
@@ -1279,18 +1435,21 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerHomeViewDidTapCloseButton:(PLVSAStreamerHomeView *)homeView {
     __weak typeof(self) weakSelf = self;
-    PLVSAFinishStreamerSheet *actionSheet = [[PLVSAFinishStreamerSheet alloc] init];
-    [actionSheet showInView:self.view finishAction:^{
-        if (weakSelf.viewerType == PLVRoomUserTypeGuest) {
-            [weakSelf guestLogout]; //嘉宾会直接退出直播间
-        } else {
-            [weakSelf finishClass];
-        }
-    }];
+    [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"观众将无法看到直播内容，确认结束直播？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle") confirmActionBlock:^{
+               if (weakSelf.viewerType == PLVRoomUserTypeGuest) {
+                   [weakSelf guestLogout]; //嘉宾会直接退出直播间
+               } else {
+                   [weakSelf finishClass];
+               }
+           }];
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeCameraOpen:(BOOL)cameraOpen{
     [self.streamerPresenter openLocalUserCamera:cameraOpen];
+}
+
+- (void)streamerHomeViewDidTapCameraSettingButton:(PLVSAStreamerHomeView *)homeView didTapCameraOpen:(BOOL)cameraOpen cameraSetting:(BOOL)isPicture placeholderImage:(UIImage *)image placeholderImageUrl:(NSString *)url {
+    [self.streamerPresenter openLocalUserCamera:cameraOpen sourceFromImage:isPicture image:image imageUrl:url];
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)moreInfoSheet didChangeFlashOpen:(BOOL)flashOpen{
@@ -1338,6 +1497,14 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
              [self.homeView changeScreenShareButtonSelectedState:!screenShareOpen];
          }
      }
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeBroadcastPicture:(BOOL)broadcastPicture {
+    [self.streamerPresenter setupBroadcastPicture:broadcastPicture];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeBroadcastSound:(BOOL)broadcastSound {
+    [self.streamerPresenter setupBroadcastSound:broadcastSound];
 }
 
 - (PLVResolutionType)streamerHomeViewCurrentQuality:(PLVSAStreamerHomeView *)homeView {
@@ -1404,6 +1571,11 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self saveSelectedMixLayoutType:type];
 }
 
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeBroadcastLayoutType:(PLVBroadcastLayoutType)type {
+    PLVRTCStreamerBroadcastLayoutType streamerLayout = [PLVRoomData streamerBroadcastLayoutTypWithBroadcastLayoutType:type];
+    [self.streamerPresenter setupBroadcastLayoutType:streamerLayout];
+}
+
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference {
     [self.streamerPresenter setupVideoQosPreference:videoQosPreference];
 }
@@ -1426,6 +1598,19 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (PLVChannelLinkMicMediaType)streamerHomeViewCurrentChannelLinkMicMediaType:(PLVSAStreamerHomeView *)homeView {
     return self.streamerPresenter.channelLinkMicMediaType;
+}
+
+- (CGSize)streamerHomeViewCurrentFloatingContentSize:(PLVSAStreamerHomeView *)homeView {
+    if (self.streamerPresenter.streamScale == PLVBLinkMicStreamScale3_4) {
+        return CGSizeMake(3, 4);
+    } else if (self.streamerPresenter.streamScale == PLVBLinkMicStreamScale4_3) {
+        return CGSizeMake(4, 3);
+    } else if (self.streamerPresenter.streamScale == PLVBLinkMicStreamScale16_9) {
+        return CGSizeMake(16, 9);
+    } else if (self.streamerPresenter.streamScale == PLVBLinkMicStreamScale9_16) {
+        return CGSizeMake(9, 16);
+    }
+    return self.view.bounds.size;
 }
 
 #pragma mark PLVSABeautySheetDelegate

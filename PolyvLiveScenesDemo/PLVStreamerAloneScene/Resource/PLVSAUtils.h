@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImageDownloader.h>
+#import "PLVToast.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -35,6 +36,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 设备方向
 @property (nonatomic, assign, readonly) UIDeviceOrientation deviceOrientation;
+
+/// 当前是否是本地用户预览视图
+@property (nonatomic, assign) BOOL isLocalUserPreviewView;
 
 
 /// 单例

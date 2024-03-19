@@ -217,6 +217,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// 当前 本地用户
 @property (nonatomic, weak, readonly) PLVLinkMicOnlineUser * localOnlineUser;
 
+/// 当前 母房间用户
+@property (nonatomic, strong, readonly) PLVLinkMicOnlineUser * masterRoomUser;
+
 /// 当前 等待连麦 用户数组
 ///
 /// @note 准确的描述，应是 “按业务逻辑需对外展示的 等待连麦 用户数组”
@@ -308,6 +311,9 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @note 若加入成功，将触发 [plvStreamerPresenter:currentRtcRoomJoinStatus:inRTCRoomChanged:inRTCRoom:] 回调
 - (void)joinRTCChannel;
 
+///// 加入 次RTC频道
+//- (int)joinSubRTCChannelWithChannelId:(NSString *)channelId userId:(NSString *)userId;
+
 /// 退出RTC频道
 ///
 /// @note 该方法被调用，则表达 ‘外部希望退出RTC频道’，将直接退出RTC频道；
@@ -359,6 +365,12 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///       NO: 本地视频预览无论是否镜像，远端观看效果均不镜像，即效果相互独立，互不干扰；
 - (void)setupLocalVideoPreviewSameAsRemoteWatch:(BOOL)localSameAsRemote;
 
+- (void)setupBroadcastLayoutType:(PLVRTCStreamerBroadcastLayoutType)layoutType;
+
+- (void)setupBroadcastPicture:(BOOL)open;
+
+- (void)setupBroadcastSound:(BOOL)open;
+
 #pragma mark CDN流管理
 /// 开始推流
 ///
@@ -391,6 +403,15 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///
 /// @param openCamera 开启或关闭 摄像头 (YES:开启；NO:关闭)
 - (void)openLocalUserCamera:(BOOL)openCamera;
+
+
+/// 开启或关闭 本地用户 的摄像头并设置本地图片
+///
+/// @note 将触发RTC房间内其他成员，收到回调；
+///
+/// @param openCamera 开启或关闭 摄像头 (YES:开启；NO:关闭)
+/// @param imageSource 摄像头来源画面 （YES：图像 NO：本地摄像头）
+- (void)openLocalUserCamera:(BOOL)openCamera sourceFromImage:(BOOL)imageSource image:(UIImage * _Nullable)image imageUrl:( NSString *)imageUrl;
 
 /// 切换 本地用户 的前后置摄像头
 ///
@@ -538,6 +559,10 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// 获取美颜管理器
 - (PLVBeautyManager *)shareBeautyManager;
 
+#pragma mark 转推
+
+- (void)startMatrixPlayback;
+
 @end
 
 
@@ -571,6 +596,12 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// RTC频道统计信息回调
 /// 该回调每间隔2秒抛出一次，只在进入频道后触发
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter rtcStatistics:(PLVRTCStatistics *)statistics;
+
+/// 开始拉取转播画面回调
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter startRemoteMasterRoomView:(PLVLinkMicOnlineUser *)masterRoomUser;
+
+/// 转播画面显示回调
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter masterRoomViewVideoMuted:(BOOL)videoMuted;
 
 #pragma mark 课程事件
 /// 当前频道 sessionId 场次Id发生变化
@@ -783,6 +814,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param screenShareOpen 当前正在讲话的连麦用户数组
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter   remoteOnlineUser:(PLVLinkMicOnlineUser *)onlineUser screenShareOpenChanged:(BOOL)screenShareOpen;
 
+/// 当前连麦用户的 视频尺寸发生改变
+///
+/// @param presenter 连麦管理器
+/// @param linkMicUserId 连麦用户ID
+/// @param videoSize 视频的尺寸
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicUserId:(NSString *)linkMicUserId videoSizeChanged:(CGSize)videoSize;
+
 /// 强制挂断 当前连麦用户
 ///
 /// @param presenter 推流管理器
@@ -816,6 +854,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param presenter 推流管理器
 /// @param error 错误对象
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter beautyProcessDidOccurError:(NSError *)error;
+
+#pragma mark 转推任务
+
+/// 转推任务发起回调
+/// @param presenter 推流管理器
+/// @param success 发起成功
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter startMatrixPlayback:(BOOL)success;
 
 @end
 

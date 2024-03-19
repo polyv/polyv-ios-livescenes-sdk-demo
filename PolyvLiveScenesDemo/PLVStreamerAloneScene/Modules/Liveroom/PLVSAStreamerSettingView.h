@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h>
 #import "PLVRoomData.h"
 #import "PLVSAMixLayoutSheet.h"
+#import "PLVSACameraSettingSheet.h"
 
 
 @protocol PLVSAStreamerSettingViewDelegate;
@@ -22,6 +23,12 @@
 @property (nonatomic, strong, readonly) PLVSAMixLayoutSheet *mixLayoutSheet;
 
 @property (nonatomic, assign, readonly) BOOL canAutorotate;
+
+/// 本地用户的 摄像头 当前是否开启
+@property (nonatomic, assign) BOOL currentCameraOpen;
+
+/// 本地用户的 麦克风 当前是否开启
+@property (nonatomic, assign) BOOL currentMicOpen;
 
 // 推流视频模版默认清晰度（已区分讲师和嘉宾）
 @property (nonatomic, copy, readonly) NSString *defaultQualityLevel;
@@ -49,6 +56,12 @@
 /// 同步当前开播流比例
 - (void)synchPushStreamScale:(PLVBLinkMicStreamScale)streamScale;
 
+/// 右移显示
+- (void)landscapeShouldShiftRight:(BOOL)shiftRight;
+
+/// 更新摄像头来源，摄像头图片地址
+- (void)updateVideoSourceType:(PLVVideoSourceType)videoSourceType image:(UIImage * _Nullable)image imageSourceUrl:(NSString * _Nullable)imageSourceUrl;
+
 @end
 
 @protocol PLVSAStreamerSettingViewDelegate <NSObject>
@@ -65,6 +78,12 @@
   @param type 当前清晰度
  */
 - (void)streamerSettingViewStartButtonClickWithResolutionType:(PLVResolutionType)type;
+/// 点击 摄像头设置 按钮 触发回调
+- (void)streamerSettingViewDidTapCameraSettingButton:(PLVSAStreamerSettingView *)streamerSettingView didTapCameraOpen:(BOOL)cameraOpen cameraSetting:(BOOL)isPicture placeholderImage:(UIImage * _Nullable)image placeholderImageUrl:(NSString * _Nullable)url;
+/// 点击 摄像头 按钮 触发回调
+- (void)streamerSettingViewDidChangeCameraOpen:(BOOL)cameraOpen;
+// 点击 麦克风 按钮 触发回调
+- (void)streamerSettingViewDidChangeMicOpen:(BOOL)micOpen;
 /// 摄像头反转
 - (void)streamerSettingViewCameraReverseButtonClick;
 /// 镜像

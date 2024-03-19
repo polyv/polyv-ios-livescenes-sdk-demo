@@ -13,6 +13,7 @@
 #import "PLVSALinkMicWindowsSpeakerView.h"
 #import "PLVSALinkMicSpeakerPlaceholderView.h"
 #import "PLVSALinkMicPreviewView.h"
+#import "PLVSALinkMicWindowsExternalView.h"
 
 // 模块
 #import "PLVLinkMicOnlineUser+SA.h"
@@ -22,7 +23,8 @@
 
 typedef NS_ENUM(NSInteger, PLVSALinkMicLayoutMode) {
     PLVSALinkMicLayoutModeTiled = 0, //平铺模式
-    PLVSALinkMicLayoutModeSpeaker = 1 //主讲模式
+    PLVSALinkMicLayoutModeSpeaker = 1, //主讲模式
+    PLVSALinkMicLayoutModeMasterRoom = 2 // 子母直播间模式
 };
 
 //连麦窗口宽高比例 横屏 3:2 竖屏2:3
@@ -42,20 +44,29 @@ PLVSALinkMicPreviewViewDelegate
 #pragma mark 数据
 @property (nonatomic, assign) NSUInteger linkMicUserCount; //连麦用户数量
 @property (nonatomic, strong, readonly) PLVLinkMicOnlineUser *localOnlineUser; // 只读，本地用户
+@property (nonatomic, strong, readonly) PLVLinkMicOnlineUser *masterRoomUser; // 只读，主频道用户
 @property (nonatomic, strong, readonly) NSArray <PLVLinkMicOnlineUser *> *dataArray; // 只读，当前连麦在线用户数组
 @property (nonatomic, assign) PLVSALinkMicLayoutMode linkMicLayoutMode; //当前连麦布局模式 (默认为平铺模式)
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
+@property (nonatomic, assign) BOOL showMasterRoom; // 是否显示母房间
+@property (nonatomic, assign, readonly) BOOL showingExternalView;
+@property (nonatomic, strong) NSIndexPath * showingExternalCellIndexPath; // 正在显示外部视图的Cell，所对应的下标
+@property (nonatomic, copy) NSString * showingExternalCellLinkMicUserId;  // 正在显示外部视图的Cell，所对应的用户Id (将用于更新 showingExternalCellIndexPath 属性，以保证 dataArray 刷新时其仍是正确的)
 @property (nonatomic, copy) NSString *currentSpeakerLinkMicUserId; //当前显示主讲用户的连麦id[布局模式切换时缓存此id]
 @property (nonatomic, assign) NSInteger currentSpeakerUserIndex; // 当前主讲用户在数据中的下标
 @property (nonatomic, copy) NSString *fullScreenUserId; // 全屏用户的Id
 @property (nonatomic, assign) BOOL delayDisplayToast; // 是否需要延迟显示toast
 @property (nonatomic, assign) BOOL observingCollectionView;
+@property (nonatomic, assign) BOOL shouldShowMatrixPlaybackButton; // 是否显示播放母流按钮
+@property (nonatomic, assign) BOOL shouldShowMatrixPlaybackLoadingView; // 是否显示播放母流加载提示
+@property (nonatomic, assign) BOOL isAnimating;
 
 #pragma mark UI
 /// view hierarchy
 ///
 /// (PLVSALinkMicWindowsView) self
 ///    ├─  (UICollectionView) collectionView
+///    ├─  (PLVSALinkMicWindowsExternalView) localExternalView
 ///    ├─  (PLVSALinkMicSpeakerPlaceholderView) speakerPlaceholderView
 ///    └─  (PLVSALinkMicWindowsSpeakerView) speakerView
 @property (nonatomic, strong) PLVSALinkMicGuideView *linkMicGuideView; // 连麦新手引导
@@ -68,6 +79,13 @@ PLVSALinkMicPreviewViewDelegate
 @property (nonatomic, strong) PLVSALinkMicWindowCell *fullScreenCell; // 全屏视图
 @property (nonatomic, strong) PLVSALinkMicPreviewView *linkMicPreView; // 连麦预览视图
 @property (nonatomic, strong) UIView *fullScreenContentView; // 全屏展示视图的容器
+@property (nonatomic, strong) UIView *floatingContentView; // 悬浮展示视图的容器
+@property (nonatomic, strong) PLVSALinkMicWindowsExternalView *localExternalView; // 本地小窗展示视图的容器
+@property (nonatomic, strong) UIView * externalView; // 外部视图 (正在被显示在 PLVSALinkMicWindowsView 窗口列表中的外部视图；弱引用)
+@property (nonatomic, strong) UIButton *matrixPlaybackButton; // 播放母流按钮
+@property (nonatomic, strong) UIView *matrixPlaybackLoadingView; // 播放母流加载提示视图
+@property (nonatomic, strong) UIImageView *loadingImageView; // 加载动画
+@property (nonatomic, strong) UILabel *matrixPlaybackLoadingTipLabel; // 播放母流加载文字提示
 
 @end
 
@@ -109,7 +127,16 @@ PLVSALinkMicPreviewViewDelegate
         self.linkMicUserCount = count;
         [self setNeedsLayout];
     }
-    if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) {
+    
+    if (self.moreThanTwoLinkMicUser && self.showMasterRoom) {
+        self.linkMicLayoutMode = PLVSALinkMicLayoutModeMasterRoom;
+        [self setNeedsLayout];
+        [self switchShowMasterRoom:YES masterRoomInFloating:NO];
+    } else if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeMasterRoom && !self.moreThanTwoLinkMicUser) {
+        [self setNeedsLayout];
+        [self.speakerView hideSpeakerView];
+        [self switchShowMasterRoom:self.showMasterRoom masterRoomInFloating:NO];
+    } else if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) {
         [self updateSpeakerViewForLinkMicUserId:self.currentSpeakerLinkMicUserId];
     }
     
@@ -179,6 +206,125 @@ PLVSALinkMicPreviewViewDelegate
     [self.linkMicPreView showLinkMicPreviewView:NO];
 }
 
+- (void)switchShowMasterRoom:(BOOL)showMasterRoom masterRoomInFloating:(BOOL)inFloating {
+    if (!self.supportMasterRoom) {
+        return;
+    }
+    
+    self.matrixPlaybackButton.hidden = !(self.shouldShowMatrixPlaybackButton && showMasterRoom && !inFloating);
+    self.matrixPlaybackLoadingView.hidden = !(self.shouldShowMatrixPlaybackLoadingView && showMasterRoom && !inFloating);
+    
+    self.floatingContentView.hidden = !showMasterRoom || self.moreThanTwoLinkMicUser;
+    self.localExternalView.hidden = !showMasterRoom || !self.moreThanTwoLinkMicUser;
+    
+    self.showMasterRoom = showMasterRoom;
+
+    [self removeSubview:self.floatingContentView];
+    
+    [self setupLinkMicCanvasViewWithMasterRoomUser:self.masterRoomUser];
+    
+    if (!showMasterRoom) {
+        self.showingExternalCellLinkMicUserId = nil;
+        self.externalView = nil;
+        NSInteger targetCellIndex = [self findCellIndexWithUserId:self.localOnlineUser.linkMicUserId];
+        NSIndexPath * targetCellIndexPath = [NSIndexPath indexPathForRow:targetCellIndex inSection:0];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.collectionView reloadItemsAtIndexPaths:@[targetCellIndexPath]];
+        });
+        
+        if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeMasterRoom) {
+            self.linkMicLayoutMode = PLVSALinkMicLayoutModeSpeaker;
+            [self setNeedsLayout];
+            [self layoutIfNeeded];
+            [self updateSpeakerViewForLinkMicUserId:self.currentSpeakerLinkMicUserId];
+        }
+        [self.collectionView reloadData];
+    } else {
+        if (self.linkMicLayoutMode != PLVSALinkMicLayoutModeMasterRoom) {
+            self.linkMicLayoutMode = PLVSALinkMicLayoutModeMasterRoom;
+            [self setNeedsLayout];
+            [self layoutIfNeeded];
+        }
+        if (inFloating) {
+            self.showingExternalCellLinkMicUserId = nil;
+            self.externalView = nil;
+            
+            if (self.moreThanTwoLinkMicUser) {
+                [self.localExternalView showExternalViewWithExternalView:self.masterRoomUser.canvasView];
+            } else {
+                self.masterRoomUser.canvasView.frame = self.floatingContentView.bounds;
+                [self.floatingContentView addSubview:self.masterRoomUser.canvasView];
+            }
+            
+            NSInteger targetCellIndex = [self findCellIndexWithUserId:self.localOnlineUser.linkMicUserId];
+            NSIndexPath * targetCellIndexPath = [NSIndexPath indexPathForRow:targetCellIndex inSection:0];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.collectionView reloadItemsAtIndexPaths:@[targetCellIndexPath]];
+            });
+            
+            if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeMasterRoom) {
+                [self updateSpeakerViewForLinkMicUserId:self.currentSpeakerLinkMicUserId];
+            }
+            [self.collectionView reloadData];
+        } else {
+            self.externalView = self.masterRoomUser.canvasView;
+            self.showingExternalCellLinkMicUserId = self.localOnlineUser.linkMicUserId;
+            if (self.moreThanTwoLinkMicUser) {
+                if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeMasterRoom) {
+                    [self updateSpeakerViewForLinkMicUserId:self.currentSpeakerLinkMicUserId];
+                    [self.speakerView showSpeakerViewWithExternalView:self.externalView];
+                    [self.localExternalView showExternalViewWithUserModel:self.localOnlineUser delegate:self];
+                }
+            } else {
+                self.localOnlineUser.canvasView.frame = self.floatingContentView.bounds;
+                self.localOnlineUser.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+                    [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow placeHolderImage:onlineUser.image imageShouldFill:YES];
+                };
+                [self.floatingContentView addSubview:self.localOnlineUser.canvasView];
+                NSInteger targetCellIndex = [self findCellIndexWithUserId:self.localOnlineUser.linkMicUserId];
+                NSIndexPath * targetCellIndexPath = [NSIndexPath indexPathForRow:targetCellIndex inSection:0];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.collectionView reloadItemsAtIndexPaths:@[targetCellIndexPath]];
+                });
+            }
+            [self.collectionView reloadData];
+        }
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicWindowsView:hadSwitchShowMasterRoom: masterRoomInFloating:)]) {
+        [self.delegate plvSALinkMicWindowsView:self hadSwitchShowMasterRoom:showMasterRoom masterRoomInFloating:inFloating];
+    }
+}
+
+- (void)showMatrixPlaybackButton:(BOOL)show {
+    self.shouldShowMatrixPlaybackButton = show;
+    self.matrixPlaybackButton.hidden = !(show && self.showMasterRoom && self.floatingContentView);
+}
+
+- (void)startMatrixPlaybackLoadingAnimating {
+    if (!self.isAnimating) {
+        self.isAnimating = YES;
+        
+        CABasicAnimation *rotationAnimation = [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
+        rotationAnimation.toValue = @(2 * M_PI);
+        rotationAnimation.duration = 1.0; //
+        rotationAnimation.repeatCount = HUGE_VALF;
+        
+        [self.loadingImageView.layer addAnimation:rotationAnimation forKey:@"plv-sa-linkmic-rotate-layer"];
+    }
+    
+    self.shouldShowMatrixPlaybackLoadingView = YES;
+    self.matrixPlaybackLoadingView.hidden = !(self.shouldShowMatrixPlaybackLoadingView && self.showMasterRoom && self.floatingContentView);
+}
+
+- (void)stopMatrixPlaybackLoadingAnimating {
+    if (self.isAnimating) {
+        self.isAnimating = NO;
+        [self.loadingImageView.layer removeAnimationForKey:@"plv-sa-linkmic-rotate-layer"];
+    }
+    self.shouldShowMatrixPlaybackLoadingView = NO;
+    self.matrixPlaybackLoadingView.hidden = YES;
+}
+
 #pragma mark - [ Private Method ]
 
 /// 根据连麦列表视图下标 获取在线用户model [经过业务逻辑处理 与 dataArray 数据并不对应]
@@ -195,7 +341,7 @@ PLVSALinkMicPreviewViewDelegate
 /// isReal NO 将dataArray 数据中对应的下标转换为cell的下标
 - (NSInteger)indexWithTargetIndex:(NSInteger)targetIndex isRealIndex:(BOOL)isReal {
     if (self.currentSpeakerUserIndex > -1) {
-        if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) {
+        if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker || self.linkMicLayoutMode == PLVSALinkMicLayoutModeMasterRoom) {
             if (targetIndex >= self.currentSpeakerUserIndex && self.linkMicUserCount != 1) {
                 isReal ? targetIndex++ : targetIndex--;
             }
@@ -267,6 +413,22 @@ PLVSALinkMicPreviewViewDelegate
 - (void)setupLinkMicCanvasViewWithOnlineUser:(PLVLinkMicOnlineUser *)aOnlineUser {
     if (!aOnlineUser.canvasView) {
         PLVSALinkMicCanvasView *canvasView = [[PLVSALinkMicCanvasView alloc] init];
+        [canvasView addRTCView:aOnlineUser.rtcView];
+        aOnlineUser.canvasView = canvasView;
+    }
+}
+
+/// 若连麦用户Model未有连麦rtc画布视图，则此时需创建并交由连麦用户Model进行管理
+- (void)setupLinkMicCanvasViewWithMasterRoomUser:(PLVLinkMicOnlineUser *)aOnlineUser {
+    if (!aOnlineUser) {
+        return;
+    }
+    if (!aOnlineUser.canvasView) {
+        PLVSALinkMicCanvasView *canvasView = [[PLVSALinkMicCanvasView alloc] init];
+        canvasView.masterUser = YES;
+        canvasView.supportMatrixPlayback = [PLVRoomDataManager sharedManager].roomData.supportMatrixPlayback;
+        canvasView.effectView.effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+        [canvasView setupSplashImg:aOnlineUser.splashImg];
         [canvasView addRTCView:aOnlineUser.rtcView];
         aOnlineUser.canvasView = canvasView;
     }
@@ -403,25 +565,52 @@ PLVSALinkMicPreviewViewDelegate
                     collectionViewWidth = MIN(collectionViewHeight * PLVSALinkMicCellAspectRatio, collectionViewWidth);
                     collectionViewX = (windowsViewWidth - collectionViewWidth)/2;
                 }
-            } else { //主讲模式
+            } else if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) { //主讲模式
                 CGFloat speakerViewWidth = collectionViewWidth * 0.7;
                 collectionViewX = left + speakerViewWidth;
                 collectionViewWidth = collectionViewWidth - speakerViewWidth;
                 self.speakerView.frame = CGRectMake(left, collectionViewY, speakerViewWidth, collectionViewHeight);
+            } else { //母房间模式
+                CGFloat speakerViewWidth = collectionViewWidth * 0.7;
+                collectionViewX = left + speakerViewWidth;
+                collectionViewWidth = collectionViewWidth - speakerViewWidth;
+                self.speakerView.frame = CGRectMake(left, collectionViewY, speakerViewWidth, collectionViewHeight);
+                self.localExternalView.frame = CGRectMake(collectionViewX,  collectionViewY, collectionViewWidth, collectionViewWidth / PLVSALinkMicCellAspectRatio);
+                collectionViewHeight -= collectionViewWidth / PLVSALinkMicCellAspectRatio;
+                collectionViewY += collectionViewWidth / PLVSALinkMicCellAspectRatio;
             }
         } else { //竖屏布局
             collectionViewY = top + (isPad ? 92 : 78);
             collectionViewHeight = windowsViewHeight - collectionViewY - bottom;
-            if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) { //主讲模式
+            if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeTiled) { //平铺模式
+                if (self.linkMicUserCount <= 4) {
+                    collectionViewHeight = MIN(collectionViewWidth * PLVSALinkMicCellAspectRatio, collectionViewHeight);
+                }
+            } else if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) { //主讲模式
                 collectionViewX = windowsViewWidth * 0.75;
                 collectionViewWidth = windowsViewWidth * 0.25;
                 CGFloat speakerViewWidth = windowsViewWidth - collectionViewWidth;
                 CGFloat speakerViewHeight = isPad ? speakerViewWidth * 1.4 :  speakerViewWidth * PLVSALinkMicCellAspectRatio;
                 self.speakerView.frame = CGRectMake(0, collectionViewY, speakerViewWidth, speakerViewHeight);
+            } else {
+                collectionViewX = windowsViewWidth * 0.75;
+                collectionViewWidth = windowsViewWidth * 0.25;
+                CGFloat speakerViewWidth = windowsViewWidth - collectionViewWidth;
+                CGFloat speakerViewHeight = isPad ? speakerViewWidth * 1.4 :  speakerViewWidth * PLVSALinkMicCellAspectRatio;
+                self.speakerView.frame = CGRectMake(0, collectionViewY, speakerViewWidth, speakerViewHeight);
+                self.localExternalView.frame = CGRectMake(collectionViewX,  collectionViewY, collectionViewWidth, collectionViewWidth * PLVSALinkMicCellAspectRatio);
+                collectionViewHeight -= collectionViewWidth * PLVSALinkMicCellAspectRatio;
+                collectionViewY += collectionViewWidth * PLVSALinkMicCellAspectRatio;
             }
         }
         self.collectionBackgroundView.frame = CGRectMake(collectionViewX, collectionViewY, floor(collectionViewWidth), floor(collectionViewHeight));
     }
+    
+    self.matrixPlaybackButton.frame = CGRectMake(windowsViewWidth / 2 - 47, windowsViewHeight / 2 - 16, 94, 32);
+    self.matrixPlaybackLoadingView.frame = CGRectMake(windowsViewWidth / 2 - 75, windowsViewHeight / 2 - 45, 150, 90);
+    self.matrixPlaybackLoadingTipLabel.frame = CGRectMake(13, 60, 124, 17);
+    self.loadingImageView.frame = CGRectMake(55, 12, 40, 40);
+    
     self.collectionView.frame = self.collectionBackgroundView.bounds;
     self.collectionView.contentOffset = CGPointZero;
     [self.collectionView.collectionViewLayout invalidateLayout];
@@ -488,10 +677,22 @@ PLVSALinkMicPreviewViewDelegate
     self.currentSpeakerUserIndex = linkMicUserIndex;
 }
 
+- (void)handleTap:(UITapGestureRecognizer *)gesture {
+    [self switchShowMasterRoom:YES masterRoomInFloating:self.showingExternalView];
+}
+
 #pragma mark Initialize
 
 - (void)setupUI {
+    [self addSubview:self.localExternalView];
     [self addSubview:self.collectionBackgroundView];
+    if ([PLVRoomDataManager sharedManager].roomData.supportMatrixPlayback) {
+        [self.matrixPlaybackLoadingView addSubview:self.loadingImageView];
+        [self.matrixPlaybackLoadingView addSubview:self.matrixPlaybackLoadingTipLabel];
+        [self addSubview:self.matrixPlaybackLoadingView];
+        [self addSubview:self.matrixPlaybackButton];
+        self.shouldShowMatrixPlaybackButton = YES;
+    }
     [self addSubview:self.speakerView];
     [self addSubview:self.speakerPlaceholderView];
     [self.collectionBackgroundView addSubview:self.collectionView];
@@ -502,6 +703,14 @@ PLVSALinkMicPreviewViewDelegate
 - (PLVLinkMicOnlineUser *)localOnlineUser {
     if (self.delegate) {
         return [self.delegate localUserInLinkMicWindowsView:self];
+    } else {
+        return nil;
+    }
+}
+
+- (PLVLinkMicOnlineUser *)masterRoomUser {
+    if (self.delegate) {
+        return [self.delegate masterRoomUserInLinkMicWindowsView:self];
     } else {
         return nil;
     }
@@ -589,6 +798,76 @@ PLVSALinkMicPreviewViewDelegate
     return _fullScreenContentView;
 }
 
+- (UIView *)floatingContentView {
+    if (!_floatingContentView) {
+        _floatingContentView = [[UIView alloc] init];
+        _floatingContentView.hidden = YES;
+        _floatingContentView.layer.cornerRadius = 8;
+        _floatingContentView.clipsToBounds = true;
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleTap:)];
+        [_floatingContentView addGestureRecognizer:tapGesture];
+    }
+    return _floatingContentView;
+}
+
+- (PLVSALinkMicWindowsExternalView *)localExternalView {
+    if (!_localExternalView) {
+        _localExternalView = [[PLVSALinkMicWindowsExternalView alloc] init];
+    }
+    return _localExternalView;
+}
+
+- (UIButton *)matrixPlaybackButton {
+    if (!_matrixPlaybackButton) {
+        _matrixPlaybackButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _matrixPlaybackButton.layer.cornerRadius = 16.0;
+        _matrixPlaybackButton.layer.borderWidth = 1.0;
+        _matrixPlaybackButton.layer.borderColor = [PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.2].CGColor;
+        _matrixPlaybackButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#000000" alpha:0.2];
+        [_matrixPlaybackButton setTitle:PLVLocalizedString(@"播放母流") forState:UIControlStateNormal];
+        _matrixPlaybackButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#FFFFFF"];
+        _matrixPlaybackButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:12];
+        [_matrixPlaybackButton setImage:[PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_window_matrix_playback_icon"] forState:UIControlStateNormal];
+        [_matrixPlaybackButton addTarget:self action:@selector(matrixPlaybackButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _matrixPlaybackButton.hidden = YES;
+        
+    }
+    return _matrixPlaybackButton;
+}
+
+- (UIView *)matrixPlaybackLoadingView {
+    if (!_matrixPlaybackLoadingView) {
+        _matrixPlaybackLoadingView = [[UIView alloc] init];
+        _matrixPlaybackLoadingView.hidden = YES;
+        _matrixPlaybackLoadingView.backgroundColor = [PLVColorUtil colorFromHexString:@"#1B202D" alpha:0.6];
+        _matrixPlaybackLoadingView.layer.cornerRadius = 6.0;
+    }
+    return _matrixPlaybackLoadingView;
+}
+
+- (UIImageView *)loadingImageView {
+    if (!_loadingImageView) {
+        _loadingImageView = [[UIImageView alloc] init];
+        _loadingImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_window_matrix_playback_loading_icon"];
+    }
+    return _loadingImageView;
+}
+
+- (UILabel *)matrixPlaybackLoadingTipLabel {
+    if (!_matrixPlaybackLoadingTipLabel) {
+        _matrixPlaybackLoadingTipLabel = [[UILabel alloc] init];
+        _matrixPlaybackLoadingTipLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
+        _matrixPlaybackLoadingTipLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _matrixPlaybackLoadingTipLabel.text = PLVLocalizedString(@"加载中，预计等待30秒");
+    }
+    return _matrixPlaybackLoadingTipLabel;
+}
+
+- (BOOL)showingExternalView{
+    return [PLVFdUtil checkStringUseable:self.showingExternalCellLinkMicUserId];
+}
+
+
 - (PLVRoomUserType)viewerType{
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
 }
@@ -615,6 +894,14 @@ PLVSALinkMicPreviewViewDelegate
     } else {
         return NO;
     }
+}
+
+- (BOOL)moreThanTwoLinkMicUser {
+    return self.linkMicUserCount >= 2;
+}
+
+- (BOOL)supportMasterRoom {
+    return [PLVRoomDataManager sharedManager].roomData.supportMasterRoom;
 }
 
 /// 全屏或者关闭全屏后 Toast 提示
@@ -647,6 +934,19 @@ PLVSALinkMicPreviewViewDelegate
         });
     } else {
         [PLVSAUtils showToastInHomeVCWithMessage:message];
+    }
+}
+
+- (void)removeSubview:(UIView *)superview{
+    for (UIView * subview in superview.subviews) { [subview removeFromSuperview]; }
+}
+
+#pragma mark Action
+
+- (void)matrixPlaybackButtonAction {
+    [self showMatrixPlaybackButton:NO];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicWindowsViewDidClickMatrixPlaybackButton:)]) {
+        [self.delegate plvSALinkMicWindowsViewDidClickMatrixPlaybackButton:self];
     }
 }
 
@@ -694,7 +994,7 @@ PLVSALinkMicPreviewViewDelegate
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
     NSInteger dataNum = self.linkMicUserCount;
-    if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker) {
+    if (self.linkMicLayoutMode == PLVSALinkMicLayoutModeSpeaker || self.linkMicLayoutMode == PLVSALinkMicLayoutModeMasterRoom) {
         NSInteger finalCellNum = (dataNum - 1) <= 0 ? 1 : (dataNum - 1);
         return finalCellNum; /// 主讲模式下，主讲用户不需在连麦窗口列表中显示窗口
     }
@@ -703,6 +1003,7 @@ PLVSALinkMicPreviewViewDelegate
 
 - (__kindof UICollectionViewCell *)collectionView:(UICollectionView *)collectionView
                            cellForItemAtIndexPath:(NSIndexPath *)indexPath {
+    BOOL thisCellShowingExternalView = NO;
     PLVLinkMicOnlineUser *onlineUser = [self onlineUserWithIndex:indexPath.row];
     if (!onlineUser) {
         return [collectionView dequeueReusableCellWithReuseIdentifier:kCellIdentifier forIndexPath:indexPath];
@@ -713,9 +1014,21 @@ PLVSALinkMicPreviewViewDelegate
     PLVSALinkMicWindowCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:kCellIdentifier forIndexPath:indexPath];
     cell.delegate = self;
     if (![onlineUser.linkMicUserId isEqualToString:self.fullScreenUserId]) {
-        // 设备检测页，不显示昵称且关闭摄像头时不显示canvasView
-        BOOL hideCanvasView = [self isLocalUserPreviewView];
-        [cell setUserModel:onlineUser hideCanvasViewWhenCameraClose:hideCanvasView];
+        // 设备检测页或者连麦人数为1时不显示占位图的情况下，不显示昵称且关闭摄像头时不显示canvasView
+        BOOL hideCanvasView = [self isLocalUserPreviewView] || (self.linkMicUserCount == 1 && ![self showSpeakerPlaceholderView]);
+        // 若两值一致，则表示此 Cell 将需要展示外部视图，此时应更新 showingExternalCellIndexPath
+        if ([self.showingExternalCellLinkMicUserId isEqualToString:onlineUser.linkMicUserId]) {
+            self.showingExternalCellIndexPath = indexPath;
+            thisCellShowingExternalView = YES;
+        }
+        if (thisCellShowingExternalView) {
+            /// 显示 外部视图
+            [cell switchToShowExternalContentView:self.externalView];
+        }else{
+            /// 显示 rtc画布视图
+            [cell switchToShowRtcContentView:onlineUser.canvasView];
+            [cell setUserModel:onlineUser hideCanvasViewWhenCameraClose:hideCanvasView];
+        }
     }
     
     return cell;

@@ -21,6 +21,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 背景视图 (负责展示 占位图)
 @property (nonatomic, strong, readonly) UIImageView * placeholderImageView;
 
+/// 是否母房间用户
+@property (nonatomic, assign) BOOL masterUser;
+
+/// 是否支持矩阵直播间转推母房间回放
+@property (nonatomic, assign) BOOL supportMatrixPlayback;
+
+@property (nonatomic, strong, readonly) UIVisualEffectView *effectView; // 用于调整高斯模糊背景图格式
+
 #pragma mark - [ 方法 ]
 /// 添加 rtcview
 - (void)addRTCView:(UIView *)rtcView;
@@ -31,7 +39,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// rtcview 隐藏/显示
 ///
 /// @param rtcViewShow rtcview 隐藏或显示 (YES:显示 NO:隐藏)
-- (void)rtcViewShow:(BOOL)rtcViewShow;
+/// @param placeHolderImage 占位图，传空不显示
+/// @param fill 占位图是否铺满显示 (YES:铺满CanvasView NO:竖屏时上部居中显示，横屏时左侧居中显示，用于主讲传图片时的预览场景)
+- (void)rtcViewShow:(BOOL)rtcViewShow placeHolderImage:(UIImage * _Nullable)placeHolderImage imageShouldFill:(BOOL)fill;
+
+/// 配置母房间用户时需要显示的封面图
+- (void)setupSplashImg:(NSString * _Nullable)splashImg;
 
 @end
 
