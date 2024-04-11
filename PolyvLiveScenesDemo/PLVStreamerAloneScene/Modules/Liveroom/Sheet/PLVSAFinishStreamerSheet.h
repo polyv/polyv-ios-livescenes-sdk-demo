@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVSAFinishStreamerSheet : PLVSABottomSheet
 
-- (void)showInView:(UIView *)parentView finishAction:(void (^)(void))finishHandler;
+- (void)showInView:(UIView *)parentView finishAction:(void (^)(void))finishHandler pauseAction:(void (^)(void))pauseHandler;
 
 @end
 

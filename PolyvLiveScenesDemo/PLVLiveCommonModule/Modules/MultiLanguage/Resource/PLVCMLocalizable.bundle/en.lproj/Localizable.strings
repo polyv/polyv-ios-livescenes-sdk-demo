@@ -400,9 +400,12 @@
 /**  推流  */
 "继续直播" = "Continue";
 "结束直播" = "End live";
+"暂停直播" = "Pause live";
 "检测中" = "Detecting";
 "检测到%@，是否结束直播" = "%@ is detected, should you end the live?";
-"检测到之前异常退出，是否恢复直播" = "Abnormal exit before detection, Resume live stream?";
+"监测到您的上次直播中途离开，是否继续?" = "Abnormal exit before detection, Resume live stream?";
+"暂时退出，30分钟内可再次恢复直播" = "Temporary exit. Live stream can resume within 30 minutes";
+"结束后，无法再次开始直播" = "Live stream can not resume after end live";
 "观众将无法看到直播内容，确认结束直播？" = "Audience will be unable to see live content. Confirm ending the live?";
 "直播托管中，请在30分钟内返回" = "The live is being hosted. Please get back within 30 minutes.";
 "马上切换" = "Switch now";
@@ -416,7 +419,7 @@
 "码率：%ldkbps，帧率：%ldfps" = "Bitrate: %ldkbps, Frame Rate: %ldfps";
 "处理中..." = "Processing...";
 "弱网处理" = "Weak net";
-"恢复直播" = "Resume live";
+"继续直播" = "Resume live";
 "流畅优先" = "Fluency priority";
 "画质优先" = "Quality priority";
 "混流布局" = "Mix layout";

@@ -224,6 +224,15 @@ PLVShareLiveSheetDelegate
     [self logout];
 }
 
+- (void)teacherLogoutForPauseLive{
+    [self.streamerPresenter pauseClass];
+    // 退出聊天室，资源释放、状态位清零
+    [[PLVSAChatroomViewModel sharedViewModel] clear];
+    // 成员列表数据停止自动更新
+    [self.memberPresenter stop];
+    [self logout];
+}
+
 /// 启动、挂断视频连麦
 - (void)startLinkMic:(BOOL)start videoLinkMic:(BOOL)videoLinkMic {
     NSString *typeTitle = videoLinkMic ? PLVLocalizedString(@"视频") : PLVLocalizedString(@"语音");
@@ -612,7 +621,7 @@ PLVShareLiveSheetDelegate
 - (void)tryResumeClass {
     if ([PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
         __weak typeof(self) weakSelf = self;
-        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"检测到之前异常退出，是否恢复直播") cancelActionTitle:PLVLocalizedString(@"结束直播") cancelActionBlock:^{
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"监测到您的上次直播中途离开，是否继续?") cancelActionTitle:PLVLocalizedString(@"结束直播") cancelActionBlock:^{
             /// 重置值、结束服务器中该频道上课状态
             [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving = NO;
             [weakSelf.streamerPresenter finishClass];
@@ -1435,13 +1444,22 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)streamerHomeViewDidTapCloseButton:(PLVSAStreamerHomeView *)homeView {
     __weak typeof(self) weakSelf = self;
-    [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"观众将无法看到直播内容，确认结束直播？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle") confirmActionBlock:^{
-               if (weakSelf.viewerType == PLVRoomUserTypeGuest) {
-                   [weakSelf guestLogout]; //嘉宾会直接退出直播间
-               } else {
-                   [weakSelf finishClass];
-               }
-           }];
+    if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom && self.viewerType == PLVRoomUserTypeTeacher) {
+        PLVSAFinishStreamerSheet *actionSheet = [[PLVSAFinishStreamerSheet alloc] init];
+        [actionSheet showInView:self.view finishAction:^{
+            [weakSelf finishClass];
+        } pauseAction:^{
+            [weakSelf teacherLogoutForPauseLive];
+        }];
+    } else {
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"观众将无法看到直播内容，确认结束直播？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle") confirmActionBlock:^{
+            if (weakSelf.viewerType == PLVRoomUserTypeGuest) {
+                [weakSelf guestLogout]; //嘉宾会直接退出直播间
+            } else {
+                [weakSelf finishClass];
+            }
+        }];
+    }
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeCameraOpen:(BOOL)cameraOpen{

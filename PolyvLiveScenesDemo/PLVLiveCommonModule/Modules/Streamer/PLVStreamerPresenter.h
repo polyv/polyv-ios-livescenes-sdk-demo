@@ -59,6 +59,8 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
     PLVStreamerPresenterErrorCode_AnswerInvitationFailedAckIllegal = 702,
     /** 704: 应答连麦邀请失败，连麦人数达到上限 */
     PLVStreamerPresenterErrorCode_AnswerInvitationFailedLinkMicLimited = 704,
+    /// 800: 讲师中途离开失败，网络请求错误
+    PLVStreamerPresenterErrorCode_TeacherLeaveFailedNetFailed = 800
 };
 
 @protocol PLVStreamerPresenterDelegate;
@@ -335,6 +337,12 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @note 区别于 [stopPushStream] 方法，该方法将停止推流，且发送请求修改频道状态为“结束上课”;
 ///       兼容嘉宾角色调用，嘉宾角色调用时，仅负责退出直播间；
 - (void)finishClass;
+
+/// 讲师中途离开
+///
+/// @note 适用于讲师离开房间，不结束推流，调用后延迟30分钟后结束直播;
+///       嘉宾角色调用无效；
+ - (void)pauseClass;
 
 #pragma mark 流管理
 /// 配置 流宽高比

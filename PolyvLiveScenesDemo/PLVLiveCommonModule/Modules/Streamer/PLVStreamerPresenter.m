@@ -274,6 +274,17 @@ PLVChannelClassManagerDelegate
     }
 }
 
+- (void)pauseClass {
+    if (self.viewerType == PLVRoomUserTypeTeacher) {
+        if ([PLVRoomDataManager sharedManager].roomData.supportMasterRoom) {
+            /// 母房间用户
+            [self.rtcStreamerManager unsubscribeSubRTCStreamWithRTCUserId:self.masterRoomMixUserId];
+            self.masterRoomUser = nil;
+        }
+        [self requestForTeacherLeave];
+    }
+}
+
 #pragma mark 流管理
 - (void)setupStreamScale:(PLVBLinkMicStreamScale)streamScale{
     [self.rtcStreamerManager setupStreamScale:streamScale];
@@ -978,6 +989,18 @@ PLVChannelClassManagerDelegate
     } failure:^(NSError * _Nonnull error) {
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"requestForLiveStatusEnd failed, error %@",error);
         NSError * finalError = [weakSelf errorWithCode:PLVStreamerPresenterErrorCode_EndClassFailedNetFailed errorDescription:nil];
+        finalError = PLVErrorWithUnderlyingError(finalError, error);
+        [weakSelf callbackForDidOccurError:finalError];
+    }];
+}
+/// 讲师中途离开
+- (void)requestForTeacherLeave {
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestTeacherLeaveWithChannelId:self.channelId delayMinutes:30 success:^(NSString * _Nonnull responseCont) {
+    } failure:^(NSError * _Nonnull error) {
+        
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"requestForTeacherLeave failed, error %@",error);
+        NSError * finalError = [weakSelf errorWithCode:PLVStreamerPresenterErrorCode_TeacherLeaveFailedNetFailed errorDescription:nil];
         finalError = PLVErrorWithUnderlyingError(finalError, error);
         [weakSelf callbackForDidOccurError:finalError];
     }];
