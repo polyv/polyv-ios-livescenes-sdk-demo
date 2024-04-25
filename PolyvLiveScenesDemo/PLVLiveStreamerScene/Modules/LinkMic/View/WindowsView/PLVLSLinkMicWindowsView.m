@@ -27,6 +27,7 @@ PLVLSLinkMicPreviewViewDelegate
 @property (nonatomic, copy) NSString * showingExternalCellLinkMicUserId;  // 正在显示外部视图的Cell，所对应的用户Id (将用于更新 showingExternalCellIndexPath 属性)
 @property (nonatomic, copy) NSString * firstSiteLinkMicUserId; // 当前第一画面用户id(目前第一画面为主讲用户或者讲师)
 @property (nonatomic, assign) NSInteger firstSiteUserIndex; // 第一画面用户数据对应的下标
+@property (nonatomic, strong) PLVLSLinkMicWindowCell *externalCell; // 当前外部cell
 
 #pragma mark UI
 /// view hierarchy
@@ -144,6 +145,14 @@ PLVLSLinkMicPreviewViewDelegate
 
 - (void)finishClass {
     [self.linkMicPreView showLinkMicPreviewView:NO];
+}
+
+- (void)updateAllCellLinkMicDuration {
+    NSArray *cells = self.collectionView.visibleCells;
+    for (PLVLSLinkMicWindowCell * cell in cells) {
+        [cell updateLinkMicDuration:YES];
+    }
+    [self.externalCell updateLinkMicDuration:YES];
 }
 
 #pragma mark - [ Private Methods ]
@@ -357,6 +366,8 @@ PLVLSLinkMicPreviewViewDelegate
     [self checkUserModelAndSetupLinkMicCanvasView:linkMicUser];
     [externalCell setModel:linkMicUser];
     [externalCell switchToShowRtcContentView:linkMicUser.canvasView];
+    [externalCell updateLinkMicDuration:linkMicUser.userType != PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher];
+    self.externalCell = externalCell;
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsView:showFirstSiteWindowCellOnExternal:)]) {
         [self.delegate plvLSLinkMicWindowsView:self showFirstSiteWindowCellOnExternal:externalCell];
     }

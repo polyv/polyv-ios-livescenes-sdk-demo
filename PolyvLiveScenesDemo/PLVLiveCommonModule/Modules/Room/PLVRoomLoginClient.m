@@ -507,6 +507,8 @@
         NSString *preferenceString = PLV_SafeStringForDictKey(data, @"pushQualityPreference");
         roomData.userDefaultOpenMicLinkEnabled = PLV_SafeStringForDictKey(data, @"userDefaultOpenMicLinkEnabled");
         [roomData setupPushQualityPreference:preferenceString];
+        roomData.linkmicNewStrategyEnabled = PLV_SafeBoolForDictKey(data, @"newMicEnabled");
+        roomData.defaultOpenMicLinkEnabled = PLV_SafeStringForDictKey(data, @"defaultOpenMicLinkEnabled");
         
         // 初始化直播间用户数据
         NSString *teacherNickname = PLV_SafeStringForDictKey(data, @"teacherNickname");

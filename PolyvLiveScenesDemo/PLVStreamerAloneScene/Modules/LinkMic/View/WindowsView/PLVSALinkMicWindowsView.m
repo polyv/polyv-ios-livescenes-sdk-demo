@@ -488,6 +488,15 @@ PLVSALinkMicPreviewViewDelegate
     self.currentSpeakerUserIndex = linkMicUserIndex;
 }
 
+- (void)updateAllCellLinkMicDuration {
+    NSArray *cells = self.collectionView.visibleCells;
+    for (PLVSALinkMicWindowCell * cell in cells) {
+        [cell updateLinkMicDuration:YES];
+    }
+    [self.fullScreenCell updateLinkMicDuration:YES];
+    [self.speakerView.linkMicWindowCell updateLinkMicDuration:YES];
+}
+
 #pragma mark Initialize
 
 - (void)setupUI {

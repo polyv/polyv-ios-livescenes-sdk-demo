@@ -34,6 +34,8 @@
 @property (nonatomic, assign) PLVSocketUserType userType;
 @property (nonatomic, assign) BOOL localUser;
 @property (nonatomic, strong) NSDictionary * originalUserDict;
+@property (nonatomic, assign) NSTimeInterval linkMicTimestamp; /// 创建用户的连麦时间戳
+@property (nonatomic, assign) NSTimeInterval currentLinkMicDuration; /// 获取到的 已连麦时长
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL updateUserCurrentVolumeCallbackBefore;
@@ -150,6 +152,11 @@
     return _currentScreenShareOpenChanged_MultiReceiverMap;
 }
 
+- (NSTimeInterval)currentLinkMicDuration {
+    NSTimeInterval currentLinkMicDuration = ([[NSDate date] timeIntervalSince1970] * 1000 - self.linkMicTimestamp) / 1000;
+    return currentLinkMicDuration;
+}
+
 #pragma mark - [ Public Methods ]
 #pragma mark Getter
 - (UIView *)rtcView{
@@ -174,6 +181,7 @@
     
     PLVLinkMicOnlineUser *user = [[PLVLinkMicOnlineUser alloc] init];
     [user updateWithDictionary:dictionary];
+    user.linkMicTimestamp = [[NSDate date] timeIntervalSince1970] * 1000;
     return user;
 }
 

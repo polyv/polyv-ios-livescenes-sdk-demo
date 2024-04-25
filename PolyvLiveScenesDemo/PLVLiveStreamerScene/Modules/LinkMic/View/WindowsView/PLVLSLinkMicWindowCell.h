@@ -23,6 +23,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换至 显示外部内容视图
 - (void)switchToShowExternalContentView:(UIView *)externalContentView;
 
+/// 更新当前连麦时长
+///
+/// @param show 表示是否显示连麦时长
+- (void)updateLinkMicDuration:(BOOL)show;
+
 @end
 
 NS_ASSUME_NONNULL_END

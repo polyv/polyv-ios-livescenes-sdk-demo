@@ -499,7 +499,7 @@ PLVECLotteryWidgetViewDelegate
         }
     } else if (self.type == PLVECHomePageType_Playback) {
         if (!self.playerContolView.sliderDragging) {
-            self.playerContolView.playButton.selected = playing;
+            [self.playerContolView updatePlayButtonWithPlaying:playing];
         }
     }
 }
@@ -596,6 +596,17 @@ PLVECLotteryWidgetViewDelegate
     [self updateUIFrame];
 }
 
+- (void)updateProgressControlsHidden:(BOOL)hidden {
+    self.playerContolView.currentTimeLabel.hidden = hidden;
+    self.playerContolView.totalTimeLabel.hidden = hidden;
+    self.playerContolView.progressSlider.hidden = hidden;
+}
+
+- (void)updatePlayButtonEnabled:(BOOL)enabled {
+    self.playerContolView.playButton.enabled = enabled;
+    [self.playerContolView updatePlayButtonWithPlaying:self.playerContolView.playButton.isSelected];
+}
+
 - (void)updateIarEntranceButtonDataArray:(NSArray *)dataArray {
     if (![PLVFdUtil checkArrayUseable:dataArray]) {
         self.questionnaireButton.hidden = YES;
@@ -645,7 +656,8 @@ PLVECLotteryWidgetViewDelegate
 - (void)updateDelayModeSwitchViewHiddenState {
     BOOL hidden = self.audioMode ||
     (![PLVRoomDataManager sharedManager].roomData.menuInfo.watchQuickLive &&
-    ![PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay);
+    ![PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay &&
+     ![PLVRoomDataManager sharedManager].roomData.menuInfo.watchPublicStream);
     if (hidden == self.hiddenDelayModeSwitch) {
         return;
     }
@@ -1069,7 +1081,7 @@ PLVECLotteryWidgetViewDelegate
         inLinkMic = [self.delegate homePageView_inLinkMic:self];
     }
     
-    if (!inLinkMic && self.isPlaying) {
+    if (!inLinkMic && self.isPlaying && self.type == PLVECHomePageType_Live) {
         if (!self.noDelayWatchMode) {
             PLVECMoreViewItem *item1 = [[PLVECMoreViewItem alloc] init];
             item1.title = PLVLocalizedString(PLVECHomePageView_Data_AudioModeItemTitle);
@@ -1108,6 +1120,12 @@ PLVECLotteryWidgetViewDelegate
             item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
             [muArray addObject:item5];
         }
+    } else if (self.type == PLVECHomePageType_Playback &&
+               [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+        PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
+        item5.title = PLVLocalizedString(PLVECHomePageView_Data_PictureInPictureItemTitle);
+        item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
+        [muArray addObject:item5];
     }
     
     if (self.type == PLVECHomePageType_Playback && [PLVRoomDataManager sharedManager].roomData.menuInfo.playbackMultiplierEnabled) {

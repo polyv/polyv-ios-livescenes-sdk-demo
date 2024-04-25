@@ -18,6 +18,14 @@ typedef NS_ENUM(NSInteger, PLVECLivePlayerQuickLiveNetworkQuality) {
     PLVECLivePlayerQuickLiveNetworkQuality_Poor = 3            // 较差
 };
 
+/// 网络质量（公共流独有）
+typedef NS_ENUM(NSInteger, PLVECLivePlayerPublicStreamNetworkQuality) {
+    PLVECLivePlayerPublicStreamNetworkQuality_NoConnection = 0,   // 无网络
+    PLVECLivePlayerPublicStreamNetworkQuality_Good = 1,           // 良好
+    PLVECLivePlayerPublicStreamNetworkQuality_Middle = 2,         // 一般
+    PLVECLivePlayerPublicStreamNetworkQuality_Poor = 3            // 较差
+};
+
 @class PLVECPlayerViewController;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -40,9 +48,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)playerController:(PLVECPlayerViewController *)playerController
  quickLiveNetworkQuality:(PLVECLivePlayerQuickLiveNetworkQuality)netWorkQuality;
 
+/// 公共流观看下的网络质量回调
+- (void)playerController:(PLVECPlayerViewController *)playerController
+ publicStreamNetworkQuality:(PLVECLivePlayerPublicStreamNetworkQuality)netWorkQuality;
+
 - (void)playerControllerWannaSwitchLine:(PLVECPlayerViewController *)playerController;
 
 - (void)playerControllerWannaFullScreen:(PLVECPlayerViewController *)playerController;
+
 #pragma mark 回放的回调
 
 /// 更新回放进度
@@ -99,6 +112,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 画中画已经停止
 /// @param playerController 播放器管理器
 - (void)playerControllerPictureInPictureDidStop:(PLVECPlayerViewController *)playerController;
+
+/// 画中画播放器播放状态改变
+/// @param playerController 播放器管理器
+/// @param playing  是否播放器中 YES 播放，NO 暂停
+- (void)playerController:(PLVECPlayerViewController *)playerController pictureInPicturePlayingStateDidChange:(BOOL)playing;
 
 @end
 

@@ -377,6 +377,14 @@ UIGestureRecognizerDelegate>
     NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshPaintButtonShow failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
+- (void)refreshProgressControlsShow:(BOOL)show {
+    self.currentTimeLabel.hidden = !show;
+    self.diagonalsLabel.hidden = !show;
+    self.durationLabel.hidden = !show;
+    self.progressSlider.hidden = !show;
+    self.progressView.hidden = !show;
+}
+
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView{
     BOOL otherViewCanBeHandler = NO;
     if (otherView.hidden != YES && otherView.alpha > 0 && otherView.userInteractionEnabled) {
@@ -689,6 +697,10 @@ UIGestureRecognizerDelegate>
             if (!roomData.menuInfo.playbackProgressBarEnabled || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"] || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) {
                 return;
             }
+            if (self.progressSlider.isHidden) {
+                return;
+            }
+            
             self.panType = PLVBasePlayerSKinViewTyoeAdjustProgress;
             self.scrubTime = self.currentPlaybackTime;
             [self setProgressLabelWithCurrentTime:self.currentPlaybackTime durationTime:self.duration];
@@ -712,6 +724,10 @@ UIGestureRecognizerDelegate>
                 if (!roomData.menuInfo.playbackProgressBarEnabled || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"] || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) {
                     break;
                 }
+                if (self.progressSlider.isHidden) {
+                    break;
+                }
+                
                 if (gestureRecognizer.state == UIGestureRecognizerStateChanged) {
                     self.scrubTime += velocty.x / 200;
                     if (self.scrubTime > self.duration) {

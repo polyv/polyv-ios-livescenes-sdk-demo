@@ -348,11 +348,11 @@
 "结束连麦" = "Hang up";
 "挂断" = "Hang up";
 "下麦" = "Hang up";
-"全体下麦" = "Hang up all";
-"全体静音" = "Mute all";
-"取消全体静音" = "Unmute all";
-"已全体下麦" = "The call has ended";
-"已全体静音" = "Mute all enabled";
+"观众下麦" = "Hang up audiences";
+"全员静音" = "Mute all";
+"取消全员静音" = "Unmute all";
+"已下麦观众" = "Audiences have been hanged up";
+"已全员静音" = "Mute all enabled";
 "已关闭摄像头" = "Camera turned off";
 "已开启视频连麦" = "Video call has been enabled";
 "已关闭视频连麦" = "Video call turned off";
@@ -370,10 +370,10 @@
 "确认挂断连麦吗？" = "Are you sure you want to hang up?";
 "已挂断%@的连麦" = "Has hung up on %@'s call";
 "已切换到流畅模式" = "Switched to fluency mode";
-"已取消全体静音" = "Unmuted all";
-"确认全体下麦？" = "Confirm hang up everyone?";
-"确认全体静音？" = "Confirm mute all?";
-"确认取消全体静音？" = "Confirm unmute all?";
+"已取消全员静音" = "Unmuted all";
+"确认下麦所有连麦观众吗？" = "Hang up all audiences?";
+"确认全员静音？" = "Confirm mute all?";
+"确认取消全员静音？" = "Confirm unmute all?";
 "当前连麦人数已达上限" = "No more connections available";
 "您已静音，请开启麦克风后发言" = "You are muted, please turn on the microphone and speak";
 "当前连麦状态不匹配 %ld 请稍后再试或重进直播间" = "The current call status doesn't match %ld, Please try again later or re-enter the live stream room";
@@ -393,6 +393,21 @@
 "下麦提醒" = "Reminder";
 "强制下麦" = "force disconnect";
 "正常下麦" = "normal termination";
+"连麦管理" = "Voice chat config";
+"连麦设置" = "Voice chat setting";
+"注：更改连麦方式时，需要确保当前无人正在连麦" = "Note: Before switching voice chat type, you should make sure nobody connected";
+"若需要固定该配置项，请前往云直播后台-频道设置-高级设置-观看页设置-连麦设置修改" = "To config default voice chat type, change it on Cloud live backend - Channel setting - Advanced features - Viewing page settings - Voice chat setting";
+"已开启观众连麦" = "Viewer voice chat enabled";
+"已关闭观众连麦" = "Viewer voice chat disabled";
+"开启观众连麦失败，请稍后再试" = "Viewer voice chat enabled failed, try on later";
+"关闭观众连麦失败，请稍后再试" = "Viewer voice chat disabled failed, try on later";
+"当前有用户在连麦，无法切换连麦方式，若要切换，需将麦上用户全部下麦，确认切换连麦方式吗？" = "Can not switch voice chat type because viewers are connecting. To continue, all connected viewers will be hanged up. Confirm to switch type?";
+"切换并下麦所有用户" = "Switch and hang up viewers";
+"开启观众连麦" = "Allow voice chat";
+"关闭观众连麦" = "Forbid voice chat";
+"“连麦”功能更新啦" = "New Voice Chat available";
+"点击此功能按钮可开启观众连麦" = "Click here to allow viewer requesting voice chat";
+"当前网络信号弱，开启失败，请检查网络！" = "Weak network signal, activation failed. Check your connection!";
 
 /**  推流  */
 "继续直播" = "Continue";

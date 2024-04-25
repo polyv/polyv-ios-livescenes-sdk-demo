@@ -8,6 +8,7 @@
 
 #import "PLVMarqueeView.h"
 #import "PLVMarqueeAnimationManager.h"
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVMarqueeView ()<CAAnimationDelegate>
 
@@ -98,7 +99,7 @@
             [PLVMarqueeAnimationManager startMarqueeAnimation:self.mainMarqueeLayer];
         }else {
             //没有添加动画，则添加
-            [PLVMarqueeAnimationManager addAnimationForLayer:self.mainMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:self];
+            [PLVMarqueeAnimationManager addAnimationForLayer:self.mainMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:[PLVFWeakProxy proxyWithTarget:self]];
         }
     }
     
@@ -109,7 +110,7 @@
             [PLVMarqueeAnimationManager startMarqueeAnimation:self.secondMarqueeLayer];
         } else {
             //没有添加动画，则添加
-            [PLVMarqueeAnimationManager addDoubleFlashAnimationForSecondLayer:self.secondMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:self];
+            [PLVMarqueeAnimationManager addDoubleFlashAnimationForSecondLayer:self.secondMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:[PLVFWeakProxy proxyWithTarget:self]];
         }
     }
 }

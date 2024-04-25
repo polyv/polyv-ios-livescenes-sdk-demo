@@ -51,6 +51,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 下课（直播结束）
 - (void)finishClass;
 
+/// 更新连麦用户的连麦时长
+- (void)updateUsersLinkMicDuration;
+
 @end
 
 /// 连麦区域视图Delegate

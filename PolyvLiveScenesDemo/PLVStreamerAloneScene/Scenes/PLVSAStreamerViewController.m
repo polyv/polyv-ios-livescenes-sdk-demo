@@ -413,6 +413,7 @@ PLVShareLiveSheetDelegate
     } else {
         [self.streamerPresenter setupStreamQuality:[PLVRoomData streamQualityWithResolutionType:roomData.defaultResolution]];
     }
+    [self.streamerPresenter setLinkMicNewStrategyEnabled:roomData.linkmicNewStrategyEnabled interactNumLimit:roomData.interactNumLimit defaultChannelLinkMicMediaType:roomData.defaultChannelLinkMicMediaType];
     [self.streamerPresenter setupStreamScale:PLVBLinkMicStreamScale9_16];
     [self.streamerPresenter setupLocalVideoPreviewSameAsRemoteWatch:YES];
     PLVMixLayoutType localMixLayout = [self getLocalMixLayoutType];
@@ -555,11 +556,11 @@ PLVShareLiveSheetDelegate
 - (void)tryResumeClass {
     if ([PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
         __weak typeof(self) weakSelf = self;
-        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"检测到之前异常退出，是否恢复直播") cancelActionTitle:PLVLocalizedString(@"结束直播") cancelActionBlock:^{
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"监测到您的上次直播中途离开，是否继续?") cancelActionTitle:PLVLocalizedString(@"结束直播") cancelActionBlock:^{
             /// 重置值、结束服务器中该频道上课状态
             [PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving = NO;
             [weakSelf.streamerPresenter finishClass];
-        } confirmActionTitle:PLVLocalizedString(@"恢复直播") confirmActionBlock:^{
+        } confirmActionTitle:PLVLocalizedString(@"继续直播") confirmActionBlock:^{
             [weakSelf tryResumeDeviceOrientation];
             [weakSelf.streamerPresenter joinRTCChannel];
             weakSelf.tryResumeClassBlock = ^{
@@ -580,16 +581,7 @@ PLVShareLiveSheetDelegate
     __weak typeof(self) weakSelf = self;
     if (self.streamerPresenter.micCameraGranted &&
         self.streamerPresenter.inRTCRoom) {
-        if (self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Unknown) {
-            // 麦克风和摄像头当前全部关闭时
-            if (!self.streamerPresenter.currentMicOpen &&
-                !self.streamerPresenter.currentCameraOpen) {
-                /// 开始上课倒数
-                [self updateViewState:PLVSAStreamerViewStateBeginSteam];
-            }else{
-                needRetry = YES;
-            }
-        } else if(self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Down) {
+       if (self.streamerPresenter.networkQuality == PLVBRTCNetworkQuality_Down) {
             needRetry = YES;
         }else{
             /// 开始上课倒数
@@ -626,6 +618,11 @@ PLVShareLiveSheetDelegate
 
 - (void)startClass { // 在此处理推流正式开始的UI更新
     [self.homeView startClass:YES];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
+        [self.streamerPresenter changeLinkMicMediaType:self.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video allowRaiseHand:self.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+        }];
+    }
 }
 
 #pragma mark finishClass（直播推流结束时调用）
@@ -1426,6 +1423,64 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (PLVChannelLinkMicMediaType)streamerHomeViewCurrentChannelLinkMicMediaType:(PLVSAStreamerHomeView *)homeView {
     return self.streamerPresenter.channelLinkMicMediaType;
+}
+
+- (void)streamerHomeViewDidAllowRaiseHandButton:(PLVSAStreamerHomeView *)homeView wannaChangeAllowRaiseHand:(BOOL)allowRaiseHand {
+    if ([PLVReachability reachabilityForInternetConnection].currentReachabilityStatus == PLVNotReachable) {
+        [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"当前网络信号弱，开启失败，请检查网络！") inView:self.homeView];
+        return;
+    }
+    
+    if (![PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled) {
+        return;
+    }
+    
+    NSString * successTitle = allowRaiseHand ? PLVLocalizedString(@"已开启观众连麦") : PLVLocalizedString(@"已关闭观众连麦");
+    NSString * failTitle = allowRaiseHand ? PLVLocalizedString(@"开启观众连麦失败，请稍后再试") : PLVLocalizedString(@"关闭观众连麦失败，请稍后再试");
+    __weak typeof(self) weakSelf = self;
+    
+    [self.streamerPresenter allowRaiseHand:allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
+        plv_dispatch_main_async_safe(^{
+            if (emitSuccess) {
+                [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
+                [PLVSAUtils showToastInHomeVCWithMessage:successTitle];
+                [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:allowRaiseHand];
+            }else{
+                [PLVSAUtils showToastInHomeVCWithMessage:failTitle];
+            }
+        })
+    }];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView wannaChangeLinkMicType:(BOOL)linkMicOnAudio {
+    __weak typeof(self) weakSelf = self;
+    
+    if (self.streamerPresenter.onlineUserArray.count > 1) {
+        [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"提示") Message:PLVLocalizedString(@"当前有用户在连麦，无法切换连麦方式，若要切换，需将麦上用户全部下麦，确认切换连麦方式吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"切换并下麦所有用户") confirmActionBlock:^{
+            [weakSelf.streamerPresenter removeAllAudiences];
+            [weakSelf.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:weakSelf.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+                if (emitSuccess) {
+                    [weakSelf.homeView updateHomeViewLinkMicType:linkMicOnAudio];
+                    [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                }
+            }];
+        }];
+    } else {
+        [self.streamerPresenter removeAllAudiences];
+        [self.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:self.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+            if (emitSuccess) {
+                [weakSelf.homeView updateHomeViewLinkMicType:linkMicOnAudio];
+                [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+            }
+        }];
+    }
+}
+
+- (void)streamerHomeViewDidTapRemoveAllAudiencesButton:(PLVSAStreamerHomeView *)homeView {
+    __weak typeof(self) weakSelf = self;
+    [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"提示") Message:PLVLocalizedString(@"确认下麦所有连麦观众吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确认") confirmActionBlock:^{
+        [weakSelf.streamerPresenter removeAllAudiences];
+    }];
 }
 
 #pragma mark PLVSABeautySheetDelegate

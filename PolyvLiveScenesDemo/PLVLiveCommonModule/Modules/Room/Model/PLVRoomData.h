@@ -178,6 +178,12 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign, readonly) PLVQualityPreferenceType pushQualityPreference;
 /// 连麦默认打开 开关，audio默认开启语音连麦，video默认打开视频连麦，N连麦默认不打开，默认值为N
 @property (nonatomic, copy) NSString *userDefaultOpenMicLinkEnabled;
+/// 新版连麦模式开关， YES默认使用新版连麦界面，NO默认使用旧版连麦界面
+@property (nonatomic, assign) BOOL linkmicNewStrategyEnabled;
+/// 新版连麦默认类型类型，audio默认开启语音连麦，video默认打开视频连麦，N连麦默认不打开，默认值为N
+@property (nonatomic, copy) NSString *defaultOpenMicLinkEnabled;
+// 频道默认开关，仅新版连麦生效
+@property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType defaultChannelLinkMicMediaType;
 
 #pragma mark SIP独有属性
 /// 支持SIP模式

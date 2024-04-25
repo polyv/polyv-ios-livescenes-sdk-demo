@@ -475,16 +475,19 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 - (void)startPictureInPicture {
-    if (self.videoType == PLVChannelVideoType_Live) {
+    if (self.videoType <= PLVChannelVideoType_Playback) {
         PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.superview animated:YES];
         [hud.label setText:PLVLocalizedString(@"正在开启小窗...")];
         [hud hideAnimated:YES afterDelay:3.0];
         [self.playerPresenter startPictureInPictureFromOriginView:self.pictureInPictureOriginView];
+        if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaViewWannaStartPictureInPicture:)]) {
+            [self.delegate plvLCMediaAreaViewWannaStartPictureInPicture:self];
+        }
     }
 }
 
 - (void)stopPictureInPicture {
-    if (self.videoType == PLVChannelVideoType_Live) {
+    if (self.videoType <= PLVChannelVideoType_Playback) {
         [self.playerPresenter stopPictureInPicture];
     }
 }
@@ -507,12 +510,20 @@ PLVLCDocumentPaintModeViewDelegate
     return self.playerPresenter.channelWatchQuickLive;
 }
 
+- (BOOL)channelWatchPublicStream {
+    return self.playerPresenter.channelWatchPublicStream;
+}
+
 - (BOOL)noDelayWatchMode {
     return self.playerPresenter.noDelayWatchMode;
 }
 
 - (BOOL)quickLiveWatching {
     return self.playerPresenter.quickLiveWatching;
+}
+
+- (BOOL)publicStreamWatching {
+    return self.playerPresenter.publicStreamWatching;
 }
 
 - (BOOL)noDelayLiveWatching{
@@ -646,12 +657,12 @@ PLVLCDocumentPaintModeViewDelegate
     // 直播延迟选项数据
     PLVLCMediaMoreModel *liveDelayModel = nil;
     
-    // 无延迟直播和快直播频道支持切换延迟模式
-    if (self.channelWatchNoDelay || self.channelWatchQuickLive) {
+    // 无延迟直播、快直播、公共流频道支持切换延迟模式
+    if (self.channelWatchNoDelay || self.channelWatchQuickLive || self.channelWatchPublicStream) {
         liveDelayModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_LiveDelayOptionTitle) optionItemsArray:@[PLVLocalizedString(@"无延迟"),PLVLocalizedString(@"正常延迟")] selectedIndex:!self.noDelayWatchMode];
     }
 
-    // 观看无延迟直播和快直播时不支持切换音视频模式、视频质量和线路
+    // 观看无延迟直播、快直播、公共流时不支持切换音视频模式、视频质量和线路
     if (!self.noDelayWatchMode) {
         NSArray<NSString *> *optionItemsArray = self.isOnlyAudio ? @[PLVLocalizedString(@"仅听声音")] : @[PLVLocalizedString(@"播放画面"),PLVLocalizedString(@"仅听声音")];
         modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_ModeOptionTitle) optionItemsArray:optionItemsArray selectedIndex:self.playerPresenter.audioMode];
@@ -1364,7 +1375,7 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (void)documentView_teacherSetPaintPermission:(BOOL)permission userId:(NSString *)userId {
     NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
-    if ([viewerId isEqualToString:userId]) {
+    if ([viewerId isEqualToString:userId] && self.hasPaintPermission != permission) {
         if (self.delegate &&
             [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:didChangePaintPermission:)]) {
             [self.delegate plvLCMediaAreaView:self didChangePaintPermission:permission];
@@ -1384,7 +1395,8 @@ PLVLCDocumentPaintModeViewDelegate
 #pragma mark PLVStreamerPPTView Delegate
 /// PPT获取刷新的延迟时间
 - (unsigned int)documentView_getRefreshDelayTime {
-    return self.inRTCRoom ? 0 : self.quickLiveWatching ? 500 : 5000;
+    int rtcDelayTime = (self.quickLiveWatching || self.publicStreamWatching) ? 500 : 5000;
+    return self.inRTCRoom ? 0 : rtcDelayTime;
 }
 
 /// PPT视图 PPT位置需切换
@@ -1444,6 +1456,13 @@ PLVLCDocumentPaintModeViewDelegate
         if (self.currentPlayTime > 0.5) {
             [self showMemoryPlayTipLabelWithTime:self.currentPlayTime];
         }
+        
+        /// 更新画中画按钮显示状态
+        [self refreshPictureInPictureButtonShow:YES];
+    }
+        
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playbackVideoSizeChange:)]) {
+        [self.delegate plvLCMediaAreaView:self playbackVideoSizeChange:videoSize];
     }
 }
 
@@ -1518,7 +1537,7 @@ PLVLCDocumentPaintModeViewDelegate
     
     if (newestStreamState == PLVChannelLiveStreamState_Live) {
         if (!self.noDelayLiveWatching && self.inLinkMic == NO) {
-            [self.floatView showFloatView:YES userOperat:NO];
+            [self.floatView showFloatView:YES userOperat:self.lastLinkMicSceneType == PLVChannelLinkMicSceneType_PPT_PureRtc];
             [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_CDN];
             
             /// 确保 直播状态变更为‘直播中’时，PPT 位于主屏
@@ -1597,9 +1616,18 @@ PLVLCDocumentPaintModeViewDelegate
     }
 }
 
+/// [公共流] 公共流 网络质量检测
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter publicStreamNetworkQuality:(PLVPublicStreamPlayerNetworkQuality)netWorkQuality {
+    if (netWorkQuality == PLVPublicStreamPlayerNetworkQuality_Poor) {
+        [self showNetworkQualityPoorView];
+    } else if (netWorkQuality == PLVPublicStreamPlayerNetworkQuality_Middle) {
+        [self showNetworkQualityMiddleView];
+    }
+}
+
 /// 播放器 广告‘正在播放状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter advertViewPlayingStateDidChanged:(BOOL)playing {
-    if (self.videoType == PLVChannelVideoType_Live) {
+    if (self.videoType <= PLVChannelVideoType_Playback) {
         [self refreshPictureInPictureButtonShow:!playing];
     }
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:advertViewPlayingDidChange:)]) {
@@ -1637,14 +1665,20 @@ PLVLCDocumentPaintModeViewDelegate
     [self.skinView refreshMoreButtonHiddenOrRestore:YES];
     [self.skinView enablePlayControlButtons:NO];
     
-    // 画中画占位视图显示控制、播放控制
-    if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        // 画中画占位视图显示控制、播放控制
+        if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+            [self.canvasView setPictureInPicturePlaceholderShow:YES];
+            [self.playerPresenter pausePlay];
+        }else {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
+                [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:NO];
+            }
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
         [self.canvasView setPictureInPicturePlaceholderShow:YES];
         [self.playerPresenter pausePlay];
-    }else {
-        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
-            [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:NO];
-        }
+        [self.skinView refreshProgressControlsShow:NO];
     }
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureDidStart:)]) {
@@ -1673,14 +1707,20 @@ PLVLCDocumentPaintModeViewDelegate
     [self.skinView refreshMoreButtonHiddenOrRestore:NO];
     [self.skinView enablePlayControlButtons:YES];
     
-    // 画中画展位视图显示控制、播放控制
-    if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        // 画中画展位视图显示控制、播放控制
+        if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+            [self.canvasView setPictureInPicturePlaceholderShow:NO];
+            [self.playerPresenter resumePlay];
+        }else {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
+                [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:YES];
+            }
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
         [self.canvasView setPictureInPicturePlaceholderShow:NO];
         [self.playerPresenter resumePlay];
-    }else {
-        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
-            [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:YES];
-        }
+        [self.skinView refreshProgressControlsShow:YES];
     }
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewPictureInPictureDidStop:)]) {

@@ -419,6 +419,7 @@ PLVLCLinkMicWindowsViewDelegate
         PLVLCLinkMicControlBarType barType = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio ? PLVLCLinkMicControlBarType_Audio : PLVLCLinkMicControlBarType_Video);
         [self.currentControlBar changeBarType:barType];
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Open];
+        [self.linkMicPreView showLinkMicPreviewView:NO];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Waiting) {
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Waiting];
         [self.currentControlBar updateLinkMicRequestIndex:presenter.linkMicRequestIndex];
@@ -427,6 +428,8 @@ PLVLCLinkMicWindowsViewDelegate
         self.linkMicPreView.isOnlyAudio = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio);
         [self.linkMicPreView showLinkMicPreviewView:YES];
     }else if (currentLinkMicStatus == PLVLinkMicStatus_Joined) {
+        PLVLCLinkMicControlBarType barType = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio ? PLVLCLinkMicControlBarType_Audio : PLVLCLinkMicControlBarType_Video);
+        [self.currentControlBar changeBarType:barType];
         [self.currentControlBar controlBarStatusSwitchTo:PLVLCLinkMicControlBarStatus_Joined];
         // 同步控件状态
         self.currentControlBar.micButton.selected = !self.presenter.micDefaultOpen;

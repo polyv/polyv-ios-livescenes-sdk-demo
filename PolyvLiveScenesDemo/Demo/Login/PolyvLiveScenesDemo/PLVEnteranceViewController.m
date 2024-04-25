@@ -10,15 +10,12 @@
 #import "PLVLiveWatchLoginController.h"
 #import "PLVLiveStreamerLoginViewController.h"
 
-// 模块
-#import "PLVHCTeacherLoginManager.h"
 
 @interface PLVEnteranceViewController ()
 
 @property (nonatomic, strong) UIImageView *bgImageView;
 @property (nonatomic, strong) UIButton *streamerButton;
 @property (nonatomic, strong) UIButton *watchButton;
-@property (nonatomic, strong) UIButton *hiClassButton;
 @property (nonatomic, strong) UIButton *seminarButton;
 @property (nonatomic, strong) NSArray *buttonArray;
 
@@ -33,7 +30,7 @@
     
     [self.view addSubview:self.bgImageView];
     
-    self.buttonArray = @[ self.streamerButton, self.watchButton, self.hiClassButton ];
+    self.buttonArray = @[ self.streamerButton, self.watchButton ];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -107,22 +104,6 @@
     return _watchButton;
 }
 
-- (UIButton *)hiClassButton {
-    if (!_hiClassButton) {
-        _hiClassButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        UIImage *image = [[self class] imageWithImageName:@"plv_enterance_hiclass_btn"];
-        [_hiClassButton setImage:image forState:UIControlStateNormal];
-        [_hiClassButton setTitle:@"互动学堂" forState:UIControlStateNormal];
-        [_hiClassButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [_hiClassButton setTitleEdgeInsets:UIEdgeInsetsMake(-40, -290, 0, 0)];
-        _hiClassButton.titleLabel.font = [UIFont systemFontOfSize:24];
-        _hiClassButton.titleLabel.textAlignment = NSTextAlignmentLeft;
-        [_hiClassButton addTarget:self action:@selector(hiClassButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        [self.view addSubview:_hiClassButton];
-    }
-    return _hiClassButton;
-}
-
 #pragma mark - [ Private Method ]
 #pragma mark Utils
 
@@ -149,10 +130,6 @@
     PLVLiveWatchLoginController *vctrl = (PLVLiveWatchLoginController *)[storyboard instantiateInitialViewController];
     vctrl.modalPresentationStyle = UIModalPresentationFullScreen;
     [self presentViewController:vctrl animated:YES completion:nil];
-}
-
-- (void)hiClassButtonAction:(id)sender {
-    [PLVHCTeacherLoginManager loadMainViewController];
 }
 
 @end

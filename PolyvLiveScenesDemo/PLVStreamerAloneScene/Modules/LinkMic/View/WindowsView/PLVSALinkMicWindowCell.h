@@ -25,6 +25,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param hide 是否需要隐藏昵称，同时当摄像头关闭时，是否要显示canvasView视图
 - (void)setUserModel:(PLVLinkMicOnlineUser *)onlineUser hideCanvasViewWhenCameraClose:(BOOL)hide;
 
+/// 更新当前连麦时长
+///
+/// @param show 表示是否显示连麦时长
+- (void)updateLinkMicDuration:(BOOL)show;
+
 @end
 
 @protocol PLVSALinkMicWindowCellDelegate <NSObject>

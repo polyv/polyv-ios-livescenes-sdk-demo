@@ -486,7 +486,7 @@ PLVPlayerPresenterDelegate
 #pragma mark - Public
 
 - (void)play {
-    if (self.playerPresenter.noDelayWatchMode && !self.playerPresenter.quickLiveWatching) {
+    if (self.playerPresenter.noDelayLiveWatching && !self.playerPresenter.quickLiveWatching) {
         self.playing = YES;
         self.playButton.hidden = YES;
         if (self.delegate &&
@@ -499,7 +499,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)pause {
-    if (self.playerPresenter.noDelayWatchMode && !self.playerPresenter.quickLiveWatching) {
+    if (self.playerPresenter.noDelayLiveWatching && !self.playerPresenter.quickLiveWatching) {
         self.playing = NO;
         self.playButton.hidden = NO;
         if (self.delegate &&
@@ -590,16 +590,10 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)startPictureInPicture {
-    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live) {
-        return;
-    }
     [self.playerPresenter startPictureInPictureFromOriginView:self.contentBackgroudView];
 }
 
 - (void)stopPictureInPicture {
-    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live) {
-        return;
-    }
     [self.playerPresenter stopPictureInPicture];
 }
 
@@ -717,6 +711,12 @@ PLVPlayerPresenterDelegate
     }
 }
 
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter publicStreamNetworkQuality:(PLVPublicStreamPlayerNetworkQuality)netWorkQuality {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:quickLiveNetworkQuality:)]) {
+        [self.delegate playerController:self publicStreamNetworkQuality:(PLVECLivePlayerPublicStreamNetworkQuality)netWorkQuality];
+    }
+}
+
 - (void)playerPresenterPlaybackInterrupted:(PLVPlayerPresenter *)playerPresenter {
 
 }
@@ -798,6 +798,12 @@ PLVPlayerPresenterDelegate
     self.pictureInPicturePlaceholderView.hidden = YES;
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerPictureInPictureDidStop:)]) {
         [self.delegate playerControllerPictureInPictureDidStop:self];
+    }
+}
+
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:pictureInPicturePlayingStateDidChange:)]) {
+        [self.delegate playerController:self pictureInPicturePlayingStateDidChange:playing];
     }
 }
 

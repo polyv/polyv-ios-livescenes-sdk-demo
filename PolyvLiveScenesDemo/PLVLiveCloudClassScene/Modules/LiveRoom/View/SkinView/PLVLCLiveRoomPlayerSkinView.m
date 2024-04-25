@@ -244,6 +244,7 @@
 }
 
 - (void)refreshPictureInPictureButtonFrame{
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat rightSafePadding = 0;
     CGFloat topPadding = 16.0;
     CGFloat intervalPadding = 0;
@@ -259,7 +260,12 @@
     }
     
     CGSize backButtonSize = CGSizeMake(40.0, 20.0);
-    CGFloat pictureInPictureButtonX = self.bulletinButton.frame.origin.x - backButtonSize.width;
+    CGFloat pictureInPictureButtonX = viewWidth - rightSafePadding - backButtonSize.width;
+    if (_bulletinButton && !_bulletinButton.hidden) {
+        pictureInPictureButtonX = self.bulletinButton.frame.origin.x - backButtonSize.width;
+    } else if (self.moreButton && !self.moreButton.hidden) {
+        pictureInPictureButtonX = self.moreButton.frame.origin.x - backButtonSize.width;
+    }
     self.pictureInPictureButton.frame = CGRectMake(pictureInPictureButtonX, topPadding, backButtonSize.width, backButtonSize.height);
 }
 

@@ -151,6 +151,12 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param show YES:显示  NO:隐藏
 - (void)updateMoreButtonShow:(BOOL)show;
 
+/// 更新进度控件隐藏（包含进度条，进度文本）
+- (void)updateProgressControlsHidden:(BOOL)hidden;
+
+/// 更新播放按钮是否启用
+- (void)updatePlayButtonEnabled:(BOOL)enabled;
+
 - (void)updateIarEntranceButtonDataArray:(NSArray *)dataArray;
 
 /// 更新更多按钮的按钮状态

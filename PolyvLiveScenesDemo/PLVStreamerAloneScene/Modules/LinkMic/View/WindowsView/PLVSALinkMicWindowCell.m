@@ -36,6 +36,9 @@
 @property (nonatomic, strong) UIButton *closeFullScreenButton; // 关闭全屏 按钮
 @property (nonatomic, strong) UIImageView *screenSharingImageView; // 屏幕共享时 背景图
 @property (nonatomic, strong) UILabel *screenSharingLabel; // 屏幕共享时 文本框
+@property (nonatomic, strong) UIImageView *timerIcon; // 计时器图标
+@property (nonatomic, strong) UILabel *linkMicDuration; // 连麦时长
+@property (nonatomic, assign) BOOL linkMicDurationShow;
 
 @end
 
@@ -71,6 +74,9 @@
     [self layoutLinkMicStatusLabel];
     CGFloat speakerImageViewLeft = self.linkMicStatusLabel.isHidden ? statusLabelLeftPadding : CGRectGetMaxX(self.linkMicStatusLabel.frame) + 8;
     self.speakerImageView.frame = CGRectMake(speakerImageViewLeft, statusLabelTopPadding, 16, 16);
+    CGFloat timerIconOriginX = self.speakerImageView.isHidden ? leftPadding : CGRectGetMaxX(self.speakerImageView.frame) + 4;
+    self.timerIcon.frame = CGRectMake(timerIconOriginX, 4, 14, 14);
+    self.linkMicDuration.frame = CGRectMake(CGRectGetMaxX(self.timerIcon.frame) + 3, 4, contentViewWidth - CGRectGetMaxX(self.timerIcon.frame) + 3, 14);
     self.screenSharingImageView.frame = CGRectMake((contentViewWidth - 44)/2, (contentViewHeight - 44)/2 - 20, 44, 44);
     CGFloat sharingLabelWidth = [self.screenSharingLabel sizeThatFits:CGSizeMake(MAXFLOAT, 18)].width;
     self.screenSharingLabel.frame = CGRectMake((contentViewWidth - sharingLabelWidth)/2, CGRectGetMaxY(self.screenSharingImageView.frame) + 4, sharingLabelWidth, 18);
@@ -99,6 +105,8 @@
     
     // 设备检测页的连麦窗口不显示以下控件
     self.nickNameLabel.hidden = self.micButton.hidden = hide;
+    
+    [self updateLinkMicDuration:self.linkMicDurationShow];
     
     __weak typeof(self) weakSelf = self;
     // 连麦状态
@@ -183,10 +191,25 @@
     } blockKey:self];
 }
 
+- (void)updateLinkMicDuration:(BOOL)show {
+    BOOL shouldShow = self.onlineUser.userType != PLVSocketUserTypeTeacher && show;
+    if (self.onlineUser.currentLinkMicDuration > NSTimeIntervalSince1970) {
+        shouldShow = NO;
+    }
+    if (shouldShow) {
+        self.linkMicDuration.text = [PLVFdUtil secondsToString2:self.onlineUser.currentLinkMicDuration];
+    }
+    self.linkMicDuration.hidden = !shouldShow;
+    self.timerIcon.hidden = !shouldShow;
+    self.linkMicDurationShow = shouldShow;
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupUI {
     [self.contentView addSubview:self.contentBackgroudView];
+    [self.contentView addSubview:self.timerIcon];
+    [self.contentView addSubview:self.linkMicDuration];
     [self.contentView addSubview:self.micButton];
     [self.contentView addSubview:self.nickNameLabel];
     [self.contentView addSubview:self.linkMicStatusLabel];
@@ -364,6 +387,28 @@
         _screenSharingLabel.hidden = YES;
     }
     return _screenSharingLabel;
+}
+
+- (UIImageView *)timerIcon {
+    if (!_timerIcon) {
+        _timerIcon = [[UIImageView alloc] init];
+        _timerIcon.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_cell_timer_icon"];
+        _timerIcon.contentMode = UIViewContentModeScaleAspectFill;
+        _timerIcon.hidden = YES;
+    }
+    return _timerIcon;
+}
+
+- (UILabel *)linkMicDuration {
+    if (!_linkMicDuration) {
+        _linkMicDuration = [[UILabel alloc]init];
+        _linkMicDuration.text = [PLVFdUtil secondsToString2:self.onlineUser.currentLinkMicDuration];
+        _linkMicDuration.font = [UIFont systemFontOfSize:14];
+        _linkMicDuration.textColor = [UIColor whiteColor];
+        _linkMicDuration.textAlignment = NSTextAlignmentLeft;
+        _linkMicDuration.hidden = YES;
+    }
+    return _linkMicDuration;
 }
 
 #pragma mark - [ Event ]

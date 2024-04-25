@@ -53,7 +53,7 @@
 #pragma mark - Private Method
 
 - (NSString *)html:(NSString *)content {
-    NSString *processedContent = [content stringByReplacingOccurrencesOfString:@"<img src=\"//" withString:@"<img src=\"https://"];
+    NSString *processedContent = [content stringByReplacingOccurrencesOfString:@"src=\"//" withString:@"src=\"https://"];
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<img " withString:@"<img style=\"width:100%\""];
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<table>" withString:@"<table border=\"1\" rules=all style=\"color:#ADADC0;\">"];
     processedContent = [processedContent stringByReplacingOccurrencesOfString:@"<li>" withString:@"<li style=\"color:#ADADC0;\">"];

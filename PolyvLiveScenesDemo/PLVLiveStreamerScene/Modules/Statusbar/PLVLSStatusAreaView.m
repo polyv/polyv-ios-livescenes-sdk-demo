@@ -63,6 +63,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
 @property (nonatomic, assign) PLVLSStatusLinkMicButtonStatus linkMicButtonStatus; // 连麦按钮状态
 @property (nonatomic, strong) NSTimer *requestLinkMicTimer; // 申请连麦计时器
 @property (nonatomic, assign) NSTimeInterval requestLinkMicLimitTs; // 请求连麦的限制时间
+@property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
 
 @end
 
@@ -88,6 +89,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         [self addSubview:self.stopPushButton];
         
         [self.memberButton addSubview:self.memberRedDot];
+        self.linkMicBtnLastTimeInterval = 0.0;
     }
     return self;
 }
@@ -329,8 +331,16 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
 - (UIButton *)linkmicButton {
     if (!_linkmicButton) {
         _linkmicButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        UIImage *normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn"];
-        UIImage *highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn_selected"];
+        BOOL newStrategy = self.isTeacher && [PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0;
+        UIImage *normalImage;
+        UIImage *highlightImage;
+        if (!newStrategy) {
+            normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn"];
+            highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn_selected"];
+        } else {
+            normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_audience_raise_hand_btn"];
+            highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_audience_raise_hand_btn_selected"];
+        }
         [_linkmicButton setImage:normalImage forState:UIControlStateNormal];
         [_linkmicButton setImage:highlightImage forState:UIControlStateHighlighted];
         [_linkmicButton setImage:highlightImage forState:UIControlStateSelected];
@@ -432,7 +442,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         _linkMicMenu = [[PLVLSLinkMicMenuPopup alloc] initWithMenuFrame:rect buttonFrame:buttonRect];
         __weak typeof(self) weakSelf = self;
         _linkMicMenu.dismissHandler = ^{
-            weakSelf.linkmicButton.selected = NO;
+            weakSelf.linkmicButton.selected = [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Unknown;
         };
         
         _linkMicMenu.videoLinkMicButtonHandler = ^BOOL(BOOL start) {
@@ -655,8 +665,8 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         [self.linkMicApplyView dismiss];
     }
     
-    self.linkmicButton.selected = !self.linkmicButton.selected;
     if (self.isGuest) {
+        self.linkmicButton.selected = !self.linkmicButton.selected;
         if (!self.inClass) {
             self.linkmicButton.selected = !self.linkmicButton.selected;
             [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"上课前无法发起连麦")];
@@ -676,10 +686,20 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
             [self.guestLinkMicMenu dismiss];
         }
     } else {
-        if (self.linkmicButton.selected) {
-            [self.linkMicMenu showAtView:self.superview];
-        } else {
+        if([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
+            // 防止短时间内重复点击，1s间隔内的点击会直接忽略
+            NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
+            if (curTimeInterval - self.linkMicBtnLastTimeInterval > 1000) {
+                if (self.delegate && [self.delegate respondsToSelector:@selector(statusAreaView_didTapAudienceRaiseHandButton:)]) {
+                    [self.delegate statusAreaView_didTapAudienceRaiseHandButton:!self.linkmicButton.selected];
+                }
+            }
+            self.linkMicBtnLastTimeInterval = curTimeInterval;
+
+        } else if (self.linkMicMenu.superview) {
             [self.linkMicMenu dismiss];
+        } else {
+            [self.linkMicMenu showAtView:self.superview];
         }
     }
 }
@@ -756,7 +776,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     if (!start) {
         [self.linkMicMenu resetStatus];
         [self setCurrentLinkMicButtonStatus:PLVLSStatusLinkMicButtonStatus_Default];
-    } else if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVFdUtil checkStringUseable:roomData.userDefaultOpenMicLinkEnabled]) {
+    } else if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVFdUtil checkStringUseable:roomData.userDefaultOpenMicLinkEnabled] && !roomData.linkmicNewStrategyEnabled) {
         if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"audio"]) {
             [self.linkMicMenu audioLinkMicBtnAction];
         } else if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"video"]) {
@@ -837,6 +857,10 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
 
 - (void)changeMemberButtonSelectedState:(BOOL)selected {
     self.memberButton.selected = selected;
+}
+
+- (void)changeLinkmicButtonSelectedState:(BOOL)selected {
+    self.linkmicButton.selected = selected;
 }
 
 @end

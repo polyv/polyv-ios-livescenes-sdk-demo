@@ -491,7 +491,9 @@ PLVECMessagePopupViewDelegate
 }
 
 - (void)roomDataManager_didPlayingStatusChanged:(BOOL)playing {
-    [self.homePageView updatePlayerState:playing];
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [self.homePageView updatePlayerState:playing];
+    }
 }
 
 - (void)roomDataManager_didVidChanged:(NSString *)vid {
@@ -672,6 +674,14 @@ PLVECMessagePopupViewDelegate
     }
 }
 
+- (void)playerController:(PLVECPlayerViewController *)playerController publicStreamNetworkQuality:(PLVECLivePlayerPublicStreamNetworkQuality)netWorkQuality {
+    if (netWorkQuality == PLVECLivePlayerPublicStreamNetworkQuality_Poor) {
+        [self.homePageView showNetworkQualityPoorView];
+    } else if (netWorkQuality == PLVECLivePlayerPublicStreamNetworkQuality_Middle) {
+        [self.homePageView showNetworkQualityMiddleView];
+    }
+}
+
 - (void)customMarqueeDefaultWithError:(NSError *)error {
     [self exitCurrentController];
 }
@@ -699,6 +709,11 @@ PLVECMessagePopupViewDelegate
 /// 画中画已经开启
 -(void)playerControllerPictureInPictureDidStart:(PLVECPlayerViewController *)playerController {
     [self.homePageView updateMoreButtonShow:NO];
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        [self.homePageView updateProgressControlsHidden:YES];
+        [self.homePageView updatePlayButtonEnabled:NO];
+    }
+
     [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"小窗播放中，可能存在画面延后的情况") detail:@"" view:self.view];
     
     if (self.playerVC.noDelayLiveWatching) {
@@ -734,6 +749,10 @@ PLVECMessagePopupViewDelegate
 /// 画中画已经关闭
 -(void)playerControllerPictureInPictureDidStop:(PLVECPlayerViewController *)playerController {
     [self.homePageView updateMoreButtonShow:YES];
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        [self.homePageView updateProgressControlsHidden:NO];
+        [self.homePageView updatePlayButtonEnabled:YES];
+    }
     
     if (self.playerVC.noDelayLiveWatching) {
         [self.linkMicAreaView pauseWatchNoDelay:NO];
@@ -744,6 +763,12 @@ PLVECMessagePopupViewDelegate
     
     // 清理恢复逻辑的处理者
     [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
+- (void)playerController:(PLVECPlayerViewController *)playerController pictureInPicturePlayingStateDidChange:(BOOL)playing {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        [self.homePageView updatePlayerState:playing];
+    }
 }
 
 #pragma mark PLVECLinkMicAreaViewDelegate

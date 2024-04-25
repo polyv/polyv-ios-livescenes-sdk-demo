@@ -22,14 +22,14 @@ typedef NS_ENUM(NSUInteger, PLVLinkMicPresenterRoomJoinStatus) {
 
 typedef NS_ENUM(NSUInteger, PLVLinkMicStatus) {
     PLVLinkMicStatus_Unknown = 0, // 未知状态
-    PLVLinkMicStatus_Open    = 2, // 讲师已开启连麦，但未加入连麦
+    PLVLinkMicStatus_Open    = 2, // 讲师已开启连麦，但未加入连麦；【新版】连麦表示不允许观看端允许举手
     PLVLinkMicStatus_Waiting = 4, // 等待讲师允许中（举手中）
     PLVLinkMicStatus_Inviting= 6, // 讲师等待连麦邀请的应答中
     PLVLinkMicStatus_ResponseWaiting = 8, // 已同意讲师的连麦邀请
     PLVLinkMicStatus_Joining = 10,// 讲师已允许 或 学生已应答，正在加入，引擎正在初始化
     PLVLinkMicStatus_Joined  = 12,// 已加入连麦（连麦中）
     PLVLinkMicStatus_Leaving = 14,// 正在离开中
-    PLVLinkMicStatus_NotOpen = 16 // 讲师未开启连麦
+    PLVLinkMicStatus_NotOpen = 16 // 讲师未开启连麦;【新版】连麦表示不允许观看端允许举手
 };
 
 typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
@@ -144,7 +144,7 @@ typedef NS_ENUM(NSInteger, PLVLinkMicErrorCode) {
 /// 当前 是否处于RTC房间中 (rtcRoomJoinStatus 为 PLVLinkMicPresenterRoomJoinStatus_Joined)
 @property (nonatomic, assign, readonly) BOOL inRTCRoom;
 
-/// 当前 讲师是否发起连麦 (YES:讲师已开启连麦 NO:讲师未开启连麦)
+/// 当前 讲师是否发起连麦 (YES:讲师已开启连麦 NO:讲师未开启连麦) 新版表示 讲师是否允许观众举手
 @property (nonatomic, assign, readonly) BOOL linkMicOpen;
 
 /// 当前 频道连麦场景类型

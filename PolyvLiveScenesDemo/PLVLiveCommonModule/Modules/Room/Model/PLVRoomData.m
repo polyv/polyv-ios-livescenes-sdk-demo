@@ -273,6 +273,8 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
     self.watchCount = menuInfo.pageView.unsignedIntegerValue;
     self.restrictChatEnabled = menuInfo.restrictChatEnabled;
     self.maxViewerCount = menuInfo.maxViewer.unsignedIntegerValue;
+    self.linkmicNewStrategyEnabled = menuInfo.newMicEnabled;
+    self.defaultOpenMicLinkEnabled = menuInfo.defaultOpenMicLinkEnabled;
 }
 
 #pragma mark Getter & Setter
@@ -327,6 +329,17 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
     } else if ([appWebStartResolutionRatio isEqualToString:@"4:3"]) {
         _streamScale = PLVBLinkMicStreamScale4_3;
     }
+}
+
+- (PLVChannelLinkMicMediaType)defaultChannelLinkMicMediaType {
+    if ([PLVFdUtil checkStringUseable:self.defaultOpenMicLinkEnabled]) {
+        if ([self.defaultOpenMicLinkEnabled isEqualToString:@"audio"]) {
+            return PLVChannelLinkMicMediaType_Audio;
+        } else if ([self.defaultOpenMicLinkEnabled isEqualToString:@"video"]) {
+            return PLVChannelLinkMicMediaType_Video;
+        }
+    }
+    return PLVChannelLinkMicMediaType_Unknown;
 }
 
 @end

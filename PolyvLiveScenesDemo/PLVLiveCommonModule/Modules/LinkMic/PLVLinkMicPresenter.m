@@ -61,7 +61,7 @@ PLVLinkMicManagerDelegate
 @property (nonatomic, assign) BOOL inProgress;
 @property (nonatomic, assign) BOOL watchingNoDelay;
 @property (nonatomic, assign) int originalIdleTimerDisabled; // 0 表示未记录；负值小于0 对应NO状态；正值大于0 对应YES状态；
-@property (nonatomic, assign) BOOL roomAllMicMute; // 当前是否‘房间全体静音’
+@property (nonatomic, assign) BOOL roomAllMicMute; // 当前是否‘房间全员静音’
 @property (nonatomic, assign) NSInteger linkMicRequestIndex; // 当前观众连麦麦序
 
 #pragma mark 数据
@@ -200,7 +200,7 @@ PLVLinkMicManagerDelegate
     if (self.linkMicStatus != PLVLinkMicStatus_Inviting && self.linkMicStatus != PLVLinkMicStatus_Waiting) { // 非邀请连麦状态下，且非举手中
         NSLog(@"PLVLinkMicPresenter - answer linkmic invitation failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
         [self callbackForDidOccurError:PLVLinkMicErrorCode_AnswerInvitationFailedStatusIllegal extraCode:self.linkMicStatus];
-        [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Open];
+        [self changeLinkMicStatusAndCallback:self.linkMicOpen ? PLVLinkMicStatus_Open : PLVLinkMicStatus_NotOpen];
     } else if (self.linkMicStatus == PLVLinkMicStatus_Inviting && accept) { //邀请连麦时 接受连麦邀请
         __weak typeof(self) weakSelf = self;
         [self checkLinkMicLimitedCallback:^(BOOL limited) {
@@ -211,13 +211,14 @@ PLVLinkMicManagerDelegate
                     [weakSelf emitSocketMessge_JoinAnswer:accept];
                 }];
             }
-            [weakSelf changeLinkMicStatusAndCallback:(limited ? PLVLinkMicStatus_Open : PLVLinkMicStatus_ResponseWaiting)];
+            PLVLinkMicStatus linkMicStatus = weakSelf.linkMicOpen ? PLVLinkMicStatus_Open : PLVLinkMicStatus_NotOpen;
+            [weakSelf changeLinkMicStatusAndCallback:(limited ? linkMicStatus : PLVLinkMicStatus_ResponseWaiting)];
         }];
     } else {
         if (!timeoutCancel) { // 拒绝连麦邀请 且不是时间超时取消
             [self emitSocketMessge_JoinAnswer:accept];
         }
-        [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Open];
+        [self changeLinkMicStatusAndCallback:self.linkMicOpen ? PLVLinkMicStatus_Open : PLVLinkMicStatus_NotOpen];
     }
 }
 
@@ -737,7 +738,7 @@ PLVLinkMicManagerDelegate
 - (void)changeLinkMicStatusAndCallback:(PLVLinkMicStatus)toLinkMicStatus{
     BOOL linkMicStatusChanged = (self.linkMicStatus != toLinkMicStatus);
     self.linkMicStatus = toLinkMicStatus;
-    if (linkMicStatusChanged) { [self callbackForLinkMicStatusChanged]; }
+    if (linkMicStatusChanged || [PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled) { [self callbackForLinkMicStatusChanged]; }
 }
 
 /// 解析数据，并刷新‘讲师端连麦开启状态’
@@ -745,6 +746,39 @@ PLVLinkMicManagerDelegate
     BOOL open = NO;
     if ([PLVFdUtil checkStringUseable:openStatus] && [openStatus isEqualToString:@"open"]) { open = YES; }
     BOOL diff = (open != self.linkMicOpen);
+    if ([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled) {
+        PLVChannelLinkMicMediaType lastLinkMicMediaType = self.linkMicMediaType;
+        
+        if ([PLVFdUtil checkStringUseable:mediaType]) {
+            if ([mediaType isEqualToString:@"audio"]) {
+                self.linkMicMediaType = PLVChannelLinkMicMediaType_Audio; // 音频连麦
+            }else if ([mediaType isEqualToString:@"video"]) {
+                self.linkMicMediaType = PLVChannelLinkMicMediaType_Video; // 视频连麦
+            }
+        }
+        self.linkMicOpen = open;
+        
+        if (self.linkMicStatus == PLVLinkMicStatus_Joined || self.linkMicStatus == PLVLinkMicStatus_Joining) {
+            if (![PLVFdUtil checkStringUseable:mediaType]) { // 连麦中讲师下课会发送close为空的消息， 如果mediaType为空则将其下麦
+                [self callbackForOperationInProgress:YES];
+                [self leaveLinkMic];
+            }
+            return;
+        }
+        
+        if (lastLinkMicMediaType == self.linkMicMediaType) {
+            // 音视频连麦类型相同
+            if (diff && self.linkMicStatus != PLVLinkMicStatus_Inviting) {
+                [self changeLinkMicStatusAndCallback:open ? PLVLinkMicStatus_Open : PLVLinkMicStatus_NotOpen];
+                return;
+            }
+            return;
+        } else {
+            [self changeLinkMicStatusAndCallback:open ? PLVLinkMicStatus_Open : PLVLinkMicStatus_NotOpen];
+            return;
+        }
+    }
+    
     if (diff) {
         if (open) { // 讲师 发起 连麦功能
             self.linkMicOpen = YES;
@@ -939,19 +973,18 @@ PLVLinkMicManagerDelegate
                     if (user.localUser) {
                         weakSelf.currentLocalLinkMicUser = user;
                         
-                        /// 根据‘全体静音’得出最终的麦克风开关状态
+                        /// 根据‘全员静音’得出最终的麦克风开关状态
                         BOOL finalMicOpen = self.roomAllMicMute ? NO : weakSelf.micDefaultOpen;
                         
                         /// 设置初始值
                         [user updateUserCurrentMicOpen:finalMicOpen];
                         [user updateUserCurrentCameraOpen:weakSelf.cameraDefaultOpen];
                         
-                        if (self.roomAllMicMute) {
-                            [weakSelf muteUser:user.linkMicUserId mediaType:@"audio" mute:!finalMicOpen];
-                        }
+                        [weakSelf muteUser:user.linkMicUserId mediaType:@"audio" mute:!finalMicOpen];
+                        [weakSelf muteUser:user.linkMicUserId mediaType:@"video" mute:!weakSelf.cameraDefaultOpen];
                     }else{
-                        BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"audio" defaultMuteStatus:NO];
-                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"video" defaultMuteStatus:NO];
+                        BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"audio" defaultMuteStatus:YES];
+                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"video" defaultMuteStatus:YES];
                         
                         /// 设置初始值
                         [user updateUserCurrentMicOpen:micOpen];
@@ -1505,7 +1538,7 @@ PLVLinkMicManagerDelegate
                 }else { /// 其他状态
                     NSLog(@"PLVLinkMicPresenter - will not join rtc channel, rtcRoomJoinStatus illegal, current status:%lu",(unsigned long)self.rtcRoomJoinStatus);
                 }
-            } else if ((self.linkMicStatus == PLVLinkMicStatus_Open || self.linkMicStatus == PLVLinkMicStatus_ResponseWaiting) && needAnswer) { /// 讲师邀请学生上麦
+            } else if ((self.linkMicStatus == PLVLinkMicStatus_Open || [PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled || self.linkMicStatus == PLVLinkMicStatus_ResponseWaiting) && needAnswer) { /// 讲师邀请学生上麦
                 [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Inviting];
             } else if (self.linkMicStatus == PLVLinkMicStatus_Waiting && needAnswer) { /// 举手中收到邀请
                 [self acceptLinkMicInvitation:YES timeoutCancel:NO];
@@ -1523,7 +1556,7 @@ PLVLinkMicManagerDelegate
         // 讲师打开或关闭，你的摄像头或麦克风（单播消息 unicast）
         case PLVLinkMicEventType_MuteUserMedia: {
             BOOL mute = ((NSNumber *)jsonDict[@"mute"]).boolValue;
-            if (![PLVFdUtil checkStringUseable:jsonDict[@"userId"]]) { /// 全体静音处理
+            if (![PLVFdUtil checkStringUseable:jsonDict[@"userId"]]) { /// 全员静音处理
                 self.roomAllMicMute = mute;
             }
             [self muteUser:self.linkMicUserId mediaType:jsonDict[@"type"] mute:mute];
@@ -1633,7 +1666,7 @@ PLVLinkMicManagerDelegate
             // 连麦Token不为空，需发送 reJoinMic 进行重连
             [self emitSocketMessge_reJoinMic];
         }
-    } else if ([subEvent isEqualToString:PLVSocketIOPPT_onSliceID_key]) { // 是否开启全体静音
+    } else if ([subEvent isEqualToString:PLVSocketIOPPT_onSliceID_key]) { // 是否开启全员静音
         NSString * avConnectMode = jsonDict[@"data"][@"avConnectMode"];
         if ([PLVFdUtil checkStringUseable:avConnectMode] &&
             [avConnectMode isEqualToString:@"audio"]) {

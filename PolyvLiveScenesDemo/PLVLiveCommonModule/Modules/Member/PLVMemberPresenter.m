@@ -158,7 +158,7 @@ PLVSocketManagerProtocol // socket协议
 //     N 是 本地用户localUserMDic 的长度。  N 可以很大很大。
 //     M 是 新用户 newLinkMicWaitUserArray 的长度。 连麦人数最多16人，也就是说，M 最大值是 16。也就是说，可以忽略不计；
 - (void)refreshUserListWithLinkMicWaitUserArray:(NSArray <PLVLinkMicWaitUser *>*)newLinkMicWaitUserArray {
-    if (!newLinkMicWaitUserArray || ![newLinkMicWaitUserArray isKindOfClass:[NSArray class]] || newLinkMicWaitUserArray.count==0) {
+    if (!newLinkMicWaitUserArray || ![newLinkMicWaitUserArray isKindOfClass:[NSArray class]]) {
         return;
     }
     

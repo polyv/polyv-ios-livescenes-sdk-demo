@@ -30,9 +30,10 @@ PLVChannelClassManagerDelegate
 @property (nonatomic, assign) int originalIdleTimerDisabled; // 0 表示未记录；负值小于0 对应NO状态；正值大于0 对应YES状态；
 @property (nonatomic, assign) BOOL micCameraGranted;
 @property (nonatomic, assign) BOOL localVideoPreviewSameAsRemoteWatch;
-@property (nonatomic, assign) BOOL roomAllMicMute; // 当前是否‘房间全体静音’
+@property (nonatomic, assign) BOOL roomAllMicMute; // 当前是否‘房间全员静音’
 @property (nonatomic, assign) BOOL currentNetworkConnected; // 当前网络是否连接
 @property (nonatomic, assign) BOOL needLocalGuestAutoLinkMic; // 断网重连是否需要重新上麦
+@property (nonatomic, assign) BOOL hadSetupLinkMicStrategy; // 是否配置过新版连麦
 
 #pragma mark 数据
 @property (nonatomic, copy) NSString * linkMicUserId;
@@ -212,6 +213,13 @@ PLVChannelClassManagerDelegate
     [self resetWaitUserList];
 }
 
+- (void)setLinkMicNewStrategyEnabled:(BOOL)linkMicNewStrategyEnabled interactNumLimit:(NSUInteger)interactNumLimit defaultChannelLinkMicMediaType:(PLVChannelLinkMicMediaType)defaultChannelLinkMicMediaType {
+    if (!self.hadSetupLinkMicStrategy) {
+        [self.rtcStreamerManager setLinkMicNewStrategyEnabled:linkMicNewStrategyEnabled interactNumLimit:interactNumLimit defaultChannelLinkMicMediaType:defaultChannelLinkMicMediaType];
+        self.hadSetupLinkMicStrategy = YES;
+    }
+}
+
 #pragma mark 课程事件管理
 - (int)startClass{
     if (self.viewerType != PLVRoomUserTypeTeacher) { return -1; }
@@ -388,6 +396,43 @@ PLVChannelClassManagerDelegate
     }
 }
 
+- (void)changeLinkMicMediaType:(BOOL)linkMicOnAudio allowRaiseHand:(BOOL)allow emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock {
+    if (linkMicOnAudio) {
+        [self.rtcStreamerManager openAudioLinkMic:allow emitCompleteBlock:emitCompleteBlock];
+        [self removeWaitUserButGuest];
+        [self removeOnlineUserButGuest];
+    } else {
+        [self.rtcStreamerManager openVideoLinkMic:allow emitCompleteBlock:emitCompleteBlock];
+        [self removeWaitUserButGuest];
+        [self removeOnlineUserButGuest];
+    }
+}
+
+- (void)allowRaiseHand:(BOOL)allow emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock {
+    if (self.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Audio) {
+        [self allowRaiseHandForAudioLinkMic:allow emitCompleteBlock:emitCompleteBlock];
+    }else if(self.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Video) {
+        [self allowRaiseHandForVideoLinkMic:allow emitCompleteBlock:emitCompleteBlock];
+    }else{
+        [self allowRaiseHandForAudioLinkMic:allow emitCompleteBlock:emitCompleteBlock];
+    }
+}
+
+- (void)allowRaiseHandForAudioLinkMic:(BOOL)allow emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock {
+    [self.rtcStreamerManager openAudioLinkMic:allow emitCompleteBlock:emitCompleteBlock];
+    if (!allow) {
+        [self removeWaitUserButGuest];
+    }
+}
+
+- (void)allowRaiseHandForVideoLinkMic:(BOOL)allow emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock {
+    [self.rtcStreamerManager openVideoLinkMic:allow emitCompleteBlock:emitCompleteBlock];
+    if (!allow) {
+        [self removeWaitUserButGuest];
+    }
+}
+
+
 /// 开启或关闭 ”音频连麦“
 - (void)openAudioLinkMic:(BOOL)open emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock{
     [self.rtcStreamerManager openAudioLinkMic:open emitCompleteBlock:emitCompleteBlock];
@@ -491,10 +536,25 @@ PLVChannelClassManagerDelegate
             for (PLVLinkMicOnlineUser * user in  weakSelf.onlineUserMuArray) {
                 [user startForceCloseLinkTimer];
             }
-            PLVLinkMicOnlineUser * user;
         });
     }
     BOOL success = [[PLVSocketManager sharedManager] emitPermissionMessageForCloseAllLinkMicWithTimeout:5.0 callback:nil];
+    return success;
+}
+
+- (BOOL)removeAllAudiences {
+    if (self.arraySafeQueue) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_async(self.arraySafeQueue, ^{
+            for (PLVLinkMicOnlineUser * user in  weakSelf.onlineUserMuArray) {
+                if (user.userType != PLVSocketUserTypeGuest) {
+                    [user startForceCloseLinkTimer];
+                }
+            }
+        });
+    }
+    BOOL success = [self.rtcStreamerManager removeAllAudiences];
+    [self removeWaitUserButGuest];
     return success;
 }
 
@@ -954,10 +1014,8 @@ PLVChannelClassManagerDelegate
             if (updateResult) {
                 [weakSelf changeRoomJoinStatusAndCallback:PLVStreamerPresenterRoomJoinStatus_Joining];
                 [weakSelf.rtcStreamerManager joinRTCChannelWithUserRTCId:weakSelf.linkMicUserId];
-                /// 讲师角色，则默认为 ‘主播’ 类型；
-                /// 否则，默认为‘观众’ 类型
-                PLVBLinkMicRoleType roleType = (weakSelf.viewerType == PLVRoomUserTypeTeacher ? PLVBLinkMicRoleBroadcaster : PLVBLinkMicRoleAudience);
-                [weakSelf.rtcStreamerManager switchRoleTypeTo:roleType];
+                /// 所有角色都以听众方式进房，讲师在开始推流后内部切换为讲师角色
+                [weakSelf.rtcStreamerManager switchRoleTypeTo:PLVBLinkMicRoleAudience];
             }else{
                 PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"joinRTCChannel failed, update RTC Token failed");
             }
@@ -1063,8 +1121,10 @@ PLVChannelClassManagerDelegate
             BOOL shouldIgnore = NO;
             NSNumber * lastLeaveLinkMicTimeObj = [lastMediaStatusDict objectForKey:@"LastLeaveLinkMicTime"];
             if (lastLeaveLinkMicTimeObj && [lastLeaveLinkMicTimeObj isKindOfClass:NSNumber.class]) {
-                NSTimeInterval lastLeaveLinkMicTime = lastLeaveLinkMicTimeObj.doubleValue;
-                shouldIgnore = ([[NSDate date] timeIntervalSince1970] - lastLeaveLinkMicTime) < 2;
+                if ([self.rtcType isEqualToString:@"agora"]) {
+                    NSTimeInterval lastLeaveLinkMicTime = lastLeaveLinkMicTimeObj.doubleValue;
+                    shouldIgnore = ([[NSDate date] timeIntervalSince1970] - lastLeaveLinkMicTime) < 2;
+                }
             }
             if (!shouldIgnore) { updateMediaStatusDict = [[NSMutableDictionary alloc] initWithDictionary:lastMediaStatusDict]; }
         } else {
@@ -1408,8 +1468,8 @@ PLVChannelClassManagerDelegate
                     }
                     
                     if (!onlineUser.localUser) {
-                        BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"audio" defaultMuteStatus:NO];
-                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"video" defaultMuteStatus:NO];
+                        BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"audio" defaultMuteStatus:YES];
+                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"video" defaultMuteStatus:!(onlineUser.userType == PLVSocketUserTypeGuest || onlineUser.userType == PLVSocketUserTypeTeacher)];
                         
                         /// 设置初始值
                         [onlineUser updateUserCurrentMicOpen:micOpen];
@@ -1996,12 +2056,13 @@ PLVChannelClassManagerDelegate
                         [self.rtcStreamerManager switchRoleTypeTo:PLVBLinkMicRoleBroadcaster];
                         [self.localOnlineUser updateUserCurrentStatusVoice:YES];
                         [self callbackForLocalUserLinkMicStatusChanged:PLVLinkMicUserLinkMicStatus_Joined];
-                        
+                        BOOL finalMicOpen = self.roomAllMicMute ? NO : self.currentMicOpen;
                         /// 响应‘全体静音’房间开关
                         if (self.roomAllMicMute && self.currentMicOpen) {
                             [self openLocalUserMic:NO];
-                            [self muteUser:userId mediaType:@"audio" mute:YES];
                         }
+                        [self muteUser:userId mediaType:@"audio" mute:!finalMicOpen];
+                        [self muteUser:userId mediaType:@"video" mute:!self.currentCameraOpen];
                     }else{
                         [self linkMicUserJoined:userId retryCount:0];
                     }
@@ -2067,7 +2128,7 @@ PLVChannelClassManagerDelegate
 
 - (void)handleSocket_MUTE_USER_MICRO:(NSDictionary *)jsonDict{
     BOOL mute = ((NSNumber *)jsonDict[@"mute"]).boolValue;
-    if (![PLVFdUtil checkStringUseable:jsonDict[@"userId"]]) { /// 全体静音处理
+    if (![PLVFdUtil checkStringUseable:jsonDict[@"userId"]]) { /// 全员静音处理
         self.roomAllMicMute = mute;
     }
     [self muteUser:self.linkMicUserId mediaType:jsonDict[@"type"] mute:mute];
@@ -2701,7 +2762,7 @@ PLVChannelClassManagerDelegate
             self.classStarted = NO;
             [self guestLeaveRTCChannel];
         }
-    }else if ([subEvent isEqualToString:@"onSliceID"]) { // 是否开启全体静音
+    }else if ([subEvent isEqualToString:@"onSliceID"]) { // 是否开启全员静音
         NSString * avConnectMode = jsonDict[@"data"][@"avConnectMode"];
         if ([PLVFdUtil checkStringUseable:avConnectMode] &&
             [avConnectMode isEqualToString:@"audio"]) {

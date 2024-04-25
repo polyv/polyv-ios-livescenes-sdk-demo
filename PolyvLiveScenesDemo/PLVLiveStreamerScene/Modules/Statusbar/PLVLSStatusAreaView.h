@@ -59,6 +59,8 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 
 - (void)statusAreaView_didTapCloseLinkMicButton;
 
+- (void)statusAreaView_didTapAudienceRaiseHandButton:(BOOL)start;
+
 - (PLVLSStatusBarControls)statusAreaView_selectControlsInDemand;
 
 @end
@@ -72,6 +74,8 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 @property (nonatomic, assign) NSTimeInterval duration; // 已上课时长，同时更新界面时长文本
 
 @property (nonatomic, assign) PLVLSStatusBarNetworkQuality netState; // 网络状态，设置该值同时更新界面网络状态
+
+@property (nonatomic, strong, readonly) UIButton *linkmicButton;
 
 /// 禁止点击上课按钮
 /// @param enable YES - 禁止 NO - 解除禁止
@@ -107,6 +111,9 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 - (void)updateStatistics:(PLVRTCStatistics *)statistics;
 
 - (void)changeMemberButtonSelectedState:(BOOL)selected;
+
+/// 更新连麦状态是否开启
+- (void)changeLinkmicButtonSelectedState:(BOOL)selected;
 
 @end
 

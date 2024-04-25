@@ -126,6 +126,9 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 /// @param show YES:显示，NO:隐藏
 - (void)refreshPaintButtonShow:(BOOL)show;
 
+/// 刷新播放进度控件是否显示（进度条、进度文本）
+- (void)refreshProgressControlsShow:(BOOL)show;
+
 /// 工具方法 (与 PLVLCBasePlayerSkinView 类本身没有逻辑关联，仅业务上相关)
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView;
 

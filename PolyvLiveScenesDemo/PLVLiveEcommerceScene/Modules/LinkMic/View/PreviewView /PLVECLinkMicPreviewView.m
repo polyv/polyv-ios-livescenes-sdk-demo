@@ -16,6 +16,8 @@
 
 static NSString *kPLVECUserLinkMicPreConfig = @"kPLVECUserLinkMicPreConfig";
 static NSInteger kPLVECLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时间(秒)
+static BOOL kPLVECUserLinkMicPreCameraEnable = NO; // 默认预览摄像头开关
+static BOOL kPLVECUserLinkMicPreMicEnable = YES; // 默认预览麦克风开关
 
 @interface PLVECLinkMicPreMediaSwitchView : UIView
 
@@ -62,6 +64,10 @@ static NSInteger kPLVECLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
         [self setupUI];
+        
+        self.cameraSwitch.on = kPLVECUserLinkMicPreCameraEnable;
+        self.micSwitch.on = kPLVECUserLinkMicPreMicEnable;
+        [self saveUserLinkMicPreConfig];
     }
     return self;
 }
@@ -466,18 +472,7 @@ static NSInteger kPLVECLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时
 }
 
 - (void)micSwitchAction:(UISwitch *)sender {
-    if (!sender.on || [PLVCaptureDeviceManager sharedManager].microGranted) { // 关闭麦克风 或者 已经授权
-        [self saveUserLinkMicPreConfig];
-    } else { // 未授权且希望开启麦克风
-        __weak typeof(self) weakSelf = self;
-        NSString *message = PLVLocalizedString(@"参与直播需要麦克风权限，请前往系统设置开启权限");
-        [[PLVCaptureDeviceManager sharedManager] requestAuthorizationWithType:PLVCaptureDeviceTypeMicrophone grantedRefuseTips:message completion:^(BOOL granted) {
-            if (!granted) {
-                weakSelf.micSwitch.on = granted;
-            }
-            [weakSelf saveUserLinkMicPreConfig];
-        }];
-    }
+    [self saveUserLinkMicPreConfig];
 }
 
 #pragma mark Timer

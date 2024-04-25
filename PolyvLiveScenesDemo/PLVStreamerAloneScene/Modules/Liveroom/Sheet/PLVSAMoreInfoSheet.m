@@ -33,7 +33,14 @@
 @property (nonatomic, strong) UIButton *shareButton; // 分享
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
 @property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局
+@property (nonatomic, strong) UIButton *allowRaiseHandButton; // 开启/关闭观众连麦
+@property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
+@property (nonatomic, strong) UIButton *removeAllAudiencesButton; // 观众下麦
 @property (nonatomic, strong) NSArray *buttonArray;
+@property (nonatomic, strong) UIScrollView *scrollView; // 按钮承载视图
+
+// 数据
+@property (nonatomic, assign) NSTimeInterval allowRaiseHandButtonLastTimeInterval; // 开启/关闭观众连麦上一次点击的时间戳
 
 @end
 
@@ -55,6 +62,7 @@
         if (!isPad && [self.buttonArray count] > 10) { // 超过两行
             self.sheetHight += (28 + 12 + 14 + 16);
         }
+        self.allowRaiseHandButtonLastTimeInterval = 0.0;
     }
     return self;
 }
@@ -69,6 +77,7 @@
     CGFloat titleX = isLandscape ? 32 : (isPad ? 56 :16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
+    self.scrollView.frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame) + 8, CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - CGRectGetMaxY(self.titleLabel.frame));
     
     CGSize buttonSize = [self getMaxButtonSize];
     
@@ -93,6 +102,10 @@
     self.cameraButton.enabled = !selectedState;
     self.cameraReverseButton.enabled = !selectedState;
     self.mirrorButton.enabled = !selectedState && self.currentCameraOpen && self.currentCameraFront;
+}
+
+- (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState {
+    self.allowRaiseHandButton.selected = selectedState;
 }
 
 #pragma mark 当前用户配置
@@ -147,8 +160,9 @@
 
 - (void)initUI {
     [self.contentView addSubview:self.titleLabel];
+    [self.contentView addSubview:self.scrollView];
     
-    UIView *buttonSuperView = self.contentView;
+    UIView *buttonSuperView = self.scrollView;
         
     // 摄像头、麦克风、前后摄像头、镜像
     [buttonSuperView addSubview:self.cameraButton];
@@ -193,6 +207,24 @@
     // 弱网处理
     [buttonSuperView addSubview:self.badNetworkButton];
     [muButtonArray addObject:self.badNetworkButton];
+    
+    // 显示新版连麦举手
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        [buttonSuperView addSubview:self.allowRaiseHandButton];
+        [muButtonArray addObject:self.allowRaiseHandButton];
+    }
+    
+    // 显示观众下麦
+    if ([PLVSAMoreInfoSheet showRemoveAllAudiencesButton]) {
+        [buttonSuperView addSubview:self.removeAllAudiencesButton];
+        [muButtonArray addObject:self.removeAllAudiencesButton];
+    }
+    
+    // 显示新版连麦设置
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        [buttonSuperView addSubview:self.linkMicSettingButton];
+        [muButtonArray addObject:self.linkMicSettingButton];
+    }
     
     // 混流布局
     if ([PLVSAMoreInfoSheet showMixLayoutButton]) {
@@ -395,6 +427,53 @@
     return _mixLayoutButton;
 }
 
+- (UIButton *)allowRaiseHandButton {
+    if (!_allowRaiseHandButton) {
+        _allowRaiseHandButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _allowRaiseHandButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _allowRaiseHandButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
+        [_allowRaiseHandButton setTitle:PLVLocalizedString(@"开启观众连麦") forState:UIControlStateNormal];
+        [_allowRaiseHandButton setTitle:PLVLocalizedString(@"关闭观众连麦") forState:UIControlStateSelected];
+        [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn"] forState:UIControlStateNormal];
+        [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn_selected"] forState:UIControlStateSelected];
+        [_allowRaiseHandButton addTarget:self action:@selector(allowRaiseHandButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _allowRaiseHandButton;
+}
+
+- (UIButton *)linkMicSettingButton {
+    if (!_linkMicSettingButton) {
+        _linkMicSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _linkMicSettingButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _linkMicSettingButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
+        [_linkMicSettingButton setTitle:PLVLocalizedString(@"连麦设置") forState:UIControlStateNormal];
+        [_linkMicSettingButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_link_mic_setting_btn"] forState:UIControlStateNormal];
+        [_linkMicSettingButton addTarget:self action:@selector(linkMicSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _linkMicSettingButton;
+}
+
+- (UIButton *)removeAllAudiencesButton {
+    if (!_removeAllAudiencesButton) {
+        _removeAllAudiencesButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _removeAllAudiencesButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _removeAllAudiencesButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
+        [_removeAllAudiencesButton setTitle:PLVLocalizedString(@"观众下麦") forState:UIControlStateNormal];
+        [_removeAllAudiencesButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_link_mic_remove_audiences_btn"] forState:UIControlStateNormal];
+        [_removeAllAudiencesButton addTarget:self action:@selector(removeAllAudiencesButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _removeAllAudiencesButton;
+}
+
+- (UIScrollView *)scrollView {
+    if (!_scrollView) {
+        _scrollView = [[UIScrollView alloc] init];
+        _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.pagingEnabled = YES;
+    }
+    return _scrollView;
+}
+
 #pragma mark setButtonFrame
 
 - (CGSize)getMaxButtonSize {
@@ -419,11 +498,11 @@
     
     NSInteger buttonCount = isLandscape ? 3 : (isPad ? 7 : 5); // 竖屏时（iphone）每行5个按钮、横屏时（iphone & ipad）每行3个按钮
     CGFloat buttonOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
-    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : 46;
-    CGFloat buttonXPadding = (self.contentView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
+    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ?  4 : 38;
+    CGFloat buttonXPadding = (self.scrollView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
     CGFloat buttonYPadding = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
     if (isPad && !isLandscape) {
-        buttonOriginY = CGRectGetMaxY(self.titleLabel.frame) + 28.0;
+        buttonOriginY =  28.0;
         buttonYPadding = 30.0;
     }
     
@@ -438,6 +517,9 @@
         button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonSize.width, buttonSize.height);
         buttonOriginX += buttonSize.width + buttonXPadding;
     }
+    
+    // 设置超出视图范围可滚动选择按钮
+    self.scrollView.contentSize = CGSizeMake(self.contentView.frame.size.width, buttonOriginY + buttonSize.height);
 }
 
 - (void)setButtonInsets {
@@ -578,6 +660,15 @@
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
 }
 
++ (BOOL)showLinkMicNewStrategy {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0 && roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
++ (BOOL)showRemoveAllAudiencesButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
 #pragma mark - Event
 
 #pragma mark Action
@@ -687,6 +778,36 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapMixLayoutButton:)]) {
         [self.delegate moreInfoSheetDidTapMixLayoutButton:self];
+    }
+}
+
+- (void)allowRaiseHandButtonAction {
+    [self dismiss];
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        // 防止短时间内重复点击，1s间隔内的点击会直接忽略
+        NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
+        if (curTimeInterval - self.allowRaiseHandButtonLastTimeInterval > 1000) {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapAllowRaiseHandButton:wannaChangeAllowRaiseHand:)]) {
+                [self.delegate moreInfoSheetDidTapAllowRaiseHandButton:self wannaChangeAllowRaiseHand:!self.allowRaiseHandButton.selected];
+            }
+        }
+        self.allowRaiseHandButtonLastTimeInterval = curTimeInterval;
+    }
+}
+
+- (void)linkMicSettingButtonAction {
+    [self dismiss];
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLinkMicSettingButton:)]) {
+            [self.delegate moreInfoSheetDidTapLinkMicSettingButton:self];
+        }
+    }
+}
+
+- (void)removeAllAudiencesButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapRemoveAllAudiencesButton:)]) {
+        [self.delegate moreInfoSheetDidTapRemoveAllAudiencesButton:self];
     }
 }
 

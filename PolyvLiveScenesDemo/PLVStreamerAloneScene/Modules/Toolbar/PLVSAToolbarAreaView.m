@@ -66,7 +66,10 @@
         
         [self addSubview:self.chatButton];
         [self addSubview:self.layoutSwitchButton];
-        [self addSubview:self.linkMicButton];
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        if (!(roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0) || roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
+            [self addSubview:self.linkMicButton];
+        }
         [self addSubview:self.memberButton];
         [self addSubview:self.memberBadgeView];
         [self addSubview:self.commodityButton];
@@ -109,7 +112,7 @@
     
     CGFloat originX = CGRectGetMinX(self.memberButton.frame);
     self.linkMicButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
-    originX = self.linkMicButton.isHidden ? originX : CGRectGetMinX(self.linkMicButton.frame);
+    originX = self.linkMicButton.isHidden || !self.linkMicButton.superview ? originX : CGRectGetMinX(self.linkMicButton.frame);
     self.layoutSwitchButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
 }
 

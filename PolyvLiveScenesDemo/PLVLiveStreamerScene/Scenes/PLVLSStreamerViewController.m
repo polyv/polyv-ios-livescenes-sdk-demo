@@ -28,6 +28,8 @@
 #import "PLVLSSwitchSuccessTipsView.h"
 #import "PLVLSBadNetworkSwitchSheet.h"
 #import "PLVLSMixLayoutSheet.h"
+#import "PLVLSLinkMicSettingSheet.h"
+#import "PLVLSLinkMicUpdateTipsView.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -59,7 +61,8 @@ PLVLSBeautySheetDelegate,
 PLVLSMoreInfoSheetDelegate,
 PLVShareLiveSheetDelegate,
 PLVLSBadNetworkSwitchSheetDelegate,
-PLVLSMixLayoutSheetDelegate
+PLVLSMixLayoutSheetDelegate,
+PLVLSLinkMicSettingSheetDelegate
 >
 
 #pragma mark 功能
@@ -85,6 +88,8 @@ PLVLSMixLayoutSheetDelegate
 @property (nonatomic, strong) PLVLSBadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
 @property (nonatomic, strong) PLVLSSwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
 @property (nonatomic, strong) PLVLSMixLayoutSheet *mixLayoutSheet; // 混流布局弹层
+@property (nonatomic, strong) PLVLSLinkMicSettingSheet *linkMicSettingSheet; // 连麦设置弹层
+@property (nonatomic, strong) PLVLSLinkMicUpdateTipsView *linkMicUpdateTipsView;
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -92,6 +97,8 @@ PLVLSMixLayoutSheetDelegate
 @property (nonatomic, assign, readonly) BOOL isOnlyAudio; // 当前频道是否为音频模式
 @property (nonatomic, assign) NSTimeInterval showMicTipsTimeInterval; // 显示'请打开麦克风提示'时的时间戳
 @property (nonatomic, assign) BOOL chatroomAreaViewOriginalShow; // chatroomAreaView原本的显示状态
+@property (nonatomic, assign) BOOL allowRaiseHand; // 缓存上课前的举手按钮，默认是NO
+@property (nonatomic, assign) PLVChannelLinkMicMediaType linkMicMediaTypeCache; // 缓存上课前的连麦类型，
 
 @end
 
@@ -120,6 +127,8 @@ PLVLSMixLayoutSheetDelegate
         
         [PLVLSUtils sharedUtils].homeVC = self;
         
+        self.linkMicMediaTypeCache = [PLVRoomDataManager sharedManager].roomData.defaultChannelLinkMicMediaType;
+        
     }
     return self;
 }
@@ -131,6 +140,9 @@ PLVLSMixLayoutSheetDelegate
     [self setupUI];
     [self setupModule];
     [self preapareStartClass];
+    if ([PLVRoomDataManager sharedManager].roomData .linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
+        self.linkMicUpdateTipsView.hidden = NO;
+    }
 }
 
 - (void)viewWillLayoutSubviews {
@@ -165,6 +177,8 @@ PLVLSMixLayoutSheetDelegate
     CGFloat chatroomAreaViewHeigh = [UIScreen mainScreen].bounds.size.height * (isPad ? 0.28 : 0.42) + 44;
     
     self.chatroomAreaView.frame = CGRectMake(PLVLSUtils.safeSidePad, screenSize.height - PLVLSUtils.safeBottomPad - chatroomAreaViewHeigh, chatroomAreaViewWidth, chatroomAreaViewHeigh);
+    CGRect buttonRelativeFrame = [self.statusAreaView convertRect:self.statusAreaView.linkmicButton.frame toView:self.view];
+    self.linkMicUpdateTipsView.frame = CGRectMake(CGRectGetMidX(buttonRelativeFrame) - self.linkMicUpdateTipsView.viewSize.width / 2, CGRectGetMaxY(buttonRelativeFrame), self.linkMicUpdateTipsView.viewSize.width,  self.linkMicUpdateTipsView.viewSize.height);
     
     if (self.isFullscreen) {
         self.documentAreaView.frame = self.view.bounds;
@@ -218,6 +232,7 @@ PLVLSMixLayoutSheetDelegate
     [self.view addSubview:self.chatroomAreaView];
     // 非全屏状态下，顶部 statusAreaView 必须在最顶端，需最后添加进去
     [self.view addSubview:self.statusAreaView];
+    [self.view addSubview:self.linkMicUpdateTipsView];
 
     // 初始化
     [self.settingSheet initView]; /// 仅用于初始化
@@ -248,6 +263,7 @@ PLVLSMixLayoutSheetDelegate
     }
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [self.streamerPresenter setLinkMicNewStrategyEnabled:roomData.linkmicNewStrategyEnabled interactNumLimit:roomData.interactNumLimit defaultChannelLinkMicMediaType:roomData.defaultChannelLinkMicMediaType];
     [self.streamerPresenter setDefaultVideoQosPreference:roomData.pushQualityPreference];
     PLVRTCStreamerMixLayoutType type = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:[self getLocalMixLayoutType]];
     [self.streamerPresenter setupMixLayoutType:type];
@@ -443,6 +459,24 @@ PLVLSMixLayoutSheetDelegate
     return _mixLayoutSheet;
 }
 
+- (PLVLSLinkMicSettingSheet *)linkMicSettingSheet {
+    if (!_linkMicSettingSheet) {
+        CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
+        _linkMicSettingSheet = [[PLVLSLinkMicSettingSheet alloc] initWithSheetWidth:sheetWidth];
+        [_linkMicSettingSheet updateLinkMicType:[PLVRoomDataManager sharedManager].roomData.defaultChannelLinkMicMediaType != PLVChannelLinkMicMediaType_Video];
+        _linkMicSettingSheet.delegate = self;
+    }
+    return _linkMicSettingSheet;
+}
+
+- (PLVLSLinkMicUpdateTipsView *)linkMicUpdateTipsView {
+    if (!_linkMicUpdateTipsView) {
+        _linkMicUpdateTipsView = [[PLVLSLinkMicUpdateTipsView alloc] init];
+        _linkMicUpdateTipsView.hidden = YES;
+    }
+    return _linkMicUpdateTipsView;
+}
+
 #pragma mark - Private
 
 - (void)documentFullscreen:(BOOL)fullscreen {
@@ -565,17 +599,7 @@ PLVLSMixLayoutSheetDelegate
     __weak typeof(self) weakSelf = self;
     if (self.streamerPresenter.micCameraGranted &&
         self.streamerPresenter.inRTCRoom) {
-        if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityUnknown) {
-            // 麦克风和摄像头当前全部关闭时
-            if (!self.streamerPresenter.currentMicOpen &&
-                !self.streamerPresenter.currentCameraOpen) {
-                /// 开始上课倒数
-                [self.coutBackView startCountDownOnView:self.view];
-                if (callCompletion) { callCompletion(YES); }
-            }else{
-                needRetry = YES;
-            }
-        } else if(self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
+        if (self.streamerPresenter.networkQuality == PLVBLinkMicNetworkQualityDown) {
             needRetry = YES;
         }else{
             /// 开始上课倒数
@@ -618,6 +642,18 @@ PLVLSMixLayoutSheetDelegate
     [self.statusAreaView startClass:YES];
     [self.documentAreaView startClass:startClassInfoDict];
     [self.memberSheet startClass:YES];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    __weak typeof(self) weakSelf = self;
+    if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
+        // 允许邀请连麦
+        [self.memberSheet enableAudioVideoLinkMic:YES];
+        [self.streamerPresenter changeLinkMicMediaType:self.linkMicMediaTypeCache != PLVChannelLinkMicMediaType_Video allowRaiseHand:self.allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
+            if (!emitSuccess) {
+                [weakSelf.statusAreaView changeLinkmicButtonSelectedState:NO];
+            }
+            [self.linkMicSettingSheet updateLinkMicType:weakSelf.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video];
+        }];
+    }
 }
 
 - (void)finishClass {
@@ -626,6 +662,7 @@ PLVLSMixLayoutSheetDelegate
     [self.streamerPresenter finishClass];
     [self.documentAreaView finishClass];
     [self.memberSheet startClass:NO];
+    [self.memberSheet enableAudioVideoLinkMic:NO];
     
     if (self.viewerType == PLVSocketUserTypeGuest) { // 嘉宾登录 下课后重置为未非全屏
         self.fullscreen = NO;
@@ -734,6 +771,7 @@ PLVLSMixLayoutSheetDelegate
                     [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
                     [weakSelf.memberSheet enableAudioVideoLinkMic:start];
                     [PLVLSUtils showToastWithMessage:suceessTitle inView:weakSelf.view];
+                    [weakSelf.statusAreaView changeLinkmicButtonSelectedState:start];
                 }else{
                     [PLVLSUtils showToastWithMessage:failTitle inView:weakSelf.view];
                 }
@@ -762,6 +800,7 @@ PLVLSMixLayoutSheetDelegate
                     [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
                     [weakSelf.memberSheet enableAudioVideoLinkMic:start];
                     [PLVLSUtils showToastWithMessage:suceessTitle inView:weakSelf.view];
+                    [weakSelf.statusAreaView changeLinkmicButtonSelectedState:start];
                 }else{
                     [PLVLSUtils showToastWithMessage:failTitle inView:weakSelf.view];
                 }
@@ -769,6 +808,45 @@ PLVLSMixLayoutSheetDelegate
         }];
         return YES;
     }
+}
+
+- (void)statusAreaView_didTapAudienceRaiseHandButton:(BOOL)start {
+    if ([PLVRoomDataManager sharedManager].roomData.interactNumLimit == 0) {
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"尚未开通，请联系管理员") inView:self.view];
+        return;
+    }
+    
+    if (!self.streamerPresenter.pushStreamStarted) {
+        self.allowRaiseHand = start;
+        [self.statusAreaView changeLinkmicButtonSelectedState:start];
+        return;
+    }
+    // 开播后再检查开启是否失败
+    if ([PLVReachability reachabilityForInternetConnection].currentReachabilityStatus == PLVNotReachable) {
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"当前网络信号弱，开启失败，请检查网络！") inView:self.view];
+        return;
+    }
+    
+    if (![PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled) {
+        return;
+    }
+    
+    NSString * suceessTitle = start ? PLVLocalizedString(@"已开启观众连麦") : PLVLocalizedString(@"已关闭观众连麦");
+    NSString * failTitle = start ? PLVLocalizedString(@"开启观众连麦失败，请稍后再试") : PLVLocalizedString(@"关闭观众连麦失败，请稍后再试");
+    __weak typeof(self) weakSelf = self;
+    
+    [self.streamerPresenter allowRaiseHand:start emitCompleteBlock:^(BOOL emitSuccess) {
+        plv_dispatch_main_async_safe(^{
+            if (emitSuccess) {
+                [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
+                [PLVLSUtils showToastWithMessage:suceessTitle inView:weakSelf.view];
+                [weakSelf.statusAreaView changeLinkmicButtonSelectedState:start];
+                weakSelf.allowRaiseHand = start;
+            }else{
+                [PLVLSUtils showToastWithMessage:failTitle inView:weakSelf.view];
+            }
+        })
+    }];
 }
 
 - (PLVLSStatusBarControls)statusAreaView_selectControlsInDemand{
@@ -830,10 +908,10 @@ PLVLSMixLayoutSheetDelegate
         if (changeBlock) { changeBlock(NO); }
     }else{
         __weak typeof(self) weakSelf = self;
-        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"确认全体下麦？") cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
-            BOOL success = [weakSelf.streamerPresenter closeAllLinkMicUser];
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"确认下麦所有连麦观众吗？？") cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
+            BOOL success = [weakSelf.streamerPresenter removeAllAudiences];
             if (success) {
-                [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"已全体下麦") inView:weakSelf.view];
+                [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"已下麦观众") inView:weakSelf.view];
             }
             if (changeBlock) { changeBlock(YES); }
         }];
@@ -847,8 +925,8 @@ PLVLSMixLayoutSheetDelegate
         [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请先上课") inView:self.view];
         if (changeBlock) { changeBlock(NO); }
     }else{
-        NSString * title = mute ? PLVLocalizedString(@"确认全体静音？") : PLVLocalizedString(@"确认取消全体静音？");
-        NSString * toastTitle = mute ? PLVLocalizedString(@"已全体静音") : PLVLocalizedString(@"已取消全体静音");
+        NSString * title = mute ? PLVLocalizedString(@"确认全员静音？") : PLVLocalizedString(@"确认取消全员静音？");
+        NSString * toastTitle = mute ? PLVLocalizedString(@"已全员静音") : PLVLocalizedString(@"已取消全员静音");
         __weak typeof(self) weakSelf = self;
         [PLVLSUtils showAlertWithMessage:title cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             [weakSelf.streamerPresenter muteAllLinkMicUserMic:mute];
@@ -856,6 +934,10 @@ PLVLSMixLayoutSheetDelegate
             if (changeBlock) { changeBlock(YES); }
         }];
     }
+}
+
+- (void)didTapLinkMicSettingInMemberSheet:(PLVLSMemberSheet *)memberSheet {
+    [self.linkMicSettingSheet showInView:self.view];
 }
 
 - (void)banUsersInMemberSheet:(PLVLSMemberSheet *)memberSheet
@@ -1106,6 +1188,9 @@ PLVLSMixLayoutSheetDelegate
 /// ’已有效推流时长‘ 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentPushStreamValidDuration:(NSTimeInterval)pushStreamValidDuration{
     self.statusAreaView.duration = pushStreamValidDuration;
+    if (self.viewerType == PLVRoomUserTypeTeacher) {
+        [self.linkMicAreaView updateUsersLinkMicDuration];
+    }
 }
 
 /// 当前 ’单次重连时长‘ 定时回调
@@ -1363,12 +1448,43 @@ PLVLSMixLayoutSheetDelegate
     [self.streamerPresenter setupVideoQosPreference:videoQosPreference];
 }
 
-#pragma mark - PLVLSMixLayoutSheetDelegate
+#pragma mark  PLVLSMixLayoutSheetDelegate
 
 - (void)mixLayoutSheet_didChangeMixLayoutType:(PLVMixLayoutType)type {
     PLVRTCStreamerMixLayoutType mixLayoutType = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
     [self.streamerPresenter setupMixLayoutType:mixLayoutType];
     [self saveSelectedMixLayoutType:type];
+}
+
+#pragma mark PLVLSLinkMicSettingSheetDelegate
+
+- (void)plvlsLinkMicSettingSheet_wannaChangeLinkMicType:(BOOL)linkMicOnAudio {
+    if (!self.streamerPresenter.pushStreamStarted) {
+        // 缓存当前的连麦类型并配置，直接改变连麦设置
+        self.linkMicMediaTypeCache = linkMicOnAudio ? PLVChannelLinkMicMediaType_Audio : PLVChannelLinkMicMediaType_Video;
+        [self.linkMicSettingSheet updateLinkMicType:linkMicOnAudio];
+    }
+    __weak typeof(self) weakSelf = self;
+    
+    if (self.streamerPresenter.onlineUserArray.count > 1) {
+        [PLVLSUtils showAlertWithTitle2:PLVLocalizedString(@"提示") message:PLVLocalizedString(@"当前有用户在连麦，无法切换连麦方式，若要切换，需将麦上用户全部下麦，确认切换连麦方式吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"切换并下麦所有用户") confirmActionBlock:^{
+            [weakSelf.streamerPresenter removeAllAudiences];
+            [weakSelf.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:weakSelf.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+                if (emitSuccess) {
+                    [weakSelf.linkMicSettingSheet updateLinkMicType:linkMicOnAudio];
+                    [weakSelf.statusAreaView changeLinkmicButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                }
+            }];
+        }];
+    } else {
+        [weakSelf.streamerPresenter removeAllAudiences];
+        [self.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:self.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+            if (emitSuccess) {
+                [weakSelf.linkMicSettingSheet updateLinkMicType:linkMicOnAudio];
+                [weakSelf.statusAreaView changeLinkmicButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+            }
+        }];
+    }
 }
 
 @end

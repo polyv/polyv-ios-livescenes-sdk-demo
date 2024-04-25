@@ -78,6 +78,15 @@
     return resultWidth;
 }
 
+- (void)updatePlayButtonWithPlaying:(BOOL)playing {
+    self.playButton.selected = playing;
+    [self.playButton setImage:[PLVECUtils imageForWatchResource:@"plv_player_play_btn"] forState:UIControlStateNormal];
+    if (!self.playButton.enabled) {
+        UIImage *buttonImg = self.playButton.selected ? [PLVECUtils imageForWatchResource:@"plv_player_pause_btn"] : [PLVECUtils imageForWatchResource:@"plv_player_play_btn"];
+        [self.playButton setImage:buttonImg forState:UIControlStateNormal];
+    }
+}
+
 #pragma mark - Actions
 
 - (void)playButtonAction:(UIButton *)sender {

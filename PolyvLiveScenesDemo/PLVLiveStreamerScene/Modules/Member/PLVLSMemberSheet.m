@@ -35,6 +35,7 @@ UITableViewDataSource
 /// UI
 @property (nonatomic, strong) UIButton *memberButton;
 @property (nonatomic, strong) UIButton *leaveMicButton;
+@property (nonatomic, strong) UIButton *linkMicSettingButton;
 @property (nonatomic, strong) UIButton *muteButton;
 @property (nonatomic, strong) UIView *titleLine;
 @property (nonatomic, strong) UITableView *tableView;
@@ -99,9 +100,13 @@ UITableViewDataSource
         buttonWidth = 66.0 - (self.bounds.size.width/667);
     }
     CGFloat buttonOriginX = self.sheetWidth - PLVLSUtils.safeSidePad - buttonWidth * 2 - buttonMargin;
+    if ([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled &&  [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
+        buttonOriginX = buttonOriginX - buttonWidth - buttonMargin;
+    }
     
     self.leaveMicButton.frame = CGRectMake(buttonOriginX, buttonTop, buttonWidth, 28);
     self.muteButton.frame = CGRectMake(buttonOriginX + buttonWidth + buttonMargin, buttonTop, buttonWidth, 28);
+    self.linkMicSettingButton.frame = CGRectMake(buttonOriginX + buttonWidth * 2 + buttonMargin * 2, buttonTop, buttonWidth, 28);
     self.titleLine.frame = CGRectMake(16, titleLineTop, self.sheetWidth - 16 - PLVLSUtils.safeSidePad, 1);
     
     CGFloat tableViewOriginY = CGRectGetMaxY(self.titleLine.frame);
@@ -154,6 +159,9 @@ UITableViewDataSource
 - (void)setupUI {
     [self.contentView addSubview:self.memberButton];
     [self.contentView addSubview:self.leaveMicButton];
+    if ([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
+        [self.contentView addSubview:self.linkMicSettingButton];
+    }
     [self.contentView addSubview:self.muteButton];
     [self.contentView addSubview:self.titleLine];
     [self.contentView addSubview:self.tableView];
@@ -193,7 +201,7 @@ UITableViewDataSource
         _leaveMicButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
         _leaveMicButton.layer.masksToBounds = YES;
         _leaveMicButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        [_leaveMicButton setTitle:PLVLocalizedString(@"全体下麦") forState:UIControlStateNormal];
+        [_leaveMicButton setTitle:PLVLocalizedString(@"观众下麦") forState:UIControlStateNormal];
         [_leaveMicButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_leaveMicButton addTarget:self action:@selector(leaveMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _leaveMicButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
@@ -245,14 +253,32 @@ UITableViewDataSource
         _muteButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
         _muteButton.layer.masksToBounds = YES;
         _muteButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        [_muteButton setTitle:PLVLocalizedString(@"全体静音") forState:UIControlStateNormal];
-        [_muteButton setTitle:PLVLocalizedString(@"取消全体静音") forState:UIControlStateSelected];
+        [_muteButton setTitle:PLVLocalizedString(@"全员静音") forState:UIControlStateNormal];
+        [_muteButton setTitle:PLVLocalizedString(@"取消全员静音") forState:UIControlStateSelected];
         [_muteButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_muteButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateSelected];
         [_muteButton addTarget:self action:@selector(muteButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _muteButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
     }
     return _muteButton;
+}
+
+- (UIButton *)linkMicSettingButton {
+    if (!_linkMicSettingButton) {
+        NSString *colorHex = @"#4399ff";
+        _linkMicSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _linkMicSettingButton.layer.borderWidth = 1;
+        _linkMicSettingButton.layer.cornerRadius = 14;
+        _linkMicSettingButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
+        _linkMicSettingButton.layer.masksToBounds = YES;
+        _linkMicSettingButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        [_linkMicSettingButton setTitle:PLVLocalizedString(@"连麦设置") forState:UIControlStateNormal];
+        [_linkMicSettingButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
+        [_linkMicSettingButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateSelected];
+        [_linkMicSettingButton addTarget:self action:@selector(linkMicSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _linkMicSettingButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
+    }
+    return _linkMicSettingButton;
 }
 
 
@@ -350,6 +376,12 @@ UITableViewDataSource
                 weakSelf.muteButton.selected = !weakSelf.muteButton.selected;
             }
         }];
+    }
+}
+
+- (void)linkMicSettingButtonAction {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(didTapLinkMicSettingInMemberSheet:)]) {
+        [self.delegate didTapLinkMicSettingInMemberSheet:self];
     }
 }
 

@@ -50,6 +50,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 混流布局 按钮 触发回调
 - (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 允许/关闭观众连麦 按钮 触发回调
+- (void)moreInfoSheetDidTapAllowRaiseHandButton:(PLVSAMoreInfoSheet *)moreInfoSheet wannaChangeAllowRaiseHand:(BOOL)allowRasieHand;
+
+/// 点击 连麦设置按钮 触发回调
+- (void)moreInfoSheetDidTapLinkMicSettingButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
+/// 点击 观众下麦 触发回调
+- (void)moreInfoSheetDidTapRemoveAllAudiencesButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层
@@ -90,6 +99,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 改变屏幕共享按钮选中状态
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
+
+/// 改变 开启/关闭观众连麦按钮 选中状态
+- (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState;
 
 @end
 

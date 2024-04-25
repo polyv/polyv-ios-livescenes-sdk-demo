@@ -76,6 +76,10 @@ PLVSALinkMicWindowsViewDelegate
     [self.windowsView removeFromSuperview];
 }
 
+- (void)updateUsersLinkMicDuration {
+    [self.windowsView updateAllCellLinkMicDuration];
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupUI {

@@ -45,6 +45,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 下课（直播结束）
 - (void)finishClass;
 
+/// 更新所有连麦者的连麦时长（除讲师外）
+- (void)updateAllCellLinkMicDuration;
+
 @end
 
 @protocol PLVSALinkMicWindowsViewDelegate <NSObject>

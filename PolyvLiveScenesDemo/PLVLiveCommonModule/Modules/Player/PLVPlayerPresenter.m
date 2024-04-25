@@ -33,6 +33,7 @@ PLVLivePlayerDelegate,
 PLVLivePlayerPictureInPictureDelegate,
 PLVLivePlaybackPlayerDelegate,
 PLVAdvertViewDelegate,
+PLVPublicStreamPlayerDelegate,
 PLVDefaultPageViewDelegate
 >
 
@@ -43,6 +44,8 @@ PLVDefaultPageViewDelegate
 @property (nonatomic, assign) BOOL currentNoDelayLiveStart;
 @property (nonatomic, assign) PLVLivePlayerQuickLiveNetworkQuality networkQuality;
 @property (nonatomic, assign) NSInteger networkQualityRepeatCount;
+@property (nonatomic, assign) PLVPublicStreamPlayerNetworkQuality publicStreamNetworkQuality; //!< 公共流网络质量
+@property (nonatomic, assign) NSInteger publicStreamNetworkQualityRepeatCount; //!< 公共流网络质量重复次数
 @property (nonatomic, assign) BOOL currentLivePlaybackChangingVid;
 @property (nonatomic, assign) IJKMPMovieScalingMode scalingMode;
 
@@ -68,6 +71,7 @@ PLVDefaultPageViewDelegate
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVLivePlayer * livePlayer;
+@property (nonatomic, strong) PLVPublicStreamPlayer *streamPlayer;
 @property (nonatomic, strong) PLVLivePlaybackPlayer * livePlaybackPlayer;
 @property (nonatomic, strong) PLVAdvertView * advertView;
 @property (nonatomic, strong) NSTimer * timer;
@@ -197,6 +201,16 @@ PLVDefaultPageViewDelegate
     return self.livePlayer.channelWatchQuickLive;
 }
 
+- (BOOL)channelWatchPublicStream {
+    if (self.channelMatchExternal) {
+        return self.currentExternalRoomData.menuInfo.watchPublicStream;
+    } else {
+        /// 当前PlayerPresenter的频道号，与外部频道号不一致
+        /// 此时不允许执行观看公共流，因此[watchPublicStream]该值无意义，而恒为NO
+        return NO;
+    }
+}
+
 - (BOOL)noDelayWatchMode {
     return self.livePlayer.noDelayWatchMode;
 }
@@ -207,6 +221,10 @@ PLVDefaultPageViewDelegate
 
 - (BOOL)quickLiveWatching {
     return self.livePlayer.quickLiveWatching;
+}
+
+- (BOOL)publicStreamWatching {
+    return self.livePlayer.publicStreamWatching;
 }
 
 - (BOOL)audioMode {
@@ -294,7 +312,11 @@ PLVDefaultPageViewDelegate
     self.displayView = displayView;
     [self setupUI];
     
-    [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
+    if (self.channelWatchPublicStream) {
+        [self.streamPlayer setupDisplaySuperview:self.playerBackgroundView];
+    }else {
+        [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
+    }
     [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
     
     self.defaultPageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -313,6 +335,7 @@ PLVDefaultPageViewDelegate
 
 - (void)cleanPlayer{
     [self.livePlayer clearAllPlayer];
+    [self.streamPlayer clearPlayer];
     [self.livePlaybackPlayer clearAllPlayer];
 }
 
@@ -325,6 +348,9 @@ PLVDefaultPageViewDelegate
         // 修复频道未在开播状态时，主动调用resumePlay方法，导致的播放器异常问题
         if (self.currentStreamState == PLVChannelLiveStreamState_Live || self.currentStreamState == PLVChannelLiveStreamState_Stop) {
             [self.livePlayer reloadLivePlayer];
+            if (self.publicStreamWatching) {
+                [self.streamPlayer reloadStreamPlayer];
+            }
         }
     } else if (self.currentVideoType == PLVChannelVideoType_Playback){
         [self.livePlaybackPlayer play];
@@ -341,6 +367,9 @@ PLVDefaultPageViewDelegate
         // 修复频道未在开播状态时，主动调用pausePlay方法，导致的播放器异常问题
         if (self.currentStreamState == PLVChannelLiveStreamState_Live || self.currentStreamState == PLVChannelLiveStreamState_Stop) {
             [self.livePlayer pause];
+            if (self.publicStreamWatching) {
+                [self.streamPlayer stop];
+            }
         }
     } else if (self.currentVideoType == PLVChannelVideoType_Playback){
         [self.livePlaybackPlayer pause];
@@ -350,11 +379,17 @@ PLVDefaultPageViewDelegate
 
 - (void)mute{
     [self.livePlayer mute];
+    if (self.publicStreamWatching) {
+        [self.streamPlayer pause];
+    }
     [self.livePlaybackPlayer mute];
 }
 
 - (void)cancelMute{
     [self.livePlayer cancelMute];
+    if (self.publicStreamWatching) {
+        [self.streamPlayer resume];
+    }
     [self.livePlaybackPlayer cancelMute];
 }
 
@@ -376,17 +411,32 @@ PLVDefaultPageViewDelegate
 }
 
 - (void)switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {
+    if (self.channelWatchPublicStream) {
+        if (noDelayWatchMode) {
+            [self.streamPlayer reloadStreamPlayer];
+        }else {
+            [self.streamPlayer clearPlayer];
+        }
+    }
     self.defaultPageView.hidden = YES;
     [self.livePlayer switchToNoDelayWatchMode:noDelayWatchMode];
 }
 
 - (void)startPictureInPictureFromOriginView:(UIView *)originView {
     self.defaultPageView.hidden = YES;
-    [self.livePlayer startPictureInPictureFromOriginView:originView];
+    if (self.livePlayer) {
+        [self.livePlayer startPictureInPictureFromOriginView:originView];
+    } else if (self.livePlaybackPlayer) {
+        [self.livePlaybackPlayer startPictureInPictureFromOriginView:originView];
+    }
 }
 
 - (void)stopPictureInPicture {
-    [self.livePlayer stopPictureInPicture];
+    if (self.livePlayer) {
+        [self.livePlayer stopPictureInPicture];
+    } else if (self.livePlaybackPlayer) {
+        [self.livePlaybackPlayer stopPictureInPicture];
+    }
 }
 
 #pragma mark 非直播相关
@@ -441,12 +491,17 @@ PLVDefaultPageViewDelegate
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.pictureInPictureDelegate = self;
+        self.livePlayer.channelWatchPublicStream = self.channelWatchPublicStream;
         self.livePlayer.channelWatchNoDelay = self.channelWatchNoDelay;
         self.livePlayer.channelWatchQuickLive = self.channelWatchQuickLive;
         [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
-        
         self.livePlayer.videoToolBox = NO;
         self.livePlayer.chaseFrame = NO;
+        
+        if (self.channelWatchPublicStream) {
+            [self setupPublicStreamPlayer];
+        }
+        
         self.livePlayer.customParam = self.currentExternalCustomParam;
     }else if (self.currentVideoType == PLVChannelVideoType_Playback){ /// 回放
         if (self.recordEnable) {
@@ -456,11 +511,36 @@ PLVDefaultPageViewDelegate
         }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
+        self.livePlaybackPlayer.pictureInPictureDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
 
         self.livePlaybackPlayer.videoToolBox = NO;
         self.livePlaybackPlayer.customParam = self.currentExternalCustomParam;
     }
+}
+
+- (void)setupPublicStreamPlayer {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVSocketManager *socketManager = [PLVSocketManager sharedManager];
+    
+    PLVPublicStreamGetInfoModel * getPublicStreamModel = [[PLVPublicStreamGetInfoModel alloc]init];
+    getPublicStreamModel.channelId = roomData.channelId;
+    getPublicStreamModel.userId = socketManager.linkMicId;
+    getPublicStreamModel.channelType = roomData.channelType;
+    getPublicStreamModel.viewerId = socketManager.viewerId;
+    getPublicStreamModel.nickname = socketManager.viewerName;
+    getPublicStreamModel.sessionId = roomData.sessionId;
+
+    PLVRoomUserType currentUserViewerType = roomData.roomUser.viewerType;
+    if (currentUserViewerType == PLVRoomUserTypeSlice || currentUserViewerType == PLVRoomUserTypeStudent) {
+        getPublicStreamModel.userType = @"audience";
+    }
+
+    self.streamPlayer = [[PLVPublicStreamPlayer alloc]init];
+    self.streamPlayer.delegate = self;
+    [self.streamPlayer setupPlayerWith:getPublicStreamModel];
+    [self.streamPlayer setupDisplaySuperview:self.playerBackgroundView];
+    [self.streamPlayer play];
 }
 
 - (void)setupUI{
@@ -925,11 +1005,18 @@ PLVDefaultPageViewDelegate
 
 /// 直播播放器 ‘流状态’ 更新
 - (void)plvLivePlayer:(PLVLivePlayer *)livePlayer streamStateUpdate:(PLVChannelLiveStreamState)newestStreamState streamStateDidChanged:(BOOL)streamStateDidChanged{
+    PLVChannelLiveStreamState lastState = [PLVRoomDataManager sharedManager].roomData.liveState;
     [PLVRoomDataManager sharedManager].roomData.liveState = newestStreamState;
     if (newestStreamState == PLVChannelLiveStreamState_Live) {
         [self setupPlayerLogoImage];
+        if (self.publicStreamWatching && lastState != PLVChannelLiveStreamState_Live) {
+            [self.streamPlayer reloadStreamPlayer];
+        }
     } else {
         [self.logoView removeFromSuperview];
+        if (self.publicStreamWatching && (newestStreamState == PLVChannelLiveStreamState_End || newestStreamState == PLVChannelLiveStreamState_Stop)) {
+            [self.streamPlayer clearPlayer];
+        }
     }
     
     if ([self.delegate respondsToSelector:@selector(playerPresenter:streamStateUpdate:streamStateDidChanged:)]) {
@@ -1020,6 +1107,9 @@ PLVDefaultPageViewDelegate
 }
 
 - (BOOL)plvLivePlayerGetPausedWatchNoDelay:(PLVLivePlayer *)livePlayer {
+    if (self.publicStreamWatching) {
+        return self.streamPlayer ? self.streamPlayer.streamPlaying : NO;
+    }
     if ([self.delegate respondsToSelector:@selector(playerPresenterGetPausedWatchNoDelay:)]) {
         return [self.delegate playerPresenterGetPausedWatchNoDelay:self];
     }else{
@@ -1068,44 +1158,44 @@ PLVDefaultPageViewDelegate
 }
 
 #pragma mark PLVLivePlayerPictureInPictureDelegate
-- (void)plvLivePlayerPictureInPictureWillStart:(PLVLivePlayer *)livePlayer {
+- (void)plvLivePlayerPictureInPictureWillStart:(PLVPlayer<PLVLivePlayerPictureInPictureProtocol> *)livePlayer {
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureWillStart:)]) {
         [self.delegate playerPresenterPictureInPictureWillStart:self];
     }
 }
 
-- (void)plvLivePlayerPictureInPictureDidStart:(PLVLivePlayer *)livePlayer {
+- (void)plvLivePlayerPictureInPictureDidStart:(PLVPlayer<PLVLivePlayerPictureInPictureProtocol> *)livePlayer {
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureDidStart:)]) {
         [self.delegate playerPresenterPictureInPictureDidStart:self];
     }
 }
 
-- (void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPictureFailedToStartWithError:(NSError *)error {
+- (void)plvLivePlayer:(PLVPlayer<PLVLivePlayerPictureInPictureProtocol> *)livePlayer pictureInPictureFailedToStartWithError:(NSError *)error {
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:pictureInPictureFailedToStartWithError:)]) {
         [self.delegate playerPresenter:self pictureInPictureFailedToStartWithError:error];
     }
 }
 
-- (void)plvLivePlayerPictureInPictureWillStop:(PLVLivePlayer *)livePlayer {
+- (void)plvLivePlayerPictureInPictureWillStop:(PLVPlayer<PLVLivePlayerPictureInPictureProtocol> *)livePlayer {
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureWillStop:)]) {
         [self.delegate playerPresenterPictureInPictureWillStop:self];
     }
 }
 
-- (void)plvLivePlayerPictureInPictureDidStop:(PLVLivePlayer *)livePlayer {
+- (void)plvLivePlayerPictureInPictureDidStop:(PLVPlayer<PLVLivePlayerPictureInPictureProtocol> *)livePlayer {
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterPictureInPictureDidStop:)]) {
         [self.delegate playerPresenterPictureInPictureDidStop:self];
     }
 }
 
--(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
+-(void)plvLivePlayer:(PLVPlayer<PLVLivePlayerPictureInPictureProtocol> *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
     [PLVRoomDataManager sharedManager].roomData.playing = playing;
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:pictureInPicturePlayerPlayingStateDidChange:)]) {
         [self.delegate playerPresenter:self pictureInPicturePlayerPlayingStateDidChange:playing];
     }    
 }
 
--(void)plvLivePlayer:(PLVLivePlayer *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing systemInterrupts:(BOOL)systemInterrupts{
+-(void)plvLivePlayer:(PLVPlayer<PLVLivePlayerPictureInPictureProtocol> *)livePlayer pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing systemInterrupts:(BOOL)systemInterrupts{
     
 }
 
@@ -1124,7 +1214,11 @@ PLVDefaultPageViewDelegate
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_ParameterError]){
         /// 频道信息请求失败
         message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
-    }
+    } else if ((error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_PlayRestrict] &&
+                error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_RequestFailed])) {
+     /// 限制信息
+     message = [NSString stringWithFormat:@"%ld %@",(long)error.code,error.localizedDescription];
+ }
     
     if ([self.delegate respondsToSelector:@selector(playerPresenter:loadPlayerFailureWithMessage:)] &&
         [PLVFdUtil checkStringUseable:message]) {
@@ -1133,11 +1227,14 @@ PLVDefaultPageViewDelegate
     
     if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_DataError] ||
         error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_FileUrlError] ||
-        error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_ParameterError]) {
+        error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_ParameterError] ||
+        error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_RequestFailed]) {
         [self.defaultPageView showWithErrorCode:error.code message:nil type:PLVDefaultPageViewTypeErrorCode];
     } else if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_CodeError] ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_RequestFailed]){
         [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefresh];
+    } else if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_PlayRestrict]) {
+        [self.defaultPageView showWithErrorCode:error.code message:PLVLocalizedString(@"存在观看限制，暂不支持进入") type:PLVDefaultPageViewTypeErrorCode];
     }
 }
 
@@ -1224,6 +1321,40 @@ PLVDefaultPageViewDelegate
 
 - (void)plvAdvertView:(PLVAdvertView *)advertView clickStartAdvertWithHref:(NSURL *)advertHref {
     [[UIApplication sharedApplication] openURL:advertHref];
+}
+
+#pragma mark PLVPublicStreamPlayerDelegate
+- (void)plvPublicStreamPlayer:(PLVPublicStreamPlayer *)streamPlayer streamPlayerPlayingStateDidChange:(BOOL)playing {
+    [PLVRoomDataManager sharedManager].roomData.playing = playing;
+    if (playing) {
+        self.defaultPageView.hidden = YES;
+        self.warmUpImageView.hidden = YES;
+    }
+    
+    if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
+        [self.delegate playerPresenter:self playerPlayingStateDidChanged:playing];
+    }
+}
+
+/// 公共流播放器（公共流）网络质量回调
+- (void)plvPublicStreamPlayer:(PLVPublicStreamPlayer *)streamPlayer publicStreamNetworkQuality:(PLVPublicStreamPlayerNetworkQuality)netWorkQuality {
+    if (self.publicStreamNetworkQuality == netWorkQuality) {
+        self.publicStreamNetworkQualityRepeatCount ++;
+    }
+    self.publicStreamNetworkQuality = netWorkQuality;
+    if (self.publicStreamNetworkQualityRepeatCount == 2) {
+        self.publicStreamNetworkQualityRepeatCount = 0;
+        self.publicStreamNetworkQuality = PLVPublicStreamPlayerNetworkQuality_NoConnection;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:publicStreamNetworkQuality:)]) {
+            [self.delegate playerPresenter:self publicStreamNetworkQuality:netWorkQuality];
+        }
+    }
+}
+
+- (void)plvPublicStreamPlayer:(PLVPublicStreamPlayer *)streamPlayer videoSize:(CGSize)videoSize {
+    if ([self.delegate respondsToSelector:@selector(playerPresenter:videoSizeChange:)]) {
+        [self.delegate playerPresenter:self videoSizeChange:videoSize];
+    }
 }
 
 #pragma mark PLVDefaultPageViewDelegate

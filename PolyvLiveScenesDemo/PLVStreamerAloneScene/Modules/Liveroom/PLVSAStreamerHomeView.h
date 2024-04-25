@@ -87,8 +87,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 分享 按钮触发回调
 - (void)streamerHomeViewDidTapShareButton:(PLVSAStreamerHomeView *)homeView;
 
-/// 获取当前频道连麦媒体类型
+/// 点击 开启/关闭连麦设置按钮 按钮触发回调
+- (void)streamerHomeViewDidAllowRaiseHandButton:(PLVSAStreamerHomeView *)homeView wannaChangeAllowRaiseHand:(BOOL)allowRaiseHand;
+
+/// 点击 开启/关闭连麦设置按钮 按钮触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView wannaChangeLinkMicType:(BOOL)linkMicOnAudio;
+
+/// 点击 连麦设置 触底回调
 - (PLVChannelLinkMicMediaType)streamerHomeViewCurrentChannelLinkMicMediaType:(PLVSAStreamerHomeView *)homeView;
+
+/// 点击 观众下麦 按钮触发回调
+- (void)streamerHomeViewDidTapRemoveAllAudiencesButton:(PLVSAStreamerHomeView *)homeView;
 
 @end
 
@@ -153,6 +162,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 改变屏幕共享按钮选中状态
 /// @param selectedState 选中状态 (YES:选中，开启屏幕共享 NO:未选中，关闭屏幕共享)
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
+
+/// 改变 开启/关闭观众连麦按钮 选中状态
+/// @param selectedState 选中状态 (YES:选中，开启观众连麦 NO:未选中，关闭观众连麦)
+- (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState;
+
+/// 更新选中连麦按钮
+/// @param linkMicOnAudio 连麦类型 (YES:音频连麦 NO:视频连麦)
+- (void)updateHomeViewLinkMicType:(BOOL)linkMicOnAudio;
 
 /// 是否显示美颜弹窗
 /// @param show YES: 显示；NO：隐藏

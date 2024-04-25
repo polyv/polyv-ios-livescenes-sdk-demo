@@ -71,6 +71,10 @@
     [self.windowsView updateLocalUserLinkMicStatus:linkMicStatus];
 }
 
+- (void)updateUsersLinkMicDuration {
+    [self.windowsView updateAllCellLinkMicDuration];
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setupUI{
     // 添加 连麦窗口列表视图

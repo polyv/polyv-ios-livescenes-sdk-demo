@@ -1149,6 +1149,12 @@ PLVLCLandscapeMessagePopupViewDelegate
     }
 }
 
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoSizeChange:(CGSize)videoSize {
+    if (self.videoType == PLVChannelVideoType_Playback) {
+        [self.liveRoomSkinView refreshPictureInPictureButtonShow:YES];
+    }
+}
+
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
     if ([videoInfo isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]]) {
         [self.menuAreaView updateLiveStatus:PLVLCLiveStatusCached];
@@ -1159,6 +1165,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     if ([self enableChatroomPlaybackViewModel]) {
         [self setupChatroomPlaybackViewModel];
     }
+}
+
+- (void)plvLCMediaAreaViewWannaStartPictureInPicture:(PLVLCMediaAreaView *)mediaAreaView {
+    self.linkMicAreaView.currentControlBar.pictureInPictureStarted = YES;
 }
 
 #pragma mark PLVLCLiveRoomPlayerSkinViewDelegate
@@ -1409,10 +1419,14 @@ PLVLCLandscapeMessagePopupViewDelegate
     // 更多按钮显示控制
     [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:YES];
     [self.liveRoomSkinView enablePlayControlButtons:NO];
-    
-    // 画中画占位视图显示控制、播放控制
-    if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
-        [self.linkMicAreaView setPictureInPicturePlaceholderShow:YES];
+        
+    if (self.videoType == PLVChannelVideoType_Live){ // 视频类型为 直播回放
+        // 画中画占位视图显示控制、播放控制
+        if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+            [self.linkMicAreaView setPictureInPicturePlaceholderShow:YES];
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
+        [self.liveRoomSkinView refreshProgressControlsShow:NO];
     }
     
     // 设定画中画恢复逻辑的处理者为PLVLivePictureInPictureRestoreManager
@@ -1445,11 +1459,16 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView {
     // 更多按钮显示控制
     [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:NO];
+    self.linkMicAreaView.currentControlBar.pictureInPictureStarted = NO;
     [self.liveRoomSkinView enablePlayControlButtons:YES];
     
-    // 画中画展位视图显示控制、播放控制
-    if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
-        [self.linkMicAreaView setPictureInPicturePlaceholderShow:NO];
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        // 画中画展位视图显示控制、播放控制
+        if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+            [self.linkMicAreaView setPictureInPicturePlaceholderShow:NO];
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
+        [self.liveRoomSkinView refreshProgressControlsShow:YES];
     }
     
     // 清理恢复逻辑的处理者

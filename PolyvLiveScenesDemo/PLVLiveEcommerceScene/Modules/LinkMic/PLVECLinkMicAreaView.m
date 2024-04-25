@@ -321,6 +321,7 @@ PLVECLinkMicWindowsViewDelegate
         PLVECLinkMicControlBarType barType = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio ? PLVECLinkMicControlBarType_Audio : PLVECLinkMicControlBarType_Video);
         [self.currentControlBar changeBarType:barType];
         [self.currentControlBar controlBarStatusSwitchTo:PLVECLinkMicControlBarStatus_Open];
+        [self.linkMicPreView showLinkMicPreviewView:NO];
     } else if (currentLinkMicStatus == PLVLinkMicStatus_Waiting) { // 等待讲师允许中（举手中）
         [self.currentControlBar controlBarStatusSwitchTo:PLVECLinkMicControlBarStatus_Waiting];
         [self.currentControlBar updateLinkMicRequestIndex:presenter.linkMicRequestIndex];
@@ -332,6 +333,8 @@ PLVECLinkMicWindowsViewDelegate
         [self.linkMicPreView showLinkMicPreviewView:YES];
         
     } else if (currentLinkMicStatus == PLVLinkMicStatus_Joined) { // 已加入连麦（连麦中）
+        PLVECLinkMicControlBarType barType = (presenter.linkMicMediaType == PLVChannelLinkMicMediaType_Audio ? PLVECLinkMicControlBarType_Audio : PLVECLinkMicControlBarType_Video);
+        [self.currentControlBar changeBarType:barType];
         [self.currentControlBar controlBarStatusSwitchTo:PLVECLinkMicControlBarStatus_Joined];
         // 同步控件状态
         self.currentControlBar.micButton.selected = !self.presenter.micDefaultOpen;

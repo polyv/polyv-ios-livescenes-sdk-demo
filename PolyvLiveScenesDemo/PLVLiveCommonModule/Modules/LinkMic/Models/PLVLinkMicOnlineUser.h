@@ -356,6 +356,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 当前用户下麦时是否需要强制下麦
 @property (nonatomic, assign, readonly) BOOL forceCloseLinkMicIfNeed;
 
+/// 当前用户连麦时长
+@property (nonatomic, assign, readonly) NSTimeInterval currentLinkMicDuration;
+
 #pragma mark - [ 方法 ]
 #pragma mark 创建
 

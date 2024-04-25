@@ -315,6 +315,15 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @note Presenter 内部将在销毁时自动调用，一般情况下，外部无需关心此方法；
 - (void)leaveRTCChannel;
 
+/// 设置响应新版连麦策略、频道连麦人数和默认频道连麦方式
+///
+/// @note 只允许配置一次
+///       仅新策略且频道允许连麦人数不为0时，新策略生效
+/// @param linkMicNewStrategyEnabled 是否响应新策略
+/// @param interactNumLimit 频道允许连麦最大人数
+/// @param defaultChannelLinkMicMediaType 默认连麦方式
+- (void)setLinkMicNewStrategyEnabled:(BOOL)linkMicNewStrategyEnabled interactNumLimit:(NSUInteger)interactNumLimit defaultChannelLinkMicMediaType:(PLVChannelLinkMicMediaType)defaultChannelLinkMicMediaType;
+
 #pragma mark 课程事件管理
 /// 开始上课
 ///
@@ -444,6 +453,15 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///
 /// @param emitCompleteBlock 关闭 “连麦功能” 的请求发送结果Block
 - (void)closeLinkMicEmitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock;
+
+// 新版切换连麦方式
+- (void)changeLinkMicMediaType:(BOOL)linkMicOnAudio allowRaiseHand:(BOOL)allow emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock;
+
+/// 新版调整学员是否举手
+- (void)allowRaiseHand:(BOOL)allow emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock;
+
+/// 将所有观众下麦
+- (BOOL)removeAllAudiences;
 
 #pragma mark 连麦用户管理
 /// 允许 某位远端用户 上麦

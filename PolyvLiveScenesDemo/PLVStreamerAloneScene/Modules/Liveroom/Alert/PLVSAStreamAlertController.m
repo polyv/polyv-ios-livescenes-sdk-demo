@@ -145,8 +145,16 @@ static CGFloat kAlertButtonHeight = 36.0; // 按钮的高度
     
     // 根据Alert按钮类型设置按钮位置
     if (self.alertClickStyle == PLVSAAlertClickStyleTwoButton) {
-        self.cancelButton.frame = CGRectMake(kAlertInnerLeftAndRightGap, CGRectGetMaxY(self.contentView.bounds) - kAlertButtonHeight - 22.7, 100, kAlertButtonHeight);
-        self.confirmButton.frame = CGRectMake(CGRectGetMaxX(self.contentView.bounds) -  kAlertInnerLeftAndRightGap - 100, CGRectGetMaxY(self.contentView.bounds) - kAlertButtonHeight - 22.7, 100, kAlertButtonHeight);
+        CGFloat cancelButtonTitLabelWidth = [self.cancelButton.titleLabel.text boundingRectWithSize:CGSizeMake(MAXFLOAT, kAlertButtonHeight) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : [UIFont fontWithName:@"PingFangSC-Semibold" size:kAlertFontSize]} context:nil].size.width;
+        CGFloat confirmButtonTitLabelWidth = [self.confirmButton.titleLabel.text boundingRectWithSize:CGSizeMake(MAXFLOAT, kAlertButtonHeight) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : [UIFont fontWithName:@"PingFangSC-Semibold" size:kAlertFontSize]} context:nil].size.width;
+        CGFloat cancelButtonWidth = 105;
+        CGFloat confirmButtonWidth = 105;
+        if (cancelButtonTitLabelWidth > 0 && confirmButtonTitLabelWidth > 105) {
+            cancelButtonWidth = MAX(cancelButtonTitLabelWidth / (cancelButtonTitLabelWidth + confirmButtonTitLabelWidth) * 210 , 56);
+            confirmButtonWidth = 210 - cancelButtonWidth;
+        }
+        self.cancelButton.frame = CGRectMake(kAlertInnerLeftAndRightGap, CGRectGetMaxY(self.contentView.bounds) - kAlertButtonHeight - 22.7, cancelButtonWidth, kAlertButtonHeight);
+        self.confirmButton.frame = CGRectMake(CGRectGetMaxX(self.contentView.bounds) -  kAlertInnerLeftAndRightGap - confirmButtonWidth, CGRectGetMaxY(self.contentView.bounds) - kAlertButtonHeight - 22.7, confirmButtonWidth, kAlertButtonHeight);
         self.gradientLayer.frame = self.confirmButton.bounds;
     } else {
         self.cancelButton.frame = CGRectZero;

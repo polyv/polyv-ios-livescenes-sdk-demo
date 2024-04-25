@@ -15,17 +15,20 @@ NS_ASSUME_NONNULL_BEGIN
 
 @protocol PLVLSMemberSheetDelegate <NSObject>
 
-/// 点击全体下麦按钮触发回调
-/// @param changeBlock 是否【全体下麦】成功 block，needChange-YES 表示成功
+/// 点击全员下麦按钮触发回调
+/// @param changeBlock 是否【全员下麦】成功 block，needChange-YES 表示成功
 - (void)didTapCloseAllUserLinkMicInMemberSheet:(PLVLSMemberSheet *)memberSheet
                                    changeBlock:(void(^ _Nullable)(BOOL needChange))changeBlock;
 
-/// 点击全体静音按钮触发回调
-/// @param mute YES-全体静音 NO-取消全体静音
-/// @param changeBlock 是否【全体静音/取消全体静音】成功 block，needChange-YES 表示成功
+/// 点击全员静音按钮触发回调
+/// @param mute YES-全员静音 NO-取消全员静音
+/// @param changeBlock 是否【全员静音/取消全员静音】成功 block，needChange-YES 表示成功
 - (void)didTapMuteAllUserMicInMemberSheet:(PLVLSMemberSheet *)memberSheet
                                      mute:(BOOL)mute
                               changeBlock:(void(^)(BOOL needChange))changeBlock;
+
+/// 点击连麦设置按钮触发回调
+- (void)didTapLinkMicSettingInMemberSheet:(PLVLSMemberSheet *)memberSheet;
 
 /// 禁言/取消禁言某个用户
 /// @param userId 禁言/取消禁言用户ID

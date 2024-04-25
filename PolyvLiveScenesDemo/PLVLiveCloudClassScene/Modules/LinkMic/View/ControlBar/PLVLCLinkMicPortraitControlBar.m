@@ -57,6 +57,7 @@ static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展�
 @synthesize switchCameraButtonFront = _switchCameraButtonFront;
 @synthesize mediaControlButtonsShow = _mediaControlButtonsShow;
 @synthesize cameraButtonEnable = _cameraButtonEnable;
+@synthesize pictureInPictureStarted= _pictureInPictureStarted;
 
 @synthesize selfWidth = _selfWidth;
 @synthesize selfHeight = _selfHeight;
@@ -242,6 +243,7 @@ static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展�
         self.switchCameraButton.alpha = _mediaControlButtonsShow ? (self.switchCameraButton.selected ? 0.5 : 1.0) : 0.0;
         self.switchCameraButtonFront = controlBar.switchCameraButtonFront;
         self.micButton.selected = controlBar.micButton.selected;
+        self.pictureInPictureStarted = controlBar.pictureInPictureStarted;
     }
 }
 
@@ -292,6 +294,7 @@ static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展�
     self.status = PLVLCLinkMicControlBarStatus_Default;
     self.hiddenSelf = YES;
     self.linkMicBtnLastTimeInterval = 0.0;
+    self.pictureInPictureStarted = NO;
 }
 
 - (UIImage *)getImageWithName:(NSString *)imageName{
@@ -695,6 +698,10 @@ static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展�
 - (void)onOffButtonAction:(UIButton *)button{
     if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"小窗播放中，不支持连麦") detail:@"" view:self.superview];
+        return;
+    }
+    if (self.pictureInPictureStarted) {
+        [PLVLCUtils showHUDWithTitle:@"小窗正在启动中，不支持连麦" detail:@"" view:self.superview];
         return;
     }
     // 防止短时间内重复点击，kLinkMicBtnTouchInterval间隔内的点击会直接忽略
