@@ -8,6 +8,7 @@
 
 #import "PLVECCardPushButtonPopupView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECCardPushButtonPopupView ()
 
@@ -46,7 +47,7 @@
 #pragma mark - [ Public Method ]
 
 - (void)setPopupViewTitle:(NSString *)title {
-    self.titleLabel.text = [PLVFdUtil checkStringUseable:title] ? title : @"连续观看有奖励哦";
+    self.titleLabel.text = [PLVFdUtil checkStringUseable:title] ? title : PLVLocalizedString(@"连续观看有奖励哦");
 }
 
 #pragma mark - [ Private Method ]
@@ -59,7 +60,7 @@
         _titleLabel.textAlignment = NSTextAlignmentCenter;
         _titleLabel.textColor = [UIColor whiteColor];
         _titleLabel.font = [UIFont systemFontOfSize:13];
-        _titleLabel.text = @"连续观看有奖励哦";
+        _titleLabel.text = PLVLocalizedString(@"连续观看有奖励哦");
     }
     return _titleLabel;
 }

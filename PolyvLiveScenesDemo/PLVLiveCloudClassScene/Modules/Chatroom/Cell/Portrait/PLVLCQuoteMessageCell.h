@@ -17,6 +17,9 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface PLVLCQuoteMessageCell : PLVLCMessageCell
 
+/// 生成回复消息的多属性文本
++ (NSMutableAttributedString *)contentAttributedStringWithMessage:(PLVQuoteMessage *)message;
+
 @end
 
 NS_ASSUME_NONNULL_END

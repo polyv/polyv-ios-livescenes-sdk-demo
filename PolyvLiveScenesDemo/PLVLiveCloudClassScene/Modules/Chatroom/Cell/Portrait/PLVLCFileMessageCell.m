@@ -129,8 +129,15 @@
     
     self.fileMessage = model.message;
     
-    NSMutableAttributedString *contentLabelString = [PLVLCFileMessageCell contentLabelAttributedStringWithMessage:model.message
-                                                                                                              user:model.user];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLCFileMessageCell contentLabelAttributedStringWithMessage:model.message
+                                                                                      user:model.user];
+        model.attributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:NO];
     
     UIImage *fileImageView = [PLVLCFileMessageCell imageWithMessage:model.message];
@@ -140,7 +147,7 @@
 
 #pragma mark UI - ViewModel
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(id)message user:(PLVChatUser *)user {
     NSString *content = @"";
     if ([message isKindOfClass:[PLVFileMessage class]]) {

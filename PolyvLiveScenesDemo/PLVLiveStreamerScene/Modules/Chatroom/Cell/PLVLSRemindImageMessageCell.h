@@ -29,6 +29,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param previousUserId 前一个消息的用户Id
 + (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth previousUserId:(NSString *)previousUserId;
 
+/// 生成昵称多属性文本
++ (NSMutableAttributedString *)nickNameLabelAttributedStringWithUser:(PLVChatUser *)user;
+
 @end
 
 NS_ASSUME_NONNULL_END

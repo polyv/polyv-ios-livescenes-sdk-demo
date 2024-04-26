@@ -26,6 +26,7 @@ typedef void (^PLVRewardDisplayViewWillDeallocBlock)(NSInteger index);
 @property (nonatomic, strong) PLVRewardGoodsModel * model;
 @property (nonatomic, assign) NSInteger goodsNum;
 @property (nonatomic, strong) NSString * personName;
+@property (nonatomic, assign) BOOL fullScreenShow;
 
 /// 即将销毁回调
 @property (nonatomic, strong) PLVRewardDisplayViewWillDeallocBlock willDeallocBlock;

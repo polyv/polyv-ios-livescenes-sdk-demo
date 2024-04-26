@@ -11,13 +11,7 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 #import "PLVLSUtils.h"
-
-static NSString *const kDocumentUploadTips =
-@"1. 18:00-19:00 为上传高峰期，排队时间较长，请错峰上传；\n\
-2. 文档最大支持 500M，不超过 1000页；\n\
-3. 仅支持未加密且不含音视频的 ppt、pptx、pdf、doc、docx、\n\
-xls、xlsx、wps、jpg、jpeg、png 格式；\n\
-4. wps 或含特殊字体、付费字体的文档请先转为 pdf 再上传";
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSDocumentUploadTipsView ()
 
@@ -78,11 +72,11 @@ xls、xlsx、wps、jpg、jpeg、png 格式；\n\
                                 
     };
     
-    NSAttributedString *string = [[NSAttributedString alloc] initWithString:kDocumentUploadTips attributes:attribute];
+    NSAttributedString *string = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"PLVLSDocumentUploadTips") attributes:attribute];
     self.tipsLabel.attributedText = string;
     self.tipsLabel.lineBreakMode = NSLineBreakByWordWrapping;
     
-    CGSize size = [kDocumentUploadTips sizeWithAttributes:attribute];
+    CGSize size = [PLVLocalizedString(@"PLVLSDocumentUploadTips") sizeWithAttributes:attribute];
     self.tipsLabel.frame = CGRectMake(0, 0, size.width, size.height);
     self.tipsLabel.center = CGPointMake(PLVScreenWidth / 2.0, PLVScreenHeight / 2.0);
 }

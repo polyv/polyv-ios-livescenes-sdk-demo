@@ -8,6 +8,8 @@
 
 #import "PLVLCKeyboardMoreView.h"
 #import "PLVLCUtils.h"
+#import "PLVActionSheet.h"
+#import "PLVMultiLanguageManager.h"
 #import <SDWebImage/UIButton+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -25,6 +27,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     PLVLCKeyboardMoreButtonTypeOpenCamera,
     PLVLCKeyboardMoreButtonTypeOpenBulletin,
     PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay,
+    PLVLCKeyboardMoreButtonTypeSwitchLanguage,
 };
 
 @interface PLVLCMoreCollectionViewCell : UICollectionViewCell
@@ -62,32 +65,38 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         case PLVLCKeyboardMoreButtonTypeOnlyTeacher:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_onlyteacher"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_seeall"] forState:UIControlStateSelected];
-            [self.moreBtn setTitle:@"只看主持" forState:UIControlStateNormal];
-            [self.moreBtn setTitle:@"查看全部" forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"只看主持") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"查看全部") forState:UIControlStateSelected];
             break;
         case PLVLCKeyboardMoreButtonTypeOpenAlbum:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_album"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_album"] forState:UIControlStateSelected];
-            [self.moreBtn setTitle:@"发送图片" forState:UIControlStateNormal];
-            [self.moreBtn setTitle:@"发送图片" forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"发送图片") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"发送图片") forState:UIControlStateSelected];
             break;
         case PLVLCKeyboardMoreButtonTypeOpenCamera:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_camera"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_camera"] forState:UIControlStateSelected];
-            [self.moreBtn setTitle:@"拍照" forState:UIControlStateNormal];
-            [self.moreBtn setTitle:@"拍照" forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"拍照") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"拍照") forState:UIControlStateSelected];
             break;
         case PLVLCKeyboardMoreButtonTypeOpenBulletin:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_notice"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_notice"] forState:UIControlStateSelected];
-            [self.moreBtn setTitle:@"公告" forState:UIControlStateNormal];
-            [self.moreBtn setTitle:@"公告" forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"公告") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"公告") forState:UIControlStateSelected];
             break;
         case PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_hide_reward_display"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_show_reward_display"] forState:UIControlStateSelected];
-            [self.moreBtn setTitle:@"屏蔽特效" forState:UIControlStateNormal];
-            [self.moreBtn setTitle:@"展示特效" forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"屏蔽特效") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"展示特效") forState:UIControlStateSelected];
+            break;
+        case PLVLCKeyboardMoreButtonTypeSwitchLanguage:
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_languageswitch_btn"] forState:UIControlStateNormal];
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_languageswitch_btn"] forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"PLVLiveLanguageSwitchTitle") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"PLVLiveLanguageSwitchTitle") forState:UIControlStateSelected];
             break;
         default:
             break;
@@ -98,7 +107,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - imageWidth, - imageWidth- kCellImageLabelMargin / 2.0f, 0)];
         [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(3.5, (kCellButtonWidth - imageWidth)/2, self.moreBtn.titleLabel.intrinsicContentSize.height + kCellImageLabelMargin, (kCellButtonWidth - imageWidth)/2)];
     } else {
-        [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - self.moreBtn.imageView.frame.size.width, - self.moreBtn.imageView.frame.size.height - kCellImageLabelMargin / 2.0f, 0)];
+        [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - self.moreBtn.imageView.frame.size.width - 12, - self.moreBtn.imageView.frame.size.height - kCellImageLabelMargin / 2.0f, - 12)];
         [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(- self.moreBtn.titleLabel.intrinsicContentSize.height - kCellImageLabelMargin / 2.0f, 0, 0, - self.moreBtn.titleLabel.intrinsicContentSize.width)];
     }
 }
@@ -112,6 +121,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 @property (nonatomic, strong) NSArray *dynamicDataArray;
 @property (nonatomic, assign) BOOL closeRoom;
 @property (nonatomic, assign) BOOL focusMode;
+@property (nonatomic, assign) BOOL disableInteraction;
 
 @end
 
@@ -124,6 +134,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     if (self) {
         _sendImageEnable = YES;
         _hideRewardDisplaySwitch = YES;
+        _onlyTeacherEnable = YES;
         
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1.0];
         
@@ -131,13 +142,14 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         self.flowLayout.scrollDirection = UICollectionViewScrollDirectionVertical;
         self.flowLayout.itemSize = CGSizeMake(kCellButtonWidth, kCellButtonHeight);
         
-        float distanceWidth = [UIScreen mainScreen].bounds.size.width - kCellButtonWidth * 4;
+        CGFloat screenWidth  = MIN([UIScreen mainScreen].bounds.size.width, [UIScreen mainScreen].bounds.size.height);
+        float distanceWidth = screenWidth - kCellButtonWidth * 4;
         float spacing = distanceWidth / 5;
         self.flowLayout.minimumInteritemSpacing = spacing;
         float padding = distanceWidth - spacing * 4;
         self.flowLayout.sectionInset = UIEdgeInsetsMake(15.9, padding, 15.9, padding);
         
-        CGRect rect = CGRectMake(0, 0, [UIScreen mainScreen].bounds.size.width, 24 + kCellButtonHeight + 24);
+        CGRect rect = CGRectMake(0, 0, screenWidth, 24 + kCellButtonHeight + 24);
         self.collectionView = [[UICollectionView alloc] initWithFrame:rect collectionViewLayout:self.flowLayout];
         self.collectionView.backgroundColor = [UIColor clearColor];
         [self.collectionView registerClass:[PLVLCMoreCollectionViewCell class] forCellWithReuseIdentifier:kMoreViewCellIdentifier];
@@ -186,6 +198,11 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     [self changeCloseRoomStatus:focusMode];
 }
 
+- (void)disableRoomInteraction:(BOOL)disable {
+    self.disableInteraction = disable;
+    [self.collectionView reloadData];
+}
+
 #pragma mark - Getterr & Setter
 
 - (void)setSendImageEnable:(BOOL)sendImageEnable {
@@ -204,12 +221,24 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     [self.collectionView reloadData];
 }
 
+- (void)setOnlyTeacherEnable:(BOOL)onlyTeacherEnable {
+    if (_onlyTeacherEnable == onlyTeacherEnable) {
+        return;
+    }
+    _onlyTeacherEnable = onlyTeacherEnable;
+    [self.collectionView reloadData];
+}
+
 - (NSInteger)getNativeAddButtonCount {
+    if (self.disableInteraction) { return 1; }
+    
     NSInteger buttonCount = 0;
-    buttonCount += (self.sendImageEnable ? 3 : 1);
+    buttonCount += (self.onlyTeacherEnable ? 1 : 0);
+    buttonCount += (self.sendImageEnable ? 2 : 0);
     buttonCount += (!self.hiddenBulletin ? 1 : 0);
     buttonCount += (!self.hideRewardDisplaySwitch ? 1 : 0);
-    
+    buttonCount += 1;
+
     return buttonCount;
 }
 
@@ -278,6 +307,18 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             [self.delegate keyboardMoreView_switchRewardDisplay:self on:button.selected];
             button.selected = !button.selected;
         }
+    } else if (type == PLVLCKeyboardMoreButtonTypeSwitchLanguage) {
+        __weak typeof(self) weakSelf = self;
+        [PLVActionSheet showActionSheetWithTitle:nil cancelBtnTitle:PLVLocalizedString(@"取消") destructiveBtnTitle:nil otherBtnTitles:@[@"简体中文-ZH", @"English-EN"] handler:^(PLVActionSheet * _Nonnull actionSheet, NSInteger index) {
+            if (index > 0) {
+                PLVMultiLanguageMode selectedLanguage = (index == 1 ?PLVMultiLanguageModeZH : PLVMultiLanguageModeEN);
+                if (selectedLanguage != [PLVMultiLanguageManager sharedManager].currentLanguage) {
+                    if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(keyboardMoreView:switchLanguageMode:)]) {
+                        [weakSelf.delegate keyboardMoreView:weakSelf switchLanguageMode:selectedLanguage];
+                    }
+                }
+            }
+        }];
     } else if (type == PLVLCKeyboardMoreButtonTypeUnknow) {
         NSInteger defaultCount = [self getNativeAddButtonCount];
         if (button.tag < defaultCount + self.dynamicDataArray.count) {
@@ -294,25 +335,61 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 #pragma mark - Private Method
 
 - (PLVLCKeyboardMoreButtonType)typeOfIndex:(NSInteger)index {
-    if (index == 0) {
-        return PLVLCKeyboardMoreButtonTypeOnlyTeacher;
+    if (self.disableInteraction) {
+        if (index == 0) {
+            return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
+        } else {
+            return PLVLCKeyboardMoreButtonTypeUnknow;
+        }
     }
     
-    if (self.sendImageEnable) {
-        if (index == 1) {
-            return PLVLCKeyboardMoreButtonTypeOpenAlbum;
-        } else if (index == 2) {
-            return PLVLCKeyboardMoreButtonTypeOpenCamera;
-        } else if (index == 3 && !self.hiddenBulletin) {
-            return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-        } else if (index == 4 && !self.hideRewardDisplaySwitch) {
-            return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+    NSInteger overlayIndex = (!self.hiddenBulletin ? 1 : 0) + (!self.hideRewardDisplaySwitch ? 1 : 0);
+    if (self.onlyTeacherEnable) {
+        if (index == 0) {
+            return PLVLCKeyboardMoreButtonTypeOnlyTeacher;
+        }
+        if (self.sendImageEnable) {
+            if (index == 1) {
+                return PLVLCKeyboardMoreButtonTypeOpenAlbum;
+            } else if (index == 2) {
+                return PLVLCKeyboardMoreButtonTypeOpenCamera;
+            } else if (index == 3 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 4 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            } else if (index == (3 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
+            }
+        } else {
+            if (index == 1 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 2 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            } else if (index == (1 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
+            }
         }
     } else {
-        if (index == 1 && !self.hiddenBulletin) {
-            return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-        } else if (index == 2 && !self.hideRewardDisplaySwitch) {
-            return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+        if (self.sendImageEnable) {
+            if (index == 0) {
+                return PLVLCKeyboardMoreButtonTypeOpenAlbum;
+            } else if (index == 1) {
+                return PLVLCKeyboardMoreButtonTypeOpenCamera;
+            } else if (index == 2 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 3 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            } else if (index == (2 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
+            }
+        } else {
+            if (index == 0 && !self.hiddenBulletin) {
+                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+            } else if (index == 1 && !self.hideRewardDisplaySwitch) {
+                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+            } else if (index == (0 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
+            }
         }
     }
     return PLVLCKeyboardMoreButtonTypeUnknow;

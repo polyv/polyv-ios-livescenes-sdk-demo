@@ -8,6 +8,7 @@
 
 #import "PLVECLiveIntroductionCardView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVECLiveIntroductionCardView () <WKNavigationDelegate>
 
@@ -19,11 +20,11 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        self.titleLB.text = @"直播介绍";
+        self.titleLB.text = PLVLocalizedString(@"直播介绍");
         self.iconImgView.image = [PLVECUtils imageForWatchResource:@"plv_liveInfo_icon"];
         
         self.backgroundLable = [[UILabel alloc] init];
-        self.backgroundLable.text = @"暂无直播介绍～";
+        self.backgroundLable.text = PLVLocalizedString(@"暂无直播介绍～");
         self.backgroundLable.textColor = UIColor.blackColor;
         self.backgroundLable.textAlignment = NSTextAlignmentCenter;
         self.backgroundLable.font = [UIFont systemFontOfSize:14];
@@ -66,7 +67,7 @@
     /// 图片自适应设备宽，边距，禁用双指缩放
     int offset = 0;
     int fontSize = 12;
-    NSString *content = [htmlCont stringByReplacingOccurrencesOfString:@"<img src=\"//" withString:@"<img src=\"https://"];
+    NSString *content = [htmlCont stringByReplacingOccurrencesOfString:@"src=\"//" withString:@"src=\"https://"];
     content = [NSString stringWithFormat:@"<html>\n<body style=\"position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script>%@</body></html>", offset, offset, offset, offset, fontSize, content];
     return content;
 }

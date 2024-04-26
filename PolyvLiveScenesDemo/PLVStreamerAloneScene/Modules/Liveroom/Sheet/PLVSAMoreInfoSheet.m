@@ -10,6 +10,7 @@
 
 // utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVSABitRateSheet.h"
 
 //SDK
@@ -31,7 +32,15 @@
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜
 @property (nonatomic, strong) UIButton *shareButton; // 分享
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
+@property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局
+@property (nonatomic, strong) UIButton *allowRaiseHandButton; // 开启/关闭观众连麦
+@property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
+@property (nonatomic, strong) UIButton *removeAllAudiencesButton; // 观众下麦
 @property (nonatomic, strong) NSArray *buttonArray;
+@property (nonatomic, strong) UIScrollView *scrollView; // 按钮承载视图
+
+// 数据
+@property (nonatomic, assign) NSTimeInterval allowRaiseHandButtonLastTimeInterval; // 开启/关闭观众连麦上一次点击的时间戳
 
 @end
 
@@ -53,6 +62,7 @@
         if (!isPad && [self.buttonArray count] > 10) { // 超过两行
             self.sheetHight += (28 + 12 + 14 + 16);
         }
+        self.allowRaiseHandButtonLastTimeInterval = 0.0;
     }
     return self;
 }
@@ -67,6 +77,7 @@
     CGFloat titleX = isLandscape ? 32 : (isPad ? 56 :16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
+    self.scrollView.frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame) + 8, CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - CGRectGetMaxY(self.titleLabel.frame));
     
     CGSize buttonSize = [self getMaxButtonSize];
     
@@ -93,6 +104,10 @@
     self.mirrorButton.enabled = !selectedState && self.currentCameraOpen && self.currentCameraFront;
 }
 
+- (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState {
+    self.allowRaiseHandButton.selected = selectedState;
+}
+
 #pragma mark 当前用户配置
 - (void)setCurrentMicOpen:(BOOL)currentMicOpen {
     _currentMicOpen = currentMicOpen;
@@ -101,18 +116,23 @@
 
 - (void)setStreamQuality:(PLVResolutionType)streamQuality {
     _streamQuality = streamQuality;
-    [self setCameraBitRateButtonTitleAndImageWithType:streamQuality];
+    [self setCameraBitRateButtonTitleAndImageWithType:streamQuality streamQualityLevel:self.streamQualityLevel];
+}
+
+- (void)setStreamQualityLevel:(NSString *)streamQualityLevel {
+    _streamQualityLevel = streamQualityLevel;
+    [self setCameraBitRateButtonTitleAndImageWithType:self.streamQuality streamQualityLevel:self.streamQualityLevel];
 }
 
 - (void)setCurrentCameraOpen:(BOOL)currentCameraOpen {
     _currentCameraOpen = currentCameraOpen;
     self.cameraButton.selected = currentCameraOpen;
     // 摄像头关闭，翻转 禁用
-    self.cameraReverseButton.enabled = currentCameraOpen;
+    self.cameraReverseButton.enabled = currentCameraOpen && !self.screenShareButton.selected;
     // 后置摄像头、摄像头：镜像禁用
-    self.mirrorButton.enabled = currentCameraOpen && self.currentCameraFront;
+    self.mirrorButton.enabled = currentCameraOpen && self.currentCameraFront && !self.screenShareButton.selected;
     // 前置摄像头，闪光灯 禁用
-    self.flashButton.enabled = currentCameraOpen && !self.currentCameraFront;
+    self.flashButton.enabled = currentCameraOpen && !self.currentCameraFront && !self.screenShareButton.selected;
 }
 
 /// 本地用户的 摄像头 当前是否前置
@@ -140,9 +160,9 @@
 
 - (void)initUI {
     [self.contentView addSubview:self.titleLabel];
+    [self.contentView addSubview:self.scrollView];
     
-    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    UIView *buttonSuperView = self.contentView;
+    UIView *buttonSuperView = self.scrollView;
         
     // 摄像头、麦克风、前后摄像头、镜像
     [buttonSuperView addSubview:self.cameraButton];
@@ -188,6 +208,30 @@
     [buttonSuperView addSubview:self.badNetworkButton];
     [muButtonArray addObject:self.badNetworkButton];
     
+    // 显示新版连麦举手
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        [buttonSuperView addSubview:self.allowRaiseHandButton];
+        [muButtonArray addObject:self.allowRaiseHandButton];
+    }
+    
+    // 显示观众下麦
+    if ([PLVSAMoreInfoSheet showRemoveAllAudiencesButton]) {
+        [buttonSuperView addSubview:self.removeAllAudiencesButton];
+        [muButtonArray addObject:self.removeAllAudiencesButton];
+    }
+    
+    // 显示新版连麦设置
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        [buttonSuperView addSubview:self.linkMicSettingButton];
+        [muButtonArray addObject:self.linkMicSettingButton];
+    }
+    
+    // 混流布局
+    if ([PLVSAMoreInfoSheet showMixLayoutButton]) {
+        [buttonSuperView addSubview:self.mixLayoutButton];
+        [muButtonArray addObject:self.mixLayoutButton];
+    }
+    
     self.buttonArray = [muButtonArray copy];
 }
 
@@ -196,7 +240,7 @@
 - (UILabel *)titleLabel {
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = @"更多";
+        _titleLabel.text = PLVLocalizedString(@"更多");
         _titleLabel.font = [UIFont systemFontOfSize:18];
         _titleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
     }
@@ -207,8 +251,8 @@
         _cameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _cameraButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _cameraButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_cameraButton setTitle:@"摄像头" forState:UIControlStateNormal];
-        [_cameraButton setTitle:@"摄像头" forState:UIControlStateSelected];
+        [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateNormal];
+        [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateSelected];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_close"] forState:UIControlStateNormal];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_open"] forState:UIControlStateSelected];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_disabled"] forState:UIControlStateSelected|UIControlStateDisabled];
@@ -223,8 +267,10 @@
         _microphoneButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _microphoneButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _microphoneButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_microphoneButton setTitle:@"麦克风" forState:UIControlStateNormal];
-        [_microphoneButton setTitle:@"麦克风" forState:UIControlStateSelected];
+        _microphoneButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        _microphoneButton.titleLabel.numberOfLines = 0;
+        [_microphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateNormal];
+        [_microphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateSelected];
         [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
         [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
         [_microphoneButton addTarget:self action:@selector(microphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -237,7 +283,7 @@
         _cameraReverseButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _cameraReverseButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _cameraReverseButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_cameraReverseButton setTitle:@"翻转" forState:UIControlStateNormal];
+        [_cameraReverseButton setTitle:PLVLocalizedString(@"翻转") forState:UIControlStateNormal];
         [_cameraReverseButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_cameraReverse"] forState:UIControlStateNormal];
         [_cameraReverseButton addTarget:self action:@selector(cameraReverseButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -249,8 +295,8 @@
         _mirrorButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _mirrorButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _mirrorButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_mirrorButton setTitle:@"镜像" forState:UIControlStateNormal];
-        [_mirrorButton setTitle:@"镜像" forState:UIControlStateSelected];
+        [_mirrorButton setTitle:PLVLocalizedString(@"镜像") forState:UIControlStateNormal];
+        [_mirrorButton setTitle:PLVLocalizedString(@"镜像") forState:UIControlStateSelected];
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorClose"] forState:UIControlStateNormal];
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorOpen"] forState:UIControlStateSelected];
         [_mirrorButton addTarget:self action:@selector(mirrorButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -263,8 +309,15 @@
         _screenShareButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _screenShareButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _screenShareButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_screenShareButton setTitle:@"屏幕共享" forState:UIControlStateNormal];
-        [_screenShareButton setTitle:@"结束共享" forState:UIControlStateSelected];
+        _screenShareButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _screenShareButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        _screenShareButton.titleLabel.numberOfLines = 0;
+        NSString *normalTitle = PLVLocalizedString(@"屏幕共享");
+        if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+            normalTitle = [normalTitle stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+        }
+        [_screenShareButton setTitle:normalTitle forState:UIControlStateNormal];
+        [_screenShareButton setTitle:PLVLocalizedString(@"结束共享") forState:UIControlStateSelected];
         [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_open"] forState:UIControlStateNormal];
         [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_close"] forState:UIControlStateSelected];
         [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_disabled"] forState:UIControlStateDisabled];
@@ -279,8 +332,8 @@
         _flashButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _flashButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _flashButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_flashButton setTitle:@"闪光灯" forState:UIControlStateNormal];
-        [_flashButton setTitle:@"闪光灯" forState:UIControlStateSelected];
+        [_flashButton setTitle:PLVLocalizedString(@"闪光灯") forState:UIControlStateNormal];
+        [_flashButton setTitle:PLVLocalizedString(@"闪光灯") forState:UIControlStateSelected];
         [_flashButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_flash_close"] forState:UIControlStateNormal];
         [_flashButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_flash_open"] forState:UIControlStateSelected];
         [_flashButton addTarget:self action:@selector(flashButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -311,8 +364,8 @@
         _closeRoomButton.titleLabel.textAlignment = NSTextAlignmentCenter;
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
         BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
-        NSString *normalTitle = isPad && !isLandscape ? @"开启全体禁言" : @"开启全体\n禁言";
-        NSString *selectedTitle = isPad && !isLandscape ? @"取消全体禁言" : @"取消全体\n禁言";
+        NSString *normalTitle = isPad && !isLandscape ? PLVLocalizedString(@"开启全体禁言") : PLVLocalizedString(@"开启全体\n禁言");
+        NSString *selectedTitle = isPad && !isLandscape ? PLVLocalizedString(@"取消全体禁言") : PLVLocalizedString(@"取消全体\n禁言");
         [_closeRoomButton setTitle:normalTitle forState:UIControlStateNormal];
         [_closeRoomButton setTitle:selectedTitle forState:UIControlStateSelected];
         [_closeRoomButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_allmicphoneClose"] forState:UIControlStateNormal];
@@ -327,7 +380,7 @@
         _beautyButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _beautyButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _beautyButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_beautyButton setTitle:@"美颜" forState:UIControlStateNormal];
+        [_beautyButton setTitle:PLVLocalizedString(@"美颜") forState:UIControlStateNormal];
         [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_more"] forState:UIControlStateNormal];
         [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_more"] forState:UIControlStateSelected];
         [_beautyButton addTarget:self action:@selector(beautyButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -340,7 +393,7 @@
         _shareButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _shareButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _shareButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_shareButton setTitle:@"分享" forState:UIControlStateNormal];
+        [_shareButton setTitle:PLVLocalizedString(@"分享") forState:UIControlStateNormal];
         [_shareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_share"] forState:UIControlStateNormal];
         [_shareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_share"] forState:UIControlStateSelected];
         [_shareButton addTarget:self action:@selector(shareButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -353,12 +406,72 @@
         _badNetworkButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _badNetworkButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _badNetworkButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_badNetworkButton setTitle:@"弱网处理" forState:UIControlStateNormal];
+        [_badNetworkButton setTitle:PLVLocalizedString(@"弱网处理") forState:UIControlStateNormal];
         [_badNetworkButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_badNetwork_switch_btn"] forState:UIControlStateNormal];
         [_badNetworkButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_badNetwork_switch_btn"] forState:UIControlStateSelected];
         [_badNetworkButton addTarget:self action:@selector(badNetworkButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _badNetworkButton;
+}
+
+- (UIButton *)mixLayoutButton {
+    if (!_mixLayoutButton) {
+        _mixLayoutButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _mixLayoutButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _mixLayoutButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_mixLayoutButton setTitle:PLVLocalizedString(@"混流布局") forState:UIControlStateNormal];
+        [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateNormal];
+        [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateSelected];
+        [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _mixLayoutButton;
+}
+
+- (UIButton *)allowRaiseHandButton {
+    if (!_allowRaiseHandButton) {
+        _allowRaiseHandButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _allowRaiseHandButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _allowRaiseHandButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
+        [_allowRaiseHandButton setTitle:PLVLocalizedString(@"开启观众连麦") forState:UIControlStateNormal];
+        [_allowRaiseHandButton setTitle:PLVLocalizedString(@"关闭观众连麦") forState:UIControlStateSelected];
+        [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn"] forState:UIControlStateNormal];
+        [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn_selected"] forState:UIControlStateSelected];
+        [_allowRaiseHandButton addTarget:self action:@selector(allowRaiseHandButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _allowRaiseHandButton;
+}
+
+- (UIButton *)linkMicSettingButton {
+    if (!_linkMicSettingButton) {
+        _linkMicSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _linkMicSettingButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _linkMicSettingButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
+        [_linkMicSettingButton setTitle:PLVLocalizedString(@"连麦设置") forState:UIControlStateNormal];
+        [_linkMicSettingButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_link_mic_setting_btn"] forState:UIControlStateNormal];
+        [_linkMicSettingButton addTarget:self action:@selector(linkMicSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _linkMicSettingButton;
+}
+
+- (UIButton *)removeAllAudiencesButton {
+    if (!_removeAllAudiencesButton) {
+        _removeAllAudiencesButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _removeAllAudiencesButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
+        _removeAllAudiencesButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
+        [_removeAllAudiencesButton setTitle:PLVLocalizedString(@"观众下麦") forState:UIControlStateNormal];
+        [_removeAllAudiencesButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_link_mic_remove_audiences_btn"] forState:UIControlStateNormal];
+        [_removeAllAudiencesButton addTarget:self action:@selector(removeAllAudiencesButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _removeAllAudiencesButton;
+}
+
+- (UIScrollView *)scrollView {
+    if (!_scrollView) {
+        _scrollView = [[UIScrollView alloc] init];
+        _scrollView.showsHorizontalScrollIndicator = NO;
+        _scrollView.pagingEnabled = YES;
+    }
+    return _scrollView;
 }
 
 #pragma mark setButtonFrame
@@ -385,11 +498,11 @@
     
     NSInteger buttonCount = isLandscape ? 3 : (isPad ? 7 : 5); // 竖屏时（iphone）每行5个按钮、横屏时（iphone & ipad）每行3个按钮
     CGFloat buttonOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
-    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ? CGRectGetMaxY(self.titleLabel.frame) + 12 : 46;
-    CGFloat buttonXPadding = (self.contentView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
+    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ?  4 : 38;
+    CGFloat buttonXPadding = (self.scrollView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
     CGFloat buttonYPadding = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
     if (isPad && !isLandscape) {
-        buttonOriginY = CGRectGetMaxY(self.titleLabel.frame) + 28.0;
+        buttonOriginY =  28.0;
         buttonYPadding = 30.0;
     }
     
@@ -404,6 +517,9 @@
         button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonSize.width, buttonSize.height);
         buttonOriginX += buttonSize.width + buttonXPadding;
     }
+    
+    // 设置超出视图范围可滚动选择按钮
+    self.scrollView.contentSize = CGSizeMake(self.contentView.frame.size.width, buttonOriginY + buttonSize.height);
 }
 
 - (void)setButtonInsets {
@@ -433,48 +549,74 @@
 /// 将成字符串转换成清晰度枚举值
 - (PLVResolutionType)changeBitRateTypeWithString:(NSString *)bitRatestring {
     PLVResolutionType type = PLVResolutionType360P;
-    if ([bitRatestring isEqualToString:@"超高清"]) {
+    if ([bitRatestring isEqualToString:PLVLocalizedString(@"超高清")]) {
         type = PLVResolutionType1080P;
-    } else if ([bitRatestring isEqualToString:@"超清"]) {
+    } else if ([bitRatestring isEqualToString:PLVLocalizedString(@"超清")]) {
         type = PLVResolutionType720P;
-    } else if ([bitRatestring isEqualToString:@"高清"]) {
+    } else if ([bitRatestring isEqualToString:PLVLocalizedString(@"高清")]) {
         type = PLVResolutionType360P;
-    } else if ([bitRatestring isEqualToString:@"标清"]) {
+    } else if ([bitRatestring isEqualToString:PLVLocalizedString(@"标清")]) {
         type = PLVResolutionType180P;
     }
     return type;
 }
 
-- (void)setCameraBitRateButtonTitleAndImageWithType:(PLVResolutionType)type {
+- (void)setCameraBitRateButtonTitleAndImageWithType:(PLVResolutionType)type streamQualityLevel:(NSString *)streamQualityLevel  {
     NSString *title = @"";
     NSString *imageName = @"";
     switch (type) {
         case PLVResolutionType180P:
-            title = @"标清\n  ";
+            title = PLVLocalizedString(@"标清");
             imageName = @"plvsa_liveroom_btn_sd";
             break;
         case PLVResolutionType360P:
-            title = @"高清\n  ";
+            title = PLVLocalizedString(@"高清");
             imageName = @"plvsa_liveroom_btn_hd";
             break;
         case PLVResolutionType720P:
-            title = @"超清\n  ";
+            title = PLVLocalizedString(@"超清");
             imageName = @"plvsa_liveroom_btn_fhd";
             break;
         case PLVResolutionType1080P:
-            title = @"超高清\n  ";
+            title = PLVLocalizedString(@"超高清");
             imageName = @"plvsa_liveroom_btn_uhd";
             break;
         default:
             break;
     }
-    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
-        title = [NSString stringWithFormat:@"%@\n  ",[self qualityNameWithResolutionType:type]];
+    title = [NSString stringWithFormat:@"%@\n  ", title];
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParamsArray = [PLVLiveVideoConfig sharedInstance].videoParams;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled &&
+        [PLVFdUtil checkStringUseable:streamQualityLevel] &&
+        [PLVFdUtil checkArrayUseable:videoParamsArray]) {
+        __block PLVClientPushStreamTemplateVideoParams *videoParam;
+        [videoParamsArray enumerateObjectsUsingBlock:^(PLVClientPushStreamTemplateVideoParams * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([streamQualityLevel isEqualToString:obj.qualityLevel]) {
+                videoParam = obj;
+                *stop = YES;
+            }
+        }];
+        
+        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) {
+            title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityName];
+        } else {
+            title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityEnName];
+        }
+        
+        if ([videoParam.qualityLevel containsString:@"FHD"]) {
+            imageName = @"plvsa_liveroom_btn_uhd";
+        } else if ([videoParam.qualityLevel containsString:@"SHD"]) {
+            imageName = @"plvsa_liveroom_btn_fhd";
+        } else if ([videoParam.qualityLevel containsString:@"HSD"]) {
+            imageName = @"plvsa_liveroom_btn_hd";
+        } else {
+            imageName = @"plvsa_liveroom_btn_sd";
+        }
     }
     
     // iPad时，文案去掉换行
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    if (isPad) {
+    if (isPad && [title containsString:@"\n  "]) {
         NSRange range = [title rangeOfString:@"\n  "];
         NSString *padTitle = [title substringToIndex:range.location];
         title = padTitle;
@@ -482,17 +624,6 @@
 
     [self.cameraBitRateButton setTitle:title forState:UIControlStateNormal];
     [self.cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:imageName] forState:UIControlStateNormal];
-}
-
-/// 将清晰度枚举值转换成字符串
-- (NSString *)qualityNameWithResolutionType:(PLVResolutionType)resolutionType {
-    NSString *string = nil;
-    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
-    int i = (int)resolutionType / 4.0;
-    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
-        string = videoParams[i].qualityName;
-    }
-    return string;
 }
 
 /// 讲师、助教、管理员可以禁言操作
@@ -523,6 +654,19 @@
         return YES;
     }
     return NO;
+}
+
++ (BOOL)showMixLayoutButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
++ (BOOL)showLinkMicNewStrategy {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0 && roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
++ (BOOL)showRemoveAllAudiencesButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
 }
 
 #pragma mark - Event
@@ -626,6 +770,44 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapBadNetworkButton:)]) {
         [self.delegate moreInfoSheetDidTapBadNetworkButton:self];
+    }
+}
+
+- (void)mixLayoutButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapMixLayoutButton:)]) {
+        [self.delegate moreInfoSheetDidTapMixLayoutButton:self];
+    }
+}
+
+- (void)allowRaiseHandButtonAction {
+    [self dismiss];
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        // 防止短时间内重复点击，1s间隔内的点击会直接忽略
+        NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
+        if (curTimeInterval - self.allowRaiseHandButtonLastTimeInterval > 1000) {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapAllowRaiseHandButton:wannaChangeAllowRaiseHand:)]) {
+                [self.delegate moreInfoSheetDidTapAllowRaiseHandButton:self wannaChangeAllowRaiseHand:!self.allowRaiseHandButton.selected];
+            }
+        }
+        self.allowRaiseHandButtonLastTimeInterval = curTimeInterval;
+    }
+}
+
+- (void)linkMicSettingButtonAction {
+    [self dismiss];
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLinkMicSettingButton:)]) {
+            [self.delegate moreInfoSheetDidTapLinkMicSettingButton:self];
+        }
+    }
+}
+
+- (void)removeAllAudiencesButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapRemoveAllAudiencesButton:)]) {
+        [self.delegate moreInfoSheetDidTapRemoveAllAudiencesButton:self];
     }
 }
 

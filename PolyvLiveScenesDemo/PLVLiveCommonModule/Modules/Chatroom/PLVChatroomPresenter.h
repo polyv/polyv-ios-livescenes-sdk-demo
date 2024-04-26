@@ -34,6 +34,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取提醒历史聊天消息失败时触发
 - (void)chatroomPresenter_loadRemindHistoryFailure;
 
+/// 获取提问历史聊天消息成功时触发
+/// @param modelArray 聊天消息队列
+/// @param noMore 是否还有更多历史消息，YES表示已加载完
+- (void)chatroomPresenter_loadQuestionHistorySuccess:(NSArray <PLVChatModel *> *)modelArray noMore:(BOOL)noMore;
+
+/// 获取提问历史聊天消息失败时触发
+- (void)chatroomPresenter_loadQuestionHistoryFailure;
+
 /// 获取图片表情数据
 - (void)chatroomPresenter_loadImageEmotionsSuccess;
 
@@ -103,7 +111,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVChatroomPresenterProtocol> delegate;
 
-/// 当前登陆用户是否是特殊身份（譬如讲师），为YES时字段closeRoom、banned永远为NO
+/// 当前登录用户是否是特殊身份（譬如讲师），为YES时字段closeRoom、banned永远为NO
 @property (nonatomic, assign, readonly) BOOL specialRole;
 
 /// 图片表情数组
@@ -191,11 +199,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送点赞消息
 - (void)sendLike;
 
+/// 开启观看次数刷新计时器
+- (void)startPageViewTimer;
+
+/// 发送修改昵称消息
+- (void)sendChangeNickname:(NSString *)nickname;
+
 /// 加载历史聊天记录
 - (void)loadHistory;
 
 /// 加载提醒消息历史记录
 - (void)loadRemindHistory;
+
+/// 加载提问消息历史记录
+- (void)loadQuestionHistory;
 
 ///加载图片表情
 - (void)loadImageEmotions;

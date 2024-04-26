@@ -9,6 +9,7 @@
 #import "PLVSABeautyFilterViewController.h"
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVSABeautyFilterCollectionViewCell.h"
 // 模块
@@ -26,7 +27,7 @@ UICollectionViewDelegate
 
 @end
 
-static CGFloat kItemWidth = 56; // item宽度
+static CGFloat kItemWidth = 60; // item宽度
 static int kItemLineNum = 3; // 每行item数
 
 @implementation PLVSABeautyFilterViewController
@@ -51,8 +52,9 @@ static int kItemLineNum = 3; // 每行item数
             }
         }
     }
-    
-    [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    if (self.dataArray && self.dataArray.count > self.selectedIndexPath.item) {
+        [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    }
     [self didSelectItemAtIndexPath:self.selectedIndexPath];
 }
 
@@ -66,7 +68,7 @@ static int kItemLineNum = 3; // 每行item数
     [super setupDataArray];
     NSMutableArray *tempArrayM = [NSMutableArray arrayWithCapacity:[PLVBeautyViewModel sharedViewModel].filterOptionArray.count];
     for (PLVBFilterOption *option in [PLVBeautyViewModel sharedViewModel].filterOptionArray) {
-        PLVSABeautyCellModel *model = [[PLVSABeautyCellModel alloc] initWithTitle:option.filterName imageName:[NSString stringWithFormat:@"plvsa_beauty_filter_%@", option.filterSpellName] beautyOption:-1 selected:NO filterOption:option];
+        PLVSABeautyCellModel *model = [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(option.filterName) imageName:[NSString stringWithFormat:@"plvsa_beauty_filter_%@", option.filterSpellName] beautyOption:-1 selected:NO filterOption:option];
         [tempArrayM addObject:model];
     }
     self.dataArray = [tempArrayM copy];
@@ -84,16 +86,18 @@ static int kItemLineNum = 3; // 每行item数
 - (void)beautyOpen:(BOOL)open {
     [super beautyOpen:open];
     [self.collectionView reloadData];
-    if (open &&
-        self.selectedIndexPath) {
+    if (open && self.selectedIndexPath &&
+        self.dataArray.count > self.selectedIndexPath.item) {
         [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     }
 }
 
 - (void)resetBeauty {
     [super resetBeauty];
-    self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
+        self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
+        [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    }
 }
 
 #pragma mark - [ Private Method ]

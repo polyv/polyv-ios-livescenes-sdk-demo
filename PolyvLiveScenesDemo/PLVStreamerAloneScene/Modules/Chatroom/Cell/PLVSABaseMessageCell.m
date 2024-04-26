@@ -9,6 +9,7 @@
 #import "PLVSABaseMessageCell.h"
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // model
 #import "PLVChatModel.h"
@@ -61,8 +62,8 @@
 #pragma mark Setter
 /// 设置menuItem
 - (void)setMenuItem {
-    UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
-    UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
+    UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"复制") action:@selector(customCopy:)];
+    UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"回复") action:@selector(reply:)];
     UIMenuController *menuController = [UIMenuController sharedMenuController];
     // 是否含有严禁词并且发送失败时
     if (self.model.isProhibitMsg && self.model.prohibitWord) {
@@ -156,12 +157,8 @@
         size.width += 10;
     }
     label.frame = CGRectMake(0, 0, size.width, 14);
-    UIGraphicsBeginImageContextWithOptions(label.frame.size, NO, [UIScreen mainScreen].scale);
-    CGContextRef ctx = UIGraphicsGetCurrentContext();
-    [label.layer renderInContext:ctx];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
-   
+    UIImage *image = [PLVImageUtil imageFromUIView:label opaque:NO scale:[UIScreen mainScreen].scale];
+
     return image;
 }
 @end

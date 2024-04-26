@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PLVRoomDataManager.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,6 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 返回 cell 高度
 + (CGFloat)cellHeight;
+
+@end
+
+@interface PLVLSResolutionLevelSheetCell : UITableViewCell
+
+- (void)setupVideoParams:(PLVClientPushStreamTemplateVideoParams *)videoParams;
 
 @end
 

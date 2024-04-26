@@ -9,6 +9,7 @@
 #import "PLVLCLinkMicWindowsView.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCLinkMicWindowCell.h"
 #import "PLVLinkMicOnlineUser+LC.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -164,13 +165,12 @@ UICollectionViewDelegate
         if (firstSiteOnlineUser) {
             [self checkUserModelAndSetupLinkMicCanvasView:firstSiteOnlineUser];
             [self setupUserModelWillDeallocBlock:firstSiteOnlineUser];
-            /// 在纯视频场景下主屏需要额外设置 ’摄像头是否应该显示值‘ 的回调
-            firstSiteOnlineUser.cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
-                [onlineUser.canvasView rtcViewShow:onlineUser.currentCameraShouldShow];
-            };
-            
+            /// 在纯视频场景下 媒体区域外部显示
+            PLVLCLinkMicWindowCellContentView *rtcContentView = [[PLVLCLinkMicWindowCellContentView alloc] init];
+            [rtcContentView setModel:firstSiteOnlineUser];
+            rtcContentView.showInWindowCell = NO;
             if ([self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:showFirstSiteCanvasViewOnExternal:)]) {
-                [self.delegate plvLCLinkMicWindowsView:self showFirstSiteCanvasViewOnExternal:firstSiteOnlineUser.canvasView];
+                [self.delegate plvLCLinkMicWindowsView:self showFirstSiteCanvasViewOnExternal:rtcContentView];
             }
         }
         finalCellNum = (finalCellNum - 1) <= 0 ? 0 : (finalCellNum - 1);
@@ -179,6 +179,7 @@ UICollectionViewDelegate
     __weak typeof(self) weakSelf = self;
     if (!CGRectGetHeight(self.bounds) && finalCellNum > 0) {
         self.collectionReloadBlock = ^{
+            [weakSelf.collectionView layoutIfNeeded];
             [weakSelf.collectionView reloadData];
             [weakSelf showGuideView];
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -187,6 +188,7 @@ UICollectionViewDelegate
             });
         };
     } else {
+        [self.collectionView layoutIfNeeded];
         [self.collectionView reloadData];
         [self showGuideView];
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -335,8 +337,16 @@ UICollectionViewDelegate
 
 - (void)wantExchangeWithExternalViewForLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser needReload:(BOOL)reload{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:wantExchangeWithExternalViewForLinkMicUser:canvasView:)]) {
-        UIView * returnView = [self.delegate plvLCLinkMicWindowsView:self wantExchangeWithExternalViewForLinkMicUser:linkMicUser canvasView:linkMicUser.canvasView];
-        
+        // 如果 cell 可见则直接获取当前的 rtcContentView，如果不可见则重新创建。
+        PLVLCLinkMicWindowCell *cell = [self findCellWithUserId:linkMicUser.linkMicUserId];
+        PLVLCLinkMicWindowCellContentView *rtcContentView = cell.rtcContentView;
+        if (![self.collectionView.visibleCells containsObject:cell]) {
+            rtcContentView = [[PLVLCLinkMicWindowCellContentView alloc] init];
+            [rtcContentView setModel:linkMicUser];
+        }
+        rtcContentView.showInWindowCell = NO;
+
+        UIView * returnView = [self.delegate plvLCLinkMicWindowsView:self wantExchangeWithExternalViewForLinkMicUser:linkMicUser canvasView:rtcContentView];
         if (returnView && [returnView isKindOfClass:UIView.class]) {
             self.showingExternalCellLinkMicUserId = linkMicUser.linkMicUserId;
             self.externalView = returnView;
@@ -374,7 +384,7 @@ UICollectionViewDelegate
     if (oriUserModel){
         // 将播放画布视图恢复至默认位置
         PLVLCLinkMicWindowCell * showingExternalCell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:oriIndexPath];
-        [showingExternalCell switchToShowRtcContentView:oriUserModel.canvasView];
+        [showingExternalCell switchToShowDefaultRtcContentView];
     } else {
         NSLog(@"PLVLCLinkMicWindowsView - rollbackLinkMicCanvasView failed, oriIndexPath %@ can't get userModel",oriIndexPath);
     }
@@ -434,6 +444,13 @@ UICollectionViewDelegate
     linkMicUserModel.willDeallocBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         [weakSelf cleanLinkMicCellWithLinkMicUser:onlineUser];
     };
+}
+
+- (void)resetExternalContentView:(PLVLCLinkMicWindowCellContentView *)contentView linkMicUser:(PLVLinkMicOnlineUser *)linkMicUser {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsView:wantExchangeWithExternalViewForLinkMicUser:canvasView:)]) {
+        contentView.showInWindowCell = NO;
+        [self.delegate plvLCLinkMicWindowsView:self wantExchangeWithExternalViewForLinkMicUser:linkMicUser canvasView:contentView];
+    }
 }
 
 #pragma mark UI
@@ -504,7 +521,7 @@ UICollectionViewDelegate
 - (UILabel *)guideTextLabel{
     if (!_guideTextLabel) {
         _guideTextLabel = [[UILabel alloc]init];
-        _guideTextLabel.text = @"向左滑动试试";
+        _guideTextLabel.text = PLVLocalizedString(@"向左滑动试试");
         _guideTextLabel.font = [UIFont systemFontOfSize:12];
         _guideTextLabel.textColor = [UIColor colorWithRed:255/255.0 green:255/255.0 blue:255/255.0 alpha:1.0];
         _guideTextLabel.textAlignment = NSTextAlignmentCenter;
@@ -595,9 +612,11 @@ UICollectionViewDelegate
     if (thisCellShowingExternalView) {
         /// 显示 外部视图
         [cell switchToShowExternalContentView:self.externalView];
+        /// 重置外部视图显示
+        [self resetExternalContentView:cell.rtcContentView linkMicUser:linkMicUserModel];
     }else{
         /// 显示 rtc画布视图
-        [cell switchToShowRtcContentView:linkMicUserModel.canvasView];
+        [cell switchToShowDefaultRtcContentView];
     }
     
     return cell;

@@ -23,6 +23,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVLSChatroomViewModel.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVToast.h"
 
 /// 依赖库
@@ -74,6 +75,7 @@ UITableViewDataSource
         self.tableView.frame = self.bounds;
         self.tableView.scrollEnabled = YES;
     }
+    [PLVLSChatroomViewModel sharedViewModel].tableViewWidth = self.tableView.frame.size.width;
 }
 
 - (void)dealloc {
@@ -159,7 +161,7 @@ UITableViewDataSource
                 CGRect newFrame = CGRectMake(0, self.bounds.size.height - contentHeight, self.bounds.size.width, contentHeight);
                 self.tableView.frame = newFrame;
                 [self scrollsToBottom:NO];
-                self.tableView.scrollEnabled = NO;
+                self.tableView.scrollEnabled = YES;
             }];
         } else if (CGRectGetHeight(self.bounds) > 0) {
             self.tableView.frame = self.bounds;
@@ -245,14 +247,14 @@ UITableViewDataSource
             if (content) {
                 model.overLenContent = content;
                 [UIPasteboard generalPasteboard].string = content;
-                [PLVToast showToastWithMessage:@"复制成功" inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+                [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
             }
         }];
     } else {
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:@"复制成功" inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
         }
     }
 }
@@ -445,15 +447,30 @@ UITableViewDataSource
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     PLVChatModel *model = [[PLVLSChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVLSSpeakMessageCell isModelValid:model]) {
-        cellHeight = [PLVLSSpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLSSpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
-        cellHeight = [PLVLSLongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLSLongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLSImageMessageCell isModelValid:model]) {
-        cellHeight = [PLVLSImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLSImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {
-        cellHeight = [PLVLSImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLSImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLSQuoteMessageCell isModelValid:model]) {
-        cellHeight = [PLVLSQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLSQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else {
         cellHeight = 0.0;
     }

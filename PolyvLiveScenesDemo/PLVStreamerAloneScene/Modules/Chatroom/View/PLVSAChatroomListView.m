@@ -11,6 +11,7 @@
 // 工具
 #import "PLVSAUtils.h"
 #import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVSASpeakMessageCell.h"
@@ -83,6 +84,7 @@ UITableViewDataSource
         self.tableView.frame = self.bounds;
         self.tableView.scrollEnabled = YES;
     }
+    [PLVSAChatroomViewModel sharedViewModel].tableViewWidth = self.tableView.frame.size.width;
 }
 
 #pragma mark - [ Public Method ]
@@ -144,14 +146,14 @@ UITableViewDataSource
             if (content) {
                 model.overLenContent = content;
                 [UIPasteboard generalPasteboard].string = content;
-                [PLVToast showToastWithMessage:@"复制成功" inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
+                [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
             }
         }];
     } else {
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:@"复制成功" inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
+            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
         }
     }
 }
@@ -228,21 +230,21 @@ UITableViewDataSource
 - (void)resendSpeakMessage:(PLVChatModel *)model {
     BOOL success = [[PLVSAChatroomViewModel sharedViewModel] resendSpeakMessage:model replyChatModel:model.replyMessage];
     if (!success) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"消息发送失败")];
     }
 }
 
 - (void)resendImageMessage:(PLVChatModel *)model {
     BOOL success = [[PLVSAChatroomViewModel sharedViewModel] resendImageMessage:model];
     if (!success) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"消息发送失败")];
     }
 }
 
 - (void)resendImageEmotionMessage:(PLVChatModel *)model {
     BOOL success = [[PLVSAChatroomViewModel sharedViewModel] resendImageEmotionMessage:model];
     if (!success) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"消息发送失败")];
     }
 }
 
@@ -420,17 +422,35 @@ UITableViewDataSource
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     PLVChatModel *model = [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVSASpeakMessageCell isModelValid:model]) {
-        cellHeight = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSALongContentMessageCell isModelValid:model]) {
-        cellHeight = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSALongContentMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSAImageMessageCell isModelValid:model]) {
-        cellHeight = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSAImageMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
-        cellHeight = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSAImageEmotionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
-        cellHeight = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSAQuoteMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else if ([PLVSARewardMessageCell isModelValid:model]) {
-        cellHeight = [PLVSARewardMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVSARewardMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
     } else {
         cellHeight = 0;
     }

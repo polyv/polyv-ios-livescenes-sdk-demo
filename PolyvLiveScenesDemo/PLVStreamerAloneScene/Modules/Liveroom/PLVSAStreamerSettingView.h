@@ -9,6 +9,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVRoomData.h"
+#import "PLVSAMixLayoutSheet.h"
 
 
 @protocol PLVSAStreamerSettingViewDelegate;
@@ -17,7 +18,13 @@
 
 @property (nonatomic, weak) id<PLVSAStreamerSettingViewDelegate> delegate;
 
+// 混流布局选择面板，用于更新当前混流布局类型
+@property (nonatomic, strong, readonly) PLVSAMixLayoutSheet *mixLayoutSheet;
+
 @property (nonatomic, assign, readonly) BOOL canAutorotate;
+
+// 推流视频模版默认清晰度（已区分讲师和嘉宾）
+@property (nonatomic, copy, readonly) NSString *defaultQualityLevel;
 
 /**
   是否禁用摄像头和镜像按钮
@@ -64,12 +71,16 @@
 - (void)streamerSettingViewMirrorButtonClickWithMirror:(BOOL)mirror;
 /// 清晰度切换
 - (void)streamerSettingViewBitRateButtonClickWithResolutionType:(PLVResolutionType)type;
+/// 流清晰度质量等级切换
+- (void)streamerSettingViewBitRateSheetDidSelectStreamQualityLevel:(NSString *)streamQualityLevel;
 /// 显示美颜按钮
 - (void)streamerSettingViewDidClickBeautyButton:(PLVSAStreamerSettingView *)streamerSettingView;
 /// 设备方向发送改变
 - (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView;
 /// 开播流比例改变
 - (void)streamerSettingViewStreamScaleButtonClickWithStreamScale:(PLVBLinkMicStreamScale)streamScale;;
+/// 混流布局切换
+- (void)streamerSettingViewMixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type;
 
 @end
 

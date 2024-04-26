@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCMediaMoreCell.h"
+#import "PLVMultiLanguageManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -141,7 +142,7 @@
         [self.buttonsArray removeAllObjects];
         for (int i = 0; i < model.optionItemsArray.count; i++) {
             NSString * optionItemTitle = model.optionItemsArray[i];
-            UIButton * button = [self createButtonWithOptionItemTitle:optionItemTitle];
+            UIButton * button = [self createButtonWithOptionItemTitle:PLVLocalizedString(optionItemTitle)];
             [self.contentView addSubview:button];
             [self.buttonsArray addObject:button];
             if (model.selectedIndex == i) { self.currentSelectedButton = button; }
@@ -154,7 +155,7 @@
 - (void)openDanmuButton:(BOOL)open {
     for (int i = 0; i < self.buttonsArray.count ; i++) {
         UIButton *button = self.buttonsArray[i];
-        if ([button.titleLabel.text isEqualToString:@"弹幕"]) {
+        if ([button.titleLabel.text isEqualToString:PLVLocalizedString(@"弹幕")]) {
             button.selected = open;
             break;
         }
@@ -244,7 +245,7 @@
 - (UILabel *)optionTitleLabel{
     if (!_optionTitleLabel) {
         _optionTitleLabel = [[UILabel alloc] init];
-        _optionTitleLabel.text = @"选项标题";
+        _optionTitleLabel.text = PLVLocalizedString(@"选项标题");
         _optionTitleLabel.textColor = PLV_UIColorFromRGB(@"C2C2C2");
         _optionTitleLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
     }

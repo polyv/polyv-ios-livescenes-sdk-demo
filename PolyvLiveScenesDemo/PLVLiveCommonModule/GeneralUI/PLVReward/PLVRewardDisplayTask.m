@@ -60,8 +60,8 @@
     }else{
         return;
     }
-    /// 横屏状态下不显示打赏横幅
-    if (CGRectGetWidth(self.superView.frame) > CGRectGetHeight(self.superView.frame)) {
+    /// fullScreenShow为NO且横屏状态下不显示打赏横幅时
+    if (CGRectGetWidth(self.superView.frame) > CGRectGetHeight(self.superView.frame) && !self.fullScreenShow) {
         return;
     }
 

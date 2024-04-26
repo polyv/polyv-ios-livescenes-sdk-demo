@@ -64,6 +64,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前直播回放的 播放时间点 (单位:秒；仅非直播场景下有值)
 @property (nonatomic, readonly) NSTimeInterval currentPlaybackTime;
 
+/// 当前直播回放的 最大播放时间点 (单位:秒；仅非直播场景下有值)
+@property (nonatomic, readonly) NSTimeInterval playbackMaxPosition;
+
 /// 当前直播回放的 视频总时长 (单位:秒；仅非直播场景下有值)
 @property (nonatomic, readonly) NSTimeInterval duration;
 
@@ -97,6 +100,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 该频道是否观看 ‘快直播’( 以 后台配置数据 作为依据；当 [channelMatchExternal] 为NO时，此值无意义，而恒为NO)
 @property (nonatomic, assign, readonly) BOOL channelWatchQuickLive;
 
+/// 该频道是否观看 ‘公共流’
+@property (nonatomic, assign, readonly) BOOL channelWatchPublicStream;
+
 /// 播放器当前是否加载 ‘快直播’（以 当前直播播放器是否加载快直播 作为依据；）
 @property (nonatomic, assign, readonly) BOOL currentPlayerWatchQuickLive;
 
@@ -109,8 +115,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 播放器当前是否正在播放快直播
 @property (nonatomic, assign, readonly) BOOL quickLiveWatching;
 
+/// 播放器当前是否正在播放公共流
+@property (nonatomic, assign, readonly) BOOL publicStreamWatching;
+
 /// 无延迟直播的当前 ‘开始结束状态’
 @property (nonatomic, assign, readonly) BOOL currentNoDelayLiveStart;
+
+/// 播放器当前的缩放尺寸
+@property (nonatomic, assign,readonly) IJKMPMovieScalingMode scalingMode;
 
 #pragma mark UI
 /// 外部传入的，负责承载播放器画面的父视图
@@ -157,6 +169,12 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param displayView 承载播放器画面的父视图
 - (void)setupPlayerWithDisplayView:(UIView *)displayView;
+
+
+/// 设置 播放器 的缩放尺寸
+///
+/// @param scalingMode 缩放尺寸，默认为IJKMPMovieScalingModeAspectFit
+- (void)setupScalingMode:(IJKMPMovieScalingMode)scalingMode;
 
 /// 清理播放器
 - (void)cleanPlayer;
@@ -310,6 +328,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param netWorkQuality 当前网络质量
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter quickLiveNetworkQuality:(PLVLivePlayerQuickLiveNetworkQuality)netWorkQuality;
 
+/// [公共流] 公共流网络质量检测
+///
+/// @param playerPresenter 播放器管理器
+/// @param netWorkQuality 当前网络质量
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter publicStreamNetworkQuality:(PLVPublicStreamPlayerNetworkQuality)netWorkQuality;
+
 /// 播放器 广告‘正在播放状态’ 发生改变
 ///
 /// @param playerPresenter 播放器管理器
@@ -350,6 +374,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 画中画已经停止
 /// @param playerPresenter 播放器管理器
 - (void)playerPresenterPictureInPictureDidStop:(PLVPlayerPresenter *)playerPresenter;
+
+/// 画中画播放器播放状态改变
+/// @param playerPresenter 播放器管理器
+/// @param playing 是否正在播放
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing;
 
 @end
 

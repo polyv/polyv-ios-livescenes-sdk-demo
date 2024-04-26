@@ -10,6 +10,7 @@
 
 // Utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVSASendMessageToolView.h"
@@ -307,7 +308,7 @@ UITextViewDelegate
             if (granted) {
                 [[PLVSAUtils sharedUtils].homeVC presentViewController:weakSelf.imagePicker animated:YES completion:nil];
             } else {
-                [PLVSAUtils showAlertWithMessage:@"应用需要获取您的相册权限，请前往设置" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"设置" confirmActionBlock:^{
+                [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"应用需要获取您的相册权限，请前往设置") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"设置") confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
                         [[UIApplication sharedApplication] openURL:url];
@@ -326,7 +327,7 @@ UITextViewDelegate
         
         BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:self.replyModel];
         if (!success) {
-            [PLVSAUtils showToastInHomeVCWithMessage:@"发送消息失败"];
+            [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"发送消息失败")];
         }
     }
     [self.toolView.textView clearText];
@@ -336,7 +337,7 @@ UITextViewDelegate
 - (void)sendImageWithImage:(UIImage *)image {
     BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendImageMessage:image];
     if (!success) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"消息发送失败"];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"消息发送失败")];
     }
 }
 
@@ -395,7 +396,7 @@ UITextViewDelegate
     }
     BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendImageEmotionMessage:emoticon.imageId imageUrl:emoticon.url];;
     if (!success) {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"发送消息失败"];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"发送消息失败")];
     } else {
         //隐藏面板
         [self dismiss];

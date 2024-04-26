@@ -72,7 +72,7 @@ WKNavigationDelegate
     int fontSize = 16;
     NSString *fontColor = @"#ADADC0";
     
-    NSString *content = [self.content stringByReplacingOccurrencesOfString:@"<img src=\"//" withString:@"<img src=\"https://"];
+    NSString *content = [self.content stringByReplacingOccurrencesOfString:@"src=\"//" withString:@"src=\"https://"];
     NSString *htmlContent = [NSString stringWithFormat:@"<html>\n<body style=\" position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d; color:%@;\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script>%@</body></html>", horizontalPadding, horizontalPadding, verticalPadding, verticalPadding, fontSize, fontColor, content]; // 图片自适应设备宽，设置字体大小、边距
     
     [self.webView loadHTMLString:htmlContent baseURL:[NSURL URLWithString:@""]];

@@ -11,6 +11,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVChatUser.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import "PLVLinkMicOnlineUser.h"
@@ -35,6 +36,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 @property (nonatomic, strong) UIButton *authSpeakerButton;
 @property (nonatomic, strong) UIView *seperatorLine;
 @property (nonatomic, strong) UIView *leftDragingView;  // 触发左滑view
+@property (nonatomic, strong) UIImageView *handUpImageView;
 
 /// 数据
 @property (nonatomic, strong) PLVChatUser *user;
@@ -44,6 +46,9 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 @property (nonatomic, assign) CGPoint lastPoint; // 上一次停留的位置
 @property (nonatomic, assign) BOOL isOnlyAudio; // 当前频道是否为音频模式
 @property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
+@property (nonatomic, assign, readonly) BOOL enableLinkMic; // 是否开启连麦
+@property (nonatomic, assign, readonly) BOOL startClass; // 是否开始上课
+@property (nonatomic, assign, readonly) BOOL inviteAudioEnabled; // 是否开启邀请连麦开关
 
 @property (nonatomic, strong) PLVLinkMicOnlineUserMicOpenChangedBlock micOpenChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraShouldShowChangedBlock cameraShouldShowChangedBlock;
@@ -80,6 +85,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         }
         [self.gestureView addSubview:self.authSpeakerButton];
         [self.gestureView addSubview:self.linkmicButton];
+        [self.gestureView addSubview:self.handUpImageView];
 
         [self.actorBgView addSubview:self.actorLabel];
         
@@ -118,6 +124,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     
     CGFloat rightOriginX = self.bounds.size.width - 36;
     self.linkmicButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+    self.handUpImageView.frame = CGRectMake(rightOriginX - 20 - 4, 12, 20, 20);
     if (self.isOnlyAudio) {
         if (!self.authSpeakerButton.hidden) {
             self.authSpeakerButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
@@ -139,8 +146,10 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
             rightOriginX = CGRectGetMinX(self.authSpeakerButton.frame) - 44;
         }
         
-        self.cameraButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
-        rightOriginX = CGRectGetMinX(self.cameraButton.frame) - 44;
+        if (!self.cameraButton.hidden) {
+            self.cameraButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+            rightOriginX = CGRectGetMinX(self.cameraButton.frame) - 44;
+        }
         self.microPhoneButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
     }
     self.seperatorLine.frame = CGRectMake(0, self.bounds.size.height - 1, self.bounds.size.width, 1);
@@ -151,6 +160,24 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 }
 
 #pragma mark - Getter & Setter
+
+- (BOOL)enableLinkMic {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(enableAudioVideoLinkMicInCell:)]) {
+        return [self.delegate enableAudioVideoLinkMicInCell:self];
+    }
+    return NO;
+}
+
+- (BOOL)startClass {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(startClassInCell:)]) {
+        return [self.delegate startClassInCell:self];
+    }
+    return NO;
+}
+
+- (BOOL)inviteAudioEnabled {
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.inviteAudioEnabled;
+}
 
 - (PLVLSMemberCellEditView *)editView {
     if (!_editView) {
@@ -280,6 +307,15 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     return _seperatorLine;
 }
 
+- (UIImageView *)handUpImageView {
+    if (!_handUpImageView) {
+        _handUpImageView = [[UIImageView alloc] init];
+        _handUpImageView.image = [PLVLSUtils imageForMemberResource:@"plvls_member_linkmic_handup_icon"];
+        _handUpImageView.hidden = YES;
+    }
+    return _handUpImageView;
+}
+
 - (PLVLinkMicOnlineUserMicOpenChangedBlock)micOpenChangedBlock{
     if (!_micOpenChangedBlock) {
         __weak typeof(self) weakSelf = self;
@@ -396,19 +432,29 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 }
 
 - (void)notifyListenerlinkMicButtonAction {
-    if (self.user.waitUser) {
+    if (!self.linkmicButton.isSelected) {
         BOOL allowLinkmic = [self.delegate allowLinkMicInCell:self];
         if (allowLinkmic) {
-            [self.user.waitUser wantAllowUserJoinLinkMic];
+            if (self.user.waitUser ||
+                (self.user.userType == PLVRoomUserTypeGuest ||
+                 self.user.userType == PLVRoomUserTypeSlice ||
+                 self.user.userType == PLVRoomUserTypeStudent)) {
+                if (self.delegate && [self.delegate respondsToSelector:@selector(memberCell_inviteUserJoinLinkMic:)]) {
+                    [self.delegate memberCell_inviteUserJoinLinkMic:self.user];
+                }
+            }
+            
             // 刷新按钮状态为等待连麦
             [self refreshLinkMicButtonStateWithWait];
         } else {
-            [PLVLSUtils showToastInHomeVCWithMessage:@"当前连麦人数已达上限"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"当前连麦人数已达上限")];
         }
-    }else if (self.user.onlineUser){
-        [self.user.onlineUser wantCloseUserLinkMic];
-    }else{
-        NSLog(@"PLVLSMemberCell - linkMicButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+    }else {
+        if (self.user.onlineUser) {
+            [self.user.onlineUser wantCloseUserLinkMic];
+        } else {
+            NSLog(@"PLVLSMemberCell - linkMicButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+        }
     }
 }
 
@@ -484,35 +530,66 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         [weakSelf refreshAuthControlButtonsState];
     };
     
+    if(self.user.waitUser) {
+        user.waitUser.linkMicStatusBlock = ^(PLVLinkMicWaitUser * _Nonnull waitUser) {
+            [weakSelf refreshLinkMicButtonState];
+        };
+    }
+    
     [self refreshLinkMicButtonState];
     [self refreshMediaControlButtonsState];
     [self refreshAuthControlButtonsState];
 }
 
 - (void)refreshLinkMicButtonState{
-    BOOL isLoginUser = [self isLoginUser:self.user.userId];
-    BOOL hiddenLinkMicButton = isLoginUser ? YES: ((self.user.waitUser || self.user.onlineUser) && [self canManagerLinkMic] ? NO : YES);
-    BOOL hiddenLinkMicButtonSelected = self.user.onlineUser ? YES : NO;
+    BOOL isCanLinkMicGuest = (self.user.userType == PLVRoomUserTypeGuest); // 可以邀请连麦的嘉宾
+    BOOL isCanLinkMicWatchUser = ((self.user.userType == PLVRoomUserTypeSlice || self.user.userType == PLVRoomUserTypeStudent) && self.enableLinkMic && self.inviteAudioEnabled); // 可以邀请连麦的观众
+    BOOL isManagerLinkMicUser = [self canManagerLinkMic]; // 讲师等角色可以操作邀请嘉宾、观众用户连麦
+    BOOL hiddenLinkMicButton = self.startClass ? ((isManagerLinkMicUser && (isCanLinkMicGuest || isCanLinkMicWatchUser)) ? NO : YES) : YES;
+ 
+    BOOL linkMicButtonSelected = (self.user.onlineUser) ? YES : NO;
+    self.linkmicButton.selected = linkMicButtonSelected;
     
-    if (self.user.onlineUser.userType == PLVSocketUserTypeGuest) {
-        hiddenLinkMicButton = ![PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
+    BOOL canShowHandUpUser = (self.user.waitUser && self.user.waitUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_HandUp && isManagerLinkMicUser); // 举手用户
+    BOOL hiddenHandUpImageView = canShowHandUpUser ? NO : YES;
+    self.handUpImageView.hidden = hiddenHandUpImageView;
+    self.linkmicButton.hidden = hiddenLinkMicButton;
+    self.linkmicButton.selected = linkMicButtonSelected;
+    if (linkMicButtonSelected && isManagerLinkMicUser && !self.user.onlineUser.localUser) {
+        self.linkmicButton.hidden = NO;
+    }
+    if (canShowHandUpUser) {
+        self.linkmicButton.hidden = NO;
     }
     
-    self.linkmicButton.hidden = hiddenLinkMicButton;
-    self.linkmicButton.selected = hiddenLinkMicButtonSelected;
-    // 刷新按钮状态为普通状态
-    if (!hiddenLinkMicButtonSelected && !isLoginUser) {
-        [self refreshLinkMicButtonStateWithNormal];
+    [self refreshLinkMicButtonStateWithNormal];
+    BOOL isInvitedUser = (!linkMicButtonSelected && self.user.waitUser && self.user.waitUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_Inviting);
+    if (isInvitedUser) {
+        [self refreshLinkMicButtonStateWithWait];
     }
 }
 
 /// 刷新按钮状态为等待连麦
 - (void)refreshLinkMicButtonStateWithWait{
-    [self.linkmicButton setImage:[PLVLSUtils imageForMemberResource:@"plvls_member_linkmicing_icon_1"] forState:UIControlStateNormal];
+    self.linkmicButton.userInteractionEnabled = NO;
+    UIImageView *buttonImageView = self.linkmicButton.imageView;
+    NSMutableArray *imageArray = [NSMutableArray arrayWithCapacity:3];
+    for (NSInteger i = 0; i < 3; i ++) {
+        [imageArray addObject:[PLVLSUtils imageForMemberResource:[NSString stringWithFormat:@"plvls_member_linkmic_wait_icon_0%ld.png", i]]];
+    }
+    [buttonImageView setAnimationImages:[imageArray copy]];
+    [buttonImageView setAnimationDuration:1];
+    [buttonImageView startAnimating];
 }
 
 /// 刷新按钮状态为普通状态
 - (void)refreshLinkMicButtonStateWithNormal{
+    self.linkmicButton.userInteractionEnabled = YES;
+    UIImageView *buttonImageView = self.linkmicButton.imageView;
+    if (buttonImageView.isAnimating) {
+        [buttonImageView stopAnimating];
+    }
+    buttonImageView.animationImages = nil;
     [self.linkmicButton setImage:[PLVLSUtils imageForLinkMicResource:@"plvls_linkmic_join_request"] forState:UIControlStateNormal];
 }
 
@@ -719,11 +796,11 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         if (granted) {
             completion();
         } else {
-            [PLVLSUtils showAlertWithTitle:@"音视频权限申请"
-                                   message:@"请前往“设置-隐私”开启权限"
-                         cancelActionTitle:@"取消"
+            [PLVLSUtils showAlertWithTitle:PLVLocalizedString(@"音视频权限申请")
+                                   message:PLVLocalizedString(@"请前往“设置-隐私”开启权限")
+                         cancelActionTitle:PLVLocalizedString(@"取消")
                          cancelActionBlock:nil
-                        confirmActionTitle:@"前往设置" confirmActionBlock:^{
+                        confirmActionTitle:PLVLocalizedString(@"前往设置") confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
                         [[UIApplication sharedApplication] openURL:url];

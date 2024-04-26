@@ -8,12 +8,15 @@
 
 #import "PLVLSNewMessageView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSNewMessageView ()
 
 @property (nonatomic, assign) NSUInteger messageCount;
 
 @property (nonatomic, strong) UILabel *label;
+
+@property (nonatomic, strong) NSAttributedString *attachmentString;
 
 @end
 
@@ -53,6 +56,17 @@
     return _label;
 }
 
+- (NSAttributedString *)attachmentString {
+    if (!_attachmentString) {
+        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_newmsg_arrow"];
+        NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
+        [attachment setImage:image];
+        attachment.bounds = CGRectMake(0, -2, image.size.width, image.size.height);
+        _attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
+    }
+    return _attachmentString;
+}
+
 #pragma mark - Action
 
 - (void)tapAction {
@@ -83,20 +97,14 @@
 - (NSAttributedString *)labelText {
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     
-    NSString *string = [NSString stringWithFormat:@"%zd条新消息 ", self.messageCount];
+    NSString *string = [NSString stringWithFormat:PLVLocalizedString(@"%zd条新消息 "), self.messageCount];
     if (self.messageCount > 999) {
-        string = @"999+条新消息 ";
+        string = PLVLocalizedString(@"999+条新消息 ");
     }
     NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:string];
     
-    UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_newmsg_arrow"];
-    NSTextAttachment *attachment = [[NSTextAttachment alloc] init];
-    [attachment setImage:image];
-    attachment.bounds = CGRectMake(0, -2, image.size.width, image.size.height);
-    NSAttributedString *attachmentString = [NSAttributedString attributedStringWithAttachment:attachment];
-    
     [muString appendAttributedString:attributedString];
-    [muString appendAttributedString:attachmentString];
+    [muString appendAttributedString:self.attachmentString];
     return [muString copy];
 }
 

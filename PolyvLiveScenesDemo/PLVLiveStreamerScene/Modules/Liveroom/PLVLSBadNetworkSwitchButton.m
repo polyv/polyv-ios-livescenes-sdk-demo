@@ -8,6 +8,7 @@
 
 #import "PLVLSBadNetworkSwitchButton.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSBadNetworkSwitchButton ()
 
@@ -74,11 +75,11 @@
     [self addSubview:self.selectedImageView];
     
     if (self.videoQosPreference == PLVBRTCVideoQosPreferenceClear) {
-        self.titleLabel.text = @"画质优先";
-        self.detailLabel.text = @"当网络状态差时，优先保证画面清晰度，但会造成观看画面卡顿";
+        self.titleLabel.text = PLVLocalizedString(@"画质优先");
+        self.detailLabel.text = PLVLocalizedString(@"当网络状态差时，优先保证画面清晰度，但会造成观看画面卡顿");
     } else if (self.videoQosPreference == PLVBRTCVideoQosPreferenceSmooth) {
-        self.titleLabel.text = @"流畅优先";
-        self.detailLabel.text = @"当网络状态差时，优先保证画面流畅度，但清晰度会下降";
+        self.titleLabel.text = PLVLocalizedString(@"流畅优先");
+        self.detailLabel.text = PLVLocalizedString(@"当网络状态差时，优先保证画面流畅度，但清晰度会下降");
     }
 }
 

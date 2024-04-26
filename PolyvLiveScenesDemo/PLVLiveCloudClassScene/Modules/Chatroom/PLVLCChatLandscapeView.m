@@ -20,8 +20,10 @@
 #import "PLVLCLandscapeFileCell.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <MJRefresh/MJRefresh.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define KEYPATH_CONTENTSIZE @"contentSize"
 
@@ -92,6 +94,8 @@ UITableViewDataSource
         self.tableView.frame = self.bounds;
         self.tableView.scrollEnabled = YES;
     }
+    
+    [PLVLCChatroomViewModel sharedViewModel].tableViewWidthForH = self.tableView.frame.size.width;
     
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {
@@ -213,6 +217,7 @@ UITableViewDataSource
                 self.tableView.frame = newFrame;
                 [self scrollsToBottom:NO];
                 self.tableView.scrollEnabled = NO;
+                [self scrollViewDidScroll:self.tableView];
             }];
         } else if (CGRectGetHeight(self.bounds) > 0) {
             self.tableView.frame = self.bounds;
@@ -267,6 +272,9 @@ UITableViewDataSource
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView hidden];
 }
@@ -288,7 +296,9 @@ UITableViewDataSource
     if (self.playbackEnable) {
         model = self.playbackViewModel.chatArray[indexPath.row];
     } else {
-        model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+        if ([PLVLCChatroomViewModel sharedViewModel].chatArray.count > indexPath.row) {
+            model = [[PLVLCChatroomViewModel sharedViewModel] chatArray][indexPath.row];
+        }
     }
     return model;
 }
@@ -301,7 +311,7 @@ UITableViewDataSource
                 if (content) {
                     model.overLenContent = content;
                     [UIPasteboard generalPasteboard].string = content;
-                    [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+                    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
                 }
             }];
         }
@@ -309,7 +319,7 @@ UITableViewDataSource
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:@"复制成功" inView:self.superview afterDelay:3.0];
+            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
         }
     }
 }
@@ -350,6 +360,48 @@ UITableViewDataSource
 
 - (void)didTapRedpackModel:(PLVChatModel *)model {
     [[PLVLCChatroomViewModel sharedViewModel] checkRedpackStateWithChatModel:model];
+}
+
+- (void)trackLogAction {
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (!fullScreen) {
+        return;
+    }
+    
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:self.tableView.indexPathsForVisibleRows.count];
+    for (NSIndexPath *indexPath in self.tableView.indexPathsForVisibleRows) {
+        CGRect cellRect = [self.tableView rectForRowAtIndexPath:indexPath];
+        if (cellRect.origin.y + 28.0 >= self.tableView.contentOffset.y &&
+            cellRect.origin.y + cellRect.size.height - 28.0 <= self.tableView.contentOffset.y + self.tableView.frame.size.height) {
+            PLVChatModel *model = [self modelAtIndexPath:indexPath];
+            if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
+                id message = model.message;
+                PLVRedpackMessage *redpackMessage = (PLVRedpackMessage *)message;
+                [muArray addObject:redpackMessage];
+            }
+        }
+    }
+    
+    NSArray *currentVisibleRedpackMessages = [muArray copy];
+    if ([currentVisibleRedpackMessages count] > 0) {
+        [self trackLog:currentVisibleRedpackMessages];
+    }
+}
+
+- (void)trackLog:(NSArray <PLVRedpackMessage *> *)redpackMessages {
+    NSTimeInterval interval = [[NSDate date] timeIntervalSince1970];
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:redpackMessages.count];
+    for (PLVRedpackMessage *redpackMessage in redpackMessages) {
+        NSString *repackTypeString = (redpackMessage.type == PLVRedpackMessageTypeAliPassword) ? @"alipay_password_official_normal" : @"";
+        NSDictionary *eventInfo = @{
+            @"repackType": repackTypeString,
+            @"redpackId" : redpackMessage.redpackId,
+            @"exposureTime" : @(lround(interval))
+        };
+        [muArray addObject:eventInfo];
+    }
+    
+    [[PLVWLogReporterManager sharedManager] reportTrackWithEventId:@"user_read_redpack" eventType:@"show" specInformationArray:[muArray copy]];
 }
 
 #pragma mark - PLVLCChatroomViewModelProtocol
@@ -567,19 +619,40 @@ UITableViewDataSource
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
     if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeLongContentCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeQuoteCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     } else if ([PLVLCLandscapeFileCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight =  model.cellHeightForH;
     } else if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
-        cellHeight = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
     }
     
     return cellHeight;
@@ -594,6 +667,9 @@ UITableViewDataSource
     if (!up) {
         [self clearNewMessageCount];
     }
+    
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(trackLogAction) object:nil];
+    [self performSelector:@selector(trackLogAction) withObject:nil afterDelay:1];
 }
 
 @end

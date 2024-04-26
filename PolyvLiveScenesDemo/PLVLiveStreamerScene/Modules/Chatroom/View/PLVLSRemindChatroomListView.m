@@ -10,6 +10,7 @@
 
 ///工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVLSRemindSpeakMessageCell.h"
@@ -176,7 +177,7 @@ UITableViewDataSource
 - (void)resendSpeakMessage:(PLVChatModel *)model {
     if (![self netCan]) {
         model.msgState = PLVChatMsgStateFail;
-        [PLVLSUtils showToastWithMessage:@"请检查网络设置" inView:[PLVLSUtils sharedUtils].homeVC.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请检查网络设置") inView:[PLVLSUtils sharedUtils].homeVC.view];
         return;
     }
     [[PLVLSChatroomViewModel sharedViewModel] resendRemindSpeakMessage:model];
@@ -185,7 +186,7 @@ UITableViewDataSource
 - (void)resendImageMessage:(PLVChatModel *)model {
     if (![self netCan]) {
         model.msgState = PLVChatMsgStateFail;
-        [PLVLSUtils showToastWithMessage:@"请检查网络设置" inView:[PLVLSUtils sharedUtils].homeVC.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请检查网络设置") inView:[PLVLSUtils sharedUtils].homeVC.view];
         return;
     }
     [[PLVLSChatroomViewModel sharedViewModel] resendRemindImageMessage:model];

@@ -8,16 +8,18 @@
 
 #import "PLVSABadNetworkTipsView.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kBadNetworkTipsViewDismissDuration = 10.0; // // 每次显示持续时长
 static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时间最小间隔
+static NSString *kBadNetworkTipsSwitchAttributeName = @"switchnow";
 
-@interface PLVSABadNetworkTipsView ()
+@interface PLVSABadNetworkTipsView ()<UITextViewDelegate>
 
 @property (nonatomic, assign) BOOL showing;
 @property (nonatomic, assign) BOOL cooling;
-@property (nonatomic, strong) UILabel *label;
+@property (nonatomic, strong) UITextView *textView;
 @property (nonatomic, strong) UIButton *switchButton;
 @property (nonatomic, strong) UIButton *closeButton;
 
@@ -31,7 +33,7 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     self = [super init];
     if (self) {
         self.backgroundColor = [PLVColorUtil colorFromHexString:@"#1B202D" alpha:0.6];
-        self.layer.cornerRadius = kPLVSABadNetworkTipsViewHeight / 2.0;
+        self.layer.cornerRadius = 10.0f;
 
         [self initUI];
     }
@@ -42,7 +44,8 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     CGFloat height = self.bounds.size.height;
     self.closeButton.frame = CGRectMake(self.bounds.size.width - 4 - 24, 0, 24, height);
     self.switchButton.frame = CGRectMake(CGRectGetMinX(self.closeButton.frame)- 70, 0, 70, height);
-    self.label.frame = CGRectMake(12, 0, CGRectGetMinX(self.closeButton.frame) - 12, height);
+    CGSize labelSize = [self.textView.attributedText boundingRectWithSize:CGSizeMake(PLVScreenWidth - 40, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    self.textView.frame = CGRectMake(12, (height - labelSize.height)/2, CGRectGetMinX(self.closeButton.frame) - 12, labelSize.height);
 }
 
 #pragma mark - [ Public Methods ]
@@ -72,10 +75,17 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     [self stopCooling];
 }
 
+- (CGSize)viewSize {
+    CGSize labelSize = [self.textView.attributedText boundingRectWithSize:CGSizeMake(PLVScreenWidth - 40, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    CGFloat viewHeight = (labelSize.height > ceil(self.textView.font.lineHeight)) ? 40 : 20;
+    CGFloat viewWidth = (labelSize.height > ceil(self.textView.font.lineHeight)) ? labelSize.width : labelSize.width + 45;
+    return CGSizeMake(viewWidth, viewHeight);
+}
+
 #pragma mark - [ Private Methods ]
 
 - (void)initUI {
-    [self addSubview:self.label];
+    [self addSubview:self.textView];
     [self addSubview:self.closeButton];
     [self addSubview:self.switchButton];
     
@@ -86,7 +96,7 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     
     {
-        NSString *string = @"当前网络较差，建议切换为流畅模式 ";
+        NSString *string = PLVLocalizedString(@"当前网络较差，建议切换为流畅模式 ");
         NSDictionary *attributes = @{
             NSFontAttributeName : [UIFont systemFontOfSize:12],
             NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#F0F1F5"]
@@ -96,17 +106,18 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     }
     
     {
-        NSString *string = @"马上切换";
+        NSString *string = PLVLocalizedString(@"马上切换");
         NSDictionary *attributes = @{
+            NSLinkAttributeName : [NSString stringWithFormat:@"%@://", kBadNetworkTipsSwitchAttributeName],
             NSFontAttributeName : [UIFont systemFontOfSize:12],
-            NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#FF6363"],
             NSUnderlineStyleAttributeName : @(1)
         };
         NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:string attributes:attributes];
         [muString appendAttributedString:attributedString];
     }
     
-    self.label.attributedText = [muString copy];
+    self.textView.linkTextAttributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FF6363"]};
+    self.textView.attributedText = [muString copy];
 }
 
 - (void)startCooling {
@@ -121,11 +132,17 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
 
 #pragma mark Getter & Setter
 
-- (UILabel *)label {
-    if (!_label) {
-        _label = [[UILabel alloc] init];
+- (UITextView *)textView {
+    if (!_textView) {
+        _textView = [[UITextView alloc] init];
+        _textView.delegate = self;
+        _textView.editable = YES;        //必须禁止输入，否则点击将弹出输入键盘
+        _textView.scrollEnabled = NO;
+        _textView.backgroundColor = [UIColor clearColor];
+        _textView.textContainerInset = UIEdgeInsetsZero;
+        _textView.textContainer.lineFragmentPadding = 0;
     }
-    return _label;
+    return _textView;
 }
 
 - (UIButton *)closeButton {
@@ -165,6 +182,18 @@ static CGFloat kBadNetworkTipsViewShowInterval = 60 * 10.0; // 两次显示时�
     if (self.switchButtonActionBlock) {
         self.switchButtonActionBlock();
     }
+}
+
+#pragma mark UITextViewDelegate
+- (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL *)URL inRange:(NSRange)characterRange {
+    if ([[URL scheme] isEqualToString:kBadNetworkTipsSwitchAttributeName]) {
+        [self switchButtonAction];
+    }
+    return NO;
+}
+
+- (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
+    return NO;
 }
 
 @end

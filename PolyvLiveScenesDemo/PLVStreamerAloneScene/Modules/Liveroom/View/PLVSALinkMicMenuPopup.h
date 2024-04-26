@@ -24,6 +24,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)dismiss;
 
+- (void)videoLinkMicBtnAction;
+
+- (void)audioLinkMicBtnAction;
+
 @end
 
 NS_ASSUME_NONNULL_END

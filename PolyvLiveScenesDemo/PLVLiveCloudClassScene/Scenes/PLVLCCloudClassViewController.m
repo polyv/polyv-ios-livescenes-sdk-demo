@@ -36,6 +36,7 @@
 
 // 工具
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCCloudClassViewController ()<
 PLVSocketManagerProtocol,
@@ -131,6 +132,10 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (instancetype)init {
     self = [super init];
     if (self) {
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        // 设置多语言场景
+        [[PLVMultiLanguageManager sharedManager] setupLocalizedLiveScene:PLVMultiLanguageLiveSceneLC channelId:roomData.channelId language:roomData.menuInfo.watchLangType];
+
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
         // 启动聊天室管理器
@@ -179,6 +184,16 @@ PLVLCLandscapeMessagePopupViewDelegate
     return (UIInterfaceOrientationMaskPortrait | UIInterfaceOrientationMaskLandscapeRight);
 }
 
+#pragma mark - [ Public Method ]
+
+- (void)exitCleanCurrentLiveController {
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+        [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+    }
+    [self.linkMicAreaView leaveLinkMicOnlyEmit];
+    [self exitCurrentController];
+}
 
 #pragma mark - [ Private Methods ]
 - (void)setupModule{
@@ -187,11 +202,11 @@ PLVLCLandscapeMessagePopupViewDelegate
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interfaceOrientationDidChange:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenInteractApp:) name:PLVLCChatroomOpenInteractAppNotification object:nil];
+
     if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLCChatroomOpenBulletinNotification object:nil];
-        
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenInteractApp:) name:PLVLCChatroomOpenInteractAppNotification object:nil];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenRewardView:) name:PLVLCChatroomOpenRewardViewNotification object:nil];
 
@@ -370,6 +385,7 @@ PLVLCLandscapeMessagePopupViewDelegate
             [self.liveRoomSkinView displayLikeButtonView:self.menuAreaView.chatVctrl.likeButtonView];
             [self.liveRoomSkinView displayRedpackButtonView:self.menuAreaView.chatVctrl.redpackButtonView];
             [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
+            [self.liveRoomSkinView displayLotteryWidgetView:self.menuAreaView.chatVctrl.lotteryWidgetView];
             [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 114), 308, 114)];
             [self.cardDetailView hiddenCardDetailView];
         }
@@ -415,6 +431,8 @@ PLVLCLandscapeMessagePopupViewDelegate
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     [self.liveRoomSkinView setTitleLabelWithText:roomData.menuInfo.name];
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
+    self.liveRoomSkinView.guideChatLabel.hidden = !self.menuAreaView.chatVctrl;
+    self.liveRoomSkinView.rewardButton.hidden = !self.menuAreaView.chatVctrl;
     [self.liveRoomSkinView showCommodityButton:self.menuAreaView.showCommodityMenu];
 }
 
@@ -577,7 +595,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (PLVRewardDisplayManager *)rewardDisplayManager{
     if (!_rewardDisplayManager) {
-        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] init];
+        _rewardDisplayManager = [[PLVRewardDisplayManager alloc] initWithLiveType:PLVRewardDisplayManagerTypeLC];
     }
     return _rewardDisplayManager;
 }
@@ -641,9 +659,13 @@ PLVLCLandscapeMessagePopupViewDelegate
     // 全屏播放器皮肤 liveRoomSkinView 的弹幕按钮 danmuButton 为显示状态，且为非选中状态，且当前为横屏时，才显示弹幕
     BOOL danmuEnable = !self.liveRoomSkinView.danmuButton.selected && !self.liveRoomSkinView.danmuButton.hidden;
     [self.mediaAreaView showDanmu:fullScreen && danmuEnable];
-    // 可在此处控制 “横屏聊天区”，是否跟随 “弹幕” 一并显示/隐藏；注释或移除此句，则不跟随；
+    // 可在此处控制 “横屏聊天区”，当竖屏聊天Tab存在时是否跟随 “弹幕” 一并显示/隐藏；注释或移除下方，则不跟随；
     // 其他相关代码，可在此文件中，搜索 “self.chatLandscapeView.hidden = ”
-    self.chatLandscapeView.hidden = !(fullScreen && danmuEnable);
+    if (self.menuAreaView.chatVctrl) {
+        self.chatLandscapeView.hidden = !(fullScreen && danmuEnable);
+    } else {
+        self.chatLandscapeView.hidden = YES;
+    }
     
     if (self.fullScreenDifferent) {
         [self.popoverView hidRewardView];
@@ -698,7 +720,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
 //    dispatch_async(dispatch_get_main_queue(), ^{
-//        [PLVLCUtils showHUDWithTitle:@"登陆成功" detail:@"" view:self.view];
+//        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"登录成功") detail:@"" view:self.view];
 //    });
 }
 
@@ -707,7 +729,7 @@ PLVLCLandscapeMessagePopupViewDelegate
     if (error.code == PLVSocketLoginErrorCodeKick) {
         [self.linkMicAreaView leaveLinkMicOnlyEmit];
         plv_dispatch_main_async_safe(^{
-            [PLVLCUtils showHUDWithTitle:nil detail:@"您已被管理员踢出聊天室！" view:self.view afterDelay:3.0];
+            [PLVLCUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"您已被管理员踢出聊天室！") view:self.view afterDelay:3.0];
         })
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
@@ -729,13 +751,13 @@ PLVLCLandscapeMessagePopupViewDelegate
     if (connectStatus == PLVSocketConnectStatusReconnect) {
         self.socketReconnecting = YES;
         plv_dispatch_main_async_safe(^{
-            [PLVLCUtils showHUDWithTitle:@"聊天室重连中" detail:@"" view:self.view];
+            [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"聊天室重连中") detail:@"" view:self.view];
         })
     } else if(connectStatus == PLVSocketConnectStatusConnected) {
         if (self.socketReconnecting) {
             self.socketReconnecting = NO;
             plv_dispatch_main_async_safe(^{
-                [PLVLCUtils showHUDWithTitle:@"聊天室重连成功" detail:@"" view:self.view];
+                [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"聊天室重连成功") detail:@"" view:self.view];
             })
         }
     }
@@ -769,7 +791,7 @@ PLVLCLandscapeMessagePopupViewDelegate
     
     BOOL listenMain = roomData.listenMain;
     if ([event isEqualToString:@"transmit"]) { // 【双师模式】所需监听event
-        if ([subEvent isEqualToString:@"transmitDoubleMode"]) { // 双师模式小房间登陆聊天室时收到ack
+        if ([subEvent isEqualToString:@"transmitDoubleMode"]) { // 双师模式小房间登录聊天室时收到ack
             if (jsonString &&
                 [jsonString isKindOfClass:[NSString class]]) {
                 if ([jsonString isEqualToString:@"listenMain"]) {
@@ -798,10 +820,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     if (roomData.listenMain != listenMain) { // listenMain发生变化时，切换播放器频道
         dispatch_async(dispatch_get_main_queue(), ^{
             if (roomData.listenMain) {
-                [PLVToast showToastWithMessage:@"已切换至大房间进行上课" inView:self.view afterDelay:3.0];
+                [PLVToast showToastWithMessage:PLVLocalizedString(@"已切换至大房间进行上课") inView:self.view afterDelay:3.0];
                 [self.mediaAreaView changePlayertoChannelId:roomData.menuInfo.mainRoomChannelId vodId:nil vodList:NO recordFile:nil recordEnable:NO];
             } else {
-                [PLVToast showToastWithMessage:@"已切回小房间上课" inView:self.view afterDelay:3.0];
+                [PLVToast showToastWithMessage:PLVLocalizedString(@"已切回小房间上课") inView:self.view afterDelay:3.0];
                 [self.mediaAreaView changePlayertoChannelId:roomData.channelId vodId:nil vodList:NO recordFile:nil recordEnable:NO];
             }
         });
@@ -817,6 +839,7 @@ PLVLCLandscapeMessagePopupViewDelegate
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
         [self.pushView setModel:model];
+        [self.pushView reportTrackEvent];
         if (self.currentLandscape) {
             [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 144 - 16, 308, 114)];
         } else {
@@ -831,6 +854,9 @@ PLVLCLandscapeMessagePopupViewDelegate
         if (!enabled && _pushView) {
             [ _pushView hide];
         }
+        
+        [self.menuAreaView updateProductMenuTab:contentDict];
+        [self.liveRoomSkinView showCommodityButton:enabled];
     }
 }
 
@@ -841,7 +867,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 }
 
 - (void)chatroomManager_loadRewardEnable:(BOOL)enable payWay:payWay rewardModelArray:(NSArray *)modelArray pointUnit:(NSString *)pointUnit {
-    self.liveRoomSkinView.rewardButton.hidden = !enable;
+    self.liveRoomSkinView.rewardButton.hidden = !enable || !self.menuAreaView.chatVctrl;
     if (enable) {
         [self.popoverView setRewardViewData:payWay rewardModelArray:modelArray pointUnit:pointUnit];
     }
@@ -859,7 +885,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)chatroomManager_didLoginRestrict{
     __weak typeof(self)weakSelf = self;
     plv_dispatch_main_async_safe(^{
-        [PLVLCUtils showHUDWithTitle:nil detail:@"直播间太过火爆了，请稍后再来(2050407)"  view:self.view afterDelay:3.0];
+        [PLVLCUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"直播间太过火爆了，请稍后再来(2050407)")  view:self.view afterDelay:3.0];
     })
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
@@ -885,7 +911,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 }
 
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom {
-    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
+    NSString *string = closeRoom ? PLVLocalizedString(@"聊天室已经关闭") : PLVLocalizedString(@"聊天室已经打开");
     plv_dispatch_main_async_safe(^{
         [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
         [self.liveRoomSkinView changeCloseRoomStatus:closeRoom];
@@ -893,7 +919,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 }
 
 - (void)chatroomManager_focusMode:(BOOL)focusMode {
-    NSString *string = focusMode ? @"聊天室专注模式已开启" : @"聊天室专注模式已关闭";
+    NSString *string = focusMode ? PLVLocalizedString(@"聊天室专注模式已开启") : PLVLocalizedString(@"聊天室专注模式已关闭");
     plv_dispatch_main_async_safe(^{
         [PLVLCUtils showHUDWithTitle:string detail:@"" view:self.view];
         [self.liveRoomSkinView changeFocusModeStatus:focusMode];
@@ -997,7 +1023,9 @@ PLVLCLandscapeMessagePopupViewDelegate
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playerPlayingDidChange:(BOOL)playing{
-    [self.liveRoomSkinView setPlayButtonWithPlaying:playing];
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [self.liveRoomSkinView setPlayButtonWithPlaying:playing];
+    }
 }
 
 /// 媒体区域的 悬浮视图 出现/隐藏回调
@@ -1069,7 +1097,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 // 画笔权限改变
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangePaintPermission:(BOOL)permission {
-    NSString *title = permission ? @"讲师已授予你画笔权限" : @"讲师已收回你的画笔权限";
+    NSString *title = permission ? PLVLocalizedString(@"讲师已授予你画笔权限") : PLVLocalizedString(@"讲师已收回你的画笔权限");
     [PLVLCUtils showHUDWithTitle:title detail:@"" view:self.view];
     if (permission && !self.liveRoomSkinView.skinShow) {
         [self.liveRoomSkinView controlsSwitchShowStatusWithAnimation:YES];
@@ -1121,6 +1149,12 @@ PLVLCLandscapeMessagePopupViewDelegate
     }
 }
 
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoSizeChange:(CGSize)videoSize {
+    if (self.videoType == PLVChannelVideoType_Playback) {
+        [self.liveRoomSkinView refreshPictureInPictureButtonShow:YES];
+    }
+}
+
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
     if ([videoInfo isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]]) {
         [self.menuAreaView updateLiveStatus:PLVLCLiveStatusCached];
@@ -1133,6 +1167,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     }
 }
 
+- (void)plvLCMediaAreaViewWannaStartPictureInPicture:(PLVLCMediaAreaView *)mediaAreaView {
+    self.linkMicAreaView.currentControlBar.pictureInPictureStarted = YES;
+}
+
 #pragma mark PLVLCLiveRoomPlayerSkinViewDelegate
 - (void)plvLCLiveRoomPlayerSkinViewBulletinButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView{
     [self.popoverView.interactView openLastBulletin];
@@ -1140,9 +1178,13 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaShowDanmu:(BOOL)showDanmu{
     [self.mediaAreaView showDanmu:showDanmu];
-    // 可在此处控制 “横屏聊天区”，是否跟随 “弹幕” 一并显示/隐藏；注释或移除此句，则不跟随；
+    // 可在此处控制 “横屏聊天区”，当竖屏聊天Tab存在时是否跟随 “弹幕” 一并显示/隐藏；注释或移除下方代码，则不跟随；
     // 其他相关代码，可在此文件中，搜索 “self.chatLandscapeView.hidden = ”
-    self.chatLandscapeView.hidden = !showDanmu;
+    if (self.menuAreaView.chatVctrl) {
+        self.chatLandscapeView.hidden = !showDanmu;
+    } else {
+        self.chatLandscapeView.hidden = YES;
+    }
 }
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
@@ -1154,7 +1196,7 @@ PLVLCLandscapeMessagePopupViewDelegate
                          replyModel:(PLVChatModel *)replyModel {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendSpeakMessage:chatContent replyChatModel:replyModel];
     if (!success) {
-        [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self.view];
     }
 }
 
@@ -1339,6 +1381,14 @@ PLVLCLandscapeMessagePopupViewDelegate
     }
 }
 
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView emitInteractEvent:(NSString *)event {
+    [self.popoverView.interactView openInteractAppWithEventName:event];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView lotteryWidgetShowStatusChanged:(BOOL)show {
+    [self.liveRoomSkinView showLotteryWidgetView:show];
+}
+
 #pragma mark  PLVCommodityPushViewDelegate
 
 - (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL {
@@ -1368,10 +1418,15 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)plvLCMediaAreaViewPictureInPictureDidStart:(PLVLCMediaAreaView *)mediaAreaView {
     // 更多按钮显示控制
     [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:YES];
-    
-    // 画中画占位视图显示控制、播放控制
-    if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
-        [self.linkMicAreaView setPictureInPicturePlaceholderShow:YES];
+    [self.liveRoomSkinView enablePlayControlButtons:NO];
+        
+    if (self.videoType == PLVChannelVideoType_Live){ // 视频类型为 直播回放
+        // 画中画占位视图显示控制、播放控制
+        if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+            [self.linkMicAreaView setPictureInPicturePlaceholderShow:YES];
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
+        [self.liveRoomSkinView refreshProgressControlsShow:NO];
     }
     
     // 设定画中画恢复逻辑的处理者为PLVLivePictureInPictureRestoreManager
@@ -1404,14 +1459,24 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView {
     // 更多按钮显示控制
     [self.liveRoomSkinView refreshMoreButtonHiddenOrRestore:NO];
+    self.linkMicAreaView.currentControlBar.pictureInPictureStarted = NO;
+    [self.liveRoomSkinView enablePlayControlButtons:YES];
     
-    // 画中画展位视图显示控制、播放控制
-    if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
-        [self.linkMicAreaView setPictureInPicturePlaceholderShow:NO];
+    if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
+        // 画中画展位视图显示控制、播放控制
+        if (self.mediaAreaView.currentLiveSceneType != PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
+            [self.linkMicAreaView setPictureInPicturePlaceholderShow:NO];
+        }
+    } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
+        [self.liveRoomSkinView refreshProgressControlsShow:YES];
     }
     
     // 清理恢复逻辑的处理者
     [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
+    [self.liveRoomSkinView setPlayButtonWithPlaying:playing];
 }
 
 #pragma mark PLVPopoverViewDelegate
@@ -1445,6 +1510,11 @@ PLVLCLandscapeMessagePopupViewDelegate
     [[PLVLCChatroomViewModel sharedViewModel] changeRedpackStateWithRedpackId:redpackId state:status];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict {
+    NSArray *dataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.menuAreaView.chatVctrl updateLotteryWidgetViewInfo:dataArray];
+}
+
 #pragma mark PLVLCChatLandscapeViewDelegate
 
 - (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView alertLongContentMessage:(PLVChatModel *)model {
@@ -1464,14 +1534,14 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)messagePopupViewWillCopy:(PLVLCMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
-    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
 }
 
 #pragma mark PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)landscapeMessagePopupViewWillCopy:(PLVLCLandscapeMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
-    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
 }
 
 @end

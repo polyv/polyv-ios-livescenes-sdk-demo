@@ -92,6 +92,8 @@ static CGFloat kSideSheetAnimationDuration = 0.5;
     } completion:^(BOOL finished) {
         [self removeFromSuperview];
     }];
+    
+    _sideSheetDismissBlock ? _sideSheetDismissBlock() : nil;
 }
 
 - (void)initView {}

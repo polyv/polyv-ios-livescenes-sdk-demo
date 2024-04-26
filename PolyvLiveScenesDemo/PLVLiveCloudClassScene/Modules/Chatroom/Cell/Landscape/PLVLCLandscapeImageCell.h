@@ -17,6 +17,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface PLVLCLandscapeImageCell : PLVLCLandscapeBaseCell
 
+/// 生成昵称多属性文本
++ (NSAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
+                                              loginUserId:(NSString *)loginUserId;
+
 @end
 
 NS_ASSUME_NONNULL_END

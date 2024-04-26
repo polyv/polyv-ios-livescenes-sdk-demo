@@ -10,9 +10,11 @@
 
 /// 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVLSMemberCell.h"
+#import "PLVLSSipView.h"
 
 /// 模块
 #import "PLVRoomDataManager.h"
@@ -25,17 +27,22 @@
 
 @interface PLVLSMemberSheet ()<
 PLVLSMemberCellDelegate,
+PLVLSSipViewDelegate,
 UITableViewDelegate,
 UITableViewDataSource
 >
 
 /// UI
-@property (nonatomic, strong) UILabel *titleLabel;
-@property (nonatomic, strong) UILabel *countLabel;
+@property (nonatomic, strong) UIButton *memberButton;
 @property (nonatomic, strong) UIButton *leaveMicButton;
+@property (nonatomic, strong) UIButton *linkMicSettingButton;
 @property (nonatomic, strong) UIButton *muteButton;
 @property (nonatomic, strong) UIView *titleLine;
 @property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) PLVLSSipView *sipView;
+@property (nonatomic, strong) UIButton *sipMemberButton;
+@property (nonatomic, strong) UIView *moveLine;
+@property (nonatomic, strong) UIView *sipMemberButtonRedDot;
 
 /// 数据
 @property (nonatomic, strong) NSArray <PLVChatUser *> *userList;
@@ -45,6 +52,8 @@ UITableViewDataSource
 @property (nonatomic, assign) BOOL delayReload; // 是否在左滑时遇到列表刷新通知
 @property (nonatomic, assign) BOOL showLeftDragAnimation; // 显示左滑动画
 @property (nonatomic, assign) BOOL isRealMainSpeaker; // 本地用户是否是主讲
+@property (nonatomic, assign) BOOL startClass; // 是否开始上课
+@property (nonatomic, assign) BOOL enableLinkMic; // 是否开启连麦
 
 @end
 
@@ -83,21 +92,34 @@ UITableViewDataSource
         buttonMargin = 12;
     }
     
-    self.titleLabel.frame = CGRectMake(16, titleLabelTop, 70, 22);
+    CGFloat memberButtonWidth = [self.memberButton sizeThatFits:CGSizeMake(MAXFLOAT, 22)].width + 2;
+    self.memberButton.frame = CGRectMake(16, titleLabelTop, memberButtonWidth, 22);
     
     CGFloat buttonWidth = 88.0;
     if (self.bounds.size.width <= 667) {  // iphone小屏适配
         buttonWidth = 66.0 - (self.bounds.size.width/667);
     }
     CGFloat buttonOriginX = self.sheetWidth - PLVLSUtils.safeSidePad - buttonWidth * 2 - buttonMargin;
+    if ([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled &&  [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
+        buttonOriginX = buttonOriginX - buttonWidth - buttonMargin;
+    }
     
-    self.countLabel.frame = CGRectMake(84, countLabelTop, buttonOriginX - 84 - 4, 17);
     self.leaveMicButton.frame = CGRectMake(buttonOriginX, buttonTop, buttonWidth, 28);
     self.muteButton.frame = CGRectMake(buttonOriginX + buttonWidth + buttonMargin, buttonTop, buttonWidth, 28);
+    self.linkMicSettingButton.frame = CGRectMake(buttonOriginX + buttonWidth * 2 + buttonMargin * 2, buttonTop, buttonWidth, 28);
     self.titleLine.frame = CGRectMake(16, titleLineTop, self.sheetWidth - 16 - PLVLSUtils.safeSidePad, 1);
     
     CGFloat tableViewOriginY = CGRectGetMaxY(self.titleLine.frame);
     self.tableView.frame = CGRectMake(16, tableViewOriginY, CGRectGetWidth(self.titleLine.frame), self.bounds.size.height - tableViewOriginY);
+    self.sipView.frame = CGRectMake(0, CGRectGetMinY(self.tableView.frame), CGRectGetWidth(self.tableView.frame) + 16, CGRectGetHeight(self.tableView.frame));
+        
+    self.sipMemberButton.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) + 24, CGRectGetMinY(self.memberButton.frame), 85, 22);
+    self.sipMemberButtonRedDot.frame = CGRectMake(CGRectGetWidth(self.sipMemberButton.frame) - 2 - 6, 4, 6, 6);
+    if (self.sipView.hidden || ![PLVRoomDataManager sharedManager].roomData.sipEnabled) {
+        self.moveLine.frame = CGRectMake(CGRectGetMinX(self.titleLine.frame) + 16, titleLineTop - 2, 32, 2);
+    } else {
+        self.moveLine.frame = CGRectMake(CGRectGetMidX(self.sipMemberButton.frame) - 16, titleLineTop - 2, 32, 2);
+    }
 }
 
 #pragma mark - [ Public Method ]
@@ -110,26 +132,56 @@ UITableViewDataSource
     [self updateUI];
 }
 
+- (void)startClass:(BOOL)start {
+    _startClass = start;
+    if (!start) {
+        [self enableAudioVideoLinkMic:NO];
+    }
+    [self.tableView reloadData];
+}
+
 - (void)updateLocalUserSpeakerAuth:(BOOL)auth {
     self.isRealMainSpeaker = auth;
     [self.tableView reloadData];
 }
 
+- (void)enableAudioVideoLinkMic:(BOOL)enable {
+    self.enableLinkMic = enable;
+    [self.tableView reloadData];
+}
+
+- (void)showNewIncomingTelegramView {
+    [self.sipView showNewIncomingTelegramView];
+}
+
 #pragma mark - [Private Method ]
 
 - (void)setupUI {
-    [self.contentView addSubview:self.titleLabel];
-    [self.contentView addSubview:self.countLabel];
+    [self.contentView addSubview:self.memberButton];
     [self.contentView addSubview:self.leaveMicButton];
+    if ([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
+        [self.contentView addSubview:self.linkMicSettingButton];
+    }
     [self.contentView addSubview:self.muteButton];
     [self.contentView addSubview:self.titleLine];
     [self.contentView addSubview:self.tableView];
+    if ([PLVRoomDataManager sharedManager].roomData.sipEnabled) {
+        [self.contentView addSubview:self.sipView];
+        [self.contentView addSubview:self.sipMemberButton];
+        [self.sipMemberButton addSubview:self.sipMemberButtonRedDot];
+    }
+    [self.contentView addSubview:self.moveLine];
 }
 
 - (void)updateUI {
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.countLabel.text = [NSString stringWithFormat:@"(%zd人)", self.userCount];
         
+        NSString *text = [NSString stringWithFormat:PLVLocalizedString(@"成员(%zd)"), self.userCount];
+        [self memberButtonSetAttributedTitleWithTextString:text];
+        CGFloat memberButtonWidth = [self.memberButton sizeThatFits:CGSizeMake(MAXFLOAT, 22)].width + 2;
+        self.memberButton.frame = CGRectMake(16, self.memberButton.frame.origin.y, memberButtonWidth, 22);
+        self.sipMemberButton.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) + 24, CGRectGetMinY(self.memberButton.frame), 85, 22);
+
         if (self.tableViewEditing) {
             self.delayReload = YES;
         } else {
@@ -140,26 +192,6 @@ UITableViewDataSource
 
 #pragma mark Getter & Setter
 
-- (UILabel *)titleLabel {
-    if (!_titleLabel) {
-        _titleLabel = [[UILabel alloc] init];
-        _titleLabel.font = [UIFont systemFontOfSize:16];
-        _titleLabel.text = @"成员列表";
-        _titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#f0f1f5"];
-    }
-    return _titleLabel;
-}
-
-- (UILabel *)countLabel {
-    if (!_countLabel) {
-        _countLabel = [[UILabel alloc] init];
-        _countLabel.font = [UIFont systemFontOfSize:12];
-        _countLabel.textColor = [PLVColorUtil colorFromHexString:@"#cfd1d6"];
-        _countLabel.text = [NSString stringWithFormat:@"(%zd人)", self.userCount];
-    }
-    return _countLabel;
-}
-
 - (UIButton *)leaveMicButton {
     if (!_leaveMicButton) {
         NSString *colorHex = @"#4399ff";
@@ -169,12 +201,47 @@ UITableViewDataSource
         _leaveMicButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
         _leaveMicButton.layer.masksToBounds = YES;
         _leaveMicButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        [_leaveMicButton setTitle:@"全体下麦" forState:UIControlStateNormal];
+        [_leaveMicButton setTitle:PLVLocalizedString(@"观众下麦") forState:UIControlStateNormal];
         [_leaveMicButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_leaveMicButton addTarget:self action:@selector(leaveMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _leaveMicButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
     }
     return _leaveMicButton;
+}
+
+- (void)moveLineMoveHorizontallyToX:(CGFloat)x {
+    __weak typeof(self) weakSelf = self;
+    CGPoint point = self.moveLine.frame.origin;
+    CGSize size = self.moveLine.frame.size;
+    [UIView animateWithDuration:0.2 delay:0 options:UIViewAnimationOptionCurveLinear animations:^{
+        weakSelf.moveLine.frame = CGRectMake(x, point.y, size.width, size.height);
+    } completion:^(BOOL finished) {
+    }];
+}
+
+- (void)memberButtonSetAttributedTitleWithTextString:(NSString *)text {
+    UIColor *titleColor = PLV_UIColorFromRGB(@"#f0f1f5");
+    UIColor *countColor = PLV_UIColorFromRGB(@"#cfd1d6");
+    NSDictionary *titleAttributes = @{NSFontAttributeName:[UIFont systemFontOfSize:16],
+                                          NSForegroundColorAttributeName:titleColor};
+    NSDictionary *countAttributes = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
+                                          NSForegroundColorAttributeName:countColor};
+    NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:text];
+    [attributedString addAttributes:titleAttributes range:NSMakeRange(0, text.length)];
+    [attributedString addAttributes:countAttributes range:NSMakeRange(2, text.length - 2)];
+    [_memberButton setAttributedTitle:attributedString forState:UIControlStateNormal];
+}
+
+#pragma mark Getter & Setter
+
+- (UIButton *)memberButton {
+    if (!_memberButton) {
+        _memberButton = [[UIButton alloc] init];
+        [_memberButton addTarget:self action:@selector(memberButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        NSString *text = [NSString stringWithFormat:PLVLocalizedString(@"成员(%zd)"), self.userCount];
+        [self memberButtonSetAttributedTitleWithTextString:text];
+    }
+    return _memberButton;
 }
 
 - (UIButton *)muteButton {
@@ -186,14 +253,44 @@ UITableViewDataSource
         _muteButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
         _muteButton.layer.masksToBounds = YES;
         _muteButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        [_muteButton setTitle:@"全体静音" forState:UIControlStateNormal];
-        [_muteButton setTitle:@"取消全体静音" forState:UIControlStateSelected];
+        [_muteButton setTitle:PLVLocalizedString(@"全员静音") forState:UIControlStateNormal];
+        [_muteButton setTitle:PLVLocalizedString(@"取消全员静音") forState:UIControlStateSelected];
         [_muteButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_muteButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateSelected];
         [_muteButton addTarget:self action:@selector(muteButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _muteButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
     }
     return _muteButton;
+}
+
+- (UIButton *)linkMicSettingButton {
+    if (!_linkMicSettingButton) {
+        NSString *colorHex = @"#4399ff";
+        _linkMicSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _linkMicSettingButton.layer.borderWidth = 1;
+        _linkMicSettingButton.layer.cornerRadius = 14;
+        _linkMicSettingButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
+        _linkMicSettingButton.layer.masksToBounds = YES;
+        _linkMicSettingButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        [_linkMicSettingButton setTitle:PLVLocalizedString(@"连麦设置") forState:UIControlStateNormal];
+        [_linkMicSettingButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
+        [_linkMicSettingButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateSelected];
+        [_linkMicSettingButton addTarget:self action:@selector(linkMicSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _linkMicSettingButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
+    }
+    return _linkMicSettingButton;
+}
+
+
+- (UIButton *)sipMemberButton {
+    if (!_sipMemberButton) {
+        _sipMemberButton = [[UIButton alloc] init];
+        _sipMemberButton.titleLabel.font = [UIFont systemFontOfSize:16];
+        [_sipMemberButton setTitle:PLVLocalizedString(@"电话连麦") forState:UIControlStateNormal];
+        [_sipMemberButton setTitleColor:PLV_UIColorFromRGB(@"#CFD1D6") forState:UIControlStateNormal];
+        [_sipMemberButton addTarget:self action:@selector(sipButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _sipMemberButton;
 }
 
 - (UIView *)titleLine {
@@ -217,6 +314,34 @@ UITableViewDataSource
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     }
     return _tableView;
+}
+
+- (PLVLSSipView *)sipView {
+    if (!_sipView) {
+        _sipView = [[PLVLSSipView alloc] init];
+        _sipView.hidden = YES;
+        _sipView.delegate = self;
+    }
+    return _sipView;
+}
+
+- (UIView *)moveLine {
+    if (!_moveLine) {
+        _moveLine = [[UIView alloc] init];
+        _moveLine.backgroundColor = PLV_UIColorFromRGB(@"#F0F1F5");
+    }
+    return _moveLine;
+}
+
+- (UIView *)sipMemberButtonRedDot {
+    if (!_sipMemberButtonRedDot) {
+        _sipMemberButtonRedDot = [[UIView alloc] init];
+        _sipMemberButtonRedDot.backgroundColor = PLV_UIColorFromRGB(@"#FF6363");
+        _sipMemberButtonRedDot.layer.masksToBounds = YES;
+        _sipMemberButtonRedDot.layer.cornerRadius = 3;
+        _sipMemberButtonRedDot.hidden = YES;
+    }
+    return _sipMemberButtonRedDot;
 }
 
 #pragma mark Utils
@@ -254,6 +379,37 @@ UITableViewDataSource
     }
 }
 
+- (void)linkMicSettingButtonAction {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(didTapLinkMicSettingInMemberSheet:)]) {
+        [self.delegate didTapLinkMicSettingInMemberSheet:self];
+    }
+}
+
+- (void)memberButtonAction {
+    if (self.memberButton.selected) {
+//        return;
+    }
+    
+    self.memberButton.selected = !self.sipMemberButton.selected;
+    self.tableView.hidden = NO;
+    self.sipView.hidden = YES;
+    CGFloat x = CGRectGetMidX(self.memberButton.frame) - CGRectGetWidth(self.moveLine.frame) / 2;
+    [self moveLineMoveHorizontallyToX:x];
+}
+
+- (void)sipButtonAction {
+    if (self.sipMemberButton) {
+//        return;
+    }
+    
+    self.sipMemberButton.selected = !self.memberButton.selected;
+    self.sipMemberButtonRedDot.hidden = YES;
+    self.tableView.hidden = YES;
+    self.sipView.hidden = NO;
+    CGFloat x = CGRectGetMidX(self.sipMemberButton.frame) - CGRectGetWidth(self.moveLine.frame) / 2;
+    [self moveLineMoveHorizontallyToX:x];
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark PLVLSMemberCellDelegate
@@ -289,6 +445,12 @@ UITableViewDataSource
     }
 }
 
+- (void)memberCell_inviteUserJoinLinkMic:(PLVChatUser *)user {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(inviteUserJoinLinkMicInMemberSheet:chatUser:)]) {
+        [self.delegate inviteUserJoinLinkMicInMemberSheet:self chatUser:user];
+    }
+}
+
 - (BOOL)allowLinkMicInCell:(PLVLSMemberCell *)cell {
     NSInteger maxLinkMicCount = [PLVRoomDataManager sharedManager].roomData.interactNumLimit;
     BOOL allowLinkmic = self.onlineCount <= maxLinkMicCount;
@@ -297,6 +459,27 @@ UITableViewDataSource
 
 - (BOOL)localUserIsRealMainSpeakerInCell:(PLVLSMemberCell *)cell {
     return self.isRealMainSpeaker;
+}
+    
+#pragma mark PLVLSSipViewDelegate
+
+- (void)newCallingInSipView:(PLVLSSipView *)sipView{
+    if (self.sipView.hidden) {
+        self.sipMemberButtonRedDot.hidden = NO;
+    }
+    if (!self.superview) {
+        if (self.delegate  && [self.delegate respondsToSelector:@selector(sipUserListDidChangedInMemberSheet:)]) {
+            [self.delegate sipUserListDidChangedInMemberSheet:self];
+        }
+    }
+}
+
+- (BOOL)startClassInCell:(PLVLSMemberCell *)cell {
+    return self.startClass;
+}
+
+- (BOOL)enableAudioVideoLinkMicInCell:(PLVLSMemberCell *)cell {
+    return self.enableLinkMic;
 }
 
 #pragma mark UITableViewDataSource

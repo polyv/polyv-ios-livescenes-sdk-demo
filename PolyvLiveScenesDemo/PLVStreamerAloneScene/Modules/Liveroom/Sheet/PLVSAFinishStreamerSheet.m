@@ -8,6 +8,7 @@
 
 #import "PLVSAFinishStreamerSheet.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -63,7 +64,7 @@ static CGFloat kLineHeight = 1.0;
 - (UIButton *)finishButton {
     if (!_finishButton) {
         _finishButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        NSString *closeTitle = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? @"结束直播" : @"退出直播间";
+        NSString *closeTitle = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? PLVLocalizedString(@"结束直播") : PLVLocalizedString(@"退出直播间");
         [_finishButton setTitle:closeTitle forState:UIControlStateNormal];
         [_finishButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FF5459"] forState:UIControlStateNormal];
         _finishButton.titleLabel.font = [UIFont systemFontOfSize:16];
@@ -75,7 +76,7 @@ static CGFloat kLineHeight = 1.0;
 - (UIButton *)cancelButton {
     if (!_cancelButton) {
         _cancelButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_cancelButton setTitle:@"取消" forState:UIControlStateNormal];
+        [_cancelButton setTitle:PLVLocalizedString(@"取消") forState:UIControlStateNormal];
         [_cancelButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF"] forState:UIControlStateNormal];
         _cancelButton.titleLabel.font = [UIFont systemFontOfSize:16];
         [_cancelButton addTarget:self action:@selector(cancelButtonAction:) forControlEvents:UIControlEventTouchUpInside];

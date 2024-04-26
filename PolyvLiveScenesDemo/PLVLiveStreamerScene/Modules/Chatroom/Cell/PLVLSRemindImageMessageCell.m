@@ -10,6 +10,7 @@
 // 工具
 #import "PLVPhotoBrowser.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVLSProhibitWordTipView.h"
@@ -218,7 +219,13 @@ static CGFloat kCellTopMargin = 10;
     }
 
     // 设置昵称文本
-    NSMutableAttributedString *nickLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+    NSMutableAttributedString *nickLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.attributeString;
+    } else {
+        nickLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+        model.attributeString = nickLabelString;
+    }
     
     self.nickNameLabel.attributedText = nickLabelString;
     
@@ -317,7 +324,13 @@ static CGFloat kCellTopMargin = 10;
     
     if (![PLVFdUtil checkStringUseable:previousUserId] ||
         ![model.user.userId isEqualToString:previousUserId]) {
-        NSMutableAttributedString *nickNameLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+        NSMutableAttributedString *nickNameLabelString;
+        if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+            nickNameLabelString = model.attributeString;
+        } else {
+            nickNameLabelString = [PLVLSRemindImageMessageCell nickNameLabelAttributedStringWithUser:model.user];
+            model.attributeString = nickNameLabelString;
+        }
         CGSize nickNameLabelSize = [nickNameLabelString boundingRectWithSize:CGSizeMake(maxViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
         originY += nickNameLabelSize.height + 4;
     }
@@ -368,7 +381,7 @@ static CGFloat kCellTopMargin = 10;
         _resendButton.titleLabel.font = [UIFont systemFontOfSize:10];
         _resendButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         
-        [_resendButton setTitle:@"重新发送" forState:UIControlStateNormal];
+        [_resendButton setTitle:PLVLocalizedString(@"重新发送") forState:UIControlStateNormal];
         [_resendButton setImage:[PLVLSUtils imageForChatroomResource:@"plvls_chatroom_cell_image_resend"] forState:UIControlStateNormal];
         _resendButton.hidden = YES;
         [_resendButton addTarget:self action:@selector(resendButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -384,7 +397,7 @@ static CGFloat kCellTopMargin = 10;
         _reloadButton.titleLabel.font = [UIFont systemFontOfSize:10];
         _reloadButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         
-        [_reloadButton setTitle:@"重新加载" forState:UIControlStateNormal];
+        [_reloadButton setTitle:PLVLocalizedString(@"重新加载") forState:UIControlStateNormal];
         [_reloadButton setImage:[PLVLSUtils imageForChatroomResource:@"plvls_chatroom_cell_image_reload"] forState:UIControlStateNormal];
         _reloadButton.hidden = YES;
         [_reloadButton addTarget:self action:@selector(reloadButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -472,7 +485,7 @@ static CGFloat kCellTopMargin = 10;
 
 #pragma mark AttributedString
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSMutableAttributedString *)nickNameLabelAttributedStringWithUser:(PLVChatUser *)user {
  
     UIFont *font = [UIFont systemFontOfSize:12.0];
@@ -546,7 +559,7 @@ static CGFloat kCellTopMargin = 10;
 }
 
 + (NSString *)prohibitWordTip {
-    return @"图片不合法";
+    return PLVLocalizedString(@"图片不合法");
 }
 
 - (void)setButtonInsets:(UIButton *) button {
@@ -576,7 +589,7 @@ static CGFloat kCellTopMargin = 10;
     // 只有在发送失败时方可触发重发点击事件，避免重复发送
     if (self.msgState == PLVImageMessageSendStateFailed) {
         __weak typeof(self) weakSelf = self;
-        [PLVLSUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"重发该消息？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             weakSelf.model.msgState = (PLVChatMsgState)PLVImageMessageSendStateReady;
             if (weakSelf.resendImageHandler) {
                 weakSelf.resendImageHandler(weakSelf.model);

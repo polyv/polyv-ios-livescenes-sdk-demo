@@ -10,6 +10,7 @@
 
 /// 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// 模块
 #import "PLVRoomDataManager.h"
@@ -463,7 +464,7 @@ UIGestureRecognizerDelegate
 }
 
 - (void)documentView_webViewLoadFailWithError:(NSError *)error {
-    [PLVLSUtils showToastInHomeVCWithMessage:@"PPT 加载失败"];
+    [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"PPT 加载失败")];
 }
 
 - (void)documentView_changePPTPositionToMain:(BOOL)pptToMain {
@@ -530,11 +531,19 @@ UIGestureRecognizerDelegate
     }
 }
 
+- (void)documentView_teacherSetPaintPermission:(BOOL)permission userId:(NSString *)userId {
+    NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    if ([userId isEqualToString:viewerId]) {
+        [self.pptView setDocumentUserInteractionEnabled:permission];
+        [self updateDocumentBrushAuth:permission];
+    }
+}
+
 #pragma mark - PLVSControlToolsView Delegate
 
 - (BOOL)controlToolsView:(PLVLSDocumentToolView *)controlToolsView openBrush:(BOOL)isOpen {
     if (!self.docPlaceholder.hidden) {
-        [PLVLSUtils showToastInHomeVCWithMessage:@"请选择文档后再使用画笔"];
+        [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"请选择文档后再使用画笔")];
         return NO;
     }
     
@@ -574,7 +583,7 @@ UIGestureRecognizerDelegate
 - (void)brushView:(PLVLSDocumentBrushView *)brushView changeType:(PLVLSDocumentBrushViewType)type {
     if (type == PLVLSDocumentBrushViewTypeClearAll) { // 清屏
         __weak typeof(self) weakSelf = self;
-        [PLVLSUtils showAlertWithMessage:@"清屏后画笔痕迹将无法恢复，确认清屏吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"清屏" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"清屏后画笔痕迹将无法恢复，确认清屏吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"清屏") confirmActionBlock:^{
             [weakSelf.pptView deleteAllPaint];
         }];
         return;

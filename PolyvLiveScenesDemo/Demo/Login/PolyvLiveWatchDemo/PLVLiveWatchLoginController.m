@@ -11,6 +11,7 @@
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 #import "PLVLCCloudClassViewController.h"
 #import "PLVECWatchRoomViewController.h"
@@ -47,6 +48,8 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 @property (weak, nonatomic) IBOutlet UISwitch *vodListSwitch;
 @property (weak, nonatomic) IBOutlet UILabel *vodListSwitchLabel;
 
+@property (nonatomic, weak) UIViewController *liveViewController;
+
 @end
 
 @implementation PLVLiveWatchLoginController
@@ -64,6 +67,19 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction)];
     [self.view addGestureRecognizer:tap];
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVMultiLanguageManager sharedManager].languageUpdateCallback = ^{
+        if (weakSelf.liveViewController) {
+            if ([weakSelf.liveViewController isKindOfClass:PLVLCCloudClassViewController.class]) {
+                [(PLVLCCloudClassViewController *)weakSelf.liveViewController exitCleanCurrentLiveController];
+                [weakSelf loginRequest];
+            } else if ([weakSelf.liveViewController isKindOfClass:PLVECWatchRoomViewController.class]) {
+                [(PLVECWatchRoomViewController *)weakSelf.liveViewController exitCleanCurrentLiveController];
+                [weakSelf loginRequest];
+            }
+        }
+    };
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -259,6 +275,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                 cloudClassVC.modalPresentationStyle = UIModalPresentationFullScreen;
                 [self presentViewController:cloudClassVC animated:YES completion:nil];
             }
+            self.liveViewController = cloudClassVC;
             
             PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
             [PLVBugReporter setUserIdentifier:roomUser.viewerId];
@@ -277,12 +294,14 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     } else { // 直播带货场景
         void(^successBlock)(void) = ^() { // 登录成功页面跳转回调
             PLVECWatchRoomViewController * watchLiveVC = [[PLVECWatchRoomViewController alloc] init];
+            watchLiveVC.fullScreenButtonShowOnIpad = YES;
             if (PushOrModel) {
                 [self.navigationController pushViewController:watchLiveVC animated:YES];
             }else{
                 watchLiveVC.modalPresentationStyle = UIModalPresentationFullScreen;
                 [self presentViewController:watchLiveVC animated:YES completion:nil];
             }
+            self.liveViewController = watchLiveVC;
             
             PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
             [PLVBugReporter setUserIdentifier:roomUser.viewerId];
@@ -332,7 +351,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                                appId:self.appIDTF.text
                                            appSecret:self.appSecretTF.text
                                             roomUser:^(PLVRoomUser * _Nonnull roomUser) {
-        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+        // 可在此处配置自定义的登录用户ID、昵称、头像，不配则均使用默认值
 //        roomUser.viewerId = @"用户ID";
 //        roomUser.viewerName = @"用户昵称";
 //        roomUser.viewerAvatar = @"用户头像";
@@ -364,7 +383,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                                    appId:self.appIDTF.text
                                                appSecret:self.appSecretTF.text
                                                 roomUser:^(PLVRoomUser * _Nonnull roomUser) {
-        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+        // 可在此处配置自定义的登录用户ID、昵称、头像，不配则均使用默认值
 //        roomUser.viewerId = @"用户ID";
 //        roomUser.viewerName = @"用户昵称";
 //        roomUser.viewerAvatar = @"用户头像";
@@ -394,7 +413,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                                appId:self.appIDTF.text
                                            appSecret:self.appSecretTF.text
                                             roomUser:^(PLVRoomUser * _Nonnull roomUser) {
-        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+        // 可在此处配置自定义的登录用户ID、昵称、头像，不配则均使用默认值
 //        roomUser.viewerId = @"用户ID";
 //        roomUser.viewerName = @"用户昵称";
 //        roomUser.viewerAvatar = @"用户头像";
@@ -426,7 +445,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                                                    appId:self.appIDTF.text
                                                appSecret:self.appSecretTF.text
                                                 roomUser:^(PLVRoomUser * _Nonnull roomUser) {
-        // 可在此处配置自定义的登陆用户ID、昵称、头像，不配则均使用默认值
+        // 可在此处配置自定义的登录用户ID、昵称、头像，不配则均使用默认值
 //        roomUser.viewerId = @"用户ID";
 //        roomUser.viewerName = @"用户昵称";
 //        roomUser.viewerAvatar = @"用户头像";

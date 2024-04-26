@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 框架
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -73,28 +74,25 @@
 - (void)updateCameraOpen:(BOOL)cameraOpen micphoneOpen:(BOOL)micphoneOpen {
     NSString *tipString = @"";
     CGRect frame = self.bgView.frame;
-    CGFloat width = frame.size.width;
     
     if (!cameraOpen) {
-        tipString = @"你的摄像头已关闭";
-        width = 200;
+        tipString = PLVLocalizedString(@"你的摄像头已关闭");
     }
     if (!micphoneOpen) {
-        tipString = @"你的麦克风已关闭";
-        width = 200;
+        tipString = PLVLocalizedString(@"你的麦克风已关闭");
     }
     
     if (!cameraOpen &&
         !micphoneOpen) {
-        tipString = @"你的摄像头和麦克风已关闭";
-        width = 250;
+        tipString = PLVLocalizedString(@"你的摄像头和麦克风已关闭");
     }
-    
+    self.tipLabel.text = tipString;
+    CGSize tipLabelSize = [self.tipLabel sizeThatFits:CGSizeMake(MAXFLOAT, self.bgView.frame.size.height)];
+    CGFloat width = tipLabelSize.width + 12 + 50 + 5;
     frame.size.width = width;
     self.bgWidth = width;
     self.bgView.frame = frame;
     
-    self.tipLabel.text = tipString;
     self.hidden = cameraOpen && micphoneOpen;
     
     [self.superview setNeedsLayout];
@@ -117,7 +115,7 @@
 - (UILabel *)notifyLabel {
     if (!_notifyLabel) {
         _notifyLabel = [[UILabel alloc] init];
-        _notifyLabel.text = @"通知";
+        _notifyLabel.text = PLVLocalizedString(@"通知");
         _notifyLabel.textAlignment = NSTextAlignmentCenter;
         _notifyLabel.font = [UIFont systemFontOfSize:12];
         _notifyLabel.textColor = [UIColor whiteColor];

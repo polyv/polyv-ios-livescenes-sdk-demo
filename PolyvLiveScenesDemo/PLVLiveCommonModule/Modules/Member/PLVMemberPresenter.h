@@ -64,6 +64,9 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 /// 踢出成员数据发生变化
 - (NSArray *)currentOnlineUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
 
+/// 获取当前等待用户列表
+- (NSArray *)currentWaitUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
+
 @end
 
 @interface PLVMemberPresenter : NSObject

@@ -9,6 +9,7 @@
 #import "PLVLCLiveRoomPlayerSkinView.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCLiveRoomLandscapeInputView.h"
 #import "PLVCommodityPushView.h"
 #import "PLVRoomDataManager.h"
@@ -26,6 +27,7 @@
 @property (nonatomic, strong) UIView * likeButtonBackgroudView;
 @property (nonatomic, strong) UIView * redpackBackgroudView;
 @property (nonatomic, strong) UIView * cardPushBackgroudView;
+@property (nonatomic, strong) UIView * lotteryWidgetView;
 @property (nonatomic, strong) UIButton *rewardButton;
 @property (nonatomic, strong) UIButton *commodityButton;
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
@@ -176,6 +178,16 @@
     }
 }
 
+- (void)displayLotteryWidgetView:(UIView *)lotteryWidgetView {
+    if (lotteryWidgetView && [lotteryWidgetView isKindOfClass:UIView.class]) {
+        [self.lotteryWidgetView addSubview:lotteryWidgetView];
+        lotteryWidgetView.frame = self.lotteryWidgetView.bounds;
+        lotteryWidgetView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }else{
+        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayLotteryWidgetView failed, view illegal %@", lotteryWidgetView);
+    }
+}
+
 - (void)showCommodityButton:(BOOL)show {
     self.commodityButton.hidden = !show;
     [self refreshBottomButtonsFrame];
@@ -188,6 +200,11 @@
 
 - (void)showCardPushButtonView:(BOOL)show {
     self.cardPushBackgroudView.hidden = !show;
+    [self refreshBottomButtonsFrame];
+}
+
+- (void)showLotteryWidgetView:(BOOL)show {
+    self.lotteryWidgetView.hidden = !show;
     [self refreshBottomButtonsFrame];
 }
 
@@ -227,6 +244,7 @@
 }
 
 - (void)refreshPictureInPictureButtonFrame{
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat rightSafePadding = 0;
     CGFloat topPadding = 16.0;
     CGFloat intervalPadding = 0;
@@ -242,7 +260,12 @@
     }
     
     CGSize backButtonSize = CGSizeMake(40.0, 20.0);
-    CGFloat pictureInPictureButtonX = self.bulletinButton.frame.origin.x - backButtonSize.width;
+    CGFloat pictureInPictureButtonX = viewWidth - rightSafePadding - backButtonSize.width;
+    if (_bulletinButton && !_bulletinButton.hidden) {
+        pictureInPictureButtonX = self.bulletinButton.frame.origin.x - backButtonSize.width;
+    } else if (self.moreButton && !self.moreButton.hidden) {
+        pictureInPictureButtonX = self.moreButton.frame.origin.x - backButtonSize.width;
+    }
     self.pictureInPictureButton.frame = CGRectMake(pictureInPictureButtonX, topPadding, backButtonSize.width, backButtonSize.height);
 }
 
@@ -351,11 +374,15 @@
         self.redpackBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
         buttonOriginX -= (buttonPadding + buttonWidth);
     }
-    
     // 从右数起第一个按钮为卡片推送时，位置适配，右边间隔从10改为50
     buttonOriginX = MIN(buttonOriginX, viewWidth - rightSafePadding - 50 - buttonWidth);
     if (!self.cardPushBackgroudView.isHidden) {
         self.cardPushBackgroudView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
+    if (!self.lotteryWidgetView.isHidden) {
+        self.lotteryWidgetView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
         buttonOriginX -= (buttonPadding + buttonWidth);
     }
     
@@ -389,7 +416,7 @@
 
 /// 切换聊天室关闭状态，开启/禁用输入框
 - (void)changeCloseRoomStatus:(BOOL)closeRoom {
-    NSString *guideChatLabelText = closeRoom ? @"聊天室已关闭":@"跟大家聊点什么吧～";
+    NSString *guideChatLabelText = closeRoom ? PLVLocalizedString(@"聊天室已关闭"):PLVLocalizedString(@"跟大家聊点什么吧～");
     [self.guideChatLabel setText:guideChatLabelText];
     self.guideChatLabel.userInteractionEnabled = !closeRoom;
     [self.landscapeInputView showInputView:NO];
@@ -397,7 +424,7 @@
 
 /// 切换聊天室专注模式状态，开启/禁用输入框
 - (void)changeFocusModeStatus:(BOOL)focusMode{
-    NSString *guideChatLabelText = focusMode ? @"当前为专注模式，无法发言":@"跟大家聊点什么吧～";
+    NSString *guideChatLabelText = focusMode ? PLVLocalizedString(@"当前为专注模式，无法发言"):PLVLocalizedString(@"跟大家聊点什么吧～");
     [self.guideChatLabel setText:guideChatLabelText];
     self.guideChatLabel.userInteractionEnabled = !focusMode;
     [self.landscapeInputView showInputView:NO];
@@ -449,9 +476,9 @@
         _guideChatLabel.userInteractionEnabled = YES;
         
         if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
-            _guideChatLabel.text = @"聊天室暂时关闭";
+            _guideChatLabel.text = PLVLocalizedString(@"聊天室暂时关闭");
         } else {
-            _guideChatLabel.text = @"跟大家聊点什么吧～";
+            _guideChatLabel.text = PLVLocalizedString(@"跟大家聊点什么吧～");
             UITapGestureRecognizer * guideChatLabelTapGR = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(guideChatLabelTapGestureAction:)];
             [_guideChatLabel addGestureRecognizer:guideChatLabelTapGR];
         }
@@ -480,6 +507,14 @@
         _cardPushBackgroudView.hidden = YES;
     }
     return _cardPushBackgroudView;
+}
+
+- (UIView *)lotteryWidgetView{
+    if (!_lotteryWidgetView) {
+        _lotteryWidgetView = [[UIView alloc] init];
+        _lotteryWidgetView.hidden = YES;
+    }
+    return _lotteryWidgetView;
 }
 
 - (UIButton *)rewardButton {
@@ -529,8 +564,9 @@
     [self addSubview:self.likeButtonBackgroudView];
     [self addSubview:self.redpackBackgroudView];
     [self addSubview:self.cardPushBackgroudView];
-    [self addSubview:self.landscapeInputView];
+    [self addSubview:self.lotteryWidgetView];
     [self addSubview:self.commodityButton];
+    [self addSubview:self.landscapeInputView];
 
     // 注意：懒加载过程中已增加判断，若场景不匹配，将创建失败并返回nil
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 视频类型为 直播
@@ -617,7 +653,7 @@
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = @"房间标题";
+        _titleLabel.text = PLVLocalizedString(@"房间标题");
         _titleLabel.textAlignment = NSTextAlignmentLeft;
         _titleLabel.textColor = [UIColor whiteColor];
         _titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:16];
@@ -628,7 +664,7 @@
 - (UILabel *)playTimesLabel{
     if (!_playTimesLabel) {
         _playTimesLabel = [[UILabel alloc] init];
-        _playTimesLabel.text = @"播放量";
+        _playTimesLabel.text = PLVLocalizedString(@"播放量");
         _playTimesLabel.textAlignment = NSTextAlignmentLeft;
         _playTimesLabel.textColor = PLV_UIColorFromRGB(@"D0D0D0");
         _playTimesLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];

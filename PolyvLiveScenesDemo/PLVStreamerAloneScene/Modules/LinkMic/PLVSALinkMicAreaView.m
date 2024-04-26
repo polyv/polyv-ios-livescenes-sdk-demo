@@ -8,6 +8,7 @@
 
 #import "PLVSALinkMicAreaView.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVSALinkMicWindowsView.h"
 #import "PLVSALinkMicUserInfoSheet.h"
 #import "PLVLinkMicOnlineUser+SA.h"
@@ -63,8 +64,20 @@ PLVSALinkMicWindowsViewDelegate
     [self.windowsView updateFirstSiteCanvasViewWithUserId:linkMicUserId toFirstSite:toFirstSite];
 }
 
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    [self.windowsView updateLocalUserLinkMicStatus:linkMicStatus];
+}
+
+- (void)finishClass {
+    [self.windowsView finishClass];
+}
+
 - (void)clear {
     [self.windowsView removeFromSuperview];
+}
+
+- (void)updateUsersLinkMicDuration {
+    [self.windowsView updateAllCellLinkMicDuration];
 }
 
 #pragma mark - [ Private Method ]
@@ -90,10 +103,10 @@ PLVSALinkMicWindowsViewDelegate
     PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
     if (viewerType == PLVRoomUserTypeTeacher &&
         ((auth && speakerUser) || (!auth && onlineUser.currentScreenShareOpen))) {
-        NSString *titlePrefix = auth ? @"确定授予ta" : @"确定移除ta的";
-        NSString *message = auth ? @"当前已有主讲人，确定后将替换为新的主讲人" : @"移除后主讲人的屏幕共享将会自动结束";
-        NSString *alertTitle = [NSString stringWithFormat:@"%@主讲权限吗？", titlePrefix];
-        [PLVSAUtils showAlertWithTitle:alertTitle Message:message cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        NSString *titlePrefix = auth ? PLVLocalizedString(@"确定授予ta") : PLVLocalizedString(@"确定移除ta的");
+        NSString *message = auth ? PLVLocalizedString(@"当前已有主讲人，确定后将替换为新的主讲人") : PLVLocalizedString(@"移除后主讲人的屏幕共享将会自动结束");
+        NSString *alertTitle = [NSString stringWithFormat:PLVLocalizedString(@"%@主讲权限吗？"), titlePrefix];
+        [PLVSAUtils showAlertWithTitle:alertTitle Message:message cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             [onlineUser wantAuthUserSpeaker:auth];
         }];
     } else {
@@ -219,6 +232,18 @@ PLVSALinkMicWindowsViewDelegate
 - (void)linkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen {
     if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicAreaView:onlineUser:isFullScreen:)]) {
         [self.delegate linkMicAreaView:self onlineUser:onlineUser isFullScreen:isFullScreen];
+    }
+}
+
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicAreaView:acceptLinkMicInvitation:timeoutCancel:)]) {
+        [self.delegate plvSALinkMicAreaView:self acceptLinkMicInvitation:accept timeoutCancel:timeoutCancel];
+    }
+}
+
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSALinkMicAreaView:inviteLinkMicTTL:)]) {
+        [self.delegate plvSALinkMicAreaView:self inviteLinkMicTTL:callback];
     }
 }
 

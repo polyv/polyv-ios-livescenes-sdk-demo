@@ -18,14 +18,22 @@ extern NSString *PLVLCChatroomFunctionGotNotification;
 typedef NS_ENUM (NSInteger, PLVResolutionType) {
     PLVResolutionType180P = 0, // 180p（标清）
     PLVResolutionType360P = 4, // 360p（高清）
-    PLVResolutionType720P = 8, // 720p（超清）
-    PLVResolutionType1080P = 12, // 1080p（超高清）
+    PLVResolutionType480P = 8, // 480p（高标清）
+    PLVResolutionType720P = 12, // 720p（超清）
+    PLVResolutionType1080P = 16, // 1080p（超高清）
 };
 
 /// 推流画质优先设置
 typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
     PLVQualityPreferenceTypeClear = 0, // 画质优先
     PLVQualityPreferenceTypeSmooth = 1, // 流畅度优先
+};
+
+/// 混流布局类型
+typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
+    PLVMixLayoutType_Single = 1, // 单人模式
+    PLVMixLayoutType_Tile = 2, // 平铺模式
+    PLVMixLayoutType_MainSpeaker = 3, // 主讲模式
 };
 
 @interface PLVRoomData : NSObject
@@ -112,6 +120,8 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
 @property (nonatomic, assign) BOOL welcomeShowDisable;
 /// 开启显示举报反馈，默认NO-不显示举报反馈
 @property (nonatomic, assign) BOOL watchFeedbackEnabled;
+/// 条件红包是否开启，默认NO-不开启
+@property (nonatomic, assign) BOOL conditionLotteryEnabled;
 
 #pragma mark 连麦独有属性
 /// 当前 是否处于RTC房间中
@@ -162,8 +172,26 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
 @property (nonatomic, assign) BOOL appDefaultLandScapeEnabled;
 /// 支持默认开启后置摄像头，YES默认开启后置摄像头，NO不开启（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL appDefaultPureViewEnabled;
+/// 支持默认混流布局类型（仅适用于纯视频开播）
+@property (nonatomic, assign, readonly) PLVMixLayoutType defaultMixLayoutType;
 /// 推流画质优先/流畅优先，默认画质优先
 @property (nonatomic, assign, readonly) PLVQualityPreferenceType pushQualityPreference;
+/// 连麦默认打开 开关，audio默认开启语音连麦，video默认打开视频连麦，N连麦默认不打开，默认值为N
+@property (nonatomic, copy) NSString *userDefaultOpenMicLinkEnabled;
+/// 新版连麦模式开关， YES默认使用新版连麦界面，NO默认使用旧版连麦界面
+@property (nonatomic, assign) BOOL linkmicNewStrategyEnabled;
+/// 新版连麦默认类型类型，audio默认开启语音连麦，video默认打开视频连麦，N连麦默认不打开，默认值为N
+@property (nonatomic, copy) NSString *defaultOpenMicLinkEnabled;
+// 频道默认开关，仅新版连麦生效
+@property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType defaultChannelLinkMicMediaType;
+
+#pragma mark SIP独有属性
+/// 支持SIP模式
+@property (nonatomic, assign) BOOL sipEnabled;
+/// SIP入会号码
+@property (nonatomic, copy) NSString *sipNumber;
+/// SIP入会密码
+@property (nonatomic, copy) NSString *sipPassword;
 
 /// 设置 roomUser
 - (void)setupRoomUser:(PLVRoomUser *)roomUser;
@@ -180,6 +208,12 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
 /// 配置pushQualityPreference枚举值
 - (void)setupPushQualityPreference:(NSString *)pushQualityPreferenceString;
 
+/// 前端获取原生用户信息参数
+- (NSDictionary *)nativeAppUserParamsWithExtraParam:(NSDictionary * _Nullable)extraParam;
+
+///  更新入会信息
+- (void)updateSipInfo;
+
 /// 将清晰度枚举值转换成字符串
 /// @return 返回值为nil时表示参数resolutionType出错，无法转换
 + (NSString * _Nullable)resolutionStringWithType:(PLVResolutionType)resolutionType;
@@ -189,6 +223,16 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
 
 /// 将枚举 PLVResolutionType 转换为 PLVBLinkMicStreamQuality 枚举
 + (PLVBLinkMicStreamQuality)streamQualityWithResolutionType:(PLVResolutionType)resolution;
+
+/// 将枚举 PLVRTCStreamerMixLayoutType 转换为 PLVMixLayoutType 枚举
++ (PLVMixLayoutType)mixLayoutTypeWithStreamerMixLayoutType:(PLVRTCStreamerMixLayoutType)streamerType;
+
+/// 将枚举 PLVMixLayoutType 转换为 PLVRTCStreamerMixLayoutType 枚举
++ (PLVRTCStreamerMixLayoutType)streamerMixLayoutTypeWithMixLayoutType:(PLVMixLayoutType)mixLayoutType;
+
+/// 将清晰度枚举值转换成字符串
+/// @return 返回值为nil时表示参数resolutionType出错，无法转换
++ (NSString * _Nullable)mixLayoutTypeStringWithType:(PLVMixLayoutType)mixLayoutType;
 
 @end
 

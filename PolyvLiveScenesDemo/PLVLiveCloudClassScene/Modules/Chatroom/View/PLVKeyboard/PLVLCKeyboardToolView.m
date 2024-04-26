@@ -12,6 +12,7 @@
 #import "PLVLCKeyboardMoreView.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVChatModel.h"
 #import "PLVLCRepliedMsgView.h"
 #import "PLVLCIarEntranceView.h"
@@ -308,10 +309,10 @@ PLVLCKeyboardMoreViewDelegate
 }
 
 - (void)moreAction:(UIButton *)sender {
-    if (![self shouldInteract]) {
-        return;
-    }
     self.toolState = PLVLCKeyboardToolStateMoreboard;
+    if (![self shouldInteract]) {
+        [self.moreboard disableRoomInteraction:YES];
+    }
 }
 
 - (void)tapAction:(id)sender {
@@ -568,7 +569,7 @@ PLVLCKeyboardMoreViewDelegate
 
 /// 切换聊天室关闭状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能
 - (void)changeCloseRoomStatus:(BOOL)closeRoom {
-    NSString *placeholderText = closeRoom ? @"聊天室已关闭":@"我也来聊几句";
+    NSString *placeholderText = closeRoom ? PLVLocalizedString(@"聊天室已关闭"):PLVLocalizedString(@"我也来聊几句");
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.textView setEditable:!closeRoom];
         [self changePlaceholderText:placeholderText];
@@ -582,7 +583,7 @@ PLVLCKeyboardMoreViewDelegate
 
 /// 切换聊天室专注模式状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能，启用只看讲师功能
 - (void)changeFocusMode:(BOOL)focusMode {
-    NSString *placeholderText = focusMode ? @"当前为专注模式，无法发言":@"我也来聊几句";
+    NSString *placeholderText = focusMode ? PLVLocalizedString(@"当前为专注模式，无法发言"):PLVLocalizedString(@"我也来聊几句");
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.textView setEditable:!focusMode];
         [self changePlaceholderText:placeholderText];
@@ -752,6 +753,13 @@ PLVLCKeyboardMoreViewDelegate
     [self tapAction:nil];
     if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_switchRewardDisplay:on:)]) {
         [self.delegate keyboardToolView_switchRewardDisplay:self on:on];
+    }
+}
+
+- (void)keyboardMoreView:(PLVLCKeyboardMoreView *)moreView switchLanguageMode:(NSInteger)languageMode {
+    [self tapAction:nil];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:switchLanguageMode:)]) {
+        [self.delegate keyboardToolView:self switchLanguageMode:languageMode];
     }
 }
 

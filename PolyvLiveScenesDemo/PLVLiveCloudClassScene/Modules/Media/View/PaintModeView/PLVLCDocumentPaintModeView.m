@@ -8,6 +8,7 @@
 
 #import "PLVLCDocumentPaintModeView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCBrushToolBarView.h"
 #import "PLVLCDocumentInputView.h"
 #import "PLVLCBrushToolSelectSheet.h"
@@ -80,7 +81,7 @@ PLVLCBrushColorSelectSheetDelegate>
 - (void)enterPaintModeWithPPTView:(UIView *)pptView {
     self.hidden = NO;
     self.pptView = [self isPptView:pptView] ? (PLVDocumentView *)pptView : nil;
-    [PLVLCUtils showHUDWithTitle:@"已进入画笔模式" detail:@"" view:self];
+    [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"已进入画笔模式") detail:@"" view:self];
     [self displayExternalView:self.pptView];
     // 延迟设置画笔绘制状态 避免 ppt 视图尺寸异常
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
@@ -135,7 +136,7 @@ PLVLCBrushColorSelectSheetDelegate>
 #pragma mark native -> js（内部使用）
 - (void)dealClearEvent {
     __weak typeof(self) weakSelf = self;
-    [PLVFdUtil showAlertWithTitle:@"提示" message:@"清屏后画笔痕迹将无法恢复，确认清屏吗？" viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"取消" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"确认" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+    [PLVFdUtil showAlertWithTitle:PLVLocalizedString(@"提示") message:PLVLocalizedString(@"清屏后画笔痕迹将无法恢复，确认清屏吗？") viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"取消") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确认") confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
         [weakSelf.pptView deleteAllPaint];
     }];
 }
@@ -191,7 +192,7 @@ PLVLCBrushColorSelectSheetDelegate>
         _exitPaintModeButton.layer.cornerRadius = 4.0f;
         _exitPaintModeButton.titleLabel.font =  [UIFont fontWithName:@"PingFangSC-Regular" size:14];
         [_exitPaintModeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-        [_exitPaintModeButton setTitle:@"退出画笔模式" forState:UIControlStateNormal];
+        [_exitPaintModeButton setTitle:PLVLocalizedString(@"退出画笔模式") forState:UIControlStateNormal];
         [_exitPaintModeButton setImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_paint_exit"] forState:UIControlStateNormal];
         [_exitPaintModeButton addTarget:self action:@selector(exitPaintModeButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [_exitPaintModeButton setImageEdgeInsets:UIEdgeInsetsMake(0, 0, 0, 3)];
@@ -243,7 +244,7 @@ PLVLCBrushColorSelectSheetDelegate>
     self.hidden = YES;
     [self.pptView setPaintStatus:NO];
     [self.pptView setDocumentUserInteractionEnabled:NO];
-    [PLVLCUtils showHUDWithTitle:@"已退出画笔模式" detail:@"" view:self.superview];
+    [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"已退出画笔模式") detail:@"" view:self.superview];
 
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCDocumentPaintModeViewExitPaintMode:)]) {
         [self.delegate plvLCDocumentPaintModeViewExitPaintMode:self];

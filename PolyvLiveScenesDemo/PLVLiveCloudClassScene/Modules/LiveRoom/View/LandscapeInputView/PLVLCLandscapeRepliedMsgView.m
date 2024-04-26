@@ -9,6 +9,7 @@
 #import "PLVLCLandscapeRepliedMsgView.h"
 #import "PLVChatModel.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLandscapeRepliedMsgView ()
@@ -61,9 +62,9 @@
             [muString appendString:quoteMessage.content];
         }
     } else if ([message isKindOfClass:[PLVImageMessage class]]) {
-        [muString appendString:@"[图片]"];
+        [muString appendString:PLVLocalizedString(@"[图片]")];
     } else if ([message isKindOfClass:[PLVImageEmotionMessage class]]) {
-        [muString appendString:@"[图片表情]"];
+        [muString appendString:PLVLocalizedString(@"[图片表情]")];
     }
     
     _label.text = [muString copy];

@@ -10,6 +10,8 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
+#import "PLVToast.h"
 
 // UI
 #import "PLVChatTextView.h"
@@ -157,7 +159,13 @@
     }
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else { // 如果 不存在 ，就 需要计算 ；但同时，把 计算结果 存下来，以备下次使用；
+        contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+        model.attributeString = contentLabelString;
+    }
     
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
@@ -184,7 +192,7 @@
 
 #pragma mark UI - ViewModel
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord isRemindMsg:(BOOL)isRemindMsg {
@@ -201,7 +209,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -218,7 +226,7 @@
     
     // 提醒消息
     if (isRemindMsg) {
-        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_tag"];
+        UIImage *image = [PLVLSUtils imageForChatroomResource:PLVLocalizedString(@"plvls_chatroom_remind_tag")];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
         CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
@@ -260,7 +268,15 @@
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+    
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else { // 如果 不存在 ，就 需要计算 ；但同时，把 计算结果 存下来，以备下次使用；
+        contentLabelString = [PLVLSSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord isRemindMsg:model.isRemindMsg];
+        model.attributeString = contentLabelString;
+    }
+    
     if (model.isProhibitMsg) {
         maxTextViewWidth = maxTextViewWidth - 6 - 16;
     }
@@ -288,6 +304,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVSpeakMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 - (void)tapGestureAction {
@@ -325,9 +342,9 @@
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }

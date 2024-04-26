@@ -9,6 +9,7 @@
 #import "PLVLSBeautyTitleView.h"
 // 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVLSBeautyTitleButton.h"
 // 依赖库
@@ -46,8 +47,8 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     CGFloat paddingX = 28;
-    self.whitenButton.frame = CGRectMake(0, 0, 30, self.bounds.size.height);
-    self.filterButton.frame = CGRectMake(CGRectGetMaxX(self.whitenButton.frame) + paddingX, 0, 30, self.bounds.size.height);
+    self.whitenButton.frame = CGRectMake(0, 0, 45, self.bounds.size.height);
+    self.filterButton.frame = CGRectMake(CGRectGetMaxX(self.whitenButton.frame) + paddingX, 0, 40, self.bounds.size.height);
     self.faceButton.frame = CGRectMake(CGRectGetMaxX(self.filterButton.frame) + paddingX, 0, 60, self.bounds.size.height);
 }
 
@@ -67,7 +68,7 @@
     if (!_whitenButton) {
         _whitenButton = [[PLVLSBeautyTitleButton alloc] init];
         _whitenButton.tag = PLVBeautyTypeWhiten;
-        [_whitenButton setTitle:@"美颜" forState:UIControlStateNormal];
+        [_whitenButton setTitle:PLVLocalizedString(@"美颜") forState:UIControlStateNormal];
         _whitenButton.selected = YES;
         [_whitenButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -78,7 +79,7 @@
     if (!_filterButton) {
         _filterButton = [[PLVLSBeautyTitleButton alloc] init];
         _filterButton.tag = PLVBeautyTypeFilter;
-        [_filterButton setTitle:@"滤镜" forState:UIControlStateNormal];
+        [_filterButton setTitle:PLVLocalizedString(@"滤镜") forState:UIControlStateNormal];
         [_filterButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _filterButton;
@@ -88,7 +89,7 @@
     if (!_faceButton) {
         _faceButton = [[PLVLSBeautyTitleButton alloc] init];
         _faceButton.tag = PLVBeautyTypeFace;
-        [_faceButton setTitle:@"脸部细节" forState:UIControlStateNormal];
+        [_faceButton setTitle:PLVLocalizedString(@"脸部细节") forState:UIControlStateNormal];
         [_faceButton addTarget:self action:@selector(buttonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _faceButton;

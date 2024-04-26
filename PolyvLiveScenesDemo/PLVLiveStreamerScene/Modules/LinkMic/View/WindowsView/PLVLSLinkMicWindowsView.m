@@ -7,14 +7,17 @@
 //
 
 #import "PLVLSLinkMicWindowsView.h"
+#import "PLVLSLinkMicPreviewView.h"
 
 #import "PLVLSUtils.h"
+#import "PLVRoomDataManager.h"
 #import "PLVLinkMicOnlineUser+LS.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLSLinkMicWindowsView ()<
 UICollectionViewDataSource,
-UICollectionViewDelegate
+UICollectionViewDelegate,
+PLVLSLinkMicPreviewViewDelegate
 >
 
 #pragma mark 数据
@@ -24,6 +27,7 @@ UICollectionViewDelegate
 @property (nonatomic, copy) NSString * showingExternalCellLinkMicUserId;  // 正在显示外部视图的Cell，所对应的用户Id (将用于更新 showingExternalCellIndexPath 属性)
 @property (nonatomic, copy) NSString * firstSiteLinkMicUserId; // 当前第一画面用户id(目前第一画面为主讲用户或者讲师)
 @property (nonatomic, assign) NSInteger firstSiteUserIndex; // 第一画面用户数据对应的下标
+@property (nonatomic, strong) PLVLSLinkMicWindowCell *externalCell; // 当前外部cell
 
 #pragma mark UI
 /// view hierarchy
@@ -36,6 +40,7 @@ UICollectionViewDelegate
 @property (nonatomic, weak) UIView * externalView; // 外部视图 (正在被显示在 PLVLSLinkMicWindowsView 窗口列表中的外部视图；弱引用)
 @property (nonatomic, readonly) UICollectionViewFlowLayout * collectionViewLayout; // 集合视图的布局
 @property (nonatomic, strong) UICollectionView * collectionView;  // 背景视图 (负责承载 windowCell；负责展示 背景底色；具备宫格样式的改动潜能)
+@property (nonatomic, strong) PLVLSLinkMicPreviewView * linkMicPreView; // 连麦预览图
 
 @end
 
@@ -124,6 +129,30 @@ UICollectionViewDelegate
     NSIndexPath *oriIndexPath = self.showingExternalCellIndexPath;
     [self rollbackExternalView];
     [self rollbackLinkMicCanvasView:oriIndexPath];
+}
+
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus {
+    if (linkMicStatus == PLVLinkMicUserLinkMicStatus_Inviting) {
+        self.linkMicPreView.isOnlyAudio = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+        [self.linkMicPreView showLinkMicPreviewView:YES];
+        UIView *superview = self.superview.superview;
+        if (superview) {
+            [superview addSubview:self.linkMicPreView];
+            [superview bringSubviewToFront:self.linkMicPreView];
+        }
+    }
+}
+
+- (void)finishClass {
+    [self.linkMicPreView showLinkMicPreviewView:NO];
+}
+
+- (void)updateAllCellLinkMicDuration {
+    NSArray *cells = self.collectionView.visibleCells;
+    for (PLVLSLinkMicWindowCell * cell in cells) {
+        [cell updateLinkMicDuration:YES];
+    }
+    [self.externalCell updateLinkMicDuration:YES];
 }
 
 #pragma mark - [ Private Methods ]
@@ -304,11 +333,30 @@ UICollectionViewDelegate
     return ((UICollectionViewFlowLayout *)_collectionView.collectionViewLayout);
 }
 
+- (PLVLSLinkMicPreviewView *)linkMicPreView {
+    if(!_linkMicPreView) {
+        _linkMicPreView = [[PLVLSLinkMicPreviewView alloc] init];
+        _linkMicPreView.delegate = self;
+    }
+    return _linkMicPreView;
+}
+
 - (NSArray<PLVLinkMicOnlineUser *> *)dataArray{
     if ([self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsViewGetCurrentUserModelArray:)]) {
         return [self.delegate plvLSLinkMicWindowsViewGetCurrentUserModelArray:self];
     }
     return nil;
+}
+
+- (PLVLinkMicOnlineUser *)findLocalOnlineUser{
+    NSInteger targetUserIndex = -1;
+    if ([self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsView:findUserModelIndexWithFiltrateBlock:)]) {
+        targetUserIndex = [self.delegate plvLSLinkMicWindowsView:self findUserModelIndexWithFiltrateBlock:^BOOL(PLVLinkMicOnlineUser * _Nonnull enumerateUser) {
+            if (enumerateUser.localUser) { return YES; }
+            return NO;
+        }];
+    }
+    return [self readUserModelFromDataArray:targetUserIndex];
 }
 
 #pragma mark Callback
@@ -318,8 +366,16 @@ UICollectionViewDelegate
     [self checkUserModelAndSetupLinkMicCanvasView:linkMicUser];
     [externalCell setModel:linkMicUser];
     [externalCell switchToShowRtcContentView:linkMicUser.canvasView];
+    [externalCell updateLinkMicDuration:linkMicUser.userType != PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher];
+    self.externalCell = externalCell;
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsView:showFirstSiteWindowCellOnExternal:)]) {
         [self.delegate plvLSLinkMicWindowsView:self showFirstSiteWindowCellOnExternal:externalCell];
+    }
+}
+
+- (void)callbackForAcceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsView:acceptLinkMicInvitation:timeoutCancel:)]) {
+        [self.delegate plvLSLinkMicWindowsView:self acceptLinkMicInvitation:accept timeoutCancel:timeoutCancel];
     }
 }
 
@@ -387,6 +443,24 @@ UICollectionViewDelegate
     if (!currentTapUserModel) {
         NSLog(@"PLVLSLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ can't get userModel",indexPath);
         return;
+    }
+}
+
+#pragma mark PLVLSLinkMicPreviewViewDelegate
+- (void)plvLSLinkMicPreviewViewAcceptLinkMicInvitation:(PLVLSLinkMicPreviewView *)linkMicPreView {
+    PLVLinkMicOnlineUser *localUser = [self findLocalOnlineUser];
+    [localUser wantOpenUserMic:self.linkMicPreView.micOpen];
+    [localUser wantOpenUserCamera:self.linkMicPreView.cameraOpen];
+    [self callbackForAcceptLinkMicInvitation:YES timeoutCancel:NO];
+}
+
+- (void)plvLSLinkMicPreviewView:(PLVLSLinkMicPreviewView *)linkMicPreView cancelLinkMicInvitationReason:(PLVLSCancelLinkMicInvitationReason)reason {
+    [self callbackForAcceptLinkMicInvitation:NO timeoutCancel:reason == PLVLSCancelLinkMicInvitationReason_Timeout];
+}
+
+- (void)plvLSLinkMicPreviewView:(PLVLSLinkMicPreviewView *)linkMicPreView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsView:inviteLinkMicTTL:)]) {
+        [self.delegate plvLSLinkMicWindowsView:self inviteLinkMicTTL:callback];
     }
 }
 

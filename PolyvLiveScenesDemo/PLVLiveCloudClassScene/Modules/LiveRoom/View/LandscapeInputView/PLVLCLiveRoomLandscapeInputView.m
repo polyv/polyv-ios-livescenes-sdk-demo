@@ -11,6 +11,7 @@
 #import "PLVLCKeyboardTextView.h"
 #import "PLVLCUtils.h"
 #import "PLVChatModel.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLiveRoomLandscapeInputView () <UITextFieldDelegate>
@@ -155,7 +156,7 @@
         _sendButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:13];
         [_sendButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         [_sendButton setTitleColor:[UIColor lightGrayColor] forState:UIControlStateDisabled];
-        [_sendButton setTitle:@"发送" forState:UIControlStateNormal];
+        [_sendButton setTitle:PLVLocalizedString(@"发送") forState:UIControlStateNormal];
         [_sendButton setBackgroundColor:[UIColor colorWithWhite:1 alpha:0.3]];
         _sendButton.layer.cornerRadius = 16;
         _sendButton.layer.masksToBounds = YES;

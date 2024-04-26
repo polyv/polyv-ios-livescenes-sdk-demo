@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 框架
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -85,7 +86,7 @@
 - (UILabel *)tipLabel {
     if (!_tipLabel) {
         _tipLabel = [[UILabel alloc] init];
-        _tipLabel.text = @"有人正在申请连麦";
+        _tipLabel.text = PLVLocalizedString(@"有人正在申请连麦");
         _tipLabel.textAlignment = NSTextAlignmentLeft;
         _tipLabel.font = [UIFont systemFontOfSize:14];
         _tipLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
@@ -101,7 +102,7 @@
         _checkButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _checkButton.titleLabel.textColor = [UIColor whiteColor];
         _checkButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#3399FF"];
-        [_checkButton setTitle:@"查看" forState:UIControlStateNormal];
+        [_checkButton setTitle:PLVLocalizedString(@"查看") forState:UIControlStateNormal];
         [_checkButton addTarget:self action:@selector(checkButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _checkButton;

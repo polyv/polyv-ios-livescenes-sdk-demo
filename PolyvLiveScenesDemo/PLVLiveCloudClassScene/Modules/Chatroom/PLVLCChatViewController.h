@@ -10,6 +10,7 @@
 #import "PLVLCLikeButtonView.h"
 #import "PLVLCRedpackButtonView.h"
 #import "PLVLCCardPushButtonView.h"
+#import "PLVLCLotteryWidgetView.h"
 
 @class PLVChatModel;
 
@@ -24,6 +25,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 在点击超过500字符的长文本消息时会执行此回调
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC alertLongContentMessage:(PLVChatModel *)model;
+
+/// 点击互动模块控件的回调
+/// @param event 互动模块事件
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC emitInteractEvent:(NSString *)event;
+
+/// 抽奖挂件显示状态改变的的回调
+/// @param show 当前的显示状态
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC lotteryWidgetShowStatusChanged:(BOOL)show;
 
 @end
 
@@ -48,6 +57,9 @@ extern NSString *PLVLCChatroomOpenRewardViewNotification;
 /// 卡片推送悬浮按钮 自定义视图
 @property (nonatomic, strong) PLVLCCardPushButtonView *cardPushButtonView;
 
+/// 红包挂件视图
+@property (nonatomic, strong) PLVLCLotteryWidgetView *lotteryWidgetView;
+
 /// 初始化方法
 - (instancetype)initWithLiveRoom:(UIViewController *)liveRoom;
 
@@ -64,6 +76,10 @@ extern NSString *PLVLCChatroomOpenRewardViewNotification;
 /// @param dict 卡片推送信息
 /// @param callback 开始卡片推送的回调，是否显示挂件（YES 显示，NO不显示）
 - (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback;
+
+/// 更新抽奖插件信息
+/// @param dataArray 抽奖插件数据
+- (void)updateLotteryWidgetViewInfo:(NSArray *)dataArray;
 
 @end
 

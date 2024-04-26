@@ -10,6 +10,7 @@
 
 /// 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVLSDocumentListUploadCell.h"
@@ -80,11 +81,12 @@ PLVSDocumentListProtocol
             itemNum = 6.0;
         }
     }
-
-    self.lbTitle.frame = CGRectMake(margin, 0, 68, 22);
+    
+    CGSize lbTitleSize = [self.lbTitle sizeThatFits:CGSizeMake(MAXFLOAT, 22)];
+    self.lbTitle.frame = CGRectMake(margin, 0, lbTitleSize.width + 4, 22);
     self.lbCount.frame = CGRectMake(CGRectGetMaxX(self.lbTitle.frame) + 8, 0, 100, 22);
     self.viewLine.frame = CGRectMake(margin, 30, selfSize.width - 2 * margin, 1);
-    self.refreshButton.frame = CGRectMake(CGRectGetMaxX(self.viewLine.frame) - 68, 0, 68, 20);
+    self.refreshButton.frame = CGRectMake(CGRectGetMaxX(self.viewLine.frame) - 68, 0, 70, 20);
     self.collectionView.frame = CGRectMake(0, 39, selfSize.width, selfSize.height - 39);
     
     UICollectionViewFlowLayout *collectionViewLayout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
@@ -106,7 +108,7 @@ PLVSDocumentListProtocol
         _lbTitle = [[UILabel alloc] init];
         _lbTitle.font = [UIFont boldSystemFontOfSize:16];
         _lbTitle.textColor = PLV_UIColorFromRGB(@"#F0F1F5");
-        _lbTitle.text = @"所有文档";
+        _lbTitle.text = PLVLocalizedString(@"所有文档");
     }
     
     return _lbTitle;
@@ -166,7 +168,7 @@ PLVSDocumentListProtocol
         _refreshButton = [UIButton buttonWithType:UIButtonTypeCustom];
         UIImage *normalImage = [PLVLSUtils imageForDocumentResource:@"plvls_doc_btn_refresh"];
         [_refreshButton setImage:normalImage forState:UIControlStateNormal];
-        [_refreshButton setTitle:@" 刷新" forState:UIControlStateNormal];
+        [_refreshButton setTitle:PLVLocalizedString(@" 刷新") forState:UIControlStateNormal];
         _refreshButton.titleLabel.font = [UIFont systemFontOfSize:14];
         _refreshButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentRight;
         [_refreshButton setTitleColor:[PLVColorUtil colorFromHexString:@"#4399FF"] forState:UIControlStateNormal];
@@ -249,7 +251,7 @@ PLVSDocumentListProtocol
     [self.collectionView.mj_header endRefreshing];
     
     if (!success) {
-        NSString *tips = @"请求文档列表失败，请稍候重试";
+        NSString *tips = PLVLocalizedString(@"请求文档列表失败，请稍候重试");
         if (error) {
             tips = [tips stringByAppendingFormat:@" #%zd", error.code];
         }
@@ -258,7 +260,7 @@ PLVSDocumentListProtocol
 }
 
 - (void)documentListViewModel_deleteDataFail:(NSError *)error {
-    NSString *tips = @"删除文档失败，请稍候重试";
+    NSString *tips = PLVLocalizedString(@"删除文档失败，请稍候重试");
     if (error) {
         tips = [tips stringByAppendingFormat:@" #%zd", error.code];
     }
@@ -266,13 +268,15 @@ PLVSDocumentListProtocol
 }
 
 - (void)documentListViewModel_dataUpdate {
-    self.lbCount.text = [NSString stringWithFormat:@"共%ld个", [self.viewModel dataCount]];
+    self.lbCount.text = [NSString stringWithFormat:PLVLocalizedString(@"共%ld个"), [self.viewModel dataCount]];
     [self.collectionView reloadData];
     
-    NSIndexPath *selectIndexPath = [NSIndexPath indexPathForItem:self.viewModel.selectedIndex inSection:0];
-    [self.collectionView selectItemAtIndexPath:selectIndexPath
-                                      animated:NO
-                                scrollPosition:UICollectionViewScrollPositionNone];
+    if ([self.viewModel dataCount] + 1 > self.viewModel.selectedIndex) {
+        NSIndexPath *selectIndexPath = [NSIndexPath indexPathForItem:self.viewModel.selectedIndex inSection:0];
+        [self.collectionView selectItemAtIndexPath:selectIndexPath
+                                          animated:NO
+                                    scrollPosition:UICollectionViewScrollPositionNone];
+    }
 }
 
 #pragma mark - UICollectionView DataSource
@@ -330,8 +334,8 @@ PLVSDocumentListProtocol
                 [[PLVDocumentUploadClient sharedClient] retryUploadWithFileId:identifier];
             } else if (state == 4) {
                 NSString *errorMsg = [weakSelf.viewModel errorMsgWithFileId:identifier];
-                NSString *message = [NSString stringWithFormat:@"转码失败原因：%@", errorMsg];
-                [PLVLSUtils showAlertWithMessage:message cancelActionTitle:@"确定" cancelActionBlock:nil];
+                NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"转码失败原因：%@"), errorMsg];
+                [PLVLSUtils showAlertWithMessage:message cancelActionTitle:PLVLocalizedString(@"确定") cancelActionBlock:nil];
             }
         };
         cell.animateLossButtonHandler = ^{
@@ -372,14 +376,14 @@ PLVSDocumentListProtocol
     [self dismissDeleteView];
     
     if (index == self.viewModel.selectedIndex) {
-        [PLVLSUtils showToastInHomeVCWithMessage:@"不能删除展示中的文档"];
+        [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"不能删除展示中的文档")];
         return;
     }
     
     self.viewModel.deletingIndex = index;
     
     __weak typeof(self) weakSelf = self;
-    [PLVLSUtils showAlertWithMessage:@"删除文档后将无法恢复，确认删除吗？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"删除" confirmActionBlock:^{
+    [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"删除文档后将无法恢复，确认删除吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"删除") confirmActionBlock:^{
         [weakSelf.viewModel deleteDocumentAtDeletingIndex];
     }];
 }

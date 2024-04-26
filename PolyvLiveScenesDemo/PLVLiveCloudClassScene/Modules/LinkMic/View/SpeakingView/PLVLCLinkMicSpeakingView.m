@@ -8,6 +8,7 @@
 
 #import "PLVLCLinkMicSpeakingView.h"
 
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLinkMicSpeakingView ()
@@ -69,8 +70,8 @@
         NSString * nickname = nicknamesArray[i];
         NSString * showNickname = nickname;
         if ([PLVFdUtil checkStringUseable:nickname]) {
-            if ([nickname hasSuffix:@"(我)"] && nickname.length > (maxNicknameLength + 3)) {
-                showNickname = [NSString stringWithFormat:@"%@...(我)",[nickname substringToIndex:maxNicknameLength]];
+            if ([nickname hasSuffix:PLVLocalizedString(@"(我)")] && nickname.length > (maxNicknameLength + 3)) {
+                showNickname = [NSString stringWithFormat:PLVLocalizedString(@"%@...(我)"),[nickname substringToIndex:maxNicknameLength]];
             }else if (nickname.length > maxNicknameLength){
                 showNickname = [NSString stringWithFormat:@"%@...",[nickname substringToIndex:maxNicknameLength]];
             }
@@ -84,7 +85,7 @@
             fullNicknames = showNickname;
         }
     }
-    if (legalNicknameCount > 1) { [fullNicknames stringByAppendingString:@"等"]; }
+    if (legalNicknameCount > 1) { [fullNicknames stringByAppendingString:PLVLocalizedString(@"等")]; }
     self.nickNamesLabel.text = fullNicknames;
     [self changeHiddenStatus];
 }
@@ -145,7 +146,7 @@
 - (UILabel *)speakingLabel{
     if (!_speakingLabel) {
         _speakingLabel = [[UILabel alloc] init];
-        _speakingLabel.text = @"正在发言";
+        _speakingLabel.text = PLVLocalizedString(@"正在发言");
         _speakingLabel.textAlignment = NSTextAlignmentCenter;
         _speakingLabel.textColor = [UIColor colorWithRed:208/255.0 green:208/255.0 blue:208/255.0 alpha:1.0];
         _speakingLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];

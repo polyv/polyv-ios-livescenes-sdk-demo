@@ -10,10 +10,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#define PLVECRedpackButtonPopupViewWidth (134.0)
-#define PLVECRedpackButtonPopupViewHeight (28.0)
-
 @interface PLVECRedpackButtonPopupView : UIView
+
+@property (nonatomic, assign, readonly) CGSize caculateSize;
 
 /// 初始化方法
 /// @param string 气泡内部Label文案

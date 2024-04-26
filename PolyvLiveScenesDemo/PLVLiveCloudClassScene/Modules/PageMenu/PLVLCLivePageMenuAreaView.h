@@ -60,6 +60,10 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param callback 开始卡片推送的回调，是否显示挂件（YES 显示，NO不显示）
 - (void)startCardPush:(BOOL)start cardPushInfo:(NSDictionary *)dict callback:(void (^)(BOOL show))callback;
 
+/// 更新商品库菜单Tab
+/// @param dict 商品菜单参数
+- (void)updateProductMenuTab:(NSDictionary *)dict;
+
 - (void)displayProductPageToExternalView:(UIView *)externalView;
 
 - (void)rollbackProductPageContentView;
@@ -97,6 +101,16 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView alertLongContentMessage:(PLVChatModel *)model;
+
+/// 点击互动模块控件的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param event 互动模块事件
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView emitInteractEvent:(NSString *)event;
+
+/// 抽奖挂件显示状态改变的的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param show 当前的显示状态
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView lotteryWidgetShowStatusChanged:(BOOL)show;
 
 @end
 NS_ASSUME_NONNULL_END

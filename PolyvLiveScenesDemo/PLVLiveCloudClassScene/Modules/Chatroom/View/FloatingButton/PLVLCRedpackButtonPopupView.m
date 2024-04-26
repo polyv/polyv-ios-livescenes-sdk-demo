@@ -9,7 +9,6 @@
 #import "PLVLCRedpackButtonPopupView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
-static CGFloat kLabelContainerWidth = 128.0;
 static CGFloat kLabelContainerHeight = 28.0;
 static CGFloat kArrowWidth = 10.0;
 static CGFloat kArrowHeight = 6.0;
@@ -33,7 +32,8 @@ static CGFloat kArrowHeight = 6.0;
     self.bgView.frame = self.gradientLayer.frame = self.bounds;
     
     CGFloat labelHeight = 16.0;
-    self.label.frame = CGRectMake(0, (kLabelContainerHeight - labelHeight) / 2.0, kLabelContainerWidth, labelHeight);
+    CGFloat labelWidth = self.caculateSize.width - (self.isLandscape ? 0 : kArrowHeight);
+    self.label.frame = CGRectMake(0, (kLabelContainerHeight - labelHeight) / 2.0, labelWidth, labelHeight);
     
     UIBezierPath *maskPath = [self bgViewBezierPathWithSize:self.bounds.size];
     CAShapeLayer *maskLayer = [[CAShapeLayer alloc] init];
@@ -54,14 +54,15 @@ static CGFloat kArrowHeight = 6.0;
         }
         
         self.isLandscape = isLandscape;
-        if (self.isLandscape) {
-            self.caculateSize = CGSizeMake(kLabelContainerWidth, kLabelContainerHeight + kArrowHeight);
-        } else {
-            self.caculateSize = CGSizeMake(kLabelContainerWidth + kArrowHeight, kLabelContainerHeight);
-        }
-        
         [self addSubview:self.bgView];
         [self addSubview:self.label];
+        
+        CGFloat labelWidth = [self.label sizeThatFits:CGSizeMake(MAXFLOAT, kLabelContainerHeight)].width + 14;
+        if (self.isLandscape) {
+            self.caculateSize = CGSizeMake(labelWidth, kLabelContainerHeight + kArrowHeight);
+        } else {
+            self.caculateSize = CGSizeMake(labelWidth + kArrowHeight, kLabelContainerHeight);
+        }
     }
     return self;
 }
@@ -140,10 +141,9 @@ static CGFloat kArrowHeight = 6.0;
     if (!_label) {
         _label = [[UILabel alloc] init];
         _label.textColor = [UIColor whiteColor];
-        _label.font = [UIFont systemFontOfSize:14];
+        _label.font = [UIFont systemFontOfSize:12];
         _label.textAlignment = NSTextAlignmentCenter;
         _label.text = self.labelString;
-        _label.adjustsFontSizeToFitWidth = YES;
     }
     return _label;
 }

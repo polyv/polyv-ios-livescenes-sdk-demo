@@ -9,6 +9,7 @@
 #import "PLVLCLandscapeLongContentCell.h"
 #import "PLVChatTextView.h"
 #import "PLVEmoticonManager.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -87,8 +88,15 @@ static CGFloat kButtonoHeight = 34.0;
     
     self.cellWidth = cellWidth;
     self.model = model;
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
     
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
 }
 
@@ -100,7 +108,15 @@ static CGFloat kButtonoHeight = 34.0;
     CGFloat xPadding = 12.0; // 气泡与textView的左右内间距
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2;
     
-    NSMutableAttributedString *contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.landscapeAttributeString;
+    } else {
+        contentLabelString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+        model.landscapeAttributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     CGFloat bubbleHeight = 4 + contentHeight + 4 + kButtonoHeight; // content文本与气泡的内部有上下间距4
@@ -123,7 +139,7 @@ static CGFloat kButtonoHeight = 34.0;
 
 #pragma mark - [ Private Method ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId {
     PLVChatUser *user = model.user;
     UIFont *font = [UIFont systemFontOfSize:14.0];
@@ -139,7 +155,7 @@ static CGFloat kButtonoHeight = 34.0;
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -186,7 +202,7 @@ static CGFloat kButtonoHeight = 34.0;
 - (UIButton *)copButton {
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];
@@ -198,7 +214,7 @@ static CGFloat kButtonoHeight = 34.0;
 - (UIButton *)foldButton {
     if (!_foldButton) {
         _foldButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_foldButton setTitle:@"更多" forState:UIControlStateNormal];
+        [_foldButton setTitle:PLVLocalizedString(@"更多") forState:UIControlStateNormal];
         _foldButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];

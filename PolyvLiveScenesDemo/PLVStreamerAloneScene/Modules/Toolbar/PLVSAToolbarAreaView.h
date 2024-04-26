@@ -9,6 +9,14 @@
 #import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
+
+typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
+    PLVSAToolbarLinkMicButtonStatus_Default = 0, // 默认状态
+    PLVSAToolbarLinkMicButtonStatus_NotLive = 1, // 未开启直播
+    PLVSAToolbarLinkMicButtonStatus_HandUp = 2, // 等待讲师应答中（举手中）
+    PLVSAToolbarLinkMicButtonStatus_Joined = 3, // 已加入连麦（连麦中）
+};
+
 @class PLVSAToolbarAreaView;
 @protocol PLVSAToolbarAreaViewDelegate <NSObject>
 
@@ -43,6 +51,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 同时更改连麦按钮状态，enbale设为YES
 @property (nonatomic, assign) BOOL channelLinkMicOpen;
 
+@property (nonatomic, assign, readonly) PLVSAToolbarLinkMicButtonStatus linkMicButtonStatus;
+
+// 连麦布局切换(默认平铺，选中为主讲模式)
+@property (nonatomic, strong, readonly) UIButton *layoutSwitchButton;
+
 /// 人员按钮右上角红点显示或隐藏
 /// @param show YES: 显示；NO：隐藏
 - (void)showMemberBadge:(BOOL)show;
@@ -51,6 +64,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note 更新用户数量时，会更新连麦布局切换按钮显示状态 （大于1时显示）
 /// @param onlineUserCount 连麦的用户数量
 - (void)updateOnlineUserCount:(NSInteger)onlineUserCount;
+
+/// 更新当前连麦按钮状态【本地嘉宾用户有效】
+/// @param status 连麦按钮状态
+- (void)updateLinkMicButtonStatus:(PLVSAToolbarLinkMicButtonStatus)status;
+
+/// 检测是否自动开启连麦
+- (void)autoOpenMicLinkIfNeed;
 
 @end
 

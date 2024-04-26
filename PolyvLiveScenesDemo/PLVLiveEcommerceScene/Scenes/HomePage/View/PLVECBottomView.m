@@ -13,6 +13,8 @@
 
 @property (nonatomic, strong) UIButton *closeButton;
 
+@property (nonatomic, strong) UIVisualEffectView *effectView; // 高斯模糊效果图
+
 @end
 
 @implementation PLVECBottomView
@@ -23,20 +25,30 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        UIBlurEffect *blur = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
-        UIVisualEffectView *effectView = [[UIVisualEffectView alloc] initWithEffect:blur];
-        effectView.frame = self.bounds;
-        [self addSubview:effectView];
-        
-        [self drawViewCornerRadius:self size:frame.size cornerRadii:CGSizeMake(10.f, 10.f) corners:UIRectCornerTopLeft|UIRectCornerTopRight];
+        [self addSubview:self.effectView];
         
         self.closeButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        self.closeButton.frame = CGRectMake(CGRectGetWidth(frame)-36, 15, 28, 28);
         [self.closeButton setImage:[PLVECUtils imageForWatchResource:@"plv_floatView_close_btn"] forState:UIControlStateNormal];
         [self.closeButton addTarget:self action:@selector(closeButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:self.closeButton];
     }
     return self;
+}
+
+- (void)layoutSubviews{
+    [super layoutSubviews];
+    self.effectView.frame = self.bounds;
+    UIRectCorner corners = [PLVECUtils sharedUtils].isLandscape ? UIRectCornerTopLeft|UIRectCornerBottomLeft : UIRectCornerTopLeft|UIRectCornerTopRight;
+    [self drawViewCornerRadius:self size:self.frame.size cornerRadii:CGSizeMake(10.f, 10.f) corners:corners];
+    self.closeButton.frame = CGRectMake(CGRectGetWidth(self.frame)-36, 15, 28, 28);
+}
+
+- (UIVisualEffectView *)effectView {
+    if (!_effectView) {
+        UIBlurEffect *effect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleDark];
+        _effectView = [[UIVisualEffectView alloc] initWithEffect:effect];
+    }
+    return _effectView;
 }
 
 #pragma mark - Action

@@ -12,6 +12,7 @@
 #import "PLVLCDownloadProgressView.h"
 #import "PLVRoomDataManager.h"
 #import "PLVLCDownloadViewModel.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCDownloadBottomSheet ()
 
@@ -115,18 +116,18 @@
         // 来源于本地数据
         PLVPlaybackLocalVideoInfoModel *localModel = (PLVPlaybackLocalVideoInfoModel *)self.videoModel;
         NSString *sizeString = [NSByteCountFormatter stringFromByteCount:localModel.totalBytesExpectedToWrite countStyle:NSByteCountFormatterCountStyleFile];
-        self.videoSizeLabel.text = [NSString stringWithFormat:@"视频大小：%@", sizeString];
+        self.videoSizeLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"视频大小：%@"), sizeString];
     }else {
         // 来源于在线数据
         if (![self.videoModel.liveType isEqualToString:@"ppt"]) {
             // 纯视频
             NSString *sizeString = [NSByteCountFormatter stringFromByteCount:self.videoModel.videoSize countStyle:NSByteCountFormatterCountStyleFile];
-            self.videoSizeLabel.text = [NSString stringWithFormat:@"视频大小：%@", sizeString];
+            self.videoSizeLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"视频大小：%@"), sizeString];
         }else {
             // 带ppt的三分屏视频
             NSInteger totalSize = self.videoModel.zipSize + self.videoModel.videoSize;
             NSString *sizeString = [NSByteCountFormatter stringFromByteCount:totalSize countStyle:NSByteCountFormatterCountStyleFile];
-            self.videoSizeLabel.text = [NSString stringWithFormat:@"视频大小：%@", sizeString];
+            self.videoSizeLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"视频大小：%@"), sizeString];
         }
     }
     
@@ -168,7 +169,7 @@
             }];
         }
     }else {
-        [PLVFdUtil showHUDWithTitle:@"该账号暂不支持下载视频" detail:@"请联系管理员开启" view:self];
+        [PLVFdUtil showHUDWithTitle:PLVLocalizedString(@"该账号暂不支持下载视频") detail:PLVLocalizedString(@"请联系管理员开启") view:self];
     }
 }
 
@@ -176,7 +177,7 @@
 - (UILabel *)sheetTitleLabel {
     if (!_sheetTitleLabel) {
         _sheetTitleLabel = [[UILabel alloc] init];
-        _sheetTitleLabel.text = @"下载视频";
+        _sheetTitleLabel.text = PLVLocalizedString(@"下载视频");
         _sheetTitleLabel.textAlignment = NSTextAlignmentCenter;
         _sheetTitleLabel.font = [UIFont fontWithName:@"PingFangSC" size:16];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:51/255.0 green:51/255.0 blue:51/255.0 alpha:1/1.0];
@@ -224,7 +225,7 @@
 - (UIButton *)downloadListButton {
     if (!_downloadListButton) {
         _downloadListButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_downloadListButton setTitle:@"查看下载列表 >" forState:0];
+        [_downloadListButton setTitle:PLVLocalizedString(@"查看下载列表 >") forState:0];
         [_downloadListButton setTitleColor:[PLVColorUtil colorFromHexString:@"#3082FE"] forState:0];
         _downloadListButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC" size:14];
         [_downloadListButton addTarget:self action:@selector(clickDownloadListButtonAction) forControlEvents:UIControlEventTouchUpInside];

@@ -27,6 +27,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 @optional
 
+- (NSTimeInterval)homePageView_playbackMaxPosition:(PLVECHomePageView *)homePageView;
+
 /// 切换线路
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPlayLine:(NSUInteger)line;
 
@@ -63,6 +65,12 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 打开小窗播放
 - (void)homePageViewClickPictureInPicture:(PLVECHomePageView *)homePageView;
 
+/// 点击语言切换按钮
+- (void)homePageView:(PLVECHomePageView *)homePageView switchLanguageMode:(NSInteger)languageMode;
+
+/// 返回竖屏样式
+- (void)homePageViewWannaBackToVerticalScreen:(PLVECHomePageView *)homePageView;
+
 /// 加载打赏信息时触发
 /// @param rewardEnable 是否支持打赏
 /// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏
@@ -85,9 +93,20 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param model 对应消息数据模型
 - (void)homePageView_checkRedpackStateResult:(PLVRedpackState)state chatModel:(PLVChatModel *)model;
 
+/// 点击互动模块控件的回调
+/// @param event 互动模块事件
+- (void)homePageView:(PLVECHomePageView *)homePageView emitInteractEvent:(NSString *)event;
+
 @end
 
 @interface PLVECHomePageView : UIView
+
+/// 是否在iPad上显示横屏返回按钮
+///
+/// @note NO-在iPad上横屏时不显示横屏返回按钮，YES-显示
+///       当项目未适配分屏时，建议设置为YES
+@property (nonatomic,assign) BOOL backButtonShowOnIpad;
+
 
 /// 初始化方法
 - (instancetype)initWithType:(PLVECHomePageType)type delegate:(id<PLVECHomePageViewDelegate>)delegate;
@@ -132,11 +151,23 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param show YES:显示  NO:隐藏
 - (void)updateMoreButtonShow:(BOOL)show;
 
+/// 更新进度控件隐藏（包含进度条，进度文本）
+- (void)updateProgressControlsHidden:(BOOL)hidden;
+
+/// 更新播放按钮是否启用
+- (void)updatePlayButtonEnabled:(BOOL)enabled;
+
 - (void)updateIarEntranceButtonDataArray:(NSArray *)dataArray;
 
 /// 更新更多按钮的按钮状态
 /// @param dataArray 按钮数据
 - (void)updateMoreButtonDataArray:(NSArray *)dataArray;
+
+- (void)showInScreen:(BOOL)show;
+
+/// 更新抽奖插件信息
+/// @param dataArray 抽奖插件数据
+- (void)updateLotteryWidgetViewInfo:(NSArray *)dataArray;
 
 @end
 

@@ -15,6 +15,7 @@
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCMediaBrightnessView.h"
 
 typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
@@ -187,7 +188,7 @@ UIGestureRecognizerDelegate>
 
 - (void)setPlayTimesLabelWithTimes:(NSInteger)times{
     NSString * timesString = (times > 10000) ? [NSString stringWithFormat:@"%0.1fw", times / 10000.0] : [NSString stringWithFormat:@"%ld",times];
-    self.playTimesLabel.text = [NSString stringWithFormat:@"%@次播放",timesString];
+    self.playTimesLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"%@次播放"),timesString];
     [self refreshPlayTimesLabelFrame];
 }
 
@@ -201,6 +202,22 @@ UIGestureRecognizerDelegate>
         [self.playButton setImage:[self getImageWithName:@"plvlc_media_skin_pause"] forState:UIControlStateSelected | UIControlStateHighlighted];
     }else{
         [self.playButton setImage:[self getImageWithName:@"plvlc_media_skin_play"] forState:UIControlStateHighlighted];
+    }
+    
+    if (!self.playButton.enabled) {
+        UIImage *buttonImg = self.playButton.selected ? [self getImageWithName:@"plvlc_media_skin_pause"] : [self getImageWithName:@"plvlc_media_skin_play"];
+        [self.playButton setImage:buttonImg forState:UIControlStateNormal];
+    }
+}
+
+- (void)enablePlayControlButtons:(BOOL)enable {
+    self.playButton.enabled = enable;
+    self.refreshButton.enabled = enable;
+    if (enable) {
+        [self.playButton setImage:[self getImageWithName:@"plvlc_media_skin_play"] forState:UIControlStateNormal];
+    } else {
+        UIImage *buttonImg = self.playButton.selected ? [self getImageWithName:@"plvlc_media_skin_pause"] : [self getImageWithName:@"plvlc_media_skin_play"];
+        [self.playButton setImage:buttonImg forState:UIControlStateNormal];
     }
 }
 
@@ -360,6 +377,14 @@ UIGestureRecognizerDelegate>
     NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshPaintButtonShow failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
+- (void)refreshProgressControlsShow:(BOOL)show {
+    self.currentTimeLabel.hidden = !show;
+    self.diagonalsLabel.hidden = !show;
+    self.durationLabel.hidden = !show;
+    self.progressSlider.hidden = !show;
+    self.progressView.hidden = !show;
+}
+
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView{
     BOOL otherViewCanBeHandler = NO;
     if (otherView.hidden != YES && otherView.alpha > 0 && otherView.userInteractionEnabled) {
@@ -448,7 +473,7 @@ UIGestureRecognizerDelegate>
 - (UILabel *)titleLabel{
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = @"房间标题";
+        _titleLabel.text = PLVLocalizedString(@"房间标题");
         _titleLabel.textAlignment = NSTextAlignmentLeft;
         _titleLabel.textColor = [UIColor whiteColor];
         _titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
@@ -459,7 +484,7 @@ UIGestureRecognizerDelegate>
 - (UILabel *)playTimesLabel{
     if (!_playTimesLabel && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _playTimesLabel = [[UILabel alloc] init];
-        _playTimesLabel.text = @"播放量";
+        _playTimesLabel.text = PLVLocalizedString(@"播放量");
         _playTimesLabel.textAlignment = NSTextAlignmentCenter;
         _playTimesLabel.textColor = PLV_UIColorFromRGB(@"D0D0D0");
         _playTimesLabel.font = [UIFont fontWithName:@"PingFang SC" size:10];
@@ -516,7 +541,7 @@ UIGestureRecognizerDelegate>
         [_playButton setImage:[self getImageWithName:@"plvlc_media_skin_play"] forState:UIControlStateNormal];
         [_playButton setImage:[self getImageWithName:@"plvlc_media_skin_pause"] forState:UIControlStateSelected];
         [_playButton addTarget:self action:@selector(playButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _playButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback ? YES : NO);
+        _playButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback || (self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback && ![PLVRoomDataManager sharedManager].roomData.menuInfo.showPlayButtonEnabled) ? YES : NO);
     }
     return _playButton;
 }
@@ -535,7 +560,7 @@ UIGestureRecognizerDelegate>
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (!_floatViewShowButtonTipsLabel && roomData.channelType != PLVChannelTypeAlone) {
         _floatViewShowButtonTipsLabel = [[UILabel alloc] init];
-        _floatViewShowButtonTipsLabel.text = @"可从此处重新打开浮窗";
+        _floatViewShowButtonTipsLabel.text = PLVLocalizedString(@"可从此处重新打开浮窗");
         _floatViewShowButtonTipsLabel.textAlignment = NSTextAlignmentCenter;
         _floatViewShowButtonTipsLabel.textColor = PLV_UIColorFromRGB(@"FFFFFF");
         _floatViewShowButtonTipsLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
@@ -616,7 +641,7 @@ UIGestureRecognizerDelegate>
 }
 
 - (PLVProgressSlider *)progressSlider{
-    if (!_progressSlider && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+    if (!_progressSlider && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback && [PLVRoomDataManager sharedManager].roomData.menuInfo.playbackProgressBarEnabled) {
         _progressSlider = [[PLVProgressSlider alloc] init];
         _progressSlider.delegate = self;
         _progressSlider.userInteractionEnabled = NO;
@@ -627,7 +652,7 @@ UIGestureRecognizerDelegate>
 }
 
 - (PLVLCDocumentToolView *)documentToolView {
-    if (!_documentToolView) {
+    if (!_documentToolView && [PLVRoomDataManager sharedManager].roomData.menuInfo.viewerPptTurningEnabled) {
         _documentToolView = [[PLVLCDocumentToolView alloc] init];
         _documentToolView.delegate = self;
     }
@@ -658,6 +683,7 @@ UIGestureRecognizerDelegate>
 - (void)controlMedia:(UIPanGestureRecognizer *)gestureRecognizer {
     CGPoint p = [gestureRecognizer locationInView:self];
     CGPoint velocty = [gestureRecognizer velocityInView:self];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (gestureRecognizer.state == UIGestureRecognizerStateBegan) {
         self.lastPoint = p;
         if (fabs(velocty.x) <= fabs(velocty.y)) { //在屏幕右边，上下滑动调整声音
@@ -668,6 +694,13 @@ UIGestureRecognizerDelegate>
                 [PLVLCMediaBrightnessView sharedBrightnessView];
             }
         } else {
+            if (!roomData.menuInfo.playbackProgressBarEnabled || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"] || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) {
+                return;
+            }
+            if (self.progressSlider.isHidden) {
+                return;
+            }
+            
             self.panType = PLVBasePlayerSKinViewTyoeAdjustProgress;
             self.scrubTime = self.currentPlaybackTime;
             [self setProgressLabelWithCurrentTime:self.currentPlaybackTime durationTime:self.duration];
@@ -688,6 +721,13 @@ UIGestureRecognizerDelegate>
                 break;
             }
             case PLVBasePlayerSKinViewTyoeAdjustProgress: {
+                if (!roomData.menuInfo.playbackProgressBarEnabled || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"prohibitDrag"] || [roomData.menuInfo.playbackProgressBarOperationType isEqualToString:@"dragHistoryOnly"]) {
+                    break;
+                }
+                if (self.progressSlider.isHidden) {
+                    break;
+                }
+                
                 if (gestureRecognizer.state == UIGestureRecognizerStateChanged) {
                     self.scrubTime += velocty.x / 200;
                     if (self.scrubTime > self.duration) {

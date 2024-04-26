@@ -13,7 +13,9 @@
 #import "PLVLCQuitSpeakMessageCell.h"
 #import "PLVLCChatroomViewModel.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCImageMessageCell.h"
+#import <MJRefresh/MJRefresh.h>
 
 @interface PLVLCQuizViewController ()<
 PLVLCKeyboardToolViewDelegate,
@@ -31,6 +33,8 @@ UITableViewDataSource
 @property (nonatomic, strong) PLVLCNewMessageView *receiveNewMessageView;
 /// 聊天室置底控件
 @property (nonatomic, strong) PLVLCKeyboardToolView *keyboardToolView;
+/// 提问聊天室列表顶部加载更多控件
+@property (nonatomic, strong) MJRefreshNormalHeader *refresher;
 
 /// 未读消息条数
 @property (nonatomic, assign) NSUInteger newMessageCount;
@@ -41,15 +45,20 @@ UITableViewDataSource
 
 #pragma mark - Life Cycle
 
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        [self.view addSubview:self.tableView];
+        [self.view addSubview:self.receiveNewMessageView];
+        
+        [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        [[PLVLCChatroomViewModel sharedViewModel] createAnswerChatModel];
+    }
+    return self;
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
-    [self.view addSubview:self.tableView];
-    
-    [self.view addSubview:self.receiveNewMessageView];
-    
-    [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-    [[PLVLCChatroomViewModel sharedViewModel] createAnswerChatModel];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -85,6 +94,8 @@ UITableViewDataSource
         self.tableView.frame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - height);
         
         self.hasLayoutSubView = YES;
+        
+        [self scrollsToBottom:NO];
     }
 }
 
@@ -102,8 +113,19 @@ UITableViewDataSource
         _tableView.estimatedRowHeight = 0;
         _tableView.estimatedSectionFooterHeight = 0;
         _tableView.estimatedSectionHeaderHeight = 0;
+        _tableView.mj_header = self.refresher;
     }
     return _tableView;
+}
+
+- (MJRefreshNormalHeader *)refresher {
+    if (!_refresher) {
+        _refresher = [MJRefreshNormalHeader headerWithRefreshingTarget:self refreshingAction:@selector(refreshAction:)];
+        _refresher.lastUpdatedTimeLabel.hidden = YES;
+        _refresher.stateLabel.hidden = YES;
+        [_refresher.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
+    }
+    return _refresher;
 }
 
 - (PLVLCKeyboardToolView *)keyboardToolView {
@@ -132,6 +154,10 @@ UITableViewDataSource
     [self scrollsToBottom:YES];
 }
 
+- (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
+    [[PLVLCChatroomViewModel sharedViewModel] loadQuestionHistory];
+}
+
 #pragma mark - Private
 
 - (void)scrollsToBottom:(BOOL)animated {
@@ -147,6 +173,9 @@ UITableViewDataSource
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView hidden];
 }
@@ -160,7 +189,7 @@ UITableViewDataSource
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text replyModel:(PLVChatModel *)replyModel {
     BOOL success = [[PLVLCChatroomViewModel sharedViewModel] sendQuesstionMessage:text];
     if (!success) {
-        [PLVLCUtils showHUDWithTitle:@"消息发送失败" detail:@"" view:self.view];
+        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self.view];
     }
 }
 
@@ -187,6 +216,24 @@ UITableViewDataSource
         // 统计未读消息数
         [self addNewMessageCount];
     }
+}
+
+- (void)chatroomManager_loadQuestionHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
+    [self.refresher endRefreshing];
+    [self.tableView reloadData];
+    if (noMore) {
+        [self.refresher removeFromSuperview];
+    }
+    if (first) {
+        [self scrollsToBottom:NO];
+    } else {
+        [self.tableView scrollsToTop];
+    }
+}
+
+- (void)chatroomManager_loadQuestionHistoryFailure {
+    [self.refresher endRefreshing];
+    [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"提问历史记录获取失败") detail:@"" view:self.view];
 }
 
 #pragma mark - UITableView DataSource

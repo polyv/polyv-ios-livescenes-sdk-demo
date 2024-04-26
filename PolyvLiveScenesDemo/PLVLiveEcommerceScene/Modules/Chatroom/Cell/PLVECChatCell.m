@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVPhotoBrowser.h"
@@ -87,13 +88,41 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
         
         self.tapGestureView.frame = CGRectMake(0, 0, bubbleWidth, originY);
     } else if ([self.model.message isKindOfClass:[PLVImageMessage class]]) { // 图片消息布局
+        CGFloat labelWidth = self.cellWidth - originX * 2;
+        CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
+                                                                           options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
+                                                                           context:nil].size;
+        CGFloat chatLabelHeight = ceil(chatLabelSize.height) + 12; // 修复可能出现文字显示不全的情况
+        self.chatLabel.frame = CGRectMake(originX, originY, chatLabelSize.width, chatLabelHeight);
         PLVImageMessage *imageMessage = (PLVImageMessage *)self.model.message;
         CGSize imageViewSize = [PLVECChatCell calculateImageViewSizeWithImageSize:imageMessage.imageSize];
-        
-        self.chatImageView.frame = CGRectMake(originX, originY, imageViewSize.width, imageViewSize.height);
-        
+        BOOL lineBreak = chatLabelSize.width + imageViewSize.width + 4 * 3 > self.cellWidth;
+        if (lineBreak) { // 图片需要换行
+            originY += chatLabelHeight + 4;
+            self.chatImageView.frame = CGRectMake(originX, originY, imageViewSize.width, imageViewSize.height);
+        } else {
+            self.chatImageView.frame = CGRectMake(CGRectGetMaxX(self.chatLabel.frame) + 4, originY, imageViewSize.width, imageViewSize.height);
+        }
         originY += imageViewSize.height + 4;
-        bubbleWidth = MIN(imageViewSize.width + originX * 2, self.cellWidth);
+        bubbleWidth = lineBreak ? self.cellWidth : MIN(imageViewSize.width + chatLabelSize.width + originX * 3, self.cellWidth);
+    } else if ([self.model.message isKindOfClass:[PLVImageEmotionMessage class]]) { // 图片表情消息布局
+        CGFloat labelWidth = self.cellWidth - originX * 2;
+        CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
+                                                                           options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
+                                                                           context:nil].size;
+        CGFloat chatLabelHeight = ceil(chatLabelSize.height) + 12; // 修复可能出现文字显示不全的情况
+        self.chatLabel.frame = CGRectMake(originX, originY, chatLabelSize.width, chatLabelHeight);
+        PLVImageEmotionMessage *imageMessage = (PLVImageEmotionMessage *)self.model.message;
+        CGSize imageViewSize = [PLVECChatCell calculateImageViewSizeWithImageSize:imageMessage.imageSize];
+        BOOL lineBreak = chatLabelSize.width + imageViewSize.width + 4 * 3 > self.cellWidth;
+        if (lineBreak) { // 图片需要换行
+            originY += chatLabelHeight + 4;
+            self.chatImageView.frame = CGRectMake(originX, originY, imageViewSize.width, imageViewSize.height);
+        } else {
+            self.chatImageView.frame = CGRectMake(CGRectGetMaxX(self.chatLabel.frame) + 4, originY, imageViewSize.width, imageViewSize.height);
+        }
+        originY += imageViewSize.height + 4;
+        bubbleWidth = lineBreak ? self.cellWidth : MIN(imageViewSize.width + chatLabelSize.width + originX * 3, self.cellWidth);
     } else if ([self.model.message isKindOfClass:[PLVRedpackMessage class]]) { // 红包消息布局
         CGFloat labelWidth = self.cellWidth - originX * 2;
         CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
@@ -113,14 +142,13 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
         bubbleWidth = MIN(chatLabelSize.width + originX * 2, self.cellWidth);
     } else { // 其他消息布局
         CGFloat labelWidth = self.cellWidth - originX * 2;
-        CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
-                                                                           options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
-                                                                           context:nil].size;
-        CGFloat chatLabelHeight = ceil(chatLabelSize.height) + 8; // 修复可能出现文字显示不全的情况
-        self.chatLabel.frame = CGRectMake(originX, originY, chatLabelSize.width, chatLabelHeight);
+        CGSize chatLabelSize = [self.chatLabel sizeThatFits:CGSizeMake(labelWidth, MAXFLOAT)];
+        CGFloat chatLabelHeight = ceil(chatLabelSize.height);
+        CGFloat chatLabelWidth = ceil(chatLabelSize.width);
+        self.chatLabel.frame = CGRectMake(originX, originY, chatLabelWidth, chatLabelHeight);
         
         originY += chatLabelHeight + 4;
-        bubbleWidth = MIN(chatLabelSize.width + originX * 2, self.cellWidth);
+        bubbleWidth = MIN(chatLabelWidth + originX * 2, self.cellWidth);
     }
     
     self.bubbleView.frame = CGRectMake(0, 0, bubbleWidth, originY);
@@ -161,7 +189,13 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     self.chatLabel.lineBreakMode = !fileImage ? NSLineBreakByTruncatingTail : NSLineBreakByTruncatingMiddle;
     
     // 设置 "昵称：文本（如果有的话）"
-    NSAttributedString *chatLabelString = [PLVECChatCell chatLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
+    }
+    
     self.chatLabel.attributedText = chatLabelString;
 }
 
@@ -174,7 +208,13 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     CGFloat bubbleHeight = 4.0;
     
     // 内容文本高度
-    NSAttributedString *chatLabelString = [PLVECChatCell chatLabelAttributedStringWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
+    }
+    
     CGRect chatLabelRect = CGRectZero;
     if (chatLabelString) {
         BOOL isFileMessage = model.message && [model.message isKindOfClass:[PLVFileMessage class]];
@@ -212,12 +252,16 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     if ([model.message isKindOfClass:[PLVImageMessage class]]) {
         PLVImageMessage *imageMessage = (PLVImageMessage *)model.message;
         imageViewSize = [PLVECChatCell calculateImageViewSizeWithImageSize:imageMessage.imageSize];
-        bubbleHeight += imageViewSize.height + 4;
+        BOOL lineBreak = chatLabelRect.size.width + imageViewSize.width + 4 * 3 > cellWidth; // 换行
+        CGFloat chatLabelHeigt = ceil(chatLabelRect.size.height) + 12;
+        bubbleHeight += (lineBreak ? imageViewSize.height + 8 : (- chatLabelHeigt + MAX(chatLabelHeigt, imageViewSize.height + 4)));
     }
     
     if ([model.message isKindOfClass:[PLVImageEmotionMessage class]]) {
         imageViewSize = [PLVECChatCell calculateImageViewSizeWithImageSize:CGSizeMake(60.0, 60.0)];
-        bubbleHeight += imageViewSize.height + 4;
+        BOOL lineBreak = chatLabelRect.size.width + imageViewSize.width + 4 * 3 > cellWidth; // 换行
+        CGFloat chatLabelHeigt = ceil(chatLabelRect.size.height) + 12;
+        bubbleHeight += (lineBreak ? imageViewSize.height + 8 : (- chatLabelHeigt + MAX(chatLabelHeigt, imageViewSize.height + 4)));
     }
     
     return bubbleHeight + 4;
@@ -397,7 +441,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     if ([user.userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]) { // 自己的赠送记录
         NSString *giftName = PLV_SafeStringForDictKey(dataDic, @"giftName");
         giftName = [PLVFdUtil checkStringUseable:giftName] ? giftName : @"";
-        tip = [NSString stringWithFormat:@"%@(我) 赠送了 %@", user.userName, giftName];
+        tip = [NSString stringWithFormat:PLVLocalizedString(@"%@(我) 赠送了 %@"), user.userName, giftName];
     }
     NSMutableAttributedString *conentString = [[NSMutableAttributedString alloc] initWithString:tip attributes:contentAttDict];
     
@@ -434,9 +478,9 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     // 白色文本
     NSString *redpackTypeString = @"";
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
-        redpackTypeString = @"口令";
+        redpackTypeString = PLVLocalizedString(@"支付宝口令");
     }
-    NSString *contentString = [NSString stringWithFormat:@" %@ 发了一个%@红包，", chatModel.user.userName, redpackTypeString];
+    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), chatModel.user.userName, redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
                                     NSForegroundColorAttributeName:[UIColor whiteColor],
                                     NSBaselineOffsetAttributeName:@(4.0)};
@@ -447,7 +491,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
                                        kRedpackMessageTapKey:@(1),
                                        NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FF5959"],
                                        NSBaselineOffsetAttributeName:@(4.0)};
-    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:@"点击领取" attributes:redAttributeDict];
+    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"点击领取") attributes:redAttributeDict];
     
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     [muString appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
@@ -515,11 +559,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
 
 // 将UIView转换为UIImage对象
 + (UIImage *)imageFromUIView:(UIView *)view {
-    UIGraphicsBeginImageContext(view.bounds.size);
-    CGContextRef ctxRef = UIGraphicsGetCurrentContext();
-    [view.layer renderInContext:ctxRef];
-    UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
-    UIGraphicsEndImageContext();
+    UIImage *image = [PLVImageUtil imageFromUIView:view];
     return image;
 }
 

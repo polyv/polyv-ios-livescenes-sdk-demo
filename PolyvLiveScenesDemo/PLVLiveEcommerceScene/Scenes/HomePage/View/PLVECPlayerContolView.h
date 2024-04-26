@@ -37,6 +37,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) NSTimeInterval duration;
 
+/// 更新播放按钮是否播放的状态
+/// @param playing YES:播放中  NO:暂停
+- (void)updatePlayButtonWithPlaying:(BOOL)playing;
+
 @end
 
 NS_ASSUME_NONNULL_END

@@ -29,6 +29,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 判断model是否为有效类型，子类可覆写
 + (BOOL)isModelValid:(PLVChatModel *)model;
 
+/// 生成消息多属性文本
++ (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
+                                                                  user:(PLVChatUser *)user
+                                                           loginUserId:(NSString *)loginUserId
+                                                           isRemindMsg:(BOOL)isRemindMsg;
+
 @end
 
 NS_ASSUME_NONNULL_END

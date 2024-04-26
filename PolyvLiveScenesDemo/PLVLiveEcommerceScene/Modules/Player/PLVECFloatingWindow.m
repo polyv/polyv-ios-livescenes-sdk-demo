@@ -22,6 +22,8 @@
 @property (nonatomic, assign) CGPoint originPoint;
 /// 需要在悬浮窗上显示的，由外部带入的视图，与悬浮窗口等尺寸
 @property (nonatomic, strong) UIView *containerView;
+/// 外部视图
+@property (nonatomic, strong) UIView *contentView;
 /// 关闭按钮
 @property (nonatomic, strong) UIButton *closeButton;
 /// 返回按钮
@@ -37,8 +39,13 @@
 
 #pragma mark - [ Life Cycle ]
 
+- (void)dealloc {
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
 - (void)layoutSubviews {
     self.containerView.frame = self.bounds;
+    self.contentView.frame = self.containerView.bounds;
     self.closeButton.frame = CGRectMake(self.windowSize.width - 24, 0, 24, 24);
 }
 
@@ -69,6 +76,8 @@
         [self addSubview:self.containerView];
         [self addSubview:self.backButton];
         [self addSubview:self.closeButton];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didChangeOrientation:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     }
     return self;
 }
@@ -85,6 +94,7 @@
     
     self.frame = CGRectMake(self.originPoint.x, self.originPoint.y, self.windowSize.width, self.windowSize.height);
     self.backButton.frame = self.bounds;
+    self.containerView.frame = self.bounds;
 }
 
 #pragma mark - Getter & Setter
@@ -171,6 +181,18 @@
     }
 }
 
+#pragma mark Notification
+
+- (void)didChangeOrientation:(NSNotification *)notification {
+    if (self.hidden) {
+        return;
+    }
+    // 延迟1秒布局优化旋转后画面黑屏的问题
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self resetPositionWithSize:self.windowSize];
+    });
+}
+
 #pragma mark - Public
 
 - (void)showContentView:(UIView *)contentView {
@@ -196,14 +218,17 @@
         [self resetPositionWithSize:newSize];
     }
     
-    [self.containerView addSubview:contentView];
-    contentView.frame = self.containerView.bounds;
-    contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    contentView.userInteractionEnabled = YES;
+    self.contentView = contentView;
+    [self.containerView addSubview:self.contentView];
+    self.contentView.frame = self.containerView.bounds;
+    self.contentView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.contentView.userInteractionEnabled = YES;
 }
 
 - (void)close {
     self.hidden = YES;
+    [self.contentView removeFromSuperview];
+    self.contentView = nil;
     [self resetPosition];
     [self cleanRestoreSource];
 }

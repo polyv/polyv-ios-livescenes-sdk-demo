@@ -9,6 +9,7 @@
 #import "PLVSALongContentMessageCell.h"
 
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 #import "PLVPhotoBrowser.h"
 
@@ -231,7 +232,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         self.prohibitWordTipView.hidden = YES;
     }
     
-    NSMutableAttributedString *contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:self.loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:self.loginUserId];
+        model.attributeString = contentLabelString;
+    }
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     self.resendButton.hidden = (self.msgState != PLVChatMsgStateFail) && (!model.prohibitWord || model.prohibitWord.length == 0);
@@ -245,8 +252,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     CGFloat xPadding = 8.0; // 气泡与textView的左右内间距
     CGFloat resendWidth = 8 + 16;
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2 - resendWidth;
-    
-    NSMutableAttributedString *contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSALongContentMessageCell contentLabelAttributedStringWithModel:model loginUserId:loginUserId];
+        model.attributeString = contentLabelString;
+    }
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     
@@ -295,7 +307,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 
 #pragma mark - [ Private Method ]
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model
                                                            loginUserId:(NSString *)loginUserId {
     PLVChatUser *user = model.user;
@@ -312,7 +324,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     content = [content stringByAppendingString:@"："];
     
@@ -352,7 +364,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
-        quoteUserName = [quoteUserName stringByAppendingString:@"（我）"];
+        quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
@@ -383,9 +395,9 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }
@@ -503,7 +515,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 - (UIButton *)copButton {
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateNormal];
         [_copButton addTarget:self action:@selector(copButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -514,7 +526,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 - (UIButton *)foldButton {
     if (!_foldButton) {
         _foldButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_foldButton setTitle:@"更多" forState:UIControlStateNormal];
+        [_foldButton setTitle:PLVLocalizedString(@"更多") forState:UIControlStateNormal];
         _foldButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateNormal];
         [_foldButton addTarget:self action:@selector(foldButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -607,7 +619,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         self.msgState == PLVChatMsgStateFail) {  // 只有在发送失败方可触发重发点击事件，避免重复发送
         if ([self.model content]) {
             __weak typeof(self) weakSelf = self;
-            [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+            [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"重发该消息？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
                 weakSelf.model.msgState = PLVChatMsgStateSending;
                 weakSelf.resendHandler(weakSelf.model);
             }];

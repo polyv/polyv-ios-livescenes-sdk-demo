@@ -29,6 +29,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param previousUserId 前一个消息的用户Id
 + (CGFloat)cellHeightWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth previousUserId:(NSString *)previousUserId;
 
+/// 生成消息多属性文本
++ (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
+                                                                  user:(PLVChatUser *)user
+                                                           loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord;
+
 @end
 
 NS_ASSUME_NONNULL_END

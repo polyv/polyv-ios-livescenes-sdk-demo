@@ -9,6 +9,7 @@
 #import "PLVLSLinkMicWindowCell.h"
 
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLinkMicOnlineUser+LS.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -39,6 +40,9 @@
 @property (nonatomic, strong) UILabel * nicknameLabel;            // 昵称文本框 (负责展示 用户昵称)
 @property (nonatomic, strong) UILabel * linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
 @property (nonatomic, strong) UIImageView * speakerAuthImageView; // 显示主讲权限的图像视图 (负责展示 主讲权限)
+@property (nonatomic, strong) UIImageView *timerIcon; // 计时器图标
+@property (nonatomic, strong) UILabel *linkMicDuration; // 连麦时长
+@property (nonatomic, assign) BOOL linkMicDurationShow;
 
 @end
 
@@ -85,10 +89,14 @@
                                           cellWidth - 20 - 8,
                                           nicknameLabelHeight);
     
-    self.linkMicStatusLabel.frame = CGRectMake(2, 2, 41, 16);
+    CGSize labelSize = [self.linkMicStatusLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+    self.linkMicStatusLabel.frame = CGRectMake(2, 2, labelSize.width + 8, 16);
     
     CGFloat speakerImageViewOriginX = self.linkMicStatusLabel.isHidden ? 2 : CGRectGetMaxX(self.linkMicStatusLabel.frame) + 8;
     self.speakerAuthImageView.frame = CGRectMake(speakerImageViewOriginX, 2, 16, 16);
+    CGFloat timerIconOriginX = self.speakerAuthImageView.isHidden ? 4 : CGRectGetMaxX(self.speakerAuthImageView.frame) + 4;
+    self.timerIcon.frame = CGRectMake(timerIconOriginX, 4, 12, 12);
+    self.linkMicDuration.frame = CGRectMake(CGRectGetMaxX(self.timerIcon.frame) + 3, 4, cellWidth - CGRectGetMaxX(self.timerIcon.frame) + 3, 12);
 }
 
 
@@ -101,6 +109,9 @@
     /// 昵称文本
     NSString * actor = ([PLVFdUtil checkStringUseable:userModel.actor] && [self showActorLabelWithUser:userModel.userType]) ?  [NSString stringWithFormat:@"%@-",userModel.actor] : @"";
     self.nicknameLabel.text = [PLVFdUtil checkStringUseable:userModel.nickname] ? [NSString stringWithFormat:@"%@%@",actor,userModel.nickname] : [NSString stringWithFormat:@"unknown%@",userModel.linkMicUserId];
+    
+    [self updateLinkMicDuration:self.linkMicDurationShow];
+
 
     /// 麦克风图标
     self.micButton.selected = !userModel.currentMicOpen;
@@ -178,6 +189,19 @@
     [self contentBackgroudViewAddView:externalContentView];
 }
 
+- (void)updateLinkMicDuration:(BOOL)show {
+    BOOL shouldShow = self.userModel.userType != PLVSocketUserTypeTeacher && show;
+    if (self.userModel.currentLinkMicDuration > NSTimeIntervalSince1970) {
+        shouldShow = NO;
+    }
+    if (shouldShow) {
+        self.linkMicDuration.text = [PLVFdUtil secondsToString2:self.userModel.currentLinkMicDuration];
+    }
+    self.linkMicDuration.hidden = !shouldShow;
+    self.timerIcon.hidden = !shouldShow;
+    self.linkMicDurationShow = shouldShow;
+}
+
 #pragma mark - [ Private Methods ]
 - (UIImage *)getImageWithName:(NSString *)imageName{
     return [PLVLSUtils imageForLinkMicResource:imageName];
@@ -201,10 +225,10 @@
 
 - (void)setLinkMicStatusLabelWithInVoice:(BOOL)inLinkMic{
     if (inLinkMic) {
-        self.linkMicStatusLabel.text = @"连麦中";
+        self.linkMicStatusLabel.text = PLVLocalizedString(@"连麦中");
         self.linkMicStatusLabel.backgroundColor = PLV_UIColorFromRGB(@"#09C5B3");
     }else{
-        self.linkMicStatusLabel.text = @"未连麦";
+        self.linkMicStatusLabel.text = PLVLocalizedString(@"未连麦");
         self.linkMicStatusLabel.backgroundColor = PLV_UIColorFromRGB(@"#F1453D");
     }
 }
@@ -220,6 +244,8 @@
     // 添加 视图
     [self.contentView addSubview:self.contentBackgroudView];
     [self.contentView.layer addSublayer:self.shadowLayer];
+    [self.contentView addSubview:self.timerIcon];
+    [self.contentView addSubview:self.linkMicDuration];
     [self.contentView addSubview:self.micButton];
     [self.contentView addSubview:self.nicknameLabel];
     [self.contentView addSubview:self.linkMicStatusLabel];
@@ -259,7 +285,7 @@
 - (UILabel *)nicknameLabel{
     if (!_nicknameLabel) {
         _nicknameLabel = [[UILabel alloc]init];
-        _nicknameLabel.text = @"连麦人昵称";
+        _nicknameLabel.text = PLVLocalizedString(@"连麦人昵称");
         _nicknameLabel.textColor = [UIColor whiteColor];
         _nicknameLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
     }
@@ -293,6 +319,28 @@
             userType == PLVSocketUserTypeTeacher ||
             userType == PLVSocketUserTypeAssistant ||
             userType == PLVSocketUserTypeManager);
+}
+
+- (UIImageView *)timerIcon {
+    if (!_timerIcon) {
+        _timerIcon = [[UIImageView alloc] init];
+        _timerIcon.image = [self getImageWithName:@"plvls_linkmic_cell_timer_icon"];
+        _timerIcon.contentMode = UIViewContentModeScaleAspectFill;
+        _timerIcon.hidden = YES;
+    }
+    return _timerIcon;
+}
+
+- (UILabel *)linkMicDuration {
+    if (!_linkMicDuration) {
+        _linkMicDuration = [[UILabel alloc]init];
+        _linkMicDuration.text = [PLVFdUtil secondsToString2:self.userModel.currentLinkMicDuration];;
+        _linkMicDuration.font = [UIFont systemFontOfSize:12];
+        _linkMicDuration.textColor = [UIColor whiteColor];
+        _linkMicDuration.textAlignment = NSTextAlignmentLeft;
+        _linkMicDuration.hidden = YES;
+    }
+    return _linkMicDuration;
 }
 
 @end

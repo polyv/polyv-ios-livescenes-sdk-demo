@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface PLVECQuoteChatCell : PLVECChatBaseCell
 
++ (NSAttributedString * _Nullable)contentAttributedStringWithChatModel:(PLVChatModel *)chatModel;
+
 @end
 
 NS_ASSUME_NONNULL_END

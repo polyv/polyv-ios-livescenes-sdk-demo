@@ -10,6 +10,7 @@
 #import <UIKit/UIKit.h>
 #import "PLVRoomData.h"
 #import "PLVChatUser.h"
+#import "PLVSAMixLayoutSheet.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -23,14 +24,29 @@ NS_ASSUME_NONNULL_BEGIN
 /// 踢出某个用户回调
 - (void)kickUsersInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUserId:(NSString *)userId;
 
+/// 邀请某个用户加入连麦的回调
+- (void)inviteUserJoinLinkMicInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUser:(PLVLinkMicWaitUser *)user;
+
 /// 获取当前清晰度
 - (PLVResolutionType)streamerHomeViewCurrentQuality:(PLVSAStreamerHomeView *)homeView;
+
+/// 获取当前推流质量等级
+- (NSString *)streamerHomeViewCurrentStreamQualityLevel:(PLVSAStreamerHomeView *)homeView;
 
 /// 获取连麦开启状态
 - (BOOL)streamerHomeViewChannelLinkMicOpen:(PLVSAStreamerHomeView *)homeView;
 
 /// 改变 清晰度 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeResolutionType:(PLVResolutionType)type;
+
+/// 改变 清晰度 触发回调（模版中推流质量等级）
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeStreamQualityLevel:(NSString *)streamQualityLevel;
+
+/// 获取当前混流布局
+- (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView;
+
+/// 改变 混流布局 触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutType:(PLVMixLayoutType)type;
 
 /// 改变 视频流画质偏好 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference;
@@ -71,8 +87,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 分享 按钮触发回调
 - (void)streamerHomeViewDidTapShareButton:(PLVSAStreamerHomeView *)homeView;
 
-/// 获取当前频道连麦媒体类型
+/// 点击 开启/关闭连麦设置按钮 按钮触发回调
+- (void)streamerHomeViewDidAllowRaiseHandButton:(PLVSAStreamerHomeView *)homeView wannaChangeAllowRaiseHand:(BOOL)allowRaiseHand;
+
+/// 点击 开启/关闭连麦设置按钮 按钮触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView wannaChangeLinkMicType:(BOOL)linkMicOnAudio;
+
+/// 点击 连麦设置 触底回调
 - (PLVChannelLinkMicMediaType)streamerHomeViewCurrentChannelLinkMicMediaType:(PLVSAStreamerHomeView *)homeView;
+
+/// 点击 观众下麦 按钮触发回调
+- (void)streamerHomeViewDidTapRemoveAllAudiencesButton:(PLVSAStreamerHomeView *)homeView;
 
 @end
 
@@ -80,6 +105,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// PLVSAStreamerHomeViewDelegate 代理
 @property (nonatomic, weak)id<PLVSAStreamerHomeViewDelegate> delegate;
+
+// 混流布局选择面板，用于更新当前混流布局类型
+@property (nonatomic, strong, readonly) PLVSAMixLayoutSheet *mixLayoutSheet;
 
 - (instancetype)initWithLocalOnlineUser:(PLVLinkMicOnlineUser *)localOnlineUser
                      linkMicWindowsView:(PLVSALinkMicWindowsView *)linkMicWindowsView;
@@ -135,11 +163,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param selectedState 选中状态 (YES:选中，开启屏幕共享 NO:未选中，关闭屏幕共享)
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
 
+/// 改变 开启/关闭观众连麦按钮 选中状态
+/// @param selectedState 选中状态 (YES:选中，开启观众连麦 NO:未选中，关闭观众连麦)
+- (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState;
+
+/// 更新选中连麦按钮
+/// @param linkMicOnAudio 连麦类型 (YES:音频连麦 NO:视频连麦)
+- (void)updateHomeViewLinkMicType:(BOOL)linkMicOnAudio;
+
 /// 是否显示美颜弹窗
 /// @param show YES: 显示；NO：隐藏
 - (void)showBeautySheet:(BOOL)show;
 
 - (void)updateStatistics:(PLVRTCStatistics *)statistics;
+
+- (void)dismissBottomSheet;
 
 - (void)showBadNetworkTipsView;
 

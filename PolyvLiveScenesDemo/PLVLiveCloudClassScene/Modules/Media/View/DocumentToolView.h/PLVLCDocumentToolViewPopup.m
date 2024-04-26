@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCDocumentToolViewPopup.h"
+#import "PLVMultiLanguageManager.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -91,7 +92,7 @@
         _tipLabel.font = [UIFont systemFontOfSize:12];
         _tipLabel.textColor = [PLVColorUtil colorFromHexString:@"#333333"];
         _tipLabel.textAlignment = NSTextAlignmentCenter;
-        _tipLabel.text = @"点击回到当前页";
+        _tipLabel.text = PLVLocalizedString(@"点击回到当前页");
     }
     return _tipLabel;
 }

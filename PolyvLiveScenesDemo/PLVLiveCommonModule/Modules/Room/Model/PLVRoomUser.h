@@ -40,10 +40,10 @@ typedef NS_ENUM(NSUInteger, PLVRoomUserType) {
 /// 用户昵称，用于登录socket、发送日志
 @property (nonatomic, copy) NSString *viewerName;
 
-/// 用户头像地址，用于登陆socket
+/// 用户头像地址，用于登录socket
 @property (nonatomic, copy) NSString *viewerAvatar;
 
-/// 用户类型/角色，用于登陆socket
+/// 用户类型/角色，用于登录socket
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
 
 /// 用户身份（中文），开播时用于登录socket

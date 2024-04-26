@@ -8,6 +8,7 @@
 
 #import "PLVLCNoNetworkDescViewController.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCNoNetworkDescViewController ()
 @property (nonatomic, strong) UIImageView *avatarImageView;
@@ -53,7 +54,7 @@
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.font = [UIFont systemFontOfSize:16];
         _titleLabel.textColor = [UIColor whiteColor];
-        _titleLabel.text = @"保利威直播详情";
+        _titleLabel.text = PLVLocalizedString(@"保利威直播详情");
     }
     return _titleLabel;
 }
@@ -65,7 +66,7 @@
         _statusLabel.layer.cornerRadius = 2.0;
         _statusLabel.layer.borderWidth = 1.0;
         _statusLabel.textAlignment = NSTextAlignmentCenter;
-        _statusLabel.text = @"已缓存";
+        _statusLabel.text = PLVLocalizedString(@"已缓存");
         _statusLabel.textColor = [UIColor colorWithRed:0xAD/255.0 green:0xAD/255.0 blue:0xC0/255.0 alpha:1.0];
         _statusLabel.layer.borderColor = [UIColor colorWithRed:0xAD/255.0 green:0xAD/255.0 blue:0xC0/255.0 alpha:1.0].CGColor;
     }
@@ -87,7 +88,7 @@
         _noNetWorkLabel.textColor = [UIColor colorWithRed:0xAD/255.0 green:0xAD/255.0 blue:0xC0/255.0 alpha:1.0];
         _noNetWorkLabel.textAlignment = NSTextAlignmentCenter;
         _noNetWorkLabel.numberOfLines = 0;
-        _noNetWorkLabel.text = @"正处于无网观看模式";
+        _noNetWorkLabel.text = PLVLocalizedString(@"正处于无网观看模式");
     }
     return _noNetWorkLabel;
 }

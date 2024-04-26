@@ -1,0 +1,531 @@
+/* 
+  Localizable.strings
+  MultiLanguage
+
+  Created by Sakya on 2023/8/25.
+  
+*/
+
+/** PolyvFoundationSDK */
+
+"js 消息 接收数据格式不对" = "js message receiving data format is wrong";
+
+"js 消息参数传递错误" = "js message parameter passing error";
+
+"js 消息接收数据格式错误" = "js message receiving data format error";
+
+"JSON解析失败" = "JSON parsing failed";
+
+"notify stream接口调用错误，参数出错" = "notify stream interface call error, parameter error";
+
+"notify stream接口调用错误，数据解析出错" = "notify stream interface call error, data parsing error";
+
+"OSS 上传失败" = "OSS upload failed";
+
+"socket 未登录" = "socket is not logged in";
+
+"socket 未连接" = "socket not connected";
+
+"socket服务器失去连接" = "socket server lost connection";
+
+"socket登录用户id、昵称或头像无效" = "The socket login user ID, nickname or avatar is invalid";
+
+"socket获取token重试失败" = "Socket acquisition token retry failed";
+
+"socket连接token无效或过期" = "The socket connection token is invalid or expired";
+
+"socket连接失败" = "socket connection failed";
+
+"socket重连中" = "socket reconnecting";
+
+"上报点赞数参数无效" = "The parameter for reporting the number of likes is invalid";
+
+"上报点赞数响应非200" = "Report the number of likes and the response is not 200";
+
+"上报点赞数数据解析失败" = "Analysis of reported likes data failed";
+
+"下载任务已存在" = "Download task already exists";
+
+"举个例子" = "For example";
+
+"修改频道名称接口调用错误，code非200" = "Modify channel name interface call error, code is not 200";
+
+"修改频道名称接口调用错误，参数出错" = "Modify channel name interface call error, parameter error";
+
+"修改频道名称接口调用错误，数据解析出错" = "Modify channel name interface call error, data parsing error";
+
+"删除文档接口调用参数出错" = "Error in deleting document interface calling parameters";
+
+"删除文档接口返回code不等于200" = "The return code of the delete document interface is not equal to 200";
+
+"删除文档接口返回数据解析异常" = "Deleting the document interface returns a data parsing exception";
+
+"判断聊天室观众是否已抢红包参数无效" = "Invalid parameters for determining whether chat room viewers have grabbed red envelopes";
+
+"判断聊天室观众是否已抢红包响应非200" = "Determine whether the chat room audience has grabbed the red envelope and the response is not 200";
+
+"判断聊天室观众是否已抢红包数据解析失败" = "Failed to parse data to determine whether chat room viewers have grabbed red envelopes";
+
+"刷新 OSS STS token 失败" = "Failed to refresh OSS STS token";
+
+"加入RTC房间失败" = "Failed to join RTC room";
+
+"加入推流地址失败" = "Failed to add push address";
+
+"加密JSON解析失败" = "Encrypted JSON parsing failed";
+
+"参数无效/非法" = "Parameter is invalid/illegal";
+
+"取消" = "Cancel";
+
+"回放信息请求失败" = "Replay information request failed";
+
+"回放信息请求失败，code非200" = "Playback information request failed, code is not 200";
+
+"回放信息请求失败，Url错误" = "Playback information request failed, Url error";
+
+"回放信息请求失败，参数错误" = "Playback information request failed, parameter error";
+
+"回放信息请求失败，数据解析出错" = "Playback information request failed, data parsing error";
+
+"回放登录校验接口调用错误，code非200" = "Playback login verification interface call error, code is not 200";
+
+"回放登录校验接口调用错误，参数出错" = "Playback login verification interface call error, parameter error";
+
+"回放登录校验接口调用错误，数据解析出错" = "Playback login verification interface call error, data parsing error";
+
+"回放获取“频道类型”接口调用错误，code非200" = "Playback gets the 'Channel Type' interface call error, the code is not 200";
+
+"回放获取“频道类型”接口调用错误，参数出错" = "Playback acquisition 'Channel Type' interface call error, parameter error";
+
+"回放获取“频道类型”接口调用错误，数据解析出错" = "Playback acquisition 'Channel Type' interface call error, data parsing error";
+
+"图片上传参数无效" = "Image upload parameters are invalid";
+
+"图片上传失败" = "Image upload failed";
+
+"图片包含违规内容" = "The image contains illegal content";
+
+"存储空间不足" = "Not enough storage space";
+
+"当前用户已在别处登录" = "The current user is already logged in elsewhere";
+
+"您未被授权观看本直播" = "You are not authorized to watch this live";
+
+"您的账号已在别处登录，即将被退出观看" = "Your account has been logged in elsewhere and will be logged out soon";
+
+"拷贝文档到沙盒失败" = "Failed to copy document to sandbox";
+
+"推流失败" = "Push failed";
+
+"提交中奖信息接口调用错误，code非200" = "Error in calling the interface for submitting winning information, code is not 200";
+
+"提交中奖信息接口调用错误，参数出错" = "There is an error in calling the interface for submitting winning information, and the parameters are wrong.";
+
+"提交中奖信息接口调用错误，数据解析出错" = "Error in calling the interface for submitting winning information, and error in data parsing";
+
+"放弃领奖接口调用错误，code非200" = "Error in calling the interface for giving up the prize, code is not 200";
+
+"放弃领奖接口调用错误，参数出错" = "There is an error in calling the interface for giving up the prize, and the parameters are wrong.";
+
+"放弃领奖接口调用错误，数据解析出错" = "There was an error in calling the interface for giving up the prize, and there was an error in data parsing.";
+
+"文件写入失败" = "File write failed";
+
+"文件解压失败" = "File decompression failed";
+
+"文档上传任务已存在" = "The document upload task already exists";
+
+"文档列表请求接口调用参数出错" = "Document list request interface call parameter error";
+
+"文档列表请求接口返回code不等于200" = "The return code of the document list request interface is not equal to 200";
+
+"文档列表请求接口返回数据解析异常" = "Document list request interface returns data parsing exception";
+
+"文档已存在服务端" = "The document already exists on the server";
+
+"更新频道直播状态调用错误，code非200" = "Call error when updating channel live broadcast status, code is not 200";
+
+"更新频道直播状态调用错误，参数出错" = "Update channel live broadcast status call error, parameter error";
+
+"更新频道直播状态调用错误，数据解析出错" = "Error in calling update channel live broadcast status, data parsing error";
+
+"服务器请求失败异常，响应非200" = "The server request failed abnormally and the response was non-200";
+
+"未知错误" = "Unknown mistake";
+
+"本地文件已存在" = "The local file already exists";
+
+"检测到网络权限可能未开启，您可以在“设置”中检查网络数据" = "It is detected that the network permission may not be turned on. You can check the network data in 'Settings'";
+
+"消息发送失败" = "Message sending failed";
+
+"消息发送失败，因为您已被禁言" = "Message delivery failed because you have been banned";
+
+"消息发送失败，因为房间已被关闭" = "Message delivery failed because the room has been closed";
+
+"混流配置调用错误，code非200" = "Mixed flow configuration call error, code is not 200";
+
+"混流配置调用错误，参数出错" = "Mixed flow configuration call error, parameter error";
+
+"混流配置调用错误，数据解析出错" = "Mixed flow configuration call error, data parsing error";
+
+"画中画开启失败" = "Failed to enable picture-in-picture";
+
+"登录ack后台报错" = "Log in to the ack server and report an error";
+
+"登录ack数据解析异常" = "Login ack data parsing exception";
+
+"登录socket传递参数非法" = "It is illegal to pass parameters through the login socket";
+
+"登录socket头像昵称错误" = "Login socket avatar nickname is wrong";
+
+"登录socket房间id不合法" = "Login socket room id is illegal";
+
+"登录socket未被授权" = "Login socket is not authorized";
+
+"登录socket被踢出房间" = "After logging into the socket, I was kicked out of the room.";
+
+"登录失败（登录接口）" = "Login failed (login interface)";
+
+"直播SessionID请求失败" = "Live SessionID request failed";
+
+"直播SessionID请求失败，参数错误" = "Live SessionID request failed, parameter error";
+
+"直播流状态信息请求失败" = "Live stream status information request failed";
+
+"直播流状态信息请求失败，code非200" = "Live stream status information request failed, code is not 200";
+
+"直播流状态信息请求失败，参数错误" = "Live stream status information request failed, parameter error";
+
+"直播流状态信息请求失败，数据解析出错" = "Live stream status information request failed, data parsing error";
+
+"直播登录校验接口调用错误，code非200" = "Live login verification interface call error, code is not 200";
+
+"直播登录校验接口调用错误，参数出错" = "The live login verification interface is called incorrectly and the parameters are incorrect";
+
+"直播登录校验接口调用错误，数据解析出错" = "Live login verification interface call error, data parsing error";
+
+"直播获取“频道类型和是否正在直播”接口调用错误，code非200" = "Live acquisition 'channel type and whether it is live' interface call error, code is not 200";
+
+"直播获取“频道类型和是否正在直播”接口调用错误，参数出错" = "The live obtains the 'channel type and whether it is live' interface call error, and the parameters are wrong";
+
+"直播获取“频道类型和是否正在直播”接口调用错误，数据解析出错" = "The live obtains the 'channel type and whether it is live' interface call error, and the data parsing error occurs";
+
+"禁言设置参数无效" = "The muting setting parameter is invalid";
+
+"禁言设置响应非200" = "Ban setting response is not 200";
+
+"禁言设置数据解析失败" = "Failed to parse mute setting data";
+
+"网络不佳视频加载缓慢" = "Videos load slowly due to poor network";
+
+"网络超时或无网络" = "Network timeout or no network";
+
+"网络连接失败" = "Network connection failed";
+
+"网络连接异常" = "Network connection abnormality";
+
+"网页加载失败" = "WebView loading failed";
+
+"美颜SDK处理失败" = "Beauty SDK processing failed";
+
+"美颜用户设置接口调用错误，code非200" = "Beauty user setting interface call error, code is not 200";
+
+"美颜用户设置接口调用错误，参数出错" = "Beauty user setting interface call error, parameter error";
+
+"美颜用户设置接口调用错误，数据解析出错" = "Beauty user setting interface call error, data parsing error";
+
+"美颜资源下载调用错误，code非200" = "Beauty resource download call error, code is not 200";
+
+"美颜资源下载调用错误，下载失败" = "Beauty resource download call error, download failed";
+
+"美颜资源下载调用错误，参数出错" = "Beauty resource download call error, parameter error";
+
+"美颜资源解压失败" = "Beauty resource decompression failed";
+
+"获取Token参数无效" = "Obtaining Token parameter is invalid";
+
+"获取Token响应非200" = "Obtaining Token response is not 200";
+
+"获取Token数据解析失败" = "Failed to obtain Token data and parse it";
+
+"获取历史记录参数无效" = "Invalid get history parameter";
+
+"获取历史记录数据解析失败" = "Failed to obtain history data parsing";
+
+"获取图片上传token参数无效" = "The parameters for obtaining the image upload token are invalid";
+
+"获取图片上传token响应非200" = "Obtaining image upload token response is not 200";
+
+"获取图片上传token数据解析失败" = "Failed to parse the image upload token data";
+
+"获取图片表情列表参数无效" = "Invalid parameters for obtaining picture emoticon list";
+
+"获取图片表情列表响应非200" = "The response when getting the picture emoticon list is not 200";
+
+"获取图片表情列表数据解析失败" = "Failed to parse the image expression list data";
+
+"获取在线成员列表参数无效" = "Invalid parameter for getting online member list";
+
+"获取在线成员列表数据解析失败" = "Failed to parse data to obtain online member list";
+
+"获取推流频道信息接口调用错误，参数出错" = "Error in getting push channel information interface call, parameter error";
+
+"获取推流频道信息接口调用错误，数据解析出错" = "Error in getting push channel information interface call, data parsing error";
+
+"获取文档转换状态参数无效" = "Invalid parameter to get document conversion status";
+
+"获取文档转换状态响应非200" = "Get document conversion status response non-200";
+
+"获取文档转换状态数据解析失败" = "Failed to parse the document conversion status data";
+
+"获取聊天室功能开关参数无效" = "Invalid acquisition of chat room function switch parameters";
+
+"获取聊天室功能开关响应非200" = "Obtaining a non-200 response for chat room function switch";
+
+"获取聊天室功能开关数据解析失败" = "Failed to parse the chat room function switch data";
+
+"获取聊天室提醒消息历史记录参数无效" = "Invalid parameters for getting chat room reminder message history";
+
+"获取聊天室提醒消息历史记录响应非200" = "Get chat room reminder message history response is not 200";
+
+"获取聊天室提醒消息历史记录数据解析失败" = "Failed to parse the chat room reminder message history data";
+
+"获取聊天室提问消息Token失败" = "Failed to obtain chat room question message token";
+
+"获取聊天室提问消息历史记录参数无效" = "Invalid parameters for obtaining chat room question message history records";
+
+"获取聊天室提问消息历史记录数据解析失败" = "Failed to parse the chat room question message history data";
+
+"获取聊天室最新红包参数无效" = "Invalid parameters for obtaining the latest red envelope from the chat room";
+
+"获取聊天室最新红包响应非200" = "Get the latest red envelope response from the chat room other than 200";
+
+"获取聊天室最新红包数据解析失败" = "Failed to parse the latest red envelope data from the chat room";
+
+"获取被踢出用户列表参数无效" = "Invalid parameter for obtaining kicked-out user list";
+
+"获取被踢出用户列表响应非200" = "Obtaining the list of kicked out users and the response is non-200";
+
+"获取被踢出用户列表数据解析失败" = "Failed to parse data of list of kicked out users";
+
+"获取连麦SessionID接口调用错误，参数出错" = "Getting call SessionID interface call error, parameter error";
+
+"获取连麦Token接口调用错误，code非200" = "Error in getting call Token interface call, code is not 200";
+
+"获取连麦Token接口调用错误，参数出错" = "There is an error in calling the call Token interface, and the parameters are wrong";
+
+"获取连麦Token接口调用错误，数据解析出错" = "Error in getting call Token interface call, data parsing error";
+
+"获取频道菜单列表接口调用错误，code非200" = "Error in getting channel menu list interface call, code is not 200";
+
+"获取频道菜单列表接口调用错误，参数出错" = "Error in getting channel menu list interface call, parameter error";
+
+"获取频道菜单列表接口调用错误，数据解析出错" = "Error in getting channel menu list interface call, data parsing error";
+
+"视频id不正确" = "Video id is incorrect";
+
+"视频下载链接非法" = "Video download link is illegal";
+
+"视频信息获取失败" = "Failed to obtain video information";
+
+"解码失败（异常）" = "Decoding failed (exception)";
+
+"设置" = "Set up";
+
+"设置失败" = "Setup failed";
+
+"该频道设置了限制条件" = "This channel has restrictions set";
+
+"请求失败(解析JSON数据中code非200)" = "The request failed (code in parsed JSON data is not 200)";
+
+"超出最大同时在线人数限制" = "Exceeded the maximum number of people online at the same time";
+
+"连麦需要获取您的音视频权限，请前往设置" = "Call needs to obtain your audio and video permissions, please go to settings";
+
+"频道信息请求失败" = "Channel information request failed";
+
+"频道信息请求失败，code非200" = "Channel information request failed, code is not 200";
+
+"频道信息请求失败，参数错误" = "Channel information request failed, parameter error";
+
+"频道信息请求失败，数据解析出错" = "Channel information request failed, data parsing error";
+
+"频道限制信息请求失败" = "Channel restriction information request failed";
+
+/** PolyvBusinessSDK */
+
+"云课堂学员" = "slice";
+
+"互动学堂学员" = "SCStudent";
+
+"助教" = "assistant";
+
+"嘉宾" = "guest";
+
+"客户端的参与者" = "viewer";
+
+"当前账号已在其他地方登录，您将被退出本直播间" = "The current account has been logged in elsewhere, you will be logged out of this live room";
+
+"您未被授权登录本直播间" = "You are not authorized to log in to this live room";
+
+"您未被授权进入本直播间" = "You are not authorized to enter this live room间";
+
+"普通观众" = "student";
+
+"登录token鉴权失败" = "Login token authentication failed";
+
+"登录请求失败" = "Login request failed";
+
+"管理员" = "manager";
+
+"讲师" = "teacher";
+
+/** PolyvCloudClassSDK */
+
+"appId不能为空!" = "appId cannot be empty!";
+
+"appId或appSecret参数无效" = "The appId or appSecret parameter is invalid";
+
+"appId或appSecret无效" = "Invalid appId or appSecret";
+
+"appId或appSecret无效/未配置" = "Invalid appId or appSecret/not configured";
+
+"channelId、appId或channelToken无效" = "Invalid channelId, appId or channelToken";
+
+"channelId或userId无效" = "Invalid channelId or userId";
+
+"channelId无效" = "channelId is invalid";
+
+"channelName或channelId不可为空" = "channelName or channelId cannot be empty";
+
+"PLVDownloadManager - 开始下载失败，参数错误" = "PLVDownloadManager - Failed to start download, wrong parameters";
+
+"PLVDownloadManager - 暂停下载失败，参数错误" = "PLVDownloadManager - Pause download failed, parameter error";
+
+"role无效" = "role is invalid";
+
+"roomId无效" = "roomId is invalid";
+
+"socket尚未登录" = "socket has not been logged in yet";
+
+"token不可为空" = "token cannot be empty";
+
+"URL自定义类型跑马灯提交参数错误" = "URL custom type ticker submission parameter error";
+
+"userId、appId或appSecret无效" = "Invalid userId, appId or appSecret";
+
+"vid不可为空" = "vid cannot be empty";
+
+"上传图片成功" = "Image uploaded successfully";
+
+"参数channelId为空" = "The parameter channelId is empty";
+
+"参数channelId或fileId为空" = "Parameter channelId or fileId is empty";
+
+"参数lessonId为空" = "Parameter lessonId is empty";
+
+"参数lessonId或fileId为空" = "Parameter lessonId or fileId is empty";
+
+"参数params为空" = "Parameter params is empty";
+
+"参数token或appId或channelId为空" = "The parameter token or appId or channelId is empty";
+
+"参数为空" = "Parameter is empty";
+
+"参数错误" = "Parameter error";
+
+"发送了自定义消息" = "Custom message sent";
+
+"回放信息请求失败，参数错误 vid:%@" = "Playback information request failed, parameter error vid:%@";
+
+"图片不可为空" = "Picture cannot be empty";
+
+"学生" = "student";
+
+"学生码不可为空" = "Student code cannot be empty";
+
+"当前账号已在别处登录" = "The current account has been logged in elsewhere";
+
+"接口数据出错" = "Interface data error";
+
+"接口请求失败" = "Interface request failed";
+
+"接口返回数据解析出错" = "Interface returns data parsing error";
+
+"提交参数错误" = "Submission parameter error";
+
+"数据解析失败" = "Data parsing failed";
+
+"文档已存在，convertStatus为%@" = "The document already exists, convertStatus is %@";
+
+"昵称不可为空" = "Nickname cannot be empty";
+
+"昵称与验证码不可为空" = "Nickname and verification code cannot be empty";
+
+"暂存视频信息请求失败，参数错误 fileId:%@" = "The request for temporary video information failed, parameter error fileId:%@";
+
+"校验失败" = "Verification failed";
+
+"PLVRTCStreamerManagerSIPGuestNick" = "Call-In Guest";
+
+"直播SessionID请求失败 %@" = "Live SessionID request failed %@";
+
+"直播SessionID请求失败，参数错误 channelId:%lu" = "Live SessionID request failed, parameter error channelId:%lu";
+
+"直播流状态信息请求失败，参数错误 streamId:%@" = "Live stream status information request failed, parameter error streamId:%@";
+
+"直播流状态信息请求失败，参数错误 streamId:%@,channelId:%@" = "Live stream status information request failed, parameter error streamId:%1$@,channelId:%2$@";
+
+"网络错误" = "Network Error";
+
+"获取回放列表数据解析失败" = "Failed to parse the playback list data";
+
+"请先进行登录" = "Please log in first";
+
+"请求参数无效" = "Invalid request parameter";
+
+"请求解析失败 %@" = "Request parsing failed%@";
+
+"请求超时" = "Request timed out";
+
+"课程号或课节ID不可为空" = "Course number or section ID cannot be empty";
+
+"课程号或课节ID不可都为空" = "The course number or section ID cannot both be empty";
+
+"课节ID不可为空" = "Course ID cannot be empty";
+
+"课节列表为空" = "Lesson list is empty";
+
+"课节状态参数错误" = "Lesson status parameter error";
+
+"账号密码不可为空" = "Account password cannot be empty";
+
+"账号配置参数不可为空" = "Account configuration parameters cannot be empty";
+
+"返回数据格式异常" = "Return data format exception";
+
+"错误帮助指引文字" = "Error help guidance text";
+
+"需要更改的新的错误描述" = "New error description needs to be changed";
+
+"频道RTC类型无效" = "Channel RTC type is invalid";
+
+"频道RTC类型暂不支持" = "Channel RTC type is not supported yet";
+
+"频道信息请求失败，参数错误 %@" = "Channel information request failed, parameter error %@";
+
+"频道号、appId、appSecret均不可为空" = "Channel number, appId, appSecret cannot be empty";
+
+"频道号、fileId、appId、appSecret均不可为空" = "Channel number, fileId, appId, appSecret cannot be empty";
+
+"频道号、vid与appId都不可为空" = "Channel number, vid and appId cannot be empty";
+
+"频道号不可为空" = "Channel number cannot be empty";
+
+"频道号与appId不可为空" = "Channel number and appId cannot be empty";
+
+"频道号与密码不可为空" = "Channel number and password cannot be empty";
+
+"频道类型不支持" = "Channel type is not supported";

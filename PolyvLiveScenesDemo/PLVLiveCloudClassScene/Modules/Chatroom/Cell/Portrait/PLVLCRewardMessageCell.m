@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCRewardMessageCell.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImageDownloader.h>
@@ -110,7 +111,7 @@
         nickName = [nickName stringByAppendingString:@"..."];
     }
     
-    NSAttributedString *nickNameString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@赠送",nickName]attributes:textAttDict];
+    NSAttributedString *nickNameString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:PLVLocalizedString(@"%@赠送"),nickName]attributes:textAttDict];
     
     NSString *rewardNum = @"";
     if (message.goodNum.intValue > 1) {

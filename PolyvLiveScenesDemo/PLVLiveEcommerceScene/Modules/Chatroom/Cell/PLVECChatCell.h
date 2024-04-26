@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy) void (^redpackTapHandler)(PLVChatModel *model);
 
++ (NSAttributedString *)chatLabelAttributedStringWithModel:(PLVChatModel *)model;
+
 @end
 
 NS_ASSUME_NONNULL_END

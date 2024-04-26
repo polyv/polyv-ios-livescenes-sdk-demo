@@ -8,6 +8,7 @@
 
 #import "PLVLCMessageCell.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -119,7 +120,7 @@
     
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
 
     NSString *colorHexString = [user isUserSpecial] ? @"#78A7ED" : @"#ADADC0";
@@ -223,8 +224,8 @@
     if (self.allowCopy || self.allowReply) {
         [self becomeFirstResponder];
         
-        UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
-        UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
+        UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"复制") action:@selector(customCopy:)];
+        UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"回复") action:@selector(reply:)];
         UIMenuController *menuController = [UIMenuController sharedMenuController];
         if (self.model.isProhibitMsg && self.model.prohibitWord) { // 含有严禁词并且发送失败时
             [menuController setMenuItems:@[copyMenuItem]];

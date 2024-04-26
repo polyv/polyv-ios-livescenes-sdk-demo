@@ -15,6 +15,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, strong, readonly) UIView *contentView; // 弹层右侧内容区域
 @property (nonatomic, assign, readonly) CGFloat sheetWidth; // 弹层显示时的宽度
+@property (nonatomic, copy) void (^sideSheetDismissBlock) (void); //弹层 dismiss 的回调
 
 /// 初始化方法
 /// @param sheetWidth 弹层弹出宽度

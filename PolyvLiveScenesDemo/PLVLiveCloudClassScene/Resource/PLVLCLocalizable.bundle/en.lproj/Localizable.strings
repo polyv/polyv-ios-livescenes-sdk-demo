@@ -1,0 +1,216 @@
+/* 
+  Localizable.strings
+  MultiLanguage
+
+  Created by Sakya on 2023/8/25.
+  
+*/
+
+" %@ 从%@红包中获得" = " %1$@ Obtained from %2$@ red envelope";
+
+"%@...(我)" = "%@...(Me)";
+
+"%@分 " = "%@M ";
+
+"%@天 " = "%@D ";
+
+"%@小时 " = "%@H ";
+
+"%@次播放" = "%@ views";
+
+"%@秒" = "%@S";
+
+"%@红包" = "%@ Red Packet";
+
+"%@赠送" = "%@ Given";
+
+"下载" = "Download";
+
+"下载中" = "Downloading";
+
+"下载中 %.0f%%" = "Downloading %.0f%%";
+
+"下载失败" = "Download failed";
+
+"下载视频" = "Download video";
+
+"亮度" = "Brightness";
+
+"仅听声音" = "Audio only";
+
+"你没开通访问相机的权限，如要开通，请移步到:设置->隐私->相机 开启" = "You have not opened the permission to access the camera. If you want to open it, please move to: Settings->Privacy->Camera to open";
+
+"保利威直播详情" = "Polyv live details";
+
+"倍速" = "Rate";
+
+"倒计时：" = "Countdown：";
+
+"内容加载失败，请下拉刷新重试" = "Content loading failed, please pull down to refresh and try again";
+
+"加载PPT出错，请重新登录" = "Error loading PPT, please log in again";
+
+"历史记录获取失败" = "Failed to retrieve history records";
+
+"发送图片" = "Send picture";
+
+"只看主持" = "Presenter";
+
+"可从此处重新打开浮窗" = "You can reopen the floating window from here";
+
+"向左滑动试试" = "Swipe left to try";
+
+"回放中" = "Replaying";
+
+"图片表情数据获取失败" = "Failed to retrieve picture emoji data";
+
+"图片表情消息发送失败" = "Failed to send picture emoticon message";
+
+"屏蔽特效" = "Hide animation";
+
+"展示特效" = "Show animation";
+
+"已下载" = "Downloaded";
+
+"已关联其他房间，仅可观看直播内容" = "Chatroom occupied, video only";
+
+"已切回小房间上课" = "Have switched back to the small room for class";
+
+"已切换至大房间进行上课" = "Switched to the big room for class";
+
+"已暂停" = "Paused";
+
+"已结束" = "Not Live";
+
+"已缓存" = "Cached";
+
+"已进入画笔模式" = "Entered brush mode";
+
+"已退出画笔模式" = "Exited brush mode";
+
+"延迟" = "Delay";
+
+"弹幕" = "Barrage";
+
+"弹幕速度" = "Barrage Speed";
+
+"当前为专注模式，无法发言" = "Currently in focus mode, unable to speak";
+
+"快速" = "very fast";
+
+"您的网络状态糟糕，可尝试" = "Network error, you can";
+
+"我也来聊几句" = "Join the chat";
+
+"房间标题" = "Room Title";
+
+"拍照" = "Camera";
+
+"播放画面" = "Play video";
+
+"播放量" = "Play count";
+
+"暂无菜单" = "Empty menu";
+
+"有%zd条新消息，点击查看" = "There are %zd new messages, click to view";
+
+"未开始" = "Not Started";
+
+"查看下载列表 >" = "View download list >";
+
+"查看全部" = "Look all";
+
+"标准" = "normal";
+
+"欢迎%@加入" = "Welcome %@ join";
+
+"正在发言" = "speaking";
+
+"正处于无网观看模式" = "Currently in offline viewing mode";
+
+"点击回到当前页" = "back to current page";
+
+"登录中..." = "logging in...";
+
+"直播中" = "Live";
+
+"直播时间:无" = "Live time: None";
+
+"直播时间：%@" = "Live time: %@";
+
+"直播暂停" = "Pause";
+
+"确认" = "Confirm";
+
+"确认删除%@？" = "Confirm to delete %@?";
+
+"确认退出直播间？" = "Confirm to exit the live room?";
+
+"立即下载" = "Download now";
+
+"章节" = "Chapter";
+
+"等" = "and so on";
+
+"等待中" = "Waiting";
+
+"红包" = "Redpack";
+
+"缓慢" = "very slow";
+
+"聊天室专注模式已关闭" = "Chatroom focus mode is turned off";
+
+"聊天室专注模式已开启" = "Chatroom focus mode is on";
+
+"视频大小：%@" = "Video size: %@";
+
+"视频质量" = "Quality";
+
+"讲师已授予你画笔权限" = "Your instructor has granted you brush permissions";
+
+"讲师已收回你的画笔权限" = "The instructor has revoked your brush permissions";
+
+"该账号暂不支持下载视频" = "This account does not currently support video downloading";
+
+"请联系管理员开启" = "Please contact the administrator to enable it";
+
+"跟大家聊点什么吧～" = "Join the chat";
+
+"较快" = "fast";
+
+"较慢" = "slow";
+
+"退出" = "Quit";
+
+"退出画笔模式" = "exit brush mode";
+
+"选项标题" = "option title";
+
+/**  直播间  */
+"直播介绍" = "Intro";
+"边看边买" = "Buy";
+"提问" = "Ask";
+"问答" = "Q & A";
+"聊天" = "Chat";
+"互动聊天" = "Chat";
+"图文" = "Image & Text";
+"云席" = "Seat";
+"链接" = "Link";
+"往期" = "Previous";
+"图文直播" = "Tuwen Live";
+"邀请榜" = "Ranking List";
+"成员" = "Members";
+"投票" = "Vote";
+"微活动" = "MicroActivity";
+"章节" = "Chapter";
+"分会场" = "MultiMeeting";
+"实时字幕" = "Subtitles";
+"推广外链" = "Promote Links";
+
+/** icon */
+"plvlc_chatroom_giftbox" = "plvlc_chatroom_giftbox_en";
+"plvlc_chatroom_delay_password_redpack" = "plvlc_chatroom_delay_password_redpack_en";
+"plvlc_chatroom_lottery_widget_icon" = "plvlc_chatroom_lottery_widget_icon_en";
+"plvlc_chatroom_redpack" = "plvlc_chatroom_redpack_en";
+"plvlc_media_video_rest" = "plvlc_media_video_rest_en";
+"plvlc_chatroom_password_redpack" = "plvlc_chatroom_password_redpack_en";

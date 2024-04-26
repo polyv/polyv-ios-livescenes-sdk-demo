@@ -10,12 +10,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-#define kPLVSABadNetworkTipsViewWidth (293.0)
-#define kPLVSABadNetworkTipsViewHeight (20.0)
-
 @interface PLVSABadNetworkTipsView : UIView
 
 @property (nonatomic, assign, readonly) BOOL showing;
+
+@property (nonatomic, assign, readonly) CGSize viewSize;
 
 /// 点击【马上切换】触发
 @property (nonatomic, copy) void (^switchButtonActionBlock) (void);

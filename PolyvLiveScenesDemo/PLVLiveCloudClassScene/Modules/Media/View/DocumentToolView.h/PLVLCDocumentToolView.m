@@ -165,6 +165,9 @@
 }
 
 - (void)showGuiedView {
+    if (self.hidden) {
+        return;
+    }
     if (self.showGuied) {
         return;
     }

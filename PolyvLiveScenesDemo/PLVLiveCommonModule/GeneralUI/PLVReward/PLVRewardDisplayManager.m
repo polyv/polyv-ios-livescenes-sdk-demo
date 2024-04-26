@@ -15,6 +15,8 @@ static const NSInteger PLVSvgaRailNum = 1;
 
 @interface PLVRewardDisplayManager ()
 
+/// 直播场景
+@property (nonatomic, assign) PLVRewardDisplayManagerType liveType;
 @property (nonatomic, strong) NSOperationQueue * displayQueue;
 @property (nonatomic, strong) NSOperationQueue * svgaQueue;
 @property (nonatomic, strong) NSMutableDictionary * displayRailDict;
@@ -23,6 +25,14 @@ static const NSInteger PLVSvgaRailNum = 1;
 
 @implementation PLVRewardDisplayManager
 
+#pragma mark - init
+- (instancetype)initWithLiveType:(PLVRewardDisplayManagerType)liveType {
+    self = [super init];
+    if (self) {
+        self.liveType = liveType;
+    }
+    return self;
+}
 
 #pragma mark - [ Private Methods ]
 - (NSInteger)arrangeDisplayRailWithItem:(PLVRewardGoodsModel *)model{
@@ -87,6 +97,7 @@ static const NSInteger PLVSvgaRailNum = 1;
     displayTask.goodsNum = num;
     displayTask.personName = peopleName;
     displayTask.superView = self.superView;
+    displayTask.fullScreenShow = (self.liveType == PLVRewardDisplayManagerTypeEC);
     
     __weak typeof(self) weakSelf = self;
     displayTask.willShowBlock = ^NSInteger(PLVRewardGoodsModel * _Nonnull model) {
@@ -98,6 +109,10 @@ static const NSInteger PLVSvgaRailNum = 1;
     };
     [self.displayQueue addOperation:displayTask];
     
+    //  直播带货场景横屏不显示动画
+    if (CGRectGetWidth(self.superView.frame) > CGRectGetHeight(self.superView.frame) && self.liveType == PLVRewardDisplayManagerTypeEC) {
+        return;
+    }
     // 动画
     PLVRewardSvgaTask * svgaTask = [[PLVRewardSvgaTask alloc] init];
     svgaTask.rewardImageUrl = model.goodImgURL;

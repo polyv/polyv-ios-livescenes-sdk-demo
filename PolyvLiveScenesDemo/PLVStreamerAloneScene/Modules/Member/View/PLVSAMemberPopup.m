@@ -9,6 +9,7 @@
 #import "PLVSAMemberPopup.h"
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 // 模块
 #import "PLVRoomDataManager.h"
 #import "PLVChatUser.h"
@@ -101,12 +102,13 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     // 配置需要显示的按钮类型
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:4];
     if (linkMicing) {
-        if ([PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Video) {
+        BOOL isOnlyAudio = [PLVRoomDataManager sharedManager].roomData.isOnlyAudio;
+        if ((self.chatUser.userType == PLVRoomUserTypeGuest && !isOnlyAudio) ||
+            [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Video) {
             [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonCamera), @(PLVSAMemberPopupButtonMicrophone)]];
         } else {
             [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonMicrophone)]];
         }
-        
     }
     
     if (self.chatUser.userType == PLVRoomUserTypeGuest) {
@@ -120,13 +122,24 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     
     // 根据需要显示的按钮，获取气泡宽高
     CGFloat width = 112;
+    NSDictionary *attributes = @{NSFontAttributeName: [UIFont systemFontOfSize:16.0]}; // 文本属性
     if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonAuthSpeaker)]) {
-        width = 166;
+        NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonAuthSpeaker];
+        CGSize textSize = [text sizeWithAttributes:attributes];
+        width = MAX(textSize.width + 70, width);
     } else if (self.chatUser.banned) {
-        width = 140.0;
+        NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonBanned];
+        CGSize textSize = [text sizeWithAttributes:attributes];
+        width = MAX(textSize.width + 70, width);
+    } else if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonKick)]) {
+        NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonKick];
+        CGSize textSize = [text sizeWithAttributes:attributes];
+        width = MAX(textSize.width + 70, width);
     } else if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonCamera)] ||
                [self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonMicrophone)]) {
-        width = 126;
+        NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonMicrophone];
+        CGSize textSize = [text sizeWithAttributes:attributes];
+        width = MAX(textSize.width + 70, width);
     }
     
     if (isPad) {
@@ -274,23 +287,23 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     NSString *buttonTitle = @"";
     switch (type) {
         case PLVSAMemberPopupButtonCamera: {
-            buttonTitle = @"摄像头";
+            buttonTitle = PLVLocalizedString(@"摄像头");
         } break;
         case PLVSAMemberPopupButtonMicrophone: {
-            buttonTitle = @"麦克风";
+            buttonTitle = PLVLocalizedString(@"麦克风");
         } break;
         case PLVSAMemberPopupButtonAuthSpeaker: {
             if (self.chatUser.onlineUser && self.chatUser.onlineUser.isRealMainSpeaker) {
-                buttonTitle = @"移除主讲权限";
+                buttonTitle = PLVLocalizedString(@"移除主讲权限");
             } else {
-                buttonTitle = @"授予主讲权限";
+                buttonTitle = PLVLocalizedString(@"授予主讲权限");
             }
         } break;
         case PLVSAMemberPopupButtonKick: {
-            buttonTitle = @"踢出";
+            buttonTitle = PLVLocalizedString(@"踢出");
         } break;
         case PLVSAMemberPopupButtonBanned: {
-            buttonTitle = self.chatUser.banned ? @"取消禁言" : @"禁言";
+            buttonTitle = self.chatUser.banned ? PLVLocalizedString(@"取消禁言") : PLVLocalizedString(@"禁言");
         } break;
         default:
             break;
@@ -400,13 +413,13 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
         case PLVSAMemberPopupButtonCamera: {
             [self.chatUser.onlineUser wantOpenUserCamera:button.selected];
             button.selected = !button.selected;
-            NSString *tips = [NSString stringWithFormat:@"已%@摄像头", (button.selected ? @"关闭" : @"开启")];
+            NSString *tips = button.selected ? PLVLocalizedString(@"已关闭摄像头") : PLVLocalizedString(@"已开启摄像头");
             [PLVSAUtils showToastInHomeVCWithMessage:tips];
         } break;
         case PLVSAMemberPopupButtonMicrophone: {
             [self.chatUser.onlineUser wantOpenUserMic:button.selected];
             button.selected = !button.selected;
-            NSString *tips = [NSString stringWithFormat:@"已%@麦克风", (button.selected ? @"关闭" : @"开启")];
+            NSString *tips = button.selected ? PLVLocalizedString(@"已关闭麦克风") : PLVLocalizedString(@"已开启麦克风");
             [PLVSAUtils showToastInHomeVCWithMessage:tips];
         } break;
         case PLVSAMemberPopupButtonAuthSpeaker: {

@@ -8,6 +8,7 @@
 
 #import "PLVLCCardPushButtonView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCCardPushPopupView.h"
 #import <SDWebImage/UIButton+WebCache.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -92,6 +93,10 @@
     }
 }
 
+- (void)hidePopupView {
+    self.popupView.hidden = YES;
+}
+
 - (void)leaveLiveRoom {
     [self saveLocalWatchTime];
     [self cancelDispatchTimer];
@@ -114,7 +119,7 @@
     NSString *imageType = PLV_SafeStringForDictKey(cardDict, @"imageType");
     // 设置 button 图片
     if ([imageType isEqualToString:@"redpack"] || [imageType isEqualToString:@"giftbox"]) {
-        NSString *imageName = [imageType isEqualToString:@"redpack"] ? @"plvlc_chatroom_redpack" : @"plvlc_chatroom_giftbox";
+        NSString *imageName = [imageType isEqualToString:@"redpack"] ? PLVLocalizedString(@"plvlc_chatroom_redpack") : PLVLocalizedString(@"plvlc_chatroom_giftbox");
         UIImage *image = [PLVLCUtils imageForChatroomResource:imageName];
         [self.cardPushButton setImage:image forState:UIControlStateNormal];
     } else if ([imageType isEqualToString:@"custom"]) {
@@ -209,6 +214,9 @@
 
 - (void)showPopupTitleView {
     if (self.popupView.hidden) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(cardPushButtonViewPopupViewDidShow:)]) {
+            [self.delegate cardPushButtonViewPopupViewDidShow:self];
+        }
         self.popupView.hidden = NO;
         __weak typeof(self) weakSelf = self;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -223,7 +231,7 @@
     if (!_cardPushButton) {
         _cardPushButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_cardPushButton addTarget:self action:@selector(cardPushAction:) forControlEvents:UIControlEventTouchUpInside];
-        UIImage *image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_giftbox"];
+        UIImage *image = [PLVLCUtils imageForChatroomResource:PLVLocalizedString(@"plvlc_chatroom_giftbox")];
         [_cardPushButton setImage:image forState:UIControlStateNormal];
     }
     return _cardPushButton;

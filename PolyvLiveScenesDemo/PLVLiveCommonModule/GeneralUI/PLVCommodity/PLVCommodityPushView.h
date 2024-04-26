@@ -33,6 +33,9 @@ typedef NS_ENUM(NSUInteger, PLVCommodityPushViewType) {
 
 - (void)hide;
 
+// 上报日志
+- (void)reportTrackEvent;
+
 @property (nonatomic, strong) PLVCommodityModel *model;
 
 @property (nonatomic, weak) id<PLVCommodityPushViewDelegate> delegate;

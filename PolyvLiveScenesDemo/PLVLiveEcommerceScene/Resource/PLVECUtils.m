@@ -9,9 +9,54 @@
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 
+@interface PLVECUtils ()
+@property (nonatomic, assign) UIEdgeInsets areaInsets;
+
+@property (nonatomic, assign) UIDeviceOrientation deviceOrientation; // 设备方向，缺省值为UIDeviceOrientationPortrait(竖屏）
+
+@end
+
 @implementation PLVECUtils
 
 #pragma mark - [ Public Methods ]
+
++ (instancetype)sharedUtils {
+    static PLVECUtils *instance;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[PLVECUtils alloc] init];
+        instance.deviceOrientation = UIDeviceOrientationPortrait;
+    });
+    return instance;
+}
+
+- (void)setupAreaInsets:(UIEdgeInsets)areaInsets {
+    self.areaInsets = areaInsets;
+}
+
+- (void)setupDeviceOrientation:(UIDeviceOrientation)deviceOrientation {
+    self.deviceOrientation = deviceOrientation;
+}
+
+- (UIInterfaceOrientationMask)interfaceOrientationMask { // 屏幕的旋转，枚举值里面的 right/left 是以Home键方向为准的！和设备旋转是相反的！
+    if (self.deviceOrientation == UIDeviceOrientationLandscapeLeft) {
+        return  UIInterfaceOrientationMaskLandscapeRight;
+    } else if(self.deviceOrientation == UIDeviceOrientationLandscapeRight) {
+        return UIInterfaceOrientationMaskLandscapeLeft;
+    } else {
+        return UIInterfaceOrientationMaskPortrait;
+    }
+}
+
+- (UIInterfaceOrientation)interfaceOrientation { // 屏幕的旋转，枚举值里面的 right/left 是以Home键方向为准的！和设备旋转是相反的！
+    if (self.deviceOrientation == UIDeviceOrientationLandscapeLeft) {
+        return  UIInterfaceOrientationLandscapeRight;
+    } else if(self.deviceOrientation == UIDeviceOrientationLandscapeRight) {
+        return UIInterfaceOrientationLandscapeLeft;
+    } else {
+        return UIInterfaceOrientationPortrait;
+    }
+}
 
 + (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view {
     [self showHUDWithTitle:title detail:detail view:view afterDelay:2.0];
@@ -25,6 +70,7 @@
     PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:view animated:YES];
     hud.mode = PLVProgressHUDModeText;
     hud.label.text = title;
+    hud.label.numberOfLines = 0;
     hud.detailsLabel.text = detail;
     [hud hideAnimated:YES afterDelay:delay];
 }

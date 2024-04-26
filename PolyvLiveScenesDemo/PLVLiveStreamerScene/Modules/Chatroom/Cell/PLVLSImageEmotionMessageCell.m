@@ -10,6 +10,7 @@
 #import "PLVChatModel.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLSImageEmotionMessageCell ()
@@ -146,8 +147,14 @@
     }
     
     // 设置昵称文本
-    NSAttributedString *nickLabelString = [PLVLSImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user
-                                                                                         loginUserId:self.loginUserId];
+    NSMutableAttributedString *nickLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.attributeString;
+    } else {
+        nickLabelString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageEmotionMessageCell nickLabelAttributedStringWithUser:model.user
+                                                                                                                                          loginUserId:self.loginUserId]];
+        model.attributeString = nickLabelString;
+    }
     self.nickLabel.attributedText = nickLabelString;
     
     PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
@@ -170,7 +177,7 @@
 
 #pragma mark UI - ViewModel
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
                                               loginUserId:(NSString *)loginUserId {
     if (!user.userName || ![user.userName isKindOfClass:[NSString class]] || user.userName.length == 0) {
@@ -180,7 +187,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -265,7 +272,7 @@
 }
 
 + (NSString *)prohibitWordTip {
-    return @"图片不合法";
+    return PLVLocalizedString(@"图片不合法");
 }
 
 @end

@@ -24,9 +24,17 @@ extern NSString *PLVLSMemberCellNotification;
 
 - (void)memberCell_didTapCameraSwitch;
 
+- (void)memberCell_inviteUserJoinLinkMic:(PLVChatUser *)user;
+
 - (BOOL)allowLinkMicInCell:(PLVLSMemberCell *)cell;
 
 - (BOOL)localUserIsRealMainSpeakerInCell:(PLVLSMemberCell *)cell;
+
+/// 是否开启音视频连麦（YES开启，NO关闭）
+- (BOOL)enableAudioVideoLinkMicInCell:(PLVLSMemberCell *)cell;
+
+/// 是否开始上课
+- (BOOL)startClassInCell:(PLVLSMemberCell *)cell;
 
 @end
 

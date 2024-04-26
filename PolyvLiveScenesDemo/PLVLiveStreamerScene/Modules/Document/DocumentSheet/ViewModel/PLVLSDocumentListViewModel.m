@@ -9,6 +9,7 @@
 #import "PLVLSDocumentListViewModel.h"
 #import "PLVDocumentModel.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVRoomDataManager.h"
 #import "PLVDocumentConvertManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -419,7 +420,7 @@ PLVDocumentConvertManagerDelegate
     [self dataUpdateNotify];
     
     dispatch_async(dispatch_get_main_queue(), ^{
-        NSString *message = [NSString stringWithFormat:@"文档上传%@", success ? @"成功" : @"失败"];
+        NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"文档上传%@"), success ? PLVLocalizedString(@"成功") : PLVLocalizedString(@"失败")];
         [PLVLSUtils showToastInHomeVCWithMessage:message];
     });
 }

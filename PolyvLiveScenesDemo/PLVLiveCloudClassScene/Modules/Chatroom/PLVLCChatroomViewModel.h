@@ -57,6 +57,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于停止【下拉加载更多】控件的动画
 - (void)chatroomManager_loadHistoryFailure;
 
+/// 获取提问历史聊天记录成功时触发
+/// 用于刷新列表，停止【下拉加载更多】控件的动画
+/// @param noMore 是否还有更多历史消息，YES表示已加载完，此时可隐藏【下拉加载更多】控件
+/// @param first  是否是初次加载历史消息，初次加载需滚动列表到底部
+- (void)chatroomManager_loadQuestionHistorySuccess:(BOOL)noMore firstTime:(BOOL)first;
+
+/// 获取提问历史聊天消息失败时触发
+/// 用于停止【下拉加载更多】控件的动画
+- (void)chatroomManager_loadQuestionHistoryFailure;
+
 /// 如果4秒内有登录聊天室的用户（包括自己），间隔4秒触发一次
 /// 用于显示‘欢迎登录用户横幅’
 /// @param userArray 4秒内登录聊天室的用户数组，如果为nil，表示当前时间段内当前用户有登录事件
@@ -150,6 +160,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 图片表情数组
 @property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 
+/// tableview 在手机竖屏模式下的宽度
+@property (nonatomic, assign) CGFloat tableViewWidthForV;
+
+/// tableview 的宽度
+@property (nonatomic, assign) CGFloat tableViewWidthForH;
+
 #pragma mark API
 
 /// 单例方法
@@ -163,6 +179,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 加载历史聊天记录，每次加载条数10条
 - (void)loadHistory;
+
+/// 加载提问消息历史记录
+- (void)loadQuestionHistory;
 
 /// 加载表情图片
 - (void)loadImageEmotions;

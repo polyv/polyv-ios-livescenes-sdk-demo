@@ -11,6 +11,7 @@
 
 /// util
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 /// UI
 #import "PLVSASendMessageView.h"
@@ -49,6 +50,10 @@
 @property (nonatomic, strong) PLVSASendMessageView *sendMessageView; // 输入文字、图片、emoji标签视图
 @property (nonatomic, strong) PLVSALinkMicMenuPopup *linkMicMenu;
 
+/// 数据
+@property (nonatomic, assign) PLVSAToolbarLinkMicButtonStatus linkMicButtonStatus;
+@property (nonatomic, assign, readonly) BOOL isGuest; // 是否为嘉宾
+
 @end
 
 @implementation PLVSAToolbarAreaView
@@ -61,7 +66,10 @@
         
         [self addSubview:self.chatButton];
         [self addSubview:self.layoutSwitchButton];
-        [self addSubview:self.linkMicButton];
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        if (!(roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0) || roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
+            [self addSubview:self.linkMicButton];
+        }
         [self addSubview:self.memberButton];
         [self addSubview:self.memberBadgeView];
         [self addSubview:self.commodityButton];
@@ -76,9 +84,10 @@
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL landscape = [PLVSAUtils sharedUtils].landscape;
+    CGSize chatButtonSize = [self.chatButton.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT, 32)];
     
     CGFloat marginLeft = landscape ? 36 : 8;
-    CGFloat chatButtonWidth = landscape ? 150 : 110;
+    CGFloat chatButtonWidth = landscape ? 150 : chatButtonSize.width + 53;
     CGFloat chatButtonTop = 8;
     
     if (isPad) {
@@ -101,14 +110,10 @@
 
     self.memberBadgeView.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) - 10, 8, 10, 10);
     
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeGuest) {
-        self.linkMicButton.hidden = YES;
-        self.layoutSwitchButton.hidden = YES;
-    } else {
-        self.linkMicButton.frame = CGRectMake(CGRectGetMinX(self.memberButton.frame) - 12 - 36, 8, 36, 36);
-        
-        self.layoutSwitchButton.frame = CGRectMake(CGRectGetMinX(self.linkMicButton.frame) - 12 - 36, 8, 36, 36);
-    }
+    CGFloat originX = CGRectGetMinX(self.memberButton.frame);
+    self.linkMicButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
+    originX = self.linkMicButton.isHidden || !self.linkMicButton.superview ? originX : CGRectGetMinX(self.linkMicButton.frame);
+    self.layoutSwitchButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
 }
 
 #pragma mark - [ Public Method ]
@@ -125,7 +130,53 @@
     })
 }
 
-- (void)updateOnlineUserCount:(NSInteger)onlineUserCount { self.layoutSwitchButton.hidden = (onlineUserCount <= 1);
+- (void)updateOnlineUserCount:(NSInteger)onlineUserCount {
+    self.layoutSwitchButton.hidden = (onlineUserCount <= 1);
+}
+
+- (void)updateLinkMicButtonStatus:(PLVSAToolbarLinkMicButtonStatus)status {
+    if (!self.isGuest) { return; }
+
+    _linkMicButtonStatus = status;
+    self.linkMicButton.hidden = NO;
+    self.linkMicButton.selected = NO;
+    self.linkMicButton.alpha = 1.0;
+    UIImageView *buttonImageView = self.linkMicButton.imageView;
+    if (buttonImageView.isAnimating) {
+        [buttonImageView stopAnimating];
+    }
+    buttonImageView.animationImages = nil;
+    if (_linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_HandUp) {
+        UIImageView *buttonImageView = self.linkMicButton.imageView;
+        NSMutableArray *imageArray = [NSMutableArray arrayWithCapacity:3];
+        for (NSInteger i = 0; i < 3; i ++) {
+            [imageArray addObject:[PLVSAUtils imageForMemberResource:[NSString stringWithFormat:@"plvsa_member_linkmic_wait_icon_0%ld.png", i]]];
+        }
+        [buttonImageView setAnimationImages:[imageArray copy]];
+        [buttonImageView setAnimationDuration:1];
+        [buttonImageView startAnimating];
+    } else {
+        [self.linkMicButton setImage:[PLVSAUtils imageForMemberResource:@"plvsa_member_join_request"] forState:UIControlStateNormal];
+        if (_linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_NotLive) {
+            self.linkMicButton.alpha = 0.6f;
+        } else if (_linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_Joined) {
+            self.linkMicButton.selected = YES;
+        }
+    }
+    
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+}
+
+- (void)autoOpenMicLinkIfNeed {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVFdUtil checkStringUseable:roomData.userDefaultOpenMicLinkEnabled]) {
+        if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"audio"]) {
+            [self.linkMicMenu audioLinkMicBtnAction];
+        } else if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"video"]) {
+            [self.linkMicMenu videoLinkMicBtnAction];
+        }
+    }
 }
 
 #pragma mark - [ Private Method ]
@@ -141,7 +192,7 @@
         [_chatButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6] forState:UIControlStateNormal];
         [_chatButton setContentHorizontalAlignment:UIControlContentHorizontalAlignmentLeft];
         [_chatButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_chat"] forState:UIControlStateNormal];
-        [_chatButton setTitle:@"一起聊聊" forState:UIControlStateNormal];
+        [_chatButton setTitle:PLVLocalizedString(@"一起聊聊") forState:UIControlStateNormal];
         [_chatButton addTarget:self action:@selector(chatButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _chatButton;
@@ -154,6 +205,7 @@
         [_layoutSwitchButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_speaker_switch"] forState:UIControlStateNormal];
         [_layoutSwitchButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_tiled_switch"] forState:UIControlStateSelected];
         [_layoutSwitchButton addTarget:self action:@selector(layoutSwitchButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _layoutSwitchButton.hidden = YES;
     }
     return _layoutSwitchButton;
 }
@@ -163,7 +215,8 @@
         _linkMicButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_linkMicButton setImage:[PLVSAUtils imageForMemberResource:@"plvsa_member_join_request"] forState:UIControlStateNormal];
         [_linkMicButton setImage:[PLVSAUtils imageForMemberResource:@"plvsa_member_join_leave"] forState:UIControlStateSelected];
-        [_linkMicButton addTarget:self action:@selector(linkMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        [_linkMicButton addTarget:self action:@selector(linkMicButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _linkMicButton.hidden = self.isGuest;
     }
     return _linkMicButton;
 }
@@ -253,6 +306,11 @@
     return NO;
 }
 
+- (BOOL)isGuest {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return userType == PLVRoomUserTypeGuest;;
+}
+
 #pragma mark Setter
 
 #pragma mark Data Mode
@@ -277,8 +335,12 @@
     }
 }
 
-- (void)linkMicButtonAction {
-    if (self.linkMicButton.selected) {
+- (void)linkMicButtonAction:(UIButton *)sender {
+    sender.enabled = NO;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(300 * NSEC_PER_MSEC)), dispatch_get_main_queue(), ^{
+        sender.enabled = YES;
+    });
+    if (self.linkMicButton.selected || self.isGuest) {
         if (self.delegate &&
             [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapLinkMicButton:linkMicButtonSelected:)]) {
             [self.delegate toolbarAreaViewDidTapLinkMicButton:self linkMicButtonSelected:self.linkMicButton.selected];

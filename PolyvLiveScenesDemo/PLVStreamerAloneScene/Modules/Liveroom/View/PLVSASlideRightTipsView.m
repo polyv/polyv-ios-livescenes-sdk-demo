@@ -8,6 +8,7 @@
 
 #import "PLVSASlideRightTipsView.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVSASlideRightTipsView()
@@ -42,6 +43,7 @@
 - (void)layoutSubviews {
     CGFloat originY = [PLVSAUtils sharedUtils].areaInsets.top;
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat tipsLableWidth = [self.tipsLable sizeThatFits:CGSizeMake(MAXFLOAT, 20)].width;
     
     if (isPad) {
         CGSize tipsImageViewSize = CGSizeMake(123, 85);
@@ -50,12 +52,12 @@
         tipsLableTop = CGRectGetHeight(self.bounds) / 2;
         tipsImageViewTop = tipsLableTop - 50 - tipsImageViewSize.height;
         self.tipsImageView.frame = CGRectMake(0, tipsImageViewTop, tipsImageViewSize.width, tipsImageViewSize.height);
-        self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - 72 / 2, tipsLableTop, 72, 20);
+        self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - tipsLableWidth / 2, tipsLableTop, tipsLableWidth, 20);
     } else {
         CGFloat originX = [PLVSAUtils sharedUtils].areaInsets.left;
         originY += [PLVSAUtils sharedUtils].isLandscape ? 131 : 220;
         self.tipsImageView.frame = CGRectMake(originX, originY, 123, 85);
-        self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - 72 / 2, UIViewGetBottom(self.tipsImageView) + 24, 72, 20);
+        self.tipsLable.frame = CGRectMake(CGRectGetMidX(self.bounds) - tipsLableWidth / 2, UIViewGetBottom(self.tipsImageView) + 24, tipsLableWidth, 20);
     }
     
     self.closeButton.frame = CGRectMake(CGRectGetMidX(self.bounds) - 100 / 2, UIViewGetBottom(self.tipsLable) + 25, 100, 36);
@@ -93,7 +95,7 @@
 - (UILabel *)tipsLable {
     if (!_tipsLable) {
         _tipsLable = [[UILabel alloc] init];
-        _tipsLable.text = @"右滑清屏";
+        _tipsLable.text = PLVLocalizedString(@"右滑清屏");
         _tipsLable.textColor = PLV_UIColorFromRGB(@"#FFFFFF");
         _tipsLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];
     }
@@ -105,7 +107,7 @@
         _closeButton = [[UIButton alloc] init];
         _closeButton.layer.cornerRadius = 18;
         _closeButton.layer.masksToBounds = YES;
-        [_closeButton setTitle:@"我知道了" forState:UIControlStateNormal];
+        [_closeButton setTitle:PLVLocalizedString(@"我知道了") forState:UIControlStateNormal];
         _closeButton.titleLabel.font =  [UIFont fontWithName:@"PingFangSC-Semibold" size:14];
         [_closeButton setTitleColor:PLV_UIColorFromRGB(@"#FFFFFF") forState:UIControlStateNormal];
         [_closeButton addTarget:self action:@selector(confirmButtonAction) forControlEvents:UIControlEventTouchUpInside];

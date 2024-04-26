@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCLandscapeBaseCell.h"
+#import "PLVMultiLanguageManager.h"
 
 @implementation PLVLCLandscapeBaseCell
 
@@ -101,8 +102,8 @@
     if (self.allowCopy || self.allowReply) {
         [self becomeFirstResponder];
         
-        UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:@"复制" action:@selector(customCopy:)];
-        UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:@"回复" action:@selector(reply:)];
+        UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"复制") action:@selector(customCopy:)];
+        UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"回复") action:@selector(reply:)];
         UIMenuController *menuController = [UIMenuController sharedMenuController];
         if (self.model.isProhibitMsg && self.model.prohibitWord) { // 含有严禁词并且发送失败时
             [menuController setMenuItems:@[copyMenuItem]];

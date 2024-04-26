@@ -97,6 +97,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 图片表情资源数组
 @property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 
+/// tableview 的宽度
+@property (nonatomic, assign) CGFloat tableViewWidth;
+
 #pragma mark API
 
 /// 单例方法

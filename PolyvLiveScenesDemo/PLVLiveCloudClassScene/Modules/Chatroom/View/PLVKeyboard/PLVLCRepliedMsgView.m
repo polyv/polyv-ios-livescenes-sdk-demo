@@ -9,6 +9,7 @@
 #import "PLVLCRepliedMsgView.h"
 #import "PLVChatModel.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCRepliedMsgView ()
@@ -62,9 +63,9 @@
             _contentLabel.text = quoteMessage.content;
         }
     } else if ([message isKindOfClass:[PLVImageMessage class]]) {
-        _contentLabel.text = @"[图片]";
+        _contentLabel.text = PLVLocalizedString(@"[图片]");
     } else if ([message isKindOfClass:[PLVImageEmotionMessage class]]) {
-        _contentLabel.text = @"[图片表情]";
+        _contentLabel.text = PLVLocalizedString(@"[图片表情]");
     }
     
     [self layoutUI];

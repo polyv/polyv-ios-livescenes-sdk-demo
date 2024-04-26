@@ -10,8 +10,10 @@
 #import "SampleHandler.h"
 #import <PLVBusinessSDK/PLVBusinessSDK.h>
 #import <mach/mach.h>
+#import "PLVBroadcastNotificationsManager.h"
 
 #define kPLVAppGroup @"group.cn.plv.PolyvLiveScenesDemo.ScreenShare"
+#define kPLVExtensionBroadcastStartedNotification @"PLVLiveBroadcastStartedNotification"
 
 @interface SampleHandler ()<PLVBroadcastSampleHandlerDelegate>
  
@@ -25,6 +27,9 @@
     [self createSampleHandler];
     /// 用户已启动广播
     [self.sampleHandler broadcastStarted];
+    
+    PLVBroadcastNotificationsManager *notifications = [[PLVBroadcastNotificationsManager alloc] init];
+    [notifications sendNotificationWithIdentifier:kPLVExtensionBroadcastStartedNotification];
 }
 
 - (void)broadcastPaused {

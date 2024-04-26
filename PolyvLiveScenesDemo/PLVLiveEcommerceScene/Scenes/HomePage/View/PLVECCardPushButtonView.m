@@ -8,6 +8,7 @@
 
 #import "PLVECCardPushButtonView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVECCardPushButtonPopupView.h"
 #import <SDWebImage/UIButton+WebCache.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -82,6 +83,10 @@
     }
 }
 
+- (void)hidePopupView {
+    self.popupView.hidden = YES;
+}
+
 - (void)leaveLiveRoom {
     [self saveLocalWatchTime];
     [self cancelDispatchTimer];
@@ -103,7 +108,7 @@
     // 设置 button 图片
     NSString *imageType = PLV_SafeStringForDictKey(cardDict, @"imageType");
     if ([imageType isEqualToString:@"redpack"] || [imageType isEqualToString:@"giftbox"]) {
-        NSString *imageName = [imageType isEqualToString:@"redpack"] ? @"plvec_home_redpack_btn" : @"plvec_home_giftbox_btn";
+        NSString *imageName = [imageType isEqualToString:@"redpack"] ? PLVLocalizedString(@"plvec_home_redpack_btn") : PLVLocalizedString(@"plvec_home_giftbox_btn");
         UIImage *image = [PLVECUtils imageForWatchResource:imageName];
         [self.cardPushButton setImage:image forState:UIControlStateNormal];
     } else if ([imageType isEqualToString:@"custom"]) {
@@ -147,6 +152,9 @@
         [self showPopupTitleView];
         
         [self setNeedsLayout];
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(cardPushButtonView:showStatusChanged:)]) {
+        [self.delegate cardPushButtonView:self showStatusChanged:!self.hidden];
     }
 }
 
@@ -198,6 +206,9 @@
 
 - (void)showPopupTitleView {
     if (self.popupView.hidden) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(cardPushButtonViewPopupViewDidShow:)]) {
+            [self.delegate cardPushButtonViewPopupViewDidShow:self];
+        }
         self.popupView.hidden = NO;
         __weak typeof(self) weakSelf = self;
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
@@ -212,7 +223,7 @@
     if (!_cardPushButton) {
         _cardPushButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_cardPushButton addTarget:self action:@selector(cardPushAction:) forControlEvents:UIControlEventTouchUpInside];
-        UIImage *image = [PLVECUtils imageForWatchResource:@"plvec_home_redpack_btn"];
+        UIImage *image = [PLVECUtils imageForWatchResource:PLVLocalizedString(@"plvec_home_redpack_btn")];
         [_cardPushButton setImage:image forState:UIControlStateNormal];
     }
     return _cardPushButton;

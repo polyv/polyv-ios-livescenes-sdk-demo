@@ -8,10 +8,11 @@
 
 #import "PLVECBulletinCardView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
-@interface PLVECBulletinCardView () <UITextViewDelegate>
+@interface PLVECBulletinCardView () <WKNavigationDelegate>
 
-@property (nonatomic, strong) NSDictionary *linkAttributes;
+@property (nonatomic, strong) WKWebView *webView;
 
 @end
 
@@ -21,21 +22,16 @@
 {
     self = [super initWithFrame:frame];
     if (self) {
-        self.titleLB.text = @"公告";
+        self.titleLB.text = PLVLocalizedString(@"公告");
         self.iconImgView.image = [PLVECUtils imageForWatchResource:@"plv_bulletin_bg_icon"];
         
-        self.contentTextView = [[UITextView alloc] init];
-        self.contentTextView.backgroundColor = UIColor.clearColor;
-        self.contentTextView.textColor = UIColor.blackColor;
-        self.contentTextView.font = [UIFont systemFontOfSize:12];
-        self.contentTextView.textAlignment = NSTextAlignmentLeft;
-        self.contentTextView.textContainer.lineFragmentPadding = 0;
-        self.contentTextView.textContainerInset = UIEdgeInsetsZero;
-        self.contentTextView.showsVerticalScrollIndicator = NO;
-        self.contentTextView.showsHorizontalScrollIndicator = NO;
-        self.contentTextView.editable = NO;
-        self.contentTextView.delegate = self;
-        [self addSubview:self.contentTextView];
+        self.webView = [[WKWebView alloc] init];
+        self.webView.navigationDelegate = self;
+        self.webView.opaque = NO;
+        self.webView.scrollView.scrollEnabled = NO;
+        self.webView.scrollView.showsVerticalScrollIndicator = NO;
+        self.webView.scrollView.showsHorizontalScrollIndicator = NO;
+        [self addSubview:self.webView];
     }
     return self;
 }
@@ -44,42 +40,59 @@
     [super layoutSubviews];
     
     CGFloat originY = CGRectGetMaxY(self.iconImgView.frame);
-    self.contentTextView.frame = CGRectMake(15, originY+15, CGRectGetWidth(self.bounds)-30, CGRectGetHeight(self.bounds)-originY);
+    self.webView.frame = CGRectMake(15, originY + 10, CGRectGetWidth(self.bounds) - 30, CGRectGetHeight(self.bounds) - originY - 15);
 }
 
 #pragma mark - Setter
 
 - (void)setContent:(NSString *)content {
     _content = content;
-    if ([content isKindOfClass:NSString.class]) {
-        // font 12; color black
-        NSString *style = @"<style> body { font-size: 12px; color: black; } p:last-of-type { margin: 0; }</style>";
-        NSString *styledHtml = [NSString stringWithFormat:@"%@%@", style, content];
-        NSError *err = nil;
-        NSAttributedString *htmlContentAttr = [[NSAttributedString alloc] initWithData:[styledHtml dataUsingEncoding:NSUnicodeStringEncoding] options:@{NSDocumentTypeDocumentAttribute:NSHTMLTextDocumentType} documentAttributes:nil error:&err];
-        if (err) {
-            NSLog(@"setContent err:%@",err.localizedDescription);
+    if ([content isKindOfClass:NSString.class] && content.length) {
+        [self.webView loadHTMLString:[self processHtml:content] baseURL:[NSURL URLWithString:@""]];
+    }
+}
+
+#pragma mark - Private
+
+- (NSString *)processHtml:(NSString *)htmlCont {
+    /// 图片自适应设备宽，边距，禁用双指缩放
+    int offset = 0;
+    int fontSize = 12;
+    NSString *content = [htmlCont stringByReplacingOccurrencesOfString:@"<img src=\"//" withString:@"<img src=\"https://"];
+    content = [NSString stringWithFormat:@"<html>\n<body style=\"position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script>%@</body></html>", offset, offset, offset, offset, fontSize, content];
+    return content;
+}
+
+#pragma mark - WKNavigationDelegate
+
+- (void)webView:(WKWebView *)webView didFinishNavigation:(null_unspecified WKNavigation *)navigation; {
+    /// 禁止双指缩放
+    NSString *noScaleJS = @"var script = document.createElement('meta');"
+    "script.name = 'viewport';"
+    "script.content=\"user-scalable=no,width=device-width,initial-scale=1.0,maximum-scale=1.0\";"
+    "document.getElementsByTagName('head')[0].appendChild(script);";
+    [webView evaluateJavaScript:noScaleJS completionHandler:nil];
+    
+    __weak typeof(self)weakSelf = self;
+    [webView evaluateJavaScript:@"document.body.scrollHeight" completionHandler:^(id _Nullable result, NSError * _Nullable error) {
+        if ([weakSelf.bulletinDelegate respondsToSelector:@selector(bulletinCardView:didLoadWebViewHeight:)]) {
+            [weakSelf.bulletinDelegate bulletinCardView:weakSelf didLoadWebViewHeight:[result floatValue]];
         }
-        self.contentTextView.attributedText = htmlContentAttr;
-    } else {
-        self.contentTextView.attributedText = nil;
-    }
+    }];
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        webView.hidden = NO;
+        [webView.scrollView setContentOffset:CGPointZero animated:NO];
+    });
 }
 
-#pragma mark - <UITextViewDelegate>
-
-- (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL *)URL inRange:(NSRange)characterRange interaction:(UITextItemInteraction)interaction  API_AVAILABLE(ios(10.0)) {
-    if ([self.delegate respondsToSelector:@selector(cardView:didInteractWithURL:)]) {
-        [self.delegate cardView:self didInteractWithURL:URL];
+- (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler {
+    if (navigationAction.targetFrame == nil) {
+        if ([self.bulletinDelegate respondsToSelector:@selector(cardView:didInteractWithURL:)]) {
+            [self.bulletinDelegate cardView:self didInteractWithURL:navigationAction.request.URL];
+        }
     }
-    return NO;
-}
-
-- (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL *)URL inRange:(NSRange)characterRange {
-    if ([self.delegate respondsToSelector:@selector(cardView:didInteractWithURL:)]) {
-        [self.delegate cardView:self didInteractWithURL:URL];
-    }
-    return NO;
+    decisionHandler(WKNavigationActionPolicyAllow);
 }
 
 @end

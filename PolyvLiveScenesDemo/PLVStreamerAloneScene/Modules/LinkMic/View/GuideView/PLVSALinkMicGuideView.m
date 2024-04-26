@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 框架
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -123,7 +124,7 @@
             _tipLabel.font = [UIFont systemFontOfSize:14];
         }
         _tipLabel.textColor = [UIColor whiteColor];
-        _tipLabel.text = @"点击可管理上麦成员哦";
+        _tipLabel.text = PLVLocalizedString(@"点击可管理上麦成员哦");
         _tipLabel.textAlignment = NSTextAlignmentCenter;
         _tipLabel.numberOfLines = 0;
     }

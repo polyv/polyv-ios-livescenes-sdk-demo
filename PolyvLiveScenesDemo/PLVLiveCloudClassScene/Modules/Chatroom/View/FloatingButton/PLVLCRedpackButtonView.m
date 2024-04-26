@@ -9,6 +9,7 @@
 #import "PLVLCRedpackButtonView.h"
 #import "PLVLCRedpackButtonPopupView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 点击红包按钮弹出气泡显示时长
 static NSInteger kPopupViewShowInterval = 6.0;
@@ -54,12 +55,12 @@ static NSInteger kPopupViewShowInterval = 6.0;
     }
     
     self.isLandscape = isLandscape;
+    self.countdownLabel.hidden = NO;
     if (self.isLandscape) { // 横屏
-        self.countdownLabel.hidden = YES;
         CGFloat viewWidth = CGRectGetWidth(self.bounds);
         self.redpackButton.frame = CGRectMake(-5, -5, viewWidth + 10, viewWidth + 10);
+        self.countdownLabel.frame = CGRectMake(0, CGRectGetMaxY(self.bounds) + 2, viewWidth, 12);
     } else { // 竖屏
-        self.countdownLabel.hidden = NO;
         self.redpackButton.frame = CGRectMake(0, 0, PLVLCRedpackButtonViewWidth, PLVLCRedpackButtonViewWidth);
         self.countdownLabel.frame = CGRectMake(0, PLVLCRedpackButtonViewWidth, PLVLCRedpackButtonViewWidth, 12);
     }
@@ -90,10 +91,10 @@ static NSInteger kPopupViewShowInterval = 6.0;
     UIImage *image = nil;
     switch (type) {
         case PLVRedpackMessageTypeUnknown:
-            image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_delay_password_redpack"];
+            image = [PLVLCUtils imageForChatroomResource:PLVLocalizedString(@"plvlc_chatroom_delay_password_redpack")];
             break;
         case PLVRedpackMessageTypeAliPassword:
-            image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_delay_password_redpack"];
+            image = [PLVLCUtils imageForChatroomResource:PLVLocalizedString(@"plvlc_chatroom_delay_password_redpack")];
             break;
     }
     return image;
@@ -119,10 +120,10 @@ static NSInteger kPopupViewShowInterval = 6.0;
     NSString *labelString = @"";
     switch (type) {
         case PLVRedpackMessageTypeUnknown:
-            labelString = @"倒计时红包即将来袭";
+            labelString = PLVLocalizedString(@"倒计时红包即将来袭");
             break;
         case PLVRedpackMessageTypeAliPassword:
-            labelString = @"口令红包即将来袭";
+            labelString = PLVLocalizedString(@"口令红包即将来袭");
             break;
     }
     return labelString;

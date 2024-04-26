@@ -10,6 +10,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSString *const PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
 static NSString *const PLVInteractUpdateIarEntranceCallbackNotification = @"PLVInteractUpdateIarEntranceCallbackNotification";
@@ -61,7 +62,8 @@ PLVInteractWebViewBridgeDelegate>
     NSString *urlString = [NSString stringWithFormat:@"%@?livePlayBack=%@", PLVLiveConstantsInteractNewWebViewURL, @(!self.isLiveRoom)];
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
-    urlString = [urlString stringByAppendingFormat:@"&security=%d&resourceAuth=%d&secureApi=%d", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
+    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
+    urlString = [urlString stringByAppendingFormat:@"&security=%d&resourceAuth=%d&secureApi=%d&lang=%@", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
     NSURL *interactURL = [NSURL URLWithString:urlString];
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
@@ -194,8 +196,10 @@ PLVInteractWebViewBridgeDelegate>
 - (void)updateChannelConfigInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     NSDictionary *parames = @{@"event" : @"UPDATE_CHANNEL_SWITCH",
-                            @"value" : @[@{@"type" : @"watchFeedbackEnabled",
-                                        @"enabled" : roomData.watchFeedbackEnabled ? @"Y" : @"N"}]
+                            @"value" :@[@{@"type" : @"watchFeedbackEnabled",
+                                            @"enabled" : roomData.watchFeedbackEnabled ? @"Y" : @"N"},
+                                       @{@"type" : @"conditionLotteryEnabled",
+                                            @"enabled" : roomData.conditionLotteryEnabled ? @"Y" : @"N"}]
     };
     [self.webViewBridge updateChannelConfigInfo:parames];
 }
@@ -251,15 +255,18 @@ PLVInteractWebViewBridgeDelegate>
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
+        @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
         @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
-        @"webVersion" : @"0.3.2"
+        @"webVersion" : @"0.5.0"
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
     [mutableDict addEntriesFromDictionary:sessionDict];
-    [mutableDict setObject:@"0.3.3" forKey:@"webVersion"];
+    if (roomData.menuInfo.promotionInfo) {
+        [mutableDict setObject:roomData.menuInfo.promotionInfo forKey:@"promotionInfo"];
+    }
     NSString *liveScene = self.liveType == PLVInteractGenericViewLiveTypeLC ? @"0" : @"1";
     [mutableDict setObject:liveScene forKey:@"liveScene"]; // 0 表示云课堂场景，1 表示直播带货场景
 
@@ -349,6 +356,13 @@ PLVInteractWebViewBridgeDelegate>
     if ([event isEqualToString:@"UPDATE_CHAT_BUTTON"]) { // 更新聊天室按钮
         NSDictionary *eventDict = PLV_SafeDictionaryForDictKey(dict, @"value");
         [[NSNotificationCenter defaultCenter] postNotificationName:PLVInteractUpdateChatButtonCallbackNotification object:nil userInfo:eventDict];
+    } else if ([event isEqualToString:@"UPDATE_IAR_PENDANT"]) { // 更新挂件控件
+        NSDictionary *eventDict = PLV_SafeDictionaryForDictKey(dict, @"value");
+        plv_dispatch_main_async_safe(^{
+            if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:updateLotteryWidget:)]) {
+                [self.delegate plvInteractGenericView:self updateLotteryWidget:eventDict];
+            }
+        })
     }
 }
 

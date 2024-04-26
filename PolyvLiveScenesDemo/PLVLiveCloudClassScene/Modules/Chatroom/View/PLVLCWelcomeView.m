@@ -8,6 +8,7 @@
 
 #import "PLVLCWelcomeView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCWelcomeView ()
 
@@ -91,7 +92,7 @@
         return;
     }
     
-    NSString *welcomeMessage = [NSString stringWithFormat:@"欢迎%@加入", nickName];
+    NSString *welcomeMessage = [NSString stringWithFormat:PLVLocalizedString(@"欢迎%@加入"), nickName];
     self.marqueeLabel.text = welcomeMessage;
     
     [self beginAnimation];

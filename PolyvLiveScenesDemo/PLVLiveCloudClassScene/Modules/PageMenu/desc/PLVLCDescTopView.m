@@ -8,6 +8,7 @@
 
 #import "PLVLCDescTopView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 #import <PLVFoundationSDK/PLVFdUtil.h>
 
@@ -56,12 +57,7 @@
     
     self.publisherImageView.frame = CGRectMake(commonOrigin, CGRectGetMaxY(self.line.frame) + 10, 16, 16);
     self.publisherLabel.frame = CGRectMake(commonOrigin + 20, CGRectGetMaxY(self.line.frame) + 12, self.bounds.size.width - 36 - 56 - 16, 13);
-    
-    if (self.status == PLVLCLiveStatusNone || self.status == PLVLCLiveStatusStop) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - commonOrigin, 15, 64, 24);
-    } else {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - commonOrigin, 15, 50, 24);
-    }
+    self.statusLabel.frame = CGRectMake(self.bounds.size.width - CGRectGetWidth(self.statusLabel.frame) - commonOrigin, 15, CGRectGetWidth(self.statusLabel.frame), 24);
 }
 
 #pragma mark - Getter & Setter
@@ -149,15 +145,15 @@
     }
         
     if (channelInfo.startTime && [channelInfo.startTime isKindOfClass:[NSString class]] && channelInfo.startTime.length > 0) {
-        self.startTimeLable.text = [NSString stringWithFormat:@"直播时间：%@", channelInfo.startTime];
+        self.startTimeLable.text = [NSString stringWithFormat:PLVLocalizedString(@"直播时间：%@"), channelInfo.startTime];
     } else {
-        self.startTimeLable.text = @"直播时间:无";
+        self.startTimeLable.text = PLVLocalizedString(@"直播时间:无");
     }
     
     self.status = [self liveStatusWithString:channelInfo.watchStatus];
     
     if (channelInfo.publisher && [channelInfo.publisher isKindOfClass:[NSString class]] && channelInfo.publisher.length > 0) {
-        self.publisherLabel.text = channelInfo.publisher;
+        self.publisherLabel.text = PLVLocalizedString(channelInfo.publisher);
     }
 
 }
@@ -167,38 +163,33 @@
     
     UIColor *statusLabelColor = kLightGrayColor;
     if (status == PLVLCLiveStatusPlayback) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
-        self.statusLabel.text = @"回放中";
+        self.statusLabel.text = PLVLocalizedString(@"回放中");
         statusLabelColor = [UIColor colorWithRed:0x78/255.0 green:0xa7/255.0 blue:0xed/255.0 alpha:1];;
     } else if (status == PLVLCLiveStatusLiving) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
-        self.statusLabel.text = @"直播中";
+        self.statusLabel.text = PLVLocalizedString(@"直播中");
         statusLabelColor = [UIColor colorWithRed:0xe9/255.0 green:0x60/255.0 blue:0x64/255.0 alpha:1];
     } else if (status == PLVLCLiveStatusWaiting) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
-        self.statusLabel.text = @"等待中";
+        self.statusLabel.text = PLVLocalizedString(@"等待中");
         statusLabelColor = [UIColor colorWithRed:0x78/255.0 green:0xa7/255.0 blue:0xed/255.0 alpha:1];
     } else if (status == PLVLCLiveStatusUnStart) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
-        self.statusLabel.text = @"未开始";
+        self.statusLabel.text = PLVLocalizedString(@"未开始");
         statusLabelColor = [UIColor colorWithRed:0x78/255.0 green:0xa7/255.0 blue:0xed/255.0 alpha:1];
     } else if (status == PLVLCLiveStatusEnd) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
-        self.statusLabel.text = @"已结束";
+        self.statusLabel.text = PLVLocalizedString(@"已结束");
         statusLabelColor = kLightGrayColor;
     } else if (status == PLVLCLiveStatusStop) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - 16, 15, 64, 24);
-        self.statusLabel.text = @"直播暂停";
+        self.statusLabel.text = PLVLocalizedString(@"直播暂停");
         statusLabelColor = [UIColor colorWithRed:0xe9/255.0 green:0x60/255.0 blue:0x64/255.0 alpha:1];
     } else if (status == PLVLCLiveStatusCached) {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 50 - 16, 15, 50, 24);
-        self.statusLabel.text = @"已缓存";
+        self.statusLabel.text = PLVLocalizedString(@"已缓存");
         statusLabelColor = [UIColor colorWithRed:0x78/255.0 green:0xa7/255.0 blue:0xed/255.0 alpha:1];;
     } else {
-        self.statusLabel.frame = CGRectMake(self.bounds.size.width - 64 - 16, 15, 64, 24);
-        self.statusLabel.text = @"暂无直播";
+        self.statusLabel.text = PLVLocalizedString(@"暂无直播");
         statusLabelColor = kLightGrayColor;
     }
+    CGSize statusLabelSize = [self.statusLabel sizeThatFits:CGSizeMake(MAXFLOAT, 24)];
+    CGFloat statusLabelWidth = statusLabelSize.width + 8;
+    self.statusLabel.frame = CGRectMake(self.bounds.size.width - statusLabelWidth - 16, 15, statusLabelWidth, 24);
     self.statusLabel.textColor = statusLabelColor;
     self.statusLabel.layer.borderColor = statusLabelColor.CGColor;
 }

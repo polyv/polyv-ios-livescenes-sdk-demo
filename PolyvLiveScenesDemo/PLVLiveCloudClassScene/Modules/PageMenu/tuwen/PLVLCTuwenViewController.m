@@ -7,60 +7,46 @@
 //
 
 #import "PLVLCTuwenViewController.h"
-#import <PLVFoundationSDK/PLVJSBridge.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
-
+#import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCTuwenViewController ()<
-PLVJSBridgeDelegate,
-PLVSocketManagerProtocol
+WKNavigationDelegate,
+PLVTuWenWebViewBridgeDelegate
 >
 
-@property (nonatomic, strong) NSNumber *channelId;
-
-@property (nonatomic, strong) PLVJSBridge *jsBridge;
-
+@property (nonatomic, strong) WKWebView *webView;
 @property (nonatomic, assign) BOOL showBigImage;
+@property (nonatomic, assign) BOOL isLive; // 是否正在直播中
+@property (nonatomic, strong) PLVTuWenWebViewBridge *webViewBridge;
 
 @end
 
-@implementation PLVLCTuwenViewController {
-    /// PLVSocketManager回调的执行队列
-    dispatch_queue_t socketDelegateQueue;
-}
+@implementation PLVLCTuwenViewController
 
 #pragma mark - Life Cycle
-
-- (instancetype)initWithChannelId:(NSNumber *)channelId {
-    self = [super init];
-    if (self) {
-        _channelId = channelId;
-    }
-    return self;
-}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#141518"];
+    [self.view addSubview:self.webView];
     
-    /// 添加 socket 事件监听
-    socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
-    [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
+    self.webViewBridge = [[PLVTuWenWebViewBridge alloc] initBridgeWithWebView:self.webView webViewDelegate:self];
+    self.webViewBridge.delegate = self;
     
     NSString *urlString = PLVLiveConstantsLiveFrontPictureTextURL;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
-    urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
-    [self.jsBridge loadWebView:urlString inView:self.view];
-    
-    if (@available(iOS 11.0, *)) {
-        self.jsBridge.webView.scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
-    }
+    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
+    urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d&lang=%@", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:urlString]];
+    [self.webView loadRequest:request];
 }
 
 - (void)viewWillLayoutSubviews {
-    self.jsBridge.webView.frame = self.view.bounds;
+    self.webView.frame = self.view.bounds;
 }
     
 - (void)viewDidAppear:(BOOL)animated {
@@ -77,45 +63,19 @@ PLVSocketManagerProtocol
     }
 }
 
-#pragma Getter & Setter
+#pragma mark - [ Public Method ]
 
-- (PLVJSBridge *)jsBridge {
-    if (_jsBridge == nil) {
-        _jsBridge = [[PLVJSBridge alloc] init];
-        _jsBridge.delegate = self;
-        [_jsBridge addJsFunctionsReceiver:self];
-        [_jsBridge addObserveJsFunctions:@[@"clickTuwenImage", @"tuwenImageHide"]];
-    }
-    return _jsBridge;
+- (void)updateUserInfo {
+    NSDictionary *userInfo = [self getUserInfo];
+    [self.webViewBridge updateNativeAppParamsInfo:userInfo];
 }
 
-#pragma mark - Public Method
-
-- (void)reconnect {
-    [self.jsBridge call:@"CONNECT" params:nil];
+- (void)updateLiveStatusIsLive:(BOOL)isLive {
+    self.isLive = isLive;
+    [self updateUserInfo];
 }
 
-#pragma mark - JSBridge Method
-
-// web 通知 app：点击大图触发
-- (void)clickTuwenImage:(id)sender {
-    self.showBigImage = YES;
-    [self notificationForGestureEnable:NO];
-}
-
-// web 通知 app：点击隐藏大图触发
-- (void)tuwenImageHide:(id)sender {
-    self.showBigImage = NO;
-    [self notificationForGestureEnable:YES];
-}
-
-#pragma mark - PLVJSBridge Delegate
-
-- (void)plvJSBridgeWebviewDidFinishLoad:(PLVJSBridge *)jsBridge {
-    [self.jsBridge call:@"INIT_TUWEN" params:@[self.channelId]];
-}
-
-#pragma mark - Private
+#pragma mark - [ Private Method ]
 
 - (void)notificationForGestureEnable:(BOOL)enable {
     if (self.delegate && [self.delegate respondsToSelector:@selector(clickTuwenImage:)]) {
@@ -123,17 +83,59 @@ PLVSocketManagerProtocol
     }
 }
 
-#pragma mark PLVSocketManager Protocol
+- (NSDictionary *)getUserInfo {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSDictionary *dict = @{@"isLive" : self.isLive ? @"1" : @"0"};
+    return [roomData nativeAppUserParamsWithExtraParam:dict];
+}
 
-/// socket 接收到 "message" 事件
-- (void)socketMananger_didReceiveMessage:(NSString *)subEvent
-                                    json:(NSString *)jsonString
-                              jsonObject:(id)object {
-    if ([subEvent isEqualToString:@"DELETE_IMAGE_TEXT"] // 删除图文
-        || [subEvent isEqualToString:@"SET_TOP_IMAGE_TEXT"] // 置顶图文
-        || [subEvent isEqualToString:@"CREATE_IMAGE_TEXT"]  // 发布图文
-        || [subEvent isEqualToString:@"SET_IMAGE_TEXT_MSG"]) {  // 编辑现有图文
-        [self.jsBridge call:subEvent params:@[jsonString]];
+// 将 JSON 数据转化为字典
+- (NSDictionary *)dictionaryFromJSONObject:(id)jsonObject {
+    if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
+        return (NSDictionary *)jsonObject;
+    }
+    
+    NSData *jsonData = [jsonObject dataUsingEncoding:NSUTF8StringEncoding];
+    NSDictionary *dataDict = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:nil];
+    return dataDict;
+}
+
+#pragma mark Getter & Setter
+- (WKWebView *)webView {
+    if (!_webView) {
+        WKWebViewConfiguration * config = [[WKWebViewConfiguration alloc] init];
+        if (@available(iOS 13.0, *)) {
+            config.defaultWebpagePreferences.preferredContentMode = WKContentModeMobile;
+        }
+        _webView = [[WKWebView alloc] initWithFrame:CGRectZero configuration:config];
+        _webView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);
+        _webView.opaque = NO;
+        _webView.scrollView.bounces = NO;
+        if (@available(iOS 11.0,*)) {
+            [_webView.scrollView setContentInsetAdjustmentBehavior:UIScrollViewContentInsetAdjustmentNever];
+        }
+    }
+    return _webView;
+}
+
+#pragma mark - [ Delegate ]
+
+#pragma mark PLVTuWenWebViewBridgeDelegate
+- (NSDictionary *)getAPPInfoInTuWenWebViewBridge:(PLVTuWenWebViewBridge *)webViewBridge {
+    return [self getUserInfo];
+}
+
+- (void)plvTuWenWebViewBridge:(PLVTuWenWebViewBridge *)webViewBridge callAppEvent:(id)jsonObject {
+    if (!jsonObject) { return; }
+    
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    NSString *event = PLV_SafeStringForDictKey(dict, @"event");
+    if ([event isEqualToString:@"clickTuwenImage"]) {
+        self.showBigImage = YES;
+        [self notificationForGestureEnable:NO];
+    } else if ([event isEqualToString:@"tuwenImageHide"]) {
+        self.showBigImage = NO;
+        [self notificationForGestureEnable:YES];
     }
 }
 

@@ -9,6 +9,7 @@
 #import "PLVLCRedpackResultCell.h"
 #import "PLVRedpackResult.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCRedpackResultCell ()
 
@@ -72,9 +73,9 @@
     // 白色文本
     NSString *redpackTypeString = @"";
     if (self.message.type == PLVRedpackMessageTypeAliPassword) {
-        redpackTypeString = @"口令";
+        redpackTypeString = PLVLocalizedString(@"口令");
     }
-    NSString *contentString = [NSString stringWithFormat:@" %@ 从%@红包中获得", self.message.nick, redpackTypeString];
+    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 从%@红包中获得"), self.message.nick, redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#ADADC0"],
                                     NSBaselineOffsetAttributeName:@(2.0)};
@@ -84,7 +85,7 @@
     NSDictionary *redAttributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
                                        NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FF5959"],
                                        NSBaselineOffsetAttributeName:@(2.0)};
-    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:@"红包" attributes:redAttributeDict];
+    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"红包") attributes:redAttributeDict];
     
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     [muString appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];
@@ -92,7 +93,7 @@
     [muString appendAttributedString:redString];
     self.contentLabel.attributedText = [muString copy];
     
-    self.content = [NSString stringWithFormat:@"%@红包", contentString];
+    self.content = [NSString stringWithFormat:PLVLocalizedString(@"%@红包"), contentString];
 }
 
 + (CGFloat)cellHeightWithModel:(PLVChatModel *)model cellWidth:(CGFloat)cellWidth {

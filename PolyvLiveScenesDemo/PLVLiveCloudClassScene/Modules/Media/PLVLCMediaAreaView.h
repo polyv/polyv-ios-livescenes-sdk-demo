@@ -89,6 +89,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 该频道是否观看 ‘快直播’
 @property (nonatomic, assign, readonly) BOOL channelWatchQuickLive;
 
+/// 该频道是否观看 ‘公共流’
+@property (nonatomic, assign, readonly) BOOL channelWatchPublicStream;
+
 /// 当前是否为无延迟观看模式（包括无延迟直播和快直播）
 @property (nonatomic, assign, readonly) BOOL noDelayWatchMode;
 
@@ -97,6 +100,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// 播放器当前是否正在播放快直播
 @property (nonatomic, assign, readonly) BOOL quickLiveWatching;
+
+/// 播放器当前是否正在播放公共流
+@property (nonatomic, assign, readonly) BOOL publicStreamWatching;
 
 /// 无延迟直播的当前 ‘开始结束状态’
 @property (nonatomic, assign, readonly) BOOL noDelayLiveStart;
@@ -314,8 +320,14 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// mainSpeakerPPTOnMain 发生改变回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangeMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain;
 
+/// 播放器 ‘回放视频尺寸’ 发生改变
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoSizeChange:(CGSize)videoSize;
+
 /// 播放器 ‘回放视频信息’ 发生改变
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo;
+
+/// 用户想要开启小窗
+- (void)plvLCMediaAreaViewWannaStartPictureInPicture:(PLVLCMediaAreaView *)mediaAreaView;
 
 #pragma mark 画中画的回调
 /// 画中画即将开始
@@ -339,6 +351,10 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param mediaAreaView 播放器管理器
 - (void)plvLCMediaAreaViewPictureInPictureDidStop:(PLVLCMediaAreaView *)mediaAreaView;
 
+/// 画中画播放器播放状态改变
+/// @param mediaAreaView 播放器管理器
+/// @param playing 是否正在播放
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing;
 
 #pragma mark 下载视图的回调
 - (void)plvLCMediaAreaViewClickDownloadListButton:(PLVLCMediaAreaView *)mediaAreaView;

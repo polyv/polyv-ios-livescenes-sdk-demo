@@ -31,6 +31,7 @@
 
 // 工具
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFdUtil.h>
@@ -80,6 +81,10 @@ PLVECMessagePopupViewDelegate
 - (instancetype)init {
     self = [super init];
     if (self) {
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        // 设置多语言场景
+        [[PLVMultiLanguageManager sharedManager] setupLocalizedLiveScene:PLVMultiLanguageLiveSceneEC channelId:roomData.channelId language:roomData.menuInfo.watchLangType];
+        
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         [[PLVRoomDataManager sharedManager].roomData requestChannelFunctionSwitch];
         
@@ -106,22 +111,40 @@ PLVECMessagePopupViewDelegate
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
     
+    [self getEdgeInset];
+    
     /// 布局视图 [多次]
     CGFloat closeBtn_y = 32.f;
     if (@available(iOS 11.0, *)) {
         closeBtn_y = self.view.safeAreaLayoutGuide.layoutFrame.origin.y + 12;
     }
     self.closeButton.frame = CGRectMake(CGRectGetWidth(self.view.bounds)-47, closeBtn_y, 32, 32);
+    self.closeButton.hidden = [PLVECUtils sharedUtils].isLandscape;
+    CGRect scrollViewFrame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(P_SafeAreaLeftEdgeInsets(), 0, CGRectGetWidth(self.view.bounds) - P_SafeAreaLeftEdgeInsets(), CGRectGetHeight(self.view.bounds) ):CGRectMake(0, P_SafeAreaTopEdgeInsets(), CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds) - P_SafeAreaTopEdgeInsets());
+    self.scrollView.frame = scrollViewFrame;
+    self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(scrollViewFrame) * 3, CGRectGetHeight(scrollViewFrame));
+    
+    self.homePageView.frame = CGRectMake(CGRectGetWidth(scrollViewFrame), 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
+    
+    self.liveDetailPageView.frame = CGRectMake(0, 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
+    self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
+    self.popoverView.frame = self.view.bounds;
+    
+    CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? self.scrollView.bounds.size.width - P_SafeAreaRightEdgeInsets() : self.scrollView.bounds.size.width;
+
+    self.playerVC.view.frame = CGRectMake(self.scrollView.bounds.origin.x, self.scrollView.bounds.origin.y, playerVCWidth, self.scrollView.bounds.size.height);// 重新布局
 }
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
-    
-    self.playerVC.view.frame = self.scrollView.bounds;// 重新布局
+    CGPoint boundsPoint = self.scrollView.bounds.origin;
+    CGSize boundsSize = self.scrollView.bounds.size;
+    CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? boundsSize.width - P_SafeAreaRightEdgeInsets() : boundsSize.width;
+
+    self.playerVC.view.frame = CGRectMake(boundsPoint.x, boundsPoint.y, playerVCWidth, boundsSize.height);// 重新布局
     self.linkMicAreaView.frame = self.scrollView.bounds;
     
-    CGSize boundsSize = self.scrollView.bounds.size;
     CGSize marqueeViewSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
     self.playerVC.marqueeView.frame = CGRectMake(self.scrollView.contentOffset.x, (boundsSize.height - marqueeViewSize.height) / 2.0, marqueeViewSize.width, marqueeViewSize.height);
     
@@ -149,15 +172,51 @@ PLVECMessagePopupViewDelegate
 }
 
 - (BOOL)shouldAutorotate {
-    return NO;
+    return (_playerVC.fullScreenEnable && !_linkMicAreaView.inLinkMic) || [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
 }
 
 - (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
+    if ((_playerVC.fullScreenEnable && !_linkMicAreaView.inLinkMic) || [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height) {
+        return [PLVECUtils sharedUtils].interfaceOrientation;
+    }
     return UIInterfaceOrientationPortrait;
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    return UIInterfaceOrientationMaskPortrait;
+    if ((_playerVC.fullScreenEnable && !_linkMicAreaView.inLinkMic) || [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height) {
+        return (UIInterfaceOrientationMaskLandscapeRight | UIInterfaceOrientationMaskPortrait);
+    } else {
+        return UIInterfaceOrientationMaskPortrait;
+    }
+    
+}
+
+- (void)getEdgeInset {
+    [PLVECUtils sharedUtils].landscape = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (@available(iOS 11, *)) {
+        [[PLVECUtils sharedUtils] setupAreaInsets:self.view.safeAreaInsets];
+    }
+}
+
+#pragma mark - [ Public Method ]
+
+- (void)exitCleanCurrentLiveController {
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+        [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+    }
+
+    [PLVRoomLoginClient logout];
+    [[PLVSocketManager sharedManager] logout];
+    [self.homePageView destroy];
+
+    if (self.navigationController) {
+        [self.navigationController popViewControllerAnimated:YES];
+    } else {
+        [self dismissViewControllerAnimated:YES completion:nil];
+    }
+    
+    [PLVECFloatingWindow sharedInstance].delegate = nil;
 }
 
 #pragma mark - [ Private Methods ]
@@ -219,6 +278,10 @@ PLVECMessagePopupViewDelegate
         
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
     }
+    
+    /// 适配背景铺满全屏
+    UIImage *image = [PLVECUtils imageForWatchResource:@"plv_background_img"];
+    self.view.layer.contents = (id)image.CGImage;
 }
 
 - (void)setupData{
@@ -361,6 +424,13 @@ PLVECMessagePopupViewDelegate
     return _cardDetailView;
 }
 
+#pragma mark Getter
+- (void)setFullScreenButtonShowOnIpad:(BOOL)fullScreenButtonShowOnIpad {
+    _fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
+    self.playerVC.fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
+    self.homePageView.backButtonShowOnIpad = fullScreenButtonShowOnIpad;
+}
+
 #pragma mark - [ Event ]
 #pragma mark Action
 - (void)closeButtonAction:(UIButton *)button {
@@ -371,21 +441,20 @@ PLVECMessagePopupViewDelegate
 
 - (void)addObserver {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interactUpdateMoreButtonCallback:) name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForUpdateIarEntrance:) name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interactUpdateMoreButtonCallback:) name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
-        
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     }
 }
 
 - (void)removeObserver {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
         [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateIarEntranceCallbackNotification object:nil];
-        [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVECInteractUpdateMoreButtonCallbackNotification object:nil];
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
     }
 }
@@ -424,7 +493,9 @@ PLVECMessagePopupViewDelegate
 }
 
 - (void)roomDataManager_didPlayingStatusChanged:(BOOL)playing {
-    [self.homePageView updatePlayerState:playing];
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [self.homePageView updatePlayerState:playing];
+    }
 }
 
 - (void)roomDataManager_didVidChanged:(NSString *)vid {
@@ -454,17 +525,25 @@ PLVECMessagePopupViewDelegate
     [self.homePageView updatePlayerState:liveState == PLVChannelLiveStreamState_Live];
 }
 
+- (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    // 在回放时 更新观看次数
+    if (roomData.videoType == PLVChannelVideoType_Playback){
+        [self.homePageView updateRoomInfoCount:roomData.watchCount];
+    }
+}
+
 #pragma mark PLVSocketManagerProtocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
-//    [PLVECUtils showHUDWithTitle:@"登陆成功" detail:@"" view:self.view];
+//    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"登录成功") detail:@"" view:self.view];
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
     __weak typeof(self) weakSelf = self;
     if (error.code == PLVSocketLoginErrorCodeKick) {
         plv_dispatch_main_async_safe(^{
-            [PLVECUtils showHUDWithTitle:nil detail:@"您已被管理员踢出聊天室！" view:self.view afterDelay:3.0];
+            [PLVECUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"您已被管理员踢出聊天室！") view:self.view afterDelay:3.0];
         })
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
@@ -501,13 +580,13 @@ PLVECMessagePopupViewDelegate
     if (connectStatus == PLVSocketConnectStatusReconnect) {
         self.socketReconnecting = YES;
         plv_dispatch_main_async_safe(^{
-            [PLVECUtils showHUDWithTitle:@"聊天室重连中" detail:@"" view:self.view];
+            [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"聊天室重连中") detail:@"" view:self.view];
         })
     } else if(connectStatus == PLVSocketConnectStatusConnected) {
         if (self.socketReconnecting) {
             self.socketReconnecting = NO;
             plv_dispatch_main_async_safe(^{
-                [PLVECUtils showHUDWithTitle:@"聊天室重连成功" detail:@"" view:self.view];
+                [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"聊天室重连成功") detail:@"" view:self.view];
             })
         }
     }
@@ -515,7 +594,7 @@ PLVECMessagePopupViewDelegate
 
 #pragma mark socket 数据解析
 
-/// 有用户登陆
+/// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
     [self updateOnlineCount:onlineCount];
@@ -531,7 +610,7 @@ PLVECMessagePopupViewDelegate
 - (void)closeRoomEvent:(NSDictionary *)jsonDict {
     NSDictionary *value = PLV_SafeDictionaryForDictKey(jsonDict, @"value");
     BOOL closeRoom = PLV_SafeBoolForDictKey(value, @"closed");
-    NSString *string = closeRoom ? @"聊天室已经关闭" : @"聊天室已经打开";
+    NSString *string = closeRoom ? PLVLocalizedString(@"聊天室已经关闭") : PLVLocalizedString(@"聊天室已经打开");
     plv_dispatch_main_async_safe(^{
         [PLVECUtils showHUDWithTitle:string detail:@"" view:self.view];
     })
@@ -578,6 +657,11 @@ PLVECMessagePopupViewDelegate
         }];
 }
 
+- (void)playerControllerWannaFullScreen:(PLVECPlayerViewController *)playerController {
+    [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+    [[PLVECUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+}
+
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress
                      duration:(NSTimeInterval)duration
@@ -599,6 +683,14 @@ PLVECMessagePopupViewDelegate
     if (netWorkQuality == PLVECLivePlayerQuickLiveNetworkQuality_Poor) {
         [self.homePageView showNetworkQualityPoorView];
     } else if (netWorkQuality == PLVECLivePlayerQuickLiveNetworkQuality_Middle) {
+        [self.homePageView showNetworkQualityMiddleView];
+    }
+}
+
+- (void)playerController:(PLVECPlayerViewController *)playerController publicStreamNetworkQuality:(PLVECLivePlayerPublicStreamNetworkQuality)netWorkQuality {
+    if (netWorkQuality == PLVECLivePlayerPublicStreamNetworkQuality_Poor) {
+        [self.homePageView showNetworkQualityPoorView];
+    } else if (netWorkQuality == PLVECLivePlayerPublicStreamNetworkQuality_Middle) {
         [self.homePageView showNetworkQualityMiddleView];
     }
 }
@@ -630,7 +722,12 @@ PLVECMessagePopupViewDelegate
 /// 画中画已经开启
 -(void)playerControllerPictureInPictureDidStart:(PLVECPlayerViewController *)playerController {
     [self.homePageView updateMoreButtonShow:NO];
-    [PLVECUtils showHUDWithTitle:@"小窗播放中，可能存在画面延后的情况" detail:@"" view:self.view];
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        [self.homePageView updateProgressControlsHidden:YES];
+        [self.homePageView updatePlayButtonEnabled:NO];
+    }
+
+    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"小窗播放中，可能存在画面延后的情况") detail:@"" view:self.view];
     
     if (self.playerVC.noDelayLiveWatching) {
         [self.linkMicAreaView pauseWatchNoDelay:YES];
@@ -665,6 +762,10 @@ PLVECMessagePopupViewDelegate
 /// 画中画已经关闭
 -(void)playerControllerPictureInPictureDidStop:(PLVECPlayerViewController *)playerController {
     [self.homePageView updateMoreButtonShow:YES];
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        [self.homePageView updateProgressControlsHidden:NO];
+        [self.homePageView updatePlayButtonEnabled:YES];
+    }
     
     if (self.playerVC.noDelayLiveWatching) {
         [self.linkMicAreaView pauseWatchNoDelay:NO];
@@ -675,6 +776,12 @@ PLVECMessagePopupViewDelegate
     
     // 清理恢复逻辑的处理者
     [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+}
+
+- (void)playerController:(PLVECPlayerViewController *)playerController pictureInPicturePlayingStateDidChange:(BOOL)playing {
+    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        [self.homePageView updatePlayerState:playing];
+    }
 }
 
 #pragma mark PLVECLinkMicAreaViewDelegate
@@ -697,6 +804,8 @@ PLVECMessagePopupViewDelegate
         [self.playerVC reload];
     }
     self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
+    self.playerVC.displayView.alpha = inRTCRoom ? 0 : 1;
+    self.linkMicAreaView.alpha = inRTCRoom ? 1 : 0;
     
     if (![PLVECFloatingWindow sharedInstance].hidden && !inRTCRoom) {
         [[PLVECFloatingWindow sharedInstance] showContentView:self.playerVC.view size:self.playerVC.displayView.frame.size];
@@ -708,6 +817,12 @@ PLVECMessagePopupViewDelegate
     // 如果当前正在开启系统画中画且连麦则关闭小窗
     if (inLinkMic && [PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+    }
+
+    if (inLinkMic && [PLVECUtils sharedUtils].isLandscape) {
+        [PLVFdUtil changeDeviceOrientationToPortrait];
+        [[PLVECUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
+        [PLVECUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"连麦成功，已为你切换到竖屏模式") view:self.view afterDelay:3.0];
     }
 }
 
@@ -725,6 +840,10 @@ PLVECMessagePopupViewDelegate
 
 - (BOOL)homePageView_inLinkMic:(PLVECHomePageView *)homePageView {
     return self.linkMicAreaView.inLinkMic;
+}
+
+- (NSTimeInterval)homePageView_playbackMaxPosition:(PLVECHomePageView *)homePageView {
+    return self.playerVC.playbackMaxPosition;
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPlayLine:(NSUInteger)line {
@@ -790,7 +909,7 @@ PLVECMessagePopupViewDelegate
 - (void)homePageView_didLoginRestrict {
     __weak typeof(self) weakSelf = self;
     plv_dispatch_main_async_safe(^{
-        [PLVECUtils showHUDWithTitle:nil detail:@"直播间太过火爆了，请稍后再来(2050407)" view:self.view afterDelay:3.0];
+        [PLVECUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"直播间太过火爆了，请稍后再来(2050407)") view:self.view afterDelay:3.0];
     })
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
         [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
@@ -813,9 +932,22 @@ PLVECMessagePopupViewDelegate
         [self.playerVC stopPictureInPicture];
     }else {
         PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:self.view animated:YES];
-        [hud.label setText:@"正在开启小窗..."];
+        [hud.label setText:PLVLocalizedString(@"正在开启小窗...")];
         [hud hideAnimated:YES afterDelay:3.0];
         [self.playerVC startPictureInPicture];
+    }
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView switchLanguageMode:(NSInteger)languageMode {
+    [PLVFdUtil showAlertWithTitle:nil message:PLVLocalizedString(@"PLVAlertSwitchLanguageTips") viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"取消") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle") confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+        [[PLVMultiLanguageManager sharedManager] updateLanguage:MAX(MIN(languageMode, PLVMultiLanguageModeEN), PLVMultiLanguageModeSyetem)];
+    }];
+}
+
+- (void)homePageViewWannaBackToVerticalScreen:(PLVECHomePageView *)homePageView {
+    if (self.view.bounds.size.width > self.view.bounds.size.height) {
+        [PLVFdUtil changeDeviceOrientationToPortrait];
+        [[PLVECUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
     }
 }
 
@@ -849,6 +981,10 @@ PLVECMessagePopupViewDelegate
     [self.popoverView.interactView openRedpackWithChatModel:model];
 }
 
+- (void)homePageView:(PLVECHomePageView *)homePageView emitInteractEvent:(NSString *)event {
+    [self.popoverView.interactView openInteractAppWithEventName:event];
+}
+
 #pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -863,6 +999,14 @@ PLVECMessagePopupViewDelegate
     CGRect marqueeViewFrame = self.playerVC.marqueeView.frame;
     marqueeViewFrame.origin.x = scrollView.contentOffset.x;
     self.playerVC.marqueeView.frame = marqueeViewFrame;
+    
+    if (scrollView.contentOffset.x == scrollView.frame.size.width) {
+        [self.homePageView showInScreen:YES];
+        [self.playerVC fullScreenButtonShowInView:YES];
+    } else {
+        [self.homePageView showInScreen:NO];
+        [self.playerVC fullScreenButtonShowInView:NO];
+    }
 }
 
 #pragma mark  PLVPopoverViewDelegate
@@ -890,11 +1034,16 @@ PLVECMessagePopupViewDelegate
     [[PLVECChatroomViewModel sharedViewModel] changeRedpackStateWithRedpackId:redpackId state:status];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict {
+    NSArray *dataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
+    [self.homePageView updateLotteryWidgetViewInfo:dataArray];
+}
+
 #pragma mark PLVLCMessagePopupViewDelegate
 
 - (void)messagePopupViewWillCopy:(PLVECMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
-    [PLVToast showToastWithMessage:@"复制成功" inView:self.view afterDelay:3.0];
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
 }
 
 @end

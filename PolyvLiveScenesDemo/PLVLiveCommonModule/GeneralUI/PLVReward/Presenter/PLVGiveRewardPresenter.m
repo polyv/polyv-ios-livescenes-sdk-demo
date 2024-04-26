@@ -9,6 +9,7 @@
 #import "PLVGiveRewardPresenter.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 @implementation PLVGiveRewardPresenter
 
@@ -33,7 +34,7 @@
                 donateArray = PLV_SafeArraryForDictKey(giftDonateDict, @"pointPays");
                 pointUnit = PLV_SafeStringForDictKey(giftDonateDict, @"pointUnit");
             } else {
-                NSString * desc = @"礼物打赏功能未开启";
+                NSString * desc = PLVLocalizedString(@"礼物打赏功能未开启");
                 NSString * tips = [[desc componentsSeparatedByString:@","].firstObject componentsSeparatedByString:@":"].lastObject;
                 failure(tips);
                 return;
@@ -45,11 +46,13 @@
                 model.cashReward = cashReward;
                 model.goodId = goodId;
                 if (model.cashReward) {
-                    if (model.goodPrice == 0) {
+                    if (model.goodPrice == 0 && model.goodEnabled) {
                         [modelArray addObject:model];
                     }
                 } else {
-                    [modelArray addObject:model];
+                    if (model.goodEnabled) {
+                        [modelArray addObject:model];
+                    }
                 }
             }
             completion(donateEnabled,payWay,modelArray,pointUnit);

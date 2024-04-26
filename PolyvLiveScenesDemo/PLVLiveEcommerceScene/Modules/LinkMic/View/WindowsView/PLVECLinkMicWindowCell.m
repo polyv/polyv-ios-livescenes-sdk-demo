@@ -8,6 +8,7 @@
 
 #import "PLVECLinkMicWindowCell.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLinkMicOnlineUser+EC.h"
 
 @interface PLVECLinkMicWindowCell ()
@@ -73,7 +74,7 @@
     if (self.onlineUser.actor) {
         self.nickNameLabel.text = [NSString stringWithFormat:@"%@-%@", self.onlineUser.actor, self.onlineUser.nickname];
     } else {
-        self.nickNameLabel.text = [NSString stringWithFormat:@"%@%@", self.onlineUser.localUser ? @"(我)" : @"", self.onlineUser.nickname];
+        self.nickNameLabel.text = [NSString stringWithFormat:@"%@%@", self.onlineUser.localUser ? PLVLocalizedString(@"(我)") : @"", self.onlineUser.nickname];
     }
     
     // 设备检测页的连麦窗口不显示以下控件

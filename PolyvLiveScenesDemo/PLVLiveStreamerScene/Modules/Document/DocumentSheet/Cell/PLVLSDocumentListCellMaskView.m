@@ -8,6 +8,7 @@
 
 #import "PLVLSDocumentListCellMaskView.h"
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVDocumentUploadModel.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
@@ -130,10 +131,10 @@
         
         [self addSubview:self.bgMaskView];
         if (loss) {
-            self.whiteLabel.text = @"动效丢失，已转换为图片";
+            self.whiteLabel.text = PLVLocalizedString(@"动效丢失，已转换为图片");
             [self addSubview:self.whiteLabel];
             
-            [self.button setTitle:@"知道了" forState:UIControlStateNormal];
+            [self.button setTitle:PLVLocalizedString(@"知道了") forState:UIControlStateNormal];
             [self addSubview:self.button];
         } else {
             [self addSubview:self.processView];
@@ -231,14 +232,14 @@
         self.redLabel.hidden = NO;
         self.button.hidden = NO;
         self.processView.hidden = self.whiteLabel.hidden = YES;
-        NSString *text = (status == PLVDocumentUploadStatusFailure) ? @"上传失败" : @"转码失败";
+        NSString *text = (status == PLVDocumentUploadStatusFailure) ? PLVLocalizedString(@"上传失败") : PLVLocalizedString(@"转码失败");
         [self setRedLabelText:text];
-        NSString *buttonTitle = (status == PLVDocumentUploadStatusFailure) ? @"重试" : @"帮助";
+        NSString *buttonTitle = (status == PLVDocumentUploadStatusFailure) ? PLVLocalizedString(@"重试") : PLVLocalizedString(@"帮助");
         [self.button setTitle:buttonTitle forState:UIControlStateNormal];
     } else if (status == PLVDocumentUploadStatusSuccess) {
         self.whiteLabel.hidden = NO;
         self.processView.hidden = self.redLabel.hidden = self.button.hidden = YES;
-        self.whiteLabel.text = @"上传成功，待转码";
+        self.whiteLabel.text = PLVLocalizedString(@"上传成功，待转码");
     }
     _status = status;
 }

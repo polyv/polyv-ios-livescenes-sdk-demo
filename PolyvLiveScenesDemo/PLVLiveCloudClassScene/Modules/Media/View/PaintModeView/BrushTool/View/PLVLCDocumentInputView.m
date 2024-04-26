@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCDocumentInputView.h"
+#import "PLVMultiLanguageManager.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -92,7 +93,7 @@ UITextViewDelegate
         _cancelButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _cancelButton.frame = CGRectMake(53, 0, 44, 32);
         [_cancelButton setTitleColor:PLV_UIColorFromRGB(@"#999999") forState:UIControlStateNormal];
-        [_cancelButton setTitle:@"取消" forState:UIControlStateNormal];
+        [_cancelButton setTitle:PLVLocalizedString(@"取消") forState:UIControlStateNormal];
         _cancelButton.titleLabel.font = [UIFont systemFontOfSize:16];
         [_cancelButton addTarget:self action:@selector(cancelButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -105,7 +106,7 @@ UITextViewDelegate
         _doneButton.frame = CGRectMake(self.bounds.size.width - 53 - 44, 0, 44, 32);
         [_doneButton setTitleColor:PLV_UIColorFromRGB(@"#366BEE") forState:UIControlStateNormal];
         [_doneButton setTitleColor:[UIColor grayColor] forState:UIControlStateDisabled];
-        [_doneButton setTitle:@"完成" forState:UIControlStateNormal];
+        [_doneButton setTitle:PLVLocalizedString(@"完成") forState:UIControlStateNormal];
         _doneButton.titleLabel.font = [UIFont systemFontOfSize:16];
         [_doneButton addTarget:self action:@selector(doneButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _doneButton.enabled = NO;

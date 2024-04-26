@@ -7,6 +7,7 @@
 //
 
 #import "PLVAdvertView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -215,7 +216,7 @@
     }
     
     self.advertDuration = self.param.advertDuration;
-    self.advertDurationLabel.text = [NSString stringWithFormat:@"广告：%lds", self.advertDuration];
+    self.advertDurationLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"广告：%lds"), self.advertDuration];
     
     self.playState = PLVAdvertViewPlayStatePlay;
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvAdvertView:playStateDidChange:)]) {
@@ -290,7 +291,7 @@
 
 - (void)countDownTimerEvent:(NSTimer *)timer {
     self.advertDuration--;
-    self.advertDurationLabel.text = [NSString stringWithFormat:@"广告：%lds", self.advertDuration];
+    self.advertDurationLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"广告：%lds"), self.advertDuration];
     
     if (self.advertDuration == 0) {
         [self stopAdvert];

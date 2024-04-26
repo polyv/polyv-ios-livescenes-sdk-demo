@@ -11,6 +11,7 @@
 // 工具类
 #import "PLVSAUtils.h"
 #import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVSAShadowMaskView.h"
@@ -31,6 +32,8 @@
 #import "PLVSABadNetworkTipsView.h"
 #import "PLVSASwitchSuccessTipsView.h"
 #import "PLVSABadNetworkSwitchSheet.h"
+#import "PLVSAMixLayoutSheet.h"
+#import "PLVSALinkMicSettingSheet.h"
 
 // 模块
 #import "PLVChatModel.h"
@@ -39,6 +42,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 static NSString * const kUserDefaultShowedSlideRightTips = @"UserDefaultShowedSlideRightTips";
+static NSInteger kPLVSALinkMicRequestExpiredTime = 30; // 连麦邀请等待时间(秒)
 
 @interface PLVSAStreamerHomeView ()<
 UIScrollViewDelegate,
@@ -47,10 +51,11 @@ PLVSAChatroomAreaViewDelegate,
 PLVAStatusbarAreaViewDelegate,
 PLVSAToolbarAreaViewDelegate,
 PLVSAMoreInfoSheetDelegate,
-PLVSABitRateSheetDelegate,
 PLVSAMemberSheetDelegate,
 PLVSALinkMicTipViewDelegate,
-PLVSABadNetworkSwitchSheetDelegate
+PLVSAMixLayoutSheetDelegate,
+PLVSABadNetworkSwitchSheetDelegate,
+PLVSALinkMicSettingSheetDelegate
 >
 /// view hierarchy
 ///
@@ -82,6 +87,8 @@ PLVSABadNetworkSwitchSheetDelegate
 @property (nonatomic, strong) PLVSAMemberSheet *memberSheet; // 成员列表弹层
 @property (nonatomic, strong) PLVSAManageCommoditySheet *commoditySheet; // 商品库弹层
 @property (nonatomic, strong) PLVSABadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
+@property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet; // 混流布局选择面板
+@property (nonatomic, strong) PLVSALinkMicSettingSheet *linkMicSettingSheet; // 连麦设置选择面板
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
 @property (nonatomic, strong) PLVSACameraAndMicphoneStateView *cameraAndMicphoneStateView; // 摄像头与麦克风状态视图
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
@@ -94,6 +101,10 @@ PLVSABadNetworkSwitchSheetDelegate
 @property (nonatomic, assign) BOOL showingLayoutSwitchGuide; // 是否正在显示布局切换新手引导
 @property (nonatomic, strong) NSArray <PLVChatUser *> *userList;
 @property (nonatomic, assign) NSInteger userCount;
+@property (nonatomic, strong) NSTimer *requestLinkMicTimer; // 申请连麦计时器
+@property (nonatomic, assign) NSTimeInterval requestLinkMicLimitTs; // 请求连麦的限制时间
+@property (nonatomic, assign, readonly) BOOL isGuest; // 是否为嘉宾
+@property (nonatomic, assign, readonly) BOOL isGuestManualLinkMic; // 本地嘉宾手动连麦模式
 
 @end
 
@@ -109,6 +120,7 @@ PLVSABadNetworkSwitchSheetDelegate
         self.showingLayoutSwitchGuide = NO;
         [self setupLocalOnlineUser:localOnlineUser];
         [self setupUIWithLinkMicWindowsView:linkMicWindowsView];
+        [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_NotLive];
     }
     return self;
 }
@@ -176,6 +188,7 @@ PLVSABadNetworkSwitchSheetDelegate
         self.linkMicWindowsView.frame = linkMicWindowFrame;
     }
    
+    self.linkMicWindowsView.fullScreenContentView.frame = self.bounds;
     self.statusbarAreaView.frame = CGRectMake(left, top, selfSize.width - left - right, 72);
     self.cameraAndMicphoneStateView.frame = CGRectMake(left, CGRectGetMaxY(self.statusbarAreaView.frame) + cameraAndMicphoneStateViewTop, selfSize.width - left - right, 36);
     self.toolbarAreaView.frame = CGRectMake(left, selfSize.height - bottom - toolbarAreaViewHeight, selfSize.width - left - right, toolbarAreaViewHeight);
@@ -184,7 +197,8 @@ PLVSABadNetworkSwitchSheetDelegate
     CGFloat chatroomHeight = selfSize.height * chatroomHeightScale;
     self.chatroomAreaView.frame = CGRectMake(left, CGRectGetMinY(self.toolbarAreaView.frame) - chatroomHeight, chatroomWidth, chatroomHeight);
     self.slideRightTipsView.frame = self.bounds;
-    self.layoutSwitchGuideView.frame = CGRectMake(selfSize.width - toolbarViewMarginRight - 36 * 4 - 12 * 3 - 50 - right, CGRectGetMinY(self.toolbarAreaView.frame) - 62, 107, 62);
+    CGRect buttonRelativeFrame = [self.toolbarAreaView convertRect:self.toolbarAreaView.layoutSwitchButton.frame toView:self.homePageView];
+    self.layoutSwitchGuideView.frame = CGRectMake(CGRectGetMidX(buttonRelativeFrame) - self.layoutSwitchGuideView.viewSize.width * 0.65, CGRectGetMinY(self.toolbarAreaView.frame) - self.layoutSwitchGuideView.viewSize.height, self.layoutSwitchGuideView.viewSize.width,  self.layoutSwitchGuideView.viewSize.height);
     
     UIView *teacherNameButton = (UIView *)self.statusbarAreaView.teacherNameButton;
     CGRect teacherNameRect = [self convertRect:teacherNameButton.frame toView:self.homePageView];
@@ -195,8 +209,8 @@ PLVSABadNetworkSwitchSheetDelegate
     CGFloat originY = 0;
     
     if (_badNetworkTipsView && _badNetworkTipsView.showing) {
-        CGFloat width = kPLVSABadNetworkTipsViewWidth;
-        CGFloat height = kPLVSABadNetworkTipsViewHeight;
+        CGFloat width = self.badNetworkTipsView.viewSize.width;
+        CGFloat height = self.badNetworkTipsView.viewSize.height;
         CGFloat center = self.homePageView.bounds.size.width / 2.0 - width / 2.0;
         if (isLandscape) {
             originX = MAX(behindTeacherName, center);
@@ -208,7 +222,7 @@ PLVSABadNetworkSwitchSheetDelegate
         
         self.badNetworkTipsView.frame = CGRectMake(originX, originY, width, height);
     } else if (_switchSuccessTipsView && _switchSuccessTipsView.showing) {
-        CGFloat width = kPLVSASwitchSuccessTipsViewWidth;
+        CGFloat width = self.switchSuccessTipsView.tipsViewWidth;
         CGFloat height = kPLVSASwitchSuccessTipsViewHeight;
         CGFloat center = self.homePageView.bounds.size.width / 2.0 - width / 2.0;
         if (isLandscape) {
@@ -253,10 +267,22 @@ PLVSABadNetworkSwitchSheetDelegate
 - (void)startClass:(BOOL)start {
     [self.statusbarAreaView startClass:start];
     [self.moreInfoSheet startClass:start];
+    [self.memberSheet startClass:start];
+    PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = start ? PLVSAToolbarLinkMicButtonStatus_Default : PLVSAToolbarLinkMicButtonStatus_NotLive;
+    [self updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.linkmicNewStrategyEnabled && roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
+        [self.memberSheet enableAudioVideoLinkMic:start];
+    } else if (start) {
+        [self.toolbarAreaView autoOpenMicLinkIfNeed];
+    }
 }
 
 - (void)setPushStreamDuration:(NSTimeInterval)duration {
     self.statusbarAreaView.duration = duration;
+    if (!self.isGuest) {
+        [self.linkMicWindowsView updateAllCellLinkMicDuration];
+    }
 }
 
 - (void)setNetworkQuality:(PLVBRTCNetworkQuality)netState {
@@ -284,6 +310,7 @@ PLVSABadNetworkSwitchSheetDelegate
 
 - (void)setLinkMicButtonSelected:(BOOL)selected {
     self.toolbarAreaView.channelLinkMicOpen = selected;
+    [self.memberSheet enableAudioVideoLinkMic:selected];
 }
 
 - (void)showMemberBadge:(BOOL)show {
@@ -333,6 +360,14 @@ PLVSABadNetworkSwitchSheetDelegate
     [self.moreInfoSheet changeScreenShareButtonSelectedState:selectedState];
 }
 
+- (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState {
+    [self.moreInfoSheet changeAllowRaiseHandButtonSelectedState:selectedState];
+}
+
+- (void)updateHomeViewLinkMicType:(BOOL)linkMicOnAudio {
+    [self.linkMicSettingSheet updateLinkMicType:linkMicOnAudio];
+}
+
 - (void)showBeautySheet:(BOOL)show {
     self.closeButton.hidden = show;
     self.homePageView.hidden = show;
@@ -340,6 +375,14 @@ PLVSABadNetworkSwitchSheetDelegate
 
 - (void)updateStatistics:(PLVRTCStatistics *)statistics {
     [self.statusbarAreaView updateRTT:statistics.rtt upLoss:statistics.upLoss downLoss:statistics.downLoss];
+}
+
+- (void)dismissBottomSheet {
+    [self.memberSheet dismiss];
+    [self.channelInfoSheet dismiss];
+    [self.moreInfoSheet dismiss];
+    [self.bitRateSheet dismiss];
+    [self.commoditySheet dismiss];
 }
 
 - (void)showBadNetworkTipsView {
@@ -355,6 +398,7 @@ PLVSABadNetworkSwitchSheetDelegate
     self.linkMicWindowsView = linkMicWindowsView;
     
     [self addSubview:self.scrollView];
+    [self insertSubview:self.linkMicWindowsView.fullScreenContentView aboveSubview:self.scrollView];
     [self insertSubview:self.closeButton aboveSubview:self.scrollView];
 
     // 迁移连麦窗口到homeView上
@@ -392,6 +436,21 @@ PLVSABadNetworkSwitchSheetDelegate
         weakSelf.moreInfoSheet.currentMicOpen = onlineUser.currentMicOpen;
         [weakSelf.cameraAndMicphoneStateView updateCameraOpen:onlineUser.currentCameraOpen micphoneOpen:onlineUser.currentMicOpen];
     };
+    
+    [self.localOnlineUser addCurrentStatusVoiceChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = onlineUser.currentStatusVoice ? PLVSAToolbarLinkMicButtonStatus_Joined : PLVSAToolbarLinkMicButtonStatus_Default;
+        [weakSelf updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
+    } blockKey:self];
+    
+    self.localOnlineUser.linkMicStatusBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = PLVSAToolbarLinkMicButtonStatus_Default;
+        if (onlineUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_Joined) {
+            linkMicbButtonStatus = PLVSAToolbarLinkMicButtonStatus_Joined;
+        } else if (onlineUser.linkMicStatus == PLVLinkMicUserLinkMicStatus_HandUp) {
+            linkMicbButtonStatus = PLVSAToolbarLinkMicButtonStatus_HandUp;
+        }
+        [weakSelf updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
+    };
 }
 
 /// 设置更多弹窗数据
@@ -406,12 +465,16 @@ PLVSABadNetworkSwitchSheetDelegate
     
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentQuality:)]) {
-        self.moreInfoSheet.streamQuality = [self.delegate streamerHomeViewCurrentQuality:self];
+        if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+            self.moreInfoSheet.streamQualityLevel = [self.delegate streamerHomeViewCurrentStreamQualityLevel:self];
+        } else {
+            self.moreInfoSheet.streamQuality = [self.delegate streamerHomeViewCurrentQuality:self];
+        }
     }
 }
 
 - (void)showLayoutSwitchGuideWithUserCount:(NSInteger)userCount {
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeGuest || userCount < 2) {
+    if (self.isGuest || userCount < 2) {
         self.showingLayoutSwitchGuide = NO;
         [self.layoutSwitchGuideView showLinkMicLayoutSwitchGuide:NO];
         return;
@@ -466,6 +529,54 @@ PLVSABadNetworkSwitchSheetDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLinkMicButton:linkMicButtonSelected:videoLinkMic:)]) {
         [self.delegate streamerHomeViewDidTapLinkMicButton:self linkMicButtonSelected:selected videoLinkMic:videoLinkMic];
+    }
+}
+
+- (void)guestLinMicButtonAction {
+    if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_NotLive) {
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"上课前无法发起连麦")];
+    } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_HandUp) {
+        __weak typeof(self) weakSelf = self;
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"等待接听中，是否取消") cancelActionTitle:PLVLocalizedString(@"否") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"是") confirmActionBlock:^{
+            [weakSelf.localOnlineUser wantUserRequestJoinLinkMic:NO];
+            [weakSelf updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
+        }];
+    } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_Joined) {
+        __weak typeof(self) weakSelf = self;
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"确定结束连麦吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
+            [weakSelf.localOnlineUser wantCloseUserLinkMic];
+            [weakSelf updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
+        }];
+    } else if (self.toolbarAreaView.linkMicButtonStatus == PLVSAToolbarLinkMicButtonStatus_Default) {
+        [self.localOnlineUser wantUserRequestJoinLinkMic:YES];
+        [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_HandUp];
+    }
+}
+
+// 更新连麦按钮状态 手动上麦嘉宾有效
+- (void)updateToolbarLinkMicButtonStatus:(PLVSAToolbarLinkMicButtonStatus)status {
+    if (self.isGuest && self.isGuestManualLinkMic) {
+        if (status == PLVSAToolbarLinkMicButtonStatus_HandUp) {
+            [self createRequestLinkMicTimer];
+        } else {
+            [self destroyRequestLinkMicTimer];
+        }
+        [self.toolbarAreaView updateLinkMicButtonStatus:status];
+    }
+}
+
+- (void)createRequestLinkMicTimer {
+    if (_requestLinkMicTimer) {
+        [self destroyRequestLinkMicTimer];
+    }
+    self.requestLinkMicLimitTs = kPLVSALinkMicRequestExpiredTime;
+    _requestLinkMicTimer = [NSTimer scheduledTimerWithTimeInterval:1 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(requestLinkMicTimerAction) userInfo:nil repeats:YES];
+}
+
+- (void)destroyRequestLinkMicTimer {
+    if (_requestLinkMicTimer) {
+        [_requestLinkMicTimer invalidate];
+        _requestLinkMicTimer = nil;
     }
 }
 
@@ -574,15 +685,17 @@ PLVSABadNetworkSwitchSheetDelegate
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat heightScale = isPad ? 0.233 : 0.285;
-        CGFloat widthScale = 0.23;
+        BOOL isStreamTemplateEnabled = [PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled;
+        CGFloat heightScale = isPad ? 0.233 : (isStreamTemplateEnabled ? 0.50 : 0.285);
+        CGFloat widthScale = isStreamTemplateEnabled ? 0.40 : 0.23;
         CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = maxWH * widthScale;
         _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
         _bitRateSheet.delegate = self;
         PLVResolutionType type = [self.delegate streamerHomeViewCurrentQuality:self];
-        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:type];
+        NSString *qualityLevel = [self.delegate streamerHomeViewCurrentStreamQualityLevel:self];
+        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:type streamQualityLevel:qualityLevel];
     }
     return _bitRateSheet;
 }
@@ -632,6 +745,37 @@ PLVSABadNetworkSwitchSheetDelegate
     return _badNetworkSwitchSheet;
 }
 
+- (PLVSAMixLayoutSheet *)mixLayoutSheet {
+    if (!_mixLayoutSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.233 : 0.285;
+        CGFloat widthScale = 0.23;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _mixLayoutSheet = [[PLVSAMixLayoutSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _mixLayoutSheet.delegate = self;
+        PLVMixLayoutType type = [self.delegate streamerHomeViewCurrentMixLayoutType:self];
+        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:type];
+    }
+    return _mixLayoutSheet;
+}
+
+- (PLVSALinkMicSettingSheet *)linkMicSettingSheet {
+    if (!_linkMicSettingSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.43 : 0.52;
+        CGFloat widthScale = 0.44;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _linkMicSettingSheet = [[PLVSALinkMicSettingSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        [_linkMicSettingSheet updateLinkMicType:[PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video];
+        _linkMicSettingSheet.delegate = self;
+    }
+    return _linkMicSettingSheet;
+}
+
 - (PLVSALinkMicTipView *)linkMicTipView {
     if (!_linkMicTipView) {
         _linkMicTipView = [[PLVSALinkMicTipView alloc] init];
@@ -663,6 +807,15 @@ PLVSABadNetworkSwitchSheetDelegate
         type = [self.delegate streamerHomeViewCurrentChannelLinkMicMediaType:self];
     }
     return type;
+}
+
+- (BOOL)isGuest {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    return userType == PLVRoomUserTypeGuest;;
+}
+
+- (BOOL)isGuestManualLinkMic {
+    return self.isGuest && [PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
 }
 
 - (PLVSABadNetworkTipsView *)badNetworkTipsView {
@@ -702,6 +855,15 @@ PLVSABadNetworkSwitchSheetDelegate
     }
 }
 
+#pragma mark Timer
+- (void)requestLinkMicTimerAction {
+    self.requestLinkMicLimitTs -= 1;
+    if (self.requestLinkMicLimitTs <= 0) {
+        [self.localOnlineUser wantUserRequestJoinLinkMic:NO];
+        [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_Default];
+    }
+}
+
 #pragma mark - Delegate
 
 #pragma mark UIScrollViewDelegate
@@ -736,7 +898,11 @@ PLVSABadNetworkSwitchSheetDelegate
 }
 
 - (void)toolbarAreaViewDidTapLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
-    [self linkMicButtonSelected:selected videoLinkMic:[self currentChannelLinkMicMediaType] == PLVChannelLinkMicMediaType_Video];
+    if (self.isGuest) { // 嘉宾用户
+        [self guestLinMicButtonAction];
+    } else {
+        [self linkMicButtonSelected:selected videoLinkMic:[self currentChannelLinkMicMediaType] == PLVChannelLinkMicMediaType_Video];
+    }
 }
 
 - (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView {
@@ -793,12 +959,6 @@ PLVSABadNetworkSwitchSheetDelegate
 }
 
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeScreenShareOpen:(BOOL)screenShareOpen {
-    if (screenShareOpen && !self.localOnlineUser.currentCameraOpen) {
-        [self.moreInfoSheet changeScreenShareButtonSelectedState:NO];
-        [PLVSAUtils showToastInHomeVCWithMessage:@"请先打开摄像头"];
-        return;
-    }
-    
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeScreenShareOpen:)]) {
         [self.delegate streamerHomeView:self didChangeScreenShareOpen:screenShareOpen];
@@ -831,6 +991,27 @@ PLVSABadNetworkSwitchSheetDelegate
     }
 }
 
+- (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.mixLayoutSheet showInView:self];
+}
+
+- (void)moreInfoSheetDidTapAllowRaiseHandButton:(PLVSAMoreInfoSheet *)moreInfoSheet wannaChangeAllowRaiseHand:(BOOL)allowRaiseHand {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidAllowRaiseHandButton:wannaChangeAllowRaiseHand:)]) {
+        [self.delegate streamerHomeViewDidAllowRaiseHandButton:self wannaChangeAllowRaiseHand:allowRaiseHand];
+    }
+}
+
+- (void)moreInfoSheetDidTapLinkMicSettingButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.linkMicSettingSheet showInView:self];
+}
+
+- (void)moreInfoSheetDidTapRemoveAllAudiencesButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapRemoveAllAudiencesButton:)]) {
+        [self.delegate streamerHomeViewDidTapRemoveAllAudiencesButton:self];
+    }
+}
+
 #pragma mark PLVSABitRateSheetDelegate
 
 - (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet bitRateButtonClickWithBitRate:(PLVResolutionType)bitRate {
@@ -838,6 +1019,14 @@ PLVSABadNetworkSwitchSheetDelegate
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeResolutionType:)]) {
         [self.delegate streamerHomeView:self didChangeResolutionType:bitRate];
         self.moreInfoSheet.streamQuality = bitRate;
+    }
+}
+
+- (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet didSelectStreamQualityLevel:(NSString *)streamQualityLevel {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeStreamQualityLevel:)]) {
+        [self.delegate streamerHomeView:self didChangeStreamQualityLevel:streamQualityLevel];
+        self.moreInfoSheet.streamQualityLevel = streamQualityLevel;
     }
 }
 
@@ -904,6 +1093,16 @@ PLVSABadNetworkSwitchSheetDelegate
     }
 }
 
+- (void)inviteUserJoinLinkMicInMemberSheet:(PLVSAMemberSheet *)memberSheet chatUser:(PLVChatUser *)user {
+    PLVLinkMicWaitUser *waitUser = user.waitUser;
+    if (!waitUser) {
+        waitUser = [PLVLinkMicWaitUser modelWithChatUser:user];
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(inviteUserJoinLinkMicInStreamerHomeView:withUser:)]) {
+        [self.delegate inviteUserJoinLinkMicInStreamerHomeView:self withUser:waitUser];
+    }
+}
+
 #pragma mark PLVSALinkMicTipViewDelegate
 - (void)linkMicTipViewDidTapCheckButton:(PLVSALinkMicTipView *)linkMicTipView {
     [self.linkMicTipView dismiss];
@@ -912,4 +1111,22 @@ PLVSABadNetworkSwitchSheetDelegate
     // 显示成员列表
     [self.memberSheet showInView:self];
 }
+
+#pragma mark PLVSAMixLayoutSheetDelegate
+
+- (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet mixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeMixLayoutType:)]) {
+        [self.delegate streamerHomeView:self didChangeMixLayoutType:type];
+    }
+}
+
+#pragma mark PLVSALinkMicSettingSheetDelegate
+
+- (void)plvsaLinkMicSettingSheet_wannaChangeLinkMicType:(BOOL)linkMicOnAudio {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeView:wannaChangeLinkMicType:)]) {
+        [self.delegate streamerHomeView:self wannaChangeLinkMicType:linkMicOnAudio];
+    }
+}
+
 @end

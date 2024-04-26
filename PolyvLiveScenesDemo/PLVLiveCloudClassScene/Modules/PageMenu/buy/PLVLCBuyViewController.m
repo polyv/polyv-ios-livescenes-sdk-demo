@@ -10,6 +10,7 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCBuyViewController ()<
 WKNavigationDelegate,
@@ -40,6 +41,7 @@ PLVProductWebViewBridgeDelegate>
     [super viewWillAppear:animated];
     
     [self.webView layoutSubviews];
+    [self.webViewBridge callWebViewEvent:@{@"event" : @"OPEN_PRODUCT"}];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -47,7 +49,7 @@ PLVProductWebViewBridgeDelegate>
     
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {
-        self.webView.frame = CGRectMake(self.contentBackgroudView.bounds.size.width * 0.6, 0, self.contentBackgroudView.bounds.size.width * 0.4, self.contentBackgroudView.bounds.size.height);
+        self.webView.frame = CGRectMake(self.contentBackgroudView.bounds.size.width - 375, 0, 375, self.contentBackgroudView.bounds.size.height);
     } else {
         self.contentBackgroudView.frame = self.view.bounds;
         self.webView.frame = self.contentBackgroudView.bounds;
@@ -68,6 +70,11 @@ PLVProductWebViewBridgeDelegate>
     self.contentBackgroudView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 }
 
+- (void)showInLandscape {
+    [self viewWillLayoutSubviews];
+    [self.webViewBridge callWebViewEvent:@{@"event" : @"OPEN_PRODUCT"}];
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)loadWebView {
@@ -77,7 +84,8 @@ PLVProductWebViewBridgeDelegate>
     NSString *urlString = PLVLiveConstantsProductListHTML;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
-    urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
+    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
+    urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d&lang=%@", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
     NSURL *interactURL = [NSURL URLWithString:urlString];
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
@@ -104,12 +112,17 @@ PLVProductWebViewBridgeDelegate>
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
-        @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId]
+        @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
+        @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
+        @"webVersion" : @"0.5.0"
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    if (roomData.menuInfo.promotionInfo) {
+        [mutableDict setObject:roomData.menuInfo.promotionInfo forKey:@"promotionInfo"];
+    }
     [mutableDict addEntriesFromDictionary:sessionDict];
     
     return mutableDict;

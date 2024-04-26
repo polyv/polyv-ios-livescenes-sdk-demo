@@ -10,6 +10,7 @@
 
 // Utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 
 // Model
@@ -100,7 +101,13 @@
 
     
     PLVRewardMessage *message = (PLVRewardMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVSARewardMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSARewardMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId];
+        model.attributeString = contentLabelString;
+    }
     
     self.contentLabel.attributedText = contentLabelString;
     self.contentLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
@@ -170,7 +177,7 @@
 
 #pragma mark AttributedString
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVRewardMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId {
@@ -190,19 +197,19 @@
     }
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     content = [content stringByAppendingString:@"："];
     
     NSAttributedString *nickNameString = [[NSAttributedString alloc] initWithString:content attributes:nickNameAttDict];
     
     NSString *gimg = message.gimg;
-    NSString *rewardContent = message.rewardContent;
+    NSString *rewardContent = PLVLocalizedString(message.rewardContent);
     // 礼物打赏为礼物图片，现金打赏为空
     if ([PLVFdUtil checkStringUseable:gimg]) {
-        rewardContent = [NSString stringWithFormat:@"赠送了 %@", rewardContent];
+        rewardContent = [NSString stringWithFormat:PLVLocalizedString(@"赠送了 %@"), rewardContent];
     } else {
-        rewardContent = [NSString stringWithFormat:@"打赏 %@元", rewardContent];
+        rewardContent = [NSString stringWithFormat:PLVLocalizedString(@"打赏 %@元"), rewardContent];
     }
     
     NSAttributedString *conentString = [[NSAttributedString alloc] initWithString:rewardContent attributes:contentAttDict];

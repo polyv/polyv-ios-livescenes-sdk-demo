@@ -17,6 +17,10 @@ NS_ASSUME_NONNULL_BEGIN
  */
 @interface PLVLCLandscapeQuoteCell : PLVLCLandscapeBaseCell
 
+/// 生成消息多属性文本
++ (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVQuoteMessage *)message
+                                                                  user:(PLVChatUser *)user;
+
 @end
 
 NS_ASSUME_NONNULL_END

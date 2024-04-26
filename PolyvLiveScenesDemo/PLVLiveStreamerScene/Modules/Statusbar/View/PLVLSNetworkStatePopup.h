@@ -14,7 +14,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign, readonly) BOOL showing;
 
-- (instancetype)initWithBubbleFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame;
+@property (nonatomic, assign, readonly) CGSize bubbleSize;
+
+- (void)setupBubbleFrame:(CGRect)frame buttonFrame:(CGRect)buttonFrame;
 
 - (void)showAtView:(UIView *)superView;
 

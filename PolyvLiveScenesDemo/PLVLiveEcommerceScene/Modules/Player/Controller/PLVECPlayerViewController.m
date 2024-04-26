@@ -12,6 +12,7 @@
 #import "PLVECAudioAnimalView.h"
 #import "PLVLivePictureInPicturePlaceholderView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVWatermarkView.h"
 
@@ -42,6 +43,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) UIView *displayView; // 播放器区域
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) UIButton * playButton; // 播放器暂停、播放按钮
+@property (nonatomic, strong) UIButton *fullScreenButton;          // 横屏按钮
 @property (nonatomic, strong) PLVLivePictureInPicturePlaceholderView *pictureInPicturePlaceholderView;    // 画中画占位图
 @property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) UILabel *memoryPlayTipLabel; // 记忆播放提示
@@ -51,6 +53,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, assign) CGSize videoSize; // 视频源尺寸
 @property (nonatomic, readonly) PLVRoomData *roomData; // 只读，当前直播间数据
 @property (nonatomic, assign) BOOL playing; // 播放器播放状态
+@property (nonatomic, assign) BOOL fullScreenEnable;
 
 @end
 
@@ -63,7 +66,7 @@ PLVPlayerPresenterDelegate
         /// 播放器
         self.playerPresenter = [[PLVPlayerPresenter alloc] initWithVideoType:self.roomData.videoType];
         self.playerPresenter.delegate = self;
-        
+        self.fullScreenEnable = NO;
         [self addTapGestureRecognizer];
     }
     return self;
@@ -82,6 +85,7 @@ PLVPlayerPresenterDelegate
     [self contentBackgroundViewDisplaySubview:self.displayView];
     [self.view addSubview:self.audioAnimalView];
     [self.view addSubview:self.playButton];
+    [self.view addSubview:self.fullScreenButton];
     [self.view addSubview:self.pictureInPicturePlaceholderView];
     [self.view addSubview:self.memoryPlayTipLabel];
     
@@ -98,7 +102,12 @@ PLVPlayerPresenterDelegate
     // 设置播放器背景图位置、尺寸
     CGSize boundsSize = self.view.bounds.size;
     CGSize playerBgSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
-    self.playerBackgroundView.frame = CGRectMake(0, boundsSize.height * 0.166, playerBgSize.width, playerBgSize.height);
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (boundsSize.width > boundsSize.height) {
+        self.playerBackgroundView.frame = CGRectMake(0, (boundsSize.height - playerBgSize.height) / 2.0, playerBgSize.width, playerBgSize.height);
+    } else {
+        self.playerBackgroundView.frame = CGRectMake(0, boundsSize.height * 0.166, playerBgSize.width, playerBgSize.height);
+    }
     
     // 设置音频模式背景图位置、尺寸
     self.audioAnimalView.frame = self.playerBackgroundView.frame;
@@ -111,6 +120,13 @@ PLVPlayerPresenterDelegate
         self.contentBackgroudView.frame = self.displayRect;
     }
     
+    self.fullScreenButton.frame = CGRectMake(boundsSize.width - 36, CGRectGetMaxY(self.contentBackgroudView.frame) + 4, 32, 32);
+    if (fullScreen || (boundsSize.width == 90 && boundsSize.height == 160)) {
+        [self fullScreenButtonShowInView:NO];
+    } else if (!fullScreen && self.fullScreenButton.alpha == 0 && self.fullScreenEnable) {
+        [self fullScreenButtonShowInView:YES];
+    }
+    
     // 设置跑马灯区域位置、尺寸
     if (self.marqueeView.superview == self.view) {
         self.marqueeView.frame = self.playerBackgroundView.frame;
@@ -119,12 +135,12 @@ PLVPlayerPresenterDelegate
     // 设置防录屏水印位置、尺寸
     self.watermarkView.frame = self.contentBackgroudView.frame;
     
-    self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, (CGRectGetHeight(self.view.frame) - 72) / 2, 74, 72);
+    self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, CGRectGetMinY(self.playerBackgroundView.frame) +  (CGRectGetHeight(self.playerBackgroundView.frame) - 72) / 2, 74, 72);
     
     // 设置画中画占位图
     self.pictureInPicturePlaceholderView.frame = self.contentBackgroudView.frame;
     
-    self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.contentBackgroudView.frame) - 28 - 30, 242, 28);
+    self.memoryPlayTipLabel.frame = CGRectMake(16, CGRectGetMaxY(self.contentBackgroudView.frame) - 28 - 30, CGRectGetWidth(self.memoryPlayTipLabel.frame), 28);
 }
 
 - (CGRect)getDisplayViewRect {
@@ -135,11 +151,14 @@ PLVPlayerPresenterDelegate
     }
     
     if (self.videoSize.width >= self.videoSize.height) { // 视频源宽大于高时，屏幕等宽，等比缩放居中显示
-        
         CGFloat width = containerSize.width;
         CGFloat height = containerSize.width / self.videoSize.width * self.videoSize.height;
-        return CGRectMake(0, containerSize.height * 0.166, width, height);
-        
+        CGFloat originY = fabs(containerSize.height * 0.48 - height);
+        if (containerSize.width > containerSize.height) {
+            return CGRectMake(0, (containerSize.height - height) / 2.0, width, height);
+        } else {
+            return CGRectMake(0, containerSize.height * 0.166, width, height);
+        }
     } else {  // 视频源高大于宽时
         CGFloat w_h = self.videoSize.width / self.videoSize.height;
         CGFloat w_h_base = containerSize.width / containerSize.height;
@@ -154,6 +173,9 @@ PLVPlayerPresenterDelegate
             displayerRect.size.width = containerSize.width;
             displayerRect.size.height = containerSize.width / self.videoSize.width * self.videoSize.height;
             displayerRect.origin.y = (containerSize.height - displayerRect.size.height) / 2.0;
+            if (displayerRect.origin.y < 0) { // 超出视频高度时，按照屏幕大小
+                displayerRect = self.view.bounds;
+            }
         }
         return displayerRect;
     }
@@ -198,7 +220,7 @@ PLVPlayerPresenterDelegate
             if (customNick) {
                 channel.marquee = customNick;
             } else {
-                channel.marquee = @"自定义昵称";
+                channel.marquee = PLVLocalizedString(@"自定义昵称");
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
@@ -260,11 +282,14 @@ PLVPlayerPresenterDelegate
                                           NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#FFFFFF")};
     NSDictionary *timeAttributes = @{NSFontAttributeName:font,
                                           NSForegroundColorAttributeName:PLV_UIColorFromRGB(@"#5C9DFF")};
-    NSString *textString = [NSString stringWithFormat:@"您上次观看至 %@ ，已为您自动续播", playTimeString];
+    NSString *textString = [NSString stringWithFormat:PLVLocalizedString(@"您上次观看至 %@ ，已为您自动续播"), playTimeString];
     NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:textString];
     [attributedString addAttributes:normalAttributes range:NSMakeRange(0, attributedString.length)];
     [attributedString addAttributes:timeAttributes range:[textString rangeOfString:playTimeString]];
     self.memoryPlayTipLabel.attributedText = attributedString;
+    CGSize memoryTipSize = [self.memoryPlayTipLabel sizeThatFits:CGSizeMake(MAXFLOAT, 28)];
+    CGRect tipLabelFrame = self.memoryPlayTipLabel.frame;
+    self.memoryPlayTipLabel.frame = CGRectMake(tipLabelFrame.origin.x, tipLabelFrame.origin.y, memoryTipSize.width + 10, tipLabelFrame.size.height);
     [UIView animateWithDuration:0.5 animations:^{
         self.memoryPlayTipLabel.alpha = 1.0;
     } completion:^(BOOL finished) {
@@ -279,8 +304,7 @@ PLVPlayerPresenterDelegate
 
 - (UIImageView *)backgroundView {
     if (!_backgroundView) {
-        UIImage *image = [PLVECUtils imageForWatchResource:@"plv_background_img"];
-        _backgroundView = [[UIImageView alloc] initWithImage:image];
+        _backgroundView = [[UIImageView alloc] init];
     }
     return _backgroundView;
 }
@@ -334,6 +358,16 @@ PLVPlayerPresenterDelegate
         _playButton.hidden = YES;
     }
     return _playButton;
+}
+
+- (UIButton *)fullScreenButton {
+    if (!_fullScreenButton) {
+        _fullScreenButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_fullScreenButton setImage:[PLVECUtils imageForWatchResource:@"plvec_media_skin_fullscreen"] forState:UIControlStateNormal];
+        [_fullScreenButton addTarget:self action:@selector(fullScreenButtonButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        self.fullScreenButton.alpha = 0.0;
+    }
+    return _fullScreenButton;
 }
 
 - (BOOL)noDelayWatchMode {
@@ -414,11 +448,18 @@ PLVPlayerPresenterDelegate
     [singleGestureRecognizer requireGestureRecognizerToFail:doubleGestureRecognizer];
 }
 
+- (NSTimeInterval)playbackMaxPosition {
+    return self.playerPresenter.playbackMaxPosition;
+}
+
 #pragma mark - [ Action ]
 - (void)displayViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
     PLVRoomData *roomData = self.roomData;
     if (roomData.videoType == PLVChannelVideoType_Live &&
         roomData.liveState != PLVChannelLiveStreamState_Live) { // 直播时未开播，不响应播放
+        return;
+    } else if (roomData.videoType == PLVChannelVideoType_Playback &&
+               !roomData.menuInfo.showPlayButtonEnabled) { // 回放时不显示播放按钮，不响应手势
         return;
     }
     
@@ -435,10 +476,16 @@ PLVPlayerPresenterDelegate
     }
 }
 
+- (void)fullScreenButtonButtonAction:(id)sender {
+    if (self.delegate &&[self.delegate respondsToSelector:@selector(playerControllerWannaFullScreen:)]) {
+        [self.delegate playerControllerWannaFullScreen:self];
+    }
+}
+
 #pragma mark - Public
 
 - (void)play {
-    if (self.playerPresenter.noDelayWatchMode && !self.playerPresenter.quickLiveWatching) {
+    if (self.playerPresenter.noDelayLiveWatching && !self.playerPresenter.quickLiveWatching) {
         self.playing = YES;
         self.playButton.hidden = YES;
         if (self.delegate &&
@@ -451,7 +498,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)pause {
-    if (self.playerPresenter.noDelayWatchMode && !self.playerPresenter.quickLiveWatching) {
+    if (self.playerPresenter.noDelayLiveWatching && !self.playerPresenter.quickLiveWatching) {
         self.playing = NO;
         self.playButton.hidden = NO;
         if (self.delegate &&
@@ -500,7 +547,7 @@ PLVPlayerPresenterDelegate
     PLVProgressHUD *hud = nil;
     if (showHud) {
         hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].delegate.window animated:YES];
-        [hud.label setText:@"加载直播..."];
+        [hud.label setText:PLVLocalizedString(@"加载直播...")];
     }
     */
     [self.playerPresenter switchLiveToLineIndex:Line];
@@ -542,17 +589,24 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)startPictureInPicture {
-    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live) {
-        return;
-    }
     [self.playerPresenter startPictureInPictureFromOriginView:self.contentBackgroudView];
 }
 
 - (void)stopPictureInPicture {
-    if ([PLVRoomDataManager sharedManager].roomData.videoType != PLVChannelVideoType_Live) {
+    [self.playerPresenter stopPictureInPicture];
+}
+
+- (void)fullScreenButtonShowInView:(BOOL)show {
+    if (!self.fullScreenButtonShowOnIpad && [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        self.fullScreenButton.alpha = 0.0;
         return;
     }
-    [self.playerPresenter stopPictureInPicture];
+    
+    if (!((self.playerPresenter.currentVideoType == PLVChannelVideoType_Live && self.playerPresenter.currentStreamState == PLVChannelLiveStreamState_Live) || self.playerPresenter.currentVideoType == PLVChannelVideoType_Playback)) {
+        self.fullScreenButton.alpha = 0.0;
+        return;
+    }
+    self.fullScreenButton.alpha = show ? 1.0 : 0.0;
 }
 
 #pragma mark 回放方法
@@ -596,6 +650,9 @@ PLVPlayerPresenterDelegate
     
     self.displayRect = [self getDisplayViewRect];
     self.contentBackgroudView.frame = self.displayRect;
+    self.fullScreenEnable = ((self.playerPresenter.currentVideoType == PLVChannelVideoType_Live && self.playerPresenter.currentStreamState == PLVChannelLiveStreamState_Live) || self.playerPresenter.currentVideoType == PLVChannelVideoType_Playback) && self.videoSize.width > self.videoSize.height;
+    [self fullScreenButtonShowInView:self.fullScreenEnable];
+    self.fullScreenButton.frame = CGRectMake(self.view.bounds.size.width - 36, CGRectGetMaxY(self.contentBackgroudView.frame) + 4, 32, 32);
     self.watermarkView.frame = self.contentBackgroudView.frame;
     self.pictureInPicturePlaceholderView.frame = self.displayRect;
     if (self.playerPresenter.currentPlaybackTime > 0.5) {
@@ -623,6 +680,8 @@ PLVPlayerPresenterDelegate
     } else {
         // 移除水印
         [self.watermarkView removeFromSuperview];
+        self.fullScreenEnable = NO;
+        [self fullScreenButtonShowInView:NO];
     }
 }
 
@@ -648,6 +707,12 @@ PLVPlayerPresenterDelegate
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter quickLiveNetworkQuality:(PLVLivePlayerQuickLiveNetworkQuality)netWorkQuality {
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:quickLiveNetworkQuality:)]) {
         [self.delegate playerController:self quickLiveNetworkQuality:[self transformQuickLiveNetworkQuality:netWorkQuality]];
+    }
+}
+
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter publicStreamNetworkQuality:(PLVPublicStreamPlayerNetworkQuality)netWorkQuality {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:quickLiveNetworkQuality:)]) {
+        [self.delegate playerController:self publicStreamNetworkQuality:(PLVECLivePlayerPublicStreamNetworkQuality)netWorkQuality];
     }
 }
 
@@ -732,6 +797,12 @@ PLVPlayerPresenterDelegate
     self.pictureInPicturePlaceholderView.hidden = YES;
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerPictureInPictureDidStop:)]) {
         [self.delegate playerControllerPictureInPictureDidStop:self];
+    }
+}
+
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter pictureInPicturePlayerPlayingStateDidChange:(BOOL)playing {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:pictureInPicturePlayingStateDidChange:)]) {
+        [self.delegate playerController:self pictureInPicturePlayingStateDidChange:playing];
     }
 }
 

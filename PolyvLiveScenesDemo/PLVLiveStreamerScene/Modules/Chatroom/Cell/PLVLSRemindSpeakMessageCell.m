@@ -10,6 +10,7 @@
 
 // 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 
 // UI
@@ -222,7 +223,13 @@ static CGFloat kCellTopMargin = 10;
     self.previousUserId = previousUserId;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:self.loginUserId prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
     
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     // 重发按钮是否隐藏
@@ -265,7 +272,14 @@ static CGFloat kCellTopMargin = 10;
     CGFloat maxTextViewWidth = cellWidth - xPadding * 2 - resendWidth - headerWidth - xPadding;
     
     PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLSRemindSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:loginUserId prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
     // 严禁词高度
@@ -404,7 +418,7 @@ static CGFloat kCellTopMargin = 10;
     return nickNameAttributedString;
 }
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVSpeakMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId prohibitWord:(NSString *)prohibitWord{
@@ -449,9 +463,9 @@ static CGFloat kCellTopMargin = 10;
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }
@@ -489,7 +503,7 @@ static CGFloat kCellTopMargin = 10;
     // 只有在发送失败方可触发重发点击事件，避免重复发送
     if (self.msgState == PLVChatMsgStateFail) {
         __weak typeof(self) weakSelf = self;
-        [PLVLSUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"重发该消息？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             weakSelf.model.msgState = PLVChatMsgStateSending;
             if (weakSelf.resendHandler) {
                 weakSelf.resendHandler(weakSelf.model);

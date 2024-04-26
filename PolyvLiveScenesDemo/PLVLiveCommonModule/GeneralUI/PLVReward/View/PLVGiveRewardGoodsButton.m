@@ -7,6 +7,7 @@
 //
 
 #import "PLVGiveRewardGoodsButton.h"
+#import "PLVMultiLanguageManager.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImageDownloader.h>
 
@@ -39,11 +40,11 @@
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {
         self.prizeImageView.frame = CGRectMake((CGRectGetWidth(self.frame) - 60) / 2, 10, 60, 60);
-        self.prizeNameLabel.frame = CGRectMake((CGRectGetWidth(self.frame) - 50) / 2, 78, 50, 17);
+        self.prizeNameLabel.frame = CGRectMake(0, 78, CGRectGetWidth(self.frame), 17);
         self.prizePointsLabel.frame = CGRectMake((CGRectGetWidth(self.frame) - 50) / 2, 98, 50, 14);
     } else {
         self.prizeImageView.frame = CGRectMake((CGRectGetWidth(self.frame) - 48) / 2, 8, 48, 48);
-        self.prizeNameLabel.frame = CGRectMake((CGRectGetWidth(self.frame) - 50) / 2, 61, 50, 17);
+        self.prizeNameLabel.frame = CGRectMake(0, 61, CGRectGetWidth(self.frame), 17);
         self.prizePointsLabel.frame = CGRectMake((CGRectGetWidth(self.frame) - 50) / 2, 78, 50, 14);
     }
 }
@@ -53,11 +54,11 @@
 - (void)setModel:(PLVRewardGoodsModel *)model pointUnit:(NSString *)pointUnit{
     if (model) {
         [self.prizeImageView sd_setImageWithURL: [NSURL URLWithString:model.goodImgFullURL]];
-        self.prizeNameLabel.text = model.goodName;
+        self.prizeNameLabel.text = PLVLocalizedString(model.goodName);
         if (model.cashReward) {
-            self.prizePointsLabel.text = @"免费";
+            self.prizePointsLabel.text = PLVLocalizedString(@"免费");
         } else {
-            self.prizePointsLabel.text = [NSString stringWithFormat:@"%.0lf%@",model.goodPrice,pointUnit];
+            self.prizePointsLabel.text = [NSString stringWithFormat:@"%.0lf%@",model.goodPrice, PLVLocalizedString(pointUnit)];
         }
     }
 }
@@ -88,7 +89,7 @@
         _prizeNameLabel = [[UILabel alloc]init];
         _prizeNameLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
         _prizeNameLabel.textColor = [UIColor colorWithRed:208/255.0 green:208/255.0 blue:208/255.0 alpha:1.0];
-        _prizeNameLabel.text = @"礼物";
+        _prizeNameLabel.text = PLVLocalizedString(@"礼物");
         _prizeNameLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _prizeNameLabel;
@@ -100,7 +101,7 @@
         _prizePointsLabel.font = [UIFont fontWithName:@"PingFang SC" size:10];
         _prizePointsLabel.textColor = [UIColor colorWithRed:173/255.0 green:173/255.0 blue:192/255.0 alpha:1.0];
         _prizePointsLabel.textAlignment = NSTextAlignmentCenter;
-        _prizePointsLabel.text = @"0点";
+        _prizePointsLabel.text = PLVLocalizedString(@"0点");
     }
     return _prizePointsLabel;
 }

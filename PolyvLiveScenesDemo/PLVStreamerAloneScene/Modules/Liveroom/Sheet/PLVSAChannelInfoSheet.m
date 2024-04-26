@@ -10,6 +10,7 @@
 
 // utils
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 //Modules
 #import "PLVRoomDataManager.h"
@@ -78,6 +79,7 @@
     self.liveTitleContentLabel.frame = CGRectMake(contentLabelX, contentLabelY, titleContentSize.width, titleContentSize.height);
   
     CGFloat labelBottomMargin = isLandscape ? 22 : 12;
+    size = [self.beginTimeTitleLabel sizeThatFits:CGSizeMake(width, 20)];
     self.beginTimeTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.liveTitleContentLabel.frame) + labelBottomMargin, size.width, size.height);
     contentLabelX = isLandscape ? self.beginTimeTitleLabel.frame.origin.x : CGRectGetMaxX(self.beginTimeTitleLabel.frame);
     contentLabelY = isLandscape ? CGRectGetMaxY(self.beginTimeTitleLabel.frame) + 6 : self.beginTimeTitleLabel.frame.origin.y;
@@ -122,12 +124,12 @@
         
     NSString *dateString = roomData.menuInfo.startTime;
     if (![PLVFdUtil checkStringUseable:dateString]) {
-        dateString = @"无";
+        dateString = PLVLocalizedString(@"无");
     }
     
     NSString *channelIdString = roomData.channelId;
     if (![PLVFdUtil checkStringUseable:channelIdString]) {
-        channelIdString = @"无";
+        channelIdString = PLVLocalizedString(@"无");
     }
     self.liveTitleContentLabel.text = titleString;
     self.beginTimeContentLabel.text = dateString;
@@ -150,7 +152,7 @@
     if (!_sheetTitleLabel) {
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.font = [UIFont systemFontOfSize:18];
-        _sheetTitleLabel.text = @"频道信息";
+        _sheetTitleLabel.text = PLVLocalizedString(@"频道信息");
         _sheetTitleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
     }
     return _sheetTitleLabel;
@@ -161,7 +163,7 @@
         _liveTitleLabel = [[UILabel alloc] init];
         _liveTitleLabel.font = [UIFont systemFontOfSize:14];
         _liveTitleLabel.textColor = PLV_UIColorFromRGB(@"#AFAFAF");
-        _liveTitleLabel.text = @"直播名称：";
+        _liveTitleLabel.text = PLVLocalizedString(@"直播名称：");
     }
     return _liveTitleLabel;
 }
@@ -181,7 +183,7 @@
         _beginTimeTitleLabel = [[UILabel alloc] init];
         _beginTimeTitleLabel.font = [UIFont systemFontOfSize:14];
         _beginTimeTitleLabel.textColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6);
-        _beginTimeTitleLabel.text = @"开始时间：";
+        _beginTimeTitleLabel.text = PLVLocalizedString(@"开始时间：");
     }
     return _beginTimeTitleLabel;
 }
@@ -201,7 +203,7 @@
         _channelIdTitleLabel = [[UILabel alloc] init];
         _channelIdTitleLabel.font = [UIFont systemFontOfSize:14];
         _channelIdTitleLabel.textColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6);
-        _channelIdTitleLabel.text = @"频道号：";
+        _channelIdTitleLabel.text = PLVLocalizedString(@"频道号：");
     }
     return _channelIdTitleLabel;
 }
@@ -223,7 +225,7 @@
         _cloneChannelIdButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _cloneChannelIdButton.backgroundColor = [UIColor colorWithRed:0/255.0 green:128/255.0 blue:255/255.0 alpha:1/1.0];
         _cloneChannelIdButton.layer.cornerRadius = 12;
-        [_cloneChannelIdButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_cloneChannelIdButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         [_cloneChannelIdButton addTarget:self action:@selector(cloneChannelIdButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _cloneChannelIdButton;
@@ -236,7 +238,7 @@
 - (void)cloneChannelIdButtonAction {
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     pasteboard.string = [PLVRoomDataManager sharedManager].roomData.channelId;
-    [PLVSAUtils showToastInHomeVCWithMessage:@"已复制"];
+    [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"已复制")];
 }
 
 @end

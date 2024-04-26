@@ -1,0 +1,31 @@
+/* 
+  Localizable.strings
+  MultiLanguage
+
+  Created by Sakya on 2023/8/25.
+  
+*/
+
+"%@(我) 赠送了 %@" = "%1$@(me) given %2$@";
+  
+"公告：" = "Bulletin:";
+
+"切换清晰度" = "Switch quality";
+
+"加载直播..." = "loading live...";
+
+"发起提问" = "Initiate a question";
+
+"提问频道" = "Question Channel";
+
+"聊点什么～" = "Join the chat";
+
+"连麦成功，已为你切换到竖屏模式" = "Called successfully, switched to portrait view";
+
+/** icon */
+"plv_chatroom_askquestion_default_btn" = "plv_chatroom_askquestion_default_btn_en";
+"plv_chatroom_askquestion_selected_btn" = "plv_chatroom_askquestion_selected_btn_en";
+"plvec_chatroom_delay_password_redpack" = "plvec_chatroom_delay_password_redpack_en";
+"plvec_chatroom_lottery_widget_icon" = "plvec_chatroom_lottery_widget_icon_en";
+"plvec_home_giftbox_btn" = "plvec_home_giftbox_btn_en";
+"plvec_home_redpack_btn" = "plvec_home_redpack_btn_en";

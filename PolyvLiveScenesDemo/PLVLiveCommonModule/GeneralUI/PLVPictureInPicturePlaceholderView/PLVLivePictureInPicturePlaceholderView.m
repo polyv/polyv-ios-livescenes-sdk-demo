@@ -7,6 +7,7 @@
 //
 
 #import "PLVLivePictureInPicturePlaceholderView.h"
+#import "PLVMultiLanguageManager.h"
 
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -37,7 +38,7 @@
 - (UILabel *)placeholderLabel {
     if (!_placeholderLabel) {
         _placeholderLabel = [[UILabel alloc]init];
-        _placeholderLabel.text = @"小窗播放中...";
+        _placeholderLabel.text = PLVLocalizedString(@"小窗播放中...");
         _placeholderLabel.textColor = [PLVColorUtil colorFromHexString:@"#E4E4E4"];
         _placeholderLabel.textAlignment = NSTextAlignmentCenter;
         _placeholderLabel.font = [UIFont systemFontOfSize:14.0];

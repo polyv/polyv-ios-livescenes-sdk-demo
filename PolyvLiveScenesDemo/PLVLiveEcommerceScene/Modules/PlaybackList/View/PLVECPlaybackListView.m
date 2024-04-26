@@ -8,6 +8,7 @@
 
 #import "PLVECPlaybackListView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVECPlaybackListCell.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -59,7 +60,7 @@
     if (! _titleLabel) {
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.textAlignment = NSTextAlignmentLeft;
-        _titleLabel.text = @"回放列表";
+        _titleLabel.text = PLVLocalizedString(@"回放列表");
         _titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:16];
         _titleLabel.textColor= PLV_UIColorFromRGB(@"#FFFFFF");
     }

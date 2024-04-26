@@ -7,6 +7,7 @@
 //
 
 #import "PLVRoomData.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NSString *PLVLCChatroomFunctionGotNotification = @"PLVLCChatroomFunctionGotNotification";
@@ -21,6 +22,7 @@ NSString *PLVRoomDataKeyPathMenuInfo    = @"menuInfo";
 NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 NSString *PLVRoomDataKeyPathHiClassStatus   = @"hiClassStatus";
 NSString *PLVRoomDataKeyPathVid   = @"vid";
+NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
 
 @interface PLVRoomData ()
 
@@ -64,6 +66,33 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
             self.pushQualityPreference = PLVQualityPreferenceTypeClear;
         }
     }
+}
+
+- (NSDictionary *)nativeAppUserParamsWithExtraParam:(NSDictionary * _Nullable)extraParam {
+    NSDictionary *userInfo = @{
+        @"nick" : [NSString stringWithFormat:@"%@", self.roomUser.viewerName],
+        @"userId" : [NSString stringWithFormat:@"%@", self.roomUser.viewerId],
+        @"pic" : [NSString stringWithFormat:@"%@", self.roomUser.viewerAvatar]
+    };
+    NSDictionary *channelInfo = @{
+        @"channelId" : [NSString stringWithFormat:@"%@", self.channelId],
+        @"roomId" : [NSString stringWithFormat:@"%@", self.channelId]
+    };
+    NSDictionary *sessionDict = @{
+        @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
+        @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
+        @"sessionId" : [NSString stringWithFormat:@"%@", self.sessionId]
+    };
+    
+    NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
+    [mutableDict setObject:userInfo forKey:@"userInfo"];
+    [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    [mutableDict addEntriesFromDictionary:sessionDict];
+    if ([PLVFdUtil checkDictionaryUseable:extraParam]) {
+        [mutableDict addEntriesFromDictionary:extraParam];
+    }
+    
+    return mutableDict;
 }
 
 #pragma mark HTTP Request
@@ -125,10 +154,21 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
             weakSelf.sendImageDisable = ![switchInfo[@"viewerSendImgEnabled"] boolValue];
             weakSelf.sendLikeDisable = ![switchInfo[@"sendFlowersEnabled"] boolValue];
             weakSelf.watchFeedbackEnabled = [switchInfo[@"watchFeedbackEnabled"] boolValue];
+            weakSelf.conditionLotteryEnabled = [switchInfo[@"conditionLotteryEnabled"] boolValue];
             [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomFunctionGotNotification object:switchInfo];
         }
     } failure:^(NSError * _Nonnull error) {
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request channel function switch failed with 【%@】", __FUNCTION__, error);
+    }];
+}
+
+- (void)updateSipInfo {
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestSIPInfoWithChannelId:self.channelId completion:^(NSDictionary *data) {
+        weakSelf.sipNumber = PLV_SafeStringForDictKey(data, @"ucSipPhone");
+        weakSelf.sipPassword = PLV_SafeStringForDictKey(data, @"ucSipId");
+    } failure:^(NSError *error) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s request SIP Info failed with 【%@】", __FUNCTION__, error);
     }];
 }
 
@@ -138,16 +178,19 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     NSString *string = nil;
     switch (resolutionType) {
         case PLVResolutionType1080P:
-            string = @"超高清";
+            string = PLVLocalizedString(@"超高清");
             break;
         case PLVResolutionType720P:
-            string = @"超清";
+            string = PLVLocalizedString(@"超清");
+            break;
+        case PLVResolutionType480P:
+            string = PLVLocalizedString(@"高标清");
             break;
         case PLVResolutionType360P:
-            string = @"高清";
+            string = PLVLocalizedString(@"高清");
             break;
         case PLVResolutionType180P:
-            string = @"标清";
+            string = PLVLocalizedString(@"标清");
             break;
     }
     return string;
@@ -181,6 +224,46 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     return streamQuality;
 }
 
++ (PLVMixLayoutType)mixLayoutTypeWithStreamerMixLayoutType:(PLVRTCStreamerMixLayoutType)streamerType {
+    PLVMixLayoutType mixLayoutType = PLVMixLayoutType_Single;
+    if (streamerType == PLVRTCStreamerMixLayoutType_Single) {
+        mixLayoutType = PLVMixLayoutType_Single;
+    }else if (streamerType == PLVRTCStreamerMixLayoutType_Tile){
+        mixLayoutType = PLVMixLayoutType_Tile;
+    }else if (streamerType == PLVRTCStreamerMixLayoutType_MainSpeaker){
+        mixLayoutType = PLVMixLayoutType_MainSpeaker;
+    }
+    return mixLayoutType;
+}
+
++ (PLVRTCStreamerMixLayoutType)streamerMixLayoutTypeWithMixLayoutType:(PLVMixLayoutType)mixLayoutType {
+    PLVRTCStreamerMixLayoutType streamerMixLayoutType = PLVRTCStreamerMixLayoutType_Unknown;
+    if (mixLayoutType == PLVMixLayoutType_Single) {
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_Single;
+    }else if (mixLayoutType == PLVMixLayoutType_Tile){
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_Tile;
+    }else if (mixLayoutType == PLVMixLayoutType_MainSpeaker){
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_MainSpeaker;
+    }
+    return streamerMixLayoutType;
+}
+
++ (NSString * _Nullable)mixLayoutTypeStringWithType:(PLVMixLayoutType)mixLayoutType {
+    NSString *string = nil;
+    switch (mixLayoutType) {
+        case PLVMixLayoutType_Single:
+            string = PLVLocalizedString(@"单人模式");
+            break;
+        case PLVMixLayoutType_Tile:
+            string = PLVLocalizedString(@"平铺模式");
+            break;
+        case PLVMixLayoutType_MainSpeaker:
+            string = PLVLocalizedString(@"主讲模式");
+            break;
+    }
+    return string;
+}
+
 #pragma mark - [ Private Method ]
 
 /// 配置菜单信息
@@ -190,9 +273,17 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     self.watchCount = menuInfo.pageView.unsignedIntegerValue;
     self.restrictChatEnabled = menuInfo.restrictChatEnabled;
     self.maxViewerCount = menuInfo.maxViewer.unsignedIntegerValue;
+    self.linkmicNewStrategyEnabled = menuInfo.newMicEnabled;
+    self.defaultOpenMicLinkEnabled = menuInfo.defaultOpenMicLinkEnabled;
 }
 
 #pragma mark Getter & Setter
+
+- (void)setChannelInfo:(PLVChannelInfoModel *)channelInfo {
+    _channelInfo = channelInfo;
+    
+    [[PLVWLogReporterManager sharedManager] setupSessionId:self.channelInfo.sessionId];
+}
 
 - (NSString *)sessionId {
     if (self.channelInfo) {
@@ -216,6 +307,17 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     return PLVBLinkMicStreamScale16_9;
 }
 
+- (PLVMixLayoutType)defaultMixLayoutType {
+    if ([PLVFdUtil checkStringUseable:self.menuInfo.mobileAlonePushMixMode]) {
+        if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"flatten"]) {
+            return PLVMixLayoutType_Tile;
+        } else if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"lecture"]) {
+            return PLVMixLayoutType_MainSpeaker;
+        }
+    }
+    return PLVMixLayoutType_Tile; // 默认混流布局为平铺模式;
+}
+
 - (void)setAppWebStartResolutionRatio:(NSString *)appWebStartResolutionRatio {
     _appWebStartResolutionRatio = appWebStartResolutionRatio;
     if (![PLVFdUtil checkStringUseable:appWebStartResolutionRatio]) {
@@ -227,6 +329,17 @@ NSString *PLVRoomDataKeyPathVid   = @"vid";
     } else if ([appWebStartResolutionRatio isEqualToString:@"4:3"]) {
         _streamScale = PLVBLinkMicStreamScale4_3;
     }
+}
+
+- (PLVChannelLinkMicMediaType)defaultChannelLinkMicMediaType {
+    if ([PLVFdUtil checkStringUseable:self.defaultOpenMicLinkEnabled]) {
+        if ([self.defaultOpenMicLinkEnabled isEqualToString:@"audio"]) {
+            return PLVChannelLinkMicMediaType_Audio;
+        } else if ([self.defaultOpenMicLinkEnabled isEqualToString:@"video"]) {
+            return PLVChannelLinkMicMediaType_Video;
+        }
+    }
+    return PLVChannelLinkMicMediaType_Unknown;
 }
 
 @end

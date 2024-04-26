@@ -1,0 +1,127 @@
+/* 
+  Localizable.strings
+  MultiLanguage
+
+  Created by Sakya on 2023/8/25.
+  
+*/
+
+" 刷新" = " Refresh";
+
+" 退出登录" = " Sign Out";
+
+"PLVLSDocumentUploadTips" = "1. 18:00-19:00 is the peak upload period, and the queue time is long. Please upload during the off-peak period;\n2. The maximum document size is 500M, no more than 1000 pages;\n3. Only supports unencrypted ppt, pptx, pdf, doc, docx, xls, xlsx, wps, jpg, jpeg, png formats without audio and video;\n4. For wps or documents containing special fonts or paid fonts, please convert them to pdf first and then upload them";
+
+"PPT 加载失败" = "PPT load failed";
+
+"上传失败" = "Upload failed";
+
+"上传成功，待转码" = "Uploaded successfully, pending transcoding";
+
+"上传文档不得超过500M" = "The uploaded document must not exceed 500M";
+
+"上传文档失败" = "Failed to upload document";
+
+"上传须知" = "Upload Rules";
+
+"上课" = "Start class";
+
+"下课" = "End class";
+
+"不支持的文档格式" = "Unsupported document format";
+
+"不能删除展示中的文档" = "Cannot delete displayed document";
+
+"共%ld个" = " %ld in total";
+
+"删除文档后将无法恢复，确认删除吗？" = "Deleted documents cannot be recovered. Are you sure to delete them?";
+
+"删除文档失败，请稍候重试" = "Failed to delete document, please try again later";
+
+"动效丢失，已转换为图片" = "The animation is lost and has been converted to pictures";
+
+"动画转码" = "Animation transcoding";
+
+"存在上传中断的任务，是否恢复？" = "There is a task whose upload was interrupted. Do you want to resume it?";
+
+"已存在相同上传任务" = "The same upload task already exists";
+
+"快速转码" = "Fast transcoding";
+
+"恢复上传" = "Resume upload";
+
+"您当前有%lu条私聊消息，请及时查看" = "You currently have %lu private chat messages, please check them in time";
+
+"成功" = "success";
+
+"成员(%zd)" = "Member(%zd)"
+
+"所有文档" = "All documents";
+
+"收到新的连麦申请" = "Received a new request to join the call";
+
+"文档上传%@" = "Document upload %@";
+
+"文档已存在服务端" = "The document already exists on the server";
+
+"最多同时上传3个文件，请稍后重试" = "Up to 3 files can be uploaded at the same time, please try again later";
+
+"点击下课将结束直播，确认下课吗？" = "Selecting 'End class' will disconnect the live lesson. End class now?";
+
+"直播尚未开始，请稍作等待" = "The live has not started yet, please wait a moment";
+
+"确定禁言" = "Confirm ban";
+
+"确定踢出" = "Confirm kick out";
+
+"管理员私聊" = "Admin private chat";
+
+"被授权后才可以使用课件功能" = "You can use the PPT only after being authorized";
+
+"请先上课" = "Please start class first";
+
+"请先上课再开始连麦" = "Please start class first and then call";
+
+"请求文档列表失败，请稍候重试" = "Requesting the document list failed, please try again later";
+
+"请选择PPT转码方式\n快速转码：不含PPT动效，速度较快\n动画转码：含PPT动效，速度较慢，仅支持Microsoft Ofiice 保存的PPT" = "Please select a transcoding method \n Fast transcoding: without PPT animation effects, the speed is faster \n Animation transcoding: Contains PPT animation effects, slower speed, only supports PPT saved by Microsoft Office";
+
+"请选择文档后再使用画笔" = "Please select the document before using the brush";
+
+"读取文档失败" = "Failed to read document";
+
+"转码失败" = "Transcoding failed";
+
+"转码失败原因：%@" = "Reason for transcoding failure: %@";
+
+"返回底部" = "Return to bottom";
+
+"返回查看所有文档" = "Back to view all documents";
+
+"电话连麦号码" = "Phone linkmic number";
+
+"直播时间 %@" = "Live Time %@";
+
+"频道号 %@" = "Channel ID %@";
+
+"电话连麦号码 %@" = "Phone linkmic number %@";
+
+"%@，入会密码 %@" = "%@，Join Password %@";
+
+"复制电话连麦号码成功" = "Copy phone linkmic number success"
+
+"待接通(%zd)" = "Calling In(%zd)";
+
+"呼叫中(%zd)" = "Calling Out(%zd)";
+
+"已接通(%zd)" = "Connected(%zd)";
+
+"去接听" = "Pick Up";
+
+"忽略" = "Ignore";
+
+
+/** icon */
+"plvls_chatroom_remind_tag" = "plvls_chatroom_remind_tag_en";
+
+

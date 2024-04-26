@@ -18,6 +18,7 @@
 #import "PLVLCBuyViewController.h"
 #import "PLVLCNoNetworkDescViewController.h"
 #import "PLVRoomDataManager.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 
@@ -67,6 +68,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCSectionViewController *sectionVctrl;
 /// 商品列表页
 @property (nonatomic, strong) PLVLCBuyViewController *productVctrl;
+/// 图文直播页
+@property (nonatomic, strong) PLVLCTuwenViewController *tuwenVctrl;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
@@ -110,11 +113,17 @@ PLVRoomDataManagerProtocol
     if (self.descVctrl) {
         [self.descVctrl updateLiveStatus:liveStatus];
     }
+    if (self.tuwenVctrl) {
+        [self.tuwenVctrl updateLiveStatusIsLive:(liveStatus == PLVLCLiveStatusLiving || liveStatus == PLVLCLiveStatusStop)];
+    }
 }
 
 - (void)updateLiveUserInfo {
     if (self.productVctrl) {
         [self.productVctrl updateUserInfo];
+    }
+    if (self.tuwenVctrl) {
+        [self.tuwenVctrl updateUserInfo];
     }
 }
 
@@ -127,13 +136,39 @@ PLVRoomDataManagerProtocol
     [self.chatVctrl startCardPush:start cardPushInfo:dict callback:callback];
 }
 
+- (void)updateProductMenuTab:(NSDictionary *)dict {
+    PLVLiveVideoChannelMenu *menu = [[PLVLiveVideoChannelMenu alloc] initWithDictionary:dict];
+    if (![PLVFdUtil checkDictionaryUseable:dict] || ![PLVFdUtil checkStringUseable:menu.name]) {
+        return;
+    }
+    
+    NSMutableArray *titleArray = [NSMutableArray arrayWithArray:self.pageController.titles];
+    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.pageController.controllers];
+    BOOL enabled = PLV_SafeBoolForDictKey(dict, @"enabled");
+    if (enabled) {
+        if (![controllers containsObject:self.productVctrl]) {
+            UIViewController *viewController = [self controllerWithMenu:menu];
+            [titleArray addObject:PLVLocalizedString(menu.name)];
+            [controllers addObject:viewController];
+        }
+    } else {
+        if ([controllers containsObject:self.productVctrl]) {
+            [titleArray removeObject:PLVLocalizedString(menu.name)];
+            [controllers removeObject:self.productVctrl];
+            self.productVctrl = nil;
+        }
+    }
+
+    [self.pageController setTitles:titleArray.copy controllers:controllers.copy];
+}
+
 - (void)displayProductPageToExternalView:(UIView *)externalView {
     if (self.productVctrl) {
         if (!self.productVctrl.isViewLoaded) {
             [self.productVctrl viewDidLoad];
         }
         [self displaySubview:self.productVctrl.contentBackgroudView toSuperview:externalView];
-        [self.productVctrl viewWillLayoutSubviews];
+        [self.productVctrl showInLandscape];
     }
 }
 
@@ -157,7 +192,7 @@ PLVRoomDataManagerProtocol
     [channelMenuInfo.channelMenus enumerateObjectsUsingBlock:^(PLVLiveVideoChannelMenu * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
         PLVLCLivePageMenuType menuType = PLVLCMenuTypeWithMenuTypeString(obj.menuType);
         if (menuType == PLVLCLivePageMenuTypeBuy) {
-            commodityMenu = YES;
+            commodityMenu = obj.displayEnabled;
             *stop = YES;
         }
     }];
@@ -177,7 +212,7 @@ PLVRoomDataManagerProtocol
         // 即没有网络，又播放离线缓存视频的情况，展示无网络直播介绍
         PLVLCNoNetworkDescViewController *vctrl = [[PLVLCNoNetworkDescViewController alloc]init];
         self.noNetworkDescVctrl = vctrl;
-        [titleArray addObject:@"直播介绍"];
+        [titleArray addObject:PLVLocalizedString(@"直播介绍")];
         [ctrlArray addObject:vctrl];
     }
     else {
@@ -191,18 +226,21 @@ PLVRoomDataManagerProtocol
         
         for (int i = 0; i < menuCount; i++) {
             PLVLiveVideoChannelMenu *menu = channelMenuInfo.channelMenus[i];
+            if (!menu.displayEnabled) {
+                continue;
+            }
             UIViewController *vctrl = [self controllerWithMenu:menu];
             if (!vctrl) {
                 continue;
             }
-            [titleArray addObject:menu.name];
+            [titleArray addObject:PLVLocalizedString(menu.name)];
             [ctrlArray addObject:vctrl];
         }
         
         if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
             PLVLCPlaybackListViewController *vctrl = [[PLVLCPlaybackListViewController alloc] initWithPlaybackList:[PLVRoomDataManager sharedManager].roomData.playbackList];
             self.playbackListVctrl = vctrl;
-            [titleArray addObject:@"往期"];
+            [titleArray addObject:PLVLocalizedString(@"往期")];
             [ctrlArray addObject:vctrl];
         }
         
@@ -210,7 +248,7 @@ PLVRoomDataManagerProtocol
             PLVLCSectionViewController *vctrl = [[PLVLCSectionViewController alloc] initWithSectionList:[PLVRoomDataManager sharedManager].roomData.sectionList];
             self.sectionVctrl = vctrl;
             self.sectionVctrl.delegate = self;
-            [titleArray addObject:@"章节"];
+            [titleArray addObject:PLVLocalizedString(@"章节")];
             [ctrlArray addObject:vctrl];
         }
     }
@@ -237,9 +275,9 @@ PLVRoomDataManagerProtocol
         self.quizVctrl = vctrl;
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeTuwen) {
-        NSInteger channelIdInt = [[PLVRoomDataManager sharedManager].roomData.channelId integerValue];
-        PLVLCTuwenViewController *vctrl = [[PLVLCTuwenViewController alloc] initWithChannelId:@(channelIdInt)];
+        PLVLCTuwenViewController *vctrl = [[PLVLCTuwenViewController alloc] init];
         vctrl.delegate = self;
+        self.tuwenVctrl = vctrl;
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeText) {
         PLVLCTextViewController *vctrl = [[PLVLCTextViewController alloc] init];
@@ -324,6 +362,20 @@ PLVRoomDataManagerProtocol
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:alertLongContentMessage:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self alertLongContentMessage:model];
+    }
+}
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC emitInteractEvent:(NSString *)event {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:emitInteractEvent:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self emitInteractEvent:event];
+    }
+}
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC lotteryWidgetShowStatusChanged:(BOOL)show {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:lotteryWidgetShowStatusChanged:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self lotteryWidgetShowStatusChanged:show];
     }
 }
 

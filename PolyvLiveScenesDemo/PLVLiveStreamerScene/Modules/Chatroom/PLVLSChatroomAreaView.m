@@ -21,6 +21,7 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSTimeInterval remindMessageTimerInterval = 30.0;
 
@@ -321,7 +322,7 @@ PLVLSChatroomViewModelProtocol
         self.remindNewMessageCount > 0 &&
         ((!_remindSheet.superview &&
         self.chatroomListView.hidden) || self.documentFullScreen)) {
-        NSString *message = [NSString stringWithFormat:@"您当前有%lu条私聊消息，请及时查看", (unsigned long)self.remindNewMessageCount];
+        NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"您当前有%lu条私聊消息，请及时查看"), (unsigned long)self.remindNewMessageCount];
         [PLVLSUtils showToastWithMessage:message inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:5];
     }
 }
@@ -334,6 +335,9 @@ PLVLSChatroomViewModelProtocol
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView updateMessageCount:0];
 }
@@ -426,7 +430,7 @@ PLVLSChatroomViewModelProtocol
 
 - (void)chatroomViewModel_loadImageEmotionFailure {
     plv_dispatch_main_async_safe(^{
-        [PLVLSUtils showToastInHomeVCWithMessage:@"图片表情资源加载失败"];
+        [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"图片表情资源加载失败")];
     })
 }
 

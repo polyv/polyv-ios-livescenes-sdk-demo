@@ -8,6 +8,7 @@
 
 #import "PLVLCMediaBrightnessView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 #define BrightnessViewWidth     155.0
 #define BrightnessViewHeight    155.0
@@ -64,7 +65,7 @@
     self.title.font  = [UIFont boldSystemFontOfSize:16.0];
     self.title.textColor = [UIColor colorWithRed:0.25f green:0.22f blue:0.21f alpha:1.0f];
     self.title.textAlignment = NSTextAlignmentCenter;
-    self.title.text = @"亮度";
+    self.title.text = PLVLocalizedString(@"亮度");
     [self addSubview:self.title];
     
     self.backImgView = [[UIImageView alloc] initWithFrame:CGRectMake((BrightnessViewWidth - 79.0) * 0.5, self.title.frame.origin.y + self.title.frame.size.height + 5.0, 79.0, 76.0)];

@@ -7,6 +7,7 @@
 //
 
 #import "PLVAlertViewController.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 /// 确认按钮用到的回调类型
@@ -293,7 +294,7 @@ typedef NS_ENUM(NSUInteger, PLVAlertStyle) {
 - (void)setupButtonWithCancelTitle:(NSString *)cancelTitle confirmTitle:(NSString *)confirmTitle {
     // 传入文本容错处理
     if (!cancelTitle || ![cancelTitle isKindOfClass:[NSString class]] || cancelTitle.length == 0) {
-        cancelTitle = @"取消";
+        cancelTitle = PLVLocalizedString(@"取消");
     }
     if (![confirmTitle isKindOfClass:[NSString class]] || confirmTitle.length == 0) {
         confirmTitle = nil;

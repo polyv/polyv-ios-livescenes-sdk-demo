@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCRetryPlayView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCRetryPlayView()
@@ -44,7 +45,7 @@
 - (UIButton *)replayButton {
     if (!_replayButton) {
         _replayButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_replayButton setTitle:@"重试" forState:UIControlStateNormal];
+        [_replayButton setTitle:PLVLocalizedString(@"重试") forState:UIControlStateNormal];
         [_replayButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         _replayButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
         _replayButton.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.1);

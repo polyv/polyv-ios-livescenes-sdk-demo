@@ -7,6 +7,7 @@
 //
 
 #import "PLVLSBeautyFilterTitleView.h"
+#import "PLVMultiLanguageManager.h"
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -33,9 +34,9 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    self.filterTypeLabel.frame = CGRectMake(0, self.bounds.size.height - 22, 45, 22);
-    self.lineView.frame = CGRectMake(CGRectGetMaxX(self.filterTypeLabel.frame) + 4, self.bounds.size.height - 12, 1, 12);
-    self.filterLabel.frame = CGRectMake(CGRectGetMaxX(self.lineView.frame) + 4, self.bounds.size.height - 14, 29, 14);
+    self.lineView.frame = CGRectMake(self.bounds.size.width/2 - 1, self.bounds.size.height - 12, 1, 12);
+    self.filterTypeLabel.frame = CGRectMake(CGRectGetMinX(self.lineView.frame) - 100 - 4, self.bounds.size.height - 24, 100, 24);
+    self.filterLabel.frame = CGRectMake(CGRectGetMaxX(self.lineView.frame) + 4, self.bounds.size.height - 14, 50, 14);
 }
 
 #pragma mark - [ Public Method ]
@@ -69,6 +70,7 @@
         _filterTypeLabel = [[UILabel alloc] init];
         _filterTypeLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
         _filterTypeLabel.font = [UIFont systemFontOfSize:22];
+        _filterTypeLabel.textAlignment = NSTextAlignmentRight;
         _filterTypeLabel.text = @"";
     }
     return _filterTypeLabel;
@@ -87,11 +89,12 @@
         _filterLabel = [[UILabel alloc] init];
         _filterLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
         _filterLabel.font = [UIFont systemFontOfSize:14];
+        _filterLabel.textAlignment = NSTextAlignmentLeft;
         NSShadow *shadow = [[NSShadow alloc] init];
         shadow.shadowBlurRadius = 1;
         shadow.shadowOffset = CGSizeMake(0, 0);
         shadow.shadowColor = [PLVColorUtil colorFromHexString:@"#000000" alpha:0.4];
-        NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:@"滤镜" attributes:@{NSShadowAttributeName:shadow}];
+        NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"滤镜") attributes:@{NSShadowAttributeName:shadow}];
         _filterLabel.attributedText = attributedString;
     }
     return _filterLabel;

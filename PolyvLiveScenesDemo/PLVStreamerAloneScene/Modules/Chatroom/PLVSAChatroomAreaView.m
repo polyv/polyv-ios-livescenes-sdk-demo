@@ -10,6 +10,7 @@
 
 // 工具类
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVSANewMessgaeTipView.h"
@@ -108,6 +109,9 @@ PLVSAChatroomListViewDelegate
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView updateMeesageCount:0];
 }
@@ -179,7 +183,7 @@ PLVSAChatroomListViewDelegate
     }
     BOOL sendSuccess = [[PLVChatroomManager sharedManager] sendCloseRoom:closeRoom];
     if (sendSuccess) {
-        NSString *string = _closeRoom ? @"已开启全体禁言" : @"已解除全体禁言";
+        NSString *string = _closeRoom ? PLVLocalizedString(@"已开启全体禁言") : PLVLocalizedString(@"已解除全体禁言");
         [PLVSAUtils showToastInHomeVCWithMessage:string];
     }
 }
@@ -282,7 +286,7 @@ PLVSAChatroomListViewDelegate
             }
             if (mutableString.length > 1) {
                 string = [[mutableString copy] substringToIndex:mutableString.length - 1];
-                string = [NSString stringWithFormat:@"%@等%zd人", string, [userArray count]];
+                string = [NSString stringWithFormat:PLVLocalizedString(@"%@等%zd人"), string, [userArray count]];
             }
         } else {
             PLVChatUser *user = userArray[0];
@@ -291,7 +295,7 @@ PLVSAChatroomListViewDelegate
     }
     
     if (string.length > 0) {
-        NSString *welcomeMessage = [NSString stringWithFormat:@"欢迎 %@ 进入直播间", string];
+        NSString *welcomeMessage = [NSString stringWithFormat:PLVLocalizedString(@"欢迎 %@ 进入直播间"), string];
         [self showWelcomeWithMessage:welcomeMessage];
     }
 }
@@ -309,7 +313,7 @@ PLVSAChatroomListViewDelegate
 }
 
 - (void)chatroomViewModel_loadImageEmotionFailure {
-    [PLVSAUtils showToastInHomeVCWithMessage:@"图片表情资源加载失败"];
+    [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"图片表情资源加载失败")];
 }
 
 #pragma mark PLVSAChatroomListViewDelegate

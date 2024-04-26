@@ -9,6 +9,7 @@
 #import "PLVLSRemindChatroomSheet.h"
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVLSRemindChatroomListView.h"
 #import "PLVLSSendMessageView.h"
@@ -79,7 +80,7 @@ PLVLSChatroomViewModelProtocol
 - (UILabel *)titleLabel {
     if (!_titleLabel) {
         _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = @"管理员私聊";
+        _titleLabel.text = PLVLocalizedString(@"管理员私聊");
         _titleLabel.font = [UIFont fontWithName:@"PingFangSC" size:16];
         _titleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
     }
@@ -123,7 +124,7 @@ PLVLSChatroomViewModelProtocol
         _inputMsgButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _inputMsgButton.backgroundColor = [UIColor colorWithRed:71/255.0 green:75/255.0 blue:87/255.0 alpha:1/1.0];
         [_inputMsgButton setImage:[PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_input@2x"] forState:UIControlStateNormal];
-        [_inputMsgButton setTitle:@"当前无网络，请设置网络再参与互动" forState:UIControlStateNormal];
+        [_inputMsgButton setTitle:PLVLocalizedString(@"当前无网络，请设置网络再参与互动") forState:UIControlStateNormal];
         _inputMsgButton.titleLabel.font = [UIFont systemFontOfSize:12];
         [_inputMsgButton setTitleColor:[PLVColorUtil colorFromHexString:@"#878B93"] forState:UIControlStateNormal];
         _inputMsgButton.layer.cornerRadius = 16;
@@ -176,6 +177,9 @@ PLVLSChatroomViewModelProtocol
 }
 
 - (void)clearNewMessageCount {
+    if (self.newMessageCount == 0) {
+        return ;
+    }
     self.newMessageCount = 0;
     [self.receiveNewMessageView updateMessageCount:0];
 }
@@ -183,9 +187,9 @@ PLVLSChatroomViewModelProtocol
 #pragma mark 网络异常提示
 - (void)updateInputButtonNetState:(NSInteger)netState {
     if ([self netCan]) {
-        [self.inputMsgButton setTitle:@"有话要说..." forState:UIControlStateNormal];
+        [self.inputMsgButton setTitle:PLVLocalizedString(@"有话要说...") forState:UIControlStateNormal];
     } else {
-        [self.inputMsgButton setTitle:@"当前无网络，请设置网络再参与互动" forState:UIControlStateNormal];
+        [self.inputMsgButton setTitle:PLVLocalizedString(@"当前无网络，请设置网络再参与互动") forState:UIControlStateNormal];
     }
 }
 
@@ -203,7 +207,7 @@ PLVLSChatroomViewModelProtocol
 
 - (void)inputMsgButtonAction {
     if (![self netCan]) {
-        [PLVLSUtils showToastWithMessage:@"请检查网络设置" inView:[PLVLSUtils sharedUtils].homeVC.view];
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请检查网络设置") inView:[PLVLSUtils sharedUtils].homeVC.view];
         return;
     }
     

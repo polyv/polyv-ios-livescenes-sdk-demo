@@ -9,12 +9,14 @@
 #import "PLVLSStatusAreaView.h"
 #import "PLVLSSignalButton.h"
 #import "PLVLSLinkMicMenuPopup.h"
+#import "PLVLSLinkMicGuestMenuPopup.h"
 #import "PLVLSNetworkStatePopup.h"
 #import "PLVLSLinkMicApplyTipsView.h"
 #import "PLVRoomDataManager.h"
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 模块
 #import "PLVRoomDataManager.h"
@@ -22,6 +24,13 @@
 
 static CGFloat kStatusBarHeight = 44;
 static NSString *kGustDefaultTintColor  = @"0x888888";
+static NSInteger kPLVLSLinkMicRequestExpiredTime = 30; // 连麦邀请等待时间(秒)
+
+typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
+    PLVLSStatusLinkMicButtonStatus_Default = 0, // 默认状态
+    PLVLSStatusLinkMicButtonStatus_HandUp = 2, // 等待讲师应答中（举手中）
+    PLVLSStatusLinkMicButtonStatus_Joined  = 4,// 已加入连麦（连麦中）
+};
 
 @interface PLVLSStatusAreaView ()
 
@@ -40,6 +49,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 @property (nonatomic, strong) UIButton *startPushButton;
 @property (nonatomic, strong) UIButton *stopPushButton;
 @property (nonatomic, strong) PLVLSLinkMicMenuPopup *linkMicMenu;
+@property (nonatomic, strong) PLVLSLinkMicGuestMenuPopup *guestLinkMicMenu;
 @property (nonatomic, strong) PLVLSLinkMicApplyTipsView *linkMicApplyView;
 @property (nonatomic, strong) PLVLSNetworkStatePopup *networkStatePopup;
 
@@ -50,6 +60,10 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 @property (nonatomic, assign, getter=isGuest) BOOL guest; // 是否为嘉宾
 @property (nonatomic, assign, getter=isTeacher) BOOL teacher; // 是否为讲师
 @property (nonatomic, assign) BOOL whiteboardSelected; // 白板是否已选中
+@property (nonatomic, assign) PLVLSStatusLinkMicButtonStatus linkMicButtonStatus; // 连麦按钮状态
+@property (nonatomic, strong) NSTimer *requestLinkMicTimer; // 申请连麦计时器
+@property (nonatomic, assign) NSTimeInterval requestLinkMicLimitTs; // 请求连麦的限制时间
+@property (nonatomic, assign) NSTimeInterval linkMicBtnLastTimeInterval; // 连麦按钮上一次点击的时间戳
 
 @end
 
@@ -75,6 +89,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         [self addSubview:self.stopPushButton];
         
         [self.memberButton addSubview:self.memberRedDot];
+        self.linkMicBtnLastTimeInterval = 0.0;
     }
     return self;
 }
@@ -96,8 +111,8 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     if (controlsInDemand & PLVLSStatusBarControls_ChannelInfo) {
         self.channelInfoLabel.hidden = NO;
         self.channelInfoButton.hidden = NO;
-        self.channelInfoLabel.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 84, 28);
-        self.channelInfoButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 84, 28);
+        self.channelInfoLabel.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 90, 28);
+        self.channelInfoButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 90, 28);
     }
     
     originX = self.channelInfoLabel.hidden ? originX : CGRectGetMaxX(self.channelInfoButton.frame) + 12;
@@ -111,7 +126,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     self.signalButton.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_SignalButton) {
         self.signalButton.hidden = NO;
-        self.signalButton.frame = CGRectMake(originX, 11, 84, 20);
+        self.signalButton.frame = CGRectMake(originX, 12, self.signalButton.buttonCalWidth, 20);
     }
     
     /// 右侧控件
@@ -119,11 +134,11 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     self.startPushButton.hidden = YES;
     self.stopPushButton.hidden = YES;
     if (controlsInDemand & PLVLSStatusBarControls_PushButton) {
-        originX = self.bounds.size.width - 60;
+        originX = self.bounds.size.width - 80;
         self.startPushButton.hidden = self.inClass;
         self.stopPushButton.hidden = !self.inClass;
-        self.startPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 60, 28);
-        self.stopPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 60, 28);
+        self.startPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 80, 28);
+        self.stopPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 80, 28);
     }
     
     self.settingButton.hidden = YES;
@@ -174,8 +189,8 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     }
     
     if (_networkStatePopup) {
-        CGFloat width = 196.0;
-        CGFloat height = 76.0;
+        CGFloat width = self.networkStatePopup.bubbleSize.width;
+        CGFloat height = self.networkStatePopup.bubbleSize.height;
         CGFloat originX = MAX(0, self.frame.origin.x + self.signalButton.frame.origin.x + self.signalButton.frame.size.width - width); // 弹层与按钮右侧对齐
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
@@ -185,6 +200,22 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         if (self.networkStatePopup.showing) {
             [self.networkStatePopup dismiss];
         }
+    }
+}
+
+#pragma mark - [ Private Methods ]
+- (void)createRequestLinkMicTimer {
+    if (_requestLinkMicTimer) {
+        [self destroyRequestLinkMicTimer];
+    }
+    self.requestLinkMicLimitTs = kPLVLSLinkMicRequestExpiredTime;
+    _requestLinkMicTimer = [NSTimer scheduledTimerWithTimeInterval:1 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(requestLinkMicTimerAction) userInfo:nil repeats:YES];
+}
+
+- (void)destroyRequestLinkMicTimer {
+    if (_requestLinkMicTimer) {
+        [_requestLinkMicTimer invalidate];
+        _requestLinkMicTimer = nil;
     }
 }
 
@@ -204,7 +235,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         NSDictionary *attributedDict = @{NSFontAttributeName: [UIFont systemFontOfSize:12],
                                          NSForegroundColorAttributeName:[UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1]
         };
-        NSAttributedString *textAttributedString = [[NSAttributedString alloc] initWithString:@"频道信息" attributes:attributedDict];
+        NSAttributedString *textAttributedString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"频道信息") attributes:attributedDict];
         
         NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
         [muString appendAttributedString:textAttributedString];
@@ -300,8 +331,16 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 - (UIButton *)linkmicButton {
     if (!_linkmicButton) {
         _linkmicButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        UIImage *normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn"];
-        UIImage *highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn_selected"];
+        BOOL newStrategy = self.isTeacher && [PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0;
+        UIImage *normalImage;
+        UIImage *highlightImage;
+        if (!newStrategy) {
+            normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn"];
+            highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn_selected"];
+        } else {
+            normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_audience_raise_hand_btn"];
+            highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_audience_raise_hand_btn_selected"];
+        }
         [_linkmicButton setImage:normalImage forState:UIControlStateNormal];
         [_linkmicButton setImage:highlightImage forState:UIControlStateHighlighted];
         [_linkmicButton setImage:highlightImage forState:UIControlStateSelected];
@@ -365,8 +404,8 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         UIColor *normalColor = [UIColor colorWithRed:0x43/255.0 green:0x99/255.0 blue:0xff/255.0 alpha:1];
         _startPushButton.layer.borderColor = normalColor.CGColor;
         _startPushButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_startPushButton setTitle:@"上课" forState:UIControlStateNormal];
-        [_startPushButton setTitle:@"下课" forState:UIControlStateSelected];
+        [_startPushButton setTitle:PLVLocalizedString(@"上课") forState:UIControlStateNormal];
+        [_startPushButton setTitle:PLVLocalizedString(@"下课") forState:UIControlStateSelected];
         [_startPushButton setTitleColor:normalColor forState:UIControlStateNormal];
         [_startPushButton addTarget:self action:@selector(startPushButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -381,7 +420,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         UIColor *normalColor = [UIColor colorWithRed:0xff/255.0 green:0x63/255.0 blue:0x63/255.0 alpha:1];
         _stopPushButton.layer.borderColor = normalColor.CGColor;
         _stopPushButton.titleLabel.font = [UIFont systemFontOfSize:14];
-        [_stopPushButton setTitle:@"下课" forState:UIControlStateNormal];
+        [_stopPushButton setTitle:PLVLocalizedString(@"下课") forState:UIControlStateNormal];
         [_stopPushButton setTitleColor:normalColor forState:UIControlStateNormal];
         [_stopPushButton addTarget:self action:@selector(stopPushButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _stopPushButton.hidden = YES;
@@ -403,7 +442,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         _linkMicMenu = [[PLVLSLinkMicMenuPopup alloc] initWithMenuFrame:rect buttonFrame:buttonRect];
         __weak typeof(self) weakSelf = self;
         _linkMicMenu.dismissHandler = ^{
-            weakSelf.linkmicButton.selected = NO;
+            weakSelf.linkmicButton.selected = [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Unknown;
         };
         
         _linkMicMenu.videoLinkMicButtonHandler = ^BOOL(BOOL start) {
@@ -425,30 +464,55 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     return _linkMicMenu;
 }
 
+- (PLVLSLinkMicGuestMenuPopup *)guestLinkMicMenu {
+    if (!_guestLinkMicMenu) {
+        CGFloat centerX = self.frame.origin.x + self.linkmicButton.frame.origin.x + self.linkmicButton.frame.size.width / 2.0; // 作为连麦选择弹层中心位置
+        CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
+        CGRect rect = CGRectMake(centerX - 106 / 2.0, originY, 106, 48);
+        CGRect buttonRect = [self convertRect:self.linkmicButton.frame toView:self.superview];
+        _guestLinkMicMenu = [[PLVLSLinkMicGuestMenuPopup alloc] initWithMenuFrame:rect buttonFrame:buttonRect];
+        __weak typeof(self) weakSelf = self;
+        _guestLinkMicMenu.dismissHandler = ^{
+            weakSelf.linkmicButton.selected = NO;
+        };
+        _guestLinkMicMenu.cancelRequestLinkMicButtonHandler = ^{
+            [weakSelf setCurrentLinkMicButtonStatus:PLVLSStatusLinkMicButtonStatus_Default];
+            [weakSelf callbackForRequestJoinLinkMic:NO];
+        };
+        _guestLinkMicMenu.closeLinkMicButtonHandler = ^{
+            if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(statusAreaView_didTapCloseLinkMicButton)]) {
+                [weakSelf.delegate statusAreaView_didTapCloseLinkMicButton];
+            }
+        };
+    }
+    return _guestLinkMicMenu;
+}
+    
 - (PLVLSLinkMicApplyTipsView *)linkMicApplyView {
     if (!_linkMicApplyView) {
+        _linkMicApplyView = [[PLVLSLinkMicApplyTipsView alloc] init];
         CGFloat centerX = self.memberButton.center.x;// 作为连麦选择弹层中心位置
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         // iPad需要减去头部状态栏的安全距离
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
             originY -= PLVLSUtils.safeTopPad;
         }
-        CGRect rect = CGRectMake(centerX - 136 / 2.0, originY, 136,  52);
-        
-        _linkMicApplyView = [[PLVLSLinkMicApplyTipsView alloc] initWithFrame:rect];
+        CGRect rect = CGRectMake(centerX - _linkMicApplyView.viewWidth / 2.0, originY, _linkMicApplyView.viewWidth,  52);
+        _linkMicApplyView.frame = rect;
     }
     return _linkMicApplyView;
 }
 
 - (PLVLSNetworkStatePopup *)networkStatePopup {
     if (!_networkStatePopup) {
-        CGFloat width = 196.0;
-        CGFloat height = 76.0;
+        _networkStatePopup = [[PLVLSNetworkStatePopup alloc] init];
+        CGFloat width = _networkStatePopup.bubbleSize.width;
+        CGFloat height = _networkStatePopup.bubbleSize.height;
         CGFloat originX = MAX(0, self.frame.origin.x + self.signalButton.frame.origin.x + self.signalButton.frame.size.width - width); // 弹层与按钮右侧对齐
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
         CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
-        _networkStatePopup = [[PLVLSNetworkStatePopup alloc] initWithBubbleFrame:rect buttonFrame:buttonRect];
+        [_networkStatePopup setupBubbleFrame:rect buttonFrame:buttonRect];
     }
     return _networkStatePopup;
 }
@@ -468,31 +532,31 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     
     switch (netState) {
         case PLVLSStatusBarNetworkQuality_Unknown:
-            title = @"检测中";
+            title = PLVLocalizedString(@"检测中");
             imageName = @"plvls_status_signal_good_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Down:
-            title = @"网络断开";
+            title = PLVLocalizedString(@"网络断开");
             imageName = @"plvls_status_signal_bad_icon";
             break;
         case PLVLSStatusBarNetworkQuality_VBad:
-            title = @"网络很差";
+            title = PLVLocalizedString(@"网络很差");
             imageName = @"plvls_status_signal_bad_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Poor:
-            title = @"网络较差";
+            title = PLVLocalizedString(@"网络较差");
             imageName = @"plvls_status_signal_fine_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Bad:
-            title = @"网络一般";
+            title = PLVLocalizedString(@"网络一般");
             imageName = @"plvls_status_signal_fine_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Good:
-            title = @"网络良好";
+            title = PLVLocalizedString(@"网络良好");
             imageName = @"plvls_status_signal_good_icon";
             break;
         case PLVLSStatusBarNetworkQuality_Excellent:
-            title = @"网络优秀";
+            title = PLVLocalizedString(@"网络优秀");
             imageName = @"plvls_status_signal_good_icon";
             break;
     }
@@ -500,6 +564,51 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     self.signalButton.text = title;
     [self.signalButton setImage:[PLVLSUtils imageForStatusResource:imageName]];
     [self.signalButton enableWarningMode:netState == PLVLSStatusBarNetworkQuality_Down];
+    self.signalButton.frame = CGRectMake(self.signalButton.frame.origin.x, self.signalButton.frame.origin.y, self.signalButton.buttonCalWidth, 20);
+}
+
+- (void)setCurrentLinkMicButtonStatus:(PLVLSStatusLinkMicButtonStatus)linkMicButtonStatus {
+    if (!self.isGuest) {  return; }
+    
+    _linkMicButtonStatus = linkMicButtonStatus;
+    // 销毁计时器
+    if (linkMicButtonStatus == PLVLSStatusLinkMicButtonStatus_HandUp) {
+        [self createRequestLinkMicTimer];
+    } else {
+        [self destroyRequestLinkMicTimer];
+    }
+    
+    // 更新pop菜单
+    if (self.linkmicButton.isSelected) {
+        [self.guestLinkMicMenu updateMenuPopupInLinkMic:linkMicButtonStatus == PLVLSStatusLinkMicButtonStatus_Joined];
+    }
+    
+    // 更新连麦按钮状态
+    UIImageView *buttonImageView = self.linkmicButton.imageView;
+    if (buttonImageView.isAnimating) {
+        [buttonImageView stopAnimating];
+    }
+    buttonImageView.animationImages = nil;
+    if (_linkMicButtonStatus == PLVLSStatusLinkMicButtonStatus_HandUp) {
+        UIImageView *buttonImageView = self.linkmicButton.imageView;
+        NSMutableArray *imageArray = [NSMutableArray arrayWithCapacity:3];
+        for (NSInteger i = 0; i < 3; i ++) {
+            [imageArray addObject:[PLVLSUtils imageForStatusResource:[NSString stringWithFormat:@"plvls_status_linkmic_wait_icon_0%ld.png", i]]];
+        }
+        [buttonImageView setAnimationImages:[imageArray copy]];
+        [buttonImageView setAnimationDuration:1];
+        [buttonImageView startAnimating];
+    } else {
+        UIImage *normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn"];
+        UIImage *highlightImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmic_btn_selected"];
+        if (_linkMicButtonStatus == PLVLSStatusLinkMicButtonStatus_Joined) {
+            normalImage = [PLVLSUtils imageForStatusResource:@"plvls_status_linkmicjoined_btn"];
+            highlightImage = normalImage;
+        }
+        [self.linkmicButton setImage:normalImage forState:UIControlStateNormal];
+        [self.linkmicButton setImage:highlightImage forState:UIControlStateHighlighted];
+        [self.linkmicButton setImage:highlightImage forState:UIControlStateSelected];
+    }
 }
 
 #pragma mark 判断是否有连麦管理权限
@@ -538,7 +647,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     if (self.isGuest &&
         !self.isSpeaker) {
         if (button == self.documentButton) {
-            [PLVLSUtils showToastInHomeVCWithMessage:@"被授权后才可以使用课件功能"];
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"被授权后才可以使用课件功能")];
         }
         return;
     }
@@ -556,11 +665,42 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         [self.linkMicApplyView dismiss];
     }
     
-    self.linkmicButton.selected = !self.linkmicButton.selected;
-    if (self.linkmicButton.selected) {
-        [self.linkMicMenu showAtView:self.superview];
+    if (self.isGuest) {
+        self.linkmicButton.selected = !self.linkmicButton.selected;
+        if (!self.inClass) {
+            self.linkmicButton.selected = !self.linkmicButton.selected;
+            [PLVLSUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"上课前无法发起连麦")];
+            return;
+        }
+        
+        if (self.linkmicButton.selected) {
+            if (self.linkMicButtonStatus == PLVLSStatusLinkMicButtonStatus_Default) {
+                self.linkmicButton.selected = !self.linkmicButton.selected;
+                [self setCurrentLinkMicButtonStatus:PLVLSStatusLinkMicButtonStatus_HandUp];
+                [self callbackForRequestJoinLinkMic:YES];
+            } else {
+                [self.guestLinkMicMenu updateMenuPopupInLinkMic:self.linkMicButtonStatus == PLVLSStatusLinkMicButtonStatus_Joined];
+                [self.guestLinkMicMenu showAtView:self.superview];
+            }
+        } else {
+            [self.guestLinkMicMenu dismiss];
+        }
     } else {
-        [self.linkMicMenu dismiss];
+        if([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
+            // 防止短时间内重复点击，1s间隔内的点击会直接忽略
+            NSTimeInterval curTimeInterval = [PLVFdUtil curTimeInterval];
+            if (curTimeInterval - self.linkMicBtnLastTimeInterval > 1000) {
+                if (self.delegate && [self.delegate respondsToSelector:@selector(statusAreaView_didTapAudienceRaiseHandButton:)]) {
+                    [self.delegate statusAreaView_didTapAudienceRaiseHandButton:!self.linkmicButton.selected];
+                }
+            }
+            self.linkMicBtnLastTimeInterval = curTimeInterval;
+
+        } else if (self.linkMicMenu.superview) {
+            [self.linkMicMenu dismiss];
+        } else {
+            [self.linkMicMenu showAtView:self.superview];
+        }
     }
 }
 
@@ -569,6 +709,7 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
         [self.linkMicApplyView dismiss];
     }
     
+    self.memberButton.selected = YES;
     self.hasNewMemberState = NO;
     self.memberRedDot.hidden = YES;
     if (self.delegate) {
@@ -601,6 +742,23 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     }
 }
 
+#pragma mark Timer
+- (void)requestLinkMicTimerAction {
+    self.requestLinkMicLimitTs -= 1;
+    if (self.requestLinkMicLimitTs <= 0) {
+        [self setCurrentLinkMicButtonStatus:PLVLSStatusLinkMicButtonStatus_Default];
+        [self callbackForRequestJoinLinkMic:NO];
+        [self destroyRequestLinkMicTimer];
+    }
+}
+
+#pragma mark Callback
+- (void)callbackForRequestJoinLinkMic:(BOOL)requestJoin {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(statusAreaView_didRequestJoinLinkMic:)]) {
+        [self.delegate statusAreaView_didRequestJoinLinkMic:requestJoin];
+    }
+}
+
 #pragma mark - Public
 
 - (void)startPushButtonEnable:(BOOL)enable {
@@ -614,8 +772,16 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     self.signalButton.userInteractionEnabled = self.inClass;
     self.timeLabel.text = @"00:00:00";
     
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (!start) {
         [self.linkMicMenu resetStatus];
+        [self setCurrentLinkMicButtonStatus:PLVLSStatusLinkMicButtonStatus_Default];
+    } else if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVFdUtil checkStringUseable:roomData.userDefaultOpenMicLinkEnabled] && !roomData.linkmicNewStrategyEnabled) {
+        if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"audio"]) {
+            [self.linkMicMenu audioLinkMicBtnAction];
+        } else if ([roomData.userDefaultOpenMicLinkEnabled isEqualToString:@"video"]) {
+            [self.linkMicMenu videoLinkMicBtnAction];
+        }
     }
     
     [self layoutSubviews];
@@ -644,6 +810,9 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
 - (void)receivedNewJoinLinkMicRequest{
     if ([self canManagerLinkMic]) {
         [self.linkMicApplyView showAtView:self];
+        if (!self.memberButton.selected) {
+            [self hasNewMember];
+        }
     }
 }
 
@@ -670,8 +839,28 @@ static NSString *kGustDefaultTintColor  = @"0x888888";
     }
 }
 
+- (void)updateStatusViewLinkMicStatus:(PLVLinkMicUserLinkMicStatus)status {
+    PLVLSStatusLinkMicButtonStatus linkMicButtonStatus = PLVLSStatusLinkMicButtonStatus_Default;
+    if (status == PLVLinkMicUserLinkMicStatus_HandUp) {
+        linkMicButtonStatus = PLVLSStatusLinkMicButtonStatus_HandUp;
+    } else if (status == PLVLinkMicUserLinkMicStatus_Joined) {
+        linkMicButtonStatus = PLVLSStatusLinkMicButtonStatus_Joined;
+    }
+    if (self.linkMicButtonStatus != linkMicButtonStatus) {
+        [self setCurrentLinkMicButtonStatus:linkMicButtonStatus];
+    }
+}
+
 - (void)updateStatistics:(PLVRTCStatistics *)statistics {
     [self.networkStatePopup updateRTT:statistics.rtt upLoss:statistics.upLoss downLoss:statistics.downLoss];
+}
+
+- (void)changeMemberButtonSelectedState:(BOOL)selected {
+    self.memberButton.selected = selected;
+}
+
+- (void)changeLinkmicButtonSelectedState:(BOOL)selected {
+    self.linkmicButton.selected = selected;
 }
 
 @end

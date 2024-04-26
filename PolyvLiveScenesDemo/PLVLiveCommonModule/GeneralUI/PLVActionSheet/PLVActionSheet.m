@@ -7,6 +7,7 @@
 //
 
 #import "PLVActionSheet.h"
+#import "PLVMultiLanguageManager.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -14,7 +15,7 @@ static const CGFloat kRowH = 48.0f;
 static const CGFloat kRowLineH = 0.5f;
 static const CGFloat kSeparatorH = 6.0f;
 static const CGFloat kTitleFontSize = 14.0f;
-static const CGFloat kBtnTitleFontSize = 18.0f;
+static const CGFloat kBtnTitleFontSize = 16.0f;
 static const NSTimeInterval kAnimateDuration = 0.3f;
 
 #define bgColor [UIColor colorWithRed:43/255.0 green:44/255.0 blue:53/255.0 alpha:1.0] // 按钮背景色
@@ -148,7 +149,7 @@ static const NSTimeInterval kAnimateDuration = 0.3f;
             btn.tag = i + 1;
             btn.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:kBtnTitleFontSize];
             [btn setTitle:otherBtnTitles[i] forState:UIControlStateNormal];
-            [btn setTitleColor:[UIColor colorWithRed:64.0f/255.0f green:64.0f/255.0f blue:64.0f/255.0f alpha:1.0f] forState:UIControlStateNormal];
+            [btn setTitleColor:[UIColor colorWithRed:255.0f/255.0f green:255.0f/255.0f blue:255.0f/255.0f alpha:1.0f] forState:UIControlStateNormal];
             [btn setBackgroundImage:normalImg forState:UIControlStateNormal];
             [btn setBackgroundImage:highlightedImg forState:UIControlStateHighlighted];
             [btn addTarget:self action:@selector(btnAction:) forControlEvents:UIControlEventTouchUpInside];
@@ -167,7 +168,7 @@ static const NSTimeInterval kAnimateDuration = 0.3f;
         cancelBtn.autoresizingMask = UIViewAutoresizingFlexibleWidth;
         cancelBtn.tag = 0;
         cancelBtn.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:kBtnTitleFontSize];
-        [cancelBtn setTitle:cancelBtnTitle ?: @"取消" forState:UIControlStateNormal];
+        [cancelBtn setTitle:cancelBtnTitle ?: PLVLocalizedString(@"取消") forState:UIControlStateNormal];
         [cancelBtn setTitleColor:[UIColor colorWithRed:173/255.0 green:173/255.0 blue:192/255.0 alpha:1.0] forState:UIControlStateNormal];
         [cancelBtn setBackgroundImage:normalImg forState:UIControlStateNormal];
         [cancelBtn setBackgroundImage:highlightedImg forState:UIControlStateHighlighted];

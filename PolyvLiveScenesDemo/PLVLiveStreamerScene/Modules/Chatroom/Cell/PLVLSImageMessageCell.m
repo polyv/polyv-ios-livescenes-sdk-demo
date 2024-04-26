@@ -10,6 +10,7 @@
 
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // UI
 #import "PLVPhotoBrowser.h"
@@ -166,8 +167,14 @@
     
     PLVImageMessage *message = (PLVImageMessage *)model.message;
     // 设置昵称文本
-    NSAttributedString *nickLabelString = [PLVLSImageMessageCell nickLabelAttributedStringWithUser:model.user
-                                                                                         loginUserId:self.loginUserId source:message.source];
+    NSMutableAttributedString *nickLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.attributeString;
+    } else {
+        nickLabelString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLSImageMessageCell nickLabelAttributedStringWithUser:model.user
+                                                                                                                                   loginUserId:self.loginUserId source:message.source]];
+        model.attributeString = nickLabelString;
+    }
     self.nickLabel.attributedText = nickLabelString;
     
     self.prohibitImageView.hidden = ![model isProhibitMsg];
@@ -181,7 +188,7 @@
 
 #pragma mark UI - ViewModel
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
                                               loginUserId:(NSString *)loginUserId
                                                    source:(NSString *)source {
@@ -192,7 +199,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
@@ -209,7 +216,7 @@
     if ([PLVFdUtil checkStringUseable:source] &&
         [source isEqualToString:@"extend"]) {
         
-        UIImage *image = [PLVLSUtils imageForChatroomResource:@"plvls_chatroom_remind_tag"];
+        UIImage *image = [PLVLSUtils imageForChatroomResource:PLVLocalizedString(@"plvls_chatroom_remind_tag")];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
         CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
@@ -358,7 +365,7 @@
 }
 
 + (NSString *)prohibitWordTip {
-    return @"图片不合法";
+    return PLVLocalizedString(@"图片不合法");
 }
 
 @end

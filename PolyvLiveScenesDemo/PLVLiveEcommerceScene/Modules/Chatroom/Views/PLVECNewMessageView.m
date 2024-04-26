@@ -8,6 +8,7 @@
 
 #import "PLVECNewMessageView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVECNewMessageView ()
@@ -28,6 +29,8 @@
         self.layer.masksToBounds = YES;
         
         [self addSubview:self.label];
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction:)];
+        [self addGestureRecognizer:tapGesture];
     }
     return self;
 }
@@ -44,7 +47,7 @@
         _label.textColor = [PLVColorUtil colorFromHexString:@"#FFA611"];
         _label.font = [UIFont systemFontOfSize:12];
         _label.textAlignment = NSTextAlignmentCenter;
-        _label.text = @"查看新消息";
+        _label.text = PLVLocalizedString(@"查看新消息");
     }
     return _label;
 }
@@ -66,6 +69,10 @@
 }
 
 #pragma mark - Private
-
+#pragma mark - Action
+- (void)tapAction:(UIGestureRecognizer *)gestureRecognizer {
+    [self hidden];
+    _tapActionHandler ? _tapActionHandler() : nil;
+}
 
 @end

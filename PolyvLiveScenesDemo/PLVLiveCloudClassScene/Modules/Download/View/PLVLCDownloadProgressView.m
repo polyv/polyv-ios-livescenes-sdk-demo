@@ -8,6 +8,7 @@
 
 #import "PLVLCDownloadProgressView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCDownloadProgressView ()
 
@@ -49,29 +50,29 @@
     
     if (self.progressStyle == PLVLCProgressStyleDownload) {
         // 立即下载
-        self.progressForegroundLabel.text = @"立即下载";
+        self.progressForegroundLabel.text = PLVLocalizedString(@"立即下载");
         self.progressBackgroundLabel.text = @"";
         self.progressView.frame = self.bounds;
         self.progressView.backgroundColor = [PLVColorUtil colorFromHexString:@"#3082FE"];
         self.layer.borderWidth = 0;
     }else if (self.progressStyle == PLVLCProgressStyleDownloaded) {
         // 已下载
-        self.progressForegroundLabel.text = @"已下载";
+        self.progressForegroundLabel.text = PLVLocalizedString(@"已下载");
         self.progressBackgroundLabel.text = @"";
         self.progressView.frame = self.bounds;
         self.progressView.backgroundColor = [PLVColorUtil colorFromHexString:@"#3082FE" alpha:0.5];
         self.layer.borderWidth = 0;
     }else if (self.progressStyle == PLVLCProgressStyleDownloadStop) {
         // 已暂停
-        self.progressForegroundLabel.text = @"已暂停";
-        self.progressBackgroundLabel.text = @"已暂停";
+        self.progressForegroundLabel.text = PLVLocalizedString(@"已暂停");
+        self.progressBackgroundLabel.text = PLVLocalizedString(@"已暂停");
         self.progressView.frame = CGRectMake(0, 0, self.bounds.size.width * self.downloadProgress, self.bounds.size.height);
         self.progressView.backgroundColor = [PLVColorUtil colorFromHexString:@"#3082FE"];
         self.layer.borderWidth = 1;
     }else {
         // 下载中
-        self.progressForegroundLabel.text = [NSString stringWithFormat:@"下载中 %.0f%%", self.downloadProgress * 100];
-        self.progressBackgroundLabel.text = [NSString stringWithFormat:@"下载中 %.0f%%", self.downloadProgress * 100];
+        self.progressForegroundLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"下载中 %.0f%%"), self.downloadProgress * 100];
+        self.progressBackgroundLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"下载中 %.0f%%"), self.downloadProgress * 100];
         self.progressView.frame = CGRectMake(0, 0, self.bounds.size.width * self.downloadProgress, self.bounds.size.height);
         self.progressView.backgroundColor = [PLVColorUtil colorFromHexString:@"#3082FE"];
         self.layer.borderWidth = 1;

@@ -9,6 +9,7 @@
 #import "PLVLCMediaDanmuSettingCell.h"
 
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCMediaDanmuSettingCellSlider : UISlider
@@ -133,8 +134,8 @@
     CGFloat leftPadding = 32.0;
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     self.optionTitleLabel.textAlignment = NSTextAlignmentLeft;
-    self.optionTitleLabel.frame = CGRectMake(leftPadding, 0, 60, 14);
-    self.itemLabel.frame = CGRectMake(viewWidth - 66 - 30, CGRectGetMaxY(self.optionTitleLabel.frame) + 14, 30, 14);
+    self.optionTitleLabel.frame = CGRectMake(leftPadding, 0, 100, 14);
+    self.itemLabel.frame = CGRectMake(viewWidth - 66 - 58, CGRectGetMaxY(self.optionTitleLabel.frame) + 14, 62, 14);
     self.slider.frame = CGRectMake(leftPadding, CGRectGetMinY(self.itemLabel.frame), CGRectGetMinX(self.itemLabel.frame) - leftPadding - 14, 14);
 }
 
@@ -179,7 +180,7 @@
 - (UILabel *)optionTitleLabel {
     if (!_optionTitleLabel) {
         _optionTitleLabel = [[UILabel alloc] init];
-        _optionTitleLabel.text = @"弹幕速度";
+        _optionTitleLabel.text = PLVLocalizedString(@"弹幕速度");
         _optionTitleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
         _optionTitleLabel.textColor = PLV_UIColorFromRGB(@"#C2C2C2");
     }
@@ -189,7 +190,7 @@
 - (UILabel *)itemLabel {
     if (!_itemLabel) {
         _itemLabel = [[UILabel alloc] init];
-        _itemLabel.text = @"标准";
+        _itemLabel.text = PLVLocalizedString(@"标准");
         _itemLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:14];
         _itemLabel.textColor = PLV_UIColorFromRGB(@"#FFFFFF");
     }

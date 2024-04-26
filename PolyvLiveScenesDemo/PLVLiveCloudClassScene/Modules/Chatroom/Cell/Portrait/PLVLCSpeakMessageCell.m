@@ -8,6 +8,8 @@
 
 #import "PLVLCSpeakMessageCell.h"
 #import "PLVChatTextView.h"
+#import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 #import <PLVLiveScenesSDK/PLVSpeakMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
@@ -89,14 +91,21 @@
         return;
     }
     
-    NSMutableAttributedString *contentLabelString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:model.message
-                                                                                                              user:model.user];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:model.message
+                                                                                       user:model.user];
+        model.attributeString = contentLabelString;
+    };
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
 }
 
 #pragma mark UI - ViewModel
 
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(id)message user:(PLVChatUser *)user {
     NSString *content = @"";
     if ([message isKindOfClass:[PLVSpeakMessage class]]) {
@@ -131,8 +140,15 @@
     CGFloat bubbleXPadding = 12;//textView与bubble的内部左右间距均为12
     CGFloat maxTextViewWidth = cellWidth - originX - xPadding - bubbleXPadding * 2;
     
-    NSMutableAttributedString *contentLabelString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:model.message
-                                                                                                              user:model.user];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:model.message
+                                                                                       user:model.user];
+        model.attributeString = contentLabelString;
+    }
+    
     CGSize contentLabelSize = [[contentLabelString copy] boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat textViewHeight = 8 + contentLabelSize.height + 8; // textView文本与textView的内部有上下间距8
     
@@ -161,6 +177,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVSpeakMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview.superview afterDelay:3.0];
 }
 
 

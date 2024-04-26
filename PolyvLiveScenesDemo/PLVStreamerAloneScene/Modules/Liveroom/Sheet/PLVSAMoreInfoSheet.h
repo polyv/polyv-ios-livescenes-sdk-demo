@@ -47,6 +47,18 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 弱网处理 按钮 触发回调
 - (void)moreInfoSheetDidTapBadNetworkButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 混流布局 按钮 触发回调
+- (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
+/// 点击 允许/关闭观众连麦 按钮 触发回调
+- (void)moreInfoSheetDidTapAllowRaiseHandButton:(PLVSAMoreInfoSheet *)moreInfoSheet wannaChangeAllowRaiseHand:(BOOL)allowRasieHand;
+
+/// 点击 连麦设置按钮 触发回调
+- (void)moreInfoSheetDidTapLinkMicSettingButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
+/// 点击 观众下麦 触发回调
+- (void)moreInfoSheetDidTapRemoveAllAudiencesButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层
@@ -72,6 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前 流分辨率 (清晰度)
 @property (nonatomic, assign) PLVResolutionType streamQuality;
 
+/// 当前 推流质量等级 (清晰度)
+@property (nonatomic, copy) NSString *streamQualityLevel;
+
 /// 当前 全体禁言 当前是否开启
 @property (nonatomic, assign) BOOL closeRoom;
 
@@ -84,6 +99,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 改变屏幕共享按钮选中状态
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
+
+/// 改变 开启/关闭观众连麦按钮 选中状态
+- (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState;
 
 @end
 

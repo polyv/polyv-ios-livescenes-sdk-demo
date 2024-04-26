@@ -9,15 +9,18 @@
 #import "PLVSAStreamerSettingView.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVSABitRateSheet.h"
 
 #define TEXT_MAX_LENGTH 50
 
-static NSString *const EnterTips = @"点击输入直播标题";
+static NSString *const kSettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 
 @interface PLVSAStreamerSettingView ()<
 UITextViewDelegate,
-PLVSABitRateSheetDelegate
+UIGestureRecognizerDelegate,
+PLVSABitRateSheetDelegate,
+PLVSAMixLayoutSheetDelegate
 >
 
 #pragma mark UI
@@ -49,6 +52,8 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, strong) UIButton *orientationButton;
 /// 开播画面比例
 @property (nonatomic, strong) UIButton *streamScaleButton;
+/// 混流布局
+@property (nonatomic, strong) UIButton *mixLayoutButton;
 /// 直播名称
 @property (nonatomic, strong) UILabel *channelNameLable;
 /// 输入框蒙层（负责承载频道名称输入框和频道名称剩余可输入的字符数）
@@ -59,6 +64,8 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, strong) UITextView *channelNameTextView;
 /// 清晰度选择面板
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
+/// 混流布局选择面板
+@property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet;
 /// 文本滚动视图（为了兼容手机端横屏标题太长时，显示不美观的问题）
 @property (nonatomic, strong) UIScrollView *scrollView;
 /// 美颜开关
@@ -69,8 +76,12 @@ PLVSABitRateSheetDelegate
 @property (nonatomic, assign) CGFloat channelNameLableHeight;
 /// 初始化时的默认清晰度
 @property (nonatomic, assign) PLVResolutionType resolutionType;
+/// 初始化时的默认混流布局
+@property (nonatomic, assign) PLVMixLayoutType mixLayoutType;
 /// 当前控制器是否可以进行屏幕旋转
 @property (nonatomic, assign) BOOL canAutorotate;
+/// 当前是否显示混流布局
+@property (nonatomic, assign) BOOL canMixLayout;
 /// 当前是否显示推流画面比例
 @property (nonatomic, assign, readonly) BOOL showStreamScale;
 
@@ -91,6 +102,7 @@ PLVSABitRateSheetDelegate
         // 初始化设备方向为 竖屏
         [[PLVSAUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
         UITapGestureRecognizer *tapGes = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(endEditingAction:)];
+        tapGes.delegate = self;
         [self addGestureRecognizer:tapGes];
     }
     return self;
@@ -148,6 +160,7 @@ PLVSABitRateSheetDelegate
     [self.configView addSubview:self.bitRateButton];
     [self.configView addSubview:self.orientationButton];
     [self.configView addSubview:self.streamScaleButton];
+    [self.configView addSubview:self.mixLayoutButton];
 }
 
 - (void)updateUI {
@@ -216,7 +229,10 @@ PLVSABitRateSheetDelegate
     self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.scrollView) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
     
     /// 底部按钮
-    NSInteger configButtonCount = self.showStreamScale ? 5 : 4;
+    NSInteger configButtonCount = self.showStreamScale ? 6 : 5;
+    if (!self.showMixLayout) {
+        configButtonCount -= 1;
+    }
     CGSize buttonSize = CGSizeMake(32, 58);
     CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
     CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * configButtonCount)) / (configButtonCount + 1) ;
@@ -226,13 +242,15 @@ PLVSABitRateSheetDelegate
     self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
     self.streamScaleButton.hidden = !self.showStreamScale;
     self.streamScaleButton.frame = CGRectMake(UIViewGetRight(self.orientationButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.mixLayoutButton.hidden = !self.showMixLayout;
+    self.mixLayoutButton.frame = !self.showStreamScale ? self.streamScaleButton.frame : CGRectMake(UIViewGetRight(self.streamScaleButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
 }
 
 /// 初始化默认清晰度
 - (void)initBitRate:(PLVResolutionType)resolutionType {
     PLVResolutionType maxResolution = [PLVRoomDataManager sharedManager].roomData.maxResolution;
     self.resolutionType = resolutionType > maxResolution ? maxResolution : resolutionType;
-    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType];
+    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType streamQualityLevel:self.defaultQualityLevel];
 }
 
 /// 初始化直播间标题
@@ -295,27 +313,50 @@ PLVSABitRateSheetDelegate
 }
 
 /// 根据当前清晰度改变清晰度按钮标题和icon
-- (void)changeBitRateButtonTitleAndImageWithBitRate:(PLVResolutionType)resolutionType {
-    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParams = [PLVLiveVideoConfig sharedInstance].videoParams;
-    int i = (int)resolutionType / 4.0;
-    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled && [PLVFdUtil checkArrayUseable:videoParams] && i < videoParams.count && i >= 0) {
-        [self.bitRateButton setTitle:videoParams[i].qualityName forState:UIControlStateNormal];
+- (void)changeBitRateButtonTitleAndImageWithBitRate:(PLVResolutionType)resolutionType streamQualityLevel:(NSString * _Nullable)streamQualityLevel {
+    NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParamsArray = [PLVLiveVideoConfig sharedInstance].videoParams;
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled &&
+        [PLVFdUtil checkArrayUseable:videoParamsArray] &&
+        [PLVFdUtil checkStringUseable:streamQualityLevel]) {
+        __block PLVClientPushStreamTemplateVideoParams *videoParam;
+        [videoParamsArray enumerateObjectsUsingBlock:^(PLVClientPushStreamTemplateVideoParams * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+            if ([streamQualityLevel isEqualToString:obj.qualityLevel]) {
+                videoParam = obj;
+                *stop = YES;
+            }
+        }];
+        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) {
+            [self.bitRateButton setTitle:videoParam.qualityName forState:UIControlStateNormal];
+        } else {
+            [self.bitRateButton setTitle:videoParam.qualityEnName forState:UIControlStateNormal];
+        }
+        if ([videoParam.qualityLevel containsString:@"FHD"]) {
+            resolutionType = PLVResolutionType1080P;
+        } else if ([videoParam.qualityLevel containsString:@"SHD"]) {
+            resolutionType = PLVResolutionType720P;
+        } else if ([videoParam.qualityLevel containsString:@"HSD"]) {
+            resolutionType = PLVResolutionType480P;
+        } else if ([videoParam.qualityLevel containsString:@"LSD"]) {
+            resolutionType = PLVResolutionType360P;
+        } else {
+            resolutionType = PLVResolutionType180P;
+        }
     } else {
         switch (resolutionType) {
             case PLVResolutionType1080P:{
-                [self.bitRateButton setTitle:@"超高清" forState:UIControlStateNormal];
+                [self.bitRateButton setTitle:PLVLocalizedString(@"超高清") forState:UIControlStateNormal];
                 break;
             }
             case PLVResolutionType720P:{
-                [self.bitRateButton setTitle:@"超清" forState:UIControlStateNormal];
+                [self.bitRateButton setTitle:PLVLocalizedString(@"超清") forState:UIControlStateNormal];
                 break;
             }
             case PLVResolutionType360P:{
-                [self.bitRateButton setTitle:@"高清" forState:UIControlStateNormal];
+                [self.bitRateButton setTitle:PLVLocalizedString(@"高清") forState:UIControlStateNormal];
                 break;
             }
             case PLVResolutionType180P:{
-                [self.bitRateButton setTitle:@"标清" forState:UIControlStateNormal];
+                [self.bitRateButton setTitle:PLVLocalizedString(@"标清") forState:UIControlStateNormal];
                 break;
             }
             default:
@@ -323,21 +364,37 @@ PLVSABitRateSheetDelegate
         }
     }
     
-    if (i == 0) {
+    if (resolutionType == PLVResolutionType180P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sd"]  forState:UIControlStateNormal];
-    } else if (i == 1) {
+    } else if (resolutionType == PLVResolutionType360P) {
+        [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sd"]  forState:UIControlStateNormal];
+    } else if (resolutionType == PLVResolutionType480P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_hd"]  forState:UIControlStateNormal];
-    } else if (i == 2) {
+    } else if (resolutionType == PLVResolutionType720P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_fhd"]  forState:UIControlStateNormal];
-    } else if (i >= 3) {
+    } else if (resolutionType == PLVResolutionType1080P) {
         [self.bitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_uhd"]  forState:UIControlStateNormal];
     }
-    
 }
 
 - (void)showConfigView:(BOOL)show {
     self.configView.hidden = !show;
     self.maskView.hidden = show;
+}
+
+/// 读取本地混流布局配置
+- (PLVMixLayoutType)getLocalMixLayoutType {
+    // 如果本地有记录优先读取
+    NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kSettingMixLayoutKey, [PLVRoomDataManager sharedManager].roomData.channelId];
+    NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:mixLayoutKey];
+    if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
+        PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
+        if (saveMixLayout >= 1 && saveMixLayout <=3) {
+            return saveMixLayout;
+        }
+    }
+    // 默认混流配置
+    return [PLVRoomDataManager sharedManager].roomData.defaultMixLayoutType;
 }
 
 #pragma mark Callback
@@ -369,7 +426,7 @@ PLVSABitRateSheetDelegate
         _startButton.layer.cornerRadius = 25;
         _startButton.layer.masksToBounds = YES;
         _startButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:16];
-        NSString *buttonTitle = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? @"开始直播" : @"进入直播间";
+        NSString *buttonTitle = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ? PLVLocalizedString(@"开始直播") : PLVLocalizedString(@"进入直播间");
         [_startButton setTitle:buttonTitle forState:UIControlStateNormal];
         [_startButton addTarget:self action:@selector(startButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         [_startButton.layer insertSublayer:self.gradientLayer atIndex:0];
@@ -409,7 +466,7 @@ PLVSABitRateSheetDelegate
 
 - (UIButton *)cameraReverseButton {
     if (!_cameraReverseButton) {
-        _cameraReverseButton = [self buttonWithTitle:@"翻转" NormalImageString:@"plvsa_liveroom_btn_cameraReverse" selectedImageString:@"plvsa_liveroom_btn_cameraReverse"];
+        _cameraReverseButton = [self buttonWithTitle:PLVLocalizedString(@"翻转") NormalImageString:@"plvsa_liveroom_btn_cameraReverse" selectedImageString:@"plvsa_liveroom_btn_cameraReverse"];
         _cameraReverseButton.enabled = NO;
         [_cameraReverseButton addTarget:self action:@selector(cameraReverseAction:) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -418,18 +475,19 @@ PLVSABitRateSheetDelegate
 
 - (UIButton *)mirrorButton {
     if (!_mirrorButton) {
-        _mirrorButton = [self buttonWithTitle:@"镜像" NormalImageString:@"plvsa_liveroom_btn_mirrorClose" selectedImageString:@"plvsa_liveroom_btn_mirrorOpen"];
+        _mirrorButton = [self buttonWithTitle:PLVLocalizedString(@"镜像") NormalImageString:@"plvsa_liveroom_btn_mirrorClose" selectedImageString:@"plvsa_liveroom_btn_mirrorOpen"];
         // 默认开启镜像
         _mirrorButton.selected = YES;
         _mirrorButton.enabled = NO;
         [_mirrorButton addTarget:self action:@selector(mirrorAction:) forControlEvents:UIControlEventTouchUpInside];
+        _mirrorButton.titleEdgeInsets = UIEdgeInsetsMake(_mirrorButton.imageView.frame.size.height + 14, - 67, 0, -38);
     }
     return _mirrorButton;
 }
 
 - (UIButton *)bitRateButton {
     if (!_bitRateButton) {
-        _bitRateButton = [self buttonWithTitle:@"高清" NormalImageString:@"plvsa_liveroom_btn_hd" selectedImageString:@"plvsa_liveroom_btn_hd"];
+        _bitRateButton = [self buttonWithTitle:PLVLocalizedString(@"高清") NormalImageString:@"plvsa_liveroom_btn_hd" selectedImageString:@"plvsa_liveroom_btn_hd"];
         [_bitRateButton addTarget:self action:@selector(bitRateAction:) forControlEvents:UIControlEventTouchUpInside];
         _bitRateButton.titleEdgeInsets = UIEdgeInsetsMake(_bitRateButton.imageView.frame.size.height + 14, - 67, 0, -38);
     }
@@ -438,7 +496,7 @@ PLVSABitRateSheetDelegate
 
 - (UIButton *)orientationButton {
     if (!_orientationButton) {
-        _orientationButton = [self buttonWithTitle:@"横竖屏" NormalImageString:@"plvsa_liveroom_btn_orientation" selectedImageString:@"plvsa_liveroom_btn_orientation"];
+        _orientationButton = [self buttonWithTitle:PLVLocalizedString(@"横竖屏") NormalImageString:@"plvsa_liveroom_btn_orientation" selectedImageString:@"plvsa_liveroom_btn_orientation"];
         [_orientationButton addTarget:self action:@selector(orientationAction:) forControlEvents:UIControlEventTouchUpInside];
         _orientationButton.titleEdgeInsets = UIEdgeInsetsMake(_orientationButton.imageView.frame.size.height + 14, - 67, 0, -38);
     }
@@ -447,7 +505,7 @@ PLVSABitRateSheetDelegate
 
 - (UIButton *)streamScaleButton {
     if (!_streamScaleButton) {
-        _streamScaleButton = [self buttonWithTitle:@"开播比例" NormalImageString:@"plvsa_liveroom_btn_streamscale_16_9" selectedImageString:@"plvsa_liveroom_btn_streamscale_4_3"];
+        _streamScaleButton = [self buttonWithTitle:PLVLocalizedString(@"开播比例") NormalImageString:@"plvsa_liveroom_btn_streamscale_16_9" selectedImageString:@"plvsa_liveroom_btn_streamscale_4_3"];
         [_streamScaleButton addTarget:self action:@selector(streamScaleAction:) forControlEvents:UIControlEventTouchUpInside];
         _streamScaleButton.titleEdgeInsets = UIEdgeInsetsMake(_streamScaleButton.imageView.frame.size.height + 14, - 68, 0, -40);
         _streamScaleButton.hidden = YES;
@@ -458,7 +516,7 @@ PLVSABitRateSheetDelegate
 - (UILabel *)channelNameLable {
     if (!_channelNameLable) {
         _channelNameLable = [[UILabel alloc]init];
-        _channelNameLable.text = EnterTips;
+        _channelNameLable.text = PLVLocalizedString(@"PLVSALiveroomLiveTitleTips");
         _channelNameLable.backgroundColor = [UIColor clearColor];
         _channelNameLable.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];
         _channelNameLable.textColor = PLV_UIColorFromRGBA(@"#FFFFFF", 0.6);
@@ -518,13 +576,13 @@ PLVSABitRateSheetDelegate
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat heightScale = isPad ? 0.233 : 0.285;
-        CGFloat widthScale = 0.23;
+        CGFloat heightScale = isPad ? 0.233 : ([PLVFdUtil checkStringUseable:self.defaultQualityLevel] ? 0.50 : 0.285);
+        CGFloat widthScale = [PLVFdUtil checkStringUseable:self.defaultQualityLevel] ? 0.40 : 0.23;
         CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = maxWH * widthScale;
         _bitRateSheet = [[PLVSABitRateSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
-        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:self.resolutionType];
+        [_bitRateSheet setupBitRateOptionsWithCurrentBitRate:self.resolutionType streamQualityLevel:self.defaultQualityLevel];
         _bitRateSheet.delegate = self;
     }
     return _bitRateSheet;
@@ -534,7 +592,7 @@ PLVSABitRateSheetDelegate
     if (!_beautyButton) {
         _beautyButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_setter"] forState:UIControlStateNormal];
-        [_beautyButton setTitle:@"美颜" forState:UIControlStateNormal];
+        [_beautyButton setTitle:PLVLocalizedString(@"美颜") forState:UIControlStateNormal];
         [_beautyButton setTitleColor:[PLVColorUtil colorFromHexString:@"#0382FF"] forState:UIControlStateNormal];
         _beautyButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];
         _beautyButton.backgroundColor = [UIColor whiteColor];
@@ -547,6 +605,30 @@ PLVSABitRateSheetDelegate
     return _beautyButton;
 }
 
+- (UIButton *)mixLayoutButton {
+    if (!_mixLayoutButton) {
+        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局") NormalImageString:@"plvsa_liveroom_btn_mixLayout" selectedImageString:@"plvsa_liveroom_btn_mixLayout"];
+        [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _mixLayoutButton.titleEdgeInsets = UIEdgeInsetsMake(_orientationButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    return _mixLayoutButton;
+}
+
+- (PLVSAMixLayoutSheet *)mixLayoutSheet {
+    if (!_mixLayoutSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.233 : 0.285;
+        CGFloat widthScale = 0.23;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _mixLayoutSheet = [[PLVSAMixLayoutSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:[self getLocalMixLayoutType]]; // 纯视频场景默认为平铺模式
+        _mixLayoutSheet.delegate = self;
+    }
+    return _mixLayoutSheet;
+}
+
 - (BOOL)showStreamScale {
     if ([PLVSAUtils sharedUtils].isLandscape &&
         [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher &&
@@ -554,6 +636,22 @@ PLVSABitRateSheetDelegate
         return YES;
     }
     return NO;
+}
+
+- (BOOL)showMixLayout {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
+- (NSString *)defaultQualityLevel {
+    if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled) {
+        PLVRoomUserType viewerType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+        if (viewerType == PLVRoomUserTypeTeacher) {
+            return [PLVLiveVideoConfig sharedInstance].teacherDefaultQualityLevel;
+        } else if (viewerType == PLVRoomUserTypeGuest) {
+            return [PLVLiveVideoConfig sharedInstance].guestDefaultQualityLevel;
+        }
+    }
+    return nil;
 }
 
 #pragma mark - [ Event ]
@@ -572,7 +670,7 @@ PLVSABitRateSheetDelegate
             [self.delegate streamerSettingViewStartButtonClickWithResolutionType:self.resolutionType];
         }
     } else {
-        [PLVSAUtils showToastInHomeVCWithMessage:@"直播标题不能为空"];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"直播标题不能为空")];
     }
 }
 
@@ -630,6 +728,10 @@ PLVSABitRateSheetDelegate
     }
 }
 
+- (void)mixLayoutButtonAction:(UIButton *)sender {
+    [self.mixLayoutSheet showInView:self];
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark <UITextViewDelegate>
@@ -654,7 +756,7 @@ PLVSABitRateSheetDelegate
 }
 
 - (void)textViewDidChange:(UITextView *)textView {
-    self.channelNameLable.text = self.channelNameTextView.text.length ? self.channelNameTextView.text : EnterTips;
+    self.channelNameLable.text = self.channelNameTextView.text.length ? self.channelNameTextView.text : PLVLocalizedString(@"PLVSALiveroomLiveTitleTips");
     // 计算文本高度
     CGFloat textViewHeight = [textView sizeThatFits:CGSizeMake(textView.frame.size.width, MAXFLOAT)].height;
     CGFloat lableHeight = [self.channelNameLable sizeThatFits:CGSizeMake(self.channelNameLable.frame.size.width, MAXFLOAT)].height;
@@ -672,20 +774,43 @@ PLVSABitRateSheetDelegate
         [PLVLiveVideoAPI updateChannelName:channelName channelId:[PLVRoomDataManager sharedManager].roomData.channelId completion:^{
             [PLVRoomDataManager sharedManager].roomData.channelName = channelName;
             
-            [PLVSAUtils showToastInHomeVCWithMessage:@"直播标题修改成功"];
+            [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"直播标题修改成功")];
         } failure:^(NSError *error) {
-            [PLVSAUtils showToastInHomeVCWithMessage:@"直播标题修改失败，请重新输入"];
+            [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"直播标题修改失败，请重新输入")];
         }];
     }
 }
 
+#pragma mark <UIGestureRecognizerDelegate>
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    if ([NSStringFromClass([touch.view class]) isEqualToString:@"UITableViewCellContentView"] ||
+        [NSStringFromClass([touch.view.superview class]) isEqualToString:@"UITableViewCellContentView"]) {
+        return NO;
+    }
+    return  YES;
+}
 
 #pragma mark <PLVSABitRateSheetDelegate>
 - (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet bitRateButtonClickWithBitRate:(PLVResolutionType)bitRate {
     self.resolutionType = bitRate;
-    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType];
+    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType streamQualityLevel:nil];
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewBitRateButtonClickWithResolutionType:)]) {
         [self.delegate streamerSettingViewBitRateButtonClickWithResolutionType:bitRate];
+    }
+}
+
+- (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet didSelectStreamQualityLevel:(NSString *)streamQualityLevel {
+    [self changeBitRateButtonTitleAndImageWithBitRate:self.resolutionType streamQualityLevel:streamQualityLevel];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewBitRateSheetDidSelectStreamQualityLevel:)]) {
+        [self.delegate streamerSettingViewBitRateSheetDidSelectStreamQualityLevel:streamQualityLevel];
+    }
+}
+
+#pragma mark <PLVSAMixLayoutSheetDelegate>
+
+- (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet mixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewMixLayoutButtonClickWithMixLayoutType:)]) {
+        [self.delegate streamerSettingViewMixLayoutButtonClickWithMixLayoutType:type];
     }
 }
 

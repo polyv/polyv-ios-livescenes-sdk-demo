@@ -58,7 +58,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 连麦窗口列表视图 需外部展示 ‘第一画面连麦窗口’
 ///
 /// @param windowsView 连麦窗口列表视图
-/// @param canvasView 第一画面连麦窗口视图 (需外部进行添加展示)
+/// @param canvasView 第一画面连麦窗口视图 (需外部进行添加展示，包含昵称、其它控件等)
 - (void)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView showFirstSiteCanvasViewOnExternal:(UIView *)canvasView;
 
 /// 连麦窗口被点击事件 (表示用户希望视图位置交换)
@@ -67,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param windowsView 连麦窗口列表视图
 /// @param linkMicUser 被点击窗口 对应的连麦用户模型
-/// @param canvasView 被点击窗口 对应的连麦画布视图
+/// @param canvasView 被点击窗口 对应的连麦视图(包含昵称、其它控件等)
 ///
 /// @return UIView 外部对象返回的视图，将显示在被点击窗口的位置
 - (UIView *)plvLCLinkMicWindowsView:(PLVLCLinkMicWindowsView *)windowsView wantExchangeWithExternalViewForLinkMicUser:(PLVLinkMicOnlineUser *)linkMicUser canvasView:(UIView *)canvasView;

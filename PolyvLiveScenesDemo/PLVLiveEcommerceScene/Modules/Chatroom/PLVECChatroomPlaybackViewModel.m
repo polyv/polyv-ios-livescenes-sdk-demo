@@ -36,6 +36,10 @@ PLVChatroomPlaybackPresenterDelegate
 @implementation PLVECChatroomPlaybackViewModel {
     // 操作数组的信号量，防止多线程读写数组
     dispatch_semaphore_t _chatArrayLock;
+    
+    // 多代理
+    dispatch_queue_t multicastQueue;
+    PLVMulticastDelegate<PLVECChatroomPlaybackViewModelDelegate> *multicastDelegate;
 }
 
 #pragma mark - [ Public Method ]
@@ -49,6 +53,10 @@ PLVChatroomPlaybackPresenterDelegate
         
         self.presenter = [[PLVChatroomPlaybackPresenter alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId];
         self.presenter.delegate = self;
+        
+        // 多代理
+        multicastQueue = dispatch_queue_create("com.PLVLiveScenesDemo.PLVECChatroomPlaybackViewModel", DISPATCH_QUEUE_CONCURRENT);
+        multicastDelegate = (PLVMulticastDelegate <PLVECChatroomPlaybackViewModelDelegate> *)[[PLVMulticastDelegate alloc] init];
         
         // 初始化公聊消息信号量、公聊消息数组
         _chatArrayLock = dispatch_semaphore_create(1);
@@ -80,43 +88,59 @@ PLVChatroomPlaybackPresenterDelegate
 - (void)clear {
     [self replaceAllChatModels:@[]];
     [self notifyDelegateDidClearMessages];
+    [self removeAllUIDelegates];
 }
 
 #pragma mark - [ Private Method ]
 
+#pragma mark Multicase
+
+- (void)addUIDelegate:(id<PLVECChatroomPlaybackViewModelDelegate>)delegate delegateQueue:(dispatch_queue_t)delegateQueue {
+    dispatch_barrier_async(multicastQueue, ^{
+        [self->multicastDelegate addDelegate:delegate delegateQueue:delegateQueue];
+    });
+}
+
+- (void)removeUIDelegate:(id<PLVECChatroomPlaybackViewModelDelegate>)delegate {
+    dispatch_barrier_async(multicastQueue, ^{
+        [self->multicastDelegate removeDelegate:delegate];
+    });
+}
+
+- (void)removeAllUIDelegates {
+    dispatch_barrier_async(multicastQueue, ^{
+        [self->multicastDelegate removeAllDelegates];
+    });
+}
+
 - (void)notifyDelegateDidClearMessages {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(clearMessageForPlaybackViewModel:)]) {
-        [self.delegate clearMessageForPlaybackViewModel:self];
-    }
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate clearMessageForPlaybackViewModel:self];
+    });
 }
 
 - (void)notifyDelegateDidLoadMessageInfoSuccess:(BOOL)success {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(loadMessageInfoSuccess:playbackViewModel:)]) {
-        [self.delegate loadMessageInfoSuccess:success playbackViewModel:self];
-    }
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate loadMessageInfoSuccess:success playbackViewModel:self];
+    });
 }
 
 - (void)notifyDelegateDidReceiveNewMessages {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(didReceiveNewMessagesForChatroomPlaybackViewModel:)]) {
-        [self.delegate didReceiveNewMessagesForChatroomPlaybackViewModel:self];
-    }
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate didReceiveNewMessagesForChatroomPlaybackViewModel:self];
+    });
 }
 
 - (void)notifyDelegateDidMessagesRefreshed {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(didMessagesRefreshedForChatroomPlaybackViewModel:)]) {
-        [self.delegate didMessagesRefreshedForChatroomPlaybackViewModel:self];
-    }
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate didMessagesRefreshedForChatroomPlaybackViewModel:self];
+    });
 }
 
 - (void)notifyDelegateDidLoadMoreHistoryMessages {
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:)]) {
-        [self.delegate didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:self];
-    }
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate didLoadMoreHistoryMessagesForChatroomPlaybackViewModel:self];
+    });
 }
 
 #pragma mark 聊天消息数组

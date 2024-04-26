@@ -7,6 +7,7 @@
 //
 
 #import "PLVSABeautySwitch.h"
+#import "PLVMultiLanguageManager.h"
 // 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -43,11 +44,12 @@
         _titleLabel = [[UILabel alloc] init];
         _titleLabel.font = [UIFont systemFontOfSize:14];
         _titleLabel.textColor = [UIColor whiteColor];
+        _titleLabel.textAlignment = NSTextAlignmentRight;
         NSShadow *shadow = [[NSShadow alloc] init];
         shadow.shadowBlurRadius = 1;
         shadow.shadowOffset = CGSizeMake(0, 0);
         shadow.shadowColor = [PLVColorUtil colorFromHexString:@"#000000" alpha:0.4];
-        NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:@"美颜开关" attributes:@{NSShadowAttributeName:shadow}];
+        NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"美颜开关") attributes:@{NSShadowAttributeName:shadow}];
         _titleLabel.attributedText = attributedString;
     }
     return _titleLabel;

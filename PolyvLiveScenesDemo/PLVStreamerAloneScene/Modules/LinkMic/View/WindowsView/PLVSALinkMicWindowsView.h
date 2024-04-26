@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// delegate
 @property (nonatomic, weak) id <PLVSALinkMicWindowsViewDelegate> delegate;
+/// 全屏展示视图的容器
+@property (nonatomic, strong, readonly) UIView *fullScreenContentView;
 
 /// 刷新连麦窗口
 - (void)reloadLinkMicUserWindows;
@@ -25,6 +27,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param linkMicUserId 连麦用户id
 /// @param toFirstSite 是否到第一画面
 - (void)updateFirstSiteCanvasViewWithUserId:(NSString *)linkMicUserId toFirstSite:(BOOL)toFirstSite;
+
+/// 本地用户连麦状态发生改变
+/// @param linkMicStatus 连麦状态
+- (void)updateLocalUserLinkMicStatus:(PLVLinkMicUserLinkMicStatus)linkMicStatus;
 
 /// 切换连麦窗口布局和主讲人
 /// @note 切换连麦窗口的布局【仅当 speakerMode为YES时linkMicUserId有效】
@@ -35,6 +41,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 连麦用户全屏操作
 /// @param onlineUser 连麦用户信息
 - (void)fullScreenLinkMicUser:(PLVLinkMicOnlineUser *)onlineUser;
+
+/// 下课（直播结束）
+- (void)finishClass;
+
+/// 更新所有连麦者的连麦时长（除讲师外）
+- (void)updateAllCellLinkMicDuration;
 
 @end
 
@@ -94,6 +106,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param onlineUser 连麦用户信息
 /// @param isFullScreen 是否开启全屏(YES 开启 NO 关闭)
 - (void)linkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView onlineUser:(PLVLinkMicOnlineUser *)onlineUser isFullScreen:(BOOL)isFullScreen;
+
+/// 同意/取消 连麦邀请
+/// @param windowsView 连麦窗口列表视图
+/// @param accept 是否同意连麦邀请（YES同意，NO拒绝）
+/// @param timeoutCancel 是否是超时拒绝，当accept 为NO时有效
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel;
+
+/// 需要获取 连麦邀请 剩余的等待时间
+/// @param windowsView 连麦窗口列表视图
+/// @param callback 获取剩余时间的回调
+- (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback;
 
 @end
 

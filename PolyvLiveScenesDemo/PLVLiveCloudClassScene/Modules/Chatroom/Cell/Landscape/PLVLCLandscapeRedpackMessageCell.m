@@ -8,6 +8,7 @@
 
 #import "PLVLCLandscapeRedpackMessageCell.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
@@ -134,9 +135,9 @@ static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
     // 白色文本
     NSString *redpackTypeString = @"";
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
-        redpackTypeString = @"口令";
+        redpackTypeString = PLVLocalizedString(@"支付宝口令");
     }
-    NSString *contentString = [NSString stringWithFormat:@" %@ 发了一个%@红包，", chatModel.user.userName, redpackTypeString];
+    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), chatModel.user.userName, redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
                                     NSForegroundColorAttributeName:[UIColor whiteColor],
                                     NSBaselineOffsetAttributeName:@(4.0)};
@@ -147,7 +148,7 @@ static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
                                        kPLVLCRedpackMessageTapKey:@(1),
                                        NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FF5959"],
                                        NSBaselineOffsetAttributeName:@(4.0)};
-    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:@"点击领取" attributes:redAttributeDict];
+    NSAttributedString *redString = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@"点击领取") attributes:redAttributeDict];
     
     NSMutableAttributedString *muString = [[NSMutableAttributedString alloc] init];
     [muString appendAttributedString:[NSAttributedString attributedStringWithAttachment:attachment]];

@@ -8,6 +8,7 @@
 
 #import "PLVLCKeyboardTextView.h"
 #import "PLVEmoticonManager.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSInteger kFontSize = 16.0;
 static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeName";
@@ -28,7 +29,7 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 - (instancetype)init {
     self = [super init];
     if (self) {
-        self.placeholderText = @"我也来聊几句";
+        self.placeholderText = PLVLocalizedString(@"我也来聊几句");
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1];
         self.returnKeyType = UIReturnKeySend;
         self.scrollEnabled = YES;

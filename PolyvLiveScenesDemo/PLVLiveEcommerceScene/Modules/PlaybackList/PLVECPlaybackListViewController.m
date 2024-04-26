@@ -10,6 +10,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVECPlaybackListCell.h"
 #import "PLVECPlaybackListView.h"
+#import "PLVECUtils.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoConfig.h>
 #import <MJRefresh/MJRefresh.h>
 
@@ -50,6 +51,16 @@ PLVRoomDataManagerProtocol
     [self setupUI];
 }
 
+- (void)viewWillLayoutSubviews {
+    [super viewWillLayoutSubviews];
+    if ([PLVECUtils sharedUtils].landscape) {
+        self.playbackListView.frame = CGRectMake(CGRectGetWidth(self.view.bounds) - 375, 0, 375, CGRectGetMaxY(self.view.bounds));
+    } else {
+        CGFloat height = 410 + P_SafeAreaBottomEdgeInsets();
+        self.playbackListView.frame = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
+    }
+}
+
 #pragma mark - [ Private Methods ]
 
 - (void)setupUI {
@@ -76,7 +87,7 @@ PLVRoomDataManagerProtocol
     __weak typeof(self) weakSelf = self;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     NSString *listType = roomData.vodList ? @"vod" : @"playback";
-    [PLVLiveVideoAPI requestPlaybackList:roomData.channelId listType:listType page:pageNumber pageSize:pageSize appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
+    [PLVLiveVideoAPI requestPlaybackListWithChannelId:roomData.channelId listType:listType page:pageNumber pageSize:pageSize appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(PLVPlaybackListModel * _Nonnull playbackList, NSError * _Nonnull error) {
         if (!error && playbackList) {
             if (!playbackList.firstPage) {
                 NSMutableArray<PLVPlaybackVideoModel *> *tempDataArray = [weakSelf.dataArray mutableCopy];
@@ -105,7 +116,7 @@ PLVRoomDataManagerProtocol
         
         __weak typeof(self) weakSelf = self;
         MJRefreshNormalHeader *mjHeader = [MJRefreshNormalHeader headerWithRefreshingBlock:^{
-            [weakSelf loadDataWithPageNumber:0 pageSize:weakSelf.nextPageNumber];
+            [weakSelf loadDataWithPageNumber:0 pageSize:weakSelf.nextPageNumber * 10];
             [weakSelf.playbackListView.collectionView.mj_header endRefreshing];
         }];
         mjHeader.lastUpdatedTimeLabel.hidden = YES;
@@ -175,6 +186,7 @@ PLVRoomDataManagerProtocol
     [cell setModel:videoModel];
     if ([[PLVRoomDataManager sharedManager].roomData.vid isEqualToString:self.dataArray[indexPath.row].videoPoolId]) {
         self.selectCellIndex = indexPath.row;
+        cell.selected = YES;
         [collectionView selectItemAtIndexPath:indexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     }
     return cell;

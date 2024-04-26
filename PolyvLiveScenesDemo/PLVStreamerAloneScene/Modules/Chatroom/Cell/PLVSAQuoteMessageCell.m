@@ -11,8 +11,10 @@
 // Utils
 #import "PLVPhotoBrowser.h"
 #import "PLVSAUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import "PLVChatTextView.h"
 #import "PLVEmoticonManager.h"
+#import "PLVToast.h"
 
 // UI
 #import "PLVSAProhibitWordTipView.h"
@@ -150,6 +152,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 #pragma mark - [ Public Method ]
@@ -171,7 +174,14 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     [self addObserveMsgState];
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
+    
     [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     
     NSAttributedString *quoteLabelString = [PLVSAQuoteMessageCell quoteContentAttributedStringWithMessage:message
@@ -225,7 +235,13 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     
     CGFloat maxTextViewWidth = cellWidth - bubbleXPadding * 2 - resendWidth;
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-    NSMutableAttributedString *contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVSAQuoteMessageCell contentLabelAttributedStringWithMessage:message user:model.user prohibitWord:model.prohibitWord];
+        model.attributeString = contentLabelString;
+    }
     CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     
     NSAttributedString *quoteLabelString = [PLVSAQuoteMessageCell quoteContentAttributedStringWithMessage:message loginUserId:loginUserId];
@@ -420,15 +436,15 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 + (NSString *)prohibitWordTipWithModel:(PLVChatModel *)model {
     NSString *text = nil;
     if (model.prohibitWord) {
-        text = [NSString stringWithFormat:@"你的聊天信息中含有违规词：%@", model.prohibitWord];
+        text = [NSString stringWithFormat:PLVLocalizedString(@"你的聊天信息中含有违规词：%@"), model.prohibitWord];
     } else {
-        text = @"您的聊天消息中含有违规词语，已全部作***代替处理";
+        text = PLVLocalizedString(@"您的聊天消息中含有违规词语，已全部作***代替处理");
     }
     return text;
 }
 
 #pragma mark AttributedString
-/// 获取消息多属性文本
+/// 生成消息多属性文本
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVQuoteMessage *)message
                                                                   user:(PLVChatUser *)user
                                                           prohibitWord:(NSString *)prohibitWord{
@@ -498,7 +514,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
-        quoteUserName = [quoteUserName stringByAppendingString:@"（我）"];
+        quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
@@ -541,7 +557,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     // 只有在发送失败时方可触发重发点击事件，避免重复发送
     if (self.msgState == PLVChatMsgStateFail) {
         __weak typeof(self) weakSelf = self;
-        [PLVSAUtils showAlertWithMessage:@"重发该消息？" cancelActionTitle:@"取消" cancelActionBlock:nil confirmActionTitle:@"确定" confirmActionBlock:^{
+        [PLVSAUtils showAlertWithMessage:PLVLocalizedString(@"重发该消息？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
             weakSelf.model.msgState = PLVChatMsgStateSending;
             if (weakSelf.resendReplyHandler) {
                 weakSelf.resendReplyHandler(weakSelf.model);

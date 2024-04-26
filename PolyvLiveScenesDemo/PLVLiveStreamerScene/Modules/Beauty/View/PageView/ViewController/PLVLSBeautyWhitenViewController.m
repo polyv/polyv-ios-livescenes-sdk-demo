@@ -9,6 +9,7 @@
 #import "PLVLSBeautyWhitenViewController.h"
 // 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVLSBeautyCollectionViewCell.h"
 // 模块
@@ -26,7 +27,7 @@ UICollectionViewDelegate
 
 @end
 
-static CGFloat kItemWidth = 36; // item宽度
+static CGFloat kItemWidth = 56; // item宽度
 static CGFloat kItemHeight = 61; // item高度
 
 @implementation PLVLSBeautyWhitenViewController
@@ -40,7 +41,9 @@ static CGFloat kItemHeight = 61; // item高度
     [self.collectionView reloadData];
     // 默认选中第一个
     self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
+        [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    }
     [[PLVBeautyViewModel sharedViewModel] selectBeautyOption:PLVBBeautyOption_BeautySmooth];
 }
 
@@ -53,9 +56,9 @@ static CGFloat kItemHeight = 61; // item高度
 - (void)setupDataArray {
     [super setupDataArray];
     self.dataArray = [NSArray arrayWithObjects:
-                      [[PLVLSBeautyCellModel alloc] initWithTitle:@"磨皮" imageName:@"plvls_beauty_smooth" beautyOption:PLVBBeautyOption_BeautySmooth selected:YES],
-                      [[PLVLSBeautyCellModel alloc] initWithTitle:@"美白" imageName:@"plvls_beauty_whiten" beautyOption:PLVBBeautyOption_BeautyWhiten],
-                      [[PLVLSBeautyCellModel alloc] initWithTitle:@"锐化" imageName:@"plvls_beauty_sharp" beautyOption:PLVBBeautyOption_BeautySharp],nil];
+                      [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"磨皮") imageName:@"plvls_beauty_smooth" beautyOption:PLVBBeautyOption_BeautySmooth selected:YES],
+                      [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"美白") imageName:@"plvls_beauty_whiten" beautyOption:PLVBBeautyOption_BeautyWhiten],
+                      [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"锐化") imageName:@"plvls_beauty_sharp" beautyOption:PLVBBeautyOption_BeautySharp],nil];
 }
 
 - (void)showContentView {
@@ -70,8 +73,8 @@ static CGFloat kItemHeight = 61; // item高度
 - (void)beautyOpen:(BOOL)open {
     [super beautyOpen:open];
     [self.collectionView reloadData];
-    if (open &&
-        self.selectedIndexPath) {
+    if (open && self.selectedIndexPath && 
+        self.dataArray.count > self.selectedIndexPath.item) {
         [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     }
 }
@@ -134,7 +137,7 @@ static CGFloat kItemHeight = 61; // item高度
 
 #pragma mark UICollectionViewDelegateFlowLayout
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
-    return 36; // 竖屏collectionView水平滚动，minimumLineSpacing为左右间距
+    return 16; // 竖屏collectionView水平滚动，minimumLineSpacing为左右间距
     
 }
 

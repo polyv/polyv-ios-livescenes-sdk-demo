@@ -10,6 +10,7 @@
 #import "PLVChatUser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -79,7 +80,13 @@ static CGFloat kButtonoHeight = 32.0;
     self.cellWidth = cellWidth;
     self.model = model;
     
-    NSAttributedString *chatLabelString = [PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
+    }
+    
     self.chatLabel.attributedText = chatLabelString;
 }
 
@@ -89,7 +96,12 @@ static CGFloat kButtonoHeight = 32.0;
     }
     
     // 内容文本高度
-    NSAttributedString *chatLabelString = [PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model];
+    NSMutableAttributedString *chatLabelString;
+    if (model.attributeString) {
+        chatLabelString = model.attributeString;
+    } else {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
+    }
     
     CGFloat labelOriginX = 8.0;
     CGFloat labelMaxWidth = cellWidth - labelOriginX * 2;
@@ -236,7 +248,7 @@ static CGFloat kButtonoHeight = 32.0;
 - (UIButton *)copButton {
     if (!_copButton) {
         _copButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_copButton setTitle:@"复制" forState:UIControlStateNormal];
+        [_copButton setTitle:PLVLocalizedString(@"复制") forState:UIControlStateNormal];
         _copButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_copButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];
@@ -248,7 +260,7 @@ static CGFloat kButtonoHeight = 32.0;
 - (UIButton *)foldButton {
     if (!_foldButton) {
         _foldButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_foldButton setTitle:@"更多" forState:UIControlStateNormal];
+        [_foldButton setTitle:PLVLocalizedString(@"更多") forState:UIControlStateNormal];
         _foldButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC" alpha:0.8] forState:UIControlStateNormal];
         [_foldButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFEFC"] forState:UIControlStateHighlighted];

@@ -33,6 +33,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param model 数据模型
 + (BOOL)isModelValid:(PLVChatModel *)model;
 
+/// 生成消息多属性文本
++ (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVQuoteMessage *)message
+                                                                  user:(PLVChatUser *)user
+                                                          prohibitWord:(NSString *)prohibitWord;
+
 @end
 
 NS_ASSUME_NONNULL_END

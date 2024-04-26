@@ -1,0 +1,12 @@
+/* 
+  InfoPlist.strings
+  PolyvLiveScenesDemo
+
+  Created by Sakya on 2023/9/13.
+  Copyright © 2023 PLV. All rights reserved.
+*/
+
+NSCameraUsageDescription = "Please allow us to access your camera so that you can use the call and photo";
+NSMicrophoneUsageDescription = "Please allow us to access your microphone so that you can call";
+NSPhotoLibraryAddUsageDescription = "Please allow us to access your photo album so you can save pictures to the album";
+NSPhotoLibraryUsageDescription = "Please allow us to access your photo album so that you can send picture messages and save pictures to the photo album";

@@ -11,6 +11,8 @@
 #import "PLVPhotoBrowser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
+#import "PLVToast.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
@@ -203,7 +205,14 @@
         [PLVLCUtils setImageView:self.quoteImageView url:quoteImageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
     }
     
-    NSMutableAttributedString *contentLabelString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:message];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:message];
+        model.attributeString = contentLabelString;
+    }
+    
     if (contentLabelString) {
         [self.textView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
     }
@@ -222,7 +231,7 @@
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isEqualToString:quoteUserId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     
     NSDictionary *attributeDict = @{
@@ -260,7 +269,7 @@
     return [NSURL URLWithString:imageUrl];
 }
 
-/// 获取回复消息的多属性文本
+/// 生成回复消息的多属性文本
 + (NSMutableAttributedString *)contentAttributedStringWithMessage:(PLVQuoteMessage *)message {
     NSString *content = message.content;
     if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
@@ -304,7 +313,14 @@
         quoteContentHeight = quoteImageViewSize.height;
     }
     
-    NSMutableAttributedString *contentLabelString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:model.message];
+    NSMutableAttributedString *contentLabelString;
+    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+        contentLabelString = model.attributeString;
+    } else {
+        contentLabelString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:model.message];
+        model.attributeString = contentLabelString;
+    }
+
     CGSize contentLabelSize = [[contentLabelString copy] boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
     CGFloat textViewHeight = 8 + contentLabelSize.height + 8; // textView文本与textView的内部有上下间距8
     
@@ -362,6 +378,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview.superview afterDelay:3.0];
 }
 
 @end

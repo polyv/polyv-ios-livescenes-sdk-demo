@@ -9,6 +9,7 @@
 #import "PLVLCLandscapeImageEmotionCell.h"
 #import "PLVPhotoBrowser.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -73,8 +74,17 @@
     self.model = model;
     
     // 设置昵称文本
-    NSAttributedString *nickLabelString = [PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user
-                                                                                         loginUserId:loginUserId];
+    // 设置昵称文本
+    NSMutableAttributedString *nickLabelString;
+    if (model.landscapeAttributeString) {
+        // 如果在 model 中已经存在计算好的 横屏 消息多属性文本 ，那么 就直接使用；
+        nickLabelString = model.landscapeAttributeString;
+    } else {
+        nickLabelString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user
+                                                                                                                                            loginUserId:loginUserId]];
+        model.landscapeAttributeString = nickLabelString;
+    }
+    
     self.nickLabel.attributedText = nickLabelString;
     
     PLVImageEmotionMessage *message = (PLVImageEmotionMessage *)model.message;
@@ -113,7 +123,7 @@
 
 #pragma mark - [ Private Methods ]
 
-/// 获取昵称多属性文本
+/// 生成昵称多属性文本
 + (NSAttributedString *)nickLabelAttributedStringWithUser:(PLVChatUser *)user
                                               loginUserId:(NSString *)loginUserId {
     if (!user.userName || ![user.userName isKindOfClass:[NSString class]] || user.userName.length == 0) {
@@ -123,7 +133,7 @@
     NSString *content = user.userName;
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
-        content = [content stringByAppendingString:@"（我）"];
+        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
     }
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];

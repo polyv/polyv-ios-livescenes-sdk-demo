@@ -10,6 +10,21 @@
 #import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVGiveRewardPresenter.h"
+#import "PLVLCSpeakMessageCell.h"
+#import "PLVLCLongContentMessageCell.h"
+#import "PLVLCQuoteMessageCell.h"
+#import "PLVLCFileMessageCell.h"
+#import "PLVLCImageMessageCell.h"
+#import "PLVLCImageEmotionMessageCell.h"
+#import "PLVLCRedpackMessageCell.h"
+#import "PLVLCRewardMessageCell.h"
+#import "PLVLCLandscapeSpeakCell.h"
+#import "PLVLCLandscapeLongContentCell.h"
+#import "PLVLCLandscapeImageCell.h"
+#import "PLVLCLandscapeImageEmotionCell.h"
+#import "PLVLCLandscapeQuoteCell.h"
+#import "PLVLCLandscapeFileCell.h"
+#import "PLVLCLandscapeRedpackMessageCell.h"
 
 @interface PLVLCChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -29,9 +44,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 #pragma mark 登录用户上报
 
-/// 上报登陆用户计时器，间隔4秒触发一次
+/// 上报登录用户计时器，间隔4秒触发一次
 @property (nonatomic, strong) NSTimer *loginTimer;
-/// 暂未上报的登陆用户数组
+/// 暂未上报的登录用户数组
 @property (nonatomic, strong) NSMutableArray <PLVChatUser *> *loginUserArray;
 /// 当前时间段内是否发生当前用户的登录事件
 @property (nonatomic, assign) BOOL isMyselfLogin;
@@ -58,6 +73,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 /// 是否为专注模式
 @property (nonatomic, assign) BOOL focusMode;
+/// 是否第一次加载提问消息
+@property (nonatomic, assign) BOOL firstTimeLoadPrivateChat;
 /// 公聊全部消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *publicChatArray;
 /// 公聊【只看教师与我】消息数组
@@ -130,6 +147,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:20];
     self.presenter.delegate = self;
     [self.presenter login];
+    [self.presenter startPageViewTimer];
     
     // 监听socket消息
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
@@ -157,6 +175,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                                                      userInfo:nil
                                                       repeats:YES];
     self.danmuArray = [[NSMutableArray alloc] initWithCapacity:10];
+    
+    self.firstTimeLoadPrivateChat = YES;
+    [self loadQuestionHistory];
 }
 
 - (void)clear {
@@ -210,6 +231,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)loadHistory {
     [self.presenter loadHistory];
+}
+
+- (void)loadQuestionHistory {
+    [self.presenter loadQuestionHistory];
 }
 
 #pragma mark - 加载图片表情数据
@@ -357,6 +382,30 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+/// 私聊历史聊天记录接口返回消息数组时
+- (void)insertPrivateChatModels:(NSArray <PLVChatModel *> *)modelArray noMore:(BOOL)noMore {
+    if (![PLVFdUtil checkArrayUseable:modelArray]) {
+        [self notifyDelegatesLoadQuestionHistorySuccess:noMore firstTime:self.firstTimeLoadPrivateChat];
+        return;
+    }
+    
+    dispatch_semaphore_wait(_privateChatArrayLock, DISPATCH_TIME_FOREVER);
+    if (self.privateChatArray.count > 0) {
+        PLVChatModel *firstChatModel = self.privateChatArray.firstObject;
+        if (![PLVFdUtil checkStringUseable:firstChatModel.user.userId]) {
+            [self.privateChatArray removeObject:firstChatModel];
+        }
+    }
+    for (PLVChatModel *model in modelArray) {
+        if ([model isKindOfClass:[PLVChatModel class]]) {
+            [self.privateChatArray insertObject:model atIndex:0];
+        }
+    }
+    dispatch_semaphore_signal(_privateChatArrayLock);
+    
+    [self notifyDelegatesLoadQuestionHistorySuccess:noMore firstTime:self.firstTimeLoadPrivateChat];
+}
+
 /// 调用销毁接口时
 - (void)removeAllPrivateChatModels {
     if (!_privateChatArrayLock) {
@@ -388,6 +437,47 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+    
+    // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if ([PLVLCSpeakMessageCell isModelValid:model]) {
+        PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+        model.attributeString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.landscapeAttributeString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCLongContentMessageCell isModelValid:model]) {
+        model.attributeString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+        model.landscapeAttributeString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVLCLongContentMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
+        PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+        model.attributeString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:message];
+        model.landscapeAttributeString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.cellHeightForV = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCFileMessageCell isModelValid:model]) {
+        PLVFileMessage *message = (PLVFileMessage *)model.message;
+        model.attributeString = [PLVLCFileMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+        model.landscapeAttributeString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+        model.cellHeightForV = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
+        model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+        model.cellHeightForV = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
+        model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+        model.cellHeightForV = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCRewardMessageCell isModelValid:model]) {
+        model.cellHeightForV = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+    } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
+        model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    }
+    
     [self.publicChatArray addObject:model];
     [self.partOfPublicChatArray addObject:model];
     dispatch_semaphore_signal(_publicChatArrayLock);
@@ -400,6 +490,46 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
+            // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
+            PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+            if ([PLVLCSpeakMessageCell isModelValid:model]) {
+                PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
+                model.attributeString = [PLVLCSpeakMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+                model.landscapeAttributeString = [PLVLCLandscapeSpeakCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+                model.cellHeightForV = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCLongContentMessageCell isModelValid:model]) {
+                model.attributeString = [PLVLCLongContentMessageCell contentLabelAttributedStringWithModel:model];
+                model.landscapeAttributeString = [PLVLCLandscapeLongContentCell contentLabelAttributedStringWithModel:model loginUserId:roomUser.viewerId];
+                model.cellHeightForV = [PLVLCLongContentMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeLongContentCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCQuoteMessageCell isModelValid:model]) {
+                PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
+                model.attributeString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:message];
+                model.landscapeAttributeString = [PLVLCLandscapeQuoteCell contentLabelAttributedStringWithMessage:message user:model.user];
+                model.cellHeightForV = [PLVLCQuoteMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeQuoteCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCFileMessageCell isModelValid:model]) {
+                PLVFileMessage *message = (PLVFileMessage *)model.message;
+                model.attributeString = [PLVLCFileMessageCell contentLabelAttributedStringWithMessage:message user:model.user];
+                model.landscapeAttributeString = [PLVLCLandscapeFileCell contentLabelAttributedStringWithMessage:message user:model.user loginUserId:roomUser.viewerId];
+                model.cellHeightForV = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeFileCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCLandscapeImageCell isModelValid:model]) {
+                model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+                model.cellHeightForV = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeImageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCLandscapeImageEmotionCell isModelValid:model]) {
+                model.landscapeAttributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVLCLandscapeImageEmotionCell nickLabelAttributedStringWithUser:model.user loginUserId:roomUser.viewerId]];
+                model.cellHeightForV = [PLVLCImageEmotionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeImageEmotionCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCRewardMessageCell isModelValid:model]) {
+                model.cellHeightForV = [PLVLCRewardMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+            } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
+                model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            }
+            
             [self.publicChatArray addObject:model];
             if (model.user.specialIdentity) {
                 [self.partOfPublicChatArray addObject:model];
@@ -543,6 +673,19 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     });
 }
 
+- (void)notifyDelegatesLoadQuestionHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_loadQuestionHistorySuccess:noMore firstTime:first];
+    });
+    self.firstTimeLoadPrivateChat = NO;
+}
+
+- (void)notifyDelegatesLoadQuestionHistoryFailure {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_loadQuestionHistoryFailure];
+    });
+}
+
 - (void)notifyDelegatesForLoginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray {
     if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
         return;
@@ -644,7 +787,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 #pragma mark - 定时上报登录用户
 
-/// 有用户登陆
+/// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     if (!self.loginTimer || !self.loginTimer.valid) {// 如果没有上报任务则无需统计登录数据
         return;
@@ -902,6 +1045,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_didReceiveDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime {
     [self startRedpackTimerWithRedpackType:type delayTime:delayTime];
+}
+
+- (void)chatroomPresenter_loadQuestionHistorySuccess:(NSArray<PLVChatModel *> *)modelArray noMore:(BOOL)noMore {
+    [self insertPrivateChatModels:modelArray noMore:noMore];
+}
+
+- (void)chatroomPresenter_loadQuestionHistoryFailure {
+    [self notifyDelegatesLoadQuestionHistoryFailure];
 }
 
 #pragma mark - Utils

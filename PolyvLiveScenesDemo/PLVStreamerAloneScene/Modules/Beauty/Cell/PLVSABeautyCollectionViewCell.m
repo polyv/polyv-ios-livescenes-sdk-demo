@@ -41,8 +41,8 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    self.imageView.frame = CGRectMake(0, 0, self.contentView.bounds.size.width, self.contentView.bounds.size.width);
-    self.titleLabel.frame = CGRectMake(0, CGRectGetMaxY(self.imageView.frame) + 8, self.contentView.bounds.size.width, 17);
+    self.imageView.frame = CGRectMake(self.bounds.size.width/2 - 18, 0, 36, 36);
+    self.titleLabel.frame = CGRectMake(-5, CGRectGetMaxY(self.imageView.frame) + 8, self.contentView.bounds.size.width + 10, 17);
 }
 
 #pragma mark - [ Override ]

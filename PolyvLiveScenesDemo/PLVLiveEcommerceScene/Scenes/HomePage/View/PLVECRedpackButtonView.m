@@ -9,6 +9,7 @@
 #import "PLVECRedpackButtonView.h"
 #import "PLVECRedpackButtonPopupView.h"
 #import "PLVECUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 // 点击红包按钮弹出气泡显示时长
 static NSInteger kPopupViewShowInterval = 6.0;
@@ -90,10 +91,10 @@ static NSInteger kPopupViewShowInterval = 6.0;
     UIImage *image = nil;
     switch (type) {
         case PLVRedpackMessageTypeUnknown:
-            image = [PLVECUtils imageForWatchResource:@"plvec_chatroom_delay_password_redpack"];
+            image = [PLVECUtils imageForWatchResource:PLVLocalizedString(@"plvec_chatroom_delay_password_redpack")];
             break;
         case PLVRedpackMessageTypeAliPassword:
-            image = [PLVECUtils imageForWatchResource:@"plvec_chatroom_delay_password_redpack"];
+            image = [PLVECUtils imageForWatchResource:PLVLocalizedString(@"plvec_chatroom_delay_password_redpack")];
             break;
     }
     return image;
@@ -119,10 +120,10 @@ static NSInteger kPopupViewShowInterval = 6.0;
     NSString *labelString = @"";
     switch (type) {
         case PLVRedpackMessageTypeUnknown:
-            labelString = @"倒计时红包即将来袭";
+            labelString = PLVLocalizedString(@"倒计时红包即将来袭");
             break;
         case PLVRedpackMessageTypeAliPassword:
-            labelString = @"口令红包即将来袭";
+            labelString = PLVLocalizedString(@"口令红包即将来袭");
             break;
     }
     return labelString;
@@ -192,10 +193,10 @@ static NSInteger kPopupViewShowInterval = 6.0;
         // 预留以后横屏弹出气泡布局，目前横屏没提供点击交互
     } else {
         CGRect rect = self.frame;
-        rect.size.width = PLVECRedpackButtonPopupViewWidth;
-        rect.size.height = PLVECRedpackButtonPopupViewHeight;
-        rect.origin.x -= PLVECRedpackButtonPopupViewWidth;
-        rect.origin.y = self.center.y - PLVECRedpackButtonPopupViewHeight/2.0;
+        rect.size.width = self.popupView.caculateSize.width;
+        rect.size.height = self.popupView.caculateSize.height;
+        rect.origin.x -= self.popupView.caculateSize.width;
+        rect.origin.y = self.center.y - self.popupView.caculateSize.height/2.0;
         self.popupView.frame = rect;
     }
     

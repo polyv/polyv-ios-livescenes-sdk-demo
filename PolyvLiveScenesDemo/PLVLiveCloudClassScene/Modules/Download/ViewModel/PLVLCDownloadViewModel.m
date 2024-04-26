@@ -10,6 +10,7 @@
 #import "PLVLCCloudClassViewController.h"
 #import "PLVRoomDataManager.h"
 #import "PLVRoomLoginClient.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCDownloadViewModel ()
 
@@ -132,9 +133,9 @@
 
 - (void)deleteDownloadTaskAtIndex:(NSInteger)index withType:(PLVLCDownloadListDataType)listDataType {
     PLVDownloadPlaybackTaskInfo *model = [self downloadModelAtIndex:index withType:listDataType];
-    NSString *title = [NSString stringWithFormat:@"确认删除%@？", model.title];
+    NSString *title = [NSString stringWithFormat:PLVLocalizedString(@"确认删除%@？"), model.title];
     __weak typeof(self) weakSelf = self;
-    [PLVFdUtil showAlertWithTitle:title message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:@"取消" cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:@"确认" confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
+    [PLVFdUtil showAlertWithTitle:title message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"取消") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确认") confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
         [weakSelf.presenter deleteDownloadTaskWith:model];
         [weakSelf loadDataWithType:listDataType];
         
@@ -219,7 +220,7 @@
 - (void)loginOfflineCloudClassPlaybackRoomWithTaskInfo:(PLVDownloadPlaybackTaskInfo *)taskInfo
                                         successHandler:(void (^)(void))successHandler {
     PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
-    [hud.label setText:@"登录中..."];
+    [hud.label setText:PLVLocalizedString(@"登录中...")];
     
     NSString *vid = @"";
     NSString *fileId = @"";

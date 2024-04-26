@@ -9,6 +9,7 @@
 #import "PLVLSBeautyFaceViewController.h"
 // 工具
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 // UI
 #import "PLVLSBeautyCollectionViewCell.h"
 // 模块
@@ -26,7 +27,7 @@ UICollectionViewDelegate
 
 @end
 
-static CGFloat kItemWidth = 36; // item宽度
+static CGFloat kItemWidth = 56; // item宽度
 static CGFloat kItemHeight = 61; // item高度
 
 @implementation PLVLSBeautyFaceViewController
@@ -40,7 +41,9 @@ static CGFloat kItemHeight = 61; // item高度
     [self.collectionView reloadData];
     
     self.selectedIndexPath = [NSIndexPath indexPathForRow:0 inSection:0];
-    [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    if ([PLVFdUtil checkArrayUseable:self.dataArray]) {
+        [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
+    }
     [[PLVBeautyViewModel sharedViewModel] selectBeautyOption:PLVBBeautyOption_ReshapeDeformEye];
 }
 
@@ -53,14 +56,14 @@ static CGFloat kItemHeight = 61; // item高度
 - (void)setupDataArray {
     [super setupDataArray];
     self.dataArray = [NSArray arrayWithObjects:
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"大眼" imageName:@"plvls_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"瘦脸" imageName:@"plvls_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"下颌" imageName:@"plvls_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"额头" imageName:@"plvls_beauty_face_head" beautyOption:PLVBBeautyOption_ReshapeDeformForeHead],
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"亮眼" imageName:@"plvls_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"瘦鼻" imageName:@"plvls_beauty_face_nose" beautyOption:PLVBBeautyOption_ReshapeDeformNose],
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"嘴巴" imageName:@"plvls_beauty_face_mouth" beautyOption:PLVBBeautyOption_ReshapeDeformZoomMouth],
-                  [[PLVLSBeautyCellModel alloc] initWithTitle:@"美牙" imageName:@"plvls_beauty_face_whitenTeeth" beautyOption:PLVBBeautyOption_ReshapeBeautyWhitenTeeth],nil];
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvls_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvls_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"下颌") imageName:@"plvls_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"额头") imageName:@"plvls_beauty_face_head" beautyOption:PLVBBeautyOption_ReshapeDeformForeHead],
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvls_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦鼻") imageName:@"plvls_beauty_face_nose" beautyOption:PLVBBeautyOption_ReshapeDeformNose],
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"嘴巴") imageName:@"plvls_beauty_face_mouth" beautyOption:PLVBBeautyOption_ReshapeDeformZoomMouth],
+                  [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"美牙") imageName:@"plvls_beauty_face_whitenTeeth" beautyOption:PLVBBeautyOption_ReshapeBeautyWhitenTeeth],nil];
 }
 
 - (void)showContentView {
@@ -75,8 +78,8 @@ static CGFloat kItemHeight = 61; // item高度
 - (void)beautyOpen:(BOOL)open {
     [super beautyOpen:open];
     [self.collectionView reloadData];
-    if (open &&
-        self.selectedIndexPath) {
+    if (open && self.selectedIndexPath &&
+        self.dataArray.count > self.selectedIndexPath.item) {
         [self.collectionView selectItemAtIndexPath:self.selectedIndexPath animated:NO scrollPosition:UICollectionViewScrollPositionNone];
     }
 }
@@ -139,7 +142,7 @@ static CGFloat kItemHeight = 61; // item高度
 
 #pragma mark UICollectionViewDelegateFlowLayout
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
-    return 36; // 竖屏collectionView水平滚动，minimumLineSpacing为左右间距
+    return 16; // 竖屏collectionView水平滚动，minimumLineSpacing为左右间距
 }
 
 #pragma mark UICollectionViewDelegate

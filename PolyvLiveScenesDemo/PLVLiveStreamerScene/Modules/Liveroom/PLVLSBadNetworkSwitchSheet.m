@@ -10,6 +10,7 @@
 #import "PLVLSBadNetworkSwitchButton.h"
 // 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLSBadNetworkSwitchSheet()
 
@@ -103,7 +104,7 @@
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _sheetTitleLabel.font = [UIFont boldSystemFontOfSize:16];
-        _sheetTitleLabel.text = @"弱网处理";
+        _sheetTitleLabel.text = PLVLocalizedString(@"弱网处理");
     }
     return _sheetTitleLabel;
 }

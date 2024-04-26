@@ -13,6 +13,7 @@
 
 /// 工具类
 #import "PLVLSUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 static CGFloat kToolbarWidth = 32.0;
 static CGFloat kToolbarHeight = 32.0;
@@ -159,7 +160,7 @@ static CGFloat kToolbarHeight = 32.0;
 - (UIButton *)sendMsgButton {
     if (!_sendMsgButton) {
         _sendMsgButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_sendMsgButton setTitle:@"有话要说..." forState:UIControlStateNormal];
+        [_sendMsgButton setTitle:PLVLocalizedString(@"有话要说...") forState:UIControlStateNormal];
         _sendMsgButton.titleLabel.font = [UIFont systemFontOfSize:14];
         UIColor *color = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:0.6];
         [_sendMsgButton setTitleColor:color forState:UIControlStateNormal];
@@ -262,11 +263,11 @@ static CGFloat kToolbarHeight = 32.0;
         if (granted) {
             completion();
         } else {
-            [PLVLSUtils showAlertWithTitle:@"音视频权限申请"
-                                   message:@"请前往“设置-隐私”开启权限"
-                         cancelActionTitle:@"取消"
+            [PLVLSUtils showAlertWithTitle:PLVLocalizedString(@"音视频权限申请")
+                                   message:PLVLocalizedString(@"请前往“设置-隐私”开启权限")
+                         cancelActionTitle:PLVLocalizedString(@"取消")
                          cancelActionBlock:nil
-                        confirmActionTitle:@"前往设置" confirmActionBlock:^{
+                        confirmActionTitle:PLVLocalizedString(@"前往设置") confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
                         [[UIApplication sharedApplication] openURL:url];

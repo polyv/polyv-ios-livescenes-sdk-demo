@@ -8,6 +8,7 @@
 
 #import "PLVLCRedpackMessageCell.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 
 @interface PLVLCRedpackMessageCell ()
 
@@ -46,7 +47,7 @@
     
     PLVRedpackMessage *redpackMessage = (PLVRedpackMessage *)self.model.message;
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
-        UIImage *image = [PLVLCUtils imageForChatroomResource:@"plvlc_chatroom_password_redpack"];
+        UIImage *image = [PLVLCUtils imageForChatroomResource:PLVLocalizedString(@"plvlc_chatroom_password_redpack")];
         [self.redpackImageView setImage:image];
     }
     

@@ -18,6 +18,14 @@ typedef NS_ENUM(NSInteger, PLVECLivePlayerQuickLiveNetworkQuality) {
     PLVECLivePlayerQuickLiveNetworkQuality_Poor = 3            // 较差
 };
 
+/// 网络质量（公共流独有）
+typedef NS_ENUM(NSInteger, PLVECLivePlayerPublicStreamNetworkQuality) {
+    PLVECLivePlayerPublicStreamNetworkQuality_NoConnection = 0,   // 无网络
+    PLVECLivePlayerPublicStreamNetworkQuality_Good = 1,           // 良好
+    PLVECLivePlayerPublicStreamNetworkQuality_Middle = 2,         // 一般
+    PLVECLivePlayerPublicStreamNetworkQuality_Poor = 3            // 较差
+};
+
 @class PLVECPlayerViewController;
 
 NS_ASSUME_NONNULL_BEGIN
@@ -40,7 +48,14 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)playerController:(PLVECPlayerViewController *)playerController
  quickLiveNetworkQuality:(PLVECLivePlayerQuickLiveNetworkQuality)netWorkQuality;
 
+/// 公共流观看下的网络质量回调
+- (void)playerController:(PLVECPlayerViewController *)playerController
+ publicStreamNetworkQuality:(PLVECLivePlayerPublicStreamNetworkQuality)netWorkQuality;
+
 - (void)playerControllerWannaSwitchLine:(PLVECPlayerViewController *)playerController;
+
+- (void)playerControllerWannaFullScreen:(PLVECPlayerViewController *)playerController;
+
 #pragma mark 回放的回调
 
 /// 更新回放进度
@@ -98,6 +113,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param playerController 播放器管理器
 - (void)playerControllerPictureInPictureDidStop:(PLVECPlayerViewController *)playerController;
 
+/// 画中画播放器播放状态改变
+/// @param playerController 播放器管理器
+/// @param playing  是否播放器中 YES 播放，NO 暂停
+- (void)playerController:(PLVECPlayerViewController *)playerController pictureInPicturePlayingStateDidChange:(BOOL)playing;
+
 @end
 
 @interface PLVECPlayerViewController : UIViewController
@@ -113,6 +133,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 播放器播放状态
 @property (nonatomic, assign, readonly) BOOL playing;
 
+/// 播放器播放状态
+@property (nonatomic, assign, readonly) BOOL fullScreenEnable;
+
 /// 广告播放状态
 @property (nonatomic, readonly) BOOL advertPlaying;
 
@@ -124,6 +147,15 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 该频道是否 ‘直播中’ 
 @property (nonatomic, assign, readonly) BOOL channelInLive;
+
+/// 是否在iPad上显示全屏按钮
+///
+/// @note NO-在iPad上竖屏时不显示全屏按钮，YES-显示
+///       当项目未适配分屏时，建议设置为YES
+@property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
+
+/// 当前直播回放的 最大播放时间点 (单位:秒；仅非直播场景下有值)
+@property (nonatomic, readonly) NSTimeInterval playbackMaxPosition;
 
 /// 播放直播/回放
 - (void)play;
@@ -179,6 +211,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 在[无延迟播放场景] 下 播放器区域中展示的一个内容视图
 - (void)displayContentView:(UIView *)contentView;
+
+/// 在[直播场景]下 控制播放器区域全屏按钮显示/隐藏
+- (void)fullScreenButtonShowInView:(BOOL)show;
 
 @end
 

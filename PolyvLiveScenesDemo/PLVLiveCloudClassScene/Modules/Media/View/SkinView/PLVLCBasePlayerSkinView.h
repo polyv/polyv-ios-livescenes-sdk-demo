@@ -92,6 +92,9 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)setPlayButtonWithPlaying:(BOOL)playing;
 
+/// 是否启用播放控制按钮（播放按钮、刷新按钮）
+- (void)enablePlayControlButtons:(BOOL)enable;
+
 - (void)setFullScreenButtonShowOnIpad:(BOOL)show;
 
 - (void)setCountdownTime:(NSTimeInterval)time;
@@ -122,6 +125,9 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 /// 刷新进入画笔模式按钮是否显示
 /// @param show YES:显示，NO:隐藏
 - (void)refreshPaintButtonShow:(BOOL)show;
+
+/// 刷新播放进度控件是否显示（进度条、进度文本）
+- (void)refreshProgressControlsShow:(BOOL)show;
 
 /// 工具方法 (与 PLVLCBasePlayerSkinView 类本身没有逻辑关联，仅业务上相关)
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView;

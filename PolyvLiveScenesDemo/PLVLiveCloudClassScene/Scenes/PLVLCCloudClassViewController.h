@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///       当项目未适配分屏时，建议设置为YES
 @property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
 
+/// 退出并清理当前直播控制器
+- (void)exitCleanCurrentLiveController;
+
 @end
 
 NS_ASSUME_NONNULL_END

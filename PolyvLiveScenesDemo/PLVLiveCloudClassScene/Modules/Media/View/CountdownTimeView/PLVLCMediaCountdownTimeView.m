@@ -7,6 +7,7 @@
 //  直播间开播时间倒计时视图
 
 #import "PLVLCMediaCountdownTimeView.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVLCMediaCountdownTimeView()
@@ -48,17 +49,17 @@
     NSInteger sec = time - day * daySeconds - hour * 3600 - min * 60;
     
     NSMutableString *timeStr = [NSMutableString new];
-    [timeStr appendString:@"倒计时："];
+    [timeStr appendString:PLVLocalizedString(@"倒计时：")];
     if (day > 0)
-        [timeStr appendFormat:@"%@天 ", [NSString stringWithFormat:day < 10 ? @"0%ld" : @"%ld", day]];
+        [timeStr appendFormat:PLVLocalizedString(@"%@天 "), [NSString stringWithFormat:day < 10 ? @"0%ld" : @"%ld", day]];
     
     if (day > 0 || hour > 0)
-        [timeStr appendFormat:@"%@小时 ", [NSString stringWithFormat:hour < 10 ? @"0%ld" : @"%ld", hour]];
+        [timeStr appendFormat:PLVLocalizedString(@"%@小时 "), [NSString stringWithFormat:hour < 10 ? @"0%ld" : @"%ld", hour]];
     
     if (day > 0 || hour > 0 || min > 0)
-        [timeStr appendFormat:@"%@分 ", [NSString stringWithFormat:min < 10 ? @"0%ld" : @"%ld", min]];
+        [timeStr appendFormat:PLVLocalizedString(@"%@分 "), [NSString stringWithFormat:min < 10 ? @"0%ld" : @"%ld", min]];
     
-    [timeStr appendFormat:@"%@秒", [NSString stringWithFormat:sec < 10 ? @"0%ld" : @"%ld", sec]];
+    [timeStr appendFormat:PLVLocalizedString(@"%@秒"), [NSString stringWithFormat:sec < 10 ? @"0%ld" : @"%ld", sec]];
     
     self.lbCountdown.text = timeStr;
 }
