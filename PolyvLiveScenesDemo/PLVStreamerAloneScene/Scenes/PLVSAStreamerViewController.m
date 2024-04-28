@@ -795,7 +795,7 @@ PLVShareLiveSheetDelegate
     NSDictionary *userDict = [self getCurrentChannelStoringStreamInfo];
     orientation = [userDict[@"orientation"] longValue];
     
-    if (orientation != UIDeviceOrientationPortrait) {
+    if (orientation != [PLVSAUtils sharedUtils].deviceOrientation) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.settingView changeDeviceOrientation:orientation];
         });
