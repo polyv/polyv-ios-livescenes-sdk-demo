@@ -15,6 +15,8 @@
 #import "PLVSALongContentMessageCell.h"
 #import "PLVSARewardMessageCell.h"
 
+static NSInteger kPLVSAMaxPublicChatMessageCount = 500;
+
 @interface PLVSAChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
 PLVChatroomPresenterProtocol // common层聊天室Presenter协议
@@ -33,6 +35,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 // 数据数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray; /// 公聊全部消息数组
+
+#pragma mark 聊天数据管理
+
+/// 公聊数据管理计时器，间隔30秒触发一次
+@property (nonatomic, strong) NSTimer *publicChatManagerTimer;
 
 @end
 
@@ -89,6 +96,13 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                                                      userInfo:nil
                                                       repeats:YES];
     self.loginUserArray = [[NSMutableArray alloc] initWithCapacity:10];
+    
+    // 初始化公聊数据管理计时器
+    self.publicChatManagerTimer = [NSTimer scheduledTimerWithTimeInterval:30
+                                                                   target:self
+                                                                 selector:@selector(publicChatManagerTimerAction)
+                                                                 userInfo:nil
+                                                                  repeats:YES];
 }
 
 - (void)clear {
@@ -99,6 +113,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.delegate = nil;
     [self.loginTimer invalidate];
     self.loginTimer = nil;
+    [self.publicChatManagerTimer invalidate];
+    self.publicChatManagerTimer = nil;
     [self removeAllPublicChatModels];
 }
 
@@ -505,6 +521,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+- (void)notifyListerDidMessageCountLimitedAutoDeleted {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModelDidMessageCountLimitedAutoDeleted:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModelDidMessageCountLimitedAutoDeleted:self];
+        });
+    }
+}
+
 - (void)notifyListenerLoadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel:loadHistorySuccess:firstTime:)]) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -624,6 +648,29 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                 [self.delegate chatroomViewModel:self giftNickName:nickName cashGiftContent:giftContent];
             });
         }
+    }
+}
+
+#pragma mark 公聊数据管理
+
+- (void)publicChatManagerTimerAction {
+    if (self.chatArray.count > kPLVSAMaxPublicChatMessageCount) {
+        dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+        NSUInteger removalCount = self.chatArray.count - kPLVSAMaxPublicChatMessageCount;
+        NSRange removalRange = NSMakeRange(0, removalCount);
+        [self.chatArray removeObjectsInRange:removalRange];
+        
+        NSTimeInterval lastTime =self.chatArray.firstObject.time;
+        NSUInteger count = 0;
+        for (PLVChatModel *model in self.chatArray) {
+            if (!(model.time == lastTime)) {
+                break;
+            }
+            count++;
+        }
+        [self.presenter updateHistoryLastTime:lastTime lastTimeMessageIndex:count];
+        dispatch_semaphore_signal(_chatArrayLock);
+        [self notifyListerDidMessageCountLimitedAutoDeleted];
     }
 }
 

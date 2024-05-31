@@ -34,7 +34,7 @@ PLVPlayerPresenterDelegate
 /// │   ├── (PLVECAudioAnimalView) audioAnimalView  // 显示音频模式背景图
 /// │   ├── (UIButton) playButton  //播放器暂停、播放按钮
 /// │   └── (PLVLivePictureInPicturePlaceholderView) pictureInPicturePlaceholderView
-/// └── (PLVMarqueeView) marqueeView // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
+/// └── (PLVLiveMarqueeView) marqueeView // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 
 @property (nonatomic, strong) UIImageView *backgroundView; // 全尺寸背景图
 @property (nonatomic, strong) PLVECPlayerBackgroundView *playerBackgroundView; // 显示播放器（未开播时的）背景图
@@ -45,7 +45,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) UIButton * playButton; // 播放器暂停、播放按钮
 @property (nonatomic, strong) UIButton *fullScreenButton;          // 横屏按钮
 @property (nonatomic, strong) PLVLivePictureInPicturePlaceholderView *pictureInPicturePlaceholderView;    // 画中画占位图
-@property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
+@property (nonatomic, strong) PLVLiveMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) UILabel *memoryPlayTipLabel; // 记忆播放提示
 
 #pragma mark 基本数据
@@ -198,7 +198,7 @@ PLVPlayerPresenterDelegate
 #pragma mark Marquee
 - (void)setupMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick  {
     __weak typeof(self) weakSelf = self;
-    [self handleMarquee:channel customNick:customNick completion:^(PLVMarqueeModel *model, NSError *error) {
+    [self handleMarquee:channel customNick:customNick completion:^(PLVLiveMarqueeModel *model, NSError *error) {
         if (model) {
             [weakSelf loadVideoMarqueeView:model];
         } else if (error) {
@@ -215,7 +215,7 @@ PLVPlayerPresenterDelegate
     }];
 }
 
-- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeModel * model, NSError *error))completion {
+- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVLiveMarqueeModel * model, NSError *error))completion {
     switch (channel.marqueeType) {
         case PLVChannelMarqueeType_Nick:
             if (customNick) {
@@ -225,14 +225,14 @@ PLVPlayerPresenterDelegate
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
-            PLVMarqueeModel *model = [PLVMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue speed:channel.marqueeSpeed fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
+            PLVLiveMarqueeModel *model = [PLVLiveMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue speed:channel.marqueeSpeed fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
             completion(model, nil);
         } break;
         case PLVChannelMarqueeType_URL: {
             if (channel.marquee) {
                 [PLVLiveVideoAPI loadCustomMarquee:[NSURL URLWithString:channel.marquee] withChannelId:channel.channelId.integerValue userId:channel.accountUserId code:@"" completion:^(BOOL valid, NSDictionary *marqueeDict) {
                     if (valid) {
-                        completion([PLVMarqueeModel createMarqueeModelWithMarqueeDict:marqueeDict], nil);
+                        completion([PLVLiveMarqueeModel createMarqueeModelWithMarqueeDict:marqueeDict], nil);
                     } else {
                         NSError *error = [NSError errorWithDomain:@"net.plv.ecommerceBaseMediaError" code:-10000 userInfo:@{NSLocalizedDescriptionKey:marqueeDict[@"msg"]}];
                         completion(nil, error);
@@ -248,11 +248,11 @@ PLVPlayerPresenterDelegate
     }
 }
 
-- (void)loadVideoMarqueeView:(PLVMarqueeModel *)model {
+- (void)loadVideoMarqueeView:(PLVLiveMarqueeModel *)model {
     __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         // 设置跑马灯
-        [weakSelf.marqueeView setPLVMarqueeModel:model];
+        [weakSelf.marqueeView setPLVLiveMarqueeModel:model];
     });
 }
 
@@ -383,9 +383,9 @@ PLVPlayerPresenterDelegate
     return self.playerPresenter.noDelayLiveWatching;
 }
 
-- (PLVMarqueeView *)marqueeView{
+- (PLVLiveMarqueeView *)marqueeView{
     if (!_marqueeView) {
-        _marqueeView = [[PLVMarqueeView alloc] init];
+        _marqueeView = [[PLVLiveMarqueeView alloc] init];
         _marqueeView.backgroundColor = [UIColor clearColor];
         _marqueeView.userInteractionEnabled = NO;
     }

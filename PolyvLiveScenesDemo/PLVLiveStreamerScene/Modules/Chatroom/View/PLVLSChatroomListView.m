@@ -24,7 +24,7 @@
 #import "PLVLSChatroomViewModel.h"
 #import "PLVLSUtils.h"
 #import "PLVMultiLanguageManager.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 /// 依赖库
 #import <MJRefresh/MJRefresh.h>
@@ -213,6 +213,13 @@ UITableViewDataSource
     [self.tableView reloadData];
 }
 
+- (void)didMessageCountLimitedAutoDeleted {
+    [self.tableView reloadData];
+    if (!self.refresher.superview) {
+        self.tableView.mj_header = self.refresher;
+    }
+}
+
 - (void)loadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
     [self.refresher endRefreshing];
     [self.tableView reloadData];
@@ -247,14 +254,14 @@ UITableViewDataSource
             if (content) {
                 model.overLenContent = content;
                 [UIPasteboard generalPasteboard].string = content;
-                [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+                [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
             }
         }];
     } else {
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+            [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
         }
     }
 }

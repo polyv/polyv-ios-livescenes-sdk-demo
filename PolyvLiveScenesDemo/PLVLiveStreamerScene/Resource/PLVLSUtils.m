@@ -7,7 +7,7 @@
 //
 
 #import "PLVLSUtils.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVAlertViewController.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -355,19 +355,19 @@ static CGFloat kAlertButtonHeight = 36.0; // 按钮的高度
 #pragma mark - Public Method
 
 + (void)showToastInHomeVCWithMessage:(NSString *)message {
-    [PLVToast showToastWithMessage:message inView:[PLVLSUtils sharedUtils].homeVC.view];
+    [PLVLiveToast showToastWithMessage:message inView:[PLVLSUtils sharedUtils].homeVC.view];
 }
 
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view {
-    [PLVToast showToastWithMessage:message inView:view];
+    [PLVLiveToast showToastWithMessage:message inView:view];
 }
 
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay {
-    [PLVToast showToastWithMessage:message inView:view afterDelay:delay];
+    [PLVLiveToast showToastWithMessage:message inView:view afterDelay:delay];
 }
 
 + (void)showToastWithCountMessage:(NSString *)message inView:(UIView *)view afterCountdown:(CGFloat)countdown finishHandler:(void(^)(void))finishHandler {
-    [PLVToast showToastWithCountMessage:message inView:view afterCountdown:countdown finishHandler:finishHandler];
+    [PLVLiveToast showToastWithCountMessage:message inView:view afterCountdown:countdown finishHandler:finishHandler];
 }
 
 + (void)showAlertWithMessage:(NSString *)message

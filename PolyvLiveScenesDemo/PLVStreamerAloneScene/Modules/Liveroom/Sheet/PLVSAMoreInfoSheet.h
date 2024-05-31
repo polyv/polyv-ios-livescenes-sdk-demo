@@ -59,6 +59,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 观众下麦 触发回调
 - (void)moreInfoSheetDidTapRemoveAllAudiencesButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 签到按钮 触发回调
+- (void)moreInfoSheetDidTapSignInButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层

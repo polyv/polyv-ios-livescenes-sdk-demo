@@ -8,7 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVPlayerPresenter.h"
-#import "PLVMarqueeView.h"
+#import "PLVLiveMarqueeView.h"
 
 /// 网络质量（快直播独有）
 typedef NS_ENUM(NSInteger, PLVECLivePlayerQuickLiveNetworkQuality) {
@@ -128,7 +128,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong, readonly) UIView *displayView;
 
 /// 跑马灯视图
-@property (nonatomic, strong, readonly) PLVMarqueeView *marqueeView;
+@property (nonatomic, strong, readonly) PLVLiveMarqueeView *marqueeView;
 
 /// 播放器播放状态
 @property (nonatomic, assign, readonly) BOOL playing;

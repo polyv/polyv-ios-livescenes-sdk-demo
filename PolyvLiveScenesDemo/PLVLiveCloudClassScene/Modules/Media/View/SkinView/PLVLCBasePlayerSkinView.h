@@ -85,6 +85,8 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)setPlayTimesLabelWithTimes:(NSInteger)times;
 
+- (void)setPlayTimesLabelWithOnlineUsers:(NSInteger)onlineUsers;
+
 - (void)setFloatViewButtonWithShowStatus:(BOOL)showFloatView;
 
 /// 可提供给子类重写

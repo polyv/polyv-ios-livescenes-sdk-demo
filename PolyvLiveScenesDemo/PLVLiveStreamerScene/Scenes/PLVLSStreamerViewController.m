@@ -30,6 +30,7 @@
 #import "PLVLSMixLayoutSheet.h"
 #import "PLVLSLinkMicSettingSheet.h"
 #import "PLVLSLinkMicUpdateTipsView.h"
+#import "PLVStreamerPopoverView.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -90,6 +91,7 @@ PLVLSLinkMicSettingSheetDelegate
 @property (nonatomic, strong) PLVLSMixLayoutSheet *mixLayoutSheet; // 混流布局弹层
 @property (nonatomic, strong) PLVLSLinkMicSettingSheet *linkMicSettingSheet; // 连麦设置弹层
 @property (nonatomic, strong) PLVLSLinkMicUpdateTipsView *linkMicUpdateTipsView;
+@property (nonatomic, strong) PLVStreamerPopoverView *popoverView; // 浮动区域
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -221,6 +223,7 @@ PLVLSLinkMicSettingSheetDelegate
         CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
         [_mixLayoutSheet refreshWithSheetWidth:sheetWidth];
     }
+    self.popoverView.frame = self.view.bounds;
 }
 
 #pragma mark - Initialize
@@ -233,6 +236,8 @@ PLVLSLinkMicSettingSheetDelegate
     // 非全屏状态下，顶部 statusAreaView 必须在最顶端，需最后添加进去
     [self.view addSubview:self.statusAreaView];
     [self.view addSubview:self.linkMicUpdateTipsView];
+    // 屏蔽签到功能 
+    // [self.view addSubview:self.popoverView];
 
     // 初始化
     [self.settingSheet initView]; /// 仅用于初始化
@@ -475,6 +480,13 @@ PLVLSLinkMicSettingSheetDelegate
         _linkMicUpdateTipsView.hidden = YES;
     }
     return _linkMicUpdateTipsView;
+}
+
+- (PLVStreamerPopoverView *)popoverView {
+    if (!_popoverView) {
+        _popoverView = [[PLVStreamerPopoverView alloc] init];
+    }
+    return _popoverView;
 }
 
 #pragma mark - Private
@@ -1416,6 +1428,10 @@ PLVLSLinkMicSettingSheetDelegate
 
 - (void)moreInfoSheetDidTapMixLayoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
     [self.mixLayoutSheet showInView:self.view];
+}
+
+- (void)moreInfoSheetDidTapSignInButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.interactView openInteractViewWithEventName:@"SHOW_SIGN"];
 }
 
 #pragma mark PLVShareLiveSheetDelegate

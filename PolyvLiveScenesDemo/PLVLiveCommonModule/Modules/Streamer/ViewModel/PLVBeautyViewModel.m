@@ -54,6 +54,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     self.beautyIsOpen = [self getBeautyOpenStatus];
     [self initFilterOption];
     [self initBeautyOption];
+    [self sendBeautyOpenLog];
 }
 
 - (void)clear {
@@ -70,6 +71,10 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
         [self selectBeautyFilterOption:self.currentFilterOption];
         [self selectBeautyOption:self.currentBeautyOption];
     }
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(sendBeautyOpenLog) object:nil];
+    plv_dispatch_main_async_safe(^{
+        [self performSelector:@selector(sendBeautyOpenLog) withObject:nil afterDelay:2.0];
+    })
 }
 
 - (void)updateBeautyOptionWithIntensity:(CGFloat)intensity {
@@ -82,6 +87,10 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
         // 缓存在本地
         [[NSUserDefaults standardUserDefaults] setObject:self.beautyOptionDict forKey:kBeautyOptionDictKey];
         [[NSUserDefaults standardUserDefaults] synchronize];
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(sendBeautyUpdateLog) object:nil];
+        plv_dispatch_main_async_safe(^{
+            [self performSelector:@selector(sendBeautyUpdateLog) withObject:nil afterDelay:2.0];
+        })
     } else if (self.currentFilterOption) { // 滤镜模式
         [self.beautyManager setFilterOption:self.currentFilterOption withIntensity:intensity];
         plv_dict_set(self.beautyFilterOptionDict, self.currentFilterOption.filterSpellName, @(intensity));
@@ -89,6 +98,10 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
         // 缓存在本地
         [[NSUserDefaults standardUserDefaults] setObject:self.beautyFilterOptionDict forKey:kBeautyFilterOptionDictKey];
         [[NSUserDefaults standardUserDefaults] synchronize];
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(sendBeautyUpdateLog) object:nil];
+        plv_dispatch_main_async_safe(^{
+            [self performSelector:@selector(sendBeautyUpdateLog) withObject:nil afterDelay:2.0];
+        })
     }
 }
 
@@ -316,6 +329,10 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     [self removeBeautyFilterSelect];
     [self initBeautyOption];
     [self initFilterOption];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(sendBeautyResetLog) object:nil];
+    plv_dispatch_main_async_safe(^{
+        [self performSelector:@selector(sendBeautyResetLog) withObject:nil afterDelay:2.0];
+    })
 }
 
 #pragma mark NotifyListener
@@ -336,6 +353,48 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
             [self.delegate beautyViewModel:self didChangeFilterName:PLVLocalizedString(self.currentFilterOption.filterName)];
         })
     }
+}
+
+#pragma mark - log
+
+- (NSString *)beautyLogInfo {
+    if (!self.beautyIsOpen) {
+        return nil;
+    }
+    
+    if (!self.beautyIsOpen ||
+        !self.currentFilterOption ||
+        ![self.currentFilterOption  isKindOfClass:NSClassFromString(@"PLVBFilterOption")]) {
+        return [NSString stringWithFormat:@"beautyOptionDict: %@", self.beautyOptionDict];
+    }
+    
+    CGFloat intensity;
+    if (![PLVFdUtil checkStringUseable:self.currentFilterOption.filterKey]) { // 原图filterKey为空，隐藏强度滑动视图
+        intensity = -1;
+    } else {
+        intensity = PLV_SafeFloatForDictKey(self.beautyFilterOptionDict, self.currentFilterOption.filterSpellName);
+    }
+    
+    return [NSString stringWithFormat:@"beautyOptionDict: %@\n beautyFilterOption: %@: %f", self.beautyOptionDict, self.currentFilterOption.filterSpellName, intensity];;
+}
+
+- (void)sendBeautyOpenLog {
+    NSString *event = [NSString stringWithFormat:@"%@Beauty", self.beautyIsOpen ? @"open" : @"close"];
+    [[PLVWLogReporterManager sharedManager] reportWithEvent:event modul:@"beauty" information:[self beautyLogInfo] patch:YES];
+}
+
+- (void)sendBeautyUpdateLog {
+    if (!self.beautyIsOpen) {
+        return;
+    }
+    [[PLVWLogReporterManager sharedManager] reportWithEvent:@"updateBeauty" modul:@"beauty" information:[self beautyLogInfo] patch:YES];
+}
+
+- (void)sendBeautyResetLog {
+    if (!self.beautyIsOpen) {
+        return;
+    }
+    [[PLVWLogReporterManager sharedManager] reportWithEvent:@"resetBeauty" modul:@"beauty" information:[self beautyLogInfo] patch:YES];
 }
 
 @end

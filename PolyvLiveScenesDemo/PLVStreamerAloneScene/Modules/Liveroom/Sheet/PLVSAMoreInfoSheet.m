@@ -21,6 +21,7 @@
 
 // UI
 @property (nonatomic, strong) UILabel *titleLabel; // 标题
+@property (nonatomic, strong) UILabel *baseTitleLabel; // 基础功能标题
 @property (nonatomic, strong) UIButton *cameraButton; // 摄像头
 @property (nonatomic, strong) UIButton *microphoneButton; // 麦克风
 @property (nonatomic, strong) UIButton *cameraReverseButton; // 翻转
@@ -37,6 +38,9 @@
 @property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
 @property (nonatomic, strong) UIButton *removeAllAudiencesButton; // 观众下麦
 @property (nonatomic, strong) NSArray *buttonArray;
+@property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
+@property (nonatomic, strong) UIButton *signInButton; // 签到
+@property (nonatomic, strong) NSArray *interactiveButtonArray; // 互动
 @property (nonatomic, strong) UIScrollView *scrollView; // 按钮承载视图
 
 // 数据
@@ -62,6 +66,8 @@
         if (!isPad && [self.buttonArray count] > 10) { // 超过两行
             self.sheetHight += (28 + 12 + 14 + 16);
         }
+        // 互动入口的高度
+        self.sheetHight += 28.0 + 12.0 + 14 + 16;
         self.allowRaiseHandButtonLastTimeInterval = 0.0;
     }
     return self;
@@ -77,11 +83,11 @@
     CGFloat titleX = isLandscape ? 32 : (isPad ? 56 :16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
     self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
-    self.scrollView.frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame) + 8, CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - CGRectGetMaxY(self.titleLabel.frame));
+    self.scrollView.frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame) + 8, CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - CGRectGetMaxY(self.titleLabel.frame) - 8);
     
     CGSize buttonSize = [self getMaxButtonSize];
     
-    [self setButtonFrameWithButtonSize:buttonSize];
+    [self setControlsFrameWithButtonSize:buttonSize];
     [self setButtonInsets];
 }
 
@@ -163,7 +169,8 @@
     [self.contentView addSubview:self.scrollView];
     
     UIView *buttonSuperView = self.scrollView;
-        
+    [buttonSuperView addSubview:self.baseTitleLabel];
+
     // 摄像头、麦克风、前后摄像头、镜像
     [buttonSuperView addSubview:self.cameraButton];
     [buttonSuperView addSubview:self.microphoneButton];
@@ -233,6 +240,10 @@
     }
     
     self.buttonArray = [muButtonArray copy];
+    
+    [buttonSuperView addSubview:self.interactiveTitleLabel];
+    [buttonSuperView addSubview:self.signInButton];
+    self.interactiveButtonArray = @[self.signInButton];
 }
 
 #pragma mark Getter
@@ -246,6 +257,17 @@
     }
     return _titleLabel;
 }
+
+- (UILabel *)baseTitleLabel {
+    if (!_baseTitleLabel) {
+        _baseTitleLabel = [[UILabel alloc] init];
+        _baseTitleLabel.text = PLVLocalizedString(@"基础");
+        _baseTitleLabel.font = [UIFont systemFontOfSize:14];
+        _baseTitleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+    }
+    return _baseTitleLabel;
+}
+
 - (UIButton *)cameraButton {
     if (!_cameraButton) {
         _cameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -465,6 +487,29 @@
     return _removeAllAudiencesButton;
 }
 
+- (UILabel *)interactiveTitleLabel {
+    if (!_interactiveTitleLabel) {
+        _interactiveTitleLabel = [[UILabel alloc] init];
+        _interactiveTitleLabel.text = PLVLocalizedString(@"互动");
+        _interactiveTitleLabel.font = [UIFont systemFontOfSize:14];
+        _interactiveTitleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
+    }
+    return _interactiveTitleLabel;
+}
+
+- (UIButton *)signInButton {
+    if (!_signInButton) {
+        _signInButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _signInButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _signInButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_signInButton setTitle:PLVLocalizedString(@"签到") forState:UIControlStateNormal];
+        [_signInButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_signIn_btn"] forState:UIControlStateNormal];
+        [_signInButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_signIn_btn"] forState:UIControlStateSelected];
+        [_signInButton addTarget:self action:@selector(signInButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _signInButton;
+}
+
 - (UIScrollView *)scrollView {
     if (!_scrollView) {
         _scrollView = [[UIScrollView alloc] init];
@@ -492,13 +537,14 @@
     return CGSizeMake(maxWidth, maxHeight);
 }
 
-- (void)setButtonFrameWithButtonSize:(CGSize)buttonSize {
+- (void)setControlsFrameWithButtonSize:(CGSize)buttonSize {
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
     NSInteger buttonCount = isLandscape ? 3 : (isPad ? 7 : 5); // 竖屏时（iphone）每行5个按钮、横屏时（iphone & ipad）每行3个按钮
-    CGFloat buttonOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
-    CGFloat buttonOriginY =  (self.bounds.size.height > 667 || isLandscape) ?  4 : 38;
+    CGFloat defaultOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
+    CGFloat buttonOriginX = defaultOriginX;
+    CGFloat buttonOriginY =  4;
     CGFloat buttonXPadding = (self.scrollView.bounds.size.width - buttonOriginX * 2 - buttonSize.width * buttonCount) / (buttonCount - 1);
     CGFloat buttonYPadding = (self.bounds.size.height > 667 || isLandscape) ? 18 : 16;
     if (isPad && !isLandscape) {
@@ -506,11 +552,28 @@
         buttonYPadding = 30.0;
     }
     
+    self.baseTitleLabel.frame = CGRectMake(defaultOriginX, 5, 40, 20);
+    buttonOriginY += CGRectGetHeight(self.baseTitleLabel.frame) + 8;
     for (int i = 0; i < self.buttonArray.count ; i++) {
         UIButton *button = self.buttonArray[i];
         
         if (i % buttonCount == 0 && i != 0) { // 换行
-            buttonOriginX = isLandscape ? 38 : (isPad ? 56.0 : 21.5);
+            buttonOriginX = defaultOriginX;
+            buttonOriginY += buttonSize.height + buttonYPadding;
+        }
+        
+        button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonSize.width, buttonSize.height);
+        buttonOriginX += buttonSize.width + buttonXPadding;
+    }
+    
+    buttonOriginY += 30;
+    self.interactiveTitleLabel.frame = CGRectMake(defaultOriginX, buttonOriginY + buttonSize.height, 80, 20);
+    buttonOriginY = CGRectGetMaxY(self.interactiveTitleLabel.frame) + 8;
+    buttonOriginX = defaultOriginX;
+    for (int i = 0; i < self.interactiveButtonArray.count ; i++) {
+        UIButton *button = self.interactiveButtonArray[i];
+        if (i % buttonCount == 0 && i != 0) { // 换行
+            buttonOriginX = defaultOriginX;
             buttonOriginY += buttonSize.height + buttonYPadding;
         }
         
@@ -519,12 +582,13 @@
     }
     
     // 设置超出视图范围可滚动选择按钮
-    self.scrollView.contentSize = CGSizeMake(self.contentView.frame.size.width, buttonOriginY + buttonSize.height);
+    self.scrollView.contentSize = CGSizeMake(self.contentView.frame.size.width, buttonOriginY + buttonSize.height + 10);
 }
 
 - (void)setButtonInsets {
-    for (int i = 0; i < self.buttonArray.count ; i++) {
-        UIButton *but = self.buttonArray[i];
+    NSArray *mergeButtonArray = [self.buttonArray arrayByAddingObjectsFromArray:self.interactiveButtonArray];
+    for (int i = 0; i < mergeButtonArray.count ; i++) {
+        UIButton *but = mergeButtonArray[i];
         CGFloat padding = 12;
         CGFloat imageBottom = but.titleLabel.intrinsicContentSize.height;
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
@@ -808,6 +872,13 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapRemoveAllAudiencesButton:)]) {
         [self.delegate moreInfoSheetDidTapRemoveAllAudiencesButton:self];
+    }
+}
+
+- (void)signInButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapSignInButton:)]) {
+        [self.delegate moreInfoSheetDidTapSignInButton:self];
     }
 }
 

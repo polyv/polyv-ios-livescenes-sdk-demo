@@ -61,9 +61,10 @@ PLVInteractWebViewBridgeDelegate>
     
     NSString *urlString = [NSString stringWithFormat:@"%@?livePlayBack=%@", PLVLiveConstantsInteractNewWebViewURL, @(!self.isLiveRoom)];
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
-    BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
+    BOOL enableSecurity = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
+    NSInteger security = enableSecurity ? ([PLVFSignConfig sharedInstance].encryptType == PLVEncryptType_SM2 ? 2 : 1) : 0;
     NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
-    urlString = [urlString stringByAppendingFormat:@"&security=%d&resourceAuth=%d&secureApi=%d&lang=%@", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
+    urlString = [urlString stringByAppendingFormat:@"&security=%ld&resourceAuth=%d&secureApi=%d&lang=%@", security, (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
     NSURL *interactURL = [NSURL URLWithString:urlString];
     
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];
@@ -259,10 +260,15 @@ PLVInteractWebViewBridgeDelegate>
         @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
         @"webVersion" : @"0.5.0"
     };
+    NSDictionary *sm2Key = @{
+        @"platformPublicKey" : [NSString stringWithFormat:@"%@", [PLVFSignConfig sharedInstance].serverSM2PublicKey], // 平台公钥(接口提交参数加密用)
+        @"userPrivateKey" : [NSString stringWithFormat:@"%@", [PLVFSignConfig sharedInstance].clientSM2PrivateKey] // 用户私钥(接口返回内容解密用)
+    };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    [mutableDict setObject:sm2Key forKey:@"sm2Key"];
     [mutableDict addEntriesFromDictionary:sessionDict];
     if (roomData.menuInfo.promotionInfo) {
         [mutableDict setObject:roomData.menuInfo.promotionInfo forKey:@"promotionInfo"];
@@ -406,6 +412,15 @@ PLVInteractWebViewBridgeDelegate>
 
 - (NSDictionary *)getAPPInfoInInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge {
     return [self getUserInfo];
+}
+
+- (NSDictionary *)getInteractInfoInInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge {
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    NSDictionary *dict = @{@"lotteryData" : @{
+        @"lotteryTextCN" : [PLVFdUtil checkStringUseable:menuInfo.lotteryGiftButtonTextCH] ? menuInfo.lotteryGiftButtonTextCH : @"猛戳提升手气",
+        @"lotteryTextEN" : [PLVFdUtil checkStringUseable:menuInfo.lotteryGiftButtonTextEN] ? menuInfo.lotteryGiftButtonTextEN : @"Click For Luck"}
+    };
+    return dict;
 }
 
 #pragma mark Utils

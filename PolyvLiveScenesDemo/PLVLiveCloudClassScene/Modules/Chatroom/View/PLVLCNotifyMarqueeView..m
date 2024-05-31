@@ -7,13 +7,13 @@
 //
 
 #import "PLVLCNotifyMarqueeView.h"
-#import "PLVMarqueeLabel.h"
+#import "PLVLiveMarqueeLabel.h"
 #import "PLVEmoticonManager.h"
 
 @interface PLVLCNotifyMarqueeView ()
 
 @property (nonatomic, assign) CGFloat scrollDuration;
-@property (nonatomic, strong) PLVMarqueeLabel *marqueeLabel;
+@property (nonatomic, strong) PLVLiveMarqueeLabel *marqueeLabel;
 
 @end
 
@@ -38,9 +38,9 @@
 }
 #pragma mark - Getter & Setter
 
-- (PLVMarqueeLabel *)marqueeLabel {
+- (PLVLiveMarqueeLabel *)marqueeLabel {
     if (!_marqueeLabel) {
-        _marqueeLabel = [[PLVMarqueeLabel alloc] initWithFrame:CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height) duration:self.scrollDuration andFadeLength:0];
+        _marqueeLabel = [[PLVLiveMarqueeLabel alloc] initWithFrame:CGRectMake(0, 0, self.bounds.size.width, self.bounds.size.height) duration:self.scrollDuration andFadeLength:0];
         _marqueeLabel.textColor = [UIColor whiteColor];
         _marqueeLabel.leadingBuffer = CGRectGetWidth(self.bounds);
     }

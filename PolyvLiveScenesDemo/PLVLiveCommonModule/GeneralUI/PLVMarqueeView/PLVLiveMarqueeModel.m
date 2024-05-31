@@ -1,15 +1,15 @@
 //
-//  PLVMarqueeStyleModel.m
+//  PLVLiveMarqueeStyleModel.m
 //  PLVFoundationSDK
 //
 //  Created by PLV-UX on 2021/3/10.
 //  Copyright © 2021 PLV. All rights reserved.
 //
 
-#import "PLVMarqueeModel.h"
+#import "PLVLiveMarqueeModel.h"
 #import "PLVMultiLanguageManager.h"
 
-@interface PLVMarqueeModel ()
+@interface PLVLiveMarqueeModel ()
 
 /// 富文本字符串属性
 @property (nonatomic, strong) NSMutableDictionary *attributes;
@@ -42,10 +42,10 @@ static float FloatValueWithJsonValue(id obj) {
     }
 }
 
-@implementation PLVMarqueeModel
+@implementation PLVLiveMarqueeModel
 - (instancetype)init {
     if (self = [super init]) {
-        _style = PLVMarqueeModelStyleRoll;
+        _style = PLVLiveMarqueeModelStyleRoll;
         _content = PLVLocalizedString(@"PLV跑马灯");
         _fontSize = 30;
         _fontColor = @"#000000";
@@ -78,8 +78,8 @@ static float FloatValueWithJsonValue(id obj) {
                                         speed:(NSUInteger)speed
                                     fontColor:(NSString *)fontColor
                                         alpha:(float)alpha
-                                        style:(PLVMarqueeModelStyle)style {
-    PLVMarqueeModel *model = [[PLVMarqueeModel alloc]init];
+                                        style:(PLVLiveMarqueeModelStyle)style {
+    PLVLiveMarqueeModel *model = [[PLVLiveMarqueeModel alloc]init];
     model.content = content;
     model.fontSize = fontSize;
     model.fontColor = [fontColor stringByReplacingOccurrencesOfString:@"0x" withString:@"#"];
@@ -100,7 +100,7 @@ static float FloatValueWithJsonValue(id obj) {
         || ![StringValueWithJsonValue(marqueeDict[@"show"]) isEqualToString:@"on"]) {
         return nil;
     }
-    PLVMarqueeModel *model = [[PLVMarqueeModel alloc]init];
+    PLVLiveMarqueeModel *model = [[PLVLiveMarqueeModel alloc]init];
     model.errorMessage = StringValueWithJsonValue(marqueeDict[@"msg"]);
     model.style = IntegerValueWithJsonValue(marqueeDict[@"setting"]);
     model.content = StringValueWithJsonValue(marqueeDict[@"username"]);

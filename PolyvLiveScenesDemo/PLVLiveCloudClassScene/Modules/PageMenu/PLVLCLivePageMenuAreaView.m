@@ -338,9 +338,9 @@ PLVRoomDataManagerProtocol
 
 #pragma mark - PLVLCBuyViewControllerDelegate
 
-- (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductLinkURL:)]) {
-        [self.delegate plvLCLivePageMenuAreaView:self clickProductLinkURL:linkURL];
+- (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductLinkURL:commodity:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self clickProductLinkURL:linkURL commodity:commodity];
     }
 }
 

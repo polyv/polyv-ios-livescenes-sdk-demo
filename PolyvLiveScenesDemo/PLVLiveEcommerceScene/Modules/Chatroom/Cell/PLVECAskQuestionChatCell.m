@@ -7,7 +7,7 @@
 //
 
 #import "PLVECAskQuestionChatCell.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 // 模块
 #import "PLVChatUser.h"
 #import "PLVEmoticonManager.h"
@@ -48,7 +48,7 @@
     if ([message isKindOfClass:[NSString class]]) {
         pasteboard.string = (NSString *)message;
     }
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
 }
 
 #pragma mark - [ Public Methods ]

@@ -261,6 +261,11 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
                                              repeats:YES];
 }
 
+- (void)updateHistoryLastTime:(NSTimeInterval)lastTime lastTimeMessageIndex:(NSInteger)lastTimeMessageIndex {
+    self.lastTime = lastTime;
+    self.lastTimeMessageIndex = lastTimeMessageIndex;
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)loadNewesetRedpack {
@@ -1301,6 +1306,9 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self closeRoomEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"onSliceID"]) {
         NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+        // 在线人数由onSliceId中获取
+        NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
+        [self updateOnlineCount:onlineCount];
         NSString *focusSpecialSpeak = PLV_SafeStringForDictKey(data, @"focusSpecialSpeak");
         BOOL focusMode = [focusSpecialSpeak isEqualToString:@"Y"];
         if (focusMode) {
@@ -1325,7 +1333,6 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
-    [self updateOnlineCount:onlineCount];
     
     NSDictionary *user = PLV_SafeDictionaryForDictKey(data, @"user");
     NSString *userId = PLV_SafeStringForDictKey(user, @"userId");
@@ -1333,7 +1340,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         [self increaseWatchCount]; // 他人登录时，观看热度加1
     } else {
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        if (roomData.restrictChatEnabled && roomData.maxViewerCount > 0 && onlineCount > roomData.maxViewerCount) {
+        if (roomData.restrictChatEnabled && roomData.maxViewerCount > 0 && (onlineCount > roomData.maxViewerCount || roomData.onlineCount > roomData.maxViewerCount)) {
             if (self.delegate &&
                 [self.delegate respondsToSelector:@selector(chatroomPresenter_didLoginRestrict)]) {
                 [self.delegate chatroomPresenter_didLoginRestrict];

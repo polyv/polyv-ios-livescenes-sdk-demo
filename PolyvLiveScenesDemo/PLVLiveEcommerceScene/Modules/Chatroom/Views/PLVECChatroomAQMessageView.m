@@ -14,7 +14,7 @@
 #import "PLVECNewMessageView.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVRoomDataManager.h"
 #import <MJRefresh/MJRefresh.h>
 

@@ -8,7 +8,7 @@
 
 #import "PLVECChatBaseCell.h"
 #import "PLVMultiLanguageManager.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 @implementation PLVECChatBaseCell
 
@@ -158,7 +158,7 @@
         PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)message;
         pasteboard.string = quoteMessage.content;
     }
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVFdUtil getCurrentViewController].view afterDelay:3.0];
 }
 
 #pragma mark Gesture

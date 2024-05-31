@@ -90,7 +90,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// │   ├── (PLVWatermarkView) watermarkView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
-/// ├── (PLVMarqueeView) marqueeView
+/// ├── (PLVLiveMarqueeView) marqueeView
 /// │
 /// └── (PLVLCMediaFloatView) floatView
 ///      └── (UIView) contentBackgroudView
@@ -104,7 +104,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// │   ├── (PLVWatermarkView) watermarkView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
-/// ├── (PLVMarqueeView) marqueeView
+/// ├── (PLVLiveMarqueeView) marqueeView
 /// │
 /// └── (PLVLCMediaFloatView) floatView
 ///      └── (UIView) contentBackgroudView
@@ -123,7 +123,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// │
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// │
-/// └── (PLVMarqueeView) marqueeView
+/// └── (PLVLiveMarqueeView) marqueeView
 ///
 /// [横屏] 主屏显示 PPT 时:
 /// (UIView) superview
@@ -138,7 +138,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// │
 /// ├── (PLVLCLiveRoomPlayerSkinView) liveRoomSkinView
 /// │
-/// ├── (PLVMarqueeView) marqueeView
+/// ├── (PLVLiveMarqueeView) marqueeView
 /// │
 /// └── (PLVLCDocumentPaintModeView) paintModeView
 @property (nonatomic, strong) UIView * contentBackgroudView; // 内容背景视图 (负责承载 不同类型的内容画面（播放器画面、或PPT画面）；直接决定了’内容画面‘ 在 PLVLCMediaAreaView 中的布局、图层)
@@ -148,7 +148,7 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, strong) PLVLCMediaMoreView * moreView;
 @property (nonatomic, strong) PLVDanMu *danmuView;  // 弹幕 (用于显示 ‘聊天室消息’)
 @property (nonatomic, strong) PLVLCMediaDanmuSettingView *danmuSettingView;  // 弹幕设置视图
-@property (nonatomic, strong) PLVMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
+@property (nonatomic, strong) PLVLiveMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) PLVWatermarkView * watermarkView; // 防录屏水印
 @property (nonatomic, strong) PLVLCDocumentPaintModeView *paintModeView; // 画笔模式视图
 @property (nonatomic, assign) NSTimeInterval interruptionTime;
@@ -754,7 +754,7 @@ PLVLCDocumentPaintModeViewDelegate
 #pragma mark Marquee
 - (void)setupMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick  {
     __weak typeof(self) weakSelf = self;
-    [self handleMarquee:channel customNick:customNick completion:^(PLVMarqueeModel *model, NSError *error) {
+    [self handleMarquee:channel customNick:customNick completion:^(PLVLiveMarqueeModel *model, NSError *error) {
         if (model) {
             [weakSelf loadVideoMarqueeView:model];
         } else if (error) {
@@ -771,7 +771,7 @@ PLVLCDocumentPaintModeViewDelegate
     }];
 }
 
-- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVMarqueeModel * model, NSError *error))completion {
+- (void)handleMarquee:(PLVChannelInfoModel *)channel customNick:(NSString *)customNick completion:(void (^)(PLVLiveMarqueeModel * model, NSError *error))completion {
     switch (channel.marqueeType) {
         case PLVChannelMarqueeType_Nick:
             if (customNick) {
@@ -781,14 +781,14 @@ PLVLCDocumentPaintModeViewDelegate
             }
         case PLVChannelMarqueeType_Fixed: {
             float alpha = channel.marqueeOpacity.floatValue/100.0;
-            PLVMarqueeModel *model = [PLVMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue speed:channel.marqueeSpeed fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
+            PLVLiveMarqueeModel *model = [PLVLiveMarqueeModel createMarqueeModelWithContent:channel.marquee fontSize:channel.marqueeFontSize.unsignedIntegerValue speed:channel.marqueeSpeed fontColor:channel.marqueeFontColor alpha:alpha style:channel.marqueeSetting];
             completion(model, nil);
         } break;
         case PLVChannelMarqueeType_URL: {
             if (channel.marquee) {
                 [PLVLiveVideoAPI loadCustomMarquee:[NSURL URLWithString:channel.marquee] withChannelId:channel.channelId.integerValue userId:channel.accountUserId code:@"" completion:^(BOOL valid, NSDictionary *marqueeDict) {
                     if (valid) {
-                        completion([PLVMarqueeModel createMarqueeModelWithMarqueeDict:marqueeDict], nil);
+                        completion([PLVLiveMarqueeModel createMarqueeModelWithMarqueeDict:marqueeDict], nil);
                     } else {
                         NSError *error = [NSError errorWithDomain:@"net.plv.cloudClassBaseMediaError" code:-10000 userInfo:@{NSLocalizedDescriptionKey:marqueeDict[@"msg"]}];
                         completion(nil, error);
@@ -804,11 +804,11 @@ PLVLCDocumentPaintModeViewDelegate
     }
 }
 
-- (void)loadVideoMarqueeView:(PLVMarqueeModel *)model {
+- (void)loadVideoMarqueeView:(PLVLiveMarqueeModel *)model {
     __weak typeof(self) weakSelf = self;
     dispatch_async(dispatch_get_main_queue(), ^{
         // 设置跑马灯
-        [weakSelf.marqueeView setPLVMarqueeModel:model];
+        [weakSelf.marqueeView setPLVLiveMarqueeModel:model];
     });
 }
 
@@ -866,9 +866,9 @@ PLVLCDocumentPaintModeViewDelegate
     return _canvasView;
 }
 
-- (PLVMarqueeView *)marqueeView{
+- (PLVLiveMarqueeView *)marqueeView{
     if (!_marqueeView) {
-        _marqueeView = [[PLVMarqueeView alloc] init];
+        _marqueeView = [[PLVLiveMarqueeView alloc] init];
         _marqueeView.backgroundColor = [UIColor clearColor];
         _marqueeView.userInteractionEnabled = NO;
     }
@@ -1669,7 +1669,9 @@ PLVLCDocumentPaintModeViewDelegate
         // 画中画占位视图显示控制、播放控制
         if (self.currentLiveSceneType == PLVLCMediaAreaViewLiveSceneType_WatchCDN) {
             [self.canvasView setPictureInPicturePlaceholderShow:YES];
-            [self.playerPresenter pausePlay];
+            if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode == PLVLivePictureInPictureMode_AVPlayer) {
+                [self.playerPresenter pausePlay];
+            }
         }else {
             if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveWannaPlay:)]) {
                 [self.delegate plvLCMediaAreaView:self noDelayLiveWannaPlay:NO];
@@ -1677,7 +1679,9 @@ PLVLCDocumentPaintModeViewDelegate
         }
     } else if (self.videoType == PLVChannelVideoType_Playback) { // 视频类型为 直播回放
         [self.canvasView setPictureInPicturePlaceholderShow:YES];
-        [self.playerPresenter pausePlay];
+        if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode == PLVLivePictureInPictureMode_AVPlayer) {
+            [self.playerPresenter pausePlay];
+        }
         [self.skinView refreshProgressControlsShow:NO];
     }
     

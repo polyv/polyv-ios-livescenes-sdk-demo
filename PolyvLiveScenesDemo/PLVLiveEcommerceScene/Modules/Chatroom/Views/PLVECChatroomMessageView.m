@@ -15,7 +15,7 @@
 #import "PLVECLongContentChatCell.h"
 #import "PLVECNewMessageView.h"
 #import "PLVECUtils.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
 #import <MJRefresh/MJRefresh.h>
@@ -167,7 +167,7 @@ PLVECChatroomPlaybackViewModelDelegate
                 if (content) {
                     model.overLenContent = content;
                     [UIPasteboard generalPasteboard].string = content;
-                    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
+                    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
                 }
             }];
         }
@@ -175,7 +175,7 @@ PLVECChatroomPlaybackViewModelDelegate
         NSString *pasteString = [model isOverLenMsg] ? model.overLenContent : model.content;
         if (pasteString) {
             [UIPasteboard generalPasteboard].string = pasteString;
-            [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
+            [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
         }
     }
 }
@@ -581,6 +581,17 @@ PLVECChatroomPlaybackViewModelDelegate
         [[UIMenuController sharedMenuController] hideMenu];
     } else {
         [[UIMenuController sharedMenuController]  setMenuVisible:NO];
+    }
+}
+
+- (void)chatroomManager_didMessageCountLimitedAutoDeleted {
+    [self.tableView reloadData];
+    if (!self.tableView.mj_header.superview) {
+        MJRefreshNormalHeader *refreshHeader = [MJRefreshNormalHeader headerWithRefreshingTarget:self refreshingAction:@selector(refreshAction:)];
+        refreshHeader.lastUpdatedTimeLabel.hidden = YES;
+        refreshHeader.stateLabel.hidden = YES;
+        [refreshHeader.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleWhite];
+        self.tableView.mj_header = refreshHeader;
     }
 }
 

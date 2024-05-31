@@ -11,7 +11,7 @@
 #import "PLVPhotoBrowser.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -310,7 +310,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview.superview.superview afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview.superview.superview afterDelay:3.0];
 }
 
 - (void)tapImageViewAction {

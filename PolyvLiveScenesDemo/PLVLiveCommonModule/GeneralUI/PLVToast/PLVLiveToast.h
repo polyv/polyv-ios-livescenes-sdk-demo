@@ -1,5 +1,5 @@
 //
-//  PLVToast.h
+//  PLVLiveToast.h
 //  PLVLiveStreamerDemo
 //
 //  Created by MissYasiky on 2021/3/1.
@@ -11,7 +11,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 /// 手机开播通用 toast
-@interface PLVToast : UIView
+@interface PLVLiveToast : UIView
 
 /// 显示 toast
 /// @param message toast 文本

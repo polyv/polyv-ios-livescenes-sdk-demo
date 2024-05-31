@@ -18,15 +18,19 @@
 
 @property (nonatomic, strong) UILabel *sheetTitleLabel; // 弹层顶部标题
 @property (nonatomic, strong) UIView *titleSplitLine; // 标题底部分割线
+@property (nonatomic, strong) UILabel *baseTitleLabel; // 基础功能标题
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜按钮
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
 @property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局按钮
 @property (nonatomic, strong) UIButton *shareButton; // 分享按钮
 @property (nonatomic, strong) UIButton *badNetworkButton; //  弱网处理按钮
+@property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
+@property (nonatomic, strong) UIButton *signInButton; //  签到按钮
 @property (nonatomic, strong) UIView *buttonSplitLine; // 退出登录按钮顶部分割线
 @property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登录按钮背后的文本
 @property (nonatomic, strong) UIButton *logoutButton; // 退出登录按钮
 @property (nonatomic, strong) NSArray *buttonArray;
+@property (nonatomic, strong) NSArray *interactArray; // 互动按钮
 
 @property (nonatomic, assign) CGFloat sheetWidth; // 父类数据
 @end
@@ -41,6 +45,7 @@
     if (self) {
         [self.contentView addSubview:self.sheetTitleLabel];
         [self.contentView addSubview:self.titleSplitLine];
+        [self.contentView addSubview:self.baseTitleLabel];
         NSMutableArray *muButtonArray = [NSMutableArray array];
         if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
             [self.contentView addSubview:self.beautyButton];
@@ -58,11 +63,19 @@
             [self.contentView addSubview:self.mixLayoutButton];
             [muButtonArray addObject:self.mixLayoutButton];
         }
+        NSMutableArray *interactMuButtonArray = [NSMutableArray array];
+        [self.contentView addSubview:self.interactiveTitleLabel];
+        [self.contentView addSubview:self.signInButton];
+        // 屏蔽签到功能
+        self.interactiveTitleLabel.hidden = YES;
+        self.signInButton.hidden = YES;
+        [interactMuButtonArray addObject:self.signInButton];
         [self.contentView addSubview:self.buttonSplitLine];
         [self.contentView addSubview:self.logoutButtonLabel];
         [self.contentView addSubview:self.logoutButton];
         
         self.buttonArray = [muButtonArray copy];
+        self.interactArray = [interactMuButtonArray copy];
     }
     return self;
 }
@@ -85,15 +98,32 @@
     self.titleSplitLine.frame = CGRectMake(originX, titleSplitLineTop, self.sheetWidth - originX * 2, 1);
     
     CGFloat buttonOriginX = originX;
-    CGFloat buttonOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 24;
+    CGFloat buttonOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 18;
     CGFloat buttonWidth = 48.0;
     CGFloat buttonHeight = 53.0;
     int placeNum = isPad ? 5 : 4;
     CGFloat buttonPadding = MIN(ceil((self.sheetWidth - originX * 2 - buttonWidth * placeNum)/3.0), 28.0);
-    CGFloat buttonYPadding = 16;
+    CGFloat buttonYPadding = 14;
     
+    self.baseTitleLabel.frame = CGRectMake(originX, buttonOriginY, 50, 20);
+    buttonOriginY = CGRectGetMaxY(self.baseTitleLabel.frame) + buttonYPadding;
     for (int i = 0; i < self.buttonArray.count ; i++) {
         UIButton *button = self.buttonArray[i];
+        if (i % placeNum == 0 && i != 0) { // 换行
+            buttonOriginX = originX;
+            buttonOriginY += buttonHeight + buttonYPadding;
+        }
+        button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+        [self setButtonInsets:button];
+        buttonOriginX += buttonWidth + buttonPadding;
+    }
+    
+    buttonOriginY += buttonHeight + buttonYPadding;
+    self.interactiveTitleLabel.frame = CGRectMake(originX, buttonOriginY, 80, 20);
+    buttonOriginY = CGRectGetMaxY(self.interactiveTitleLabel.frame) + buttonYPadding;
+    buttonOriginX = originX;
+    for (int i = 0; i < self.interactArray.count ; i++) {
+        UIButton *button = self.interactArray[i];
         if (i % placeNum == 0 && i != 0) { // 换行
             buttonOriginX = originX;
             buttonOriginY += buttonHeight + buttonYPadding;
@@ -141,6 +171,16 @@
         _sheetTitleLabel.text = PLVLocalizedString(@"更多");
     }
     return _sheetTitleLabel;
+}
+
+- (UILabel *)baseTitleLabel {
+    if (!_baseTitleLabel) {
+        _baseTitleLabel = [[UILabel alloc] init];
+        _baseTitleLabel.text = PLVLocalizedString(@"基础");
+        _baseTitleLabel.font = [UIFont systemFontOfSize:14];
+        _baseTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
+    }
+    return _baseTitleLabel;
 }
 
 - (UIView *)titleSplitLine {
@@ -191,6 +231,23 @@
     return _mixLayoutButton;
 }
 
+- (UILabel *)interactiveTitleLabel {
+    if (!_interactiveTitleLabel) {
+        _interactiveTitleLabel = [[UILabel alloc] init];
+        _interactiveTitleLabel.text = PLVLocalizedString(@"互动");
+        _interactiveTitleLabel.font = [UIFont systemFontOfSize:14];
+        _interactiveTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
+    }
+    return _interactiveTitleLabel;
+}
+
+- (UIButton *)signInButton {
+    if (!_signInButton) {
+        _signInButton = [self buttonWithTitle:PLVLocalizedString(@"签到") NormalImageString:@"plvls_liveroom_signIn_btn" selectedImageString:@"plvls_liveroom_signIn_btn"];
+        [_signInButton addTarget:self action:@selector(signInAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _signInButton;
+}
 
 - (UIView *)buttonSplitLine {
     if (!_buttonSplitLine) {
@@ -320,6 +377,15 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapMixLayoutButton:)]) {
         [self.delegate moreInfoSheetDidTapMixLayoutButton:self];
+    }
+}
+
+- (void)signInAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapSignInButton:)]) {
+        [self.delegate moreInfoSheetDidTapSignInButton:self];
     }
 }
 

@@ -32,7 +32,7 @@
 #import "PLVLCDownloadListViewController.h"
 #import "PLVLCMessagePopupView.h"
 #import "PLVLCLandscapeMessagePopupView.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -135,6 +135,13 @@ PLVLCLandscapeMessagePopupViewDelegate
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         // 设置多语言场景
         [[PLVMultiLanguageManager sharedManager] setupLocalizedLiveScene:PLVMultiLanguageLiveSceneLC channelId:roomData.channelId language:roomData.menuInfo.watchLangType];
+        
+        // 设置画中画
+        if (@available(iOS 15.0, *)) {
+            [PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode = PLVLivePictureInPictureMode_IJKPlayer;
+        } else {
+            [PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode = PLVLivePictureInPictureMode_AVPlayer;
+        }
 
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
@@ -341,7 +348,7 @@ PLVLCLandscapeMessagePopupViewDelegate
             [self.mediaAreaView.skinView synchOtherSkinViewState:self.liveRoomSkinView];
             [self.menuAreaView.chatVctrl resumeFloatingButtonViewLayout];
             [self.menuAreaView rollbackProductPageContentView];
-            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, isPad ? 308 : CGRectGetWidth(self.view.frame) - 60, 114)];
+            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, isPad ? 308 : CGRectGetWidth(self.view.frame) - 60, 128)];
             [self.cardDetailView hiddenCardDetailView];
         }
 
@@ -386,7 +393,7 @@ PLVLCLandscapeMessagePopupViewDelegate
             [self.liveRoomSkinView displayRedpackButtonView:self.menuAreaView.chatVctrl.redpackButtonView];
             [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
             [self.liveRoomSkinView displayLotteryWidgetView:self.menuAreaView.chatVctrl.lotteryWidgetView];
-            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 114), 308, 114)];
+            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 128), 308, 128)];
             [self.cardDetailView hiddenCardDetailView];
         }
         [self.view insertSubview:self.chatLandscapeView belowSubview:self.liveRoomSkinView];
@@ -712,8 +719,18 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 /// 观看数 watchCount 更新
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount{
-    [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:watchCount];
-    [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
+    if ((self.videoType != PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live)) {
+        [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:watchCount];
+        [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
+    }
+}
+
+// 在线人数 onlineCount 更新
+- (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
+    if ((self.videoType != PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live)) {
+        [self.mediaAreaView.skinView setPlayTimesLabelWithOnlineUsers:onlineCount];
+        [self.liveRoomSkinView setPlayTimesLabelWithOnlineUsers:onlineCount];
+    }
 }
 
 #pragma mark PLVSocketManagerProtocol
@@ -783,6 +800,15 @@ PLVLCLandscapeMessagePopupViewDelegate
                                   json:(NSString *)jsonString
                             jsonObject:(id)object {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if ([event isEqualToString:@"product"]) {
+        if ([subEvent isEqualToString:@"PRODUCT_CLICK_TIMES"]) {
+            NSDictionary *jsonDict = (NSDictionary *)object;
+            if ([PLVFdUtil checkDictionaryUseable:jsonDict]) {
+                [self.pushView updateProductClickTimes:jsonDict];
+            }
+        }
+    }
+    
     if (self.videoType != PLVChannelVideoType_Live ||
         !roomData.menuInfo.transmitMode ||
         roomData.menuInfo.mainRoom) { // 【直播+支持双师模式+小房间】三个条件满足才需要监听以下消息
@@ -820,10 +846,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     if (roomData.listenMain != listenMain) { // listenMain发生变化时，切换播放器频道
         dispatch_async(dispatch_get_main_queue(), ^{
             if (roomData.listenMain) {
-                [PLVToast showToastWithMessage:PLVLocalizedString(@"已切换至大房间进行上课") inView:self.view afterDelay:3.0];
+                [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"已切换至大房间进行上课") inView:self.view afterDelay:3.0];
                 [self.mediaAreaView changePlayertoChannelId:roomData.menuInfo.mainRoomChannelId vodId:nil vodList:NO recordFile:nil recordEnable:NO];
             } else {
-                [PLVToast showToastWithMessage:PLVLocalizedString(@"已切回小房间上课") inView:self.view afterDelay:3.0];
+                [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"已切回小房间上课") inView:self.view afterDelay:3.0];
                 [self.mediaAreaView changePlayertoChannelId:roomData.channelId vodId:nil vodList:NO recordFile:nil recordEnable:NO];
             }
         });
@@ -841,9 +867,9 @@ PLVLCLandscapeMessagePopupViewDelegate
         [self.pushView setModel:model];
         [self.pushView reportTrackEvent];
         if (self.currentLandscape) {
-            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 144 - 16, 308, 114)];
+            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 128 - 16, 308, 128)];
         } else {
-            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, CGRectGetWidth(self.view.frame) - 60, 114)];
+            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, CGRectGetWidth(self.view.frame) - 60, 128)];
         }
     } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
         [ _pushView hide];
@@ -1356,8 +1382,8 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self.mediaAreaView seekLivePlaybackToTime:time];
 }
 
-- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL {
-    [self plvCommodityPushViewJumpToCommodityDetail:linkURL];
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity {
+    [self plvCommodityPushViewJumpToCommodityDetail:linkURL commodity:commodity];
 }
 
 - (void)plvLCLivePageMenuAreaViewCloseProductView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
@@ -1391,8 +1417,9 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 #pragma mark  PLVCommodityPushViewDelegate
 
-- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL {
+- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL commodity:(PLVCommodityModel *)commodity {
     self.commodityURL = commodityURL;
+    [self.pushView sendProductClickedEvent:commodity];
     if (self.videoType == PLVChannelVideoType_Live) { /// 直播场景需要开启画中画播放
         if (self.mediaAreaView.channelInLive &&
             !self.linkMicAreaView.inLinkMic &&
@@ -1534,14 +1561,14 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)messagePopupViewWillCopy:(PLVLCMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
 }
 
 #pragma mark PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)landscapeMessagePopupViewWillCopy:(PLVLCLandscapeMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
 }
 
 @end

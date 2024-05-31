@@ -726,9 +726,9 @@ PLVECLotteryWidgetViewDelegate
         CGFloat questionnaireButtonOriginY = bulletinView ? CGRectGetMaxY(bulletinView.frame) + 10 : CGRectGetMaxY(self.liveRoomInfoView.frame) + 15;
         self.questionnaireButton.frame =  CGRectMake(15, questionnaireButtonOriginY, 68, 28);
         if (fullScreen) {
-            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 120, 308, 114);
+            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, 308, 128);
         } else {
-            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 120, CGRectGetWidth(self.bounds) - 110, 114);
+            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 110, 128);
         }
     } else if (self.type == PLVECHomePageType_Playback) {
         // 聊天室布局
@@ -752,9 +752,9 @@ PLVECLotteryWidgetViewDelegate
         }
         
         if (fullScreen) {
-            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 120, 308, 114);
+            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, 308, 128);
         } else {
-            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 120, CGRectGetWidth(self.bounds) - 110, 114);
+            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 110, 128);
         }
         [self.playbackListVC viewWillLayoutSubviews];
     }
@@ -873,6 +873,13 @@ PLVECLotteryWidgetViewDelegate
     
     if ([event isEqualToString:@"newsPush"]) {
         [self newsPushEvent:jsonDict];
+    } else if ([event isEqualToString:@"product"]) {
+        if ([subEvent isEqualToString:@"PRODUCT_CLICK_TIMES"]) {
+            NSDictionary *jsonDict = (NSDictionary *)object;
+            if ([PLVFdUtil checkDictionaryUseable:jsonDict]) {
+                [self.pushView updateProductClickTimes:jsonDict];
+            }
+        }
     }
 }
 
@@ -939,7 +946,7 @@ PLVECLotteryWidgetViewDelegate
         __weak typeof(self)weakSelf = self;
         plv_dispatch_main_async_safe(^{
             [weakSelf.pushView setModel:model];
-            [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 120, CGRectGetWidth(weakSelf.bounds) - 110, 114)];
+            [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(weakSelf.bounds) - 110, 128)];
         })
         if (self.visiable) {
             [self.pushView reportTrackEvent];
@@ -999,7 +1006,8 @@ PLVECLotteryWidgetViewDelegate
 
 #pragma mark PLVCommodityPushViewDelegate
 
-- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL {
+- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL commodity:(PLVCommodityModel *)commodity {
+    [self.pushView sendProductClickedEvent:commodity];
     if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openCommodityDetail:)]) {
         [self.delegate homePageView:self openCommodityDetail:commodityURL];
     }
@@ -1007,7 +1015,8 @@ PLVECLotteryWidgetViewDelegate
 
 #pragma mark PLVECCommodityViewControllerDelegate
 
-- (void)plvECClickProductInViewController:(PLVECCommodityViewController *)viewController linkURL:(NSURL *)linkURL {
+- (void)plvECClickProductInViewController:(PLVECCommodityViewController *)viewController linkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity {
+    [self.pushView sendProductClickedEvent:commodity];
     if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openCommodityDetail:)]) {
         [self.delegate homePageView:self openCommodityDetail:linkURL];
     }

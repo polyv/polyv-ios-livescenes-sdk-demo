@@ -1,5 +1,5 @@
 //
-//  PLVMarqueeView.h
+//  PLVLiveMarqueeView.h
 //  PLVFoundationSDK
 //
 //  Created by PLV-UX on 2021/3/10.
@@ -7,15 +7,15 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "PLVMarqueeModel.h"
+#import "PLVLiveMarqueeModel.h"
 NS_ASSUME_NONNULL_BEGIN
 
 /// 跑马灯2.0，适用于防录屏功能使用
-@interface PLVMarqueeView : UIView
+@interface PLVLiveMarqueeView : UIView
 
 /// 设置跑马灯样式(需要手动启动跑马灯动画)
 /// @param marqueeModel model
-- (void)setPLVMarqueeModel:(PLVMarqueeModel *)marqueeModel;
+- (void)setPLVLiveMarqueeModel:(PLVLiveMarqueeModel *)marqueeModel;
 
 /// 启动跑马灯
 - (void)start;

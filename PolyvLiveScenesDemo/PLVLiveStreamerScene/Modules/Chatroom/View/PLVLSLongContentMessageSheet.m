@@ -10,7 +10,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVLSUtils.h"
 #import "PLVMultiLanguageManager.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 static NSString *kChatAdminLinkTextColor = @"#0092FA";
 static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)|(www.[a-zA-Z0-9\\.\\-]+\\.([a-zA-Z]{2,4})(:\\d+)?(/[a-zA-Z0-9\\.\\-~!@#$%^&*+?:_/=<>]*)?)";
@@ -201,7 +201,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
     [self dismiss];
     
     [UIPasteboard generalPasteboard].string = self.content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 @end

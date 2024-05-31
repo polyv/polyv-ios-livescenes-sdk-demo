@@ -1,12 +1,12 @@
 //
-//  PLVMarqueeLabel.m
+//  PLVLiveMarqueeLabel.m
 //  PLVLiveScenesDemo
 //
 //  Created by MissYasiky on 2020/10/10.
 //  Copyright © 2020 PLV. All rights reserved.
 //
 
-#import "PLVMarqueeLabel.h"
+#import "PLVLiveMarqueeLabel.h"
 #import <QuartzCore/QuartzCore.h>
 
 // Notification strings
@@ -38,7 +38,7 @@ typedef void(^MLAnimationCompletionBlock)(BOOL finished);
 - (CGFloat)durationPercentageForPositionPercentage:(CGFloat)positionPercentage withDuration:(NSTimeInterval)duration;
 @end
 
-@interface PLVMarqueeLabel ()
+@interface PLVLiveMarqueeLabel ()
 
 @property (nonatomic, strong) UILabel *subLabel;
 
@@ -57,34 +57,34 @@ CGPoint MLOffsetCGPoint(CGPoint point, CGFloat offset);
 @end
 
 
-@implementation PLVMarqueeLabel
+@implementation PLVLiveMarqueeLabel
 
 #pragma mark - Class Methods and handlers
 
 + (void)restartLabelsOfController:(UIViewController *)controller {
-    [PLVMarqueeLabel notifyController:controller
+    [PLVLiveMarqueeLabel notifyController:controller
                        withMessage:kMarqueeLabelControllerRestartNotification];
 }
 
 + (void)controllerViewWillAppear:(UIViewController *)controller {
-    [PLVMarqueeLabel restartLabelsOfController:controller];
+    [PLVLiveMarqueeLabel restartLabelsOfController:controller];
 }
 
 + (void)controllerViewDidAppear:(UIViewController *)controller {
-    [PLVMarqueeLabel restartLabelsOfController:controller];
+    [PLVLiveMarqueeLabel restartLabelsOfController:controller];
 }
 
 + (void)controllerViewAppearing:(UIViewController *)controller {
-    [PLVMarqueeLabel restartLabelsOfController:controller];
+    [PLVLiveMarqueeLabel restartLabelsOfController:controller];
 }
 
 + (void)controllerLabelsShouldLabelize:(UIViewController *)controller {
-    [PLVMarqueeLabel notifyController:controller
+    [PLVLiveMarqueeLabel notifyController:controller
                        withMessage:kMarqueeLabelShouldLabelizeNotification];
 }
 
 + (void)controllerLabelsShouldAnimate:(UIViewController *)controller {
-    [PLVMarqueeLabel notifyController:controller
+    [PLVLiveMarqueeLabel notifyController:controller
                        withMessage:kMarqueeLabelShouldAnimateNotification];
 }
 
@@ -278,7 +278,7 @@ CGPoint MLOffsetCGPoint(CGPoint point, CGFloat offset);
     [self updateSublabel];
 }
 
-#pragma mark - PLVMarqueeLabel Heavy Lifting
+#pragma mark - PLVLiveMarqueeLabel Heavy Lifting
 
 - (void)layoutSubviews
 {
@@ -1317,12 +1317,12 @@ CGPoint MLOffsetCGPoint(CGPoint point, CGFloat offset);
 }
 
 - (void)setNumberOfLines:(NSInteger)numberOfLines {
-    // By the nature of PLVMarqueeLabel, this is 1
+    // By the nature of PLVLiveMarqueeLabel, this is 1
     [super setNumberOfLines:1];
 }
 
 - (void)setAdjustsFontSizeToFitWidth:(BOOL)adjustsFontSizeToFitWidth {
-    // By the nature of PLVMarqueeLabel, this is NO
+    // By the nature of PLVLiveMarqueeLabel, this is NO
     [super setAdjustsFontSizeToFitWidth:NO];
 }
 
@@ -1363,7 +1363,7 @@ CGPoint MLOffsetCGPoint(CGPoint point, CGFloat offset);
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < 70000
 - (void)setAdjustsLetterSpacingToFitWidth:(BOOL)adjustsLetterSpacingToFitWidth {
-    // By the nature of PLVMarqueeLabel, this is NO
+    // By the nature of PLVLiveMarqueeLabel, this is NO
     [super setAdjustsLetterSpacingToFitWidth:NO];
 }
 #endif
@@ -1476,7 +1476,7 @@ CGPoint MLOffsetCGPoint(CGPoint point, CGFloat offset);
     }
 }
 
-- (void)setMarqueeType:(PLVMarqueeType)marqueeType {
+- (void)setMarqueeType:(PLVLiveMarqueeType)marqueeType {
     if (marqueeType == _marqueeType) {
         return;
     }
@@ -1614,14 +1614,14 @@ CGPoint MLOffsetCGPoint(CGPoint point, CGFloat offset) {
         df0 = [self derivativeYValueForCurveAt:t0 withControlPoints:controlPoints];
         // Check if derivative is small or zero ( http://en.wikipedia.org/wiki/Newton's_method#Failure_analysis )
         if (fabs(df0) < 1e-6) {
-            NSLog(@"PLVMarqueeLabel: Newton's Method failure, small/zero derivative!");
+            NSLog(@"PLVLiveMarqueeLabel: Newton's Method failure, small/zero derivative!");
             break;
         }
         // Else recalculate t1
         t1 = t0 - f0/df0;
     }
     
-    NSLog(@"PLVMarqueeLabel: Failed to find t for Y input!");
+    NSLog(@"PLVLiveMarqueeLabel: Failed to find t for Y input!");
     return t0;
 }
 

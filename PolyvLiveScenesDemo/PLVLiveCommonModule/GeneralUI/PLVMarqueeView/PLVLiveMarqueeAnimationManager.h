@@ -1,5 +1,5 @@
 //
-//  PLVMarqueeAnimation.h
+//  PLVLiveMarqueeAnimation.h
 //  PLVFoundationSDK
 //
 //  Created by PLV-UX on 2021/3/10.
@@ -8,12 +8,12 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import "PLVMarqueeModel.h"
+#import "PLVLiveMarqueeModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 /// 负责给跑马灯2.0提供动画
-@interface PLVMarqueeAnimationManager : NSObject
+@interface PLVLiveMarqueeAnimationManager : NSObject
 
 /// 给layer添加动画
 /// @param layer 要添加动画的layer
@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param delegate 动画代理
 + (void)addAnimationForLayer:(CALayer *)layer
         randomOriginInBounds:(CGRect)bounds
-                   withModel:(PLVMarqueeModel *)model
+                   withModel:(PLVLiveMarqueeModel *)model
            animationDelegate:(id)delegate;
 
 /// 给闪烁双跑马灯中第二个跑马灯添加动画
@@ -32,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param delegate 动画代理
 + (void)addDoubleFlashAnimationForSecondLayer:(CALayer *)layer
                          randomOriginInBounds:(CGRect)bounds
-                                    withModel:(PLVMarqueeModel *)model
+                                    withModel:(PLVLiveMarqueeModel *)model
                             animationDelegate:(id)delegate;
 
 

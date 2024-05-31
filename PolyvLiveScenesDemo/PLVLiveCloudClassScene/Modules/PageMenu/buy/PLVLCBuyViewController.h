@@ -10,14 +10,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@class PLVLCBuyViewController;
+@class PLVLCBuyViewController, PLVCommodityModel;
 
 @protocol PLVLCBuyViewControllerDelegate <NSObject>
 
 /// 点击商品库中商品的回调
 /// @param viewController 商品库页面控制器
 /// @param linkURL 商品链接url
-- (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL;
+- (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity;
 
 /// 关闭商品库弹窗页面的回调
 - (void)plvLCCloseProductViewInViewController:(PLVLCBuyViewController *)viewController;

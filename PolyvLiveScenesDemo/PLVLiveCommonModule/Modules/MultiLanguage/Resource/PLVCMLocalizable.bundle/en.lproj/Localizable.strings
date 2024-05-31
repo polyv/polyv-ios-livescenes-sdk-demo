@@ -528,6 +528,15 @@
 "清屏后画笔痕迹将无法恢复，确认清屏吗？" = "Clearing will delete all strokes. Confirm clear?";
 "清屏" = "Clear";
 
+/**  互动  */
+"互动" = "Interaction";
+"签到" = "Sign in";
+
+/**  商品  */
+"热卖中" = "Hot";
+"选购中" = "Shop";
+"投递中" = "Delivery";
+
 /** 通用 */
 "完成" = "Done";
 "回复" = "Reply";
@@ -551,6 +560,7 @@
 "我知道了" = "OK";
 "PLVAlertSwitchLanguageTips" = "Switching the language will re-enter the live room, please click 'OK' to switch";
 "摄像头与麦克风" = "Camera and microphone";
+"基础" = "Base";
 
 // tips
 "rtcType 非法，请尝试重进直播间 %ld" = "rtcType is invalid, please try to re-enter the live room %ld";

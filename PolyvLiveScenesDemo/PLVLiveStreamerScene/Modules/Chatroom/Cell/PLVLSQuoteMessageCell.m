@@ -11,7 +11,7 @@
 // 工具类
 #import "PLVLSUtils.h"
 #import "PLVMultiLanguageManager.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 // UI
 #import "PLVChatTextView.h"
@@ -426,7 +426,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 - (void)tapImageViewAction {

@@ -81,13 +81,22 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
-        @"sessionId" : [NSString stringWithFormat:@"%@", self.sessionId]
+        @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
+        @"sessionId" : [NSString stringWithFormat:@"%@", self.sessionId],
+    };
+    NSDictionary *sm2Key = @{
+        @"platformPublicKey" : [NSString stringWithFormat:@"%@", [PLVFSignConfig sharedInstance].serverSM2PublicKey], // 平台公钥(接口提交参数加密用)
+        @"userPrivateKey" : [NSString stringWithFormat:@"%@", [PLVFSignConfig sharedInstance].clientSM2PrivateKey] // 用户私钥(接口返回内容解密用)
     };
     
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    [mutableDict setObject:sm2Key forKey:@"sm2Key"];
     [mutableDict addEntriesFromDictionary:sessionDict];
+    if (self.menuInfo.promotionInfo) {
+        [mutableDict setObject:self.menuInfo.promotionInfo forKey:@"promotionInfo"];
+    }
     if ([PLVFdUtil checkDictionaryUseable:extraParam]) {
         [mutableDict addEntriesFromDictionary:extraParam];
     }

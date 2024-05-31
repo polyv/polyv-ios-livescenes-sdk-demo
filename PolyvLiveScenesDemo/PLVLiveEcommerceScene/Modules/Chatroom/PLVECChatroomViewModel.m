@@ -13,6 +13,8 @@
 #import "PLVECQuoteChatCell.h"
 #import "PLVECLongContentChatCell.h"
 
+static NSInteger kPLVECMaxPublicChatMessageCount = 500;
+
 @interface PLVECChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
 PLVChatroomPresenterProtocol // common层聊天室Presenter协议
@@ -43,6 +45,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, assign) BOOL enableReward;
 /// 是否打开【只看讲师】开关
 @property (nonatomic, assign) BOOL onlyTeacher;
+
+#pragma mark 聊天数据管理
+
+/// 公聊数据管理计时器，间隔30秒触发一次
+@property (nonatomic, strong) NSTimer *publicChatManagerTimer;
 
 #pragma mark 数据数组
 
@@ -121,6 +128,13 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                                                       repeats:YES];
     self.loginUserArray = [[NSMutableArray alloc] initWithCapacity:10];
     
+    // 初始化公聊数据管理计时器
+    self.publicChatManagerTimer = [NSTimer scheduledTimerWithTimeInterval:30
+                                                                   target:self
+                                                                 selector:@selector(publicChatManagerTimerAction)
+                                                                 userInfo:nil
+                                                                  repeats:YES];
+    
     self.firstTimeLoadPrivateChat = YES;
     [self loadQuestionHistory];
 }
@@ -138,6 +152,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.onlyTeacher = NO;
     
     [self stopRedpackTimer];
+    
+    [self.publicChatManagerTimer invalidate];
+    self.publicChatManagerTimer = nil;
 }
 
 #pragma mark - [ Public Methods ]
@@ -434,7 +451,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
             [self.publicChatArray insertObject:model atIndex:0];
             PLVChatUser *user = model.user;
             if (user.specialIdentity) {
-                [self.partOfPublicChatArray insertObject:model atIndex:0];
+                if (![self.partOfPublicChatArray containsObject:model]) {
+                    [self.partOfPublicChatArray insertObject:model atIndex:0];
+                }
             }
         }
     }
@@ -493,6 +512,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)notifyListenerDidMessageDeleted {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_didMessageDeleted];
+    });
+}
+
+- (void)notifyListerDidMessageCountLimitedAutoDeleted {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_didMessageCountLimitedAutoDeleted];
     });
 }
 
@@ -622,6 +647,28 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     
     [self notifyListenerShowDelayRedpackWithType:self.currentRedpackType delayTime:self.delayTime];
+}
+
+#pragma mark 公聊数据管理
+
+- (void)publicChatManagerTimerAction {
+    if (self.publicChatArray.count > kPLVECMaxPublicChatMessageCount) {
+        dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+        NSUInteger removalCount = self.publicChatArray.count - kPLVECMaxPublicChatMessageCount;
+        NSRange removalRange = NSMakeRange(0, removalCount);
+        [self.publicChatArray removeObjectsInRange:removalRange];
+        NSTimeInterval lastTime = self.publicChatArray.firstObject.time;
+        NSUInteger count = 0;
+        for (PLVChatModel *model in self.publicChatArray) {
+            if (!(model.time == lastTime)) {
+                break;
+            }
+            count++;
+        }
+        [self.presenter updateHistoryLastTime:lastTime lastTimeMessageIndex:count];
+        dispatch_semaphore_signal(_publicChatArrayLock);
+        [self notifyListerDidMessageCountLimitedAutoDeleted];
+    }
 }
 
 #pragma mark - 定时上报登录用户

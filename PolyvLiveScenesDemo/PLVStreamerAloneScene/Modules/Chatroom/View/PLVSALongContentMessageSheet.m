@@ -9,7 +9,7 @@
 #import "PLVSALongContentMessageSheet.h"
 #import "PLVEmoticonManager.h"
 #import "PLVSAUtils.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
 
 static CGFloat kMaxHeightScale = 0.72; // 竖屏时，弹窗最大高度为屏幕高度的0.72倍
@@ -271,7 +271,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
 - (void)copButtonAction {
     if (self.content && self.content.length > 0) {
         [UIPasteboard generalPasteboard].string = self.content;
-        [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
+        [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
     }
 }
 

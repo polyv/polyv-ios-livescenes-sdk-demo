@@ -192,6 +192,12 @@ UIGestureRecognizerDelegate>
     [self refreshPlayTimesLabelFrame];
 }
 
+- (void)setPlayTimesLabelWithOnlineUsers:(NSInteger)onlineUsers {
+    NSString * onlineUsersString = (onlineUsers > 10000) ? [NSString stringWithFormat:@"%0.1fw", onlineUsers / 10000.0] : [NSString stringWithFormat:@"%ld",onlineUsers];
+    self.playTimesLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineUsersString];
+    [self refreshPlayTimesLabelFrame];
+}
+
 - (void)setFloatViewButtonWithShowStatus:(BOOL)showFloatView{
     self.floatViewShowButton.selected = !showFloatView;
 }
@@ -338,6 +344,8 @@ UIGestureRecognizerDelegate>
         // 翻页UI
         [controlsSuperview addSubview:self.documentToolView];
     } else { // 视频类型为 直播回放
+        /// 顶部UI
+        [controlsSuperview addSubview:self.playTimesLabel];
         /// 底部UI
         [controlsSuperview addSubview:self.currentTimeLabel];
         [controlsSuperview addSubview:self.diagonalsLabel];
@@ -482,7 +490,7 @@ UIGestureRecognizerDelegate>
 }
 
 - (UILabel *)playTimesLabel{
-    if (!_playTimesLabel && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
+    if (!_playTimesLabel) {
         _playTimesLabel = [[UILabel alloc] init];
         _playTimesLabel.text = PLVLocalizedString(@"播放量");
         _playTimesLabel.textAlignment = NSTextAlignmentCenter;

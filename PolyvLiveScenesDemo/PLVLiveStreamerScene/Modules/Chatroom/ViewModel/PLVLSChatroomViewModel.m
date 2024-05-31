@@ -16,6 +16,8 @@
 #import "PLVLSRemindSpeakMessageCell.h"
 #import "PLVLSRemindImageMessageCell.h"
 
+static NSInteger kPLVLSMaxPublicChatMessageCount = 500;
+
 @interface PLVLSChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
 PLVChatroomPresenterProtocol // common层聊天室Presenter协议
@@ -26,6 +28,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray; /// 公聊全部消息数组
 
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatRemindArray; /// 提醒消息 全部消息数组
+
+#pragma mark 聊天数据管理
+
+/// 公聊数据管理计时器，间隔30秒触发一次
+@property (nonatomic, strong) NSTimer *publicChatManagerTimer;
+
 
 @end
 
@@ -79,13 +87,20 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
     // 监听socket消息
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
+    // 初始化公聊数据管理计时器
+    self.publicChatManagerTimer = [NSTimer scheduledTimerWithTimeInterval:30
+                                                                   target:self
+                                                                 selector:@selector(publicChatManagerTimerAction)
+                                                                 userInfo:nil
+                                                                  repeats:YES];
 }
 
 - (void)clear {
     [[PLVSocketManager sharedManager] removeDelegate:self];
     [self.presenter destroy];
     self.presenter = nil;
-
+    [self.publicChatManagerTimer invalidate];
+    self.publicChatManagerTimer = nil;
     [self removeAllPublicChatModels];
 }
 
@@ -543,6 +558,29 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self notifyListenerDidSendProhibitMessage];
 }
 
+#pragma mark 公聊数据管理
+
+- (void)publicChatManagerTimerAction {
+    if (self.chatArray.count > kPLVLSMaxPublicChatMessageCount) {
+        dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
+        NSUInteger removalCount = self.chatArray.count - kPLVLSMaxPublicChatMessageCount;
+        NSRange removalRange = NSMakeRange(0, removalCount);
+        [self.chatArray removeObjectsInRange:removalRange];
+        
+        NSTimeInterval lastTime = self.chatArray.firstObject.time;
+        NSUInteger count = 0;
+        for (PLVChatModel *model in self.chatArray) {
+            if (!(model.time == lastTime)) {
+                break;
+            }
+            count++;
+        }
+        [self.presenter updateHistoryLastTime:lastTime lastTimeMessageIndex:count];
+        dispatch_semaphore_signal(_chatArrayLock);
+        [self notifyListerDidMessageCountLimitedAutoDeleted];
+    }
+}
+
 #pragma mark - Listener
 
 - (void)notifyListenerDidSendMessage {
@@ -572,6 +610,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)notifyListenerDidMessageDeleted {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomViewModel_didMessageDeleted];
+    });
+}
+
+- (void)notifyListerDidMessageCountLimitedAutoDeleted {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomViewModel_didMessageCountLimitedAutoDeleted];
     });
 }
 

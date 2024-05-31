@@ -10,7 +10,7 @@
 
 // 工具类
 #import "PLVSAUtils.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
 
 // UI
@@ -34,6 +34,7 @@
 #import "PLVSABadNetworkSwitchSheet.h"
 #import "PLVSAMixLayoutSheet.h"
 #import "PLVSALinkMicSettingSheet.h"
+#import "PLVStreamerPopoverView.h"
 
 // 模块
 #import "PLVChatModel.h"
@@ -71,7 +72,8 @@ PLVSALinkMicSettingSheetDelegate
 ///    │     │    ├── (PLVSASlideRightTipsView) slideRightTipsView
 ///    │     │    └── (PLVSACameraAndMicphoneStateView) cameraAndMicphoneStateView
 ///    │     └── (PLVSALinkMicTipView) linkMicTipView
-///    └── (UIButton) closeButton(highest)
+///    ├── (UIButton) closeButton
+///    └── (PLVStreamerPopoverView) popoverView(highest)
 @property (nonatomic, weak) PLVSALinkMicWindowsView *linkMicWindowsView; // 实际由主页linkMicAreaView持有的连麦窗口视图
 @property (nonatomic, strong) UIButton *closeButton; // 关闭直播间按钮
 @property (nonatomic, strong) UIScrollView *scrollView; // 底部滑动视图
@@ -94,6 +96,7 @@ PLVSALinkMicSettingSheetDelegate
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
 @property (nonatomic, strong) PLVSABadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
 @property (nonatomic, strong) PLVSASwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
+@property (nonatomic, strong) PLVStreamerPopoverView *popoverView; // 浮动区域
 
 /// 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser *localOnlineUser; // 本地用户模型，使用弱引用
@@ -165,6 +168,7 @@ PLVSALinkMicSettingSheetDelegate
     
     CGFloat closeButtonWitdh = isLandscape ? 32 : 44;
     self.closeButton.frame = CGRectMake(selfSize.width - closeButtonWitdh - right - marginLeft, top + marginTop, closeButtonWitdh, closeButtonWitdh);
+    self.popoverView.frame = self.bounds;
     
     BOOL first = CGRectEqualToRect(self.scrollView.frame, CGRectZero);
     self.scrollView.frame = self.bounds;
@@ -400,6 +404,7 @@ PLVSALinkMicSettingSheetDelegate
     [self addSubview:self.scrollView];
     [self insertSubview:self.linkMicWindowsView.fullScreenContentView aboveSubview:self.scrollView];
     [self insertSubview:self.closeButton aboveSubview:self.scrollView];
+    [self insertSubview:self.popoverView aboveSubview:self.closeButton]; /// 保证高于 closeButton
 
     // 迁移连麦窗口到homeView上
     [self.linkMicWindowsView removeFromSuperview];
@@ -625,10 +630,10 @@ PLVSALinkMicSettingSheetDelegate
         _slideRightTipsView = [[PLVSASlideRightTipsView alloc] init];
         _slideRightTipsView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.5);
         _slideRightTipsView.hidden = YES;
-        __block typeof(self) blockSelf = self;
+        __weak typeof(self) weakSelf = self;
         _slideRightTipsView.closeButtonHandler = ^{
-            [blockSelf->_slideRightTipsView removeFromSuperview];
-            blockSelf.scrollView.scrollEnabled = YES;
+            weakSelf.scrollView.scrollEnabled = YES;
+            [weakSelf.slideRightTipsView removeFromSuperview];
         };
     }
     return _slideRightTipsView;
@@ -798,6 +803,13 @@ PLVSALinkMicSettingSheetDelegate
         _layoutSwitchGuideView.hidden = YES;
     }
     return _layoutSwitchGuideView;
+}
+
+- (PLVStreamerPopoverView *)popoverView {
+    if (!_popoverView) {
+        _popoverView = [[PLVStreamerPopoverView alloc] init];
+    }
+    return _popoverView;
 }
 
 - (PLVChannelLinkMicMediaType)currentChannelLinkMicMediaType {
@@ -1010,6 +1022,10 @@ PLVSALinkMicSettingSheetDelegate
         [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapRemoveAllAudiencesButton:)]) {
         [self.delegate streamerHomeViewDidTapRemoveAllAudiencesButton:self];
     }
+}
+
+- (void)moreInfoSheetDidTapSignInButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.interactView openInteractViewWithEventName:@"SHOW_SIGN"];
 }
 
 #pragma mark PLVSABitRateSheetDelegate

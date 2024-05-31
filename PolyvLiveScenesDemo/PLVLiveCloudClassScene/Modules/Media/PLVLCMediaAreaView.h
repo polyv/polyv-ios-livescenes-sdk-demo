@@ -11,7 +11,7 @@
 #import "PLVLCMediaPlayerSkinView.h"
 #import "PLVLCMediaFloatView.h"
 #import "PLVLCRetryPlayView.h"
-#import "PLVMarqueeView.h"
+#import "PLVLiveMarqueeView.h"
 #import "PLVLCDocumentPaintModeView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
@@ -122,7 +122,7 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 跑马灯视图
 ///
 /// @note 便于外部作图层管理
-@property (nonatomic, strong, readonly) PLVMarqueeView * marqueeView;
+@property (nonatomic, strong, readonly) PLVLiveMarqueeView * marqueeView;
 
 /// 媒体悬浮视图
 ///

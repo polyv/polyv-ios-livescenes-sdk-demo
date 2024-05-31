@@ -7,7 +7,7 @@
 //
 
 #import "PLVSAUtils.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVSAStreamAlertController.h"
 
 @interface PLVSAUtils ()
@@ -61,19 +61,19 @@
 }
 
 + (void)showToastInHomeVCWithMessage:(NSString *)message {
-    [PLVToast showToastWithMessage:message inView:[PLVSAUtils sharedUtils].homeVC.view];
+    [PLVLiveToast showToastWithMessage:message inView:[PLVSAUtils sharedUtils].homeVC.view];
 }
 
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view {
-    [PLVToast showToastWithMessage:message inView:view];
+    [PLVLiveToast showToastWithMessage:message inView:view];
 }
 
 + (void)showToastWithMessage:(NSString *)message inView:(UIView *)view afterDelay:(CGFloat)delay {
-    [PLVToast showToastWithMessage:message inView:view afterDelay:delay];
+    [PLVLiveToast showToastWithMessage:message inView:view afterDelay:delay];
 }
 
 + (void)showToastWithCountMessage:(NSString *)message inView:(UIView *)view afterCountdown:(CGFloat)countdown finishHandler:(void(^)(void))finishHandler {
-    [PLVToast showToastWithCountMessage:message inView:view afterCountdown:countdown finishHandler:finishHandler];
+    [PLVLiveToast showToastWithCountMessage:message inView:view afterCountdown:countdown finishHandler:finishHandler];
 }
 
 + (void)showAlertWithMessage:(NSString *)message

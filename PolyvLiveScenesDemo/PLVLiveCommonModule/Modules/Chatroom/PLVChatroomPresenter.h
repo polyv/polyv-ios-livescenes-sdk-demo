@@ -237,6 +237,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 更新沙盒的已领取红包状态缓存数据
 - (void)recordRedpackReceiveWithID:(NSString *)redpackId time:(NSTimeInterval)time state:(PLVRedpackState)state;
 
+/// 更新获取时间
+- (void)updateHistoryLastTime:(NSTimeInterval)lastTime lastTimeMessageIndex:(NSInteger)lastTimeMessageIndex;
+
 @end
 
 NS_ASSUME_NONNULL_END

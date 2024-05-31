@@ -1,5 +1,5 @@
 //
-//  PLVMarqueeStyleModel.h
+//  PLVLiveMarqueeStyleModel.h
 //  PLVFoundationSDK
 //
 //  Created by PLV-UX on 2021/3/10.
@@ -11,27 +11,27 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-typedef NS_ENUM(NSUInteger, PLVMarqueeModelStyle) {
+typedef NS_ENUM(NSUInteger, PLVLiveMarqueeModelStyle) {
     /// 滚动（自屏幕右方至左方一直滚动）
-    PLVMarqueeModelStyleRoll = 1,
+    PLVLiveMarqueeModelStyleRoll = 1,
     /// 闪烁（屏幕内随机位置闪烁）
-    PLVMarqueeModelStyleFlash,
+    PLVLiveMarqueeModelStyleFlash,
     /// 滚动+闪烁（自屏幕右方至左方一直滚动，渐隐渐现）
-    PLVMarqueeModelStyleFade,
+    PLVLiveMarqueeModelStyleFade,
     /// 局部滚动（上下15%的视频区域之间滚动）
-    PLVMarqueeModelStylePartRoll,
+    PLVLiveMarqueeModelStylePartRoll,
     /// 局部闪烁（上下15%的视频区域随机闪烁文字）
-    PLVMarqueeModelStylePartFlash,
+    PLVLiveMarqueeModelStylePartFlash,
     /// 滚动（自屏幕右方至左方一直滚动）双跑马灯
-    PLVMarqueeModelStyleDoubleRoll,
+    PLVLiveMarqueeModelStyleDoubleRoll,
     /// 闪烁（屏幕内随机位置闪烁））双跑马灯
-    PLVMarqueeModelStyleDoubleFlash,
+    PLVLiveMarqueeModelStyleDoubleFlash,
 };
 
 /// 负责定义跑马灯2.0样式和动画
-@interface PLVMarqueeModel : NSObject
+@interface PLVLiveMarqueeModel : NSObject
 /// 跑马灯样式
-@property (nonatomic, assign) PLVMarqueeModelStyle style;
+@property (nonatomic, assign) PLVLiveMarqueeModelStyle style;
 
 #pragma mark - 内容属性
 
@@ -96,7 +96,7 @@ typedef NS_ENUM(NSUInteger, PLVMarqueeModelStyle) {
                                         speed:(NSUInteger)speed
                                     fontColor:(NSString *)fontColor
                                         alpha:(float)alpha
-                                        style:(PLVMarqueeModelStyle)style;
+                                        style:(PLVLiveMarqueeModelStyle)style;
 
 /// 初始化跑马灯样式model（适用于自定义url方式获取的跑马灯数据转换为model）
 /// @param marqueeDict 跑马灯数据

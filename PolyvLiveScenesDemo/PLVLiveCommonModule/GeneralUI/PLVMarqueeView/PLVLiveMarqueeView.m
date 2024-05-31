@@ -1,18 +1,18 @@
 //
-//  PLVMarqueeView.m
+//  PLVLiveMarqueeView.m
 //  PLVFoundationSDK
 //
 //  Created by PLV-UX on 2021/3/10.
 //  Copyright © 2021 PLV. All rights reserved.
 //
 
-#import "PLVMarqueeView.h"
-#import "PLVMarqueeAnimationManager.h"
+#import "PLVLiveMarqueeView.h"
+#import "PLVLiveMarqueeAnimationManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
-@interface PLVMarqueeView ()<CAAnimationDelegate>
+@interface PLVLiveMarqueeView ()<CAAnimationDelegate>
 
-@property (nonatomic, strong) PLVMarqueeModel *marqueeModel;
+@property (nonatomic, strong) PLVLiveMarqueeModel *marqueeModel;
 @property (nonatomic, strong) CALayer *mainMarqueeLayer;
 @property (nonatomic, strong) CALayer *secondMarqueeLayer;
 
@@ -20,7 +20,7 @@
 
 @end
 
-@implementation PLVMarqueeView
+@implementation PLVLiveMarqueeView
 
 #pragma mark - Init & Dealloc
 
@@ -30,6 +30,7 @@
         self.userInteractionEnabled = NO;
         self.layer.masksToBounds = YES;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(applicationDidEnterBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
     }
     return self;
 }
@@ -41,7 +42,7 @@
 
 #pragma mark - Setter
 
-- (void)setPLVMarqueeModel:(PLVMarqueeModel *)marqueeModel {
+- (void)setPLVLiveMarqueeModel:(PLVLiveMarqueeModel *)marqueeModel {
     if (!marqueeModel) {
         [self removeMarquee];
         return;
@@ -64,8 +65,8 @@
         [self.layer addSublayer:self.mainMarqueeLayer];
         
         //双跑马灯，开启第二个跑马灯layer
-        if (marqueeModel.style == PLVMarqueeModelStyleDoubleRoll ||
-            marqueeModel.style == PLVMarqueeModelStyleDoubleFlash) {
+        if (marqueeModel.style == PLVLiveMarqueeModelStyleDoubleRoll ||
+            marqueeModel.style == PLVLiveMarqueeModelStyleDoubleFlash) {
             
             NSAttributedString *secondAttributedString = [marqueeModel createSecondMarqueeAttributedContent];
             CGSize secondMarqueeSize = [marqueeModel secondmarqueeAttributedContentSize];
@@ -94,23 +95,23 @@
     if (self.mainMarqueeLayer) {
         self.isRunning = YES;
         self.mainMarqueeLayer.hidden = NO;
-        if ([PLVMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.mainMarqueeLayer]) {
+        if ([PLVLiveMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.mainMarqueeLayer]) {
             //当前已经添加动画,启动动画
-            [PLVMarqueeAnimationManager startMarqueeAnimation:self.mainMarqueeLayer];
+            [PLVLiveMarqueeAnimationManager startMarqueeAnimation:self.mainMarqueeLayer];
         }else {
             //没有添加动画，则添加
-            [PLVMarqueeAnimationManager addAnimationForLayer:self.mainMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:[PLVFWeakProxy proxyWithTarget:self]];
+            [PLVLiveMarqueeAnimationManager addAnimationForLayer:self.mainMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:[PLVFWeakProxy proxyWithTarget:self]];
         }
     }
     
     if (self.secondMarqueeLayer) {
         self.secondMarqueeLayer.hidden = NO;
-        if ([PLVMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.secondMarqueeLayer]) {
+        if ([PLVLiveMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.secondMarqueeLayer]) {
             //当前已经添加动画,启动动画
-            [PLVMarqueeAnimationManager startMarqueeAnimation:self.secondMarqueeLayer];
+            [PLVLiveMarqueeAnimationManager startMarqueeAnimation:self.secondMarqueeLayer];
         } else {
             //没有添加动画，则添加
-            [PLVMarqueeAnimationManager addDoubleFlashAnimationForSecondLayer:self.secondMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:[PLVFWeakProxy proxyWithTarget:self]];
+            [PLVLiveMarqueeAnimationManager addDoubleFlashAnimationForSecondLayer:self.secondMarqueeLayer randomOriginInBounds:self.bounds withModel:self.marqueeModel animationDelegate:[PLVFWeakProxy proxyWithTarget:self]];
         }
     }
 }
@@ -125,17 +126,17 @@
     if (self.mainMarqueeLayer) {
         self.isRunning = NO;
         self.mainMarqueeLayer.hidden = self.marqueeModel.isHiddenWhenPause;
-        if ([PLVMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.mainMarqueeLayer]) {
+        if ([PLVLiveMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.mainMarqueeLayer]) {
             //当前已经添加动画，暂停动画
-            [PLVMarqueeAnimationManager pauseMarqueeAnimation:self.mainMarqueeLayer];
+            [PLVLiveMarqueeAnimationManager pauseMarqueeAnimation:self.mainMarqueeLayer];
         }
     }
 
     if (self.secondMarqueeLayer) {
         self.secondMarqueeLayer.hidden = self.marqueeModel.isHiddenWhenPause;
-        if ([PLVMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.secondMarqueeLayer]) {
+        if ([PLVLiveMarqueeAnimationManager checkLayerHaveMarqueeAnimation:self.secondMarqueeLayer]) {
             //当前已经添加动画，暂停动画
-            [PLVMarqueeAnimationManager pauseMarqueeAnimation:self.secondMarqueeLayer];
+            [PLVLiveMarqueeAnimationManager pauseMarqueeAnimation:self.secondMarqueeLayer];
         }
     }
 }
@@ -177,7 +178,8 @@
 
 - (void)animationDidStop:(CAAnimation *)anim finished:(BOOL)flag {
     // This flag is NO when the application enters background.
-    if (self.isRunning) {
+    BOOL active = [UIApplication sharedApplication].applicationState == UIApplicationStateActive;
+    if (self.isRunning && active) {
         [self start];
     }
 }
@@ -188,6 +190,14 @@
 - (void)applicationDidBecomeActive {
     if (self.isRunning) {
         [self start];
+    }
+}
+
+- (void)applicationDidEnterBackground{
+    if (self.isRunning){
+        [self pause];
+        // 回到前台需要开启
+        self.isRunning = YES;
     }
 }
 

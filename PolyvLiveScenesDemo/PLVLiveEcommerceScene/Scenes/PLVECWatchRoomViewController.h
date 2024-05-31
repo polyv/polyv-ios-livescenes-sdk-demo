@@ -18,6 +18,18 @@ NS_ASSUME_NONNULL_BEGIN
 ///       当项目未适配分屏时，建议设置为YES
 @property (nonatomic,assign) BOOL fullScreenButtonShowOnIpad;
 
+/// 切换在线人数/观看热度显示逻辑-直播场景
+///
+/// @note NO-默认直播场景显示在线人数
+///       YES-直播场景显示观看热度
+@property (nonatomic,assign) BOOL playTimesLabelUseNewStrategy_live;
+
+/// 切换在线人数/观看热度显示逻辑-回放
+///
+/// @note NO-默认回放场景显示观看热度
+///       YES-回放场景显示在线人数
+@property (nonatomic,assign) BOOL playTimesLabelUseNewStrategy_playback;
+
 /// 退出并清理当前直播控制器
 - (void)exitCleanCurrentLiveController;
 

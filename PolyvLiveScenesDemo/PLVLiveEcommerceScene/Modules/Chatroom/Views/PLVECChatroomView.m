@@ -14,7 +14,7 @@
 #import "PLVECChatroomViewModel.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVRewardDisplayManager.h"
 #import "PLVECChatroomPlaybackViewModel.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -286,7 +286,7 @@ PLVECChatroomMessageViewDelegate
 #pragma mark - PLVECChatroomPlaybackViewModelDelegate
 - (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
     NSString *content = success ? PLVLocalizedString(@"聊天室重放功能已开启，将会显示历史消息") : PLVLocalizedString(@"回放消息正在准备中，可稍等刷新查看");
-    [PLVToast showToastWithMessage:content inView:self afterDelay:5.0];
+    [PLVLiveToast showToastWithMessage:content inView:self afterDelay:5.0];
 }
 
 #pragma mark 显示欢迎语

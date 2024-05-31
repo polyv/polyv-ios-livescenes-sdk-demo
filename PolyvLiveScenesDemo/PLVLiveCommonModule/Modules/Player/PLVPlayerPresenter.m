@@ -110,6 +110,7 @@ PLVDefaultPageViewDelegate
     }
     
     [self.backgroundView removeFromSuperview]; /// 需单独作移除操作以保证释放
+    [self cleanPlayer];
     NSLog(@"%s",__FUNCTION__);
 }
 
@@ -491,6 +492,7 @@ PLVDefaultPageViewDelegate
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.pictureInPictureDelegate = self;
+        self.livePlayer.canAutoStartPictureInPicture = YES;
         self.livePlayer.channelWatchPublicStream = self.channelWatchPublicStream;
         self.livePlayer.channelWatchNoDelay = self.channelWatchNoDelay;
         self.livePlayer.channelWatchQuickLive = self.channelWatchQuickLive;
@@ -511,6 +513,7 @@ PLVDefaultPageViewDelegate
         }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
+        self.livePlaybackPlayer.canAutoStartPictureInPicture = YES;
         self.livePlaybackPlayer.pictureInPictureDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
 

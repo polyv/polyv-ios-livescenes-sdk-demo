@@ -14,7 +14,7 @@
 #import "PLVMultiLanguageManager.h"
 #import "PLVChatTextView.h"
 #import "PLVEmoticonManager.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 // UI
 #import "PLVSAProhibitWordTipView.h"
@@ -152,7 +152,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     PLVQuoteMessage *message = self.model.message;
     pasteboard.string = message.content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:[PLVSAUtils sharedUtils].homeVC.view afterDelay:3.0];
 }
 
 #pragma mark - [ Public Method ]

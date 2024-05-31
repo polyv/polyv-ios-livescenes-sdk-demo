@@ -261,6 +261,10 @@ PLVSAChatroomListViewDelegate
     [self.chatroomListView didMessageDeleted];
 }
 
+- (void)chatroomViewModelDidMessageCountLimitedAutoDeleted:(PLVSAChatroomViewModel *)viewModel {
+    [self.chatroomListView didMessageCountLimitedAutoDeleted];
+}
+
 - (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel loadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
     [self.chatroomListView loadHistorySuccess:noMore firstTime:first];
 }

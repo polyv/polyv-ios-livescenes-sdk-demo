@@ -27,7 +27,7 @@
 #import "PLVECWatchRoomScrollView.h"
 #import "PLVCommodityCardDetailView.h"
 #import "PLVECMessagePopupView.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -84,6 +84,13 @@ PLVECMessagePopupViewDelegate
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         // 设置多语言场景
         [[PLVMultiLanguageManager sharedManager] setupLocalizedLiveScene:PLVMultiLanguageLiveSceneEC channelId:roomData.channelId language:roomData.menuInfo.watchLangType];
+        
+        // 设置画中画
+        if (@available(iOS 15.0, *)) {
+            [PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode = PLVLivePictureInPictureMode_IJKPlayer;
+        } else {
+            [PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode = PLVLivePictureInPictureMode_AVPlayer;
+        }
         
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         [[PLVRoomDataManager sharedManager].roomData requestChannelFunctionSwitch];
@@ -321,7 +328,6 @@ PLVECMessagePopupViewDelegate
 }
 
 - (void)openCommodityDetailViewControllerWithURL:(NSURL *)commodityURL {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         // 打开应用内悬浮窗
         if (self.linkMicAreaView.inLinkMic) {
@@ -480,8 +486,9 @@ PLVECMessagePopupViewDelegate
 }
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
-    // 在回放时 显示观看次数 不需要更新在线人数
-    if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+    PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
+    if ((videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live) ||
+        (videoType == PLVChannelVideoType_Playback && self.playTimesLabelUseNewStrategy_playback)) {
         [self.homePageView updateRoomInfoCount:onlineCount];
     }
 }
@@ -513,9 +520,14 @@ PLVECMessagePopupViewDelegate
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
         [self.homePageView updateLikeCount:roomData.likeCount];
+        if (self.playTimesLabelUseNewStrategy_live) {
+            [self.homePageView updateRoomInfoCount:roomData.menuInfo.pageView.integerValue];
+        }
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
-        [self.homePageView updateRoomInfoCount:roomData.menuInfo.pageView.integerValue];
+        if (!self.playTimesLabelUseNewStrategy_playback) {
+            [self.homePageView updateRoomInfoCount:roomData.menuInfo.pageView.integerValue];
+        }
     }
 }
 
@@ -524,10 +536,10 @@ PLVECMessagePopupViewDelegate
 }
 
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount {
-    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    // 在回放时 更新观看次数
-    if (roomData.videoType == PLVChannelVideoType_Playback){
-        [self.homePageView updateRoomInfoCount:roomData.watchCount];
+    PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
+    if ((videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live) ||
+        (videoType == PLVChannelVideoType_Playback && !self.playTimesLabelUseNewStrategy_playback)) {
+        [self.homePageView updateRoomInfoCount:watchCount];
     }
 }
 
@@ -719,7 +731,9 @@ PLVECMessagePopupViewDelegate
     if (self.playerVC.noDelayLiveWatching) {
         [self.linkMicAreaView pauseWatchNoDelay:YES];
     }else {
-        [self.playerVC pause];
+        if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode == PLVLivePictureInPictureMode_AVPlayer) {
+            [self.playerVC pause];
+        }
     }
     
     // 设定画中画恢复逻辑的处理者为PLVLivePictureInPictureRestoreManager
@@ -1025,7 +1039,7 @@ PLVECMessagePopupViewDelegate
 
 - (void)messagePopupViewWillCopy:(PLVECMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
 }
 
 @end

@@ -8,7 +8,7 @@
 
 #import "PLVLCQuitSpeakMessageCell.h"
 #import "PLVChatTextView.h"
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVEmoticonManager.h"
 #import <PLVLiveScenesSDK/PLVSpeakMessage.h>
@@ -162,7 +162,7 @@
     UIPasteboard *pasteboard = [UIPasteboard generalPasteboard];
     NSString *content = (NSString *)self.model.message;
     pasteboard.string = content;
-    [PLVToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.superview afterDelay:3.0];
 }
 
 @end

@@ -221,8 +221,9 @@ UIGestureRecognizerDelegate
     }
     
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
-    BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
-    urlString = [urlString stringByAppendingFormat:@"%@security=%d&resourceAuth=%d&secureApi=%d", (hasParam ? @"&" : @"?"), (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
+    BOOL enableSecurity = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
+    NSInteger security = enableSecurity ? ([PLVFSignConfig sharedInstance].encryptType == PLVEncryptType_SM2 ? 2 : 1) : 0;
+    urlString = [urlString stringByAppendingFormat:@"%@security=%ld&resourceAuth=%d&secureApi=%d", (hasParam ? @"&" : @"?"), security, (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0)];
     
     // 避免拼接参数中含有特殊字符#被编码导致请求拼接异常
     NSString *charactersToEscape = @"#";

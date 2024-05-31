@@ -409,6 +409,12 @@ PLVLSChatroomViewModelProtocol
     })
 }
 
+- (void)chatroomViewModel_didMessageCountLimitedAutoDeleted {
+    plv_dispatch_main_async_safe(^{
+        [self.chatroomListView didMessageCountLimitedAutoDeleted];
+    })
+}
+
 - (void)chatroomViewModel_loadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first {
     plv_dispatch_main_async_safe(^{
         [self.chatroomListView loadHistorySuccess:noMore firstTime:first];

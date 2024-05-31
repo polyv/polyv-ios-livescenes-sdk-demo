@@ -43,6 +43,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于刷新列表
 - (void)chatroomManager_didMessageDeleted;
 
+/// 消息条数超限自动删除
+- (void)chatroomManager_didMessageCountLimitedAutoDeleted;
+
 /// 发送了严禁消息（图片、文字）
 /// 用于刷新列表
 - (void)chatroomManager_didSendProhibitMessage;

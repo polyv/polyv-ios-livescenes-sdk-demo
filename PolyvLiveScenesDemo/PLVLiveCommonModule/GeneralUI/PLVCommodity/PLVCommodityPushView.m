@@ -7,6 +7,7 @@
 //  推送商品
 
 #import "PLVCommodityPushView.h"
+#import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -32,6 +33,7 @@
 @property (nonatomic, strong) UIButton *closeButton;
 
 @property (nonatomic, strong) UIButton *jumpButton;
+@property (nonatomic, strong) UIButton *jumpTextButton;
 
 @property (nonatomic, strong) NSTimer *timer;
 
@@ -45,6 +47,22 @@
 
 @property (nonatomic, strong) CAShapeLayer *shapeLayer;
 
+@property (nonatomic, strong) UIView *hotSaleTipView; // 热卖商品提示视图
+@property (nonatomic, strong) UIImageView *tipImageView; // 提示的图片视图
+@property (nonatomic, strong) UILabel *tipTitleLabel;
+@property (nonatomic, strong) CAGradientLayer *tipShadowLayer;
+
+@property (nonatomic, assign) NSInteger clickTimes; // 热卖商品点击次数
+@property (nonatomic, assign) NSInteger clickProductId; // 热卖商品的id
+@property (nonatomic, assign) BOOL productHotEffectEnabled; // 商品热卖特效开关是否开启
+@property (nonatomic, copy) NSString *currentProductTips; // 当前产品tip文案
+@property (nonatomic, copy) NSString *normalProductTips; // 普通产品tip文案
+@property (nonatomic, copy) NSString *financeProductTips; // 金融产品tip文案
+@property (nonatomic, copy) NSString *jobProductTips; // 职位产品tip文案
+@property (nonatomic, strong) CADisplayLink *displayLink; // 次数更新动画
+@property (nonatomic, assign) NSInteger unincreaseTimes; // 增长前的点击次数
+@property (nonatomic, assign) CFTimeInterval animatStartTime;
+
 @end
 
 @implementation PLVCommodityPushView
@@ -54,10 +72,6 @@
 - (instancetype)initWithType:(PLVCommodityPushViewType)type {
     self = [super init];
     if (self) {
-        // 使用-drawLayer:画出带三角形的路径
-        //self.backgroundColor = UIColor.whiteColor;
-        //self.layer.cornerRadius = 10.f;
-        //self.layer.masksToBounds = YES;
         self.type = type;
         self.needShow = NO;
         
@@ -71,6 +85,8 @@
         [self addSubview:self.coverImageView];
         
         self.showIdLabel = [[UILabel alloc] init];
+        self.showIdLabel.layer.cornerRadius = 2.0;
+        self.showIdLabel.layer.masksToBounds = YES;
         self.showIdLabel.frame = CGRectMake(0, 0, 27, 16);
         self.showIdLabel.textColor = UIColor.whiteColor;
         self.showIdLabel.font = [UIFont systemFontOfSize:12];
@@ -117,6 +133,14 @@
         [self.jumpButton setImage:[self imageForCommodityResource:@"plv_commodity_jump_btn_disabled"] forState:UIControlStateDisabled];
         [self.jumpButton addTarget:self action:@selector(jumpButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:self.jumpButton];
+        [self addSubview:self.jumpTextButton];
+
+        [self.coverImageView addSubview:self.hotSaleTipView];
+        [self.hotSaleTipView.layer addSublayer:self.tipShadowLayer];
+        [self.hotSaleTipView addSubview:self.tipTitleLabel];
+        [self.hotSaleTipView addSubview:self.tipImageView];
+        
+        [self setProductHotEffectConfig];
     }
     return self;
 }
@@ -129,6 +153,12 @@
     
     CGFloat coverImageViewHeight = CGRectGetHeight(self.bounds) - 12 * 2;
     self.coverImageView.frame = CGRectMake(12, 12, coverImageViewHeight, coverImageViewHeight);
+    if (!self.hotSaleTipView.hidden) {
+        self.hotSaleTipView.frame = CGRectMake(0, 0, coverImageViewHeight, 24);
+        self.tipShadowLayer.frame = self.hotSaleTipView.bounds;
+        self.tipImageView.frame = CGRectMake(0, 6, 14, 14);
+        self.tipTitleLabel.frame = CGRectMake(16, 0, CGRectGetWidth(self.hotSaleTipView.frame) - 16, CGRectGetHeight(self.hotSaleTipView.frame));
+    }
     CGFloat positionX = CGRectGetMaxX(self.coverImageView.frame) + 8;
     CGFloat positionY = 12;
     self.nameLabel.frame = CGRectMake(positionX, positionY, CGRectGetWidth(self.bounds)-positionX-22, 20);
@@ -142,7 +172,12 @@
     positionY = (self.firstTagLabel.isHidden && self.secondTagLabel.isHidden) ? positionY : positionY + 16 + 4;
     self.productDescLabel.frame = CGRectMake(positionX, positionY, CGRectGetWidth(self.nameLabel.frame), 18);
     
-    self.realPriceLabel.frame = CGRectMake(positionX, CGRectGetHeight(self.bounds)- 12 - 25, 150, 25);
+    if ([self.model.productType isEqualToString:@"position"] &&
+        ![PLVFdUtil checkStringUseable:self.model.cover]) { // 职位产品
+        self.realPriceLabel.frame = CGRectMake(12, CGRectGetHeight(self.bounds)- 12 - 25, 150, 25);
+    } else {
+        self.realPriceLabel.frame = CGRectMake(positionX, CGRectGetHeight(self.bounds)- 12 - 25, 150, 25);
+    }
     [self.realPriceLabel sizeToFit];
     CGFloat priceLabelX = CGRectGetMaxX(self.realPriceLabel.frame) + 4;
     self.priceLabel.frame = CGRectMake(priceLabelX, CGRectGetMinY(self.realPriceLabel.frame)+4, CGRectGetMinX(self.jumpButton.frame)-10-priceLabelX, 17);
@@ -157,6 +192,17 @@
 }
 
 #pragma mark - [ Private Method ]
+
+- (void)setProductHotEffectConfig {
+    // 是否开启产品热卖特效
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    self.hotSaleTipView.hidden = !self.productHotEffectEnabled;
+    if (self.productHotEffectEnabled) {
+        _normalProductTips = PLV_SafeStringForDictKey(menuInfo.productHotEffectTips, @"normalProductTips");
+        _financeProductTips = PLV_SafeStringForDictKey(menuInfo.productHotEffectTips, @"financeProductTips");
+        _jobProductTips = PLV_SafeStringForDictKey(menuInfo.productHotEffectTips, @"jobProductTips");
+    }
+}
 
 - (void)drawLayer {
     if (_shapeLayer.superlayer) {
@@ -251,10 +297,41 @@
     return tagsLabel;
 }
 
+- (void)startTipTitleLabelAnimate {
+    if (_displayLink) { return; }
+    
+    self.displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(updateTipNumber)];
+    self.displayLink.preferredFramesPerSecond = 30; // 每秒调用 30 次
+    [self.displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSDefaultRunLoopMode];
+    
+    // 记录开始时间
+    self.animatStartTime = CACurrentMediaTime();
+}
+
+- (void)setTipTitleLabelContent:(NSInteger)number animated:(BOOL)animated {
+    NSString *titleString = PLVLocalizedString(self.currentProductTips);
+    NSString *numString = number > 9999 ? @"9999+" : [NSString stringWithFormat:@"%ld", number];
+    NSString *string = [NSString stringWithFormat:@"%@x%@",titleString, numString];
+    
+    NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:string];
+    NSDictionary *titleAttributes = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
+                                          NSForegroundColorAttributeName:[UIColor whiteColor]};
+    [attributedString addAttributes:titleAttributes range:NSMakeRange(0, titleString.length)];
+    [attributedString addAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:10],NSForegroundColorAttributeName:[UIColor whiteColor]} range:NSMakeRange(titleString.length, 1)];
+    UIFont *numFont = [UIFont systemFontOfSize:(animated ? 16 : 14) weight:500];
+    [attributedString addAttributes:@{NSFontAttributeName:numFont,NSForegroundColorAttributeName:[UIColor whiteColor]} range:NSMakeRange(titleString.length + 1, numString.length)];
+    self.tipTitleLabel.attributedText = attributedString;
+}
+
 - (void)destroy {
     if (self.timer) {
         [self.timer invalidate];
         self.timer = nil;
+    }
+    
+    if (_displayLink) {
+        [self.displayLink invalidate];
+        self.displayLink = nil;
     }
 }
 
@@ -277,6 +354,59 @@
     return _productDescLabel;
 }
 
+- (UIView *)hotSaleTipView {
+    if (!_hotSaleTipView) {
+        _hotSaleTipView = [[UIView alloc] init];
+        _hotSaleTipView.layer.masksToBounds = YES;
+        _hotSaleTipView.hidden = YES;
+    }
+    return _hotSaleTipView;
+}
+
+- (UIImageView *)tipImageView {
+    if (!_tipImageView) {
+        _tipImageView = [[UIImageView alloc] init];
+        _tipImageView.image = [self imageForCommodityResource:@"plv_commodity_hotsale_icon"];
+    }
+    return _tipImageView;
+}
+
+- (UILabel *)tipTitleLabel {
+    if (!_tipTitleLabel) {
+        _tipTitleLabel = [[UILabel alloc] init];
+        _tipTitleLabel.lineBreakMode = NSLineBreakByClipping;
+    }
+    return _tipTitleLabel;
+}
+
+- (CAGradientLayer *)tipShadowLayer{
+    if (!_tipShadowLayer) {
+        _tipShadowLayer = [CAGradientLayer layer];
+        _tipShadowLayer.startPoint = CGPointMake(0, 0);
+        _tipShadowLayer.endPoint = CGPointMake(1, 0);
+        _tipShadowLayer.colors = @[(__bridge id)[PLVColorUtil colorFromHexString:@"#FFAF0F" alpha:1.0f].CGColor, (__bridge id)[PLVColorUtil colorFromHexString:@"#FFAF0F" alpha:0.8f].CGColor, (__bridge id)[PLVColorUtil colorFromHexString:@"#FFAF0F" alpha:0.0f].CGColor];
+        _tipShadowLayer.locations = @[@(0), @(0.7), @(1.0f)];
+    }
+    return _tipShadowLayer;
+}
+
+- (UIButton *)jumpTextButton {
+    if (!_jumpTextButton) {
+        _jumpTextButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _jumpTextButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#F15D5D"];
+        _jumpTextButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _jumpTextButton.layer.cornerRadius = 12.0f;
+        _jumpTextButton.hidden = YES;
+        [_jumpTextButton setTitle:PLVLocalizedString(@"立即投递") forState:UIControlStateNormal];
+        [_jumpTextButton addTarget:self action:@selector(jumpButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _jumpTextButton;
+}
+
+- (BOOL)productHotEffectEnabled {
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.productHotEffectEnabled;
+}
+
 #pragma mark - Setter
 
 - (void)setModel:(PLVCommodityModel *)model {
@@ -286,15 +416,31 @@
     }
     
     self.needShow = YES;
+    self.clickTimes = 0;
+    self.unincreaseTimes = 0;
+    self.clickProductId = model.productId;
+    self.productDescLabel.text = model.productDesc;
+
     // 实际价格显示逻辑
     NSString *realPriceStr;
-    if ([model.productType isEqualToString:@"finance"]) {
+    if ([model.productType isEqualToString:@"finance"]) { // 金融产品
         realPriceStr = [NSString stringWithFormat:@"%@", model.yield];
-    } else {
+        self.currentProductTips = self.financeProductTips;
+        self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_shopping_icon"];
+    } else if ([model.productType isEqualToString:@"position"]) { // 职位产品
+        if ([PLVFdUtil checkDictionaryUseable:model.params]) {
+            realPriceStr = PLV_SafeStringForDictKey(model.params, @"treatment");
+        }
+        self.productDescLabel.text = nil;
+        self.currentProductTips = self.jobProductTips;
+        self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_delivering_icon"];
+    } else { // 普通产品
         realPriceStr = [NSString stringWithFormat:@"¥ %@", model.realPrice];
         if ([model.realPrice isEqualToString:@"0"]) {
             realPriceStr = PLVLocalizedString(@"免费");
         }
+        self.currentProductTips = self.normalProductTips;
+        self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_hotsale_icon"];
     }
     
     // 原价格显示逻辑
@@ -318,7 +464,6 @@
     }
     
     self.nameLabel.text = model.name;
-    self.productDescLabel.text = model.productDesc;
     self.realPriceLabel.text = realPriceStr;
     self.priceLabel.attributedText = priceAtrrStr;
     self.showIdLabel.text = [NSString stringWithFormat:@"%ld",model.showId];
@@ -338,6 +483,10 @@
     
     NSString *linkString = [self getJumpLinkURLString];
     self.jumpButton.enabled = [PLVFdUtil checkStringUseable:linkString];
+    
+    // 更新热度标签
+    [self setTipTitleLabelContent:self.clickTimes animated:NO];
+    [self setNeedsLayout];
 }
 
 #pragma mark - Action
@@ -357,8 +506,8 @@
         jumpLinkUrl = [NSURL URLWithString:[@"http://" stringByAppendingString:jumpLinkUrl.absoluteString]];
     }
     
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityPushViewJumpToCommodityDetail:)]) {
-        [self.delegate plvCommodityPushViewJumpToCommodityDetail:jumpLinkUrl];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityPushViewJumpToCommodityDetail:commodity:)]) {
+        [self.delegate plvCommodityPushViewJumpToCommodityDetail:jumpLinkUrl commodity:self.model];
     }
 }
 
@@ -371,6 +520,24 @@
 
 - (void)tapGestureAction {
     [self jumpButtonAction];
+}
+
+- (void)updateTipNumber {
+    CFTimeInterval elapsedTime = CACurrentMediaTime() - self.animatStartTime;
+    if (elapsedTime > 0.2) {
+        // 确保在0.2秒后停止
+        elapsedTime = 0.2;
+        [self.displayLink invalidate];
+        self.displayLink = nil;
+    }
+    
+    // 根据经过的时间计算当前数字
+    NSInteger num = (NSInteger)(elapsedTime / 0.2 * (self.clickTimes - self.unincreaseTimes));
+    num += self.unincreaseTimes;
+    if (num >= self.clickTimes) {
+        self.unincreaseTimes = num;
+    }
+    [self setTipTitleLabelContent:num animated:(num < self.clickTimes)];
 }
 
 #pragma mark - Public
@@ -422,6 +589,39 @@
         @"pushId" : self.model.logId ?: @""
     };
     [[PLVWLogReporterManager sharedManager] reportTrackWithEventId:@"product_push_item_view" eventType:@"show" specInformation:info];
+}
+
+- (void)updateProductClickTimes:(NSDictionary *)dict {
+    if (!self.model || ![PLVFdUtil checkDictionaryUseable:dict] ||
+        !self.productHotEffectEnabled) {
+        return;
+    }
+    
+    NSInteger productId = PLV_SafeIntegerForDictKey(dict, @"productId");
+    if (productId == self.model.productId) {
+        self.unincreaseTimes = self.clickTimes;
+        self.clickTimes = PLV_SafeIntegerForDictKey(dict, @"times");
+        plv_dispatch_main_async_safe(^{
+            [self startTipTitleLabelAnimate];
+        })
+    }
+}
+
+- (void)sendProductClickedEvent:(PLVCommodityModel *)model {
+    if (!model) {  return; }
+
+    NSString *roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    NSString *nickName = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerName;
+    NSMutableDictionary *jsonDict = [NSMutableDictionary dictionary];
+    jsonDict[@"EVENT"] = @"PRODUCT_CLICK";
+    jsonDict[@"roomId"] = [NSString stringWithFormat:@"%@", roomId];
+    jsonDict[@"data"] = @{
+        @"nickName" : [PLVFdUtil checkStringUseable:nickName] ? nickName : @"",
+        @"positionName" : model.name ?: @"",
+        @"type" : model.productType ?: @"",
+        @"productId" : @(model.productId)
+    };
+    [[PLVSocketManager sharedManager] emitEvent:PLVSocketProduct_product_key content:jsonDict];
 }
 
 @end

@@ -25,6 +25,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)didMessageDeleted;
 
+- (void)didMessageCountLimitedAutoDeleted;
+
 - (void)loadHistorySuccess:(BOOL)noMore firstTime:(BOOL)first;
 
 - (void)loadHistoryFailure;

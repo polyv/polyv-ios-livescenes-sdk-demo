@@ -1,16 +1,16 @@
 //
-//  PLVMarqueeAnimation.m
+//  PLVLiveMarqueeAnimation.m
 //  PLVFoundationSDK
 //
 //  Created by PLV-UX on 2021/3/10.
 //  Copyright © 2021 PLV. All rights reserved.
 //
 
-#import "PLVMarqueeAnimationManager.h"
+#import "PLVLiveMarqueeAnimationManager.h"
 
-static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
+static NSString * const PLVLiveMarqueeAnimationKey = @"PLVLiveMarqueeAnimationKey";
 
-@implementation PLVMarqueeAnimationManager
+@implementation PLVLiveMarqueeAnimationManager
 
 #pragma mark - Public
 
@@ -21,35 +21,35 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param delegate 动画代理
 + (void)addAnimationForLayer:(CALayer *)layer
         randomOriginInBounds:(CGRect)bounds
-                   withModel:(PLVMarqueeModel *)model
+                   withModel:(PLVLiveMarqueeModel *)model
            animationDelegate:(id)delegate {
     switch (model.style) {
-        case PLVMarqueeModelStyleRoll: {
-            [PLVMarqueeAnimationManager addRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
+        case PLVLiveMarqueeModelStyleRoll: {
+            [PLVLiveMarqueeAnimationManager addRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
             break;
         }
-        case PLVMarqueeModelStyleFlash: {
-            [PLVMarqueeAnimationManager addFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate isSecondLayer:NO];
+        case PLVLiveMarqueeModelStyleFlash: {
+            [PLVLiveMarqueeAnimationManager addFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate isSecondLayer:NO];
             break;
         }
-        case PLVMarqueeModelStyleFade: {
-            [PLVMarqueeAnimationManager addRollFadeAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
+        case PLVLiveMarqueeModelStyleFade: {
+            [PLVLiveMarqueeAnimationManager addRollFadeAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
             break;
         }
-        case PLVMarqueeModelStylePartRoll: {
-            [PLVMarqueeAnimationManager addPartRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
+        case PLVLiveMarqueeModelStylePartRoll: {
+            [PLVLiveMarqueeAnimationManager addPartRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
             break;
         }
-        case PLVMarqueeModelStylePartFlash: {
-            [PLVMarqueeAnimationManager addPartFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
+        case PLVLiveMarqueeModelStylePartFlash: {
+            [PLVLiveMarqueeAnimationManager addPartFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
             break;
         }
-        case PLVMarqueeModelStyleDoubleRoll: {
-            [PLVMarqueeAnimationManager addRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
+        case PLVLiveMarqueeModelStyleDoubleRoll: {
+            [PLVLiveMarqueeAnimationManager addRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
             break;
         }
-        case PLVMarqueeModelStyleDoubleFlash: {
-            [PLVMarqueeAnimationManager addFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate isSecondLayer:NO];
+        case PLVLiveMarqueeModelStyleDoubleFlash: {
+            [PLVLiveMarqueeAnimationManager addFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate isSecondLayer:NO];
             break;
         }
         default:
@@ -64,16 +64,16 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param delegate 动画代理
 + (void)addDoubleFlashAnimationForSecondLayer:(CALayer *)layer
                          randomOriginInBounds:(CGRect)bounds
-                                    withModel:(PLVMarqueeModel *)model
+                                    withModel:(PLVLiveMarqueeModel *)model
                             animationDelegate:(id)delegate {
-    [PLVMarqueeAnimationManager addFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate isSecondLayer:YES];
+    [PLVLiveMarqueeAnimationManager addFlashAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate isSecondLayer:YES];
 }
 
 #pragma mark - 检查layer是否包含跑马灯动画
 /// 检查layer是否包含跑马灯动画
 /// @param layer layer
 + (BOOL)checkLayerHaveMarqueeAnimation:(CALayer *)layer {
-    if ([layer animationForKey:PLVMarqueeAnimationKey]) {
+    if ([layer animationForKey:PLVLiveMarqueeAnimationKey]) {
         return YES;
     }
     return NO;
@@ -117,7 +117,7 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param delegate 动画代理
 + (void)addFlashAnimation:(CALayer *)layer
      randomOriginInBounds:(CGRect)bounds
-                withModel:(PLVMarqueeModel *)model
+                withModel:(PLVLiveMarqueeModel *)model
         animationDelegate:(id)delegate
             isSecondLayer:(BOOL)isSecondLayer {
     //获取随机位置
@@ -125,8 +125,8 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
     CGFloat displayHeight = CGRectGetHeight(bounds);
     CGFloat displayMaxX = displayWidth - layer.frame.size.width;
     CGFloat displayMaxY = displayHeight - layer.frame.size.height;
-    CGFloat randomX = displayMaxX < 0.0 ? 0.0 : [PLVMarqueeAnimationManager randomDoubleFrom:0.0 to:displayMaxX accuracy:2];
-    CGFloat randomY = displayMaxY < 0.0 ? 0.0 : [PLVMarqueeAnimationManager randomDoubleFrom:20.0 to:displayMaxY accuracy:2];
+    CGFloat randomX = displayMaxX < 0.0 ? 0.0 : [PLVLiveMarqueeAnimationManager randomDoubleFrom:0.0 to:displayMaxX accuracy:2];
+    CGFloat randomY = displayMaxY < 0.0 ? 0.0 : [PLVLiveMarqueeAnimationManager randomDoubleFrom:20.0 to:displayMaxY accuracy:2];
     
     //给layer设置随机位置
     [CATransaction begin];
@@ -137,14 +137,14 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
     //给layer添加闪烁动画
     CAKeyframeAnimation *opacityAnimation;
     if (isSecondLayer) {
-        opacityAnimation = [PLVMarqueeAnimationManager createFlashAnimationForSecondMarqueeWithModel:model];
+        opacityAnimation = [PLVLiveMarqueeAnimationManager createFlashAnimationForSecondMarqueeWithModel:model];
     }else {
-        opacityAnimation = [PLVMarqueeAnimationManager createFlashAnimationWithModel:model];
+        opacityAnimation = [PLVLiveMarqueeAnimationManager createFlashAnimationWithModel:model];
     }
     if (opacityAnimation) {
         layer.opacity = 0;
         opacityAnimation.delegate = delegate;
-        [layer addAnimation:opacityAnimation forKey:PLVMarqueeAnimationKey];
+        [layer addAnimation:opacityAnimation forKey:PLVLiveMarqueeAnimationKey];
     }
 }
 
@@ -156,14 +156,14 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param delegate 动画代理
 + (void)addRollAnimation:(CALayer *)layer
     randomOriginInBounds:(CGRect)bounds
-               withModel:(PLVMarqueeModel *)model
+               withModel:(PLVLiveMarqueeModel *)model
        animationDelegate:(id)delegate {
     //获取随机坐标
     CGFloat displayWidth = CGRectGetWidth(bounds);
     CGFloat displayHeight = CGRectGetHeight(bounds);
     CGFloat displayMinY = 20.0;
     CGFloat displayMaxY = displayHeight - layer.frame.size.height * 0.5;
-    CGFloat randomY = [PLVMarqueeAnimationManager randomDoubleFrom:displayMinY to:displayMaxY accuracy:2];
+    CGFloat randomY = [PLVLiveMarqueeAnimationManager randomDoubleFrom:displayMinY to:displayMaxY accuracy:2];
     if (displayHeight < layer.frame.size.height) {
         randomY = 0.0;
     }
@@ -178,10 +178,10 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
     CGPoint startPoint = CGPointMake(rollFromPsitionX, randomY);
     CGPoint endPoint = CGPointMake(rollToPsitionX, randomY);
     
-    CAKeyframeAnimation *positionAnimation = [PLVMarqueeAnimationManager createRollAnimationWithModel:model startPoint:startPoint endPoint:endPoint];
+    CAKeyframeAnimation *positionAnimation = [PLVLiveMarqueeAnimationManager createRollAnimationWithModel:model startPoint:startPoint endPoint:endPoint];
     if (positionAnimation) {
         positionAnimation.delegate = delegate;
-        [layer addAnimation:positionAnimation forKey:PLVMarqueeAnimationKey];
+        [layer addAnimation:positionAnimation forKey:PLVLiveMarqueeAnimationKey];
     }
 }
 
@@ -193,9 +193,9 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param delegate 动画代理
 + (void)addRollFadeAnimation:(CALayer *)layer
         randomOriginInBounds:(CGRect)bounds
-                   withModel:(PLVMarqueeModel *)model
+                   withModel:(PLVLiveMarqueeModel *)model
            animationDelegate:(id)delegate {
-    [PLVMarqueeAnimationManager addRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
+    [PLVLiveMarqueeAnimationManager addRollAnimation:layer randomOriginInBounds:bounds withModel:model animationDelegate:delegate];
     
     NSUInteger interval = model.isAlwaysShowWhenRun ? 0 : model.interval;
     NSTimeInterval duration = model.tweenTime * 2 + model.lifeTime + interval;
@@ -227,16 +227,16 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param delegate 动画代理
 + (void)addPartRollAnimation:(CALayer *)layer
         randomOriginInBounds:(CGRect)bounds
-                   withModel:(PLVMarqueeModel *)model
+                   withModel:(PLVLiveMarqueeModel *)model
            animationDelegate:(id)delegate {
     //获取随机坐标
     CGFloat displayWidth = CGRectGetWidth(bounds);
     CGFloat displayHeight = CGRectGetHeight(bounds);
     CGFloat displayMinY = layer.frame.size.height * 0.5;
     CGFloat displayMaxY = displayHeight - layer.frame.size.height * 0.5;
-    CGFloat randomY = [PLVMarqueeAnimationManager randomDoubleFrom:displayMinY to:displayHeight * 0.15 accuracy:2];
+    CGFloat randomY = [PLVLiveMarqueeAnimationManager randomDoubleFrom:displayMinY to:displayHeight * 0.15 accuracy:2];
     if (arc4random()%2) {
-        randomY = [PLVMarqueeAnimationManager randomDoubleFrom:displayHeight * 0.85 to:displayMaxY accuracy:2];
+        randomY = [PLVLiveMarqueeAnimationManager randomDoubleFrom:displayHeight * 0.85 to:displayMaxY accuracy:2];
     }
     
     CGFloat rollFromPsitionX = displayWidth + layer.frame.size.width * 0.5;
@@ -250,10 +250,10 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
     CGPoint startPoint = CGPointMake(rollFromPsitionX, randomY);
     CGPoint endPoint = CGPointMake(rollToPsitionX, randomY);
     
-    CAKeyframeAnimation *positionAnimation = [PLVMarqueeAnimationManager createRollAnimationWithModel:model startPoint:startPoint endPoint:endPoint];
+    CAKeyframeAnimation *positionAnimation = [PLVLiveMarqueeAnimationManager createRollAnimationWithModel:model startPoint:startPoint endPoint:endPoint];
     if (positionAnimation) {
         positionAnimation.delegate = delegate;
-        [layer addAnimation:positionAnimation forKey:PLVMarqueeAnimationKey];
+        [layer addAnimation:positionAnimation forKey:PLVLiveMarqueeAnimationKey];
     }
 }
 
@@ -265,15 +265,15 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param delegate 动画代理
 + (void)addPartFlashAnimation:(CALayer *)layer
          randomOriginInBounds:(CGRect)bounds
-                    withModel:(PLVMarqueeModel *)model
+                    withModel:(PLVLiveMarqueeModel *)model
             animationDelegate:(id)delegate {
     //获取随机位置
     CGFloat displayWidth = CGRectGetWidth(bounds);
     CGFloat displayHeight = CGRectGetHeight(bounds);
     CGFloat displayMaxX = displayWidth - layer.frame.size.width;
     CGFloat displayMaxY = displayHeight - layer.frame.size.height;
-    CGFloat randomX = displayMaxX < 0.0 ? 0.0 : [PLVMarqueeAnimationManager randomDoubleFrom:0.0 to:displayMaxX accuracy:2];
-    CGFloat randomY = [PLVMarqueeAnimationManager randomDoubleFrom:0.0 to:displayHeight * 0.15 accuracy:2];
+    CGFloat randomX = displayMaxX < 0.0 ? 0.0 : [PLVLiveMarqueeAnimationManager randomDoubleFrom:0.0 to:displayMaxX accuracy:2];
+    CGFloat randomY = [PLVLiveMarqueeAnimationManager randomDoubleFrom:0.0 to:displayHeight * 0.15 accuracy:2];
     if (displayHeight * 0.15 - layer.frame.size.height < 0) {
         randomY = 0.0;
     }
@@ -281,7 +281,7 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
         if (displayHeight * 0.15 - layer.frame.size.height < 0) {
             randomY = displayMaxY < 0.0 ? 0.0 :displayMaxY;
         } else {
-            randomY = [PLVMarqueeAnimationManager randomDoubleFrom:displayHeight * 0.85 to:displayMaxY accuracy:2];
+            randomY = [PLVLiveMarqueeAnimationManager randomDoubleFrom:displayHeight * 0.85 to:displayMaxY accuracy:2];
         }
     }
     
@@ -292,11 +292,11 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
     [CATransaction commit];
     
     //给layer添加闪烁动画
-    CAKeyframeAnimation *opacityAnimation = [PLVMarqueeAnimationManager createFlashAnimationWithModel:model];
+    CAKeyframeAnimation *opacityAnimation = [PLVLiveMarqueeAnimationManager createFlashAnimationWithModel:model];
     if (opacityAnimation) {
         layer.opacity = 0;
         opacityAnimation.delegate = delegate;
-        [layer addAnimation:opacityAnimation forKey:PLVMarqueeAnimationKey];
+        [layer addAnimation:opacityAnimation forKey:PLVLiveMarqueeAnimationKey];
     }
 }
 
@@ -305,7 +305,7 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 
 /// 按照model参数生成闪烁动画
 /// @param model model
-+ (CAKeyframeAnimation *)createFlashAnimationWithModel:(PLVMarqueeModel *)model {
++ (CAKeyframeAnimation *)createFlashAnimationWithModel:(PLVLiveMarqueeModel *)model {
     NSUInteger interval = model.isAlwaysShowWhenRun ? 0 : model.interval;
     NSTimeInterval duration = model.tweenTime * 2 + model.lifeTime + interval;
     if (duration <= 0) {
@@ -332,7 +332,7 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 
 /// 为双跑马灯中第二个跑马灯按照model参数生成闪烁动画
 /// @param model model
-+ (CAKeyframeAnimation *)createFlashAnimationForSecondMarqueeWithModel:(PLVMarqueeModel *)model {
++ (CAKeyframeAnimation *)createFlashAnimationForSecondMarqueeWithModel:(PLVLiveMarqueeModel *)model {
     CAKeyframeAnimation *opacityAnimation = [CAKeyframeAnimation animationWithKeyPath:@"opacity"];
     opacityAnimation.values = @[@(model.secondMarqueeAlpha)
                                 ,@(model.secondMarqueeAlpha)
@@ -351,7 +351,7 @@ static NSString * const PLVMarqueeAnimationKey = @"PLVMarqueeAnimationKey";
 /// @param model model
 /// @param startPoint 起点
 /// @param endPoint 终点
-+ (CAKeyframeAnimation *)createRollAnimationWithModel:(PLVMarqueeModel *)model startPoint:(CGPoint)startPoint endPoint:(CGPoint)endPoint {
++ (CAKeyframeAnimation *)createRollAnimationWithModel:(PLVLiveMarqueeModel *)model startPoint:(CGPoint)startPoint endPoint:(CGPoint)endPoint {
     NSUInteger interval = model.isAlwaysShowWhenRun ? 0 : model.interval;
     NSTimeInterval duration = model.speed + interval;
     if (duration <= 0) {

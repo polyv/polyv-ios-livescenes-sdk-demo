@@ -1,12 +1,12 @@
 //
-//  PLVToast.m
+//  PLVLiveToast.m
 //  PLVLiveStreamerDemo
 //
 //  Created by MissYasiky on 2021/3/1.
 //  Copyright © 2021 PLV. All rights reserved.
 //
 
-#import "PLVToast.h"
+#import "PLVLiveToast.h"
 
 static CGFloat kToastLabelFontSize = 14.0;
 static CGFloat kToastHideDelay = 2.0;
@@ -16,19 +16,19 @@ static CGFloat kToastMaxHeight = 80.0;
 static CGFloat kToastPadMaxWidth = 300.0;
 
 /// 确认按钮用到的回调类型
-typedef void (^PLVToastCountdownAction)(void);
+typedef void (^PLVLiveToastCountdownAction)(void);
 
-@interface PLVToast ()
+@interface PLVLiveToast ()
 
 @property (nonatomic, strong) UILabel *label;
 @property (nonatomic, weak) NSTimer *hideDelayTimer;
 @property (nonatomic, assign) NSTimeInterval countdown; //倒计时长
 @property (nonatomic, copy) NSString *message; //显示文本
-@property (nonatomic, copy, nullable) PLVToastCountdownAction finishHandler; // 倒计时结束时响应时执行回调
+@property (nonatomic, copy, nullable) PLVLiveToastCountdownAction finishHandler; // 倒计时结束时响应时执行回调
 
 @end
 
-@implementation PLVToast
+@implementation PLVLiveToast
 
 #pragma mark - Life Cycle
 
@@ -70,7 +70,7 @@ typedef void (^PLVToastCountdownAction)(void);
         return;
     }
     
-    PLVToast *toast = [[PLVToast alloc] init];
+    PLVLiveToast *toast = [[PLVLiveToast alloc] init];
     [toast showMessage:message];
     [view addSubview:toast];
     
@@ -91,7 +91,7 @@ typedef void (^PLVToastCountdownAction)(void);
         return;
     }
     
-    PLVToast *toast = [[PLVToast alloc] init];
+    PLVLiveToast *toast = [[PLVLiveToast alloc] init];
     toast.countdown = floor(countdown);
     toast.message = message;
     toast.finishHandler = finishHandler;
