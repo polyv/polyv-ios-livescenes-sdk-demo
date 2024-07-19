@@ -209,11 +209,10 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     
     // 内容文本高度
     NSMutableAttributedString *chatLabelString;
-    if (model.attributeString) {
-        chatLabelString = model.attributeString;
-    } else {
+    if (!model.attributeString) {
         model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
     }
+    chatLabelString = model.attributeString;
     
     CGRect chatLabelRect = CGRectZero;
     if (chatLabelString) {

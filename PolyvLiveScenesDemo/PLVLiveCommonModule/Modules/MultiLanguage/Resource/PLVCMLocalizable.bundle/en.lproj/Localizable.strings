@@ -396,7 +396,7 @@
 "连麦管理" = "Voice chat config";
 "连麦设置" = "Voice chat setting";
 "注：更改连麦方式时，需要确保当前无人正在连麦" = "Note: Before switching voice chat type, you should make sure nobody connected";
-"若需要固定该配置项，请前往云直播后台-频道设置-高级设置-观看页设置-连麦设置修改" = "To config default voice chat type, change it on Cloud live backend - Channel setting - Advanced features - Viewing page settings - Voice chat setting";
+"若需要固定该配置，请前往频道下-角色设置-角色权限-功能配置-连麦设置-默认连麦方式修改" = "To set a default voice chat method, adjust the settings in the Channel > Role Permissions > Functional Configuration";
 "已开启观众连麦" = "Viewer voice chat enabled";
 "已关闭观众连麦" = "Viewer voice chat disabled";
 "开启观众连麦失败，请稍后再试" = "Viewer voice chat enabled failed, try on later";
@@ -536,6 +536,10 @@
 "热卖中" = "Hot";
 "选购中" = "Shop";
 "投递中" = "Delivery";
+"职位详情" = "Job details";
+"立即了解" = "Learn now";
+"请前往微信观看页购买" = "Buy in WeChat only";
+"暂不支持购买" = "Purchase not currently supported";
 
 /** 通用 */
 "完成" = "Done";

@@ -21,7 +21,13 @@ typedef NS_ENUM(NSUInteger, PLVCommodityPushViewType) {
 
 @protocol PLVCommodityPushViewDelegate <NSObject>
 
-- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL commodity:(PLVCommodityModel *)commodity;
+/// 点击商品的回调
+/// @param commodity 商品详情模型
+- (void)plvCommodityPushViewDidClickCommodityDetail:(PLVCommodityModel *)commodity;
+
+/// 点击职位详情的回调
+/// @param data 商品详情数据
+- (void)plvCommodityPushViewDidShowJobDetail:(NSDictionary *)data;
 
 @end
 

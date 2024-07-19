@@ -12,7 +12,7 @@
 #import "PLVMultiLanguageManager.h"
 #import "PLVSABitRateSheet.h"
 
-#define TEXT_MAX_LENGTH 50
+#define TEXT_MAX_LENGTH 150
 
 static NSString *const kSettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 

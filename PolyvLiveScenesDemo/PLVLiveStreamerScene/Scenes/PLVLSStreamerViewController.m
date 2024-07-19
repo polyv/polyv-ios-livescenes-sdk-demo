@@ -664,6 +664,7 @@ PLVLSLinkMicSettingSheetDelegate
                 [weakSelf.statusAreaView changeLinkmicButtonSelectedState:NO];
             }
             [self.linkMicSettingSheet updateLinkMicType:weakSelf.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video];
+            [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
         }];
     }
 }
@@ -1489,6 +1490,7 @@ PLVLSLinkMicSettingSheetDelegate
                 if (emitSuccess) {
                     [weakSelf.linkMicSettingSheet updateLinkMicType:linkMicOnAudio];
                     [weakSelf.statusAreaView changeLinkmicButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                    [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
                 }
             }];
         }];
@@ -1498,6 +1500,7 @@ PLVLSLinkMicSettingSheetDelegate
             if (emitSuccess) {
                 [weakSelf.linkMicSettingSheet updateLinkMicType:linkMicOnAudio];
                 [weakSelf.statusAreaView changeLinkmicButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
             }
         }];
     }

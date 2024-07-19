@@ -98,7 +98,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.loginUserArray = [[NSMutableArray alloc] initWithCapacity:10];
     
     // 初始化公聊数据管理计时器
-    self.publicChatManagerTimer = [NSTimer scheduledTimerWithTimeInterval:30
+    self.publicChatManagerTimer = [NSTimer scheduledTimerWithTimeInterval:6
                                                                    target:self
                                                                  selector:@selector(publicChatManagerTimerAction)
                                                                  userInfo:nil

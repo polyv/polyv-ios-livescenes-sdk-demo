@@ -11,6 +11,7 @@
 #import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import "PLVModel/PLVModel.h"
 
 @interface PLVCommodityPushView ()
 
@@ -24,9 +25,8 @@
 
 @property (nonatomic, strong) UILabel *priceLabel;
 /// 标签
-@property (nonatomic, strong) UILabel *firstTagLabel;
+@property (nonatomic, strong) NSArray <UILabel *> *tagLabelArray;
 
-@property (nonatomic, strong) UILabel *secondTagLabel;
 /// 商品描述
 @property (nonatomic, strong) UILabel *productDescLabel;
 
@@ -34,6 +34,7 @@
 
 @property (nonatomic, strong) UIButton *jumpButton;
 @property (nonatomic, strong) UIButton *jumpTextButton;
+@property (nonatomic, strong) UIButton *jobDetailButton;
 
 @property (nonatomic, strong) NSTimer *timer;
 
@@ -98,11 +99,6 @@
         self.nameLabel.textColor = [UIColor colorWithWhite:51/255.f alpha:1];
         self.nameLabel.font = [UIFont systemFontOfSize:14];
         [self addSubview:self.nameLabel];
-        
-        self.firstTagLabel = [self productTagsLabel];
-        self.secondTagLabel = [self productTagsLabel];
-        [self addSubview:self.firstTagLabel];
-        [self addSubview:self.secondTagLabel];
         [self addSubview:self.productDescLabel];
 
         self.realPriceLabel = [[UILabel alloc] init];
@@ -134,6 +130,7 @@
         [self.jumpButton addTarget:self action:@selector(jumpButtonAction) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:self.jumpButton];
         [self addSubview:self.jumpTextButton];
+        [self addSubview:self.jobDetailButton];
 
         [self.coverImageView addSubview:self.hotSaleTipView];
         [self.hotSaleTipView.layer addSublayer:self.tipShadowLayer];
@@ -151,6 +148,11 @@
     self.closeButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-20, 4, 16, 16);
     self.jumpButton.frame = CGRectMake(CGRectGetWidth(self.bounds)-46, CGRectGetHeight(self.bounds)-40, 24, 24);
     
+    [self.jumpTextButton sizeToFit];
+    CGFloat jumpTextBtnWidth = CGRectGetWidth(self.jumpTextButton.bounds) + 8;
+    self.jumpTextButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - jumpTextBtnWidth - 10, CGRectGetHeight(self.bounds) - 24 - 12, jumpTextBtnWidth, 24);
+    self.jobDetailButton.frame = CGRectMake(CGRectGetMinX(self.jumpTextButton.frame) - 64 - 6, CGRectGetMinY(self.jumpTextButton.frame), 64, 24);
+    
     CGFloat coverImageViewHeight = CGRectGetHeight(self.bounds) - 12 * 2;
     self.coverImageView.frame = CGRectMake(12, 12, coverImageViewHeight, coverImageViewHeight);
     if (!self.hotSaleTipView.hidden) {
@@ -164,17 +166,36 @@
     self.nameLabel.frame = CGRectMake(positionX, positionY, CGRectGetWidth(self.bounds)-positionX-22, 20);
     
     positionY = CGRectGetMaxY(self.nameLabel.frame) + 4;
-    CGSize firstLabelSize = [self.firstTagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
-    self.firstTagLabel.frame = CGRectMake(positionX, positionY, firstLabelSize.width + 8, 16);
-    CGSize secondLabelSize = [self.secondTagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
-    self.secondTagLabel.frame = CGRectMake((self.firstTagLabel.isHidden ? positionX : CGRectGetMaxX(self.firstTagLabel.frame)+4), positionY, secondLabelSize.width + 8, 16);
+    UILabel *firstTagLabel = self.tagLabelArray.firstObject;
+    if (!firstTagLabel.hidden) {
+        CGSize firstLabelSize = [firstTagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+        firstTagLabel.frame = CGRectMake(positionX, positionY, firstLabelSize.width + 8, 16);
+    }
+    UILabel *secondTagLabel = self.tagLabelArray[1];
+    if (!secondTagLabel.hidden) {
+        CGSize secondLabelSize = [secondTagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+        secondTagLabel.frame = CGRectMake((firstTagLabel.isHidden ? positionX : CGRectGetMaxX(firstTagLabel.frame)+4), positionY, secondLabelSize.width + 8, 16);
+    }
     
-    positionY = (self.firstTagLabel.isHidden && self.secondTagLabel.isHidden) ? positionY : positionY + 16 + 4;
+    UILabel *thirdTagLabel = self.tagLabelArray[2];
+    if (!thirdTagLabel.hidden) {
+        CGSize thirdLabelSize = [thirdTagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
+        CGFloat maxPositionX = MAX(CGRectGetMaxX(firstTagLabel.frame), CGRectGetMaxX(secondTagLabel.frame));
+        // 是否需要换行
+        CGFloat thirdTagLabelWidth = MIN(CGRectGetWidth(self.bounds) - maxPositionX - 12, thirdLabelSize.width);
+        thirdTagLabel.frame = CGRectMake(maxPositionX + 4, positionY, thirdTagLabelWidth, 16);
+    }
+    if (!firstTagLabel.hidden || !secondTagLabel.hidden || !thirdTagLabel.hidden) {
+        positionY = MAX(CGRectGetMaxY(firstTagLabel.frame), MAX(CGRectGetMaxY(secondTagLabel.frame), CGRectGetMaxY(thirdTagLabel.frame))) + 8;
+    }
     self.productDescLabel.frame = CGRectMake(positionX, positionY, CGRectGetWidth(self.nameLabel.frame), 18);
     
-    if ([self.model.productType isEqualToString:@"position"] &&
-        ![PLVFdUtil checkStringUseable:self.model.cover]) { // 职位产品
-        self.realPriceLabel.frame = CGRectMake(12, CGRectGetHeight(self.bounds)- 12 - 25, 150, 25);
+    if ([self.model.productType isEqualToString:@"position"]) { // 职位产品
+        if (![PLVFdUtil checkStringUseable:self.model.cover]) {
+            self.realPriceLabel.frame = CGRectMake(12, CGRectGetHeight(self.bounds)- 12 - 25, 150, 25);
+        } else {
+            self.realPriceLabel.frame = CGRectMake(positionX, CGRectGetMinY(self.jumpTextButton.frame) - 25 - 7, 150, 25);
+        }
     } else {
         self.realPriceLabel.frame = CGRectMake(positionX, CGRectGetHeight(self.bounds)- 12 - 25, 150, 25);
     }
@@ -213,6 +234,9 @@
     CGFloat midX = CGRectGetMidX(self.jumpButton.frame);
     CGFloat maxY = CGRectGetHeight(self.bounds);
     
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    midX -= (fullScreen ? 0 : 18);
+    
     UIBezierPath *maskPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-6) cornerRadius:10];
     // triangle
     [maskPath moveToPoint:CGPointMake(midX,maxY)];
@@ -240,16 +264,16 @@
     }];
 }
 
-- (NSString *)getJumpLinkURLString {
-    NSString *linkURLString = nil;
-    // 跳转地址
-    if (10 == self.model.linkType) { // 通用链接
-        linkURLString = self.model.link;
-    } else if (11 == self.model.linkType) { // 多平台链接
-        linkURLString = self.model.mobileAppLink;
+- (BOOL)canEnableProductClickButton {
+    if ([self.model.buyType isEqualToString:@"inner"]) {
+        // 检查直接购买的条件
+        return YES;
+    } else if ([self.model.buyType isEqualToString:@"link"]) {
+        // 检查外链购买的条件
+        return [PLVFdUtil checkStringUseable:self.model.formattedLink];
     }
-    
-    return linkURLString;
+
+    return NO;
 }
 
 - (void)addCountdownTimer {
@@ -263,38 +287,28 @@
 }
 
 - (void)updateProductTagsLabel {
-    self.firstTagLabel.hidden = YES;
-    self.secondTagLabel.hidden = YES;
-    NSArray *featureArray = self.model.featureArray;
-    if (![PLVFdUtil checkArrayUseable:featureArray]) {
-        return;
-    }
-    
-    for (NSInteger index = 0; index < featureArray.count; index ++) {
-        NSString *feature = featureArray[index];
-        UILabel *featureLabel = index == 0 ? self.firstTagLabel : self.secondTagLabel;
-        if ([PLVFdUtil checkStringUseable:feature]) {
-            featureLabel.hidden = NO;
-            featureLabel.text = feature;
-            CGSize size = [featureLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)];
-            featureLabel.frame = CGRectMake(0, 0, size.width, 16);
-        } else {
-            featureLabel.frame = CGRectZero;
-        }
-    }
-}
-
-- (UILabel *)productTagsLabel {
-    UILabel *tagsLabel = [[UILabel alloc] initWithFrame:CGRectZero];
-    tagsLabel.backgroundColor = [PLVColorUtil colorFromHexString:@"#FF8F11" alpha:0.08];
-    tagsLabel.textColor = [PLVColorUtil colorFromHexString:@"#FF8F11"];
-    tagsLabel.font = [UIFont systemFontOfSize:10];
-    tagsLabel.textAlignment = NSTextAlignmentCenter;
-    tagsLabel.numberOfLines = 0;
-    tagsLabel.layer.cornerRadius = 4.0;
-    tagsLabel.layer.masksToBounds = YES;
-    tagsLabel.hidden = YES;
-    return tagsLabel;
+   for (UIButton *tagButton in self.tagLabelArray) {
+       tagButton.hidden = YES;
+       tagButton.frame = CGRectZero;
+   }
+   NSArray *featureArray = self.model.featureArray;
+   if (![PLVFdUtil checkArrayUseable:featureArray]) {
+       return;
+   }
+   
+   NSInteger maxTagCount = ([self.model.productType isEqualToString:@"position"] ? 3 : 2);
+   for (NSInteger index = 0; index < featureArray.count; index ++) {
+       if (index >= self.tagLabelArray.count || index >= maxTagCount) {
+           return;
+       }
+       
+       NSString *feature = featureArray[index];
+       UILabel *featureLabel = self.tagLabelArray[index];
+       if ([PLVFdUtil checkStringUseable:feature]) {
+           featureLabel.hidden = NO;
+           featureLabel.text = feature;
+       }
+   }
 }
 
 - (void)startTipTitleLabelAnimate {
@@ -397,10 +411,46 @@
         _jumpTextButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _jumpTextButton.layer.cornerRadius = 12.0f;
         _jumpTextButton.hidden = YES;
-        [_jumpTextButton setTitle:PLVLocalizedString(@"立即投递") forState:UIControlStateNormal];
+        [_jumpTextButton setTitle:PLVLocalizedString(@"立即了解") forState:UIControlStateNormal];
         [_jumpTextButton addTarget:self action:@selector(jumpButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _jumpTextButton;
+}
+
+- (UIButton *)jobDetailButton {
+    if (!_jobDetailButton) {
+        _jobDetailButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _jobDetailButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _jobDetailButton.layer.cornerRadius = 12.0f;
+        _jobDetailButton.layer.borderColor = [PLVColorUtil colorFromHexString:@"#F15D5D"].CGColor;
+        _jobDetailButton.layer.borderWidth = 1.0f;
+        _jobDetailButton.hidden = YES;
+        [_jobDetailButton setTitleColor:[PLVColorUtil colorFromHexString:@"#F15D5D"] forState:UIControlStateNormal];
+        [_jobDetailButton setTitle:PLVLocalizedString(@"职位详情") forState:UIControlStateNormal];
+        [_jobDetailButton addTarget:self action:@selector(jobDetailButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _jobDetailButton;
+}
+
+- (NSArray *)tagLabelArray {
+   if (!_tagLabelArray) {
+       NSMutableArray *muTagLabelArray = [NSMutableArray arrayWithCapacity:2];
+       for (NSInteger index = 0; index < 3; index ++) {
+           UILabel *tagLabel = [[UILabel alloc] initWithFrame:CGRectZero];
+           tagLabel.backgroundColor = [PLVColorUtil colorFromHexString:@"#FF8F11" alpha:0.08];
+           tagLabel.textColor = [PLVColorUtil colorFromHexString:@"#FF8F11"];
+           tagLabel.font = [UIFont systemFontOfSize:10];
+           tagLabel.textAlignment = NSTextAlignmentCenter;
+           tagLabel.numberOfLines = 0;
+           tagLabel.layer.cornerRadius = 4.0;
+           tagLabel.layer.masksToBounds = YES;
+           tagLabel.hidden = YES;
+           [self addSubview:tagLabel];
+           [muTagLabelArray addObject:tagLabel];
+       }
+       _tagLabelArray = [muTagLabelArray copy];
+   }
+   return _tagLabelArray;
 }
 
 - (BOOL)productHotEffectEnabled {
@@ -420,6 +470,9 @@
     self.unincreaseTimes = 0;
     self.clickProductId = model.productId;
     self.productDescLabel.text = model.productDesc;
+    self.jumpButton.hidden = YES;
+    self.jumpTextButton.hidden = YES;
+    self.jobDetailButton.hidden = YES;
 
     // 实际价格显示逻辑
     NSString *realPriceStr;
@@ -427,13 +480,18 @@
         realPriceStr = [NSString stringWithFormat:@"%@", model.yield];
         self.currentProductTips = self.financeProductTips;
         self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_shopping_icon"];
+        self.jumpButton.hidden = NO;
     } else if ([model.productType isEqualToString:@"position"]) { // 职位产品
         if ([PLVFdUtil checkDictionaryUseable:model.params]) {
             realPriceStr = PLV_SafeStringForDictKey(model.params, @"treatment");
         }
+        NSString *jumpBtnTitle = [PLVFdUtil checkStringUseable:model.btnShow] ? model.btnShow : PLVLocalizedString(@"立即了解");
+        [self.jumpTextButton setTitle:jumpBtnTitle forState:UIControlStateNormal];
         self.productDescLabel.text = nil;
         self.currentProductTips = self.jobProductTips;
         self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_delivering_icon"];
+        self.jumpTextButton.hidden = NO;
+        self.jobDetailButton.hidden = NO;
     } else { // 普通产品
         realPriceStr = [NSString stringWithFormat:@"¥ %@", model.realPrice];
         if ([model.realPrice isEqualToString:@"0"]) {
@@ -441,6 +499,7 @@
         }
         self.currentProductTips = self.normalProductTips;
         self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_hotsale_icon"];
+        self.jumpButton.hidden = NO;
     }
     
     // 原价格显示逻辑
@@ -481,8 +540,7 @@
         }
     }];
     
-    NSString *linkString = [self getJumpLinkURLString];
-    self.jumpButton.enabled = [PLVFdUtil checkStringUseable:linkString];
+    self.jumpButton.enabled = [self canEnableProductClickButton];
     
     // 更新热度标签
     [self setTipTitleLabelContent:self.clickTimes animated:NO];
@@ -496,18 +554,21 @@
 }
 
 - (void)jumpButtonAction {
-    NSString *linkString = [self getJumpLinkURLString];
-    if (![PLVFdUtil checkStringUseable:linkString]) {
+    if (![self canEnableProductClickButton]) {
         return;
     }
-    
-    NSURL *jumpLinkUrl = [NSURL URLWithString:linkString];
-    if (jumpLinkUrl && !jumpLinkUrl.scheme) {
-        jumpLinkUrl = [NSURL URLWithString:[@"http://" stringByAppendingString:jumpLinkUrl.absoluteString]];
+
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityPushViewDidClickCommodityDetail:)]) {
+        [self.delegate plvCommodityPushViewDidClickCommodityDetail:self.model];
     }
-    
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityPushViewJumpToCommodityDetail:commodity:)]) {
-        [self.delegate plvCommodityPushViewJumpToCommodityDetail:jumpLinkUrl commodity:self.model];
+}
+
+- (void)jobDetailButtonAction {
+    NSDictionary *data = [self.model plv_modelToJSONObject];
+    if ([PLVFdUtil checkDictionaryUseable:data]) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityPushViewDidShowJobDetail:)]) {
+            [self.delegate plvCommodityPushViewDidShowJobDetail:data];
+        }
     }
 }
 

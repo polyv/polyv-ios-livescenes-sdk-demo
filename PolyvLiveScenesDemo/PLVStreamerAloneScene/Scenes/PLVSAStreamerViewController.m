@@ -620,7 +620,9 @@ PLVShareLiveSheetDelegate
     [self.homeView startClass:YES];
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
+        __weak typeof(self) weakSelf = self;
         [self.streamerPresenter changeLinkMicMediaType:self.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video allowRaiseHand:self.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+            [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
         }];
     }
 }
@@ -1462,6 +1464,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
                 if (emitSuccess) {
                     [weakSelf.homeView updateHomeViewLinkMicType:linkMicOnAudio];
                     [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                    [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
                 }
             }];
         }];
@@ -1471,6 +1474,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
             if (emitSuccess) {
                 [weakSelf.homeView updateHomeViewLinkMicType:linkMicOnAudio];
                 [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
             }
         }];
     }

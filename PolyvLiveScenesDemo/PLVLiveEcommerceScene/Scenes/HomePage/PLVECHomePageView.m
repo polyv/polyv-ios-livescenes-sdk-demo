@@ -640,6 +640,10 @@ PLVECLotteryWidgetViewDelegate
     [self updateLikeViewAnimationLeftShift];
 }
 
+- (void)reportProductClickedEvent:(PLVCommodityModel *)commodity {
+    [self.pushView sendProductClickedEvent:commodity];
+}
+
 #pragma mark - Private
 
 - (void)updateCodeRateSwitchViewHiddenState {
@@ -728,7 +732,7 @@ PLVECLotteryWidgetViewDelegate
         if (fullScreen) {
             self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, 308, 128);
         } else {
-            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 110, 128);
+            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 90, 128);
         }
     } else if (self.type == PLVECHomePageType_Playback) {
         // 聊天室布局
@@ -754,7 +758,7 @@ PLVECLotteryWidgetViewDelegate
         if (fullScreen) {
             self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, 308, 128);
         } else {
-            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 110, 128);
+            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 90, 128);
         }
         [self.playbackListVC viewWillLayoutSubviews];
     }
@@ -943,13 +947,21 @@ PLVECLotteryWidgetViewDelegate
     if (9 == status) {
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
-        __weak typeof(self)weakSelf = self;
-        plv_dispatch_main_async_safe(^{
-            [weakSelf.pushView setModel:model];
-            [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(weakSelf.bounds) - 110, 128)];
-        })
-        if (self.visiable) {
-            [self.pushView reportTrackEvent];
+        if (![PLVFdUtil checkStringUseable:model.productPushRule]) {
+            return;
+        }
+        
+        if ([model.productPushRule isEqualToString:@"smallCard"]) {
+            __weak typeof(self)weakSelf = self;
+            plv_dispatch_main_async_safe(^{
+                [weakSelf.pushView setModel:model];
+                [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(weakSelf.bounds) - 90, 128)];
+            })
+            if (self.visiable) {
+                [self.pushView reportTrackEvent];
+            }
+        } else {
+            [_pushView hide];
         }
     } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
         [ _pushView hide];
@@ -1006,19 +1018,29 @@ PLVECLotteryWidgetViewDelegate
 
 #pragma mark PLVCommodityPushViewDelegate
 
-- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL commodity:(PLVCommodityModel *)commodity {
-    [self.pushView sendProductClickedEvent:commodity];
-    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openCommodityDetail:)]) {
-        [self.delegate homePageView:self openCommodityDetail:commodityURL];
+- (void)plvCommodityPushViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:didClickCommodityDetail:)]) {
+        [self.delegate homePageView:self didClickCommodityDetail:commodity];
+    }
+}
+
+- (void)plvCommodityPushViewDidShowJobDetail:(NSDictionary *)data {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:didShowJobDetail:)]) {
+        [self.delegate homePageView:self didShowJobDetail:data];
     }
 }
 
 #pragma mark PLVECCommodityViewControllerDelegate
 
-- (void)plvECClickProductInViewController:(PLVECCommodityViewController *)viewController linkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity {
-    [self.pushView sendProductClickedEvent:commodity];
-    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:openCommodityDetail:)]) {
-        [self.delegate homePageView:self openCommodityDetail:linkURL];
+- (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didClickCommodityModel:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:didClickCommodityDetail:)]) {
+        [self.delegate homePageView:self didClickCommodityDetail:commodity];
+    }
+}
+
+- (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didShowJobDetail:(NSDictionary *)data {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:didShowJobDetail:)]) {
+        [self.delegate homePageView:self didShowJobDetail:data];
     }
 }
 

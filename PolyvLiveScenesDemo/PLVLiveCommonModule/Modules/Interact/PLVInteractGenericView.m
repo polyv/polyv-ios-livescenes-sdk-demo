@@ -15,6 +15,7 @@
 static NSString *const PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
 static NSString *const PLVInteractUpdateIarEntranceCallbackNotification = @"PLVInteractUpdateIarEntranceCallbackNotification";
 static NSString *const PLVInteractChannelSwitchCallbackNotification = @"PLVLCChatroomFunctionGotNotification";
+static NSString *const kPLVInteractWeiXinUniversalLinks = @"https://help.wechat.com/app/"; // 微信 Universal Links；scheme weixin://
 
 @interface PLVInteractGenericView () <
 WKNavigationDelegate,
@@ -125,6 +126,28 @@ PLVInteractWebViewBridgeDelegate>
 - (void)openInteractAppWithEventName:(NSString *)eventName {
     if ([PLVFdUtil checkStringUseable:eventName]) {
         [self.webViewBridge callWebViewEvent:@{@"event" : eventName}];
+    }
+}
+
+- (void)openInteractProductPayGuide {
+    NSString *watchUrl = [PLVRoomDataManager sharedManager].roomData.menuInfo.watchUrl;
+    if (![PLVFdUtil checkStringUseable:watchUrl]) {
+        return;
+    }
+
+    NSDictionary *eventData = @{
+        @"event" : @"SHOW_OPEN_LINK",
+        @"data" : @{@"url" : watchUrl,
+                    @"title" : PLVLocalizedString(@"请前往微信观看页购买"),
+                    @"btnType" : @"copyToWeixin"}};
+    [self.webViewBridge callWebViewEvent:eventData];
+}
+
+- (void)openJobDetailWithData:(NSDictionary *)data {
+    if ([PLVFdUtil checkDictionaryUseable:data]) {
+        NSDictionary *event = @{@"event" : @"SHOW_JOB_DETAIL",
+                                @"data" : data};
+        [self.webViewBridge callWebViewEvent:event];
     }
 }
 
@@ -258,7 +281,7 @@ PLVInteractWebViewBridgeDelegate>
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
         @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
         @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
-        @"webVersion" : @"0.5.0"
+        @"webVersion" : @"0.6.0"
     };
     NSDictionary *sm2Key = @{
         @"platformPublicKey" : [NSString stringWithFormat:@"%@", [PLVFSignConfig sharedInstance].serverSM2PublicKey], // 平台公钥(接口提交参数加密用)
@@ -406,6 +429,27 @@ PLVInteractWebViewBridgeDelegate>
                     [self.delegate plvInteractGenericView:self didOpenRedpack:redpackId status:status];
                 }
             })
+        }
+    } else if ([event isEqualToString:@"copyToWeixin"]) { // 复制链接去微信粘贴
+        NSDictionary *value = PLV_SafeDictionaryForDictKey(dict, @"value");
+        NSString *urlString = PLV_SafeStringForDictKey(value, @"url");
+        if ([PLVFdUtil checkStringUseable:urlString]) {
+            [UIPasteboard generalPasteboard].string = urlString;
+            NSURL *wechatURL = [NSURL URLWithString:kPLVInteractWeiXinUniversalLinks];
+            if ([[UIApplication sharedApplication] canOpenURL:wechatURL]) {
+                [[UIApplication sharedApplication] openURL:wechatURL options:@{} completionHandler:nil];
+            }
+        }
+    }
+}
+
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge bigCardClickProductButtonWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    NSDictionary *data = PLV_SafeDictionaryForDictKey(dict, @"data");
+    if ([PLVFdUtil checkDictionaryUseable:data]) {
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:data];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:clickBigCardCommodityDetail:)]) {
+            [self.delegate plvInteractGenericView:self clickBigCardCommodityDetail:model];
         }
     }
 }

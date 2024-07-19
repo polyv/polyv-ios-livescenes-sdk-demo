@@ -42,7 +42,7 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)homePageView:(PLVECHomePageView *)homePageView receiveBulletinMessage:(NSString * _Nullable)content open:(BOOL)open;
 
 /// 打开商品详情
-- (void)homePageView:(PLVECHomePageView *)homePageView openCommodityDetail:(NSURL *)commodityURL;
+- (void)homePageView:(PLVECHomePageView *)homePageView didClickCommodityDetail:(PLVCommodityModel *)commodity;
 
 /// 打开礼物打赏面板
 - (void)homePageViewOpenRewardView:(PLVECHomePageView *)homePageView;
@@ -96,6 +96,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 点击互动模块控件的回调
 /// @param event 互动模块事件
 - (void)homePageView:(PLVECHomePageView *)homePageView emitInteractEvent:(NSString *)event;
+
+/// 点击职位详情的回调
+/// @param data 商品详情数据
+- (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data;
 
 @end
 
@@ -168,6 +172,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 更新抽奖插件信息
 /// @param dataArray 抽奖插件数据
 - (void)updateLotteryWidgetViewInfo:(NSArray *)dataArray;
+
+/// 统计上报商品点击事件
+/// @param commodity 商品详情
+- (void)reportProductClickedEvent:(PLVCommodityModel *)commodity;
 
 @end
 

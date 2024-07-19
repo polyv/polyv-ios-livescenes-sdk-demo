@@ -327,6 +327,19 @@ PLVECMessagePopupViewDelegate
     }
 }
 
+- (void)handleProductClickWithCommodityModel:(PLVCommodityModel *)commodity {
+    [self.homePageView reportProductClickedEvent:commodity];
+    if ([commodity.buyType isEqualToString:@"inner"]) { /// 直接购买
+    } else if ([commodity.buyType isEqualToString:@"link"]) { /// 外链购买
+        if (![PLVFdUtil checkStringUseable:commodity.formattedLink]) {
+            return;
+        }
+        
+        NSURL *commodityURL = [NSURL URLWithString:commodity.formattedLink];
+        [self openCommodityDetailViewControllerWithURL:commodityURL];
+    }
+}
+
 - (void)openCommodityDetailViewControllerWithURL:(NSURL *)commodityURL {
     if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         // 打开应用内悬浮窗
@@ -864,8 +877,8 @@ PLVECMessagePopupViewDelegate
     });
 }
 
-- (void)homePageView:(PLVECHomePageView *)homePageView openCommodityDetail:(NSURL *)commodityURL {
-    [self openCommodityDetailViewControllerWithURL:commodityURL];
+- (void)homePageView:(PLVECHomePageView *)homePageView didClickCommodityDetail:(PLVCommodityModel *)commodity {
+    [self handleProductClickWithCommodityModel:commodity];
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPause:(BOOL)pause {
@@ -981,6 +994,10 @@ PLVECMessagePopupViewDelegate
     [self.popoverView.interactView openInteractAppWithEventName:event];
 }
 
+- (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data {
+    [self.popoverView.interactView openJobDetailWithData:data];
+}
+
 #pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -1033,6 +1050,10 @@ PLVECMessagePopupViewDelegate
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict {
     NSArray *dataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
     [self.homePageView updateLotteryWidgetViewInfo:dataArray];
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetail:(PLVCommodityModel *)commodity {
+    [self handleProductClickWithCommodityModel:commodity];
 }
 
 #pragma mark PLVLCMessagePopupViewDelegate

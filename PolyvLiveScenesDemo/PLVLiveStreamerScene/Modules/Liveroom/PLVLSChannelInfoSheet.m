@@ -187,7 +187,7 @@ WKNavigationDelegate
     if (!content || ![content isKindOfClass:[NSString class]]) {
         self.content = @"";
     } else {
-        self.content = [content stringByReplacingOccurrencesOfString:@"<img src=\"//" withString:@"<img src=\"https://"];
+        self.content = [content stringByReplacingOccurrencesOfString:@"src=\"//" withString:@"src=\"https://"];
     }
     
     NSString *htmlContent = [NSString stringWithFormat:@"<html>\n<body style=\" position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d; color:%@;\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script><div style=\"height:%fpx; width:%fpx;\"> </div>%@</body></html>", leftPadding, rightPadding, verticalPadding, verticalPadding, fontSize, fontColor,kTopViewHeight,kTopViewWidth,self.content]; // 图片自适应设备宽，设置字体大小、边距;在webview顶部插入空白view

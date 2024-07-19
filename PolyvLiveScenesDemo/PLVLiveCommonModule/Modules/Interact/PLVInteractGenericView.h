@@ -42,6 +42,11 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// @param dict 抽奖挂件的数据
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict;
 
+/// 点击商品库中商品的回调
+/// @param interactView 互动视图
+/// @param commodity 大卡片商品详情模型
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetail:(PLVCommodityModel *)commodity;
+
 @end
 
 /// 互动视图
@@ -96,6 +101,13 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// 打开互动应用弹窗
 /// @param eventName 事件名称，由 JS 传递过来。
 - (void)openInteractAppWithEventName:(NSString *)eventName;
+
+/// 打开互动模块商品支付引导
+- (void)openInteractProductPayGuide;
+
+/// 打开职位详情弹层视图
+/// @param data 职位详情视图
+- (void)openJobDetailWithData:(NSDictionary *)data;
 
 @end
 

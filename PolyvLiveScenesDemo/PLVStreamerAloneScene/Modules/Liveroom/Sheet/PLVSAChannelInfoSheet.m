@@ -32,6 +32,7 @@
 @property (nonatomic, strong) UILabel *channelIdTitleLabel; // 频道号标题
 @property (nonatomic, strong) UILabel *channelIdContentLabel; // 频道号内容
 @property (nonatomic, strong) UIButton *cloneChannelIdButton; // 复制频道号按钮
+@property (nonatomic, strong) UIScrollView *scrollView;
 
 @end
 
@@ -45,13 +46,14 @@
     self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
         [self.contentView addSubview:self.sheetTitleLabel];
-        [self.contentView addSubview:self.liveTitleLabel];
-        [self.contentView addSubview:self.liveTitleContentLabel];
-        [self.contentView addSubview:self.beginTimeTitleLabel];
-        [self.contentView addSubview:self.beginTimeContentLabel];
-        [self.contentView addSubview:self.channelIdTitleLabel];
-        [self.contentView addSubview:self.channelIdContentLabel];
-        [self.contentView addSubview:self.cloneChannelIdButton];
+        [self.contentView addSubview:self.scrollView];
+        [self.scrollView addSubview:self.liveTitleLabel];
+        [self.scrollView addSubview:self.liveTitleContentLabel];
+        [self.scrollView addSubview:self.beginTimeTitleLabel];
+        [self.scrollView addSubview:self.beginTimeContentLabel];
+        [self.scrollView addSubview:self.channelIdTitleLabel];
+        [self.scrollView addSubview:self.channelIdContentLabel];
+        [self.scrollView addSubview:self.cloneChannelIdButton];
     }
     return self;
 }
@@ -69,8 +71,9 @@
 
     self.sheetTitleLabel.frame = CGRectMake(margin, xPadding, width, 20);
     
+    self.scrollView.frame = CGRectMake(0, CGRectGetMaxY(self.sheetTitleLabel.frame), CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - CGRectGetMaxY(self.sheetTitleLabel.frame));
     CGSize size = [self.liveTitleLabel sizeThatFits:CGSizeMake(width, 20)];
-    self.liveTitleLabel.frame = CGRectMake(margin, CGRectGetMaxY(self.sheetTitleLabel.frame) + 22, size.width, size.height);
+    self.liveTitleLabel.frame = CGRectMake(margin, 22, size.width, size.height);
     
     CGFloat contentLabelX = isLandscape ? self.liveTitleLabel.frame.origin.x : CGRectGetMaxX(self.liveTitleLabel.frame);
     CGFloat contentLabelY = isLandscape ? CGRectGetMaxY(self.liveTitleLabel.frame) + 6 : self.liveTitleLabel.frame.origin.y;
@@ -100,6 +103,7 @@
     
     self.cloneChannelIdButton.frame = CGRectMake(CGRectGetMaxX(self.channelIdContentLabel.frame) + 12, self.channelIdTitleLabel.frame.origin.y - 2, buttonWidth, 24);
     self.cloneChannelIdButton.center = CGPointMake(self.cloneChannelIdButton.center.x, self.channelIdContentLabel.center.y);
+    self.scrollView.contentSize = CGSizeMake(CGRectGetWidth(self.scrollView.bounds), CGRectGetMaxY(self.channelIdContentLabel.frame) + 12);
 }
 
 #pragma mark - [ Override ]
@@ -229,6 +233,13 @@
         [_cloneChannelIdButton addTarget:self action:@selector(cloneChannelIdButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _cloneChannelIdButton;
+}
+
+- (UIScrollView *)scrollView {
+    if (!_scrollView) {
+        _scrollView = [[UIScrollView alloc] init];
+    }
+    return _scrollView;
 }
 
 #pragma mark - Event

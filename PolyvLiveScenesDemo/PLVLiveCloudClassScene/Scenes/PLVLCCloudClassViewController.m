@@ -864,12 +864,20 @@ PLVLCLandscapeMessagePopupViewDelegate
     if (status == 9) {
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
-        [self.pushView setModel:model];
-        [self.pushView reportTrackEvent];
-        if (self.currentLandscape) {
-            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 128 - 16, 308, 128)];
+        if (![PLVFdUtil checkStringUseable:model.productPushRule]) {
+            return;
+        }
+        
+        if ([model.productPushRule isEqualToString:@"smallCard"]) {
+            [self.pushView setModel:model];
+            [self.pushView reportTrackEvent];
+            if (self.currentLandscape) {
+                [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 128 - 16, 308, 128)];
+            } else {
+                [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, CGRectGetWidth(self.view.frame) - 60, 128)];
+            }
         } else {
-            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, CGRectGetWidth(self.view.frame) - 60, 128)];
+            [_pushView hide];
         }
     } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
         [ _pushView hide];
@@ -1382,8 +1390,12 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self.mediaAreaView seekLivePlaybackToTime:time];
 }
 
-- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity {
-    [self plvCommodityPushViewJumpToCommodityDetail:linkURL commodity:commodity];
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductCommodityModel:(PLVCommodityModel *)commodity {
+    [self plvCommodityPushViewDidClickCommodityDetail:commodity];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowJobDetail:(NSDictionary *)data {
+    [self.popoverView.interactView openJobDetailWithData:data];
 }
 
 - (void)plvLCLivePageMenuAreaViewCloseProductView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
@@ -1417,20 +1429,31 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 #pragma mark  PLVCommodityPushViewDelegate
 
-- (void)plvCommodityPushViewJumpToCommodityDetail:(NSURL *)commodityURL commodity:(PLVCommodityModel *)commodity {
-    self.commodityURL = commodityURL;
+- (void)plvCommodityPushViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
     [self.pushView sendProductClickedEvent:commodity];
-    if (self.videoType == PLVChannelVideoType_Live) { /// 直播场景需要开启画中画播放
-        if (self.mediaAreaView.channelInLive &&
-            !self.linkMicAreaView.inLinkMic &&
-            [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
-            [self.mediaAreaView startPictureInPicture];
-        } else {
+    if ([commodity.buyType isEqualToString:@"inner"]) { /// 直接购买
+    } else if ([commodity.buyType isEqualToString:@"link"]) { /// 外链购买
+        if (![PLVFdUtil checkStringUseable:commodity.formattedLink]) {
+            return;
+        }
+        
+        self.commodityURL = [NSURL URLWithString:commodity.formattedLink];
+        if (self.videoType == PLVChannelVideoType_Live) { /// 直播场景需要开启画中画播放
+            if (self.mediaAreaView.channelInLive &&
+                !self.linkMicAreaView.inLinkMic &&
+                [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+                [self.mediaAreaView startPictureInPicture];
+            } else {
+                [self jumpToCommodityDetailViewController];
+            }
+        } else if (self.videoType == PLVChannelVideoType_Playback) { /// 回放场景不支持画中画
             [self jumpToCommodityDetailViewController];
         }
-    } else if (self.videoType == PLVChannelVideoType_Playback) { /// 回放场景不支持画中画
-        [self jumpToCommodityDetailViewController];
     }
+}
+
+- (void)plvCommodityPushViewDidShowJobDetail:(NSDictionary *)data {
+    [self.popoverView.interactView openJobDetailWithData:data];
 }
 
 #pragma mark  PLVCommodityDetailViewControllerDelegate
@@ -1540,6 +1563,10 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLotteryWidget:(NSDictionary *)dict {
     NSArray *dataArray = PLV_SafeArraryForDictKey(dict, @"dataArray");
     [self.menuAreaView.chatVctrl updateLotteryWidgetViewInfo:dataArray];
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetail:(PLVCommodityModel *)commodity {
+    [self plvCommodityPushViewDidClickCommodityDetail:commodity];
 }
 
 #pragma mark PLVLCChatLandscapeViewDelegate

@@ -169,6 +169,14 @@ PLVRoomDataManagerProtocol
         }
         [self displaySubview:self.productVctrl.contentBackgroudView toSuperview:externalView];
         [self.productVctrl showInLandscape];
+        
+        // 保证商品库视图 低于PopoverView视图之下
+        for (UIView *subview in externalView.subviews) {
+            if ([subview isKindOfClass:NSClassFromString(@"PLVPopoverView")]) {
+                [externalView insertSubview:self.productVctrl.contentBackgroudView belowSubview:subview];
+                return;
+            }
+        }
     }
 }
 
@@ -338,9 +346,15 @@ PLVRoomDataManagerProtocol
 
 #pragma mark - PLVLCBuyViewControllerDelegate
 
-- (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController linkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity {
-    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductLinkURL:commodity:)]) {
-        [self.delegate plvLCLivePageMenuAreaView:self clickProductLinkURL:linkURL commodity:commodity];
+- (void)plvLCClickProductInViewController:(PLVLCBuyViewController *)viewController commodityModel:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductCommodityModel:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self clickProductCommodityModel:commodity];
+    }
+}
+
+- (void)plvLCBuyViewController:(PLVLCBuyViewController *)viewController didShowJobDetail:(NSDictionary *)data {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:didShowJobDetail:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self didShowJobDetail:data];
     }
 }
 

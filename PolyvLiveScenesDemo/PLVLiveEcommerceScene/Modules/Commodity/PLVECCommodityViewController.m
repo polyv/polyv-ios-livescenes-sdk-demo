@@ -103,7 +103,7 @@ PLVProductWebViewBridgeDelegate
         @"appSecret" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appSecret],
         @"accountId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].userId],
         @"sessionId" : [NSString stringWithFormat:@"%@", roomData.sessionId],
-        @"webVersion" : @"0.5.0"
+        @"webVersion" : @"0.6.0"
     };
     NSDictionary *sm2Key = @{
         @"platformPublicKey" : [NSString stringWithFormat:@"%@", [PLVFSignConfig sharedInstance].serverSM2PublicKey], // 平台公钥(接口提交参数加密用)
@@ -165,23 +165,22 @@ PLVProductWebViewBridgeDelegate
 
 - (void)plvProductWebViewBridge:(PLVProductWebViewBridge *)webViewBridge clickProductButtonWithJSONObject:(id)jsonObject {
     if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
-        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonObject, @"data");
-        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:data];
-        NSURL *linkURL;
-        if (model.linkType == 10) { // 通用链接
-            linkURL = [NSURL URLWithString:model.link];
-        } else if (model.linkType == 11) { // 多平台链接
-            linkURL = [NSURL URLWithString:model.mobileAppLink];
-        }
-        
-        if (linkURL && !linkURL.scheme) {
-            linkURL = [NSURL URLWithString:[@"http://" stringByAppendingString:linkURL.absoluteString]];
-        }
-        
         [self tapAction:nil];
         
-        if (self.delegate && [self.delegate respondsToSelector:@selector(plvECClickProductInViewController:linkURL:commodity:)]) {
-            [self.delegate plvECClickProductInViewController:self linkURL:linkURL commodity:model];
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonObject, @"data");
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:data];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvECCommodityViewController:didClickCommodityModel:)]) {
+            [self.delegate plvECCommodityViewController:self didClickCommodityModel:model];
+        }
+    }
+}
+
+- (void)plvProductWebViewBridge:(PLVProductWebViewBridge *)webViewBridge showJobDetailWithJSONObject:(id)jsonObject {
+    if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
+        [self tapAction:nil];
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonObject, @"data");
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvECCommodityViewController:didShowJobDetail:)]) {
+            [self.delegate plvECCommodityViewController:self didShowJobDetail:data];
         }
     }
 }

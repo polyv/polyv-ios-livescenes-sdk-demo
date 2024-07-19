@@ -195,7 +195,7 @@
 
 - (void)applicationDidEnterBackground{
     if (self.isRunning){
-        [self pause];
+        [self stop];
         // 回到前台需要开启
         self.isRunning = YES;
     }

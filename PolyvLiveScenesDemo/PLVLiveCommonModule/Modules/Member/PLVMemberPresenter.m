@@ -17,7 +17,7 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 static NSInteger kMemberCountPerLoading = 500;
-static NSInteger kMemberCountMax = 1000;
+static NSInteger kMemberCountMax = 500;
 static NSInteger kLoadUserListInterval = 20;
 static NSInteger kLoadKickedUserListInterval = 20;
 
@@ -401,7 +401,7 @@ PLVSocketManagerProtocol // socket协议
 
 #pragma mark 涉及数据容器直接写操作的大并发操作
 // 时间复杂度：O(1)
-// 增加了 force 参数。当用户数量超过 kMemberCountMax（1000）后，只有 force为YES 才会进行真正的插入，否则只是自增 userCount 数值
+// 增加了 force 参数。当用户数量超过 kMemberCountMax（500）后，只有 force为YES 才会进行真正的插入，否则只是自增 userCount 数值
 - (void)addUser:(PLVChatUser *)newUser andForce:(BOOL)force {
     if (!newUser || ![newUser isKindOfClass:[PLVChatUser class]] || ![PLVFdUtil checkStringUseable:newUser.userId]) {
         return ;

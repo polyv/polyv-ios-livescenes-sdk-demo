@@ -206,7 +206,7 @@
         _sheetNotesLabel = [[UILabel alloc] init];
         _sheetNotesLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
         _sheetNotesLabel.font = [UIFont fontWithName:@"PingFangSC-Medium" size:12];
-        _sheetNotesLabel.text = PLVLocalizedString(@"若需要固定该配置项，请前往云直播后台-频道设置-高级设置-观看页设置-连麦设置修改");
+        _sheetNotesLabel.text = PLVLocalizedString(@"若需要固定该配置，请前往频道下-角色设置-角色权限-功能配置-连麦设置-默认连麦方式修改");
         _sheetNotesLabel.numberOfLines = 2;
     }
     return _sheetNotesLabel;

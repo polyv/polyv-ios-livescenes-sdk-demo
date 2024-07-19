@@ -85,9 +85,13 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
 /// 点击商品库中的商品的回调
 /// @param pageMenuAreaView 菜单视图
-/// @param linkURL 商品详情的链接url
-/// @param commodity 商品详情
-- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductLinkURL:(NSURL *)linkURL commodity:(PLVCommodityModel *)commodity;
+/// @param commodity 商品详情模型
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductCommodityModel:(PLVCommodityModel *)commodity;
+
+/// 点击职位详情的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param data 商品详情数据
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowJobDetail:(NSDictionary *)data;
 
 /// 关闭商品库视图的回调
 /// @param pageMenuAreaView 菜单视图
