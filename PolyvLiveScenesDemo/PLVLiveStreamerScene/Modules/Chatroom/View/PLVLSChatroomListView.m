@@ -44,6 +44,8 @@ UITableViewDataSource
 /// 数据
 @property (nonatomic, assign) CGPoint lastContentOffset; // 聊天室列表上次滚动结束时的contentOffset
 @property (nonatomic, assign) BOOL observingTableView; // 是否已对列表进行KVO，默认为NO
+@property (nonatomic, assign) BOOL inClass;
+@property (nonatomic, assign, readonly) BOOL allowPinMessage; // 是否允许评论上墙功能
 
 @end
 
@@ -126,6 +128,18 @@ UITableViewDataSource
         [_refresher.loadingView setActivityIndicatorViewStyle:UIActivityIndicatorViewStyleGray];
     }
     return _refresher;
+}
+
+- (BOOL)allowPinMessage {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.menuInfo.pinMsgEnabled) {
+        if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ||
+            roomData.roomUser.viewerType == PLVRoomUserTypeAssistant) {
+            return YES;
+        }
+    }
+
+    return NO;
 }
 
 #pragma mark - Action
@@ -245,6 +259,16 @@ UITableViewDataSource
     [self.tableView setContentOffset:CGPointMake(0.0, offsetY) animated:animated];
 }
 
+- (void)startClass:(BOOL)start {
+    _inClass = start;
+    PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+    if (roomUser.viewerType == PLVRoomUserTypeTeacher ||
+        roomUser.viewerType == PLVRoomUserTypeAssistant) {
+        // 更新允许上墙按钮 显示状态
+        [self.tableView reloadData];
+    }
+}
+
 #pragma mark - Private Method
 
 // 点击超长文本消息(超过200字符）的【复制】按钮时调用
@@ -291,6 +315,18 @@ UITableViewDataSource
     [messageSheet showInView:[PLVLSUtils sharedUtils].homeVC.view];
 }
 
+- (void)didTapPinMessageMenuItem:(PLVChatModel *)model {
+    if (self.inClass) {
+        BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:model.msgId toTop:YES];
+        if (!success) {
+            NSString *message = [NSString stringWithFormat:@"%@%@", PLVLocalizedString(@"上墙"), PLVLocalizedString(@"消息发送失败")];
+            [PLVLiveToast showToastWithMessage:message inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+        }
+    } else {
+        [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"请先上课") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+    }
+}
+
 #pragma mark - UITableView DataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -316,6 +352,7 @@ UITableViewDataSource
             cell = [[PLVLSSpeakMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:speakMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowPinMessage = self.allowPinMessage;
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -332,6 +369,10 @@ UITableViewDataSource
             [weakSelf.tableView reloadData];
         }];
         
+        [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapPinMessageMenuItem:model];
+        }];
+        
         return cell;
     } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
         static NSString *LongContentMessageCell = @"LongContentMessageCell";
@@ -340,6 +381,7 @@ UITableViewDataSource
             cell = [[PLVLSLongContentMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCell];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowPinMessage = self.allowPinMessage;
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
             if (weakSelf.didTapReplyMenuItem) {
@@ -358,6 +400,9 @@ UITableViewDataSource
         }];
         [cell setFoldButtonHandler:^{
             [weakSelf requestFullContentWithModel:model];
+        }];
+        [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapPinMessageMenuItem:model];
         }];
         return cell;
     } else if ([PLVLSImageMessageCell isModelValid:model]) {
@@ -415,6 +460,7 @@ UITableViewDataSource
             cell = [[PLVLSQuoteMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:quoteMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowPinMessage = self.allowPinMessage;
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -429,6 +475,10 @@ UITableViewDataSource
         
         [cell setProhibitWordDismissHandler:^{
             [weakSelf.tableView reloadData];
+        }];
+        
+        [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapPinMessageMenuItem:model];
         }];
         
         return cell;

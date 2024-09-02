@@ -7,6 +7,7 @@
 //
 
 #import "PLVProgressSlider.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @interface PLVProgressSlider ()
 
@@ -28,7 +29,7 @@
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypePlayer, @"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{

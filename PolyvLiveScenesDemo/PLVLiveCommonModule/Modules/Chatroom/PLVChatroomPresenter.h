@@ -205,6 +205,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送修改昵称消息
 - (void)sendChangeNickname:(NSString *)nickname;
 
+/// 发送上墙消息
+/// @param msgId 需要上墙消息的id，下墙不需要
+/// @param toTop 上墙/下墙
+/// @return 发送结果，成功为YES，失败为NO
+- (BOOL)sendPinMessageWithMsgId:(NSString *_Nullable)msgId toTop:(BOOL)toTop;
+
 /// 加载历史聊天记录
 - (void)loadHistory;
 

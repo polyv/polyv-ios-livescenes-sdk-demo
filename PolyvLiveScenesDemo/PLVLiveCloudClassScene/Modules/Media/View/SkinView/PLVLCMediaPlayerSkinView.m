@@ -7,6 +7,7 @@
 //
 
 #import "PLVLCMediaPlayerSkinView.h"
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVLCMediaPlayerSkinView ()
 
@@ -18,7 +19,7 @@
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s",__FUNCTION__);
 }
 
 - (void)layoutSubviews{
@@ -188,7 +189,7 @@
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshRefreshButtonFrame];
     }else{
-        NSLog(@"PLVLCMediaPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
     }
 }
 

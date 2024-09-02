@@ -9,6 +9,7 @@
 #import "PLVECBulletinView.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVECBulletinView ()
 
@@ -100,7 +101,7 @@
     NSError *err = nil;
     NSAttributedString *htmlContentAttr = [[NSAttributedString alloc] initWithData:[styledHtml dataUsingEncoding:NSUnicodeStringEncoding] options:@{NSDocumentTypeDocumentAttribute:NSHTMLTextDocumentType} documentAttributes:nil error:&err];
     if (err) {
-        NSLog(@"htmlContentAttr err:%@",err.localizedDescription);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeInteract,@"htmlContentAttr err:%@",err.localizedDescription);
     }
     return htmlContentAttr;
 }

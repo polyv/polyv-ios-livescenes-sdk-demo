@@ -536,7 +536,7 @@
     self.coverImageView.image = nil;
     [PLVFdUtil setImageWithURL:coverUrl inImageView:self.coverImageView completed:^(UIImage *image, NSError *error, NSURL *imageURL) {
         if (error) {
-            NSLog(@"-setCellModel:图片加载失败，%@",imageURL);
+            PLV_LOG_DEBUG(PLVConsoleLogModuleTypeInteract, @"-setCellModel:图片加载失败，%@",imageURL);
         }
     }];
     
@@ -561,6 +561,7 @@
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvCommodityPushViewDidClickCommodityDetail:)]) {
         [self.delegate plvCommodityPushViewDidClickCommodityDetail:self.model];
     }
+    [self reportSmallCardClickTrackEvent];
 }
 
 - (void)jobDetailButtonAction {
@@ -570,6 +571,7 @@
             [self.delegate plvCommodityPushViewDidShowJobDetail:data];
         }
     }
+    [self reportSmallCardClickTrackEvent];
 }
 
 - (void)timerTick:(NSTimer *)timer {
@@ -650,6 +652,24 @@
         @"pushId" : self.model.logId ?: @""
     };
     [[PLVWLogReporterManager sharedManager] reportTrackWithEventId:@"product_push_item_view" eventType:@"show" specInformation:info];
+}
+
+- (void)reportSmallCardClickTrackEvent {
+    if (!self.model || ![self.model.productPushRule isEqualToString:@"smallCard"]) {
+        return;
+    }
+    
+    NSString *productId = [NSString stringWithFormat:@"%zd", self.model.productId];
+    NSDictionary *info = @{
+        @"buyType" : self.model.buyType ?: @"",
+        @"deliveryType" : self.model.deliveryType ?:@"",
+        @"name": self.model.name ?: @"",
+        @"productId" : productId,
+        @"productType" : self.model.productType ?: @"",
+        @"linkType" : @"mobile",
+        @"productPushRule" : self.model.productPushRule ?: @""
+    };
+    [[PLVWLogReporterManager sharedManager] reportTrackWithEventId:@"product_click_button" eventType:@"click" specInformation:info];
 }
 
 - (void)updateProductClickTimes:(NSDictionary *)dict {

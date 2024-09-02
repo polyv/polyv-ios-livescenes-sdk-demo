@@ -654,6 +654,7 @@ PLVLSLinkMicSettingSheetDelegate
     [self.statusAreaView startClass:YES];
     [self.documentAreaView startClass:startClassInfoDict];
     [self.memberSheet startClass:YES];
+    [self.chatroomAreaView startClass:YES];
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     __weak typeof(self) weakSelf = self;
     if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
@@ -676,6 +677,7 @@ PLVLSLinkMicSettingSheetDelegate
     [self.documentAreaView finishClass];
     [self.memberSheet startClass:NO];
     [self.memberSheet enableAudioVideoLinkMic:NO];
+    [self.chatroomAreaView startClass:NO];
     
     if (self.viewerType == PLVSocketUserTypeGuest) { // 嘉宾登录 下课后重置为未非全屏
         self.fullscreen = NO;
@@ -1003,6 +1005,10 @@ PLVLSLinkMicSettingSheetDelegate
     }
 }
 
+- (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView cancelTopPinMessage:(PLVSpeakTopMessage *)message {
+    [self.chatroomAreaView cancleTopPinMessage];
+}
+
 #pragma mark - PLVSocketManager Protocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登录成功
@@ -1045,6 +1051,26 @@ PLVLSLinkMicSettingSheetDelegate
     }
     if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin closes or opens the chatroom
         [self closeRoomEvent:jsonDict];
+    }
+}
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    
+    if ([event isEqualToString:@"speak"]) {
+        if ([subEvent isEqualToString:@"TO_TOP"] || [subEvent isEqualToString:@"CANCEL_TOP"]) {
+            BOOL show = [subEvent isEqualToString:@"TO_TOP"];
+            PLVSpeakTopMessage *message = [[PLVSpeakTopMessage alloc] initWithDictionary:jsonDict];
+            plv_dispatch_main_async_safe(^{
+                [self.documentAreaView showPinMessagePopupView:show message:message];
+            })
+        }
     }
 }
 

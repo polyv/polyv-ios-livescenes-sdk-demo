@@ -615,6 +615,11 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     }
 }
 
+#pragma mark 发送上墙消息
+- (BOOL)sendPinMessageWithMsgId:(NSString *_Nullable)msgId toTop:(BOOL)toTop {
+    return [[PLVChatroomManager sharedManager] sendPinMessageWithMsgId:msgId toTop:toTop];
+}
+
 #pragma mark - 获取历史聊天消息
 
 - (void)changeRoom {
@@ -1333,6 +1338,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 有用户登录
 - (void)loginEvent:(NSDictionary *)data {
     NSInteger onlineCount = PLV_SafeIntegerForDictKey(data, @"onlineUserNumber");
+    [self updateOnlineCount:onlineCount];
     
     NSDictionary *user = PLV_SafeDictionaryForDictKey(data, @"user");
     NSString *userId = PLV_SafeStringForDictKey(user, @"userId");

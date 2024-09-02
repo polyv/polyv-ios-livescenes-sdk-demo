@@ -103,6 +103,7 @@ PLVECLotteryWidgetViewDelegate
 @property (nonatomic, weak) PLVECCommodityViewController *commodityVC; // 商品视图
 @property (nonatomic, strong) PLVCommodityPushView *pushView;        // 商品推送视图
 @property (nonatomic, weak) PLVECPlaybackListViewController *playbackListVC;     //回放列表视图
+@property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
 
 #pragma mark UI
 
@@ -122,6 +123,7 @@ PLVECLotteryWidgetViewDelegate
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable;      // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
 @property (nonatomic, assign) BOOL visiable;                       // 该属性为YES表示当前该视图处于用户可见状态
+@property (nonatomic, assign) BOOL showMemoryPlayWithoutPlaybackTimeChanged; // 该属性为YES表示续播时没有触发播放器时间更新
 
 @end
 
@@ -164,6 +166,7 @@ PLVECLotteryWidgetViewDelegate
 
 - (void)setupUI {
     [self addSubview:self.liveRoomInfoView];
+    [self addSubview:self.pinMsgPopupView];
     
     if (self.type == PLVECHomePageType_Live) {
         [self addSubview:self.chatroomView];
@@ -179,9 +182,7 @@ PLVECLotteryWidgetViewDelegate
         if (![PLVRoomDataManager sharedManager].roomData.menuInfo.playbackProgressBarEnabled) {
             self.playerContolView.progressSlider.hidden = YES;
         }
-        if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
-            [self addSubview:self.playbackListButton];
-        }
+        [self addSubview:self.playbackListButton];
     }
     [self addSubview:self.redpackButtonView];
     [self addSubview:self.cardPushButtonView];
@@ -291,6 +292,7 @@ PLVECLotteryWidgetViewDelegate
         _playbackListButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_playbackListButton setImage:[PLVECUtils imageForWatchResource:@"plv_playbackList_btn"] forState:UIControlStateNormal];
         [_playbackListButton addTarget:self action:@selector(playbackListButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _playbackListButton.hidden = YES;
     }
     return _playbackListButton;
 }
@@ -421,6 +423,14 @@ PLVECLotteryWidgetViewDelegate
     return _networkQualityPoorView;
 }
 
+- (PLVPinMessagePopupView *)pinMsgPopupView {
+    if (!_pinMsgPopupView) {
+        _pinMsgPopupView = [[PLVPinMessagePopupView alloc] init];
+        _pinMsgPopupView.hidden = YES;
+    }
+    return _pinMsgPopupView;
+}
+
 - (UIBezierPath *)BezierPathWithSize:(CGSize)size {
     CGFloat conner = 8.0; // 圆角角度
     CGFloat trangleHeight = 4; // 尖角高度
@@ -502,6 +512,11 @@ PLVECLotteryWidgetViewDelegate
             [self.playerContolView updatePlayButtonWithPlaying:playing];
         }
     }
+
+    if (!playing &&
+        [PLVRoomDataManager sharedManager].roomData.liveState != PLVChannelLiveStreamState_Live) {
+        [self.pinMsgPopupView showPopupView:NO message:nil];
+    }
 }
 
 - (void)updateLinkMicState:(BOOL)linkMic {
@@ -543,6 +558,10 @@ PLVECLotteryWidgetViewDelegate
     self.duration = self.playerContolView.duration = duration;
     self.currentPlaybackTime = currentPlaybackTimeInterval;
     [self.chatroomView updateDuration:self.duration];
+    if (self.showMemoryPlayWithoutPlaybackTimeChanged) {
+        self.showMemoryPlayWithoutPlaybackTimeChanged = NO;
+        [self playbackTimeChanged];
+    }
     
     if (self.playerContolView.currentTimeLabel.text.length != currentPlaybackTime.length) {
         [self.playerContolView setNeedsLayout];
@@ -640,8 +659,25 @@ PLVECLotteryWidgetViewDelegate
     [self updateLikeViewAnimationLeftShift];
 }
 
+
 - (void)reportProductClickedEvent:(PLVCommodityModel *)commodity {
     [self.pushView sendProductClickedEvent:commodity];
+}
+
+- (void)updatePlaybackListButton:(BOOL)show {
+    self.playbackListButton.hidden = !show;
+}
+
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
+    [self.pinMsgPopupView showPopupView:show message:message];
+}
+
+- (void)playbackDidShowMemoryPlayTip {
+    if (self.currentPlaybackTime > 0 && self.duration > 0) {
+        [self.chatroomView playbackTimeChanged];
+    } else {
+        self.showMemoryPlayWithoutPlaybackTimeChanged = YES;
+    }
 }
 
 #pragma mark - Private
@@ -767,10 +803,16 @@ PLVECLotteryWidgetViewDelegate
     CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
     self.moreView.frame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(CGRectGetWidth(self.bounds) - 375, 0, 375, CGRectGetHeight(self.bounds)) : CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height);
     self.switchView.frame = self.moreView.frame;
+    
+    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 58);
 }
 
 - (void)updateLikeViewAnimationLeftShift {
     self.likeButtonView.animationLeftShift = !self.cardPushButtonView.hidden || !self.redpackButtonView.hidden || !self.lotteryWidgetView.hidden;
+}
+
+- (void)playbackTimeChanged {
+    [self.chatroomView playbackTimeChanged];
 }
 
 #pragma mark 快直播
@@ -1013,7 +1055,7 @@ PLVECLotteryWidgetViewDelegate
         [self.delegate homePageView:self seekToTime:interval];
     }
     
-    [self.chatroomView playbackTimeChanged];
+    [self playbackTimeChanged];
 }
 
 #pragma mark PLVCommodityPushViewDelegate
@@ -1099,6 +1141,13 @@ PLVECLotteryWidgetViewDelegate
     [self.redpackButtonView dismiss];
     [self updateUIFrame];
     [self updateLikeViewAnimationLeftShift];
+}
+
+- (void)chatroomView_receiveSpeakTopMessageChatModel:(PLVChatModel *)model showPinMsgView:(BOOL)show {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(homePageView_receiveSpeakTopMessageChatModel:showPinMsgView:)]) {
+        [self.delegate homePageView_receiveSpeakTopMessageChatModel:model showPinMsgView:show];
+    }
 }
 
 #pragma mark PLVECMoreViewDelegate

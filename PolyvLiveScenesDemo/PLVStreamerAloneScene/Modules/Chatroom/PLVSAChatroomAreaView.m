@@ -101,6 +101,14 @@ PLVSAChatroomListViewDelegate
 
 #pragma mark - [ Public Method ]
 
+- (void)sendCancleTopPinMessage {
+    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:nil toTop:NO];
+    if (!success) {
+        NSString *message = [NSString stringWithFormat:@"%@%@", PLVLocalizedString(@"下墙"), PLVLocalizedString(@"消息发送失败")];
+        [PLVSAUtils showToastInHomeVCWithMessage:message];
+    }
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)addNewMessageCount {
@@ -334,6 +342,16 @@ PLVSAChatroomListViewDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(chatroomAreaView:alertLongContentMessage:)]) {
         [self.delegate chatroomAreaView:self alertLongContentMessage:model];
+    }
+}
+
+- (void)chatroomListView:(PLVSAChatroomListView *)listView didTapPinMessageMenuItem:(PLVChatModel *)model {
+    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:model.msgId toTop:YES];
+    if (success) {
+        if (!success) {
+            NSString *message = [NSString stringWithFormat:@"%@%@", PLVLocalizedString(@"上墙"), PLVLocalizedString(@"消息发送失败")];
+            [PLVSAUtils showToastInHomeVCWithMessage:message];
+        }
     }
 }
 

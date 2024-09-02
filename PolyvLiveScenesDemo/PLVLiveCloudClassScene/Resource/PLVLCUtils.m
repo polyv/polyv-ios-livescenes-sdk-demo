@@ -8,6 +8,7 @@
 
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @implementation PLVLCUtils
 
@@ -18,7 +19,7 @@
 }
 
 + (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view afterDelay:(CGFloat)delay {
-    NSLog(@"HUD info title:%@,detail:%@",title,detail);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeVerbose,@"HUD info title:%@,detail:%@",title,detail);
     if (view == nil) {
         return;
     }

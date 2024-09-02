@@ -162,6 +162,57 @@ PLVRoomDataManagerProtocol
     [self.pageController setTitles:titleArray.copy controllers:controllers.copy];
 }
 
+- (void)updateSectionMenuTab {
+    NSMutableArray *titleArray = [NSMutableArray arrayWithArray:self.pageController.titles];
+    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.pageController.controllers];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.sectionEnable) {
+        if (![controllers containsObject:self.sectionVctrl]) {
+            PLVLCSectionViewController *vctrl = [[PLVLCSectionViewController alloc] init];
+            self.sectionVctrl = vctrl;
+            self.sectionVctrl.delegate = self;
+            [titleArray addObject:PLVLocalizedString(@"章节")];
+            [controllers addObject:vctrl];
+        }
+        if (!roomData.sectionList) {
+            [self.sectionVctrl requestData];
+        }
+    } else {
+        if ([controllers containsObject:self.sectionVctrl]) {
+            [titleArray removeObject:PLVLocalizedString(@"章节")];
+            [controllers removeObject:self.sectionVctrl];
+            self.sectionVctrl = nil;
+        }
+    }
+    
+    [self.pageController setTitles:titleArray.copy controllers:controllers.copy];
+}
+
+- (void)updatePlaybackListMenuTab {
+    NSMutableArray *titleArray = [NSMutableArray arrayWithArray:self.pageController.titles];
+    NSMutableArray *controllers = [NSMutableArray arrayWithArray:self.pageController.controllers];
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.playbackListEnable) {
+        if (![controllers containsObject:self.playbackListVctrl]) {
+            PLVLCPlaybackListViewController *vctrl = [[PLVLCPlaybackListViewController alloc] init];
+            self.playbackListVctrl = vctrl;
+            [titleArray addObject:PLVLocalizedString(@"往期")];
+            [controllers addObject:vctrl];
+        }
+        if (!roomData.playbackList) {
+            [self.sectionVctrl requestData];
+        }
+    } else {
+        if ([controllers containsObject:self.sectionVctrl]) {
+            [titleArray removeObject:PLVLocalizedString(@"章节")];
+            [controllers removeObject:self.sectionVctrl];
+            self.sectionVctrl = nil;
+        }
+    }
+    
+    [self.pageController setTitles:titleArray.copy controllers:controllers.copy];
+}
+
 - (void)displayProductPageToExternalView:(UIView *)externalView {
     if (self.productVctrl) {
         if (!self.productVctrl.isViewLoaded) {
@@ -244,21 +295,6 @@ PLVRoomDataManagerProtocol
             [titleArray addObject:PLVLocalizedString(menu.name)];
             [ctrlArray addObject:vctrl];
         }
-        
-        if ([PLVRoomDataManager sharedManager].roomData.playbackList) {
-            PLVLCPlaybackListViewController *vctrl = [[PLVLCPlaybackListViewController alloc] initWithPlaybackList:[PLVRoomDataManager sharedManager].roomData.playbackList];
-            self.playbackListVctrl = vctrl;
-            [titleArray addObject:PLVLocalizedString(@"往期")];
-            [ctrlArray addObject:vctrl];
-        }
-        
-        if ([PLVRoomDataManager sharedManager].roomData.sectionEnable) {
-            PLVLCSectionViewController *vctrl = [[PLVLCSectionViewController alloc] initWithSectionList:[PLVRoomDataManager sharedManager].roomData.sectionList];
-            self.sectionVctrl = vctrl;
-            self.sectionVctrl.delegate = self;
-            [titleArray addObject:PLVLocalizedString(@"章节")];
-            [ctrlArray addObject:vctrl];
-        }
     }
 
     [self.pageController setTitles:[titleArray copy] controllers:[ctrlArray copy]];
@@ -320,6 +356,14 @@ PLVRoomDataManagerProtocol
 
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
     [self updateChannelMenuInfo];
+}
+
+- (void)roomDataManager_didSectionEnableChanged:(BOOL)sectionEnable {
+    [self updateSectionMenuTab];
+}
+
+- (void)roomDataManager_didPlaybackListEnableChanged:(BOOL)playbackListEnable {
+    [self updatePlaybackListMenuTab];
 }
 
 #pragma mark - PLVWebViewTuwen Protocol

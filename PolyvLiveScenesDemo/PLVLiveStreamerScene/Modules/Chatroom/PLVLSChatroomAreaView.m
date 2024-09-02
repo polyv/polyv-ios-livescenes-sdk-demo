@@ -149,6 +149,10 @@ PLVLSChatroomViewModelProtocol
     [self.toolbarView cameraSwitchButtonFront:front];
 }
 
+- (void)startClass:(BOOL)start {
+    [self.chatroomListView startClass:start];
+}
+
 - (void)setNetState:(NSInteger)netState {
     self.remindSheet.netState = netState;
 }
@@ -164,6 +168,16 @@ PLVLSChatroomViewModelProtocol
         [PLVRoomDataManager sharedManager].roomData.menuInfo.remindEnabled &&
         !_remindMessageTimer.isValid) {
         [self startRemindMessageTimer];
+    }
+}
+
+- (void)cancleTopPinMessage {
+    BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:nil toTop:NO];
+    if (!success) {
+        plv_dispatch_main_async_safe((^{
+            NSString *message = [NSString stringWithFormat:@"%@%@", PLVLocalizedString(@"下墙"), PLVLocalizedString(@"消息发送失败")];
+            [PLVLSUtils showToastWithMessage:message inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3];
+        }))
     }
 }
 

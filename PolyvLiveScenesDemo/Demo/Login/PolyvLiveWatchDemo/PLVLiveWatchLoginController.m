@@ -250,7 +250,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 }
 
 - (IBAction)vodListSwitchChanged:(UISwitch *)sender {
-    NSLog(@"%@", sender.isOn ? @"打开点播列表" : @"关闭点播列表");
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeVerbose,@"%@", sender.isOn ? @"打开点播列表" : @"关闭点播列表");
 }
 
 - (IBAction)backAction:(id)sender {

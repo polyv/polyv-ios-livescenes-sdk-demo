@@ -181,6 +181,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)showBadNetworkTipsView;
 
+/// 更新评论上墙视图
+/// @param show 是否显示 评论上墙视图
+/// @param message 消息详情模型
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message;
+
 @end
 
 NS_ASSUME_NONNULL_END

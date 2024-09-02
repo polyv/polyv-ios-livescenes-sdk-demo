@@ -25,6 +25,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)chatroomListView:(PLVSAChatroomListView *)listView alertLongContentMessage:(PLVChatModel *)model;
 
+/// 点击 上墙消息 的回调
+/// @param model 需要上墙消息数据模型
+- (void)chatroomListView:(PLVSAChatroomListView *)listView didTapPinMessageMenuItem:(PLVChatModel *)model;
+
 @end
 
 /// 直播间聊天消息列表视图

@@ -13,6 +13,7 @@
 #import "PLVLCLinkMicWindowCell.h"
 #import "PLVLinkMicOnlineUser+LC.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 #define PLVColor_View_Black PLV_UIColorFromRGB(@"1A1B1F")
 
@@ -71,7 +72,7 @@ UICollectionViewDelegate
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic,@"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{
@@ -210,7 +211,7 @@ UICollectionViewDelegate
 
 - (void)linkMicWindowMainSpeaker:(NSString *)linkMicUserId toMainScreen:(BOOL)mainSpeakerToMainScreen{
     if (![PLVFdUtil checkStringUseable:linkMicUserId]) {
-        NSLog(@"PLVLCLinkMicWindowsView - [linkMicWindowLinkMicUserId:wannaBecomeFirstSite:] call failed ,linkMicUserId illegale:%@",linkMicUserId);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - [linkMicWindowLinkMicUserId:wannaBecomeFirstSite:] call failed ,linkMicUserId illegale:%@",linkMicUserId);
         return;
     }
     
@@ -252,7 +253,7 @@ UICollectionViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:)]) {
         return [self.delegate plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:self];
     }else{
-        NSLog(@"PLVLCLinkMicWindowsView - delegate not implement method:[plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - delegate not implement method:[plvLCLinkMicWindowsViewGetMainSpeakerPPTOnMain:]");
         return YES; /// 默认 YES
     }
 }
@@ -288,7 +289,7 @@ UICollectionViewDelegate
 - (PLVLCLinkMicWindowCell *)getWindowCellWithIndex:(NSInteger)cellIndex{
     PLVLCLinkMicWindowCell * cell;
     if (cellIndex >= 0) { cell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:cellIndex inSection:0]]; }
-    if (!cell) { NSLog(@"PLVLCLinkMicWindowsView - cell find failed"); }
+    if (!cell) { PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - cell find failed"); }
     return cell;
 }
 
@@ -358,11 +359,11 @@ UICollectionViewDelegate
                         [self.collectionView reloadItemsAtIndexPaths:@[targetCellIndexPath]];
                     });
                 }else{
-                    NSLog(@"PLVLCLinkMicWindowsView - wantExchangeWithExternalViewForLinkMicUser failed, targetCellIndex illegal:%ld",(long)targetCellIndex);
+                    PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - wantExchangeWithExternalViewForLinkMicUser failed, targetCellIndex illegal:%ld",(long)targetCellIndex);
                 }
             }
         }else{
-            NSLog(@"PLVLCLinkMicWindowsView - return view illegal, returnView:%@",returnView);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - return view illegal, returnView:%@",returnView);
         }
     }
 }
@@ -386,7 +387,7 @@ UICollectionViewDelegate
         PLVLCLinkMicWindowCell * showingExternalCell = (PLVLCLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:oriIndexPath];
         [showingExternalCell switchToShowDefaultRtcContentView];
     } else {
-        NSLog(@"PLVLCLinkMicWindowsView - rollbackLinkMicCanvasView failed, oriIndexPath %@ can't get userModel",oriIndexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - rollbackLinkMicCanvasView failed, oriIndexPath %@ can't get userModel",oriIndexPath);
     }
 }
 
@@ -592,7 +593,7 @@ UICollectionViewDelegate
     BOOL thisCellShowingExternalView = NO;
     PLVLinkMicOnlineUser * linkMicUserModel = [self readUserModelFromDataArray:indexPath.row];
     if (!linkMicUserModel) {
-        NSLog(@"PLVLCLinkMicWindowsView - cellForItemAtIndexPath for %@ error",indexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - cellForItemAtIndexPath for %@ error",indexPath);
         return [collectionView dequeueReusableCellWithReuseIdentifier:@"PLVLCLinkMicWindowCellID" forIndexPath:indexPath];
     }
     
@@ -646,13 +647,13 @@ UICollectionViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath{
     if (!indexPath) {
-        NSLog(@"PLVLCLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ illegal",indexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ illegal",indexPath);
         return;
     }
     
     PLVLinkMicOnlineUser * currentTapUserModel = [self readUserModelFromDataArray:indexPath.row];
     if (!currentTapUserModel) {
-        NSLog(@"PLVLCLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ can't get userModel",indexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ can't get userModel",indexPath);
         return;
     }
     

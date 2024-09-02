@@ -12,6 +12,7 @@
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间隔:300毫秒
 
@@ -63,7 +64,7 @@ static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点�
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic,@"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{

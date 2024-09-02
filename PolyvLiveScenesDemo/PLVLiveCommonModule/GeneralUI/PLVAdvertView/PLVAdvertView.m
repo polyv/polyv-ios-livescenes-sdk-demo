@@ -70,7 +70,7 @@
 }
 
 - (void)dealloc {
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose, @"%s",__FUNCTION__);
 }
 
 #pragma mark - [ Private ]

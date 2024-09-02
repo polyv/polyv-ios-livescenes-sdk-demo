@@ -10,6 +10,7 @@
 
 #import "PLVLSUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 static NSString * const kPLVLSTeacherSplashImgURLString = @"https://s1.videocc.net/default-img/channel/default-splash.png";//讲师默认封面图地址
 
@@ -31,7 +32,7 @@ static NSString * const kPLVLSTeacherSplashImgURLString = @"https://s1.videocc.n
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic,@"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{
@@ -65,7 +66,7 @@ static NSString * const kPLVLSTeacherSplashImgURLString = @"https://s1.videocc.n
             [self addSubview:rtcView];
             self.rtcView = rtcView;
         }else{
-            NSLog(@"PLVLSLinkMicCanvasView - add rtc view failed, rtcView illegal:%@",rtcView);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLSLinkMicCanvasView - add rtc view failed, rtcView illegal:%@",rtcView);
         }
     })
 }
@@ -80,7 +81,7 @@ static NSString * const kPLVLSTeacherSplashImgURLString = @"https://s1.videocc.n
     if (self.rtcView) {
         self.rtcView.hidden = !rtcViewShow;
     }else{
-        NSLog(@"PLVLSLinkMicCanvasView - rtcViewShow failed, rtcView is nil");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLSLinkMicCanvasView - rtcViewShow failed, rtcView is nil");
     }
 }
 

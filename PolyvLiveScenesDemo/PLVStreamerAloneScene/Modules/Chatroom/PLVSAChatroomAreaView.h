@@ -31,6 +31,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note Setter 方法内实现发送禁言操作
 @property (nonatomic, assign) BOOL closeRoom;
 
+/// 发送评论下墙消息
+- (void)sendCancleTopPinMessage;
+
 @end
 
 NS_ASSUME_NONNULL_END

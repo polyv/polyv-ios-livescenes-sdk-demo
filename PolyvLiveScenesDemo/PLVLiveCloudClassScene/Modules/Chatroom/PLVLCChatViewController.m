@@ -1018,7 +1018,7 @@ UITableViewDataSource
 }
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView popBoard:(BOOL)show {
-    NSLog(@"keyboardToolView - popBoard %@", show ? @"YES" : @"NO");
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeChatRoom,@"keyboardToolView - popBoard %@", show ? @"YES" : @"NO");
 }
 
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)toolView sendText:(NSString *)text replyModel:(PLVChatModel *)replyModel {

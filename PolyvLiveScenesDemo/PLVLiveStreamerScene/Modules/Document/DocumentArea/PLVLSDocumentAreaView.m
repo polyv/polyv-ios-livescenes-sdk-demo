@@ -23,6 +23,7 @@
 #import "PLVLSDocumentInputView.h"
 #import "PLVLSDocumentSheet.h"
 #import "PLVLSDocumentWaitLiveView.h"
+#import "PLVPinMessagePopupView.h"
 
 /// 依赖库
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -48,6 +49,7 @@ UIGestureRecognizerDelegate
 @property (nonatomic, strong) PLVLSDocumentWaitLiveView *waitLivePlaceholderView; // ‘直播未开始’占位视图 适用于‘非讲师角色’
 @property (nonatomic, strong) PLVLSDocumentSheet *docSheet;         // 文档弹出层
 @property (nonatomic, strong) UILabel *zoomRatioLabel;         // 缩放比例
+@property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
 
 /// 数据
 @property (nonatomic, assign) NSInteger currWhiteboardNum;          // 白板当前页码
@@ -80,6 +82,7 @@ UIGestureRecognizerDelegate
         [self addSubview:self.toolView];
         [self addSubview:self.pageNum];
         [self addSubview:self.zoomRatioLabel];
+        [self addSubview:self.pinMsgPopupView];
         
         [self startLoading];
         
@@ -104,6 +107,7 @@ UIGestureRecognizerDelegate
     self.pptView.frame = self.switchContentView.bounds;
     self.docPlaceholder.frame = self.switchContentView.bounds;
     self.waitLivePlaceholderView.frame = self.switchContentView.bounds;
+    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, 25, 320, 58);
     
     CGSize bgSize = self.bounds.size;
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width == self.bounds.size.width;
@@ -252,6 +256,21 @@ UIGestureRecognizerDelegate
     return _zoomRatioLabel;
 }
 
+- (PLVPinMessagePopupView *)pinMsgPopupView {
+    if (!_pinMsgPopupView) {
+        _pinMsgPopupView = [[PLVPinMessagePopupView alloc] init];
+        _pinMsgPopupView.canPinMessage = (self.viewerType == PLVRoomUserTypeTeacher || self.viewerType == PLVRoomUserTypeAssistant);
+        _pinMsgPopupView.hidden = YES;
+        __weak typeof(self) weakSelf = self;
+        _pinMsgPopupView.cancelTopActionBlock = ^(PLVSpeakTopMessage * _Nonnull message) {
+            if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(documentAreaView:cancelTopPinMessage:)]) {
+                [weakSelf.delegate documentAreaView:weakSelf cancelTopPinMessage:message];
+            }
+        };
+    }
+    return _pinMsgPopupView;
+}
+
 - (PLVRoomUserType)viewerType{
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
 }
@@ -318,6 +337,7 @@ UIGestureRecognizerDelegate
 
 - (void)finishClass {
     self.pptView.startClass = NO;
+    [self.pinMsgPopupView showPopupView:NO message:nil];
     
     if (self.viewerType == PLVRoomUserTypeGuest) {
         [self.toolView setFullScreenButtonSelected:NO];
@@ -379,8 +399,12 @@ UIGestureRecognizerDelegate
         externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         [self.contentBackgroundView insertSubview:externalView atIndex:0];
     }else{
-        NSLog(@"PLVLSDocumentAreaView - displayExternalView failed, externalView:%@", externalView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePPT,@"PLVLSDocumentAreaView - displayExternalView failed, externalView:%@", externalView);
     }
+}
+
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
+    [self.pinMsgPopupView showPopupView:show message:message];
 }
 
 #pragma mark - [ Private Methods ]

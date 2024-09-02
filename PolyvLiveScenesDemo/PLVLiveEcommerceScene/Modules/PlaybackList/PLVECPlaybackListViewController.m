@@ -42,6 +42,11 @@ PLVRoomDataManagerProtocol
 - (instancetype) init {
     if (self = [super init]) {
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        if (![PLVRoomDataManager sharedManager].roomData.playbackList) {
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                [self loadDataWithPageNumber:0];
+            });
+        }
     }
     return self;
 }
@@ -152,11 +157,17 @@ PLVRoomDataManagerProtocol
 }
 
 - (NSArray<PLVPlaybackVideoModel *> *)dataArray{
+    if (![PLVRoomDataManager sharedManager].roomData.playbackList) {
+        return nil;
+    }
     NSArray *dataArray = [PLVRoomDataManager sharedManager].roomData.playbackList.contents;
     return dataArray;
 }
 
 - (NSInteger)nextPageNumber {
+    if (![PLVRoomDataManager sharedManager].roomData.playbackList) {
+        return 1;
+    }
     return [PLVRoomDataManager sharedManager].roomData.playbackList.nextPageNumber;
 }
 
@@ -176,6 +187,9 @@ PLVRoomDataManagerProtocol
 #pragma mark UICollectionViewDataSource
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section{
+    if (!self.dataArray) {
+        return 0;
+    }
     return  self.dataArray.count;
 }
 

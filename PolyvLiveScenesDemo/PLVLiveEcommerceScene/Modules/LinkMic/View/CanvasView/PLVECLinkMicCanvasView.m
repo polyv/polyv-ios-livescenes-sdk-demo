@@ -81,7 +81,7 @@ static NSString * const kPLVECTeacherSplashImgURLString = @"https://s1.videocc.n
             [self bringSubviewToFront:self.networkQualityImageView];
             self.rtcView = rtcView;
         } else {
-            NSLog(@"PLVECLinkMicWindowCanvasView - add rtc view failed, rtcView illegal:%@",rtcView);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVECLinkMicWindowCanvasView - add rtc view failed, rtcView illegal:%@",rtcView);
         }
     })
 }
@@ -106,7 +106,7 @@ static NSString * const kPLVECTeacherSplashImgURLString = @"https://s1.videocc.n
     if (self.rtcView) {
         self.rtcView.hidden = !rtcViewShow;
     } else {
-        NSLog(@"PLVECLinkMicCanvasView - rtcViewShow failed, rtcView is nil");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVECLinkMicCanvasView - rtcViewShow failed, rtcView is nil");
     }
 }
 

@@ -8,6 +8,7 @@
 
 #import "PLVCaptureDeviceManager.h"
 #import "PLVMultiLanguageManager.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static const BOOL kCameraDefaultFront = YES; // 摄像头 默认前置值
@@ -279,7 +280,7 @@ static const BOOL kCameraDefaultFront = YES; // 摄像头 默认前置值
         // 开始录音
         [_audioRecorder record];
     } else {
-        NSLog(@"%@", [error description]);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose, @"%@", [error description]);
     }
     
     // 音量实时监测定时器

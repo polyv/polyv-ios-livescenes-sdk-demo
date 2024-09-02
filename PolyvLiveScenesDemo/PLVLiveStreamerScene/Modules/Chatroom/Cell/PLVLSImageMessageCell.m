@@ -151,6 +151,10 @@
     return _prohibitWordTipView;
 }
 
+- (BOOL)allowPinMessage {
+    return NO;
+}
+
 #pragma mark - UI
 
 - (void)updateWithModel:(PLVChatModel *)model loginUserId:(NSString *)loginUserId cellWidth:(CGFloat)cellWidth {

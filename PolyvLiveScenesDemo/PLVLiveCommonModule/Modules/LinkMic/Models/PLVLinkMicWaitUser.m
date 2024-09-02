@@ -166,15 +166,15 @@
 #pragma mark 多接收方回调配置
 - (void)addWillDeallocBlock:(PLVLinkMicWaitUserWillDeallocBlock)weakBlock blockKey:(id)blockKey{
     if (!weakBlock) {
-        NSLog(@"PLVLinkMicWaitUser - addWillDeallocBlock failed，weakBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicWaitUser - addWillDeallocBlock failed，weakBlock illegal");
         return;
     }
     if (!blockKey) {
-        NSLog(@"PLVLinkMicWaitUser - addWillDeallocBlock failed，blockKey illegal:%@",blockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicWaitUser - addWillDeallocBlock failed，blockKey illegal:%@",blockKey);
         return;
     }
     if (self.willDealloc_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicWaitUser - addWillDeallocBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicWaitUser - addWillDeallocBlock failed，block registration limit has been reached");
         return;
     }
     [self.willDealloc_MultiReceiverMap setObject:weakBlock forKey:blockKey];

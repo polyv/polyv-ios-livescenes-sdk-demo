@@ -10,6 +10,7 @@
 
 #import "PLVLCUtils.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVLCMediaFloatView ()
 
@@ -82,7 +83,7 @@
         externalView.frame = self.contentBackgroudView.bounds;
         externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }else{
-        NSLog(@"PLVLCMediaFloatView - displayExternalView failed, externalView:%@",externalView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaFloatView - displayExternalView failed, externalView:%@",externalView);
     }
 }
 
@@ -90,7 +91,7 @@
     if ([PLVFdUtil checkStringUseable:nicknameText]) {
         self.nicknameLabel.text = nicknameText;
     }else{
-        NSLog(@"PLVLCMediaFloatView - setNicknameLabalWithText failed, nicknameText:%@",nicknameText);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaFloatView - setNicknameLabalWithText failed, nicknameText:%@",nicknameText);
     }
 }
 

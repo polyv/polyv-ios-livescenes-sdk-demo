@@ -173,7 +173,7 @@ typedef NS_ENUM(NSInteger, PLVShareLiveButtonType) {
             [weakSelf loadWebView];
         }
     } failure:^(NSError * _Nonnull error) {
-        NSLog(@"PLVShareLiveSheet request error: %@", error.localizedDescription);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose, @"PLVShareLiveSheet request error: %@", error.localizedDescription);
     }];
 }
 

@@ -37,12 +37,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换前后置摄像头按钮状态修改
 - (void)cameraSwitchButtonFront:(BOOL)open;
 
+/// 开始上课/结束上课
+/// @param start YES - 开始上课 NO - 结束上课
+- (void)startClass:(BOOL)start;
+
 /// 退出登录
 - (void)logout;
 
 /// 文档切换全屏状态
 /// @param fullScreen 是否全屏
 - (void)documentChangeFullScreen:(BOOL)fullScreen;
+
+/// 评论下墙操作
+- (void)cancleTopPinMessage;
 
 @end
 

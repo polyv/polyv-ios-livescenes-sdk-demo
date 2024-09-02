@@ -756,15 +756,15 @@
 #pragma mark 多接收方回调配置
 - (void)addWillDeallocBlock:(PLVLinkMicOnlineUserWillDeallocBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addWillDeallocBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addWillDeallocBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addWillDeallocBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addWillDeallocBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.willDealloc_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addWillDeallocBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addWillDeallocBlock failed，block registration limit has been reached");
         return;
     }
     [self.willDealloc_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
@@ -772,15 +772,15 @@
 
 - (void)addMicOpenChangedBlock:(PLVLinkMicOnlineUserMicOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addMicOpenChangedBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addMicOpenChangedBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addMicOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addMicOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.micOpenChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addMicOpenChangedBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addMicOpenChangedBlock failed，block registration limit has been reached");
         return;
     }
     [self.micOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
@@ -788,15 +788,15 @@
 
 - (void)addCameraShouldShowChangedBlock:(PLVLinkMicOnlineUserCameraShouldShowChangedBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraShouldShowChangedBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraShouldShowChangedBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraShouldShowChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraShouldShowChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.cameraShouldShowChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraShouldShowChangedBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraShouldShowChangedBlock failed，block registration limit has been reached");
         return;
     }
     [self.cameraShouldShowChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
@@ -804,15 +804,15 @@
 
 - (void)addCameraFrontChangedBlock:(PLVLinkMicOnlineUserCameraFrontChangedBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraFrontChangedBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraFrontChangedBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraFrontChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraFrontChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.cameraFrontChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraFrontChangedBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraFrontChangedBlock failed，block registration limit has been reached");
         return;
     }
     [self.cameraFrontChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
@@ -820,15 +820,15 @@
 
 - (void)addCameraTorchOpenChangedBlock:(PLVLinkMicOnlineUserCameraTorchOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.cameraTorchOpenChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCameraTorchOpenChangedBlock failed，block registration limit has been reached");
         return;
     }
     [self.cameraTorchOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
@@ -836,15 +836,15 @@
 
 - (void)addCurrentStatusVoiceChangedBlock:(PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.currentStatusVoiceChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentStatusVoiceChangedBlock failed，block registration limit has been reached");
         return;
     }
     [self.currentStatusVoiceChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
@@ -852,15 +852,15 @@
 
 - (void)addCurrentSpeakerAuthChangedBlock:(PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.currentSpeakerAuthChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentSpeakerAuthChangedBlock failed，block registration limit has been reached");
         return;
     }
     [self.currentSpeakerAuthChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
@@ -868,15 +868,15 @@
 
 - (void)addScreenShareOpenChangedBlock:(PLVLinkMicOnlineUserScreenShareOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
-        NSLog(@"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，strongBlock illegal");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，strongBlock illegal");
         return;
     }
     if (!weakBlockKey) {
-        NSLog(@"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
         return;
     }
     if (self.currentScreenShareOpenChanged_MultiReceiverMap.count > 20) {
-        NSLog(@"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，block registration limit has been reached");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addScreenShareOpenChangedBlock failed，block registration limit has been reached");
         return;
     }
     [self.currentScreenShareOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];

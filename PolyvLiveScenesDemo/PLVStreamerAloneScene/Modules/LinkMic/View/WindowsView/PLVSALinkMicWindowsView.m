@@ -252,7 +252,7 @@ PLVSALinkMicPreviewViewDelegate
 - (PLVSALinkMicWindowCell *)getWindowCellWithIndex:(NSInteger)cellIndex{
     PLVSALinkMicWindowCell * cell;
     if (cellIndex >= 0) { cell = (PLVSALinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:cellIndex inSection:0]]; }
-    if (!cell) { NSLog(@"PLVLCLinkMicWindowsView - cell find failed"); }
+    if (!cell) { PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - cell find failed"); }
     return cell;
 }
 

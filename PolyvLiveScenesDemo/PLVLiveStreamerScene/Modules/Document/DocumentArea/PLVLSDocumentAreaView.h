@@ -7,6 +7,7 @@
 //  主页白板&PPT区域
 
 #import <UIKit/UIKit.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -43,6 +44,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pptToMain 白板&PPT是否需要显示在主视图
 /// @param needSync 是否需要同步到远端(在本地用户点击切换按钮时则为YES)
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView pptView:(UIView *)pptView changePPTPositionToMain:(BOOL)pptToMain syncRemoteUser:(BOOL)needSync;
+
+/// 评论下墙操作的回调
+/// @param documentAreaView  白板&PPT区域对象
+/// @param message 下墙的消息模型
+- (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView cancelTopPinMessage:(PLVSpeakTopMessage *)message;
 
 @end
 
@@ -87,6 +93,11 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param externalView 外部视图
 - (void)displayExternalView:(UIView *)externalView;
+
+/// 更新评论上墙视图
+/// @param show 是否显示 评论上墙视图
+/// @param message 消息详情模型
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message;
 
 @end
 

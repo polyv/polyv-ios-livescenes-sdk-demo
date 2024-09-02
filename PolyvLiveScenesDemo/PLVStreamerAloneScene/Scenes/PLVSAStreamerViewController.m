@@ -39,6 +39,8 @@
 static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
 static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
 static NSString *const kPLVSASettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
+static NSString *const KPLVSANoiseCancellationLevelKey = @"KPLVSANoiseCancellationLevelKey";
+static NSString *const KPLVSAExternalDeviceEnabledKey = @"KPLVSAExternalDeviceEnabledKey";
 
 /// PLVSAStreamerViewController 所处的四种状态，不同状态下，展示不同的页面
 typedef NS_ENUM(NSInteger, PLVSAStreamerViewState) {
@@ -287,6 +289,42 @@ PLVShareLiveSheetDelegate
     return [PLVRoomDataManager sharedManager].roomData.defaultMixLayoutType;
 }
 
+/// 保存当前选择的降噪模式到本地
+- (void)saveSelectedNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)level {
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)level] forKey:KPLVSANoiseCancellationLevelKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+/// 读取本地降噪模式
+- (PLVBLinkMicNoiseCancellationLevel)getLocalNoiseCancellationLevel {
+    // 如果本地有记录优先读取
+    NSString *saveNoiseCancellationLevelString = [[NSUserDefaults standardUserDefaults] objectForKey:KPLVSANoiseCancellationLevelKey];
+    if ([PLVFdUtil checkStringUseable:saveNoiseCancellationLevelString]) {
+        PLVBLinkMicNoiseCancellationLevel saveNoiseCancellationLevel = saveNoiseCancellationLevelString.integerValue;
+        if (saveNoiseCancellationLevel >= 1 && saveNoiseCancellationLevel <= 2) {
+            return saveNoiseCancellationLevel;
+        }
+    }
+    // 默认降噪模式
+    return PLVBLinkMicNoiseCancellationLevelAggressive;
+}
+
+/// 保存当前选择的外接设备开关到本地
+- (void)saveSelectedExternalDeviceEnabled:(BOOL)enabled {
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%@",enabled ? @"Y": @"N"] forKey:KPLVSAExternalDeviceEnabledKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+/// 读取本地外接设备开关
+- (BOOL)getLocalExternalDeviceEnabled {
+    // 如果本地有记录优先读取
+    NSString *saveExternalDeviceEnabledString = [[NSUserDefaults standardUserDefaults] objectForKey:KPLVSAExternalDeviceEnabledKey];
+    if ([PLVFdUtil checkStringUseable:saveExternalDeviceEnabledString] &&
+        [saveExternalDeviceEnabledString isEqualToString:@"Y"]) {
+        return YES;
+    }
+    // 默认外接设备关闭
+    return NO;
+}
+
 #pragma mark Getter & Setter
 
 - (PLVSALinkMicAreaView *)linkMicAreaView {
@@ -433,6 +471,18 @@ PLVShareLiveSheetDelegate
     if (roomData.appDefaultLandScapeEnabled) {
         [self.settingView changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
     }
+    
+    // 同步降噪等级
+    PLVBLinkMicNoiseCancellationLevel noiseCancellationLevel = [self getLocalNoiseCancellationLevel];
+    [self.streamerPresenter setupNoiseCancellationLevel:noiseCancellationLevel];
+    [self.settingView synchNoiseCancellationLevel:self.streamerPresenter.noiseCancellationLevel];
+    [self saveSelectedNoiseCancellationLevel:self.streamerPresenter.noiseCancellationLevel];
+    
+    // 同步外接设备
+    BOOL externalDeviceEnabled = [self getLocalExternalDeviceEnabled];
+    [self.streamerPresenter enableExternalDevice:externalDeviceEnabled];
+    [self.settingView synchExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
+    [self saveSelectedExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
     
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
 }
@@ -831,6 +881,26 @@ PLVShareLiveSheetDelegate
             self.socketReconnecting = NO;
             plv_dispatch_main_async_safe(^{
                 [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"聊天室重连成功") inView:self.view];
+            })
+        }
+    }
+}
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    
+    if ([event isEqualToString:@"speak"]) {
+        if ([subEvent isEqualToString:@"TO_TOP"] || [subEvent isEqualToString:@"CANCEL_TOP"]) {
+            BOOL show = [subEvent isEqualToString:@"TO_TOP"];
+            PLVSpeakTopMessage *message = [[PLVSpeakTopMessage alloc] initWithDictionary:jsonDict];
+            plv_dispatch_main_async_safe(^{
+                [self.homeView showPinMessagePopupView:show message:message];
             })
         }
     }
@@ -1260,6 +1330,28 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     PLVRTCStreamerMixLayoutType mixLayoutType = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
     [self.streamerPresenter setupMixLayoutType:mixLayoutType];
     [self saveSelectedMixLayoutType:type];
+}
+
+- (void)streamerSettingViewTopSettingButtonClickWithNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
+    [self.streamerPresenter setupNoiseCancellationLevel:noiseCancellationLevel];
+    [self.settingView synchNoiseCancellationLevel:self.streamerPresenter.noiseCancellationLevel];
+    [self saveSelectedNoiseCancellationLevel:self.streamerPresenter.noiseCancellationLevel];
+}
+
+- (void)streamerSettingViewExternalDeviceButtonClickWithExternalDeviceEnabled:(BOOL)enabled {
+    if (enabled) {
+        __weak typeof(self) weakSelf = self;
+        [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"温馨提示") Message:PLVLocalizedString(@"注意：媒体音量下，使用手机应用所产生提示音、音视频声音也将被采集并直播出去，请谨慎开启！") cancelActionTitle:PLVLocalizedString(@"不开启") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确认开启") confirmActionBlock:^{
+            [weakSelf.streamerPresenter enableExternalDevice:enabled];
+            [weakSelf.settingView synchExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
+            [weakSelf saveSelectedNoiseCancellationLevel:self.streamerPresenter.localExternalDeviceEnabled];
+            [weakSelf.settingView externalDeviceSwitchSheetViewDismiss];
+        }];
+    } else {
+        [self.streamerPresenter enableExternalDevice:enabled];
+        [self.settingView synchExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
+        [self saveSelectedNoiseCancellationLevel:self.streamerPresenter.localExternalDeviceEnabled];
+    }
 }
 
 #pragma mark PLVSAStreamerHomeViewProtocol

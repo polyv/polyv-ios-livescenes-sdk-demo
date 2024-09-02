@@ -10,6 +10,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "PLVWebImageDecoder.h"
 #import "PLVAlbumTool.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define WIDTH [[UIScreen mainScreen] bounds].size.width
 #define HEIGHT [[UIScreen mainScreen] bounds].size.height
@@ -134,7 +135,7 @@
             weakSelf.imageView.image = weakSelf.selectedImage;
             [weakSelf switchView:YES];
         } else {
-            NSLog(@"%@", [error localizedDescription]);
+            PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose, @"%@", [error localizedDescription]);
         }
     }];
 }

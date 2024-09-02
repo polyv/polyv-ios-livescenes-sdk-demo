@@ -125,10 +125,10 @@ static NSString * const kPLVLCTeacherSplashImgURLString = @"https://s1.videocc.n
             _videoSize = videoSize;
             [self refreshplayerSuperviewFrame];
         }else{
-            NSLog(@"PLVLCMediaPlayerCanvasView - setVideoSize failed, videoSize is same %@",NSStringFromCGSize(videoSize));
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaPlayerCanvasView - setVideoSize failed, videoSize is same %@",NSStringFromCGSize(videoSize));
         }
     }else{
-        NSLog(@"PLVLCMediaPlayerCanvasView - setVideoSize failed, videoSize illegal %@",NSStringFromCGSize(videoSize));
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaPlayerCanvasView - setVideoSize failed, videoSize illegal %@",NSStringFromCGSize(videoSize));
     }
 }
 

@@ -25,14 +25,17 @@
 
 #pragma mark - Life Cycle
 
-- (instancetype)initWithPlaybackList:(PLVPlaybackListModel *)playbackList {
+- (instancetype)init {
     self = [super init];
     if (self) {
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-        _playbackVideos = [playbackList.contents mutableCopy];
-        _nextPageNumber = playbackList.nextPageNumber;
+        _nextPageNumber = 1;
+        _playbackVideos = [[NSMutableArray alloc] init];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            [self requestDataWithPageNumber:0];
+        });
         self.view = self.tableView;//解决滑不到底部的问题
-        self.tableView.mj_footer.hidden = playbackList.lastPage;
+        self.tableView.mj_footer.hidden = YES;
     }
     return self;
 }
@@ -124,6 +127,9 @@
 #pragma mark - UITableView DataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (!self.playbackVideos) {
+        return 0;
+    }
     NSInteger number = self.playbackVideos.count;
     return number;
 }

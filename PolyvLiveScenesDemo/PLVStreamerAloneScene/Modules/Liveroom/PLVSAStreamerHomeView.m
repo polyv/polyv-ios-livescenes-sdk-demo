@@ -35,6 +35,7 @@
 #import "PLVSAMixLayoutSheet.h"
 #import "PLVSALinkMicSettingSheet.h"
 #import "PLVStreamerPopoverView.h"
+#import "PLVPinMessagePopupView.h"
 
 // 模块
 #import "PLVChatModel.h"
@@ -96,6 +97,7 @@ PLVSALinkMicSettingSheetDelegate
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
 @property (nonatomic, strong) PLVSABadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
 @property (nonatomic, strong) PLVSASwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
+@property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
 @property (nonatomic, strong) PLVStreamerPopoverView *popoverView; // 浮动区域
 
 /// 数据
@@ -239,6 +241,8 @@ PLVSALinkMicSettingSheetDelegate
         
         self.switchSuccessTipsView.frame = CGRectMake(originX, originY, width, height);
     }
+    
+    self.pinMsgPopupView.frame = CGRectMake((self.homePageView.bounds.size.width - 320)/2, (isLandscape ? 65 : 132), 320, 58);
 }
 
 #pragma mark - [ Override ]
@@ -272,6 +276,7 @@ PLVSALinkMicSettingSheetDelegate
     [self.statusbarAreaView startClass:start];
     [self.moreInfoSheet startClass:start];
     [self.memberSheet startClass:start];
+    [self.pinMsgPopupView showPopupView:NO message:nil];
     PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = start ? PLVSAToolbarLinkMicButtonStatus_Default : PLVSAToolbarLinkMicButtonStatus_NotLive;
     [self updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
@@ -396,6 +401,10 @@ PLVSALinkMicSettingSheetDelegate
     [self layoutIfNeeded];
 }
 
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
+    [self.pinMsgPopupView showPopupView:show message:message];
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupUIWithLinkMicWindowsView:(PLVSALinkMicWindowsView *)linkMicWindowsView {
@@ -417,6 +426,7 @@ PLVSALinkMicSettingSheetDelegate
     [self.homePageView addSubview:self.statusbarAreaView];
     [self.homePageView addSubview:self.toolbarAreaView];
     [self.homePageView addSubview:self.chatroomAreaView];
+    [self.homePageView addSubview:self.pinMsgPopupView];
     [self.homePageView addSubview:self.slideRightTipsView];
     [self.homePageView addSubview:self.cameraAndMicphoneStateView];
     [self.homePageView addSubview:self.layoutSwitchGuideView];
@@ -803,6 +813,20 @@ PLVSALinkMicSettingSheetDelegate
         _layoutSwitchGuideView.hidden = YES;
     }
     return _layoutSwitchGuideView;
+}
+
+- (PLVPinMessagePopupView *)pinMsgPopupView {
+    if (!_pinMsgPopupView) {
+        _pinMsgPopupView = [[PLVPinMessagePopupView alloc] init];
+        PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+        _pinMsgPopupView.canPinMessage = (userType == PLVRoomUserTypeTeacher || userType == PLVRoomUserTypeAssistant);
+        _pinMsgPopupView.hidden = YES;
+        __weak typeof(self) weakSelf = self;
+        _pinMsgPopupView.cancelTopActionBlock = ^(PLVSpeakTopMessage * _Nonnull message) {
+            [weakSelf.chatroomAreaView sendCancleTopPinMessage];
+        };
+    }
+    return _pinMsgPopupView;
 }
 
 - (PLVStreamerPopoverView *)popoverView {

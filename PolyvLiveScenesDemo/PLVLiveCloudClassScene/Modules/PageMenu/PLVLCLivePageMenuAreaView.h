@@ -70,6 +70,9 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
 - (void)leaveLiveRoom;
 
+/// 更新章节菜单Tab
+- (void)updateSectionMenuTab;
+
 @end
 
 @protocol PLVLCLivePageMenuAreaViewDelegate <NSObject>

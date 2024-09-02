@@ -54,6 +54,9 @@
     if (self.allowReply && (action == @selector(reply:))) {
         canPerform = YES;
     }
+    if (self.allowPinMessage && (action == @selector(pinMessage:))) {
+        canPerform = YES;
+    }
     return canPerform;
 }
 
@@ -64,13 +67,19 @@
 - (void)setMenuItem {
     UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"复制") action:@selector(customCopy:)];
     UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"回复") action:@selector(reply:)];
-    UIMenuController *menuController = [UIMenuController sharedMenuController];
+    UIMenuItem *pinMsgMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"上墙") action:@selector(pinMessage:)];
     // 是否含有严禁词并且发送失败时
+    NSMutableArray *menuItems = [NSMutableArray arrayWithCapacity:3];
     if (self.model.isProhibitMsg && self.model.prohibitWord) {
-        [menuController setMenuItems:@[copyMenuItem]];
+        [menuItems addObject:copyMenuItem];
     } else {
-        [menuController setMenuItems:@[copyMenuItem, replyMenuItem]];
+        [menuItems addObjectsFromArray:@[copyMenuItem, replyMenuItem]];
     }
+    if (self.allowPinMessage) {
+        [menuItems addObject:pinMsgMenuItem];
+    }
+    UIMenuController *menuController = [UIMenuController sharedMenuController];
+    [menuController setMenuItems:[menuItems copy]];
 }
 
 #pragma mark - Event
@@ -86,6 +95,12 @@
 /// UIMenuItem复制方法，由子类覆盖实现，处理业务
 /// @param sender sender
 - (void)customCopy:(id)sender {
+}
+
+- (void)pinMessage:(id)sender {
+    if (self.pinMessageHandler) {
+        self.pinMessageHandler(self.model);
+    }
 }
 
 #pragma mark Gesture

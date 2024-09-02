@@ -377,6 +377,11 @@ static  NSString *KEYPATH_EMOTIONMSGSTATE = @"imageEmotionSendState";
     }
     return _sendingIndicatorView;
 }
+
+- (BOOL)allowPinMessage {
+    return NO;
+}
+
 #pragma mark Setter
 
 - (void)setMsgState:(PLVImageEmotionMessageSendState)msgState {

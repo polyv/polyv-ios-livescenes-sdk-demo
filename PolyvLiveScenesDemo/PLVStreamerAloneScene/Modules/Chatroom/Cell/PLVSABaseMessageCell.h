@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) BOOL allowReply;
 
+/// 是否允许评论上墙
+@property (nonatomic, assign) BOOL allowPinMessage;
+
 // 是否已对消息状态进行KVO，默认为NO
 @property (nonatomic, assign) BOOL observingMsgState;
 
@@ -33,6 +36,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) void(^ _Nullable replyHandler)(PLVChatModel *model);
 /// 违禁词自动 隐藏时 触发
 @property (nonatomic, copy) void(^ _Nullable dismissHandler)(void);
+/// 点击 上墙按钮 触发
+@property (nonatomic, copy) void(^ _Nullable pinMessageHandler)(PLVChatModel *model);
 
 // 设置身份标签
 

@@ -374,7 +374,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         if (self.user.onlineUser) {
             [self.user.onlineUser wantOpenUserMic:!self.microPhoneButton.selected];
         }else{
-            NSLog(@"PLVLSMemberCell - microPhoneButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeVerbose,@"PLVLSMemberCell - microPhoneButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
         }
     }];
 }
@@ -387,7 +387,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         if (self.user.onlineUser) {
             [self.user.onlineUser wantOpenUserCamera:!self.cameraButton.selected];
         }else{
-            NSLog(@"PLVLSMemberCell - cameraButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeVerbose,@"PLVLSMemberCell - cameraButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
         }
     }];
 }
@@ -399,7 +399,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         if (self.user.onlineUser) {
             [self.user.onlineUser wantSwitchUserFrontCamera:!self.cameraSwitchButton.selected];
         }else{
-            NSLog(@"PLVLSMemberCell - cameraSwitchButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeVerbose,@"PLVLSMemberCell - cameraSwitchButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
         }
         
         if (self.delegate &&
@@ -427,7 +427,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     if (self.user.onlineUser) {
         [self.user.onlineUser wantAuthUserSpeaker:self.authSpeakerButton.isSelected];
     }else{
-        NSLog(@"PLVLSMemberCell - authSpeakerButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeVerbose,@"PLVLSMemberCell - authSpeakerButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
     }
 }
 
@@ -453,7 +453,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         if (self.user.onlineUser) {
             [self.user.onlineUser wantCloseUserLinkMic];
         } else {
-            NSLog(@"PLVLSMemberCell - linkMicButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypeVerbose,@"PLVLSMemberCell - linkMicButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
         }
     }
 }

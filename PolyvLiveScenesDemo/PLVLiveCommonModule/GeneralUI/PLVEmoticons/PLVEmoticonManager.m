@@ -7,6 +7,7 @@
 //
 
 #import "PLVEmoticonManager.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @implementation PLVEmoticon
 
@@ -82,7 +83,7 @@ static PLVEmoticonManager *_sharedManager = nil;
         NSError *err;
         _regularExpression = [NSRegularExpression regularExpressionWithPattern:@"\\[[^\\[]{1,5}\\]" options:kNilOptions error:&err];
         if (err) {
-            NSLog(@"regularExpression: err:%@",err.localizedDescription);
+            PLV_LOG_DEBUG(PLVConsoleLogModuleTypeChatRoom, @"regularExpression: err:%@",err.localizedDescription);
         }
     }
     return _regularExpression;

@@ -197,7 +197,6 @@
 - (void)plvLCMediaDanmuSettingCell:(PLVLCMediaDanmuSettingCell *)cell updateSelectedScaleValue:(NSNumber *)scalevalue {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaDanmuSettingView:danmuSpeedUpdate:)]) {
         [self.delegate plvLCMediaDanmuSettingView:self danmuSpeedUpdate:scalevalue];
-        NSLog(@"弹幕速度更新：%f",scalevalue.floatValue);
     }
 }
 

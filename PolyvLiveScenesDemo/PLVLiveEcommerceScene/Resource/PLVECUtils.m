@@ -8,6 +8,7 @@
 
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVECUtils ()
 @property (nonatomic, assign) UIEdgeInsets areaInsets;
@@ -63,7 +64,7 @@
 }
 
 + (void)showHUDWithTitle:(NSString *)title detail:(NSString *)detail view:(UIView *)view afterDelay:(CGFloat)delay {
-    NSLog(@"HUD info title:%@,detail:%@",title,detail);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeVerbose,@"HUD info title:%@,detail:%@",title,detail);
     if (view == nil) {
         return;
     }

@@ -72,7 +72,7 @@ static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展�
 #pragma mark - [ Life Period ]
 - (void)dealloc{
     [self stopFoldSelfViewTimer];
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{

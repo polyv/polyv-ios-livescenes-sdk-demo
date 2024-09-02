@@ -196,7 +196,7 @@ PLVSocketManagerProtocol // socket协议
         for (NSString *waitUserId in waitUserDic) { // 遍历 等待连麦成员字典
             PLVLinkMicWaitUser *waitUser = waitUserDic[waitUserId];
             if (![PLVFdUtil checkDictionaryUseable:waitUser.originalUserDict]) {
-                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, waitUser.originalUserDict illegal %@",waitUser.userId);
+                PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose,@"PLVMemberPresenter - refreshUserListWithLinkMicWaitUserArray failed, waitUser.originalUserDict illegal %@",waitUser.userId);
                 continue;
             }
             
@@ -260,7 +260,7 @@ PLVSocketManagerProtocol // socket协议
         for (NSString *onlineUserId in onlineUserDic) { // 遍历 已连麦成员字典
             PLVLinkMicOnlineUser *onlineUser = onlineUserDic[onlineUserId];
             if (![PLVFdUtil checkDictionaryUseable:onlineUser.originalUserDict]) {
-                NSLog(@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.originalUserDict illegal %@", onlineUser.userId);
+                PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose,@"PLVMemberPresenter - refreshUserListWithLinkMicOnlineUserArray failed, onlineUser.originalUserDict illegal %@", onlineUser.userId);
                 continue;
             }
             

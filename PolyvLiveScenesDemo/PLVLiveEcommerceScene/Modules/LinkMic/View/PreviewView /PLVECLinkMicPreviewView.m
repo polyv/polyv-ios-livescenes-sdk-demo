@@ -13,6 +13,7 @@
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <AudioToolbox/AudioToolbox.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 static NSString *kPLVECUserLinkMicPreConfig = @"kPLVECUserLinkMicPreConfig";
 static NSInteger kPLVECLinkMicInvitationAnswerTTL = 30; // 连麦邀请等待时间(秒)
@@ -58,7 +59,7 @@ static BOOL kPLVECUserLinkMicPreMicEnable = YES; // 默认预览麦克风开关
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
-    NSLog(@"%s", __FUNCTION__);
+    PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"%s", __FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {

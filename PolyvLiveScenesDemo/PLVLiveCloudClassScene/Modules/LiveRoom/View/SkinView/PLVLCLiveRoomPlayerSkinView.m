@@ -43,7 +43,7 @@
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s",__FUNCTION__);
 }
 
 - (void)layoutSubviews{
@@ -124,7 +124,7 @@
         self.durationLabel.frame = CGRectMake(CGRectGetMaxX(self.diagonalsLabel.frame), CGRectGetMinY(self.currentTimeLabel.frame), timeLabelWidth, backButtonSize.height);
         
         CGFloat progressSliderOriginX = CGRectGetMaxX(self.durationLabel.frame) + 16;
-        CGFloat progressSliderWidth = CGRectGetMaxX(self.likeButtonBackgroudView.frame) - progressSliderOriginX;
+        CGFloat progressSliderWidth = viewWidth - rightSafePadding - 10 - progressSliderOriginX;
         self.progressSlider.frame = CGRectMake(progressSliderOriginX, CGRectGetMinY(self.currentTimeLabel.frame), progressSliderWidth, 21);
         
         // 其他UI
@@ -154,7 +154,7 @@
         likeButtonView.frame = self.likeButtonBackgroudView.bounds;
         likeButtonView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }else{
-        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayLikeButtonView failed, view illegal %@",likeButtonView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCLiveRoomPlayerSkinView - displayLikeButtonView failed, view illegal %@",likeButtonView);
     }
 }
 
@@ -164,7 +164,7 @@
         redpackButtonView.frame = self.redpackBackgroudView.bounds;
         redpackButtonView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }else{
-        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayCardPushButtonView failed, view illegal %@", redpackButtonView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCLiveRoomPlayerSkinView - displayCardPushButtonView failed, view illegal %@", redpackButtonView);
     }
 }
 
@@ -174,7 +174,7 @@
         cardPushButtonView.frame = self.cardPushBackgroudView.bounds;
         cardPushButtonView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }else{
-        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayCardPushButtonView failed, view illegal %@", cardPushButtonView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCLiveRoomPlayerSkinView - displayCardPushButtonView failed, view illegal %@", cardPushButtonView);
     }
 }
 
@@ -593,7 +593,7 @@
         [self refreshDanmuButtonFrame];
         [self refreshGuideChatLabelFrame];
     }else{
-        NSLog(@"PLVLCLiveRoomPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCLiveRoomPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
     }
 }
 
@@ -619,7 +619,7 @@
 #pragma mark Father Animation
 - (void)controlsSwitchShowStatusWithAnimation:(BOOL)showStatus{
     if (self.skinShow == showStatus) {
-        NSLog(@"PLVLCBasePlayerSkinView - controlsSwitchShowAnimationWithShow failed , state is same");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView - controlsSwitchShowAnimationWithShow failed , state is same");
         return;
     }
     

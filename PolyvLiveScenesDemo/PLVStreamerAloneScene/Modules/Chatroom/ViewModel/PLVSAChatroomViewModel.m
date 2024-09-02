@@ -167,6 +167,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return model != nil;
 }
 
+- (BOOL)sendPinMessageWithMsgId:(NSString *_Nullable)msgId toTop:(BOOL)toTop {
+    return [self.presenter sendPinMessageWithMsgId:msgId toTop:toTop];
+}
+
 - (BOOL)resendSpeakMessage:(PLVChatModel *)model replyChatModel:(PLVChatModel *)replyChatModel {
     if (!model ||
         !model.message ||

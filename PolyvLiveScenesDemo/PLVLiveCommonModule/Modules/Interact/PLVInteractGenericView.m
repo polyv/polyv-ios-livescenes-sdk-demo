@@ -371,7 +371,7 @@ PLVInteractWebViewBridgeDelegate>
 
 - (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge openLink:(nonnull NSString *)linkString {
     if (![PLVFdUtil checkStringUseable:linkString]) {
-        NSLog(@"PLVInteractGenericWebView - linkClick param illegal %@",linkString);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeInteract, @"PLVInteractGenericWebView - linkClick param illegal %@",linkString);
         return;
     }
     dispatch_async(dispatch_get_main_queue(), ^{

@@ -95,8 +95,21 @@ PLVPlaybackMessageManagerDelegate
 - (NSArray <PLVChatModel *> *)chatModelArrayFromPlaybackMessageArray:(NSArray <PLVPlaybackMessage *> *)playbackMessageArray {
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:[playbackMessageArray count]];
     for (PLVPlaybackMessage *playbackMessage in playbackMessageArray) {
-        PLVChatModel *chatModel = [PLVChatModel chatModelFromPlaybackMessage:playbackMessage];
-        [muArray addObject:chatModel];
+        if (![playbackMessage.message isKindOfClass:[PLVSpeakTopMessage class]]) {
+            PLVChatModel *chatModel = [PLVChatModel chatModelFromPlaybackMessage:playbackMessage];
+            [muArray addObject:chatModel];
+        }
+    }
+    return [muArray copy];
+}
+
+- (NSArray <PLVChatModel *> *)speakTopChatModelArrayFromPlaybackMessageArray:(NSArray <PLVPlaybackMessage *> *)playbackMessageArray {
+    NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:[playbackMessageArray count]];
+    for (PLVPlaybackMessage *playbackMessage in playbackMessageArray) {
+        if ([playbackMessage.message isKindOfClass:[PLVSpeakTopMessage class]]) {
+            PLVChatModel *chatModel = [PLVChatModel chatModelFromPlaybackMessage:playbackMessage];
+            [muArray addObject:chatModel];
+        }
     }
     return [muArray copy];
 }
@@ -164,6 +177,11 @@ PLVPlaybackMessageManagerDelegate
         if ([self.delegate respondsToSelector:@selector(didReceiveChatModels:chatroomPlaybackPresenter:)]) {
             [self.delegate didReceiveChatModels:chatModelArray chatroomPlaybackPresenter:self];
         }
+        
+        NSArray <PLVChatModel *>*speakTopChatModelArray = [self speakTopChatModelArrayFromPlaybackMessageArray:messageArray];
+        if ([self.delegate respondsToSelector:@selector(didReceiveSpeakTopChatModels:autoLoad:chatroomPlaybackPresenter:)]) {
+            [self.delegate didReceiveSpeakTopChatModels:speakTopChatModelArray autoLoad:YES chatroomPlaybackPresenter:self];
+        }
     }
 }
 
@@ -191,6 +209,11 @@ PLVPlaybackMessageManagerDelegate
         } else { // 空数据也要触发回调，否则下拉控件不会停止旋转动画
             [self.delegate didLoadMoreChatModels:@[] chatroomPlaybackPresenter:self];
         }
+    }
+    
+    NSArray <PLVChatModel *>*speakTopChatModelArray = [self speakTopChatModelArrayFromPlaybackMessageArray:playbackMessags];
+    if ([self.delegate respondsToSelector:@selector(didReceiveSpeakTopChatModels:autoLoad:chatroomPlaybackPresenter:)]) {
+        [self.delegate didReceiveSpeakTopChatModels:speakTopChatModelArray autoLoad:NO chatroomPlaybackPresenter:self];
     }
 }
 

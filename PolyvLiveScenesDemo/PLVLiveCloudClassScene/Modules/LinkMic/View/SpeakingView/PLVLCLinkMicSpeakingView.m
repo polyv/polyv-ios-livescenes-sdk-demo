@@ -10,6 +10,7 @@
 
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVLCLinkMicSpeakingView ()
 
@@ -29,7 +30,7 @@
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
-    NSLog(@"%s", __FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic,@"%s", __FUNCTION__);
     [_timer invalidate];
     _timer = nil;
 }

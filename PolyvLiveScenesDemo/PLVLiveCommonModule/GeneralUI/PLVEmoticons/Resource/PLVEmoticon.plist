@@ -225,6 +225,18 @@
 				<key>image</key>
 				<string>Expression_36</string>
 			</dict>
+			<dict>
+				<key>text</key>
+				<string>拍手</string>
+				<key>image</key>
+				<string>Expression_37</string>
+			</dict>
+			<dict>
+				<key>text</key>
+				<string>鲜花</string>
+				<key>image</key>
+				<string>Expression_38</string>
+			</dict>
 		</array>
 	</dict>
 </array>

@@ -12,6 +12,7 @@
 
 /// 解决事件传递响应链问题，并无其它业务逻辑
 @property (nonatomic, weak) UIView *playerDisplayView;
+@property (nonatomic, weak) UIView *pinMsgPopupView;
 
 @end
 

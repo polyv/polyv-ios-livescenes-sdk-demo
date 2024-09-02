@@ -32,12 +32,11 @@ PLVRoomDataManagerProtocol
     [self stopTimer];
 }
 
-- (instancetype)initWithSectionList:(NSArray<PLVLivePlaybackSectionModel *> *)sectionList {
+- (instancetype)init {
     self = [super init];
     if (self) {
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
-        
-        self.sections = sectionList;
+        [self requestData];
         self.view = self.tableView;
         self.currentTime = 0;
         self.currentPlayIndex = 0;
@@ -75,15 +74,27 @@ PLVRoomDataManagerProtocol
     __weak typeof(self) weakSelf = self;
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
-    [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:roomData.channelId videoId:roomData.videoId appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(NSArray * _Nonnull sectionList, NSError * _Nonnull error) {
-        if (!error) {
-            weakSelf.sections = [sectionList copy];
-            [PLVRoomDataManager sharedManager].roomData.sectionList = sectionList;
-        }
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [weakSelf.tableView reloadData];
-        });
-    }];
+    if (roomData.recordEnable && [PLVFdUtil checkStringUseable:roomData.playbackVideoInfo.fileId]) {
+        [PLVLiveVideoAPI requestLiveRecordSectionListWithChannelId:roomData.channelId fileId:roomData.playbackVideoInfo.fileId appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(NSArray<PLVLivePlaybackSectionModel *> * _Nonnull sectionList, NSError * _Nullable error) {
+            if (!error) {
+                weakSelf.sections = [sectionList copy];
+                [PLVRoomDataManager sharedManager].roomData.sectionList = sectionList;
+            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [weakSelf.tableView reloadData];
+            });
+        }];
+    } else if ([PLVFdUtil checkStringUseable:roomData.playbackVideoInfo.videoId]) {
+        [PLVLiveVideoAPI requestLivePlaybackSectionListWithChannelId:roomData.channelId videoId:roomData.playbackVideoInfo.videoId appId:liveConfig.appId appSecret:liveConfig.appSecret completion:^(NSArray * _Nonnull sectionList, NSError * _Nonnull error) {
+            if (!error) {
+                weakSelf.sections = [sectionList copy];
+                [PLVRoomDataManager sharedManager].roomData.sectionList = sectionList;
+            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [weakSelf.tableView reloadData];
+            });
+        }];
+    }
 }
 
 - (void)starTimer {
@@ -139,6 +150,9 @@ PLVRoomDataManagerProtocol
 #pragma mark - UITableView DataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    if (!self.sections) {
+        return 0;
+    }
     return [self.sections count];
 }
 

@@ -65,6 +65,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 下拉加载更多消息时触发，或者在回放视频被seek，自动加载历史消息时触发
 - (void)didLoadMoreChatModels:(NSArray <PLVChatModel *> *)modelArray chatroomPlaybackPresenter:(PLVChatroomPlaybackPresenter *)presenter;
 
+/// 收到上墙/下墙消息触发
+/// @param autoLoad YES-随着回放时间进度自动加载的消息 NO-手动下拉加载或seek视频加载的消息
+- (void)didReceiveSpeakTopChatModels:(NSArray <PLVChatModel *> *)modelArray 
+                            autoLoad:(BOOL)autoLoad
+           chatroomPlaybackPresenter:(PLVChatroomPlaybackPresenter *)presenter;
+
 @end
 
 NS_ASSUME_NONNULL_END

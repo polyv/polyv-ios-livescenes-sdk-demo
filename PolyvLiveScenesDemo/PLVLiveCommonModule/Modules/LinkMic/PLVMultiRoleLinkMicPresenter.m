@@ -1777,7 +1777,7 @@ PLVLinkMicManagerDelegate
             [weakSelf updateLinkMicUserArrayWithJoinArray:joinArray];
         }
     } failure:^(NSError *error) {
-        NSLog(@"PLVMultiRoleLinkMicPresenter - request linkmic online user list failed : %@", error);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVMultiRoleLinkMicPresenter - request linkmic online user list failed : %@", error);
     }];
 }
 

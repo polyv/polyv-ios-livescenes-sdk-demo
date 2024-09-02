@@ -23,6 +23,8 @@ NSString *PLVRoomDataKeyPathLiveState   = @"liveState";
 NSString *PLVRoomDataKeyPathHiClassStatus   = @"hiClassStatus";
 NSString *PLVRoomDataKeyPathVid   = @"vid";
 NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
+NSString *PLVRoomDataKeyPathSectionEnable = @"sectionEnable";
+NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
 
 @interface PLVRoomData ()
 
@@ -30,6 +32,7 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
 @property (nonatomic, strong) PLVRoomUser *roomUser;
 @property (nonatomic, strong) PLVViewLogCustomParam *customParam;
 @property (nonatomic, assign) PLVQualityPreferenceType pushQualityPreference;
+@property (nonatomic, assign) BOOL transmitMode;
 
 @end
 
@@ -284,6 +287,15 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
     self.maxViewerCount = menuInfo.maxViewer.unsignedIntegerValue;
     self.linkmicNewStrategyEnabled = menuInfo.newMicEnabled;
     self.defaultOpenMicLinkEnabled = menuInfo.defaultOpenMicLinkEnabled;
+    self.transmitMode = menuInfo.transmitMode;
+    
+    PLVChannelType apiChannelType = PLVChannelTypeUnknown;
+    if ([menuInfo.scene isEqualToString:@"ppt"]) {
+        apiChannelType = PLVChannelTypePPT;
+    } else if ([menuInfo.scene  isEqualToString:@"alone"]) {
+        apiChannelType = PLVChannelTypeAlone;
+    }
+    self.channelType = apiChannelType;
 }
 
 #pragma mark Getter & Setter

@@ -129,7 +129,7 @@ PLVLCBrushColorSelectSheetDelegate>
         externalView.frame = self.contentBackgroudView.bounds;
         externalView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }else{
-        NSLog(@"PLVLCDocumentPaintModeView - displayExternalView failed, externalView:%@", externalView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePPT,@"PLVLCDocumentPaintModeView - displayExternalView failed, externalView:%@", externalView);
     }
 }
 

@@ -28,7 +28,7 @@
 #pragma mark - [ Life Period ]
 - (void)dealloc{
     [[NSNotificationCenter defaultCenter] removeObserver:self];
-    NSLog(@"%s", __FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeChatRoom,@"%s", __FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{
@@ -183,7 +183,7 @@
         [self textFieldDidChangeAction:self.textField];
         [self showInputView:NO];
     }else{
-        NSLog(@"PLVLCLiveRoomLandscapeInputView - send button callback failed, textField is no content");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeChatRoom,@"PLVLCLiveRoomLandscapeInputView - send button callback failed, textField is no content");
     }
 }
 

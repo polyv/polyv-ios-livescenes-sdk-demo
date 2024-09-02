@@ -9,6 +9,7 @@
 #import "PLVRewardSvgaView.h"
 #import <SVGAPlayer/SVGAPlayer.h>
 #import <SVGAPlayer/SVGAParser.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 
@@ -98,7 +99,7 @@
         weakSelf.svgaPlayer.videoItem = videoItem;
         [weakSelf.svgaPlayer startAnimation];
     } failureBlock:^(NSError * _Nonnull error) {
-        NSLog(@"PLVGiveRewardSvgaView error %@",error.localizedDescription);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeInteract, @"PLVGiveRewardSvgaView error %@",error.localizedDescription);
     }];
 }
 

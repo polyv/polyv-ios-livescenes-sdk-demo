@@ -72,6 +72,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// 每0.2秒触发一次，用来定时获取当前视频播放时间
 - (NSTimeInterval)currentPlaybackTimeForChatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
 
+/// 收到评论上墙消息的回调
+/// @param model 消息模型
+/// @param show 是否需要展示评论上墙视图
+- (void)didReceiveSpeakTopMessageChatModel:(PLVChatModel *)model
+                            showPinMsgView:(BOOL)show
+                 chatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel;
+
 @end
 
 @protocol PLVECChatroomPlaybackViewModelDelegate <NSObject>

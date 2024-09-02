@@ -14,6 +14,7 @@
 #import "PLVWatermarkView.h"
 #import "PLVLCDownloadBottomSheet.h"
 #import "PLVLCMediaDanmuSettingView.h"
+#import "PLVPinMessagePopupView.h"
 
 // 模块
 #import "PLVDocumentView.h"
@@ -88,6 +89,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// │   ├── (UIView) contentBackgroudView
 /// │   │    └── (PLVLCMediaPlayerCanvasView) canvasView
 /// │   ├── (PLVWatermarkView) watermarkView
+/// │   ├── (PLVPinMessagePopupView) pinMsgPopupView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
 /// ├── (PLVLiveMarqueeView) marqueeView
@@ -102,6 +104,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// │   ├── (UIView) contentBackgroudView
 /// │   │    └── (PLVPPTView) pptView
 /// │   ├── (PLVWatermarkView) watermarkView
+/// │   ├── (PLVPinMessagePopupView) pinMsgPopupView
 /// │   └── (PLVLCMediaPlayerSkinView) skinView
 /// │
 /// ├── (PLVLiveMarqueeView) marqueeView
@@ -115,6 +118,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// ├── (PLVLCMediaAreaView) self
 /// │   └── (UIView) contentBackgroudView
 /// │   ├── (PLVWatermarkView) watermarkView
+/// │   ├── (PLVPinMessagePopupView) pinMsgPopupView
 /// │   └── (PLVLCMediaPlayerCanvasView) canvasView
 /// │
 /// ├── (PLVLCMediaFloatView) floatView
@@ -130,6 +134,7 @@ PLVLCDocumentPaintModeViewDelegate
 /// ├── (PLVLCMediaAreaView) self
 /// │   └── (UIView) contentBackgroudView
 /// │   ├── (PLVWatermarkView) watermarkView
+/// │   ├── (PLVPinMessagePopupView) pinMsgPopupView
 /// │   └── (PLVLCMediaPlayerCanvasView) pptView
 /// │
 /// ├── (PLVLCMediaFloatView) floatView
@@ -155,6 +160,7 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable; // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView; // 网络糟糕提示视图
 @property (nonatomic, strong) UILabel *memoryPlayTipLabel; // 记忆播放提示
+@property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
 
 @end
 
@@ -162,7 +168,7 @@ PLVLCDocumentPaintModeViewDelegate
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
-    NSLog(@"%s", __FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s", __FUNCTION__);
 }
 
 - (instancetype)init {
@@ -248,6 +254,8 @@ PLVLCDocumentPaintModeViewDelegate
     }
 
     self.watermarkView.frame = self.contentBackgroudView.frame;
+        
+    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 58);
 }
 
 #pragma mark - [ Public Methods ]
@@ -259,10 +267,10 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (void)switchAreaViewLiveSceneTypeTo:(PLVLCMediaAreaViewLiveSceneType)toType{
     if (self.currentLiveSceneType == toType) {
-        NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type is same");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type is same");
         return;
     }else if(self.videoType != PLVChannelVideoType_Live){
-        NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, video type is not 'Live'");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, video type is not 'Live'");
         return;
     }
     
@@ -355,7 +363,7 @@ PLVLCDocumentPaintModeViewDelegate
             [self.moreView switchShowStatusWithAnimation];
         }
     } else {
-        NSLog(@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type%lud not support",(unsigned long)toType);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - switchAreaViewLiveSceneTypeTo failed, type%lud not support",(unsigned long)toType);
     }
     
     self.currentLiveSceneType = toType;
@@ -369,7 +377,7 @@ PLVLCDocumentPaintModeViewDelegate
             [self contentBackgroundViewDisplaySubview:contentView];
         }
     }else{
-        NSLog(@"PLVLCMediaAreaView - displayExternalView failed, view is illegal : %@",contentView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - displayExternalView failed, view is illegal : %@",contentView);
     }
 }
 
@@ -379,10 +387,10 @@ PLVLCDocumentPaintModeViewDelegate
         if (currentContentView) {
             return currentContentView;
         }else{
-            NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, currentContentView is illegal : %@",currentContentView);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - getViewForExchange failed, currentContentView is illegal : %@",currentContentView);
         }
     }else{
-        NSLog(@"PLVLCMediaAreaView - getViewForExchange failed, this method should been call in LinkMic or NoDelay, but current liveSceneType is %lu",(unsigned long)self.currentLiveSceneType);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - getViewForExchange failed, this method should been call in LinkMic or NoDelay, but current liveSceneType is %lu",(unsigned long)self.currentLiveSceneType);
     }
     return nil;
 }
@@ -415,16 +423,16 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (void)changePlayertoChannelId:(NSString * _Nonnull)channelId vodId:(NSString * _Nullable)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel * _Nullable)recordFile recordEnable:(BOOL)recordEnable {
     if (![PLVFdUtil checkStringUseable:channelId]) {
-        NSLog(@"PLVLCMediaAreaView - changePlayerToChannel:vodId: failed, channelId:%@",channelId);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - changePlayerToChannel:vodId: failed, channelId:%@",channelId);
         return;
     }
     
     if (self.videoType == PLVChannelVideoType_Playback) {
         if (recordEnable && !recordFile) {
-            NSLog(@"PLVLCMediaAreaView - changePlayerToChannel:recordFile: failed, recordFile is nil");
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - changePlayerToChannel:recordFile: failed, recordFile is nil");
             return;
         } else if (!recordEnable && ![PLVFdUtil checkStringUseable:vodId]) {
-            NSLog(@"PLVLCMediaAreaView - changePlayerToChannel:vodId: failed, vodId:%@",vodId);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - changePlayerToChannel:vodId: failed, vodId:%@",vodId);
             return;
         }
     }
@@ -445,6 +453,10 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (void)changePPTWithAutoId:(NSUInteger)autoId pageNumber:(NSInteger)pageNumber {
     [self.pptView changePPTWithAutoId:autoId pageNumber:pageNumber];
+}
+
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
+    [self.pinMsgPopupView showPopupView:show message:message];
 }
 
 #pragma mark 网络质量
@@ -551,6 +563,8 @@ PLVLCDocumentPaintModeViewDelegate
     
     [self addSubview:self.danmuView];
     
+    [self addSubview:self.pinMsgPopupView];
+
     [self addSubview:self.skinView];
     
     [self addSubview:self.memoryPlayTipLabel];
@@ -594,6 +608,10 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 - (void)playPPTView {
+    if (self.channelType == PLVChannelTypeAlone) {
+        return;
+    }
+    
     NSString *channelId = self.roomData.channelId;
     NSString *videoId = self.playerPresenter.videoId;
     NSString *fileId = self.roomData.recordFile.fileId;
@@ -763,10 +781,10 @@ PLVLCDocumentPaintModeViewDelegate
                     [weakSelf.delegate plvLCMediaAreaViewWannaBack:weakSelf];
                 }
             } else {
-                NSLog(@"自定义跑马灯加载失败：%@",error);
+                PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"自定义跑马灯加载失败：%@",error);
             }
         } else {
-            NSLog(@"无跑马灯或跑马灯不显示");
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"无跑马灯或跑马灯不显示");
         }
     }];
 }
@@ -1045,11 +1063,19 @@ PLVLCDocumentPaintModeViewDelegate
     return _paintModeView;
 }
 
+- (PLVPinMessagePopupView *)pinMsgPopupView {
+    if (!_pinMsgPopupView) {
+        _pinMsgPopupView = [[PLVPinMessagePopupView alloc] init];
+        _pinMsgPopupView.hidden = YES;
+    }
+    return _pinMsgPopupView;
+}
+
 - (BOOL)inLinkMic{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMic:)]) {
         return [self.delegate plvLCMediaAreaViewGetInLinkMic:self];
     }else{
-        NSLog(@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetInLinkMic:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetInLinkMic:]");
         return NO;
     }
 }
@@ -1058,7 +1084,7 @@ PLVLCDocumentPaintModeViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetPausedWatchNoDelay:)]) {
         return [self.delegate plvLCMediaAreaViewGetPausedWatchNoDelay:self];
     }else{
-        NSLog(@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetPausedWatchNoDelay:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetPausedWatchNoDelay:]");
         return NO;
     }
 }
@@ -1067,7 +1093,7 @@ PLVLCDocumentPaintModeViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMic:)]) {
         return [self.delegate plvLCMediaAreaViewGetInRTCRoom:self];
     }else{
-        NSLog(@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetInRTCRoom:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaViewController - delegate not implement method:[plvLCMediaAreaViewGetInRTCRoom:]");
         return NO;
     }
 }
@@ -1235,6 +1261,8 @@ PLVLCDocumentPaintModeViewDelegate
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.defaultPageView.switchLineButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.advertView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+        return YES;
+    }else if ([PLVLCBasePlayerSkinView checkView:self.pinMsgPopupView.closeButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
     }else{
         BOOL externalViewHandle = NO;
@@ -1455,6 +1483,10 @@ PLVLCDocumentPaintModeViewDelegate
     if (self.videoType == PLVChannelVideoType_Playback) {
         if (self.currentPlayTime > 0.5) {
             [self showMemoryPlayTipLabelWithTime:self.currentPlayTime];
+            if (self.delegate &&
+                [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewDidSeekSuccess:)]) {
+                [self.delegate plvLCMediaAreaViewDidSeekSuccess:self];
+            }
         }
         
         /// 更新画中画按钮显示状态
@@ -1564,6 +1596,7 @@ PLVLCDocumentPaintModeViewDelegate
         [self.watermarkView removeFromSuperview];
         [self.floatView forceShowFloatView:NO];
         [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
+        [self.pinMsgPopupView showPopupView:NO message:nil];
         
         /// 停止跑马灯
         [self.marqueeView stop];

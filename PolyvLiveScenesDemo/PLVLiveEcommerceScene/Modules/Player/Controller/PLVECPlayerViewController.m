@@ -73,7 +73,7 @@ PLVPlayerPresenterDelegate
 }
 
 - (void)dealloc {
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s",__FUNCTION__);
 }
 
 - (void)viewDidLoad {
@@ -207,10 +207,10 @@ PLVPlayerPresenterDelegate
                     [weakSelf.delegate customMarqueeDefaultWithError:error];
                 }
             } else {
-                NSLog(@"自定义跑马灯加载失败：%@",error);
+                PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"自定义跑马灯加载失败：%@",error);
             }
         } else {
-            NSLog(@"无跑马灯或跑马灯不显示");
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"无跑马灯或跑马灯不显示");
         }
     }];
 }
@@ -427,7 +427,7 @@ PLVPlayerPresenterDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerGetPausedWatchNoDelay:)]) {
         return [self.delegate playerControllerGetPausedWatchNoDelay:self];
     }else{
-        NSLog(@"PLVECPlayerViewController - delegate not implement method:[playerControllerGetPausedWatchNoDelay:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVECPlayerViewController - delegate not implement method:[playerControllerGetPausedWatchNoDelay:]");
         return NO;
     }
 }
@@ -525,7 +525,7 @@ PLVPlayerPresenterDelegate
     if (contentView && [contentView isKindOfClass:UIView.class]) {
         [self contentBackgroundViewDisplaySubview:contentView];
     }else{
-        NSLog(@"PLVECPlayerViewController - displayExternalView failed, view is illegal : %@",contentView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVECPlayerViewController - displayExternalView failed, view is illegal : %@",contentView);
     }
 }
 
@@ -658,6 +658,9 @@ PLVPlayerPresenterDelegate
     self.pictureInPicturePlaceholderView.frame = self.displayRect;
     if (self.playerPresenter.currentPlaybackTime > 0.5) {
         [self showMemoryPlayTipLabelWithTime:self.playerPresenter.currentPlaybackTime];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(playerControllerShowMemoryPlayTip:)]) {
+            [self.delegate playerControllerShowMemoryPlayTip:self];
+        }
     }
 }
 
@@ -724,7 +727,7 @@ PLVPlayerPresenterDelegate
 /// 直播播放器 需获知外部 ‘当前是否已暂停无延迟观看’
 - (BOOL)playerPresenterGetPausedWatchNoDelay:(PLVPlayerPresenter *)playerPresenter{
     BOOL pausedWatchNoDelay = self.pausedWatchNoDelay;
-    NSLog(@"pausedWatchNoDelay#:%d", pausedWatchNoDelay);
+    PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"pausedWatchNoDelay#:%d", pausedWatchNoDelay);
     return pausedWatchNoDelay;
 }
 

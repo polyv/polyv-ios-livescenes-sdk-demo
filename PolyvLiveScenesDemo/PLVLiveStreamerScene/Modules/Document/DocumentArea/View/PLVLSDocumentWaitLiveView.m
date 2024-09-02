@@ -11,6 +11,7 @@
 #import "PLVLSUtils.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVLSDocumentWaitLiveView ()
 
@@ -23,7 +24,7 @@
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePPT,@"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{

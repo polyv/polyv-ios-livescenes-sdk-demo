@@ -33,6 +33,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)scrollsToBottom:(BOOL)animated;
 
+/// 开始上课/结束上课
+/// @param start YES - 开始上课 NO - 结束上课
+- (void)startClass:(BOOL)start;
+
 @end
 
 NS_ASSUME_NONNULL_END

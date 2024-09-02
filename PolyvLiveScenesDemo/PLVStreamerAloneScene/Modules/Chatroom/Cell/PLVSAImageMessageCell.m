@@ -387,6 +387,11 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     }
     return _sendingIndicatorView;
 }
+
+- (BOOL)allowPinMessage {
+    return NO;
+}
+
 #pragma mark Setter
 
 - (void)setMsgState:(PLVImageMessageSendState)msgState {

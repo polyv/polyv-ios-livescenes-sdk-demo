@@ -208,6 +208,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return model != nil;
 }
 
+- (BOOL)sendPinMessageWithMsgId:(NSString *_Nullable)msgId toTop:(BOOL)toTop {
+    return [self.presenter sendPinMessageWithMsgId:msgId toTop:toTop];
+}
+
 #pragma mark Multicast
 
 - (void)addDelegate:(id<PLVLSChatroomViewModelProtocol>)delegate delegateQueue:(dispatch_queue_t)delegateQueue {

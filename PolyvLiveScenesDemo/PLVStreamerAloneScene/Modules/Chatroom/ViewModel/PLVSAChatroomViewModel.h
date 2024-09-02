@@ -138,6 +138,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)sendImageEmotionMessage:(NSString *)imageId
                        imageUrl:(NSString *)imageUrl;
 
+/// 发送上墙消息
+/// @param msgId 需要上墙消息的id，下墙不需要
+/// @param toTop 上墙/下墙
+/// @return 发送结果，成功为YES，失败为NO
+- (BOOL)sendPinMessageWithMsgId:(NSString *_Nullable)msgId toTop:(BOOL)toTop;
+
 /// 重新发送文本消息
 /// @param model 消息模型
 /// @param replyChatModel 回复消息模型（非回复消息该字段为nil）

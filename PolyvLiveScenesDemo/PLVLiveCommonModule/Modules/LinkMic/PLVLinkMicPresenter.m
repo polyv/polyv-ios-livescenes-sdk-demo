@@ -110,7 +110,7 @@ PLVLinkMicManagerDelegate
     if (self.inRTCRoom) { [self resumeOriginalScreenOnStatus]; }
     [self stopLinkMicUserListTimer];
     [self leaveRTCChannel];
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"%s",__FUNCTION__);
 }
 
 - (instancetype)init {
@@ -146,7 +146,7 @@ PLVLinkMicManagerDelegate
             [weakSelf joinRTCChannel:nil];
         }];
     }else{
-        NSLog(@"PLVLinkMicPresenter - startWatchNoDelay failed, watchNoDelay already 'YES'");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - startWatchNoDelay failed, watchNoDelay already 'YES'");
     }
 }
 
@@ -173,7 +173,7 @@ PLVLinkMicManagerDelegate
             }];
         }];
     }else{
-        NSLog(@"PLVLinkMicPresenter - request join linkmic failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - request join linkmic failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
         [self callbackForDidOccurError:PLVLinkMicErrorCode_RequestJoinFailedStatusIllegal extraCode:self.linkMicStatus];
     }
 }
@@ -182,7 +182,7 @@ PLVLinkMicManagerDelegate
     if (self.linkMicStatus == PLVLinkMicStatus_Waiting) {
         [self emitSocketMessge_JoinLeave];
     }else{
-        NSLog(@"PLVLinkMicPresenter - cancel request join linkmic failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - cancel request join linkmic failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
         [self callbackForDidOccurError:PLVLinkMicErrorCode_CancelRequestJoinFailedStatusIllegal extraCode:self.linkMicStatus];
     }
 }
@@ -191,14 +191,14 @@ PLVLinkMicManagerDelegate
     if (self.linkMicStatus == PLVLinkMicStatus_Inviting) {
         [self emitSocketMessge_JoinAnswerTTLCallback:callback];
     } else {
-        NSLog(@"PLVLinkMicPresenter - request invite linkmic ttl failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - request invite linkmic ttl failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
         [self callbackForDidOccurError:PLVLinkMicErrorCode_JoinAnswerTTLFailedStatusIllegal extraCode:self.linkMicStatus];
     }
 }
 
 - (void)acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
     if (self.linkMicStatus != PLVLinkMicStatus_Inviting && self.linkMicStatus != PLVLinkMicStatus_Waiting) { // 非邀请连麦状态下，且非举手中
-        NSLog(@"PLVLinkMicPresenter - answer linkmic invitation failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - answer linkmic invitation failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
         [self callbackForDidOccurError:PLVLinkMicErrorCode_AnswerInvitationFailedStatusIllegal extraCode:self.linkMicStatus];
         [self changeLinkMicStatusAndCallback:self.linkMicOpen ? PLVLinkMicStatus_Open : PLVLinkMicStatus_NotOpen];
     } else if (self.linkMicStatus == PLVLinkMicStatus_Inviting && accept) { //邀请连麦时 接受连麦邀请
@@ -232,7 +232,7 @@ PLVLinkMicManagerDelegate
             [self leaveRTCChannel];
         }
     }else{
-        NSLog(@"PLVLinkMicPresenter - leave join linkmic failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - leave join linkmic failed, status error, current status :%lu",(unsigned long)self.linkMicStatus);
     }
 }
 
@@ -272,7 +272,7 @@ PLVLinkMicManagerDelegate
     if (targetIndex < self.onlineUserArray.count) {
         user = self.onlineUserArray[targetIndex];
     }else{
-        NSLog(@"PLVLinkMicPresenter - getUserModelFromOnlineUserArrayWithIndex failed, '%ld' beyond data array",(long)targetIndex);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - getUserModelFromOnlineUserArrayWithIndex failed, '%ld' beyond data array",(long)targetIndex);
     }
     return user;
 }
@@ -564,7 +564,7 @@ PLVLinkMicManagerDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLinkMicPresenterGetChannelInLive:)]) {
         return [self.delegate plvLinkMicPresenterGetChannelInLive:self];
     }else{
-        NSLog(@"PLVLinkMicPresenter - delegate not implement method:[plvLinkMicPresenterGetChannelInLive:]");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - delegate not implement method:[plvLinkMicPresenterGetChannelInLive:]");
         return NO;
     }
 }
@@ -596,6 +596,7 @@ PLVLinkMicManagerDelegate
         __weak typeof(self) weakSelf = self;
         [PLVLiveVideoAPI rtcEnabled:[PLVRoomDataManager sharedManager].roomData.channelId.integerValue completion:^(BOOL rtcEnabled) {
             [weakSelf callbackForOperationInProgress:NO];
+            PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"rtc status is %@",rtcEnabled ? @"YES" : @"NO");
             if (rtcEnabled) {
                 weakSelf.linkMicSceneType = PLVChannelLinkMicSceneType_Alone_PureRtc;
             } else {
@@ -606,7 +607,7 @@ PLVLinkMicManagerDelegate
             if (successBlock) { successBlock(); }
         } failure:^(NSError *error) {
             [weakSelf callbackForOperationInProgress:NO];
-            NSLog(@"PLVLinkMicPresenter - request rtcEnabled failed, error: %@", error);
+            PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - request rtcEnabled failed, error: %@", error);
             [weakSelf callbackForDidOccurError:PLVLinkMicErrorCode_RequestJoinFailedRtcEnabledGetFail];
         }];
     }
@@ -614,7 +615,7 @@ PLVLinkMicManagerDelegate
 
 - (PLVLinkMicManager *)createLinkMicManager{
     if (![PLVFdUtil checkStringUseable:self.rtcType]) {
-        NSLog(@"PLVLinkMicPresenter - linkMicManager create failed, rtcType illegal %@",self.rtcType);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - linkMicManager create failed, rtcType illegal %@",self.rtcType);
         [self callbackForOperationInProgress:NO];
         [self callbackForDidOccurError:PLVLinkMicErrorCode_RequestJoinFailedNoRtcType];
         return nil;
@@ -701,7 +702,7 @@ PLVLinkMicManagerDelegate
     }else{
         [self changeRoomJoinStatusAndCallback:PLVLinkMicPresenterRoomJoinStatus_NotJoin];
         
-        NSLog(@"PLVLinkMicPresenter - joinRTCChannel failed, manager create failed");
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - joinRTCChannel failed, manager create failed");
         if (completion) {
             completion(-2); /// -2返回值表示连麦管理器创建失败
         }
@@ -893,7 +894,7 @@ PLVLinkMicManagerDelegate
                         });
                     }
                 } failure:^(NSError *error) {
-                    NSLog(@"PLVLinkMicPresenter - request link mic online list failed, error:%@",error);
+                    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - request link mic online list failed, error:%@",error);
                 }];
             });
             weakSelf.requestOnlineListBlock = requestBlock;
@@ -1048,7 +1049,7 @@ PLVLinkMicManagerDelegate
                     weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
                     [weakSelf callbackForLinkMicUserListRefresh];
                 }else{
-                    NSLog(@"PLVLinkMicPresenter - remove link mic user(%@) failed, index(%d) not in the array",linkMicUserId,index);
+                    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - remove link mic user(%@) failed, index(%d) not in the array",linkMicUserId,index);
                 }
             });
         }
@@ -1155,7 +1156,7 @@ PLVLinkMicManagerDelegate
                         [weakSelf callbackForLinkMicUserListRefresh];
                     }
                 } else {
-                    NSLog(@"PLVLinkMicPresenter - linkMicUserBecomeFirstSiteInArray failed, index(%ld) beyond bounds for empty array",(long)targetUserIndex);
+                    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - linkMicUserBecomeFirstSiteInArray failed, index(%ld) beyond bounds for empty array",(long)targetUserIndex);
                 }
             }
         });
@@ -1407,7 +1408,7 @@ PLVLinkMicManagerDelegate
                     
                     [weakSelf addLocalUserIntoOnlineUserList];
                 }else{
-                    NSLog(@"PLVLinkMicPresenter - 'joinSuccess' ackArray decode failed, error:%@",error);
+                    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - 'joinSuccess' ackArray decode failed, error:%@",error);
                 }
             }
         }
@@ -1466,7 +1467,7 @@ PLVLinkMicManagerDelegate
     }else{
         [self callbackForOperationInProgress:NO];
         [self callbackForDidOccurError:failedErrorCode];
-        NSLog(@"PLVLinkMicPresenter - link mic msg send failed, current status:%lu",(unsigned long)[PLVSocketManager sharedManager].status);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - link mic msg send failed, current status:%lu",(unsigned long)[PLVSocketManager sharedManager].status);
     }
 }
 
@@ -1475,7 +1476,7 @@ PLVLinkMicManagerDelegate
         [[PLVSocketManager sharedManager] emitEvent:@"reJoinMic" content:self.linkMicSocketToken timeout:5.0 callback:^(NSArray *ackArray) {
         }];
     }else{
-        NSLog(@"PLVLinkMicPresenter - reJoinMic msg send failed, linkMicSocketToken illegal %@",self.linkMicSocketToken);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - reJoinMic msg send failed, linkMicSocketToken illegal %@",self.linkMicSocketToken);
     }
 }
 
@@ -1520,7 +1521,7 @@ PLVLinkMicManagerDelegate
                     [self joinRTCChannel:^(int resultCode) {
                         if (resultCode == 0) {
                             [PLVLiveVideoAPI requestViewerIdLinkMicIdRelate:[NSString stringWithFormat:@"%@",weakSelf.channelId] viewerId:weakSelf.userId linkMicId:weakSelf.linkMicUserId completion:nil failure:^(NSError * _Nonnull error) {
-                                NSLog(@"PLVLinkMicPresenter - id relate failed %@",error);
+                                PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - id relate failed %@",error);
                             }];
                         } else {
                             /// 重置连麦状态
@@ -1531,19 +1532,19 @@ PLVLinkMicManagerDelegate
                     [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Joining];
 
                     [PLVLiveVideoAPI requestViewerIdLinkMicIdRelate:[NSString stringWithFormat:@"%@",self.channelId] viewerId:self.userId linkMicId:self.linkMicUserId completion:nil failure:^(NSError * _Nonnull error) {
-                        NSLog(@"PLVLinkMicPresenter - id relate failed %@",error);
+                        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - id relate failed %@",error);
                     }];
                     
                     [self emitSocketMessge_JoinSuccess];
                 }else { /// 其他状态
-                    NSLog(@"PLVLinkMicPresenter - will not join rtc channel, rtcRoomJoinStatus illegal, current status:%lu",(unsigned long)self.rtcRoomJoinStatus);
+                    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - will not join rtc channel, rtcRoomJoinStatus illegal, current status:%lu",(unsigned long)self.rtcRoomJoinStatus);
                 }
             } else if ((self.linkMicStatus == PLVLinkMicStatus_Open || [PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled || self.linkMicStatus == PLVLinkMicStatus_ResponseWaiting) && needAnswer) { /// 讲师邀请学生上麦
                 [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Inviting];
             } else if (self.linkMicStatus == PLVLinkMicStatus_Waiting && needAnswer) { /// 举手中收到邀请
                 [self acceptLinkMicInvitation:YES timeoutCancel:NO];
             } else {
-                NSLog(@"PLVLinkMicPresenter - will not join rtc channel, not in waiting status, current status:%lu",(unsigned long)self.linkMicStatus);
+                PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - will not join rtc channel, not in waiting status, current status:%lu",(unsigned long)self.linkMicStatus);
                 [self callbackForDidOccurError:PLVLinkMicErrorCode_JoinChannelFailedStatusIllegal];
                 [self leaveLinkMic];
             }
@@ -1616,7 +1617,7 @@ PLVLinkMicManagerDelegate
                 [weakSelf refreshLinkMicOpenStatus:status mediaType:type];
             }
         } failure:^(NSError *error) {
-            NSLog(@"PLVLinkMicPresenter - request linkmic status failed : %@",error);
+            PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - request linkmic status failed : %@",error);
         }];
         
         if (self.linkMicStatus == PLVLinkMicStatus_Joined ||
@@ -1630,11 +1631,11 @@ PLVLinkMicManagerDelegate
                     });
                 }
             } failure:^(NSError *error) {
-                NSLog(@"PLVLinkMicPresenter - request linkmic online user list failed : %@",error);
+                PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - request linkmic online user list failed : %@",error);
             }];
         }
     }else{
-        NSLog(@"PLVLinkMicPresenter - link mic status refresh failed, current socket status:%lu",(unsigned long)[PLVSocketManager sharedManager].status);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - link mic status refresh failed, current socket status:%lu",(unsigned long)[PLVSocketManager sharedManager].status);
     }
 }
 

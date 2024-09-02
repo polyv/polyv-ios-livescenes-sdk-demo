@@ -44,7 +44,7 @@ UIGestureRecognizerDelegate>
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s",__FUNCTION__);
 }
 
 - (instancetype)init {
@@ -153,7 +153,7 @@ UIGestureRecognizerDelegate>
             self.floatViewShowButton.hidden = NO;
             self.floatViewShowButton.selected = NO; /// 连麦中场景，默认显示‘开’
         } else {
-            NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",NSStringFromClass(self.class),skinViewLiveStatus);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, unsupported live status:%ld",NSStringFromClass(self.class),skinViewLiveStatus);
         }
         // 除了直播状态决定之外，还需要根据外界的其他因素决定是否显示画中画按钮
         if (!self.pictureInPictureButton.hidden) {
@@ -171,7 +171,7 @@ UIGestureRecognizerDelegate>
         // 检查当前PPT是否在主屏并设置数据
         [self checkMainSpeakerPPTOnMainAndSetData];
     }else{
-        NSLog(@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",NSStringFromClass(self.class),self.skinViewType);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",NSStringFromClass(self.class),self.skinViewType);
     }
 }
 
@@ -182,7 +182,7 @@ UIGestureRecognizerDelegate>
         }
         self.titleLabel.text = titleText;
     }else{
-        NSLog(@"PLVLCBasePlayerSkinView[%@] - setTitleLabelWithText failed, titleText:%@",NSStringFromClass(self.class),titleText);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - setTitleLabelWithText failed, titleText:%@",NSStringFromClass(self.class),titleText);
     }
 }
 
@@ -241,7 +241,7 @@ UIGestureRecognizerDelegate>
 }
 
 - (void)showFloatViewShowButtonTipsLabelAnimation:(BOOL)showTips{
-    NSLog(@"PLVLCBasePlayerSkinView[%@] - showFloatViewShowButtonTipsLabelAnimation failed, the method was not overridden by subclass",NSStringFromClass(self.class));
+    PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - showFloatViewShowButtonTipsLabelAnimation failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
 - (void)synchOtherSkinViewState:(PLVLCBasePlayerSkinView *)otherSkinView{
@@ -253,7 +253,7 @@ UIGestureRecognizerDelegate>
             [self.baseDelegate plvLCBasePlayerSkinViewSynchOtherView:self];
         }
     }else{
-        NSLog(@"PLVLCBasePlayerSkinView[%@] - synchOtherSkinViewState failed, other skin view:%@",NSStringFromClass(self.class),otherSkinView);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - synchOtherSkinViewState failed, other skin view:%@",NSStringFromClass(self.class),otherSkinView);
     }
 }
 
@@ -358,7 +358,7 @@ UIGestureRecognizerDelegate>
 }
 
 - (void)refreshPlayTimesLabelFrame{
-    NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshPlayTimesLabelFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
+    PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - refreshPlayTimesLabelFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
 - (void)refreshPictureInPictureButtonShow:(BOOL)show {
@@ -378,11 +378,11 @@ UIGestureRecognizerDelegate>
 }
 
 - (void)refreshProgressViewFrame {
-    NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshProgressViewFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
+    PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - refreshProgressViewFrame failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
 - (void)refreshPaintButtonShow:(BOOL)show {
-    NSLog(@"PLVLCBasePlayerSkinView[%@] - refreshPaintButtonShow failed, the method was not overridden by subclass",NSStringFromClass(self.class));
+    PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - refreshPaintButtonShow failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
 
 - (void)refreshProgressControlsShow:(BOOL)show {
@@ -422,7 +422,7 @@ UIGestureRecognizerDelegate>
 #pragma mark Animation
 - (void)controlsSwitchShowStatusWithAnimation:(BOOL)showStatus{
     if (self.skinShow == showStatus) {
-        NSLog(@"PLVLCBasePlayerSkinView[%@] - controlsSwitchShowAnimationWithShow failed , state is same",NSStringFromClass(self.class));
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - controlsSwitchShowAnimationWithShow failed , state is same",NSStringFromClass(self.class));
         return;
     }
     

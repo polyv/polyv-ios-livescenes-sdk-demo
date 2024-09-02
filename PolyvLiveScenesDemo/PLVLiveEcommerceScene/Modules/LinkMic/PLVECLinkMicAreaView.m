@@ -469,7 +469,7 @@ PLVECLinkMicWindowsViewDelegate
         [self.delegate respondsToSelector:@selector(plvECLinkMicAreaViewGetChannelInLive:)]) {
         return [self.delegate plvECLinkMicAreaViewGetChannelInLive:self];
     } else {
-        NSLog(@"PLVECLinkMicAreaView - delegate not implement method:[plvECLinkMicAreaViewGetChannelInLive:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVECLinkMicAreaView - delegate not implement method:[plvECLinkMicAreaViewGetChannelInLive:]");
         return NO;
     }
 }

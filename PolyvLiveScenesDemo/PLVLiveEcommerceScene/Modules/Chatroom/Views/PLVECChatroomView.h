@@ -45,6 +45,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 隐藏倒计时红包挂件
 - (void)chatroomView_hideDelayRedpack;
 
+/// 收到评论上墙信息的回调
+/// @param model 消息模型
+/// @param show 是否需要显示评论上墙视图
+- (void)chatroomView_receiveSpeakTopMessageChatModel:(PLVChatModel *)model showPinMsgView:(BOOL)show;
+
 @end
 
 /// 聊天室视图

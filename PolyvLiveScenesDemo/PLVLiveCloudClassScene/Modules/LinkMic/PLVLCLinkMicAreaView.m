@@ -59,7 +59,7 @@ PLVLCLinkMicWindowsViewDelegate
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
-    NSLog(@"%s", __FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic,@"%s", __FUNCTION__);
 }
 
 - (instancetype)init {
@@ -108,7 +108,7 @@ PLVLCLinkMicWindowsViewDelegate
 #pragma mark - [ Public Methods ]
 - (void)showAreaView:(BOOL)showStatus{
     if (!self.inRTCRoom) {
-        NSLog(@"PLVLCLinkMicAreaView - showAreaView failed, not in RTC Room");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicAreaView - showAreaView failed, not in RTC Room");
         return;
     }
     self.areaViewShow = showStatus;
@@ -246,7 +246,7 @@ PLVLCLinkMicWindowsViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaViewGetChannelInLive:)]) {
         return [self.delegate plvLCLinkMicAreaViewGetChannelInLive:self];
     }else{
-        NSLog(@"PLVLCLinkMicAreaView - delegate not implement method:[plvLCLinkMicAreaViewGetChannelInLive:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicAreaView - delegate not implement method:[plvLCLinkMicAreaViewGetChannelInLive:]");
         return NO;
     }
 }
@@ -255,7 +255,7 @@ PLVLCLinkMicWindowsViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:)]) {
         return [self.delegate plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:self];
     }else{
-        NSLog(@"PLVLCLinkMicAreaView - delegate not implement method:[plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:]");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicAreaView - delegate not implement method:[plvLCLinkMicAreaViewGetMainSpeakerPPTOnMain:]");
         return YES; /// 默认 YES
     }
 }
@@ -351,7 +351,7 @@ PLVLCLinkMicWindowsViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLinkMicAreaView:rtcWindowDidClickedCanvasView:)]) {
         return [self.delegate plvLCLinkMicAreaView:self rtcWindowDidClickedCanvasView:canvasView];
     }else{
-        NSLog(@"PLVLCLinkMicAreaView - delegate not implement method:%s",__FUNCTION__);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicAreaView - delegate not implement method:%s",__FUNCTION__);
         return nil;
     }
 }
@@ -477,7 +477,7 @@ PLVLCLinkMicWindowsViewDelegate
     if (presenter.inRTCRoom) {
         [self.windowsView linkMicWindowMainSpeaker:mainSpeakerLinkMicUserId toMainScreen:mainSpeakerToMainScreen];
     }else{
-        NSLog(@"PLVLCLinkMicAreaView -  call [linkMicWindowLinkMicUserId:wannaBecomeFirstSite:] failed, not in linkmic");
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicAreaView -  call [linkMicWindowLinkMicUserId:wannaBecomeFirstSite:] failed, not in linkmic");
     }
 }
 

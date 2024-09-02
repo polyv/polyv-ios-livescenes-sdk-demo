@@ -213,6 +213,11 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 切换ppt，属性allowChangePPT为YES才能生效
 - (void)changePPTWithAutoId:(NSUInteger)autoId pageNumber:(NSInteger)pageNumber;
 
+/// 更新评论上墙视图
+/// @param show 是否显示 评论上墙视图
+/// @param message 消息详情
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage * _Nullable)message;
+
 @end
 
 @protocol PLVLCMediaAreaViewDelegate <NSObject>

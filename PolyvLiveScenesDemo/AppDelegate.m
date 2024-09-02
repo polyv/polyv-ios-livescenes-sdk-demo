@@ -81,7 +81,6 @@
     // DEBUG模式下控制台日志打印
     // 当logLevel为PLVFConsoleLogLevelOFF时关闭所有PLV控制台日志
     [PLVConsoleLogger defaultLogger].logLevel = PLVFConsoleLogLevelALL;
-    
     return YES;
 }
 

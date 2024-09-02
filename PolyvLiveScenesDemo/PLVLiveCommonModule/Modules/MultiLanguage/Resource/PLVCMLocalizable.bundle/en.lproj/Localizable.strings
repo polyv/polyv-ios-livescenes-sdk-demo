@@ -452,6 +452,19 @@
 "错误" = "Error";
 "音视频权限申请" = "Audio and video permission application";
 "暂不支持" = "Not supported";
+"降噪" = "Noise Reduction";
+"自适应降噪" = "Adaptive";
+"提供声源智能识别和降噪的能力，适用于会议、教育培训等大多数直播场景"= "Smartly refines audio for meetings and education";
+"均衡降噪" = "Balanced";
+"提供统一的降噪效果，主要减少背景中的环境噪音，对人声和主要声音有较好的保留效果，适用于氛围型直播场景" = "Delivers targeted noise cancellation to minimize environmental sounds, preserving speech and key audio for atmospheric live broadcasts";
+"外接设备" = "External Device";
+"适用于直播过程中，通过外接麦克风收集音量的场景时，开启此功能后将切换至媒体音量，保证正常收音。" = "For live streaming with an external mic, enable this feature to switch to media volume for clear audio capture.";
+"开启" = "Enable";
+"关闭" = "Disable";
+"确认开启" = "Turn on";
+"不开启" = "Turn off";
+"温馨提示" = "Reminder";
+"注意：媒体音量下，使用手机应用所产生提示音、音视频声音也将被采集并直播出去，请谨慎开启！" = "Caution: With media volume, app sounds and media playback will also be broadcasted. Use with care.";
 
 /**  美颜  */
 "下颌" = "Jaw";
@@ -545,6 +558,8 @@
 "完成" = "Done";
 "回复" = "Reply";
 "复制" = "Copy";
+"上墙" = "Pin";
+"下墙" = "Unpin";
 "复制成功" = "Copy success";
 "分享" = "Share";
 "删除" = "Delete";

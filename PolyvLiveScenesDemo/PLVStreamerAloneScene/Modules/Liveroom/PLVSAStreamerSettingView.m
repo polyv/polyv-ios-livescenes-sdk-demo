@@ -11,6 +11,8 @@
 #import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVSABitRateSheet.h"
+#import "PLVSANoiseCancellationModeSwitchSheet.h"
+#import "PLVSAExternalDeviceSwitchSheet.h"
 
 #define TEXT_MAX_LENGTH 150
 
@@ -19,8 +21,11 @@ static NSString *const kSettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 @interface PLVSAStreamerSettingView ()<
 UITextViewDelegate,
 UIGestureRecognizerDelegate,
+UIScrollViewDelegate,
 PLVSABitRateSheetDelegate,
-PLVSAMixLayoutSheetDelegate
+PLVSAMixLayoutSheetDelegate,
+PLVSANoiseCancellationModeSwitchSheetDelegate,
+PLVSAExternalDeviceSwitchSheetDelegate
 >
 
 #pragma mark UI
@@ -42,6 +47,12 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, strong) UIView *configView;
 /// 分割线
 @property (nonatomic, strong) UIView *lineView;
+/// 按钮滑动承载视图
+@property (nonatomic, strong) UIScrollView *buttonScrollView;
+/// 按钮分页控制器
+@property (nonatomic, strong) UIPageControl *buttonPageControl;
+/// 页面按钮数组
+@property (nonatomic, strong) NSArray *buttonArray;
 /// 摄像头切换
 @property (nonatomic, strong) UIButton *cameraReverseButton;
 /// 镜像开关
@@ -54,6 +65,10 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, strong) UIButton *streamScaleButton;
 /// 混流布局
 @property (nonatomic, strong) UIButton *mixLayoutButton;
+/// 降噪模式
+@property (nonatomic, strong) UIButton *noiseCancellationModeButton;
+/// 外接设备
+@property (nonatomic, strong) UIButton *externalDeviceButton;
 /// 直播名称
 @property (nonatomic, strong) UILabel *channelNameLable;
 /// 输入框蒙层（负责承载频道名称输入框和频道名称剩余可输入的字符数）
@@ -66,6 +81,10 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
 /// 混流布局选择面板
 @property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet;
+/// 降噪模式选择面板
+@property (nonatomic, strong) PLVSANoiseCancellationModeSwitchSheet *noiseCancellationModeSwitchSheet;
+/// 外接设备选择面板
+@property (nonatomic, strong) PLVSAExternalDeviceSwitchSheet *externalDeviceSwitchSheet;
 /// 文本滚动视图（为了兼容手机端横屏标题太长时，显示不美观的问题）
 @property (nonatomic, strong) UIScrollView *scrollView;
 /// 美颜开关
@@ -84,6 +103,10 @@ PLVSAMixLayoutSheetDelegate
 @property (nonatomic, assign) BOOL canMixLayout;
 /// 当前是否显示推流画面比例
 @property (nonatomic, assign, readonly) BOOL showStreamScale;
+/// 当前频道降噪等级
+@property (nonatomic, assign) PLVBLinkMicNoiseCancellationLevel noiseCancellationLevel;
+/// 当前频道外接设备是否开启
+@property (nonatomic, assign) BOOL externalDeviceEnabled;
 
 @end
 
@@ -155,12 +178,29 @@ PLVSAMixLayoutSheetDelegate
     [self.scrollView addSubview:self.channelNameLable];
     
     [self.configView addSubview:self.lineView];
-    [self.configView addSubview:self.cameraReverseButton];
-    [self.configView addSubview:self.mirrorButton];
-    [self.configView addSubview:self.bitRateButton];
-    [self.configView addSubview:self.orientationButton];
-    [self.configView addSubview:self.streamScaleButton];
-    [self.configView addSubview:self.mixLayoutButton];
+    [self.configView addSubview:self.buttonScrollView];
+    
+    [self.buttonScrollView addSubview:self.cameraReverseButton];
+    [self.buttonScrollView addSubview:self.mirrorButton];
+    [self.buttonScrollView addSubview:self.bitRateButton];
+    [self.buttonScrollView addSubview:self.orientationButton];
+    [self.buttonScrollView addSubview:self.noiseCancellationModeButton];
+    [self.buttonScrollView addSubview:self.externalDeviceButton];
+    [self.buttonScrollView addSubview:self.streamScaleButton];
+    
+    NSMutableArray *muButtonArray = [NSMutableArray arrayWithArray:@[self.cameraReverseButton,
+                                                                     self.mirrorButton,
+                                                                     self.bitRateButton,
+                                                                     self.orientationButton,
+                                                                     self.noiseCancellationModeButton,
+                                                                     self.externalDeviceButton,
+                                                                     self.streamScaleButton]];
+    if (self.showMixLayout) {
+        [self.buttonScrollView addSubview:self.mixLayoutButton];
+        [muButtonArray addObject:self.mixLayoutButton];
+    }
+    self.buttonArray = [muButtonArray copy];
+    [self.configView addSubview:self.buttonPageControl];
 }
 
 - (void)updateUI {
@@ -229,21 +269,9 @@ PLVSAMixLayoutSheetDelegate
     self.lineView.frame = CGRectMake(lineViewLeft, UIViewGetBottom(self.scrollView) + 13, CGRectGetWidth(self.configView.bounds) - lineViewLeft * 2, 1);
     
     /// 底部按钮
-    NSInteger configButtonCount = self.showStreamScale ? 6 : 5;
-    if (!self.showMixLayout) {
-        configButtonCount -= 1;
-    }
-    CGSize buttonSize = CGSizeMake(32, 58);
-    CGFloat buttonTop = CGRectGetMaxY(self.configView.bounds) - buttonSize.height - 33;
-    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * configButtonCount)) / (configButtonCount + 1) ;
-    self.cameraReverseButton.frame = CGRectMake(buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.mirrorButton.frame = CGRectMake(UIViewGetRight(self.cameraReverseButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.bitRateButton.frame = CGRectMake(UIViewGetRight(self.mirrorButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.orientationButton.frame = CGRectMake(UIViewGetRight(self.bitRateButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.streamScaleButton.hidden = !self.showStreamScale;
-    self.streamScaleButton.frame = CGRectMake(UIViewGetRight(self.orientationButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
-    self.mixLayoutButton.hidden = !self.showMixLayout;
-    self.mixLayoutButton.frame = !self.showStreamScale ? self.streamScaleButton.frame : CGRectMake(UIViewGetRight(self.streamScaleButton) + buttonPadding, buttonTop, buttonSize.width, buttonSize.height);
+    self.buttonScrollView.frame = CGRectMake(0, CGRectGetMaxY(self.lineView.frame), CGRectGetWidth(self.configView.bounds), CGRectGetHeight(self.configView.bounds) - CGRectGetMaxY(self.lineView.frame));
+    [self setButtonFrameInScrollView];
+    self.buttonPageControl.frame = CGRectMake(0, CGRectGetHeight(self.configView.bounds) - 20, CGRectGetWidth(self.configView.bounds), 20);
 }
 
 /// 初始化默认清晰度
@@ -397,6 +425,31 @@ PLVSAMixLayoutSheetDelegate
     return [PLVRoomDataManager sharedManager].roomData.defaultMixLayoutType;
 }
 
+- (void)setButtonFrameInScrollView {
+    NSInteger configButtonCount = 5;
+    CGSize buttonSize = CGSizeMake(32, 58);
+    CGFloat buttonTop = (self.buttonScrollView.bounds.size.height - buttonSize.height) / 2;
+    CGFloat buttonPadding = (CGRectGetWidth(self.configView.bounds) - (buttonSize.width * configButtonCount)) / (configButtonCount + 1) ;
+    CGFloat buttonOriginX = buttonPadding;
+    
+    self.streamScaleButton.hidden = !self.showStreamScale;
+    NSUInteger showButtonCount = 0;
+    for (int i = 0; i < self.buttonArray.count; i++) {
+        UIButton * button = self.buttonArray[i];
+        if (button.hidden) {
+            continue;
+        }
+        showButtonCount ++;
+        if (showButtonCount == 6) {
+            buttonOriginX += buttonPadding;
+        }
+        button.frame = CGRectMake(buttonOriginX, buttonTop, buttonSize.width, buttonSize.height);
+        buttonOriginX += buttonSize.width + buttonPadding;
+    }
+    
+    self.buttonScrollView.contentSize = CGSizeMake(CGRectGetWidth(self.configView.bounds) * 2, self.buttonScrollView.bounds.size.height);
+}
+
 #pragma mark Callback
 
 - (void)callbackPushStreamScaleChanged:(PLVBLinkMicStreamScale)streamScale {
@@ -513,6 +566,24 @@ PLVSAMixLayoutSheetDelegate
     return _streamScaleButton;
 }
 
+- (UIButton *)noiseCancellationModeButton {
+    if (!_noiseCancellationModeButton) {
+        _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"降噪") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
+        [_noiseCancellationModeButton addTarget:self action:@selector(noiseCancellationModeButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _noiseCancellationModeButton.titleEdgeInsets = UIEdgeInsetsMake(_noiseCancellationModeButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    return _noiseCancellationModeButton;
+}
+
+- (UIButton *)externalDeviceButton {
+    if (!_externalDeviceButton) {
+        _externalDeviceButton = [self buttonWithTitle:PLVLocalizedString(@"外接设备") NormalImageString:@"plvsa_liveroom_btn_external_device" selectedImageString:@"plvsa_liveroom_btn_external_device"];
+        [_externalDeviceButton addTarget:self action:@selector(externalDeviceButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _externalDeviceButton.titleEdgeInsets = UIEdgeInsetsMake(_externalDeviceButton.imageView.frame.size.height + 14, - 67, 0, -38);
+    }
+    return _externalDeviceButton;
+}
+
 - (UILabel *)channelNameLable {
     if (!_channelNameLable) {
         _channelNameLable = [[UILabel alloc]init];
@@ -573,6 +644,27 @@ PLVSAMixLayoutSheetDelegate
     return _scrollView;
 }
 
+- (UIScrollView *)buttonScrollView {
+    if (!_buttonScrollView) {
+        _buttonScrollView = [[UIScrollView alloc] init];
+        _buttonScrollView.showsHorizontalScrollIndicator = NO;
+        _buttonScrollView.delegate = self;
+        _buttonScrollView.pagingEnabled = YES;
+    }
+    return _buttonScrollView;
+}
+
+- (UIPageControl *)buttonPageControl {
+    if (!_buttonPageControl) {
+        _buttonPageControl = [[UIPageControl alloc] init];
+        _buttonPageControl.numberOfPages = 2;
+        _buttonPageControl.currentPage = 0;
+        _buttonPageControl.currentPageIndicatorTintColor = [PLVColorUtil colorFromHexString:@"#2C96FF"];
+        _buttonPageControl.pageIndicatorTintColor =  [PLVColorUtil colorFromHexString:@"#BEC2CA"];
+    }
+    return _buttonPageControl;
+}
+
 - (PLVSABitRateSheet *)bitRateSheet {
     if (!_bitRateSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
@@ -627,6 +719,34 @@ PLVSAMixLayoutSheetDelegate
         _mixLayoutSheet.delegate = self;
     }
     return _mixLayoutSheet;
+}
+
+- (PLVSANoiseCancellationModeSwitchSheet *)noiseCancellationModeSwitchSheet {
+    if (!_noiseCancellationModeSwitchSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.36 : 0.517;
+        CGFloat widthScale = 0.37;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = MAX(maxWH * heightScale, 420);
+        CGFloat sheetLandscapeWidth = MAX(maxWH * widthScale, 375);
+        _noiseCancellationModeSwitchSheet = [[PLVSANoiseCancellationModeSwitchSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _noiseCancellationModeSwitchSheet.delegate = self;
+    }
+    return _noiseCancellationModeSwitchSheet;
+}
+
+- (PLVSAExternalDeviceSwitchSheet *)externalDeviceSwitchSheet {
+    if (!_externalDeviceSwitchSheet) {
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat heightScale = isPad ? 0.33 : 0.473;
+        CGFloat widthScale = 0.37;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = MAX(maxWH * heightScale, 384);
+        CGFloat sheetLandscapeWidth = MAX(maxWH * widthScale, 375);
+        _externalDeviceSwitchSheet = [[PLVSAExternalDeviceSwitchSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _externalDeviceSwitchSheet.delegate = self;
+    }
+    return _externalDeviceSwitchSheet;
 }
 
 - (BOOL)showStreamScale {
@@ -732,6 +852,14 @@ PLVSAMixLayoutSheetDelegate
     [self.mixLayoutSheet showInView:self];
 }
 
+- (void)noiseCancellationModeButtonAction:(UIButton *)sender {
+    [self.noiseCancellationModeSwitchSheet showInView:self.superview currentNoiseCancellationLevel:self.noiseCancellationLevel];
+}
+
+- (void)externalDeviceButtonAction:(UIButton *)sender {
+    [self.externalDeviceSwitchSheet showInView:self.superview currentExternalDeviceEnabled:self.externalDeviceEnabled];
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark <UITextViewDelegate>
@@ -790,6 +918,14 @@ PLVSAMixLayoutSheetDelegate
     return  YES;
 }
 
+#pragma mark <UIScrollViewDelegate>
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+    CGFloat pageWidth = self.buttonScrollView.frame.size.width;
+        NSInteger page = floor((self.buttonScrollView.contentOffset.x - pageWidth / 2) / pageWidth) + 1;
+        self.buttonPageControl.currentPage = page;
+}
+
 #pragma mark <PLVSABitRateSheetDelegate>
 - (void)plvsaBitRateSheet:(PLVSABitRateSheet *)bitRateSheet bitRateButtonClickWithBitRate:(PLVResolutionType)bitRate {
     self.resolutionType = bitRate;
@@ -811,6 +947,22 @@ PLVSAMixLayoutSheetDelegate
 - (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet mixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewMixLayoutButtonClickWithMixLayoutType:)]) {
         [self.delegate streamerSettingViewMixLayoutButtonClickWithMixLayoutType:type];
+    }
+}
+
+#pragma mark <PLVSANoiseCancellationModeSwitchSheetDelegate>
+
+- (void)noiseCancellationModeSwitchSheet:(PLVSANoiseCancellationModeSwitchSheet *)noiseCancellationModeSwitchSheet wannaChangeNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewTopSettingButtonClickWithNoiseCancellationLevel:)]) {
+        [self.delegate streamerSettingViewTopSettingButtonClickWithNoiseCancellationLevel:noiseCancellationLevel];
+    }
+}
+
+#pragma mark <PLVSAExternalDeviceSwitchSheetDelegate>
+
+- (void)externalDeviceSwitchSheet:(PLVSAExternalDeviceSwitchSheet *)externalDeviceSwitchSheet wannaChangeExternalDevice:(BOOL)enabled {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewExternalDeviceButtonClickWithExternalDeviceEnabled:)]) {
+        [self.delegate streamerSettingViewExternalDeviceButtonClickWithExternalDeviceEnabled:enabled];
     }
 }
 
@@ -882,6 +1034,20 @@ PLVSAMixLayoutSheetDelegate
         self.streamScaleButton.selected = YES;
     }
     [self callbackPushStreamScaleChanged:streamScale];
+}
+
+/// 当前噪声等级
+- (void)synchNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
+    _noiseCancellationLevel = noiseCancellationLevel;
+}
+
+/// 当前外接设备开启
+- (void)synchExternalDeviceEnabled:(BOOL)enabled {
+    _externalDeviceEnabled = enabled;
+}
+
+- (void)externalDeviceSwitchSheetViewDismiss {
+    [self.externalDeviceSwitchSheet dismiss];
 }
 
 @end

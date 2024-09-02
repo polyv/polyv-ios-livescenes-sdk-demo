@@ -9,6 +9,7 @@
 #import "PLVLCMediaMoreModel.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVLCMediaMoreModel ()
 
@@ -35,7 +36,7 @@
 #pragma mark - [ Public Methods ]
 - (NSInteger)selectedIndex{
     if (_selectedIndex >= self.optionItemsArray.count && self.mediaMoreModelMode == PLVLCMediaMoreModelMode_Options) {
-        NSLog(@"PLVLCMediaMoreModel - selectedIndex illegal:%ld, when optionItemsArray.count:%ld",_selectedIndex,self.optionItemsArray.count);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreModel - selectedIndex illegal:%ld, when optionItemsArray.count:%ld",_selectedIndex,self.optionItemsArray.count);
         return (self.optionItemsArray.count - 1);
     }else{
         return _selectedIndex;
@@ -46,7 +47,7 @@
     if (self.selectedIndex < self.optionItemsArray.count) {
         return self.optionItemsArray[self.selectedIndex];
     }else{
-        NSLog(@"PLVLCMediaMoreModel - currentSelectedItemString read failed, _selectedIndex illegal:%ld, when optionItemsArray.count:%ld",_selectedIndex,self.optionItemsArray.count);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreModel - currentSelectedItemString read failed, _selectedIndex illegal:%ld, when optionItemsArray.count:%ld",_selectedIndex,self.optionItemsArray.count);
         return @"";
     }
 }
@@ -60,13 +61,13 @@
     if ([PLVFdUtil checkStringUseable:optionTitle]) {
         model.optionTitle = optionTitle;
     }else{
-        NSLog(@"PLVLCMediaMoreModel - modelWithOptionTitle failed, set optionTitle failed, optionTitle:%@",optionTitle);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreModel - modelWithOptionTitle failed, set optionTitle failed, optionTitle:%@",optionTitle);
         return nil;
     }
     if ([PLVFdUtil checkArrayUseable:optionItemsArray]) {
         model.optionItemsArray = optionItemsArray;
     }else{
-        NSLog(@"PLVLCMediaMoreModel - modelWithOptionTitle failed, set optionItemsArray failed, optionItemsArray:%@",optionItemsArray);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreModel - modelWithOptionTitle failed, set optionItemsArray failed, optionItemsArray:%@",optionItemsArray);
         return nil;
     }
     model.mediaMoreModelMode = PLVLCMediaMoreModelMode_Options;
@@ -79,7 +80,7 @@
     if ([PLVFdUtil checkStringUseable:switchTitle]) {
         model.optionTitle = switchTitle;
     } else {
-        NSLog(@"PLVLCMediaMoreModel - modelWithSwitchTitle failed, set optionTitle failed, optionTitle:%@",switchTitle);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreModel - modelWithSwitchTitle failed, set optionTitle failed, optionTitle:%@",switchTitle);
         return nil;
     }
     
@@ -113,7 +114,7 @@
             }
         }
     }else{
-        NSLog(@"PLVLCMediaMoreModel - setSelectedIndexWithOptionItemString failed, optionItemString:%@",optionItemString);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreModel - setSelectedIndexWithOptionItemString failed, optionItemString:%@",optionItemString);
     }
 }
 

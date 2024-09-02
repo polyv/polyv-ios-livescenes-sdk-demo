@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+#import "PLVPinMessagePopupView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -101,6 +102,11 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param data 商品详情数据
 - (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data;
 
+/// 收到评论上墙信息的回调
+/// @param model 消息模型
+/// @param show 是否需要显示评论上墙视图
+- (void)homePageView_receiveSpeakTopMessageChatModel:(PLVChatModel *)model showPinMsgView:(BOOL)show;
+
 @end
 
 @interface PLVECHomePageView : UIView
@@ -111,6 +117,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 ///       当项目未适配分屏时，建议设置为YES
 @property (nonatomic,assign) BOOL backButtonShowOnIpad;
 
+/// 评论上墙视图
+@property (nonatomic, strong, readonly) PLVPinMessagePopupView *pinMsgPopupView;
 
 /// 初始化方法
 - (instancetype)initWithType:(PLVECHomePageType)type delegate:(id<PLVECHomePageViewDelegate>)delegate;
@@ -176,6 +184,18 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 统计上报商品点击事件
 /// @param commodity 商品详情
 - (void)reportProductClickedEvent:(PLVCommodityModel *)commodity;
+
+/// 更新往期列表按钮显示/隐藏
+/// @param show 显示
+- (void)updatePlaybackListButton:(BOOL)show;
+
+/// 更新评论上墙视图
+/// @param show 是否显示 评论上墙视图
+/// @param message 消息详情模型
+- (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage * _Nullable)message;
+
+/// 用于聊天重放时，回放视频记忆播放时通知聊天回放viewModel
+- (void)playbackDidShowMemoryPlayTip;
 
 @end
 

@@ -9,6 +9,7 @@
 #import "PLVActionSheet.h"
 #import "PLVMultiLanguageManager.h"
 
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static const CGFloat kRowH = 48.0f;
@@ -215,7 +216,7 @@ static const NSTimeInterval kAnimateDuration = 0.3f;
 }
 
 - (void)dealloc{
-    NSLog(@"PLVActionSheet - Dealloc");
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose, @"PLVActionSheet - Dealloc");
 }
 
 

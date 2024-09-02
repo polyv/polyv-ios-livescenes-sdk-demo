@@ -9,6 +9,7 @@
 #import "PLVECBulletinCardView.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVECBulletinCardView () <WKNavigationDelegate>
 

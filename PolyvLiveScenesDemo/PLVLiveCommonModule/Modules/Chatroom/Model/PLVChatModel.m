@@ -93,6 +93,9 @@
     } else if ([messageObject isKindOfClass:[PLVFileMessage class]]) {
         PLVFileMessage *message = (PLVFileMessage *)messageObject;
         playbackTime = message.playbackTime;
+    } else if ([messageObject isKindOfClass:[PLVSpeakTopMessage class]]) {
+        PLVSpeakTopMessage *message = (PLVSpeakTopMessage *)messageObject;
+        playbackTime = message.relativeTime;
     }
     return playbackTime;
 }

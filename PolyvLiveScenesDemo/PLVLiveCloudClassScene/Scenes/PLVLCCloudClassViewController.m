@@ -124,7 +124,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s",__FUNCTION__);
     [_countdownTimer invalidate];
     _countdownTimer = nil;
 }
@@ -792,6 +792,23 @@ PLVLCLandscapeMessagePopupViewDelegate
         plv_dispatch_main_async_safe(^{
             [self productMessageEvent:jsonDict];
         })
+    } else if ([subEvent isEqualToString:@"onSliceID"]) {
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+        if ([PLVFdUtil checkDictionaryUseable:data]) {
+            NSDictionary *speakTop = PLV_SafeDictionaryForDictKey(data, @"speakTop");
+            PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+            if ([PLVFdUtil checkDictionaryUseable:speakTop] &&
+                roomData.videoType == PLVChannelVideoType_Live) {
+                PLVSpeakTopMessage *message = [[PLVSpeakTopMessage alloc] initWithDictionary:speakTop];
+                plv_dispatch_main_async_safe(^{
+                    [self.mediaAreaView showPinMessagePopupView:YES message:message];
+                })
+            } else if (roomData.videoType == PLVChannelVideoType_Live) {
+                plv_dispatch_main_async_safe(^{
+                    [self.mediaAreaView showPinMessagePopupView:NO message:nil];
+                })
+            }
+        }
     }
 }
 
@@ -805,6 +822,17 @@ PLVLCLandscapeMessagePopupViewDelegate
             NSDictionary *jsonDict = (NSDictionary *)object;
             if ([PLVFdUtil checkDictionaryUseable:jsonDict]) {
                 [self.pushView updateProductClickTimes:jsonDict];
+            }
+        }
+    } else if ([event isEqualToString:@"speak"]) {
+        if ([subEvent isEqualToString:@"TO_TOP"] || [subEvent isEqualToString:@"CANCEL_TOP"]) {
+            NSDictionary *jsonDict = (NSDictionary *)object;
+            if ([PLVFdUtil checkDictionaryUseable:jsonDict] && roomData.videoType == PLVChannelVideoType_Live) {
+                BOOL show = [subEvent isEqualToString:@"TO_TOP"];
+                PLVSpeakTopMessage *message = [[PLVSpeakTopMessage alloc] initWithDictionary:jsonDict];
+                plv_dispatch_main_async_safe(^{
+                    [self.mediaAreaView showPinMessagePopupView:show message:message];
+                })
             }
         }
     }
@@ -975,6 +1003,12 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)didReceiveDanmu:(NSString * )content chatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
     [self.mediaAreaView insertDanmu:content];
+}
+
+- (void)didReceiveSpeakTopMessageChatModel:(PLVChatModel *)model
+                            showPinMsgView:(BOOL)show
+                 chatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
+    [self.mediaAreaView showPinMessagePopupView:show message:model.message];
 }
 
 #pragma mark PLVLCMediaAreaViewDelegate
@@ -1199,6 +1233,7 @@ PLVLCLandscapeMessagePopupViewDelegate
     if ([self enableChatroomPlaybackViewModel]) {
         [self setupChatroomPlaybackViewModel];
     }
+    [self.menuAreaView updateSectionMenuTab];
 }
 
 - (void)plvLCMediaAreaViewWannaStartPictureInPicture:(PLVLCMediaAreaView *)mediaAreaView {

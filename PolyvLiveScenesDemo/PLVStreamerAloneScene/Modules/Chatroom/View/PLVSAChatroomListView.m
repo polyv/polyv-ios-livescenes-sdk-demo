@@ -46,6 +46,7 @@ UITableViewDataSource
 /// 数据
 @property (nonatomic, assign) CGPoint lastContentOffset; // 聊天室列表上次滚动结束时的contentOffset
 @property (nonatomic, assign) BOOL observingTableView; // 是否已对列表进行KVO，默认为NO
+@property (nonatomic, assign, readonly) BOOL allowPinMessage; // 是否允许评论上墙功能
 
 @end
 
@@ -232,6 +233,18 @@ UITableViewDataSource
     return _refresher;
 }
 
+- (BOOL)allowPinMessage {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.menuInfo.pinMsgEnabled) {
+        if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ||
+            roomData.roomUser.viewerType == PLVRoomUserTypeAssistant) {
+            return YES;
+        }
+    }
+
+    return NO;
+}
+
 #pragma mark cell callback
 
 - (void)resendSpeakMessage:(PLVChatModel *)model {
@@ -259,6 +272,13 @@ UITableViewDataSource
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(chatroomListView:didTapReplyMenuItem:)]) {
         [self.delegate chatroomListView:self didTapReplyMenuItem:model];
+    }
+}
+
+- (void)didTapPinMessageMenuItem:(PLVChatModel *)model {
+    if(self.delegate &&
+       [self.delegate respondsToSelector:@selector(chatroomListView:didTapPinMessageMenuItem:)]) {
+        [self.delegate chatroomListView:self didTapPinMessageMenuItem:model];
     }
 }
 
@@ -306,6 +326,7 @@ UITableViewDataSource
             cell = [[PLVSASpeakMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:speakMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowPinMessage = self.allowPinMessage;
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -320,6 +341,10 @@ UITableViewDataSource
             [weakSelf resendSpeakMessage:model];
         }];
         
+        [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapPinMessageMenuItem:model];
+        }];
+        
         return cell;
     } else if ([PLVSALongContentMessageCell isModelValid:model]) {
         static NSString *LongContentMessageCell = @"LongContentMessageCell";
@@ -328,6 +353,7 @@ UITableViewDataSource
             cell = [[PLVSALongContentMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:LongContentMessageCell];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowPinMessage = self.allowPinMessage;
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
             [weakSelf didTapReplyMenuItem:model];
@@ -343,6 +369,9 @@ UITableViewDataSource
         }];
         [cell setFoldButtonHandler:^{
             [weakSelf alertToShowFullContentWithModel:model];
+        }];
+        [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapPinMessageMenuItem:model];
         }];
         return cell;
     } else if ([PLVSAImageMessageCell isModelValid:model]) {
@@ -396,6 +425,7 @@ UITableViewDataSource
             cell = [[PLVSAQuoteMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:quoteMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowPinMessage = self.allowPinMessage;
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -408,6 +438,10 @@ UITableViewDataSource
         
         [cell setResendReplyHandler:^(PLVChatModel * _Nonnull model) {
             [weakSelf resendSpeakMessage:model];
+        }];
+        
+        [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapPinMessageMenuItem:model];
         }];
         
         return cell;

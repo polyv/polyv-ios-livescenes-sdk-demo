@@ -13,7 +13,5 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVLCPlaybackListViewController : UIViewController
 
-- (instancetype)initWithPlaybackList:(PLVPlaybackListModel *)playbackList;
-
 @end
 NS_ASSUME_NONNULL_END

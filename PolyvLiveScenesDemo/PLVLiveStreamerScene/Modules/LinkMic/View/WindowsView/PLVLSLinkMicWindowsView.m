@@ -48,7 +48,7 @@ PLVLSLinkMicPreviewViewDelegate
 
 #pragma mark - [ Life Period ]
 - (void)dealloc{
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic,@"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{
@@ -208,7 +208,7 @@ PLVLSLinkMicPreviewViewDelegate
 - (PLVLSLinkMicWindowCell *)getWindowCellWithIndex:(NSInteger)cellIndex{
     PLVLSLinkMicWindowCell * cell;
     if (cellIndex >= 0) { cell = (PLVLSLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForRow:cellIndex inSection:0]]; }
-    if (!cell) { NSLog(@"PLVLCLinkMicWindowsView - cell find failed"); }
+    if (!cell) { PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - cell find failed"); }
     return cell;
 }
 
@@ -294,7 +294,7 @@ PLVLSLinkMicPreviewViewDelegate
         PLVLSLinkMicWindowCell * showingExternalCell = (PLVLSLinkMicWindowCell *)[self.collectionView cellForItemAtIndexPath:oriIndexPath];
         [showingExternalCell switchToShowRtcContentView:oriUserModel.canvasView];
     } else {
-        NSLog(@"PLVLSLinkMicWindowsView - rollbackLinkMicCanvasView failed, oriIndexPath %@ can't get userModel",oriIndexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLSLinkMicWindowsView - rollbackLinkMicCanvasView failed, oriIndexPath %@ can't get userModel",oriIndexPath);
     }
 }
 
@@ -390,7 +390,7 @@ PLVLSLinkMicPreviewViewDelegate
     BOOL thisCellShowingExternalView = NO;
     PLVLinkMicOnlineUser * linkMicUserModel = [self onlineUserWithIndex:indexPath.row];
     if (!linkMicUserModel) {
-        NSLog(@"PLVLCLinkMicWindowsView - cellForItemAtIndexPath for %@ error",indexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLCLinkMicWindowsView - cellForItemAtIndexPath for %@ error",indexPath);
         return [collectionView dequeueReusableCellWithReuseIdentifier:@"PLVLSLinkMicWindowCellID" forIndexPath:indexPath];
     }
     
@@ -435,13 +435,13 @@ PLVLSLinkMicPreviewViewDelegate
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath{
     if (!indexPath) {
-        NSLog(@"PLVLSLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ illegal",indexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLSLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ illegal",indexPath);
         return;
     }
     
     PLVLinkMicOnlineUser * currentTapUserModel = [self readUserModelFromDataArray:indexPath.row];
     if (!currentTapUserModel) {
-        NSLog(@"PLVLSLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ can't get userModel",indexPath);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeLinkMic,@"PLVLSLinkMicWindowsView - didSelectItemAtIndexPath error, indexPath:%@ can't get userModel",indexPath);
         return;
     }
 }

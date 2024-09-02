@@ -11,6 +11,7 @@
 #import "PLVECLiveIntroductionCardView.h"
 #import "PLVECUtils.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVECLiveDetailPageView () <PLVECBulletinCardViewDelegate, PLVECLiveIntroductionCardViewDelegate>
 
@@ -104,7 +105,7 @@
 #pragma mark - <PLVECCardViewDelegate>
 
 - (void)cardView:(PLVECCardView *)cardView didInteractWithURL:(NSURL *)URL {
-    NSLog(@"%@ %@", NSStringFromSelector(_cmd),URL);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeVerbose,@"%@ %@", NSStringFromSelector(_cmd),URL);
     if ([cardView isKindOfClass:PLVECBulletinCardView.class]) {
         [[UIApplication sharedApplication] openURL:URL];
     } else if ([cardView isKindOfClass:PLVECLiveIntroductionCardView.class]) {

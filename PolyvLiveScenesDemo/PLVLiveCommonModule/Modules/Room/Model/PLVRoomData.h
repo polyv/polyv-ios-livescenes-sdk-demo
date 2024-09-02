@@ -81,6 +81,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign) NSUInteger maxViewerCount;
 /// 双师模式且当前频道为小房间时，当前是否接收大房间的转播
 @property (nonatomic, assign) BOOL listenMain;
+/// 是否双师模式
+@property (nonatomic, assign, readonly) BOOL transmitMode;
 
 #pragma mark 直播独有属性
 /// 直播状态
@@ -103,6 +105,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, strong) PLVLiveRecordFileModel *recordFile;
 /// 回放列表
 @property (nonatomic, strong) PLVPlaybackListModel *playbackList;
+/// 回放列表是否可用
+@property (nonatomic, assign) BOOL playbackListEnable;
 /// 章节功能是否可用
 @property (nonatomic, assign) BOOL sectionEnable;
 /// 章节列表

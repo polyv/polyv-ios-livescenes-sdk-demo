@@ -175,6 +175,10 @@
     return _rewardImageView;
 }
 
+- (BOOL)allowPinMessage {
+    return NO;
+}
+
 #pragma mark AttributedString
 
 /// 生成消息多属性文本

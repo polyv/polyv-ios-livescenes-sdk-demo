@@ -60,6 +60,7 @@ static NSString *kRoomUserTypeSCStudent = @"SCStudent";
         self.viewerAvatar = viewerAvatar;
         self.viewerType = viewerType;
         self.role = [PLVRoomUser userTypeStringWithUserType:self.viewerType];
+        PLV_KEY_INFO(@"viewerIds", viewerId);
     }
     return self;
 }

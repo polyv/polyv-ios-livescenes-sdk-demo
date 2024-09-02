@@ -20,6 +20,8 @@ extern NSString *PLVRoomDataKeyPathMenuInfo;
 extern NSString *PLVRoomDataKeyPathLiveState;
 extern NSString *PLVRoomDataKeyPathVid;
 extern NSString *PLVRoomDataKeyPathSipPassword;
+extern NSString *PLVRoomDataKeyPathSectionEnable;
+extern NSString *PLVRoomDataKeyPathPlaybackListEnable;
 
 @interface PLVRoomDataManager ()
 
@@ -105,6 +107,8 @@ extern NSString *PLVRoomDataKeyPathSipPassword;
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathLiveState options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathVid options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
     [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathSipPassword options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
+    [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathSectionEnable options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
+    [self.roomData addObserver:self forKeyPath:PLVRoomDataKeyPathPlaybackListEnable options:NSKeyValueObservingOptionInitial|NSKeyValueObservingOptionNew context:nil];
 }
 
 - (void)removeRoomDataObserver {
@@ -117,13 +121,14 @@ extern NSString *PLVRoomDataKeyPathSipPassword;
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathMenuInfo];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathLiveState];
     [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathVid];
+    [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathSectionEnable];
+    [self.roomData removeObserver:self forKeyPath:PLVRoomDataKeyPathPlaybackListEnable];
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     if (![object isKindOfClass:[PLVRoomData class]]) {
         return;
     }
-    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeRoom, @"observeValueForKeyPath (keyPath:%@)", keyPath);
     if ([keyPath isEqualToString:PLVRoomDataKeyPathSessionId]) {
         [self notifyDelegatesDidSessionIdChanged:self.roomData.sessionId];
     } else if ([keyPath isEqualToString:PLVRoomDataKeyPathOnlineCount]) {
@@ -144,6 +149,10 @@ extern NSString *PLVRoomDataKeyPathSipPassword;
         [self notifyDelegatesDidVidChanged:self.roomData.vid];
     } else if ([keyPath isEqualToString:PLVRoomDataKeyPathSipPassword]) {
         [self notifyDelegatesDidVidChanged:self.roomData.sipPassword];
+    } else if ([keyPath isEqualToString:PLVRoomDataKeyPathSectionEnable]) {
+        [self notifyDelegatesDidSectionEnableChanged:self.roomData.sectionEnable];
+    } else if ([keyPath isEqualToString:PLVRoomDataKeyPathPlaybackListEnable]) {
+        [self notifyDelegatesDidPlaybackListEnableChanged:self.roomData.playbackListEnable];
     }
 }
 
@@ -206,6 +215,18 @@ extern NSString *PLVRoomDataKeyPathSipPassword;
 - (void)notifyDelegatesDidSipPasswordChanged:(NSString *)sipPassword {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate roomDataManager_didSipPasswordChanged:sipPassword];
+    });
+}
+
+- (void)notifyDelegatesDidSectionEnableChanged:(BOOL)sectionEnable {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate roomDataManager_didSectionEnableChanged:sectionEnable];
+    });
+}
+
+- (void)notifyDelegatesDidPlaybackListEnableChanged:(BOOL)playbackListEnable {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate roomDataManager_didPlaybackListEnableChanged:playbackListEnable];
     });
 }
 

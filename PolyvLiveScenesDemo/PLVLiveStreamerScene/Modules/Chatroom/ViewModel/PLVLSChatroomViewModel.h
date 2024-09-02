@@ -154,6 +154,12 @@ NS_ASSUME_NONNULL_BEGIN
 - (BOOL)sendImageEmotionMessage:(NSString *)imageId
                        imageUrl:(NSString *)imageUrl;
 
+/// 发送上墙消息
+/// @param msgId 需要上墙消息的id，下墙不需要
+/// @param toTop 上墙/下墙
+/// @return 发送结果，成功为YES，失败为NO
+- (BOOL)sendPinMessageWithMsgId:(NSString *_Nullable)msgId toTop:(BOOL)toTop;
+
 #pragma mark Multicast
 
 /// 增加PLVLSChatroomViewModelProtocol协议的监听者

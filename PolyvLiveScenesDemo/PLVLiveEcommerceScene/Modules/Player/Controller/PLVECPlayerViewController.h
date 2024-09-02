@@ -69,6 +69,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 播放器 ‘回放视频信息’ 发生改变
 - (void)playerController:(PLVECPlayerViewController *)playerController playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo;
 
+/// 播放器续播回调
+- (void)playerControllerShowMemoryPlayTip:(PLVECPlayerViewController *)playerController;
+
 #pragma mark  无延迟播放的回调
 
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变

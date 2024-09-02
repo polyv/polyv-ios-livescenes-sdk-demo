@@ -386,6 +386,14 @@ PLVChannelClassManagerDelegate
     return [self.rtcStreamerManager getMaxCameraZoomRatio];
 }
 
+- (void)setupNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)level {
+    [self.rtcStreamerManager switchNoiseCancellationLevelTo:level];
+}
+
+- (void)enableExternalDevice:(BOOL)enabled {
+    [self.rtcStreamerManager enableExternalDevice:enabled];
+}
+
 #pragma mark 连麦事件管理
 /// 开启或关闭 ”视频连麦“
 - (void)openVideoLinkMic:(BOOL)open emitCompleteBlock:(nullable void (^)(BOOL emitSuccess))emitCompleteBlock{
@@ -831,6 +839,14 @@ PLVChannelClassManagerDelegate
 
 - (PLVRTCStreamerMixLayoutType)mixLayoutType {
     return self.rtcStreamerManager.mixLayoutType;
+}
+
+- (PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
+    return self.rtcStreamerManager.localNoiseCancellationLevel;
+}
+
+- (BOOL)localExternalDeviceEnabled {
+    return self.rtcStreamerManager.localExternalDeviceEnabled;
 }
 
 #pragma mark - [ Private Methods ]

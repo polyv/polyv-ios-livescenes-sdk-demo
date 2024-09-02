@@ -25,6 +25,19 @@
          } else {
              self.scrollEnabled = YES;
          }
+        if (([fitView isKindOfClass:PLVECChatroomView.class] ||
+             [fitView isKindOfClass:PLVECHomePageView.class]) && self.pinMsgPopupView.hidden == NO) {
+            for (NSInteger k = self.pinMsgPopupView.subviews.count - 1; k >= 0; k--) {
+                UIView *grandChildren = self.pinMsgPopupView.subviews[k];
+                if ([grandChildren isKindOfClass:UIButton.class]) {
+                    CGPoint grandChildrenPoint = [self convertPoint:point toView:grandChildren];
+                    UIView *fitPopupView = [grandChildren hitTest:grandChildrenPoint withEvent:event];
+                    if (fitPopupView) {
+                        return fitPopupView;
+                    }
+                }
+            }
+        }
         if (([fitView isKindOfClass:PLVECChatroomView.class] || [fitView isKindOfClass:PLVECHomePageView.class]) && self.playerDisplayView.alpha > 0) {
             for (NSInteger k = self.playerDisplayView.subviews.count - 1; k >= 0; k--) {
                 UIView *grandChildren = self.playerDisplayView.subviews[k];

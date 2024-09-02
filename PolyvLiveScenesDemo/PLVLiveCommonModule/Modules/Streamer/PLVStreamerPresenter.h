@@ -202,6 +202,12 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///       默认 NO；修改此项配置，可调用 [setupLocalVideoPreviewSameAsRemoteWatch:] 方法
 @property (nonatomic, assign, readonly) BOOL localVideoPreviewSameAsRemoteWatch;
 
+/// 当前 降噪等级(默认值:PLVBLinkMicNoiseCancellationLevelAggressive)
+@property (nonatomic, assign, readonly) PLVBLinkMicNoiseCancellationLevel noiseCancellationLevel;
+
+/// 当前 支持外接设备 是否开启，默认关闭
+@property (nonatomic, assign, readonly) BOOL localExternalDeviceEnabled;
+
 /// 当前频道的 ‘直播流状态’
 ///
 /// @note 枚举类型详见 PLVCloudClassSDK/PLVLiveDefine.h
@@ -433,6 +439,12 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 
 /// 获取摄像头的最大变焦倍数
 - (CGFloat)getMaxCameraZoomRatio;
+
+/// 配置当前降噪等级
+- (void)setupNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)level;
+
+/// 开启或关闭外接设备
+- (void)enableExternalDevice:(BOOL)enabled;
 
 #pragma mark 连麦事件管理
 /// 开启或关闭 ”视频连麦“

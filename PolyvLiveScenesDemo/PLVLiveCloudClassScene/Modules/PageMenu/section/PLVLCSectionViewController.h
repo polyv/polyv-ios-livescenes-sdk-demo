@@ -15,9 +15,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVLCSectionViewController : UIViewController
 
-- (instancetype)initWithSectionList:(NSArray<PLVLivePlaybackSectionModel *> *)sectionList;
-
 @property (nonatomic, weak) id <PLVLCSectionViewControllerDelegate>delegate;
+
+- (void)requestData;
 
 @end
 

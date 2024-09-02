@@ -50,6 +50,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// SIP入会信息密码 更新
 - (void)roomDataManager_didSipPasswordChanged:(NSString *)sipPassword;
 
+- (void)roomDataManager_didSectionEnableChanged:(BOOL)sectionEnable;
+
+- (void)roomDataManager_didPlaybackListEnableChanged:(BOOL)playbackListEnable;
+
 @end
 
 @interface PLVRoomDataManager : NSObject

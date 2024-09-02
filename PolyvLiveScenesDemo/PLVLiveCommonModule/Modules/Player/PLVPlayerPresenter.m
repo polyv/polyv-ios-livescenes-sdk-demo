@@ -111,7 +111,7 @@ PLVDefaultPageViewDelegate
     
     [self.backgroundView removeFromSuperview]; /// 需单独作移除操作以保证释放
     [self cleanPlayer];
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypePlayer, @"%s",__FUNCTION__);
 }
 
 
@@ -263,23 +263,13 @@ PLVDefaultPageViewDelegate
 
 - (instancetype)initWithVideoType:(PLVChannelVideoType)videoType channelId:(NSString *)channelId vodId:(NSString *)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel *)recordFile recordEnable:(BOOL)recordEnable {
     if (videoType != PLVChannelVideoType_Live && videoType != PLVChannelVideoType_Playback) {
-        NSLog(@"PLVPlayerPresenter - initWithVideoType failed (videoType:%lu)",videoType);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypePlayer, @"PLVPlayerPresenter - initWithVideoType failed (videoType:%lu)",videoType);
         return nil;
     }
     
     if (![PLVFdUtil checkStringUseable:channelId]) {
-        NSLog(@"PLVPlayerPresenter - initWithVideoType failed (channelId:%@)",channelId);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypePlayer, @"PLVPlayerPresenter - initWithVideoType failed (channelId:%@)",channelId);
         return nil;
-    }
-    
-    if (videoType == PLVChannelVideoType_Playback) {
-        if (recordEnable && !recordFile) {
-            NSLog( @"PLVPlayerPresenter - initWithVideoType failed (recordFile is nil)");
-            return nil;
-        } else if (!recordEnable && ![PLVFdUtil checkStringUseable:vodId]) {
-            NSLog(@"PLVPlayerPresenter - initWithVideoType failed (vodId:%@)",vodId);
-            return nil;
-        }
     }
     
     self = [super init];
@@ -301,12 +291,12 @@ PLVDefaultPageViewDelegate
 
 - (void)setupPlayerWithDisplayView:(UIView *)displayView {
     if (!displayView || ![displayView isKindOfClass:UIView.class]) {
-        NSLog(@"PLVPlayerPresenter - %s failed, displayView illegal:%@",__FUNCTION__,displayView);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypePlayer, @"PLVPlayerPresenter - %s failed, displayView illegal:%@",__FUNCTION__,displayView);
         return;
     }
     
     if (!self.livePlayer && !self.livePlaybackPlayer) {
-        NSLog(@"PLVPlayerPresenter - %s failed, no player exsit",__FUNCTION__);
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypePlayer, @"PLVPlayerPresenter - %s failed, no player exsit",__FUNCTION__);
         return;
     }
     
@@ -468,10 +458,12 @@ PLVDefaultPageViewDelegate
 }
 
 - (void)changeVid:(NSString *)vid {
-    self.currentLivePlaybackChangingVid = YES;
-    [self.livePlaybackPlayer pause];
-    [self.livePlaybackPlayer changeLivePlaybackVodId:vid];
-    [self resumePlay];
+    if ([PLVFdUtil checkStringUseable:vid] && ![self.vodId isEqualToString:vid]) {
+        self.currentLivePlaybackChangingVid = YES;
+        [self.livePlaybackPlayer pause];
+        [self.livePlaybackPlayer changeLivePlaybackVodId:vid];
+        [self resumePlay];
+    }
 }
 
 - (void)changeFileId:(NSString *)fileId {
@@ -592,6 +584,11 @@ PLVDefaultPageViewDelegate
     /// 正在直播中或回放
     if (self.channelInLive || self.currentVideoType == PLVChannelVideoType_Playback) {
         /// 替换广告视图
+        if (_advertView) {
+            // 修复advertView初始化过早获取channelInfo的问题
+            [_advertView destroyTitleAdvert];
+            _advertView = nil;
+        }
         [self.advertView setupDisplaySuperview:self.backgroundView];
         [self.advertView showTitleAdvert];
     }
@@ -1285,16 +1282,29 @@ PLVDefaultPageViewDelegate
 /// 直播回放播放器 ‘回放视频信息’ 发生改变
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)playbackVideoInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    roomData.playbackVideoInfo = playbackVideoInfo;
     self.vodId = playbackVideoInfo.vid;
     self.recordEnable = ![PLVFdUtil checkStringUseable:playbackVideoInfo.videoPoolId];
     self.fileId = playbackVideoInfo.fileId;
+    roomData.playbackVideoInfo = playbackVideoInfo;
+    roomData.vid = playbackVideoInfo.vid;
     if (!roomData.playbackSessionId) {
         roomData.playbackSessionId = playbackVideoInfo.channelSessionId;
     }
     if ([self.delegate respondsToSelector:@selector(playerPresenter:playbackVideoInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self playbackVideoInfoDidUpdated:playbackVideoInfo];
     }
+}
+
+- (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer sectionEnabled:(BOOL)sectionEnabled recordEnabled:(BOOL)recordEnabled {
+    [PLVRoomDataManager sharedManager].roomData.recordEnable = recordEnabled;
+    if ([PLVRoomDataManager sharedManager].roomData.channelType == PLVChannelTypePPT) {
+        [PLVRoomDataManager sharedManager].roomData.sectionEnable = sectionEnabled;
+    }
+}
+
+- (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer playbackListEnabled:(BOOL)playbackListEnabled vodList:(BOOL)vodList {
+    [PLVRoomDataManager sharedManager].roomData.vodList = vodList;
+    [PLVRoomDataManager sharedManager].roomData.playbackListEnable = playbackListEnabled;
 }
 
 #pragma mark PLVAdvertViewDelegate

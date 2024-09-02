@@ -49,6 +49,15 @@
 /// 同步当前开播流比例
 - (void)synchPushStreamScale:(PLVBLinkMicStreamScale)streamScale;
 
+/// 同步当前降噪等级
+- (void)synchNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel;
+
+/// 同步外接设备开启
+- (void)synchExternalDeviceEnabled:(BOOL)enabled;
+
+/// 主动隐藏外部设备页面
+- (void)externalDeviceSwitchSheetViewDismiss;
+
 @end
 
 @protocol PLVSAStreamerSettingViewDelegate <NSObject>
@@ -81,6 +90,10 @@
 - (void)streamerSettingViewStreamScaleButtonClickWithStreamScale:(PLVBLinkMicStreamScale)streamScale;;
 /// 混流布局切换
 - (void)streamerSettingViewMixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type;
+/// 降噪模式切换
+- (void)streamerSettingViewTopSettingButtonClickWithNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel;
+/// 外接设备改变
+- (void)streamerSettingViewExternalDeviceButtonClickWithExternalDeviceEnabled:(BOOL)enabled;
 
 @end
 

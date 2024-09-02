@@ -11,6 +11,7 @@
 #import "PLVLCMediaMoreCell.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 @interface PLVLCMediaMoreView () <UITableViewDataSource, UITableViewDelegate, PLVLCMediaMoreCellDelegate>
 
@@ -104,7 +105,7 @@
             }
         }
     }else{
-        NSLog(@"PLVLCMediaMoreView - refreshTableViewWithDataArray failed, dataArray illegal:%@",dataArray);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreView - refreshTableViewWithDataArray failed, dataArray illegal:%@",dataArray);
     }
 }
 
@@ -160,7 +161,7 @@
         PLVLCMediaMoreModel * model = [self.dataArray objectAtIndex:index];
         return model;
     }else{
-        NSLog(@"PLVLCMediaMoreView - getMoreModelAtIndex failed, dataArray:%@",self.dataArray);
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreView - getMoreModelAtIndex failed, dataArray:%@",self.dataArray);
         return nil;
     }
 }
@@ -259,7 +260,7 @@
         if (currentRow < self.optionsDataArray.count) {
             model = self.optionsDataArray[currentRow];
         }else{
-            NSLog(@"PLVLCMediaMoreView - get model failed, indexPath illegal:%@",indexPath);
+            PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreView - get model failed, indexPath illegal:%@",indexPath);
         }
         [cell setModel:model];
     }

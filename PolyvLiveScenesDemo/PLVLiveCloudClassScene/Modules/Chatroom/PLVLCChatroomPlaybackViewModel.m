@@ -32,6 +32,8 @@ PLVChatroomPlaybackPresenterDelegate
 @property (nonatomic, strong) PLVChatroomPlaybackPresenter *presenter;
 /// 公聊消息数组，私聊无聊天回放
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray;
+/// 评论上墙最后一条消息模型
+@property (nonatomic, strong) PLVChatModel *lastSpeakTopChatModel;
 
 #pragma mark 内部属性
 
@@ -331,11 +333,35 @@ PLVChatroomPlaybackPresenterDelegate
     [self notifyDelegatesDidMessagesRefreshed];
     
     [self removeAllDanmus];
+    self.lastSpeakTopChatModel = nil;
 }
 
 - (void)didLoadMoreChatModels:(NSArray <PLVChatModel *> *)modelArray chatroomPlaybackPresenter:(PLVChatroomPlaybackPresenter *)presenter {
     [self insertChatModels:modelArray];
     [self notifyDelegatesDidLoadMoreHistoryMessages];
+}
+
+- (void)didReceiveSpeakTopChatModels:(NSArray <PLVChatModel *> *)modelArray
+                            autoLoad:(BOOL)autoLoad
+           chatroomPlaybackPresenter:(PLVChatroomPlaybackPresenter *)presenter {
+    BOOL showPinMsg = NO;
+    if ([PLVFdUtil checkArrayUseable:modelArray]) {
+        NSArray<PLVChatModel *>*arrangeArray = [self rearrangeChatModels:[modelArray copy]];
+        self.lastSpeakTopChatModel = arrangeArray.lastObject;
+    }
+    if (self.lastSpeakTopChatModel) {
+        PLVSpeakTopMessage *speakTopMessage = self.lastSpeakTopChatModel.message;
+        if ([speakTopMessage.action isEqualToString:@"top"]) {
+            showPinMsg = YES;
+        }
+    }
+    
+    if (!autoLoad || (autoLoad && [PLVFdUtil checkArrayUseable:modelArray])) {
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(didReceiveSpeakTopMessageChatModel:showPinMsgView:chatroomPlaybackViewModel:)]) {
+            return [self.delegate didReceiveSpeakTopMessageChatModel:self.lastSpeakTopChatModel showPinMsgView:showPinMsg chatroomPlaybackViewModel:self];
+        }
+    }
 }
 
 @end

@@ -78,6 +78,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param content 弹幕文本
 - (void)didReceiveDanmu:(NSString * )content chatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel;
 
+/// 收到评论上墙消息的回调
+/// @param model 消息模型
+/// @param show 是否需要展示评论上墙视图
+- (void)didReceiveSpeakTopMessageChatModel:(PLVChatModel *)model
+                            showPinMsgView:(BOOL)show
+                 chatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel;
+
 @end
 
 /// 需要展示聊天列表的视图所需要监听的多监听协议

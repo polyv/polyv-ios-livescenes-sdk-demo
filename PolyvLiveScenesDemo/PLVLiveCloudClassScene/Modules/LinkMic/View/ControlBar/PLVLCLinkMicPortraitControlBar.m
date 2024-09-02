@@ -12,6 +12,7 @@
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
+#import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
 static const int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间隔:300毫秒
 static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展开后，悬停多久后自动折叠)
@@ -74,7 +75,7 @@ static const int kLinkMicControlBarHoverTime = 5; // 悬停时长 (控制栏展�
 #pragma mark - [ Life Period ]
 - (void)dealloc{
     [self stopFoldSelfViewTimer];
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeLinkMic,@"%s",__FUNCTION__);
 }
 
 - (instancetype)initWithFrame:(CGRect)frame{

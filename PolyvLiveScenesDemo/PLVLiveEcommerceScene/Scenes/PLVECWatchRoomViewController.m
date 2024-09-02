@@ -103,7 +103,7 @@ PLVECMessagePopupViewDelegate
 
 - (void)dealloc{
     [self removeObserver];
-    NSLog(@"%s",__FUNCTION__);
+    PLV_LOG_INFO(PLVConsoleLogModuleTypeVerbose,@"%s",__FUNCTION__);
 }
 
 - (void)viewDidLoad {
@@ -298,6 +298,7 @@ PLVECMessagePopupViewDelegate
         self.playerVC.view.frame = self.scrollView.bounds;
         self.playerVC.delegate = self;
         self.scrollView.playerDisplayView = self.playerVC.displayView;
+        self.scrollView.pinMsgPopupView = self.homePageView.pinMsgPopupView;
         [self.scrollView insertSubview:self.playerVC.view atIndex:0];
     }
 }
@@ -556,6 +557,10 @@ PLVECMessagePopupViewDelegate
     }
 }
 
+- (void)roomDataManager_didPlaybackListEnableChanged:(BOOL)playbackListEnable {
+    [self.homePageView updatePlaybackListButton:playbackListEnable];
+}
+
 #pragma mark PLVSocketManagerProtocol
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
@@ -596,6 +601,46 @@ PLVECMessagePopupViewDelegate
         [self logoutEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"CLOSEROOM"]) { // admin closes or opens the chatroom
         [self closeRoomEvent:jsonDict];
+    } else if ([subEvent isEqualToString:@"onSliceID"]) {
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+        if ([PLVFdUtil checkDictionaryUseable:data]) {
+            NSDictionary *speakTop = PLV_SafeDictionaryForDictKey(data, @"speakTop");
+            PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+            if ([PLVFdUtil checkDictionaryUseable:speakTop] &&
+                roomData.videoType == PLVChannelVideoType_Live) {
+                PLVSpeakTopMessage *message = [[PLVSpeakTopMessage alloc] initWithDictionary:speakTop];
+                plv_dispatch_main_async_safe(^{
+                    [self.homePageView showPinMessagePopupView:YES message:message];
+                })
+            } else if (roomData.videoType == PLVChannelVideoType_Live) {
+                plv_dispatch_main_async_safe(^{
+                    [self.homePageView showPinMessagePopupView:NO message:nil];
+                })
+            }
+        }
+    }
+}
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if (![jsonDict isKindOfClass:[NSDictionary class]]) {
+        return;
+    }
+    
+    if ([event isEqualToString:@"speak"]) {
+        if ([subEvent isEqualToString:@"TO_TOP"] || [subEvent isEqualToString:@"CANCEL_TOP"]) {
+            PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+            if ([PLVFdUtil checkDictionaryUseable:jsonDict] && roomData.videoType == PLVChannelVideoType_Live) {
+                BOOL show = [subEvent isEqualToString:@"TO_TOP"];
+                PLVSpeakTopMessage *message = [[PLVSpeakTopMessage alloc] initWithDictionary:jsonDict];
+                plv_dispatch_main_async_safe(^{
+                    [self.homePageView showPinMessagePopupView:show message:message];
+                })
+            }
+        }
     }
 }
 
@@ -685,6 +730,10 @@ PLVECMessagePopupViewDelegate
 
 - (void)playerController:(PLVECPlayerViewController *)playerController playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
     [self.homePageView updatePlaybackVideoInfo];
+}
+
+- (void)playerControllerShowMemoryPlayTip:(PLVECPlayerViewController *)playerController {
+    [self.homePageView playbackDidShowMemoryPlayTip];
 }
 
 - (void)playerController:(PLVECPlayerViewController *)playerController noDelayLiveStartUpdate:(BOOL)noDelayLiveStart {
@@ -996,6 +1045,10 @@ PLVECMessagePopupViewDelegate
 
 - (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data {
     [self.popoverView.interactView openJobDetailWithData:data];
+}
+
+- (void)homePageView_receiveSpeakTopMessageChatModel:(PLVChatModel *)model showPinMsgView:(BOOL)show {
+    [self.homePageView showPinMessagePopupView:show message:model.message];
 }
 
 #pragma mark UIScrollView Delegate

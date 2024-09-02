@@ -283,6 +283,15 @@ PLVECChatroomMessageViewDelegate
     return 0;
 }
 
+- (void)didReceiveSpeakTopMessageChatModel:(PLVChatModel *)model
+                            showPinMsgView:(BOOL)show
+                 chatroomPlaybackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomView_receiveSpeakTopMessageChatModel:showPinMsgView:)]) {
+        [self.delegate chatroomView_receiveSpeakTopMessageChatModel:model showPinMsgView:show];
+    }
+}
+
 #pragma mark - PLVECChatroomPlaybackViewModelDelegate
 - (void)loadMessageInfoSuccess:(BOOL)success playbackViewModel:(PLVECChatroomPlaybackViewModel *)viewModel {
     NSString *content = success ? PLVLocalizedString(@"聊天室重放功能已开启，将会显示历史消息") : PLVLocalizedString(@"回放消息正在准备中，可稍等刷新查看");
