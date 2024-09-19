@@ -206,7 +206,7 @@ UITableViewDataSource
 
 - (void)didSendMessage {
     [self.tableView reloadData];
-    [self scrollsToBottom:YES];
+    [self scrollsToBottom:NO];
 }
 
 - (BOOL)didReceiveMessages {
@@ -218,7 +218,7 @@ UITableViewDataSource
     [self.tableView reloadData];
     
     if (isBottom) { // tableview显示在最底部
-        [self scrollsToBottom:YES];
+        [self scrollsToBottom:NO];
     }
     return isBottom;
 }

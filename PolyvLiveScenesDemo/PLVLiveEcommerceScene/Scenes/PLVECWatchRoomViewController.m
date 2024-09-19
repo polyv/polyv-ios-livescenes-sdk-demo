@@ -27,8 +27,10 @@
 #import "PLVECWatchRoomScrollView.h"
 #import "PLVCommodityCardDetailView.h"
 #import "PLVECMessagePopupView.h"
+#import "PLVECOnlineListSheet.h"
+#import "PLVECOnlineListRuleSheet.h"
 #import "PLVLiveToast.h"
-
+#import "PLVSecureView.h"
 // 工具
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
@@ -52,7 +54,9 @@ PLVLivePictureInPictureRestoreDelegate,
 PLVCommodityDetailViewControllerDelegate,
 PLVPopoverViewDelegate,
 PLVInteractGenericViewDelegate,
-PLVECMessagePopupViewDelegate
+PLVECMessagePopupViewDelegate,
+PLVECOnlineListSheetDelegate,
+PLVECChatroomViewModelProtocol
 >
 
 #pragma mark 数据
@@ -71,6 +75,8 @@ PLVECMessagePopupViewDelegate
 @property (nonatomic, strong) PLVECLiveDetailPageView * liveDetailPageView;
 @property (nonatomic, strong) UIButton * closeButton;
 @property (nonatomic, strong) PLVCommodityCardDetailView *cardDetailView;           // 卡片推送加载视图
+@property (nonatomic, strong) PLVECOnlineListSheet *onlineListSheet; // 在线列表
+@property (nonatomic, strong) PLVECOnlineListRuleSheet *onlineListRuleSheet; // 在线列表规则
 
 @end
 
@@ -96,6 +102,7 @@ PLVECMessagePopupViewDelegate
         [[PLVRoomDataManager sharedManager].roomData requestChannelFunctionSwitch];
         
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        [[PLVECChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         [self addObserver];
     }
     return self;
@@ -108,11 +115,20 @@ PLVECMessagePopupViewDelegate
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    
     [self setupUI];
     [self setupData];
     
     [PLVECFloatingWindow sharedInstance].delegate = self;
+}
+
+- (void)loadView{
+    if ([PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect){
+        PLVSecureView *secureView = [[PLVSecureView alloc] init];
+        self.view = secureView.secureView;
+        self.view.backgroundColor = [UIColor blackColor];
+    }else{
+        self.view = [[UIView alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    }
 }
 
 - (void)viewWillLayoutSubviews {
@@ -342,7 +358,9 @@ PLVECMessagePopupViewDelegate
 }
 
 - (void)openCommodityDetailViewControllerWithURL:(NSURL *)commodityURL {
-    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive && 
+        ![PLVRoomDataManager sharedManager].roomData.captureScreenProtect &&
+        ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect) {
         // 打开应用内悬浮窗
         if (self.linkMicAreaView.inLinkMic) {
             [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
@@ -442,6 +460,21 @@ PLVECMessagePopupViewDelegate
     return _cardDetailView;
 }
 
+- (PLVECOnlineListSheet *)onlineListSheet {
+    if (!_onlineListSheet) {
+        _onlineListSheet = [[PLVECOnlineListSheet alloc] init];
+        _onlineListSheet.delegate = self;
+    }
+    return _onlineListSheet;
+}
+
+- (PLVECOnlineListRuleSheet *)onlineListRuleSheet {
+    if (!_onlineListRuleSheet) {
+        _onlineListRuleSheet = [[PLVECOnlineListRuleSheet alloc] init];
+    }
+    return _onlineListRuleSheet;
+}
+
 #pragma mark Getter
 - (void)setFullScreenButtonShowOnIpad:(BOOL)fullScreenButtonShowOnIpad {
     _fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
@@ -501,10 +534,11 @@ PLVECMessagePopupViewDelegate
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if ((videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live) ||
+    if ((videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live) ||
         (videoType == PLVChannelVideoType_Playback && self.playTimesLabelUseNewStrategy_playback)) {
         [self.homePageView updateRoomInfoCount:onlineCount];
     }
+    [self.homePageView updateOnlineListButton:onlineCount];
 }
 
 - (void)roomDataManager_didLikeCountChanged:(NSUInteger)likeCount {
@@ -534,7 +568,7 @@ PLVECMessagePopupViewDelegate
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
         [self.homePageView updateLikeCount:roomData.likeCount];
-        if (self.playTimesLabelUseNewStrategy_live) {
+        if (!self.playTimesLabelUseNewStrategy_live) {
             [self.homePageView updateRoomInfoCount:roomData.menuInfo.pageView.integerValue];
         }
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
@@ -551,7 +585,7 @@ PLVECMessagePopupViewDelegate
 
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount {
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if ((videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live) ||
+    if ((videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live) ||
         (videoType == PLVChannelVideoType_Playback && !self.playTimesLabelUseNewStrategy_playback)) {
         [self.homePageView updateRoomInfoCount:watchCount];
     }
@@ -847,6 +881,18 @@ PLVECMessagePopupViewDelegate
     }
 }
 
+- (void)playerController:(PLVECPlayerViewController *)playerController preventScreenCapturing:(BOOL)start {
+    [self.linkMicAreaView preventScreenCapturing:start];
+    
+    if (start) {
+        [PLVFdUtil showAlertWithTitle:PLVLocalizedString(@"暂时无法观看") message:PLVLocalizedString(@"停止录屏才能继续正常观看") viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"确认") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:nil];
+    }
+    
+    if ([PLVRoomDataManager sharedManager].roomData.fullScreenProtectWhenCaptureScreen) {
+        self.view.hidden = start;
+    }
+}
+
 #pragma mark PLVECLinkMicAreaViewDelegate
 
 /// 无延迟直播观看 网络质量检测
@@ -1051,6 +1097,10 @@ PLVECMessagePopupViewDelegate
     [self.homePageView showPinMessagePopupView:show message:model.message];
 }
 
+- (void)homePageViewWannaShowOnlineList:(PLVECHomePageView *)homePageView {
+    [self.onlineListSheet showInView:self.view];
+}
+
 #pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -1114,6 +1164,22 @@ PLVECMessagePopupViewDelegate
 - (void)messagePopupViewWillCopy:(PLVECMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
     [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
+}
+
+#pragma mark PLVECOnlineListSheetDelegate
+
+- (void)plvECOnlineListSheetWannaShowRule:(PLVECOnlineListSheet *)sheet {
+    [self.onlineListRuleSheet showInView:self.view];
+}
+
+- (void)plvECOnlineListSheetNeedUpdateOnlineList:(PLVECOnlineListSheet *)sheet {
+    [[PLVECChatroomViewModel sharedViewModel] updateOnlineList];
+}
+
+#pragma mark PLVECChatroomViewModelProtocol
+
+- (void)chatroomManager_didUpdateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total {
+    [self.onlineListSheet updateOnlineList:list];
 }
 
 @end

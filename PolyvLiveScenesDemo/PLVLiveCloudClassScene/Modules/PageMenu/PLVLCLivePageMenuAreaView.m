@@ -17,6 +17,7 @@
 #import "PLVLCSectionViewController.h"
 #import "PLVLCBuyViewController.h"
 #import "PLVLCNoNetworkDescViewController.h"
+#import "PLVLCOnlineListViewController.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
@@ -43,6 +44,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
         return PLVLCLivePageMenuTypeIframe;
     } else if ([menuString isEqualToString:@"buy"]) {
         return PLVLCLivePageMenuTypeBuy;
+    } else if ([menuString isEqualToString:@"members"]) {
+        return PLVLCLivePageMenuTypeMembers;
     }
     return PLVLCLivePageMenuTypeUnknown;
 }
@@ -52,6 +55,7 @@ PLVLCTuwenDelegate,
 PLVLCBuyViewControllerDelegate,
 PLVLCSectionViewControllerDelegate,
 PLVLCChatViewControllerDelegate,
+PLVLCOnlineListViewControllerDelegate,
 PLVRoomDataManagerProtocol
 >
 
@@ -70,6 +74,11 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCBuyViewController *productVctrl;
 /// 图文直播页
 @property (nonatomic, strong) PLVLCTuwenViewController *tuwenVctrl;
+/// 问答直播页
+@property (nonatomic ,strong) PLVLCQAViewController *qaVctrl;
+
+/// 成员列表页
+@property (nonatomic, strong) PLVLCOnlineListViewController *onlineListVctrl;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
@@ -124,6 +133,12 @@ PLVRoomDataManagerProtocol
     }
     if (self.tuwenVctrl) {
         [self.tuwenVctrl updateUserInfo];
+    }
+}
+
+- (void)updateQAUserInfo {
+    if (self.qaVctrl) {
+        [self.qaVctrl updateUserInfo];
     }
 }
 
@@ -213,6 +228,10 @@ PLVRoomDataManagerProtocol
     [self.pageController setTitles:titleArray.copy controllers:controllers.copy];
 }
 
+- (void)updateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total {
+    [self.onlineListVctrl updateOnlineList:list];
+}
+
 - (void)displayProductPageToExternalView:(UIView *)externalView {
     if (self.productVctrl) {
         if (!self.productVctrl.isViewLoaded) {
@@ -295,6 +314,14 @@ PLVRoomDataManagerProtocol
             [titleArray addObject:PLVLocalizedString(menu.name)];
             [ctrlArray addObject:vctrl];
         }
+        
+        if ([PLVRoomDataManager sharedManager].roomData.menuInfo.portraitOnlineListEnabled && [PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live &&!self.onlineListVctrl) {
+            PLVLCOnlineListViewController *vctrl = [[PLVLCOnlineListViewController alloc] init];
+            self.onlineListVctrl = vctrl;
+            self.onlineListVctrl.delegate = self;
+            [titleArray addObject:PLVLocalizedString(@"成员")];
+            [ctrlArray addObject:vctrl];
+        }
     }
 
     [self.pageController setTitles:[titleArray copy] controllers:[ctrlArray copy]];
@@ -329,6 +356,7 @@ PLVRoomDataManagerProtocol
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeQA) {
         PLVLCQAViewController *vctrl = [[PLVLCQAViewController alloc] initWithRoomData:[PLVRoomDataManager sharedManager].roomData theme:@"black"];
+        self.qaVctrl = vctrl;
         return vctrl;
     } else if (menuType == PLVLCLivePageMenuTypeIframe) {
         PLVLCIframeViewController *vctrl = [[PLVLCIframeViewController alloc] init];
@@ -338,6 +366,11 @@ PLVRoomDataManagerProtocol
         PLVLCBuyViewController *vctrl = [[PLVLCBuyViewController alloc] init];
         vctrl.delegate = self;
         self.productVctrl = vctrl;
+        return vctrl;
+    } else if (menuType == PLVLCLivePageMenuTypeMembers && [PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+        PLVLCOnlineListViewController *vctrl = [[PLVLCOnlineListViewController alloc] init];
+        vctrl.delegate = self;
+        self.onlineListVctrl = vctrl;
         return vctrl;
     }
     
@@ -434,6 +467,22 @@ PLVRoomDataManagerProtocol
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:lotteryWidgetShowStatusChanged:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self lotteryWidgetShowStatusChanged:show];
+    }
+}
+
+#pragma mark - PLVLCOnlineListViewControllerDelegate
+
+- (void)plvLCOnlineListViewControllerWannaShowRule:(PLVLCOnlineListViewController *)viewController {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaViewWannaShowOnlineListRule:)]) {
+        [self.delegate plvLCLivePageMenuAreaViewWannaShowOnlineListRule:self];
+    }
+}
+
+- (void)plvLCOnlineListViewControllerNeedUpdateOnlineList:(PLVLCOnlineListViewController *)viewController {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaViewNeedUpdateOnlineList:)]) {
+        [self.delegate plvLCLivePageMenuAreaViewNeedUpdateOnlineList:self];
     }
 }
 

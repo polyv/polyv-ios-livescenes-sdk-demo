@@ -121,6 +121,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param playing  是否播放器中 YES 播放，NO 暂停
 - (void)playerController:(PLVECPlayerViewController *)playerController pictureInPicturePlayingStateDidChange:(BOOL)playing;
 
+#pragma mark 防录屏的回调
+
+- (void)playerController:(PLVECPlayerViewController *)playerController preventScreenCapturing:(BOOL)start;
+
 @end
 
 @interface PLVECPlayerViewController : UIViewController

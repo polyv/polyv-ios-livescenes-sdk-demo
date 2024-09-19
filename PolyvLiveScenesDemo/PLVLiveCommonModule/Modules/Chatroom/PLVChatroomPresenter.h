@@ -98,6 +98,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param delayTime 倒计时时间，单位秒
 - (void)chatroomPresenter_didReceiveDelayRedpackWithType:(PLVRedpackMessageType)type delayTime:(NSInteger)delayTime;
 
+- (void)chatroomPresenter_didUpdateOnlineList:(NSArray <PLVChatUser *> *)list total:(NSInteger)total;
+
 @end
 
 /*
@@ -245,6 +247,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 更新获取时间
 - (void)updateHistoryLastTime:(NSTimeInterval)lastTime lastTimeMessageIndex:(NSInteger)lastTimeMessageIndex;
+
+/// 更新观看页在线列表
+- (void)updateOnlineList;
 
 @end
 

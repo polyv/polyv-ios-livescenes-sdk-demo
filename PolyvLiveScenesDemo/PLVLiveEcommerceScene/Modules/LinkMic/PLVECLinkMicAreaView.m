@@ -141,6 +141,10 @@ PLVECLinkMicWindowsViewDelegate
     }];
 }
 
+- (void)preventScreenCapturing:(BOOL)start {
+    self.windowsView.hidden = start;
+}
+
 #pragma mark Getter & Setter
 
 - (PLVECLinkMicControlBar *)controlBar{

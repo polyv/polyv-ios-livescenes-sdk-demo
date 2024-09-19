@@ -9,11 +9,11 @@ target 'PolyvLiveScenesDemo' do
   use_frameworks!
 
   # 保利威 多场景 SDK
-  pod 'PLVLiveScenesSDK', '1.19.0'
+  pod 'PLVLiveScenesSDK', '1.19.1'
 
   # 保利威 手机开播场景 需依赖的库
   pod 'PLVBytedEffectSDK', '4.4.2'
-  pod 'PLVBusinessSDK', '1.19.0', :subspecs => ['Beauty']
+  pod 'PLVBusinessSDK', '1.19.1', :subspecs => ['Beauty']
   
   # 保利威 SM2加密 需依赖的库
   pod 'PLVLOpenSSL', '~> 1.1.12100'
@@ -29,6 +29,6 @@ end
 
 target 'PLVScreenShareExtension' do
   use_frameworks!
-  pod 'PLVBusinessSDK', '1.19.0', :subspecs => ['AbstractBSH','ReplayKitExt']
+  pod 'PLVBusinessSDK', '1.19.1', :subspecs => ['AbstractBSH','ReplayKitExt']
   pod 'PLVFoundationSDK', '1.19.0', :subspecs => ['AbstractBase']
 end

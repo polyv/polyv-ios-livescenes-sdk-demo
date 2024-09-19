@@ -136,6 +136,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 红包消息state字段发生变化时触发，可刷新UI
 - (void)chatroomManager_didRedpackStateChanged;
 
+/// 用户列表
+- (void)chatroomManager_didUpdateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total;
+
 @end
 
 /*
@@ -232,6 +235,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param state 红包状态（字符串类型）
 /// @return 转换为枚举值的红包状态
 - (PLVRedpackState)changeRedpackStateWithRedpackId:(NSString *)redpackId state:(NSString *)state;
+
+/// 更新观看页在线列表
+- (void)updateOnlineList;
 
 /// 增加PLVLCChatroomViewModelProtocol协议的监听者
 /// @param delegate 待增加的监听者

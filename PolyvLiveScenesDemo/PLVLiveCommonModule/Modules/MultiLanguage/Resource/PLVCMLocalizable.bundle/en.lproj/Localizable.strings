@@ -554,6 +554,18 @@
 "请前往微信观看页购买" = "Buy in WeChat only";
 "暂不支持购买" = "Purchase not currently supported";
 
+/**  观看页用户列表  */
+"在线成员" = "Online List";
+"成员信息" = "Viewer Info";
+"规则" = "Rules";
+"列表规则" = "Rules";
+"一、列表规则" = "1.Arrangement order";
+"在线列表顺序将根据特殊角色>观众的优先级进行排序；观众顺序将根据进入直播间的先后时间进行排序，先进入直播间的观众将展示在前排。" = "Sorted by special roles > audiences, with earlier entry time prioritized.";
+"二、特别提醒" = "2.Reminder";
+"在线列表将会有短时间的缓存，可能会出现观众重新离开/进入直播间，列表未更新及时的现象，属于正常。" = "Short caching may cause delayed updates of entry/exit. Normal behavior.";
+"最多支持查看200人" = "Up to 200 viewers";
+"%@人在线" = "%@ online";
+
 /** 通用 */
 "完成" = "Done";
 "回复" = "Reply";

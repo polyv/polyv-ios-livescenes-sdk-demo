@@ -111,6 +111,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param pause 暂停或取消暂停 (YES:暂停；NO:取消暂停)
 - (void)pauseWatchNoDelay:(BOOL)pause;
 
+/// 连麦区域视图 响应防录屏
+- (void)preventScreenCapturing:(BOOL)start;
+
 @end
 
 NS_ASSUME_NONNULL_END

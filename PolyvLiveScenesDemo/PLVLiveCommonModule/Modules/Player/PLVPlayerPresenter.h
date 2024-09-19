@@ -288,6 +288,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param playerPresenter 播放器管理器
 - (void)playerPresenterResumePlaying:(PLVPlayerPresenter *)playerPresenter;
 
+/// 播放器 是否启用防录屏
+/// @note 仅开启防录屏开关，才会进行回调
+///
+/// @param start 是否正在防录屏
+-  (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter preventScreenCapturing:(BOOL)start;
+
 #pragma mark 直播相关
 /// 直播 ‘流状态’ 更新
 ///

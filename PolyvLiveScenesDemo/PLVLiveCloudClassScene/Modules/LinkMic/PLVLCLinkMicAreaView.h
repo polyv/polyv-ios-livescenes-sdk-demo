@@ -93,6 +93,12 @@ NS_ASSUME_NONNULL_BEGIN
 ///       适用场景：当前确认 PLVLCLinkMicAreaView 或 内部的PLVLinkMicPresenter 将很快销毁，仅希望发送 ‘退出连麦’ 的请求消息，来更新本地用户在服务器中的状态
 - (void)leaveLinkMicOnlyEmit;
 
+/// 连麦区域视图 响应防录屏
+///
+/// @note 此方法仅用于防录屏控制
+///       此方法不影响 [areaViewShow] 值；
+- (void)preventScreenCapturing:(BOOL)start;
+
 @end
 
 /// 连麦区域视图Delegate

@@ -150,7 +150,7 @@ PLVSAChatroomListViewDelegate
         __weak typeof(self) weakSelf = self;
         _receiveNewMessageView.didTapNewMessageView = ^{
             [weakSelf clearNewMessageCount];
-            [weakSelf.chatroomListView scrollsToBottom:YES];
+            [weakSelf.chatroomListView scrollsToBottom:NO];
         };
     }
     return _receiveNewMessageView;

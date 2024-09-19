@@ -54,6 +54,7 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, readonly) PLVRoomData *roomData; // 只读，当前直播间数据
 @property (nonatomic, assign) BOOL playing; // 播放器播放状态
 @property (nonatomic, assign) BOOL fullScreenEnable;
+@property (nonatomic, assign) BOOL preventScreenCapturing; // 当前是否处于防录屏状态
 
 @end
 
@@ -749,6 +750,12 @@ PLVPlayerPresenterDelegate
 - (void)playerPresenterWannaSwitchLine:(PLVPlayerPresenter *)playerPresenter {
     if (self.delegate &&[self.delegate respondsToSelector:@selector(playerControllerWannaSwitchLine:)]) {
         [self.delegate playerControllerWannaSwitchLine:self];
+    }
+}
+
+-  (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter preventScreenCapturing:(BOOL)start {
+    if (self.delegate &&[self.delegate respondsToSelector:@selector(playerController:preventScreenCapturing:)]) {
+        [self.delegate playerController:self preventScreenCapturing:start];
     }
 }
 

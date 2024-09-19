@@ -20,8 +20,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 切换在线人数/观看热度显示逻辑-直播场景
 ///
-/// @note NO-默认直播场景显示在线人数
-///       YES-直播场景显示观看热度
+/// @note NO-默认直播场景显示观看热度
+///       YES-直播场景显示在线人数
 @property (nonatomic,assign) BOOL playTimesLabelUseNewStrategy_live;
 
 /// 切换在线人数/观看热度显示逻辑-回放

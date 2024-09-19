@@ -88,6 +88,10 @@ PLVDefaultPageViewDelegate
 @property (nonatomic, weak, readonly) PLVRoomData * currentExternalRoomData; /// 当前直播间数据 (指外部的，即不一定与播放器的频道号匹配)
 @property (nonatomic, weak, readonly) PLVViewLogCustomParam * currentExternalCustomParam; /// 当前统计自定义参数 (只允许读取外部配置的)
 @property (nonatomic, assign) NSInteger countDownTime;
+/// 是否正在防录屏
+@property (nonatomic, assign) BOOL preventScreenCapturing;
+/// 发现开始被录屏时，播放器是否处于播放中
+@property (nonatomic, assign) BOOL isPlayingWhenCaptureStart;
 
 @end
 
@@ -104,6 +108,8 @@ PLVDefaultPageViewDelegate
         [_countDownTimer invalidate];
         _countDownTimer = nil;
     }
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     
     if (_advertView) {
         [_advertView destroyTitleAdvert];
@@ -335,6 +341,10 @@ PLVDefaultPageViewDelegate
         return NO;
     }
     
+    if (self.preventScreenCapturing) { // 防录屏中
+        return NO;
+    }
+    
     if (self.currentVideoType == PLVChannelVideoType_Live) {
         // 修复频道未在开播状态时，主动调用resumePlay方法，导致的播放器异常问题
         if (self.currentStreamState == PLVChannelLiveStreamState_Live || self.currentStreamState == PLVChannelLiveStreamState_Stop) {
@@ -475,16 +485,25 @@ PLVDefaultPageViewDelegate
 - (void)setup{
     self.timer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(timerEvent:) userInfo:nil repeats:YES];
     [[NSRunLoop currentRunLoop] addTimer:self.timer forMode:NSRunLoopCommonModes];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(handleScreenCaptureStatusChanged:)
+                                                 name:UIScreenCapturedDidChangeNotification
+                                               object:nil];
+//    // 避免当播放器初始化后没有接收到通知
+//    if ([UIScreen mainScreen].isCaptured) {
+//        [self startPreventScreenCapture];
+//    }
 }
 
 - (void)setupPlayer{
     NSString * userIdForAccount = [PLVLiveVideoConfig sharedInstance].userId;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (self.currentVideoType == PLVChannelVideoType_Live) { /// 直播
         self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId];
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.pictureInPictureDelegate = self;
-        self.livePlayer.canAutoStartPictureInPicture = YES;
+        self.livePlayer.canAutoStartPictureInPicture = !roomData.captureScreenProtect && !roomData.systemScreenShotProtect;
         self.livePlayer.channelWatchPublicStream = self.channelWatchPublicStream;
         self.livePlayer.channelWatchNoDelay = self.channelWatchNoDelay;
         self.livePlayer.channelWatchQuickLive = self.channelWatchQuickLive;
@@ -505,7 +524,7 @@ PLVDefaultPageViewDelegate
         }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
-        self.livePlaybackPlayer.canAutoStartPictureInPicture = YES;
+        self.livePlaybackPlayer.canAutoStartPictureInPicture = !roomData.captureScreenProtect && !roomData.systemScreenShotProtect;
         self.livePlaybackPlayer.pictureInPictureDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
 
@@ -794,6 +813,56 @@ PLVDefaultPageViewDelegate
     return self.currentExternalRoomData.channelInfo;
 }
 
+#pragma mark - [ Screen Capture ]
+
+- (void)handleScreenCaptureStatusChanged:(NSNotification *)notification {
+    BOOL isCaptured = [UIScreen mainScreen].isCaptured;
+    if (isCaptured) {
+        [self startPreventScreenCapture];
+    } else {
+        [self stopPreventScreenCapture];
+    }
+}
+
+- (void)startPreventScreenCapture {
+    if (![PLVRoomDataManager sharedManager].roomData.captureScreenProtect) {
+        return;
+    }
+    
+    self.preventScreenCapturing = YES;
+    self.displayView.hidden = YES;
+    if (self.currentVideoType == PLVChannelVideoType_Live && [self plvLivePlayerGetInLinkMic:self.livePlayer]) {
+        // 直播且连麦时不做处理
+        self.isPlayingWhenCaptureStart = NO;
+    } else {
+        [self pausePlay];
+        self.isPlayingWhenCaptureStart = [PLVRoomDataManager sharedManager].roomData.playing;
+    }
+    
+    [self callbackPreventScreenCapture:YES];
+}
+
+- (void)stopPreventScreenCapture {
+    if (![PLVRoomDataManager sharedManager].roomData.captureScreenProtect) {
+        return;
+    }
+    
+    self.preventScreenCapturing = NO;
+    self.displayView.hidden = NO;
+    if (self.isPlayingWhenCaptureStart) {
+        self.isPlayingWhenCaptureStart = NO;
+        [self resumePlay];
+    }
+    
+    [self callbackPreventScreenCapture:NO];
+}
+
+- (void)callbackPreventScreenCapture:(BOOL)start {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:preventScreenCapturing:)]) {
+        [self.delegate playerPresenter:self preventScreenCapturing:start];
+    }
+}
+
 #pragma mark - [ Action ]
 - (void)warmUpImageViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
     NSString *warmUpContentUrlString = self.channelInfo.warmUpImageHREF;
@@ -921,6 +990,14 @@ PLVDefaultPageViewDelegate
         }
         if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
             [self.delegate playerPresenter:self playerPlayingStateDidChanged:playing];
+        }
+        
+        if ( self.preventScreenCapturing) {
+            [self pausePlay];
+        } else if (playing && [UIScreen mainScreen].isCaptured && [PLVRoomDataManager sharedManager].roomData.captureScreenProtect) {
+            // 避免当播放器初始化后没有接收到通知
+            [self pausePlay];
+            [self startPreventScreenCapture];
         }
     }
 }
@@ -1346,6 +1423,14 @@ PLVDefaultPageViewDelegate
     
     if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
         [self.delegate playerPresenter:self playerPlayingStateDidChanged:playing];
+    }
+    
+    if (playing && self.preventScreenCapturing) {
+        [self pausePlay];
+    } else if (playing && [UIScreen mainScreen].isCaptured) {
+        // 避免当播放器初始化后没有接收到通知
+        [self pausePlay];
+        [self startPreventScreenCapture];
     }
 }
 

@@ -112,6 +112,14 @@ UITableViewDataSource
     }
 }
 
+- (void)viewWillAppear:(BOOL)animated {
+    [super viewWillAppear:animated];
+    
+    if (CGRectGetWidth(self.keyboardToolView.frame) != CGRectGetWidth(self.view.bounds)) {
+        [self.view layoutIfNeeded];;
+    }
+}
+
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
      
@@ -471,6 +479,7 @@ UITableViewDataSource
 - (void)openCamera {
     [PLVLiveVideoConfig sharedInstance].unableRotate = YES;
     [PLVFdUtil changeDeviceOrientationToPortrait];
+    [[PLVLCUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
     
     UIImagePickerController *cameraVC = [[UIImagePickerController alloc] init];
     cameraVC.delegate = self;

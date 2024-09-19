@@ -107,6 +107,8 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// @param show 是否需要显示评论上墙视图
 - (void)homePageView_receiveSpeakTopMessageChatModel:(PLVChatModel *)model showPinMsgView:(BOOL)show;
 
+- (void)homePageViewWannaShowOnlineList:(PLVECHomePageView *)homePageView;
+
 @end
 
 @interface PLVECHomePageView : UIView
@@ -196,6 +198,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 /// 用于聊天重放时，回放视频记忆播放时通知聊天回放viewModel
 - (void)playbackDidShowMemoryPlayTip;
+
+/// 在线人数
+- (void)updateOnlineListButton:(NSInteger)onlineCount;
 
 @end
 

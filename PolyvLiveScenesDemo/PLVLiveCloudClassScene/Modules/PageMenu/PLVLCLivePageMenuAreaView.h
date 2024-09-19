@@ -23,13 +23,15 @@ typedef NS_ENUM(NSInteger, PLVLCLivePageMenuType) {
     PLVLCLivePageMenuTypeText,          // 自定义图文直播
     PLVLCLivePageMenuTypeQA,            // 问答功能
     PLVLCLivePageMenuTypeIframe,        // 推广外链
-    PLVLCLivePageMenuTypeBuy            // 边看边买
+    PLVLCLivePageMenuTypeBuy,           // 边看边买
+    PLVLCLivePageMenuTypeMembers        // 成员列表
 };
 
 /// 将后端返回的menu字符串转化为枚举值PLVLCLivePageMenuType
 PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
 @protocol PLVLCLivePageMenuAreaViewDelegate;
+@class PLVChatUser;
 
 @interface PLVLCLivePageMenuAreaView : UIView
 
@@ -51,6 +53,9 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 直播用户信息发生改变时调用
 - (void)updateLiveUserInfo;
 
+/// 直播用户登录后更新问答时调用
+- (void)updateQAUserInfo;
+
 /// 通过菜单视图，更新聊天回放viewModel到聊天室视图
 - (void)updatePlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)playbackViewModel;
 
@@ -63,6 +68,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 更新商品库菜单Tab
 /// @param dict 商品菜单参数
 - (void)updateProductMenuTab:(NSDictionary *)dict;
+
+- (void)updateOnlineList:(NSArray <PLVChatUser *>*)list total:(NSInteger)total;
 
 - (void)displayProductPageToExternalView:(UIView *)externalView;
 
@@ -119,6 +126,13 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param show 当前的显示状态
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView lotteryWidgetShowStatusChanged:(BOOL)show;
+
+/// 在线列表规则显示的回调
+/// @param pageMenuAreaView 菜单视图
+- (void)plvLCLivePageMenuAreaViewWannaShowOnlineListRule:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
+
+/// 在线列表更新的回调
+- (void)plvLCLivePageMenuAreaViewNeedUpdateOnlineList:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
 
 @end
 NS_ASSUME_NONNULL_END

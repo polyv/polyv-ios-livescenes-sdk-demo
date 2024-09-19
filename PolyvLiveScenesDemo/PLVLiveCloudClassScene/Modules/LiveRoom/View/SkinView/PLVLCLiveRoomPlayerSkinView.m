@@ -31,6 +31,7 @@
 @property (nonatomic, strong) UIButton *rewardButton;
 @property (nonatomic, strong) UIButton *commodityButton;
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
+@property (nonatomic, strong) UIButton *onlineListButton;
 
 @end
 
@@ -97,6 +98,7 @@
         
         [self refreshBulletinButtonFrame];
         [self refreshPictureInPictureButtonFrame];
+        [self refreshOnlineListButtonFrame];
         
         [self refreshTitleLabelFrameInSmallScreen];
         [self refreshPlayTimesLabelFrame];
@@ -217,6 +219,12 @@
     [self.landscapeInputView showWithReplyChatModel:model];
 }
 
+- (void)updateOnlineListButton:(NSInteger)onlineCount {
+    NSString * onlineCountString = (onlineCount > 10000) ? [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0] : [NSString stringWithFormat:@"%ld",onlineCount];
+    [self.onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineCountString] forState:UIControlStateNormal];
+    [self refreshOnlineListButtonFrame];
+}
+
 #pragma mark - [ Private Methods ]
 - (UIImage *)getLiveRoomImageWithName:(NSString *)imageName{
     return [PLVLCUtils imageForLiveRoomResource:imageName];
@@ -298,6 +306,34 @@
             self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
         }
     }
+}
+
+- (void)refreshOnlineListButtonFrame {
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat rightSafePadding = 0;
+    CGFloat topPadding = 16.0;
+    CGFloat intervalPadding = 0;
+    
+    if (@available(iOS 11.0, *)) {
+        rightSafePadding = self.safeAreaInsets.right;
+    }
+    // iPad适配
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        rightSafePadding = 20.0;
+        topPadding = 30.0;
+        intervalPadding = 10.0;
+    }
+    
+    CGFloat onlineListButtonWidth = [self.onlineListButton.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT,23)].width + 16;
+    CGFloat onlineListButtonX = viewWidth - rightSafePadding - onlineListButtonWidth;
+    if (self.pictureInPictureButton && !self.pictureInPictureButton.hidden) {
+        onlineListButtonX = self.pictureInPictureButton.frame.origin.x - onlineListButtonWidth;
+    } else if (_bulletinButton && !_bulletinButton.hidden) {
+        onlineListButtonX = self.bulletinButton.frame.origin.x - onlineListButtonWidth;
+    } else if (self.moreButton && !self.moreButton.hidden) {
+        onlineListButtonX = self.moreButton.frame.origin.x - onlineListButtonWidth;
+    }
+    self.onlineListButton.frame = CGRectMake(onlineListButtonX, topPadding, onlineListButtonWidth, 23);
 }
 
 - (void)refreshRefreshButtonFrame {
@@ -545,6 +581,20 @@
     return _landscapeInputView;
 }
 
+- (UIButton *)onlineListButton {
+    if (!_onlineListButton) {
+        _onlineListButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),@"0"] forState:UIControlStateNormal];
+        _onlineListButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
+        [_onlineListButton setBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.4)];
+        [_onlineListButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        [_onlineListButton addTarget:self action:@selector(onlineListButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _onlineListButton.layer.masksToBounds = YES;
+        _onlineListButton.layer.cornerRadius = 12;
+    }
+    return _onlineListButton;
+}
+
 #pragma mark Private Setter
 
 - (void)setDanmuButtonShow:(BOOL)danmuButtonShow {
@@ -573,6 +623,10 @@
         /// 顶部UI
         [self addSubview:self.bulletinButton];
         [self addSubview:self.rewardButton];
+        
+        if ([PLVRoomDataManager sharedManager].roomData.menuInfo.portraitOnlineListEnabled) {
+            [self addSubview:self.onlineListButton];
+        }
     }
 }
 
@@ -590,6 +644,7 @@
         [self refreshPlayTimesLabelFrame];
         [self refreshRefreshButtonFrame];
         [self refreshFloatViewShowButtonFrame];
+        [self refreshOnlineListButtonFrame];
         [self refreshDanmuButtonFrame];
         [self refreshGuideChatLabelFrame];
     }else{
@@ -614,6 +669,7 @@
     [super refreshMoreButtonHiddenOrRestore:hidden];
     [self refreshBulletinButtonFrame];
     [self refreshPictureInPictureButtonFrame];
+    [self refreshOnlineListButtonFrame];
 }
 
 #pragma mark Father Animation
@@ -709,6 +765,12 @@
 - (void)commodityButtonAction:(UIButton *)sender {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:)]) {
         [self.delegate plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:self];
+    }
+}
+
+- (void)onlineListButtonAction:(UIButton *)button {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewOnlineListButtonClicked:)]) {
+        [self.delegate plvLCLiveRoomPlayerSkinViewOnlineListButtonClicked:self];
     }
 }
 

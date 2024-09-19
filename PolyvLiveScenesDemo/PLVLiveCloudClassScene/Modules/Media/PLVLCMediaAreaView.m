@@ -15,6 +15,7 @@
 #import "PLVLCDownloadBottomSheet.h"
 #import "PLVLCMediaDanmuSettingView.h"
 #import "PLVPinMessagePopupView.h"
+#import "PLVLCOnlineListRuleSheet.h"
 
 // 模块
 #import "PLVDocumentView.h"
@@ -69,6 +70,7 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay; //只读，是否暂停无延迟直播
 @property (nonatomic, assign) BOOL hasPaintPermission; // 用户是否拥有画笔权限（默认关闭）
 @property (nonatomic, assign) BOOL isInPaintMode; // 当前是否处于画笔模式
+@property (nonatomic, assign) BOOL preventScreenCapturing; // 当前是否处于防录屏状态
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
@@ -76,6 +78,7 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, assign) NSInteger tryPlayPPTViewNum; // 尝试播放PPTView次数
 @property (nonatomic, assign) UIView *pictureInPictureOriginView;   // 画中画视图的起始视图，这个视图必须是激活状态的，否则无法开启画中画。
 @property (nonatomic, strong) PLVLCDownloadBottomSheet *downloadSheet;
+@property (nonatomic, strong) PLVLCOnlineListRuleSheet *onlineListRuleSheet;
 
 #pragma mark 数据
 @property (nonatomic, readonly) PLVRoomData *roomData;  // 只读，当前直播间数据
@@ -550,6 +553,10 @@ PLVLCDocumentPaintModeViewDelegate
     return self.pptView.mainSpeakerPPTOnMain;
 }
 
+- (void)showOnlineListRuleListView {
+    [self.onlineListRuleSheet showInView:self.superview];
+}
+
 #pragma mark - [ Private Methods ]
 - (void)setupData{
     self.currentLiveSceneType = PLVLCMediaAreaViewLiveSceneType_WatchCDN;
@@ -580,6 +587,7 @@ PLVLCDocumentPaintModeViewDelegate
     subview.frame = self.contentBackgroudView.bounds;
     subview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.pictureInPictureOriginView = subview;
+    self.pictureInPictureOriginView.hidden = self.preventScreenCapturing;
 }
 
 - (void)setupModule{
@@ -1042,6 +1050,14 @@ PLVLCDocumentPaintModeViewDelegate
     return _downloadSheet;
 }
 
+- (PLVLCOnlineListRuleSheet *)onlineListRuleSheet {
+    if (!_onlineListRuleSheet) {
+        _onlineListRuleSheet = [[PLVLCOnlineListRuleSheet alloc] init];
+        [_onlineListRuleSheet setSheetCornerRadius:16.0f];
+    }
+    return _onlineListRuleSheet;
+}
+
 - (UILabel *)memoryPlayTipLabel {
     if (!_memoryPlayTipLabel) {
         _memoryPlayTipLabel = [[UILabel alloc] init];
@@ -1156,6 +1172,7 @@ PLVLCDocumentPaintModeViewDelegate
     if (currentFullScreen && !(isPad && !self.fullScreenButtonShowOnIpad)) {
         // 非iPad或显示全屏按钮的iPad的全屏下，返回竖屏
         [PLVFdUtil changeDeviceOrientationToPortrait];
+        [[PLVLCUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationPortrait];
     }else{
         __weak typeof(self) weakSelf = self;
         [PLVFdUtil showAlertWithTitle:PLVLocalizedString(@"确认退出直播间？") message:nil viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"按错了") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"退出") confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
@@ -1233,12 +1250,14 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (void)plvLCBasePlayerSkinViewFullScreenOpenButtonClicked:(PLVLCBasePlayerSkinView *)skinView{
     [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+    [[PLVLCUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationLandscapeLeft];
 }
 
 - (void)plvLCBasePlayerSkinViewPaintButtonClicked:(PLVLCBasePlayerSkinView *)skinView {
     self.isInPaintMode = YES;
     self.pptView.startClass = (self.inRTCRoom && self.inLinkMic);
     [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationLandscapeLeft];
+    [[PLVLCUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationLandscapeLeft];
     [self.paintModeView enterPaintModeWithPPTView:self.pptView];
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:didChangeInPaintMode:)]) {
         [self.delegate plvLCMediaAreaView:self didChangeInPaintMode:YES];
@@ -1558,6 +1577,14 @@ PLVLCDocumentPaintModeViewDelegate
 - (void)playerPresenterResumePlaying:(PLVPlayerPresenter *)playerPresenter {
     if (self.playerPresenter.audioMode) {
         [self.canvasView setPlayCanvasButtonShow:YES];
+    }
+}
+
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter preventScreenCapturing:(BOOL)start {
+    self.preventScreenCapturing = start;
+    self.pictureInPictureOriginView.hidden = start;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:preventScreenCapturing:)]) {
+        [self.delegate plvLCMediaAreaView:self preventScreenCapturing:start];
     }
 }
 

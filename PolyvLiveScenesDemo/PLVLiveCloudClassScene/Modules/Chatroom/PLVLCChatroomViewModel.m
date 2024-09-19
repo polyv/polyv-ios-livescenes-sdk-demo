@@ -378,6 +378,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return redpackState;
 }
 
+- (void)updateOnlineList {
+    [self.presenter updateOnlineList];
+}
+
 #pragma mark - 消息数组
 
 #pragma mark 私聊
@@ -814,6 +818,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     });
 }
 
+- (void)notifyDelegatesDidUpdateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_didUpdateOnlineList:list total:total];
+    });
+}
+
 #pragma mark - 定时上报登录用户
 
 /// 有用户登录
@@ -1105,6 +1115,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 - (void)chatroomPresenter_loadQuestionHistoryFailure {
     [self notifyDelegatesLoadQuestionHistoryFailure];
+}
+
+- (void)chatroomPresenter_didUpdateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total {
+    [self notifyDelegatesDidUpdateOnlineList:list total:total];
 }
 
 #pragma mark - Utils

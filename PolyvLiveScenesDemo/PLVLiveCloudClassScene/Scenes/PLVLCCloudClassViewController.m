@@ -33,6 +33,8 @@
 #import "PLVLCMessagePopupView.h"
 #import "PLVLCLandscapeMessagePopupView.h"
 #import "PLVLiveToast.h"
+#import "PLVSecureView.h"
+#import "PLVLCOnlineListSheet.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -53,7 +55,8 @@ PLVInteractGenericViewDelegate,
 PLVLCChatroomPlaybackDelegate,
 PLVLCChatLandscapeViewDelegate,
 PLVLCMessagePopupViewDelegate,
-PLVLCLandscapeMessagePopupViewDelegate
+PLVLCLandscapeMessagePopupViewDelegate,
+PLVLCOnlineListSheetDelegate
 >
 
 #pragma mark 数据
@@ -112,8 +115,10 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
 @property (nonatomic, strong) PLVLCLiveRoomPlayerSkinView * liveRoomSkinView;// 横屏频道皮肤
+@property (nonatomic, strong) PLVLCOnlineListSheet *onlineListSheet;
 
 @property (nonatomic, assign) BOOL inBackground;
+@property (nonatomic, assign) BOOL enableSysScreenShot;
 
 @end
 
@@ -156,6 +161,15 @@ PLVLCLandscapeMessagePopupViewDelegate
     return self;
 }
 
+- (void)loadView{
+    if ([PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect){
+        PLVSecureView *secureView = [[PLVSecureView alloc] init];
+        self.view = secureView.secureView;
+    }else{
+        self.view = [[UIView alloc] initWithFrame:[UIScreen mainScreen].bounds];
+    }
+}
+
 - (void)viewDidLoad {
     [super viewDidLoad];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
@@ -166,6 +180,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
+    [self getEdgeInset];
     [self updateUI];
 }
 
@@ -189,6 +204,13 @@ PLVLCLandscapeMessagePopupViewDelegate
     }
 
     return (UIInterfaceOrientationMaskPortrait | UIInterfaceOrientationMaskLandscapeRight);
+}
+
+- (void)getEdgeInset {
+    [PLVLCUtils sharedUtils].landscape = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    if (@available(iOS 11, *)) {
+        [[PLVLCUtils sharedUtils] setupAreaInsets:self.view.safeAreaInsets];
+    }
 }
 
 #pragma mark - [ Public Method ]
@@ -631,6 +653,15 @@ PLVLCLandscapeMessagePopupViewDelegate
     return _cardDetailView;
 }
 
+- (PLVLCOnlineListSheet *)onlineListSheet {
+    if (!_onlineListSheet) {
+        _onlineListSheet = [[PLVLCOnlineListSheet alloc] init];
+        _onlineListSheet.delegate = self;
+        [_onlineListSheet setSheetCornerRadius:16.0f];
+    }
+    return _onlineListSheet;
+}
+
 - (PLVChannelType)channelType{
     return [PLVRoomDataManager sharedManager].roomData.channelType;
 }
@@ -719,7 +750,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 /// 观看数 watchCount 更新
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount{
-    if ((self.videoType != PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live)) {
+    if ((self.videoType != PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live)) {
         [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:watchCount];
         [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
     }
@@ -727,10 +758,11 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 // 在线人数 onlineCount 更新
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
-    if ((self.videoType != PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live)) {
+    if ((self.videoType != PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live)) {
         [self.mediaAreaView.skinView setPlayTimesLabelWithOnlineUsers:onlineCount];
         [self.liveRoomSkinView setPlayTimesLabelWithOnlineUsers:onlineCount];
     }
+    [self.liveRoomSkinView updateOnlineListButton:onlineCount];
 }
 
 #pragma mark PLVSocketManagerProtocol
@@ -739,6 +771,7 @@ PLVLCLandscapeMessagePopupViewDelegate
 //    dispatch_async(dispatch_get_main_queue(), ^{
 //        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"登录成功") detail:@"" view:self.view];
 //    });
+    [self.menuAreaView updateQAUserInfo];
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
@@ -995,6 +1028,11 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self.popoverView.interactView openRedpackWithChatModel:model];
 }
 
+- (void)chatroomManager_didUpdateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total {
+    [self.menuAreaView updateOnlineList:list total:total];
+    [self.onlineListSheet updateOnlineList:list];
+}
+
 #pragma mark PLVLCChatroomPlaybackDelegate
 
 - (NSTimeInterval)currentPlaybackTimeForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
@@ -1217,6 +1255,18 @@ PLVLCLandscapeMessagePopupViewDelegate
     }
 }
 
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView preventScreenCapturing:(BOOL)start {
+    [self.linkMicAreaView preventScreenCapturing:start];
+    
+    if (start) {
+        [PLVFdUtil showAlertWithTitle:PLVLocalizedString(@"暂时无法观看") message:PLVLocalizedString(@"停止录屏才能继续正常观看") viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"确认") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:nil confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:nil];
+    }
+    
+    if ([PLVRoomDataManager sharedManager].roomData.fullScreenProtectWhenCaptureScreen) {
+        self.view.hidden = start;
+    }
+}
+
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playbackVideoSizeChange:(CGSize)videoSize {
     if (self.videoType == PLVChannelVideoType_Playback) {
         [self.liveRoomSkinView refreshPictureInPictureButtonShow:YES];
@@ -1277,6 +1327,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:YES];
     // 加载商品库视图
     [self.menuAreaView displayProductPageToExternalView:self.view];
+}
+
+- (void)plvLCLiveRoomPlayerSkinViewOnlineListButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
+    [self.onlineListSheet showInView:self.view];
 }
 
 #pragma mark PLVLCLinkMicAreaViewDelegate
@@ -1462,6 +1516,14 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self.liveRoomSkinView showLotteryWidgetView:show];
 }
 
+- (void)plvLCLivePageMenuAreaViewWannaShowOnlineListRule:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
+    [self.mediaAreaView showOnlineListRuleListView];
+}
+
+- (void)plvLCLivePageMenuAreaViewNeedUpdateOnlineList:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
+    [[PLVLCChatroomViewModel sharedViewModel] updateOnlineList];
+}
+
 #pragma mark  PLVCommodityPushViewDelegate
 
 - (void)plvCommodityPushViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
@@ -1476,7 +1538,9 @@ PLVLCLandscapeMessagePopupViewDelegate
         if (self.videoType == PLVChannelVideoType_Live) { /// 直播场景需要开启画中画播放
             if (self.mediaAreaView.channelInLive &&
                 !self.linkMicAreaView.inLinkMic &&
-                [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+                [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported] &&
+                ![PLVRoomDataManager sharedManager].roomData.captureScreenProtect &&
+                ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect) {
                 [self.mediaAreaView startPictureInPicture];
             } else {
                 [self jumpToCommodityDetailViewController];
@@ -1631,6 +1695,16 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)landscapeMessagePopupViewWillCopy:(PLVLCLandscapeMessagePopupView *)popupView {
     [UIPasteboard generalPasteboard].string = popupView.content;
     [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"复制成功") inView:self.view afterDelay:3.0];
+}
+
+#pragma mark PLVLCOnlineListSheetDelegate
+
+- (void)plvLCOnlineListSheetWannaShowRule:(PLVLCOnlineListSheet *)sheet {
+    [self.mediaAreaView showOnlineListRuleListView];
+}
+
+- (void)plvLCOnlineListSheetNeedUpdateOnlineList:(PLVLCOnlineListSheet *)sheet {
+    [[PLVLCChatroomViewModel sharedViewModel] updateOnlineList];
 }
 
 @end

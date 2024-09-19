@@ -148,6 +148,10 @@ PLVLCLinkMicWindowsViewDelegate
     [self.presenter leaveLinkMicOnlyEmit];
 }
 
+- (void)preventScreenCapturing:(BOOL)start {
+    self.windowsView.hidden = start;
+}
+
 #pragma mark Getter
 - (BOOL)inRTCRoom{
     return self.presenter.inRTCRoom;

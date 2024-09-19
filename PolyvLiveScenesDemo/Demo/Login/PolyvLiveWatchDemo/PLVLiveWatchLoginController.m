@@ -268,6 +268,13 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     
     if (self.btnCloundClass.alpha == 1.0f) { // 云课堂场景
         void(^successBlock)(void) = ^() { // 登录成功页面跳转回调
+            // 解开下列注释开启防录屏
+            /*
+            [PLVRoomDataManager sharedManager].roomData.captureScreenProtect = YES;
+            [PLVRoomDataManager sharedManager].roomData.fullScreenProtectWhenCaptureScreen = YES; // 开启全屏防录屏保护
+            [PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect = YES; // 系统截图保护，禁止截图
+            */
+            
             PLVLCCloudClassViewController * cloudClassVC = [[PLVLCCloudClassViewController alloc] init];
             if (PushOrModel) {
                 [self.navigationController pushViewController:cloudClassVC animated:YES];
@@ -293,6 +300,12 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
         }
     } else { // 直播带货场景
         void(^successBlock)(void) = ^() { // 登录成功页面跳转回调
+            // 解开下列注释开启防录屏 防系统截屏功能
+            /*
+            [PLVRoomDataManager sharedManager].roomData.captureScreenProtect = YES;
+            [PLVRoomDataManager sharedManager].roomData.fullScreenProtectWhenCaptureScreen = YES; // 开启全屏防录屏保护
+            [PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect = YES; // 系统截图保护，禁止截图
+            */
             PLVECWatchRoomViewController * watchLiveVC = [[PLVECWatchRoomViewController alloc] init];
             watchLiveVC.fullScreenButtonShowOnIpad = YES;
             if (PushOrModel) {

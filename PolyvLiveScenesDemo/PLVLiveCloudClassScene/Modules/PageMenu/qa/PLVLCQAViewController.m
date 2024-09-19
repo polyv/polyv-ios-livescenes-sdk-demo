@@ -64,6 +64,13 @@ PLVQAWebViewBridgeDelegate
     self.webView.frame = self.view.bounds;
 }
 
+#pragma mark - [ Public Method ]
+
+- (void)updateUserInfo {
+    NSDictionary *userInfo = [self getUserInfo];
+    [self.webViewBridge updateNativeAppParamsInfo:userInfo];
+}
+
 #pragma mark - [ Private Method ]
 #pragma mark Getter & Setter
 - (WKWebView *)webView {
@@ -83,10 +90,20 @@ PLVQAWebViewBridgeDelegate
     return _webView;
 }
 
+- (NSDictionary *)getUserInfo {
+    NSString *chatToken = [PLVSocketManager sharedManager].chatToken;
+    if ([PLVFdUtil checkStringUseable:chatToken]) {
+        NSDictionary *dict = @{@"chatToken" : chatToken};
+        return  [self.roomData nativeAppUserParamsWithExtraParam:dict];
+    } else {
+        return [self.roomData nativeAppUserParamsWithExtraParam:nil];
+    }
+}
+
 #pragma mark - [ Delegate ]
 #pragma mark PLVQAWebViewBridgeDelegate
 - (NSDictionary *)getAPPInfoInQAWebViewBridge:(PLVQAWebViewBridge *)webViewBridge {
-    return [self.roomData nativeAppUserParamsWithExtraParam:nil];
+    return [self getUserInfo];
 }
 
 @end

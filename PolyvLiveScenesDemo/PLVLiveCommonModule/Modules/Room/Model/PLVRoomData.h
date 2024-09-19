@@ -83,6 +83,15 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign) BOOL listenMain;
 /// 是否双师模式
 @property (nonatomic, assign, readonly) BOOL transmitMode;
+/// 防录屏开关，默认 NO
+/// @note 直播以及回放场景下有效，开启防录屏开关时，不支持画中画功能；连麦场景下不结束连麦，非连麦场景会自动暂停，待录屏开启后尝试自动播放
+@property (nonatomic, assign) BOOL captureScreenProtect;
+/// 全屏保护开关，默认 NO
+/// @note YES-开启防录屏开关且录屏时，将整个观看页隐藏；NO-开启防录屏开关且录屏时，仅播放器和连麦区域隐藏
+@property (nonatomic, assign) BOOL fullScreenProtectWhenCaptureScreen;
+/// 防系统截屏开关，默认NO
+/// @note 直播和回放场景有效， 开启防系统截屏后，不支持系统画中画播放
+@property (nonatomic, assign) BOOL systemScreenShotProtect;
 
 #pragma mark 直播独有属性
 /// 直播状态

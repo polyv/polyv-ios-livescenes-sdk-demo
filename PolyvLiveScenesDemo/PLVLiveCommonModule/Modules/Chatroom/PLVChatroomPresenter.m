@@ -73,6 +73,13 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 /// 提问消息历史记录当前的页码
 @property (nonatomic, assign) NSInteger questionHistoryCurrentPage;
 
+#pragma mark 在线列表
+@property (nonatomic, assign) NSTimeInterval lastUpdateTime; // 上次更新在线列表的时间
+@property (nonatomic, strong) PLVChatUser *localUser;
+@property (nonatomic, strong) NSMutableArray <PLVChatUser *> *userList;
+@property (nonatomic, assign) NSInteger onlineListTotal;
+@property (nonatomic, assign) BOOL requestOnlineList;
+
 @end
 
 @implementation PLVChatroomPresenter {
@@ -264,6 +271,70 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 - (void)updateHistoryLastTime:(NSTimeInterval)lastTime lastTimeMessageIndex:(NSInteger)lastTimeMessageIndex {
     self.lastTime = lastTime;
     self.lastTimeMessageIndex = lastTimeMessageIndex;
+}
+
+- (void)updateOnlineList {
+    if ([[NSDate date] timeIntervalSince1970] - self.lastUpdateTime < 60) { // 1分钟内不刷新接口
+        if (!self.requestOnlineList) { // 未请求则对外同步当前用户列表
+            [self callbackForUpdateOnlineList];
+        }
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    self.lastUpdateTime = [[NSDate date] timeIntervalSince1970];
+    self.requestOnlineList = YES;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if ([PLVFdUtil checkStringUseable:roomData.customParam.liveParam4] &&
+        roomData.menuInfo.chatViewerGroupEnabled) {
+        [PLVLiveVideoAPI requestViewerListWithRoomId:roomData.channelId groupId:roomData.customParam.liveParam4 success:^(NSDictionary * _Nonnull viewerListDict) {
+            NSArray *list = PLV_SafeArraryForDictKey(viewerListDict, @"list");
+            NSMutableArray *muList = [NSMutableArray arrayWithArray:@[self.localUser]];
+            if ([PLVFdUtil checkArrayUseable:list]) {
+                for (NSDictionary *dict in list) {
+                    PLVChatUser *chatUser = [self chatUserWithDict:dict];
+                    if (chatUser) {
+                        if ([PLVFdUtil checkStringUseable:self.localUser.userId] && [chatUser.userId isEqualToString:self.localUser.userId]) {
+                            continue;
+                        }
+                        [muList addObject:chatUser];
+                    }
+                }
+            }
+            weakSelf.userList = muList;
+            weakSelf.onlineListTotal = PLV_SafeIntegerForDictKey(viewerListDict, @"total");
+            weakSelf.requestOnlineList = NO;
+            [weakSelf callbackForUpdateOnlineList];
+        } failure:^(NSError * _Nonnull error) {
+            // 失败不会更新数据 只会对外回调
+            weakSelf.requestOnlineList = NO;
+            [weakSelf callbackForUpdateOnlineList];
+        }];
+    } else {
+        [PLVLiveVideoAPI requestViewerListWithRoomId:[PLVRoomDataManager sharedManager].roomData.channelId success:^(NSDictionary * _Nonnull viewerListDict) {
+            NSArray *list = PLV_SafeArraryForDictKey(viewerListDict, @"list");
+            NSMutableArray *muList = [NSMutableArray arrayWithArray:@[self.localUser]];
+            if ([PLVFdUtil checkArrayUseable:list]) {
+                for (NSDictionary *dict in list) {
+                    PLVChatUser *chatUser = [self chatUserWithDict:dict];
+                    if (chatUser) {
+                        if ([PLVFdUtil checkStringUseable:self.localUser.userId] && [chatUser.userId isEqualToString:self.localUser.userId]) {
+                            continue;
+                        }
+                        [muList addObject:chatUser];
+                    }
+                }
+            }
+            weakSelf.userList = muList;
+            weakSelf.onlineListTotal = PLV_SafeIntegerForDictKey(viewerListDict, @"total");
+            weakSelf.requestOnlineList = NO;
+            [weakSelf callbackForUpdateOnlineList];
+        } failure:^(NSError * _Nonnull error) {
+            // 失败不会更新数据 只会对外回调
+            weakSelf.requestOnlineList = NO;
+            [weakSelf callbackForUpdateOnlineList];
+        }];
+    }
 }
 
 #pragma mark - [ Private Method ]
@@ -1256,6 +1327,44 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
 
 - (void)addLikeCount:(NSInteger)likeCount {
     [PLVRoomDataManager sharedManager].roomData.likeCount += likeCount;
+}
+
+#pragma mark 观看页在线列表
+
+- (PLVChatUser *)localUser {
+    if (!_localUser) {
+        _localUser = [[PLVChatUser alloc] init];
+        PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+        _localUser.userId = roomUser.viewerId;
+        _localUser.userName = roomUser.viewerName;
+        _localUser.avatarUrl = roomUser.viewerAvatar;
+        _localUser.userType = roomUser.viewerType;
+        _localUser.actor = roomUser.actor;
+    }
+    return _localUser;
+}
+
+- (PLVChatUser *)chatUserWithDict:(NSDictionary *)dict {
+    if (![PLVFdUtil checkDictionaryUseable:dict]) {
+        return nil;
+    }
+    
+    PLVChatUser *chatUser = [[PLVChatUser alloc] init];
+    chatUser.userId = PLV_SafeStringForDictKey(dict, @"userId");
+    chatUser.userName = PLV_SafeStringForDictKey(dict, @"nick");
+    chatUser.avatarUrl = PLV_SafeStringForDictKey(dict, @"pic");
+    if ([chatUser.avatarUrl hasPrefix:@"//"]) {
+        chatUser.avatarUrl = [@"https:" stringByAppendingString:chatUser.avatarUrl];
+    }
+    chatUser.userType = [PLVRoomUser userTypeWithUserTypeString:PLV_SafeStringForDictKey(dict, @"userType")];
+    chatUser.actor = PLV_SafeStringForDictKey(dict, @"actor");
+    return chatUser;
+}
+
+- (void)callbackForUpdateOnlineList {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomPresenter_didUpdateOnlineList:total:)]) {
+        [self.delegate chatroomPresenter_didUpdateOnlineList:self.userList total:self.onlineListTotal];
+    }
 }
 
 #pragma mark - PLVRoomDataManagerProtocol

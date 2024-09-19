@@ -218,6 +218,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param message 消息详情
 - (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage * _Nullable)message;
 
+/// 显示规则列表
+- (void)showOnlineListRuleListView;
+
 @end
 
 @protocol PLVLCMediaAreaViewDelegate <NSObject>
@@ -363,6 +366,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 #pragma mark 下载视图的回调
 - (void)plvLCMediaAreaViewClickDownloadListButton:(PLVLCMediaAreaView *)mediaAreaView;
+
+#pragma mark 防录屏的回调
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView preventScreenCapturing:(BOOL)start;
 
 @end
 

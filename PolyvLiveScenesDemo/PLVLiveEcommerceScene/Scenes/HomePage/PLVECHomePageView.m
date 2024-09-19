@@ -124,6 +124,7 @@ PLVECLotteryWidgetViewDelegate
 @property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
 @property (nonatomic, assign) BOOL visiable;                       // 该属性为YES表示当前该视图处于用户可见状态
 @property (nonatomic, assign) BOOL showMemoryPlayWithoutPlaybackTimeChanged; // 该属性为YES表示续播时没有触发播放器时间更新
+@property (nonatomic, strong) UIButton *onlineListButton; // 在线列表按钮
 
 @end
 
@@ -173,6 +174,9 @@ PLVECLotteryWidgetViewDelegate
         [self addSubview:self.likeButtonView];
         [self addSubview:self.giftButton];
         [self addSubview:self.questionnaireButton];
+        if ([PLVRoomDataManager sharedManager].roomData.menuInfo.portraitOnlineListEnabled) {
+            [self addSubview:self.onlineListButton];
+        }
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.chatroomView];
         [self addSubview:self.playerContolView];
@@ -184,6 +188,7 @@ PLVECLotteryWidgetViewDelegate
         }
         [self addSubview:self.playbackListButton];
     }
+    
     [self addSubview:self.redpackButtonView];
     [self addSubview:self.cardPushButtonView];
     [self addSubview:self.lotteryWidgetView];
@@ -324,6 +329,20 @@ PLVECLotteryWidgetViewDelegate
         [_backButton addTarget:self action:@selector(backButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _backButton;
+}
+
+- (UIButton *)onlineListButton {
+    if (!_onlineListButton) {
+        _onlineListButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),@"0"] forState:UIControlStateNormal];
+        _onlineListButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
+        [_onlineListButton setBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.4)];
+        [_onlineListButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        [_onlineListButton addTarget:self action:@selector(onlineListButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _onlineListButton.layer.masksToBounds = YES;
+        _onlineListButton.layer.cornerRadius = 12;
+    }
+    return _onlineListButton;
 }
 
 - (PLVECMoreView *)moreView {
@@ -680,6 +699,11 @@ PLVECLotteryWidgetViewDelegate
     }
 }
 
+- (void)updateOnlineListButton:(NSInteger)onlineCount {
+    NSString * onlineCountString = (onlineCount > 10000) ? [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0] : [NSString stringWithFormat:@"%ld",onlineCount];
+    [self.onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineCountString] forState:UIControlStateNormal];
+}
+
 #pragma mark - Private
 
 - (void)updateCodeRateSwitchViewHiddenState {
@@ -805,6 +829,9 @@ PLVECLotteryWidgetViewDelegate
     self.switchView.frame = self.moreView.frame;
     
     self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 58);
+
+    CGFloat onlineListButtonWidth = [self.onlineListButton.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT,23)].width + 16;
+    self.onlineListButton.frame = fullScreen ? CGRectMake(CGRectGetWidth(self.bounds) - onlineListButtonWidth - 40, 15, onlineListButtonWidth, 23) : CGRectMake(CGRectGetWidth(self.bounds) - onlineListButtonWidth - 63, 15, onlineListButtonWidth, 23);
 }
 
 - (void)updateLikeViewAnimationLeftShift {
@@ -884,6 +911,12 @@ PLVECLotteryWidgetViewDelegate
 
 - (void)closeNetworkTipsViewClick:(UIButton *)button {
     self.networkQualityPoorView.hidden = YES;
+}
+
+- (void)onlineListButtonAction:(UIButton *)button {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewWannaShowOnlineList:)]) {
+        [self.delegate homePageViewWannaShowOnlineList:self];
+    }
 }
 
 #pragma mark - Delegate
@@ -1194,7 +1227,9 @@ PLVECLotteryWidgetViewDelegate
         }
         
         if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive &&
-            [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+            [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported] && 
+            ![PLVRoomDataManager sharedManager].roomData.captureScreenProtect &&
+            ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect) {
             PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
             item5.title = PLVLocalizedString(PLVECHomePageView_Data_PictureInPictureItemTitle);
             item5.iconImageName = @"plv_pictureInPictureSwitch_btn";

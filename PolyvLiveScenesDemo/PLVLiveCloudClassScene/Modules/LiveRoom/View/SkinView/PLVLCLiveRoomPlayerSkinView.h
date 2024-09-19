@@ -88,6 +88,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击回复某条消息
 - (void)didTapReplyChatModel:(PLVChatModel *)model;
 
+/// 更新在线列表人数
+- (void)updateOnlineListButton:(NSInteger)onlineCount;
+
 @end
 
 @protocol PLVLCLiveRoomPlayerSkinViewDelegate <NSObject>
@@ -107,6 +110,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 打开商品库按钮点击的回调
 /// @param liveRoomPlayerSkinView 横屏 直播间播放器皮肤视图
 - (void)plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
+
+/// 打开成员列表点击的回调
+/// @param liveRoomPlayerSkinView 横屏 直播间播放器皮肤视图
+- (void)plvLCLiveRoomPlayerSkinViewOnlineListButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
 
 @end
 

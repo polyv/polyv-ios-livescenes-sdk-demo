@@ -163,9 +163,10 @@ UIGestureRecognizerDelegate>
                 self.pictureInPictureButton.hidden = !show;
             }
         }
-        // 不支持画中画的设备隐藏按钮
+        // 不支持画中画的设备隐藏按钮，开启防截屏功能的
         if (!self.pictureInPictureButton.hidden) {
-            self.pictureInPictureButton.hidden = ![[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported];
+            self.pictureInPictureButton.hidden = ![[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported] || [PLVRoomDataManager sharedManager].roomData.captureScreenProtect ||
+                [PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect;
         }
         self.moreButtonOriginalStatus = self.moreButton.hidden;
         // 检查当前PPT是否在主屏并设置数据
@@ -362,7 +363,9 @@ UIGestureRecognizerDelegate>
 }
 
 - (void)refreshPictureInPictureButtonShow:(BOOL)show {
-    BOOL supported = [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported];
+    BOOL supported = [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported] &&
+    ![PLVRoomDataManager sharedManager].roomData.captureScreenProtect &&
+    ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect;
     self.pictureInPictureButton.hidden = supported ? !show : YES;
 }
 
