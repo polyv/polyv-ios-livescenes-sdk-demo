@@ -62,6 +62,7 @@ PLVECChatroomViewModelProtocol
 #pragma mark 数据
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
+@property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
@@ -1101,6 +1102,14 @@ PLVECChatroomViewModelProtocol
     [self.onlineListSheet showInView:self.view];
 }
 
+- (void)homePageViewWannaShowWelfareLottery:(PLVECHomePageView *)homePageView {
+    [self.popoverView.interactView openWelfareLottery];
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView welfareLotteryWidgetShowStatusChanged:(BOOL)show {
+    self.welfareLotteryWidgetShowed = show;
+}
+
 #pragma mark UIScrollView Delegate
 
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
@@ -1159,6 +1168,17 @@ PLVECChatroomViewModelProtocol
     [self handleProductClickWithCommodityModel:commodity];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateWelfareLotteryWidget:(NSDictionary *)dict {
+    [self.homePageView updateWelfareLotteryWidgetViewInfo:dict];
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView welfareLotteryCommentSuccess:(NSDictionary *)dict {
+    NSString *comment = PLV_SafeStringForDictKey(dict, @"comment");
+    if ([PLVFdUtil checkStringUseable:comment]) {
+        [[PLVECChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];
+    }
+}
+
 #pragma mark PLVLCMessagePopupViewDelegate
 
 - (void)messagePopupViewWillCopy:(PLVECMessagePopupView *)popupView {
@@ -1180,6 +1200,23 @@ PLVECChatroomViewModelProtocol
 
 - (void)chatroomManager_didUpdateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total {
     [self.onlineListSheet updateOnlineList:list];
+}
+
+- (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
+    if (!self.welfareLotteryWidgetShowed ||!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return;
+    }
+    
+    id message = model.message;
+    if (message &&
+        [message isKindOfClass:[PLVSpeakMessage class]] && model.contentLength == PLVChatMsgContentLength_0To500) {
+        PLVSpeakMessage *speakMessage = (PLVSpeakMessage *)message;
+        NSString *comment = speakMessage.content;
+        if (![PLVFdUtil checkStringUseable:comment]) {
+            return;
+        }
+        [self.popoverView.interactView checkWelfareLotteryComment:comment];
+    }
 }
 
 @end

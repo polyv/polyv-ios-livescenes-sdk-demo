@@ -47,6 +47,16 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// @param commodity 大卡片商品详情模型
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetail:(PLVCommodityModel *)commodity;
 
+/// 收到更新福利抽奖挂件的回调
+/// @param interactView 互动视图
+/// @param dict 抽奖挂件的数据
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateWelfareLotteryWidget:(NSDictionary *)dict;
+
+/// 收到条件抽奖评论成功的回调
+/// @param interactView 互动视图
+/// @param dict 福利抽奖挂件评论
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView welfareLotteryCommentSuccess:(NSDictionary *)dict;
+
 @end
 
 /// 互动视图
@@ -108,6 +118,13 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// 打开职位详情弹层视图
 /// @param data 职位详情视图
 - (void)openJobDetailWithData:(NSDictionary *)data;
+
+/// 打开条件抽奖窗口
+- (void)openWelfareLottery;
+
+/// 检查发表的评论是否满足评论抽奖
+-
+(void)checkWelfareLotteryComment:(NSString *)comment;
 
 @end
 

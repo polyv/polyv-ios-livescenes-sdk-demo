@@ -43,7 +43,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 返回本地发送的公聊消息（包含禁言的情况）
 /// 用于刷新列表、滚动列表到底部
-- (void)chatroomManager_didSendMessage;
+- (void)chatroomManager_didSendMessage:(PLVChatModel *)model;
 
 /// 返回socket接收到的公聊消息
 /// 用于刷新列表、显示新消息提示
@@ -212,6 +212,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 更新观看页在线列表
 - (void)updateOnlineList;
+
+/// 插入一条评论抽奖消息
+- (void)welfareLotteryCommentSuccess:(NSString *)comment;
 
 /// 增加PLVECChatroomViewModelProtocol协议的监听者
 /// @param delegate 待增加的监听者

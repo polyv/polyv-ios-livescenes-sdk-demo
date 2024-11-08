@@ -79,6 +79,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 回放视频ID(请求'直播回放视频的信息'接口返回的视频Id，与后台回放列表看到的vid不是同一个数据)
 @property (nonatomic, copy, readonly) NSString *videoId;
 
+/// 文件ID(请求'直播回放视频的信息'接口返回的文件Id，与后台回放列表看到的vid不是同一个数据，适用于暂存/素材库)
+@property (nonatomic, copy, readonly) NSString *fileId;
+
 #pragma mark 状态
 /// 当前“播放器的频道号”是否与“外部频道号”一致
 @property (nonatomic, assign, readonly) BOOL channelMatchExternal;

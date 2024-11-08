@@ -6,3 +6,15 @@
   Copyright © 2023 PLV. All rights reserved.
 */
 
+"手机开播" = "Mobile Live Broadcast";
+"请输入频道号" = "Please enter the channel number";
+"请输入密码" = "Please enter the password";
+"请输入昵称" = "Please enter your nickname";
+"登录" = "Login";
+"登录中..." = "Logging in...";
+"请勾选协议" = "Please check the agreement";
+" 记住密码" = "Remember password";
+"已阅读并同意" = "I have read and agree to ";
+"《隐私政策》" = "Privacy Policy ";
+"和" = "and ";
+"《使用协议》" = "User Agreement";

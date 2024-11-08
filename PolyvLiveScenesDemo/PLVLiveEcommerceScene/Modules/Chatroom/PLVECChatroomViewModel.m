@@ -289,6 +289,13 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self.presenter updateOnlineList];
 }
 
+- (void)welfareLotteryCommentSuccess:(NSString *)comment {
+    PLVChatModel *model = [self.presenter createWelfareLotteryCommentChatModel:comment];
+    if (model) {
+        [self addPublicChatModel:model];
+    }
+}
+
 #pragma mark - 消息数组
 
 #pragma mark 私聊
@@ -375,7 +382,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self.publicChatArray addObject:model];
     dispatch_semaphore_signal(_publicChatArrayLock);
     
-    [self notifyListenerDidSendMessage];
+    [self notifyListenerDidSendMessage:model];
 }
 
 /// 接收到socket的公聊消息时
@@ -501,9 +508,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 #pragma mark - Listener
 
-- (void)notifyListenerDidSendMessage {
+- (void)notifyListenerDidSendMessage:(PLVChatModel *)model {
     dispatch_async(multicastQueue, ^{
-        [self->multicastDelegate chatroomManager_didSendMessage];
+        [self->multicastDelegate chatroomManager_didSendMessage:model];
     });
 }
 

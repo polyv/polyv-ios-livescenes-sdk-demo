@@ -18,7 +18,7 @@ static int kMaxLength = 100;
 UITextViewDelegate
 >
 
-@property (nonatomic, strong) UIView *maskView;
+@property (nonatomic, strong) UIView *customMaskView;
 @property (nonatomic, strong) UIView *topBarView;
 @property (nonatomic, strong) UIButton *cancelButton;
 @property (nonatomic, strong) UIButton *doneButton;
@@ -37,7 +37,7 @@ UITextViewDelegate
     if (self) {
         self.frame = [UIScreen mainScreen].bounds;
         
-        [self addSubview:self.maskView];
+        [self addSubview:self.customMaskView];
         [self addSubview:self.topBarView];
         [self addSubview:self.textView];
         
@@ -70,12 +70,12 @@ UITextViewDelegate
 #pragma mark - [ Private Method ]
 #pragma mark  Getter
 
-- (UIView *)maskView {
-    if (_maskView == nil) {
-        _maskView = [[UIView alloc] initWithFrame:self.bounds];
-        _maskView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.8];
+- (UIView *)customMaskView {
+    if (_customMaskView == nil) {
+        _customMaskView = [[UIView alloc] initWithFrame:self.bounds];
+        _customMaskView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.8];
     }
-    return _maskView;
+    return _customMaskView;
 }
 
 - (UIView *)topBarView {

@@ -188,13 +188,23 @@ UIGestureRecognizerDelegate>
 }
 
 - (void)setPlayTimesLabelWithTimes:(NSInteger)times{
-    NSString * timesString = (times > 10000) ? [NSString stringWithFormat:@"%0.1fw", times / 10000.0] : [NSString stringWithFormat:@"%ld",times];
+    NSString *timesString = [NSString stringWithFormat:@"%ld",times];
+    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && times > 10000) {
+        timesString = [NSString stringWithFormat:@"%0.1fw", times / 10000.0];
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && times > 1000) {
+        timesString = [NSString stringWithFormat:@"%0.1fk", times / 1000.0];
+    }
     self.playTimesLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"%@次播放"),timesString];
     [self refreshPlayTimesLabelFrame];
 }
 
 - (void)setPlayTimesLabelWithOnlineUsers:(NSInteger)onlineUsers {
-    NSString * onlineUsersString = (onlineUsers > 10000) ? [NSString stringWithFormat:@"%0.1fw", onlineUsers / 10000.0] : [NSString stringWithFormat:@"%ld",onlineUsers];
+    NSString *onlineUsersString = [NSString stringWithFormat:@"%ld",onlineUsers];
+    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && onlineUsers > 10000) {
+        onlineUsersString = [NSString stringWithFormat:@"%0.1fw", onlineUsers / 10000.0];
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && onlineUsers > 1000) {
+        onlineUsersString = [NSString stringWithFormat:@"%0.1fk", onlineUsers / 1000.0];
+    }
     self.playTimesLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineUsersString];
     [self refreshPlayTimesLabelFrame];
 }

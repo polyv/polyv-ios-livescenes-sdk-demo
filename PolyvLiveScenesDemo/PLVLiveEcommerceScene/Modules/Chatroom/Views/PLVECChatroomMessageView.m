@@ -548,7 +548,7 @@ PLVECChatroomPlaybackViewModelDelegate
 
 #pragma mark - PLVECChatroomViewModelProtocol
 #pragma mark 公聊
-- (void)chatroomManager_didSendMessage {
+- (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
     [self.tableView reloadData];
     [self scrollsToBottom];
 }

@@ -27,6 +27,7 @@
 #import "PLVECMoreView.h"
 #import "PLVECSwitchView.h"
 #import "PLVECLotteryWidgetView.h"
+#import "PLVECWelfareLotteryWidgetView.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -67,7 +68,8 @@ PLVCommodityPushViewDelegate,
 PLVSocketManagerProtocol,
 PLVECChatroomViewDelegate,
 PLVECCardPushButtonViewDelegate,
-PLVECLotteryWidgetViewDelegate
+PLVECLotteryWidgetViewDelegate,
+PLVECWelfareLotteryWidgetViewDelegate
 >
 
 #pragma mark 数据
@@ -114,6 +116,7 @@ PLVECLotteryWidgetViewDelegate
 @property (nonatomic, strong) PLVECRedpackButtonView *redpackButtonView; // 倒计时红包挂件
 @property (nonatomic, strong) PLVECPlayerContolView *playerContolView; // 视频播放控制视图
 @property (nonatomic, strong) PLVECLotteryWidgetView *lotteryWidgetView; // 抽奖挂件视图
+@property (nonatomic, strong) PLVECWelfareLotteryWidgetView *welfareLotteryWidgetView; // 福利抽奖挂件
 @property (nonatomic, strong) UIButton *moreButton;                    // 更多按钮
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
@@ -192,6 +195,7 @@ PLVECLotteryWidgetViewDelegate
     [self addSubview:self.redpackButtonView];
     [self addSubview:self.cardPushButtonView];
     [self addSubview:self.lotteryWidgetView];
+    [self addSubview:self.welfareLotteryWidgetView];
     [self addSubview:self.moreButton];
     [self addSubview:self.shoppingCartButton];
     [self addSubview:self.backButton];
@@ -261,6 +265,14 @@ PLVECLotteryWidgetViewDelegate
         _lotteryWidgetView.delegate = self;
     }
     return _lotteryWidgetView;
+}
+
+- (PLVECWelfareLotteryWidgetView *)welfareLotteryWidgetView {
+    if (!_welfareLotteryWidgetView) {
+        _welfareLotteryWidgetView = [[PLVECWelfareLotteryWidgetView alloc] init];
+        _welfareLotteryWidgetView.delegate = self;
+    }
+    return _welfareLotteryWidgetView;
 }
 
 - (UIButton *)moreButton {
@@ -678,6 +690,15 @@ PLVECLotteryWidgetViewDelegate
     [self updateLikeViewAnimationLeftShift];
 }
 
+- (void)updateWelfareLotteryWidgetViewInfo:(NSDictionary *)dict {
+    if ([PLVFdUtil checkDictionaryUseable:dict]) {
+        [self.welfareLotteryWidgetView updateWelfareLotteryWidgetInfo:dict];
+    } else {
+        [self.welfareLotteryWidgetView hideWidgetView];
+    }
+    [self updateLikeViewAnimationLeftShift];
+}
+
 
 - (void)reportProductClickedEvent:(PLVCommodityModel *)commodity {
     [self.pushView sendProductClickedEvent:commodity];
@@ -700,7 +721,12 @@ PLVECLotteryWidgetViewDelegate
 }
 
 - (void)updateOnlineListButton:(NSInteger)onlineCount {
-    NSString * onlineCountString = (onlineCount > 10000) ? [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0] : [NSString stringWithFormat:@"%ld",onlineCount];
+    NSString *onlineCountString = [NSString stringWithFormat:@"%ld",onlineCount];
+    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && onlineCount > 10000) {
+        onlineCountString = [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0];
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && onlineCount > 1000) {
+        onlineCountString = [NSString stringWithFormat:@"%0.1fk", onlineCount / 1000.0];
+    }
     [self.onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineCountString] forState:UIControlStateNormal];
 }
 
@@ -763,6 +789,12 @@ PLVECLotteryWidgetViewDelegate
                 originY -= (8 + PLVECRedpackButtonViewHeight);
                 self.redpackButtonView.frame = CGRectMake(originX, originY, PLVECRedpackButtonViewWidth, PLVECRedpackButtonViewHeight);
             }
+            // 福利抽奖挂件
+            if (!self.welfareLotteryWidgetView.hidden) {
+                originY -= (8 + self.welfareLotteryWidgetView.widgetSize.height);
+                self.welfareLotteryWidgetView.frame = CGRectMake(originX, originY, self.welfareLotteryWidgetView.widgetSize.width, self.welfareLotteryWidgetView.widgetSize.height);
+            }
+            
             // 抽奖挂件
             if (!self.lotteryWidgetView.hidden) {
                 originY -= (8 + self.lotteryWidgetView.widgetSize.height);
@@ -804,6 +836,11 @@ PLVECLotteryWidgetViewDelegate
         self.playerContolView.frame = CGRectMake(0, CGRectGetMinY(self.moreButton.frame) - 41, CGRectGetMaxX(self.moreButton.frame), 41);
         
         CGFloat widgetOriginY = CGRectGetMinY(self.playerContolView.frame);
+        // 福利抽奖挂件
+        if (!self.welfareLotteryWidgetView.hidden) {
+            widgetOriginY -= (self.welfareLotteryWidgetView.widgetSize.height + 8);
+            self.welfareLotteryWidgetView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - self.welfareLotteryWidgetView.widgetSize.width/2, widgetOriginY, self.welfareLotteryWidgetView.widgetSize.width, self.welfareLotteryWidgetView.widgetSize.height);
+        }
         // 抽奖挂件
         if (!self.lotteryWidgetView.hidden) {
             widgetOriginY -= (self.lotteryWidgetView.widgetSize.height + 8);
@@ -835,7 +872,7 @@ PLVECLotteryWidgetViewDelegate
 }
 
 - (void)updateLikeViewAnimationLeftShift {
-    self.likeButtonView.animationLeftShift = !self.cardPushButtonView.hidden || !self.redpackButtonView.hidden || !self.lotteryWidgetView.hidden;
+    self.likeButtonView.animationLeftShift = !self.cardPushButtonView.hidden || !self.redpackButtonView.hidden || !self.lotteryWidgetView.hidden || !self.welfareLotteryWidgetView.hidden;
 }
 
 - (void)playbackTimeChanged {
@@ -1418,6 +1455,7 @@ PLVECLotteryWidgetViewDelegate
 
 - (void)cardPushButtonViewPopupViewDidShow:(PLVECCardPushButtonView *)pushButtonView {
     [self.lotteryWidgetView hidePopupView];
+    [self.welfareLotteryWidgetView hidePopupView];
 }
 
 #pragma mark PLVECLotteryWidgetViewDelegate
@@ -1432,6 +1470,25 @@ PLVECLotteryWidgetViewDelegate
 }
 
 - (void)lotteryWidgetViewPopupViewDidShow:(PLVECLotteryWidgetView *)lotteryWidgetView {
+    [self.cardPushButtonView hidePopupView];
+}
+
+#pragma mark PLVECWelfareLotteryWidgetViewDelegate
+
+- (void)welfareLotteryWidgetViewDidClickAction:(PLVECWelfareLotteryWidgetView *)welfareLotteryWidgetView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewWannaShowWelfareLottery:)]) {
+        [self.delegate homePageViewWannaShowWelfareLottery:self];
+    }
+}
+
+- (void)welfareLotteryWidgetView:(PLVECWelfareLotteryWidgetView *)welfareLotteryWidgetView showStatusChanged:(BOOL)show {
+    [self updateUIFrame];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:welfareLotteryWidgetShowStatusChanged:)]) {
+        [self.delegate homePageView:self welfareLotteryWidgetShowStatusChanged:show];
+    }
+}
+
+- (void)welfareLotteryWidgetViewPopupViewDidShow:(PLVECWelfareLotteryWidgetView *)welfareLotteryWidgetView {
     [self.cardPushButtonView hidePopupView];
 }
 

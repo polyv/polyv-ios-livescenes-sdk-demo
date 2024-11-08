@@ -65,6 +65,7 @@ PLVLCOnlineListSheetDelegate
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, strong) NSURL *commodityURL;
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
+@property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentLandscape;    // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
@@ -415,6 +416,7 @@ PLVLCOnlineListSheetDelegate
             [self.liveRoomSkinView displayRedpackButtonView:self.menuAreaView.chatVctrl.redpackButtonView];
             [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
             [self.liveRoomSkinView displayLotteryWidgetView:self.menuAreaView.chatVctrl.lotteryWidgetView];
+            [self.liveRoomSkinView displayWelfareLotteryWidgetView:self.menuAreaView.chatVctrl.welfareLotteryWidgetView];
             [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 128), 308, 128)];
             [self.cardDetailView hiddenCardDetailView];
         }
@@ -1033,6 +1035,23 @@ PLVLCOnlineListSheetDelegate
     [self.onlineListSheet updateOnlineList:list];
 }
 
+- (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
+    if (!self.welfareLotteryWidgetShowed ||!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return;
+    }
+    
+    id message = model.message;
+    if (message &&
+        [message isKindOfClass:[PLVSpeakMessage class]] && model.contentLength == PLVChatMsgContentLength_0To500) {
+        PLVSpeakMessage *speakMessage = (PLVSpeakMessage *)message;
+        NSString *comment = speakMessage.content;
+        if (![PLVFdUtil checkStringUseable:comment]) {
+            return;
+        }
+        [self.popoverView.interactView checkWelfareLotteryComment:comment];
+    }
+}
+
 #pragma mark PLVLCChatroomPlaybackDelegate
 
 - (NSTimeInterval)currentPlaybackTimeForChatroomPlaybackViewModel:(PLVLCChatroomPlaybackViewModel *)viewModel {
@@ -1524,6 +1543,15 @@ PLVLCOnlineListSheetDelegate
     [[PLVLCChatroomViewModel sharedViewModel] updateOnlineList];
 }
 
+- (void)plvLCLivePageMenuAreaViewWannaShowWelfareLottery:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
+    [self.popoverView.interactView openWelfareLottery];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView welfareLotteryWidgetShowStatusChanged:(BOOL)show {
+    self.welfareLotteryWidgetShowed = show;
+    [self.liveRoomSkinView showWelfareLotteryWidgetView:show];
+}
+
 #pragma mark  PLVCommodityPushViewDelegate
 
 - (void)plvCommodityPushViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
@@ -1668,6 +1696,16 @@ PLVLCOnlineListSheetDelegate
     [self plvCommodityPushViewDidClickCommodityDetail:commodity];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateWelfareLotteryWidget:(NSDictionary *)dict {
+    [self.menuAreaView.chatVctrl updateWelfareLotteryWidgetInfo:dict];
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView welfareLotteryCommentSuccess:(NSDictionary *)dict {
+    NSString *comment = PLV_SafeStringForDictKey(dict, @"comment");
+    if ([PLVFdUtil checkStringUseable:comment]) {
+        [[PLVLCChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];
+    }
+}
 #pragma mark PLVLCChatLandscapeViewDelegate
 
 - (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView alertLongContentMessage:(PLVChatModel *)model {

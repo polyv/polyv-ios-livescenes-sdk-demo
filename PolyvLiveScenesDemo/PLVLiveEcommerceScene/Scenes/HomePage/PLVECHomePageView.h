@@ -109,6 +109,13 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 
 - (void)homePageViewWannaShowOnlineList:(PLVECHomePageView *)homePageView;
 
+/// 点击福利抽奖挂件的回调
+- (void)homePageViewWannaShowWelfareLottery:(PLVECHomePageView *)homePageView;
+
+/// 福利抽奖挂件显示状态改变的的回调
+/// @param show 当前的显示状态
+- (void)homePageView:(PLVECHomePageView *)homePageView welfareLotteryWidgetShowStatusChanged:(BOOL)show;
+
 @end
 
 @interface PLVECHomePageView : UIView
@@ -182,6 +189,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 更新抽奖插件信息
 /// @param dataArray 抽奖插件数据
 - (void)updateLotteryWidgetViewInfo:(NSArray *)dataArray;
+
+/// 更新福利抽奖插件信息
+/// @param dict 福利抽奖插件数据
+- (void)updateWelfareLotteryWidgetViewInfo:(NSDictionary *)dict;
 
 /// 统计上报商品点击事件
 /// @param commodity 商品详情

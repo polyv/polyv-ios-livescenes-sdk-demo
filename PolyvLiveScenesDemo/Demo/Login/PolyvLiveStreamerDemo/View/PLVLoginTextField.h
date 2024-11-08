@@ -12,6 +12,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVLoginTextField : UITextField
 
+- (instancetype)initPasswordTextField;
+
 @end
 
 NS_ASSUME_NONNULL_END

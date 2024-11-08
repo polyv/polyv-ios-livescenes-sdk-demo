@@ -198,6 +198,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 生成后的消息数据模型通过回调 '-chatroomPresenter_didReceiveAnswerChatModel:' 返回
 - (void)createAnswerChatModel;
 
+/// 本地生成一条消息，用于展示评论抽奖发送成功后的结果
+- (PLVChatModel * _Nullable)createWelfareLotteryCommentChatModel:(NSString *)comment;
+
 /// 发送点赞消息
 - (void)sendLike;
 

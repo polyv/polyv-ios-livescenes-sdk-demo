@@ -239,6 +239,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 更新观看页在线列表
 - (void)updateOnlineList;
 
+/// 插入一条评论抽奖消息
+- (void)welfareLotteryCommentSuccess:(NSString *)comment;
+
 /// 增加PLVLCChatroomViewModelProtocol协议的监听者
 /// @param delegate 待增加的监听者
 /// @param delegateQueue 执行回调的队列

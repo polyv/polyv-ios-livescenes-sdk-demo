@@ -61,6 +61,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)displayLotteryWidgetView:(UIView *)lotteryWidgetView;
 
+- (void)displayWelfareLotteryWidgetView:(UIView *)welfareLotteryWidgetView;
+
 /// 是否显示打开商品库的按钮
 /// @param show YES 显示 NO 不显示
 - (void)showCommodityButton:(BOOL)show;
@@ -90,6 +92,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 更新在线列表人数
 - (void)updateOnlineListButton:(NSInteger)onlineCount;
+
+/// 是否显示福利抽奖挂件视图
+/// @param show YES 显示 NO 不显示
+- (void)showWelfareLotteryWidgetView:(BOOL)show;
 
 @end
 

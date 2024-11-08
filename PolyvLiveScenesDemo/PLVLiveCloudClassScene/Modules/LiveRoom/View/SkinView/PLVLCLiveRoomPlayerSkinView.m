@@ -32,6 +32,7 @@
 @property (nonatomic, strong) UIButton *commodityButton;
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
 @property (nonatomic, strong) UIButton *onlineListButton;
+@property (nonatomic, strong) UIView * welfareLotteryWidgetView;
 
 @end
 
@@ -190,6 +191,16 @@
     }
 }
 
+- (void)displayWelfareLotteryWidgetView:(UIView *)welfareLotteryWidgetView {
+    if (welfareLotteryWidgetView && [welfareLotteryWidgetView isKindOfClass:UIView.class]) {
+        [self.welfareLotteryWidgetView addSubview:welfareLotteryWidgetView];
+        welfareLotteryWidgetView.frame = self.welfareLotteryWidgetView.bounds;
+        welfareLotteryWidgetView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }else{
+        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayWelfareLotteryWidgetView failed, view illegal %@", welfareLotteryWidgetView);
+    }
+}
+
 - (void)showCommodityButton:(BOOL)show {
     self.commodityButton.hidden = !show;
     [self refreshBottomButtonsFrame];
@@ -220,9 +231,19 @@
 }
 
 - (void)updateOnlineListButton:(NSInteger)onlineCount {
-    NSString * onlineCountString = (onlineCount > 10000) ? [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0] : [NSString stringWithFormat:@"%ld",onlineCount];
+    NSString *onlineCountString = [NSString stringWithFormat:@"%ld",onlineCount];
+    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && onlineCount > 10000) {
+        onlineCountString = [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0];
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && onlineCount > 1000) {
+        onlineCountString = [NSString stringWithFormat:@"%0.1fk", onlineCount / 1000.0];
+    }
     [self.onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineCountString] forState:UIControlStateNormal];
     [self refreshOnlineListButtonFrame];
+}
+
+- (void)showWelfareLotteryWidgetView:(BOOL)show {
+    self.welfareLotteryWidgetView.hidden = !show;
+    [self refreshBottomButtonsFrame];
 }
 
 #pragma mark - [ Private Methods ]
@@ -417,6 +438,11 @@
         buttonOriginX -= (buttonPadding + buttonWidth);
     }
     
+    if (!self.welfareLotteryWidgetView.isHidden) {
+        self.welfareLotteryWidgetView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+    
     if (!self.lotteryWidgetView.isHidden) {
         self.lotteryWidgetView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
         buttonOriginX -= (buttonPadding + buttonWidth);
@@ -553,6 +579,14 @@
     return _lotteryWidgetView;
 }
 
+- (UIView *)welfareLotteryWidgetView {
+    if (!_welfareLotteryWidgetView) {
+        _welfareLotteryWidgetView = [[UIView alloc] init];
+        _welfareLotteryWidgetView.hidden = YES;
+    }
+    return _welfareLotteryWidgetView;
+}
+
 - (UIButton *)rewardButton {
     if (!_rewardButton) {
         _rewardButton = [[UIButton alloc]init];
@@ -615,6 +649,7 @@
     [self addSubview:self.redpackBackgroudView];
     [self addSubview:self.cardPushBackgroudView];
     [self addSubview:self.lotteryWidgetView];
+    [self addSubview:self.welfareLotteryWidgetView];
     [self addSubview:self.commodityButton];
     [self addSubview:self.landscapeInputView];
 

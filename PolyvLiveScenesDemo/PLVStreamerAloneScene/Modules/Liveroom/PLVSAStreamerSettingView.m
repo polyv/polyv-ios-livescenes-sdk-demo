@@ -32,7 +32,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 /// view hierarchy
 ///
 /// (PLVSAStreamerSettingView) self
-/// ├── (UIView) maskView
+/// ├── (UIView) customMaskView
 /// ├── (UIView) configView
 /// ├── (UIView) bitRateSheet
 /// ├── (UIButton) startButton
@@ -72,7 +72,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 /// 直播名称
 @property (nonatomic, strong) UILabel *channelNameLable;
 /// 输入框蒙层（负责承载频道名称输入框和频道名称剩余可输入的字符数）
-@property (nonatomic, strong) UIView *maskView;
+@property (nonatomic, strong) UIView *customMaskView;
 /// 频道名称剩余可输入字符数
 @property (nonatomic, strong) UILabel *limitLable;
 /// 频道名称输入框
@@ -165,9 +165,9 @@ PLVSAExternalDeviceSwitchSheetDelegate
         [self addSubview:self.beautyButton];
     }
     
-    [self addSubview:self.maskView];
-    [self.maskView addSubview:self.limitLable];
-    [self.maskView addSubview:self.channelNameTextView];
+    [self addSubview:self.customMaskView];
+    [self.customMaskView addSubview:self.limitLable];
+    [self.customMaskView addSubview:self.channelNameTextView];
     
     /// 初始化高度
     self.configViewHeight = 195;
@@ -234,7 +234,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
     self.channelNameLableHeight = lableHeight;
     
     self.backButton.frame = CGRectMake(originX + 24, backButttonTop, 36, 36);
-    self.maskView.frame = self.bounds;
+    self.customMaskView.frame = self.bounds;
     /// 初始化时默认收起输入框
     [self takeBackTextView];
     
@@ -407,7 +407,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (void)showConfigView:(BOOL)show {
     self.configView.hidden = !show;
-    self.maskView.hidden = show;
+    self.customMaskView.hidden = show;
 }
 
 /// 读取本地混流布局配置
@@ -498,13 +498,13 @@ PLVSAExternalDeviceSwitchSheetDelegate
     return _gradientLayer;
 }
 
-- (UIView *)maskView {
-    if (!_maskView) {
-        _maskView = [[UIView alloc]init];
-        _maskView.backgroundColor = PLV_UIColorFromRGBA(@"#0000000", 0.5);
-        _maskView.hidden = YES;
+- (UIView *)customMaskView {
+    if (!_customMaskView) {
+        _customMaskView = [[UIView alloc]init];
+        _customMaskView.backgroundColor = PLV_UIColorFromRGBA(@"#0000000", 0.5);
+        _customMaskView.hidden = YES;
     }
-    return _maskView;
+    return _customMaskView;
 }
 
 - (UIView *)configView {
@@ -1020,7 +1020,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
     [self showConfigView:!show];
     self.backButton.hidden = show;
     if (show) {
-        self.maskView.hidden = YES; // show == NO时，showConfigView内部会处理
+        self.customMaskView.hidden = YES; // show == NO时，showConfigView内部会处理
     }
     self.beautyButton.hidden = show;
     self.startButton.hidden = show;

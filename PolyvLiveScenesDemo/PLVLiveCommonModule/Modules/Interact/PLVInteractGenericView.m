@@ -151,6 +151,19 @@ PLVInteractWebViewBridgeDelegate>
     }
 }
 
+- (void)openWelfareLottery {
+    [self.webViewBridge callWebViewEvent:@{@"event" : @"SHOW_WELFARE_LOTTERY"}];
+}
+
+- (void)checkWelfareLotteryComment:(NSString *)comment {
+    if ([PLVFdUtil checkStringUseable:comment]) {
+        NSDictionary *eventData = @{
+            @"event" : @"CHECK_WELFARE_LOTTERY_COMMENT",
+            @"data" : @{@"comment" : comment}};
+        [self.webViewBridge callWebViewEvent:eventData];
+    }
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupData {
@@ -451,6 +464,20 @@ PLVInteractWebViewBridgeDelegate>
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:clickBigCardCommodityDetail:)]) {
             [self.delegate plvInteractGenericView:self clickBigCardCommodityDetail:model];
         }
+    }
+}
+
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge welfareLotteryEntranceDataChangeWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:updateWelfareLotteryWidget:)]) {
+        [self.delegate plvInteractGenericView:self updateWelfareLotteryWidget:dict];
+    }
+}
+
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge welfareLotteryCommentSuccessWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:welfareLotteryCommentSuccess:)]) {
+        [self.delegate plvInteractGenericView:self welfareLotteryCommentSuccess:dict];
     }
 }
 

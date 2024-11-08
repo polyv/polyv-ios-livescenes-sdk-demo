@@ -12,6 +12,7 @@
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVMultiMeetingManager.h"
 
 #import "PLVLCCloudClassViewController.h"
 #import "PLVECWatchRoomViewController.h"
@@ -76,6 +77,22 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
                 [weakSelf loginRequest];
             } else if ([weakSelf.liveViewController isKindOfClass:PLVECWatchRoomViewController.class]) {
                 [(PLVECWatchRoomViewController *)weakSelf.liveViewController exitCleanCurrentLiveController];
+                [weakSelf loginRequest];
+            }
+        }
+    };
+    
+    [PLVMultiMeetingManager sharedManager].jumpCallback = ^(NSString *_Nonnull channelId, BOOL isPlayback) {
+        if (weakSelf.liveViewController) {
+            if ([weakSelf.liveViewController isKindOfClass:PLVLCCloudClassViewController.class]) {
+                [(PLVLCCloudClassViewController *)weakSelf.liveViewController exitCleanCurrentLiveController];
+                weakSelf.channelIdTF.text = channelId;
+                if (isPlayback) {
+                    [weakSelf switchToVodUI];
+                } else {
+                    [weakSelf switchToLiveUI];
+                }
+                weakSelf.vIdTF.text = @"";
                 [weakSelf loginRequest];
             }
         }

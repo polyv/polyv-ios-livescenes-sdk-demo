@@ -622,10 +622,10 @@ PLVLCDocumentPaintModeViewDelegate
     
     NSString *channelId = self.roomData.channelId;
     NSString *videoId = self.playerPresenter.videoId;
-    NSString *fileId = self.roomData.recordFile.fileId;
+    NSString *fileId = self.roomData.menuInfo.materialLibraryEnabled ? self.playerPresenter.fileId : self.roomData.recordFile.fileId;
     if ([PLVFdUtil checkStringUseable:channelId] &&
         ([PLVFdUtil checkStringUseable:videoId] || [PLVFdUtil checkStringUseable:fileId])) { // videoId 在app启动后立马取值不一定有值，需要递归处理
-        if (self.roomData.recordEnable) {
+        if (self.roomData.recordEnable || self.roomData.menuInfo.materialLibraryEnabled) {
             [self.pptView pptStartWithFileId:fileId channelId:channelId];
         } else {
             [self.pptView pptStartWithVideoId:videoId channelId:channelId];

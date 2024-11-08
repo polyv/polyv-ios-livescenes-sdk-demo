@@ -8,6 +8,7 @@
 
 #import "PLVLCLikeButtonView.h"
 #import "PLVLCUtils.h"
+#import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
 @interface PLVLCLikeButtonView ()
@@ -95,8 +96,10 @@
     NSString *string = nil;
     if (likeCount < 0) {
         string = @"";
-    } else if (likeCount > 9999) {
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && likeCount > 9999) {
         string = [NSString stringWithFormat:@"%.1fw", likeCount/10000.0];
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && likeCount > 999) {
+        string = [NSString stringWithFormat:@"%.1fk", likeCount/1000.0];
     } else {
         string = [NSString stringWithFormat:@"%zd", likeCount];
     }

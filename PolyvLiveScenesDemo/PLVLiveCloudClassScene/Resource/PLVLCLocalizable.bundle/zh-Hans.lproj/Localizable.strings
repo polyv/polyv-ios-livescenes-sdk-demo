@@ -209,10 +209,24 @@
 "实时字幕" = "实时字幕";
 "推广外链" = "推广外链";
 
+/** 多会场 */
+"多会场" = "多会场";
+"会场直播间" = "会场直播间";
+"主会场" = "主会场";
+"没有更多了" = "没有更多了";
+"播放中" = "播放中";
+"直播未开始" = "直播未开始";
+"未开始" = "未开始";
+"等待中" = "等待中";
+"回放中" = "回放中";
+"直播中" = "直播中";
+"暂无直播" = "暂无直播";
+
 /** icon */
 "plvlc_chatroom_giftbox" = "plvlc_chatroom_giftbox";
 "plvlc_chatroom_delay_password_redpack" = "plvlc_chatroom_delay_password_redpack";
 "plvlc_chatroom_lottery_widget_icon" = "plvlc_chatroom_lottery_widget_icon";
+"plvlc_chatroom_welfare_lottery_widget_icon" = "plvlc_chatroom_welfare_lottery_widget_icon";
 "plvlc_chatroom_redpack" = "plvlc_chatroom_redpack";
 "plvlc_media_video_rest" = "plvlc_media_video_rest";
 "plvlc_chatroom_password_redpack" = "plvlc_chatroom_password_redpack";

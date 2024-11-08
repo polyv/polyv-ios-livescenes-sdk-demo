@@ -662,6 +662,22 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     [self teacherAnswerEvent:jsonDict];
 }
 
+#pragma mark 生成评论抽奖本地信息
+
+- (PLVChatModel * _Nullable)createWelfareLotteryCommentChatModel:(NSString *)comment {
+    if (!comment || ![comment isKindOfClass:[NSString class]] || comment.length == 0) {
+        return nil;
+    }
+    
+    PLVChatModel *model = [[PLVChatModel alloc] init];
+    model.user = [PLVChatUser copyUser:self.loginChatUser];
+    PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
+    message.content = comment;
+    model.message = message;
+    model.msgState = PLVChatMsgStateSuccess;
+    return model;
+}
+
 #pragma mark 点赞消息
 
 - (void)sendLike {

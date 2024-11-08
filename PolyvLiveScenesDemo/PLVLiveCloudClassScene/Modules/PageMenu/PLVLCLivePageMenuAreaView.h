@@ -134,5 +134,17 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 在线列表更新的回调
 - (void)plvLCLivePageMenuAreaViewNeedUpdateOnlineList:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
 
+/// 多会场跳转回调
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didJumpToOtherChannel:(NSString *)channelId isPlayback:(BOOL)isPlayback;
+
+/// 点击福利抽奖挂件的回调
+/// @param pageMenuAreaView 菜单视图
+- (void)plvLCLivePageMenuAreaViewWannaShowWelfareLottery:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
+
+/// 福利抽奖挂件显示状态改变的的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param show 当前的显示状态
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView welfareLotteryWidgetShowStatusChanged:(BOOL)show;
+
 @end
 NS_ASSUME_NONNULL_END

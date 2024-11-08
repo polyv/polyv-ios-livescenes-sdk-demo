@@ -520,7 +520,8 @@ PLVDefaultPageViewDelegate
         if (self.recordEnable) {
             self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId recordFile:self.recordFile];
         } else {
-            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId vodId:self.vodId vodList:self.vodList];
+            BOOL vodList = roomData.menuInfo.materialLibraryEnabled ? NO : self.vodList;
+            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId vodId:self.vodId vodList:vodList];
         }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;

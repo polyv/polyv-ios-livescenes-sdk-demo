@@ -292,7 +292,7 @@
         PLVChannelType apiChannelType = PLVChannelTypeUnknown;
         if ([liveScene isEqualToString:@"ppt"]) {
             apiChannelType = PLVChannelTypePPT;
-        } else if ([liveScene isEqualToString:@"alone"]) {
+        } else if ([liveScene isEqualToString:@"alone"] || [liveScene isEqualToString:@"topclass"]) {
             apiChannelType = PLVChannelTypeAlone;
         }
         

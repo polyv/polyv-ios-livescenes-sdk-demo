@@ -11,7 +11,7 @@
 
 @interface PLVSACountDownView ()
 
-@property (nonatomic, strong) UIView *maskView;
+@property (nonatomic, strong) UIView *customMaskView;
 @property (nonatomic, strong) UIView *bubbleView;
 @property (nonatomic, strong) UILabel *countLabel;
 @property (nonatomic, assign) NSInteger countDownTime;
@@ -25,7 +25,7 @@
 - (instancetype)init {
     self = [super init];
     if (self) {
-        [self addSubview:self.maskView];
+        [self addSubview:self.customMaskView];
         [self addSubview:self.bubbleView];
         [self.bubbleView addSubview:self.countLabel];
 
@@ -36,9 +36,9 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    self.maskView.frame = self.bounds;
+    self.customMaskView.frame = self.bounds;
     self.bubbleView.frame = CGRectMake(0, 0, 100, 100);
-    self.bubbleView.center = self.maskView.center;
+    self.bubbleView.center = self.customMaskView.center;
     self.countLabel.frame = CGRectMake(0, 0, 100, 100);
 }
 
@@ -72,12 +72,12 @@
 
 #pragma mark Getter
 
-- (UIView *)maskView {
-    if (!_maskView) {
-        _maskView = [[UIView alloc] init];
-        _maskView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.5);
+- (UIView *)customMaskView {
+    if (!_customMaskView) {
+        _customMaskView = [[UIView alloc] init];
+        _customMaskView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.5);
     }
-    return _maskView;
+    return _customMaskView;
 }
 
 - (UIView *)bubbleView {

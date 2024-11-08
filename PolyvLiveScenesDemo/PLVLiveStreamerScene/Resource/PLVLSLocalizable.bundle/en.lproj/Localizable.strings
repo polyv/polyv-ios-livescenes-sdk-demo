@@ -54,7 +54,7 @@
 
 "成功" = "success";
 
-"成员(%zd)" = "Member(%zd)"
+"成员(%zd)" = "Member(%zd)";
 
 "所有文档" = "All documents";
 
@@ -108,7 +108,7 @@
 
 "%@，入会密码 %@" = "%@，Join Password %@";
 
-"复制电话连麦号码成功" = "Copy phone linkmic number success"
+"复制电话连麦号码成功" = "Copy phone linkmic number success";
 
 "待接通(%zd)" = "Calling In(%zd)";
 

@@ -21,6 +21,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
+#import "PLVLCMultiMeetingViewController.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoChannelMenuInfo.h>
 
 PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
@@ -323,6 +324,12 @@ PLVRoomDataManagerProtocol
             [ctrlArray addObject:vctrl];
         }
     }
+    
+    if ([PLVRoomDataManager sharedManager].roomData.menuInfo.multiMeetingEnabled) {
+        PLVLCMultiMeetingViewController *vctrl = [[PLVLCMultiMeetingViewController alloc] init];
+        [titleArray addObject:PLVLocalizedString(@"多会场")];
+        [ctrlArray addObject:vctrl];
+    }
 
     [self.pageController setTitles:[titleArray copy] controllers:[ctrlArray copy]];
 }
@@ -467,6 +474,20 @@ PLVRoomDataManagerProtocol
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:lotteryWidgetShowStatusChanged:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self lotteryWidgetShowStatusChanged:show];
+    }
+}
+
+- (void)plvLCChatViewControllerWannaShowWelfareLottery:(PLVLCChatViewController *)chatVC {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaViewWannaShowWelfareLottery:)]) {
+        [self.delegate plvLCLivePageMenuAreaViewWannaShowWelfareLottery:self];
+    }
+}
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC welfareLotteryWidgetShowStatusChanged:(BOOL)show {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:welfareLotteryWidgetShowStatusChanged:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self welfareLotteryWidgetShowStatusChanged:show];
     }
 }
 

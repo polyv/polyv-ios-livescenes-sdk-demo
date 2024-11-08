@@ -53,6 +53,7 @@ PLVLCLotteryWidgetViewDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
 PLVLCChatroomPlaybackViewModelDelegate,
+PLVLCWelfareLotteryWidgetViewDelegate,
 UINavigationControllerDelegate,
 UIImagePickerControllerDelegate,
 UITableViewDelegate,
@@ -196,6 +197,12 @@ UITableViewDataSource
         self.cardPushButtonView.frame = CGRectMake(originX, originY, PLVLCCardPushButtonViewWidth, PLVLCCardPushButtonViewHeight);
     }
     
+    if (!self.welfareLotteryWidgetView.hidden && self.welfareLotteryWidgetView.superview == self.view) {
+        originX = self.view.bounds.size.width - centerPadding - self.welfareLotteryWidgetView.widgetSize.width / 2.0;
+        originY -= (buttonYPadding + self.welfareLotteryWidgetView.widgetSize.height);
+        self.welfareLotteryWidgetView.frame = CGRectMake(originX, originY, self.welfareLotteryWidgetView.widgetSize.width, self.welfareLotteryWidgetView.widgetSize.height);
+    }
+    
     if (!self.lotteryWidgetView.hidden && self.lotteryWidgetView.superview == self.view) {
         originX = self.view.bounds.size.width - centerPadding - self.lotteryWidgetView.widgetSize.width / 2.0;
         originY -= (buttonYPadding + self.lotteryWidgetView.widgetSize.height);
@@ -328,6 +335,14 @@ UITableViewDataSource
     return _rewardDisplayManager;
 }
 
+- (PLVLCWelfareLotteryWidgetView *)welfareLotteryWidgetView {
+    if (!_welfareLotteryWidgetView) {
+        _welfareLotteryWidgetView = [[PLVLCWelfareLotteryWidgetView alloc] init];
+        _welfareLotteryWidgetView.delegate = self;
+    }
+    return _welfareLotteryWidgetView;
+}
+
 #pragma mark - Action
 
 - (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
@@ -417,6 +432,7 @@ UITableViewDataSource
     [self.view insertSubview:self.redpackButtonView belowSubview:self.receiveNewMessageView];
     [self.view insertSubview:self.cardPushButtonView belowSubview:self.receiveNewMessageView];
     [self.view insertSubview:self.lotteryWidgetView belowSubview:self.receiveNewMessageView];
+    [self.view insertSubview:self.welfareLotteryWidgetView belowSubview:self.receiveNewMessageView];
     
     [self refreshFloatingButtonViewFrame];
 }
@@ -443,6 +459,14 @@ UITableViewDataSource
         [self.lotteryWidgetView updateLotteryWidgetInfo:dataArray.firstObject];
     } else {
         [self.lotteryWidgetView hideWidgetView];
+    }
+}
+
+- (void)updateWelfareLotteryWidgetInfo:(NSDictionary *)dict {
+    if ([PLVFdUtil checkDictionaryUseable:dict]) {
+        [self.welfareLotteryWidgetView updateWelfareLotteryWidgetInfo:dict];
+    } else {
+        [self.welfareLotteryWidgetView hideWidgetView];
     }
 }
 
@@ -1167,6 +1191,25 @@ UITableViewDataSource
 }
 
 - (void)lotteryWidgetViewPopupViewDidShow:(PLVLCLotteryWidgetView *)lotteryWidgetView {
+    [self.cardPushButtonView hidePopupView];
+}
+
+#pragma mark - PLVLCWelfareLotteryWidgetViewDelegate
+
+- (void)welfareLotteryWidgetViewDidClickAction:(PLVLCWelfareLotteryWidgetView *)welfareLotteryWidgetView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewControllerWannaShowWelfareLottery:)]) {
+        [self.delegate plvLCChatViewControllerWannaShowWelfareLottery:self];
+    }
+}
+
+- (void)welfareLotteryWidgetView:(PLVLCWelfareLotteryWidgetView *)welfareLotteryWidgetView showStatusChanged:(BOOL)show {
+    [self refreshFloatingButtonViewFrame];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:welfareLotteryWidgetShowStatusChanged:)]) {
+        [self.delegate plvLCChatViewController:self welfareLotteryWidgetShowStatusChanged:show];
+    }
+}
+
+- (void)welfareLotteryWidgetViewPopupViewDidShow:(PLVLCLotteryWidgetView *)lotteryWidgetView {
     [self.cardPushButtonView hidePopupView];
 }
 

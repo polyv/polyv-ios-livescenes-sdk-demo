@@ -382,6 +382,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     [self.presenter updateOnlineList];
 }
 
+- (void)welfareLotteryCommentSuccess:(NSString *)comment {
+    PLVChatModel *model = [self.presenter createWelfareLotteryCommentChatModel:comment];
+    if (model) {
+        [self addPublicChatModel:model];
+        [self cacheDanmu:@[model]];
+    }
+}
+
 #pragma mark - 消息数组
 
 #pragma mark 私聊

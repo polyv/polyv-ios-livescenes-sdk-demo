@@ -267,8 +267,8 @@ UITextViewDelegate>
 
 - (PLVLoginTextField *)tfPassword {
     if (! _tfPassword) {
-        _tfPassword = [[PLVLoginTextField alloc] init];
-        _tfPassword.secureTextEntry = YES;
+        _tfPassword = [[PLVLoginTextField alloc] initPasswordTextField];
+        _tfPassword.keyboardType = UIKeyboardTypeASCIICapable;
         [self.view addSubview:_tfPassword];
         
         [self setTFStyle:_tfPassword placeholder:NSLocalizedString(@"请输入密码", nil)];
@@ -535,6 +535,10 @@ UITextViewDelegate>
     }
     
     if (newLength <= maxLength) {
+        if ([textField isEqual:self.tfPassword] && textField.isSecureTextEntry) {
+            textField.text = toBeString;
+            return NO;
+        }
         return YES;
     } else {
         return NO;

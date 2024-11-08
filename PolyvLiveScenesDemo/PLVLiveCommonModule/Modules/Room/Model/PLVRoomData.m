@@ -292,7 +292,7 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
     PLVChannelType apiChannelType = PLVChannelTypeUnknown;
     if ([menuInfo.scene isEqualToString:@"ppt"]) {
         apiChannelType = PLVChannelTypePPT;
-    } else if ([menuInfo.scene  isEqualToString:@"alone"]) {
+    } else if ([menuInfo.scene isEqualToString:@"alone"] || [menuInfo.scene isEqualToString:@"topclass"]) {
         apiChannelType = PLVChannelTypeAlone;
     }
     self.channelType = apiChannelType;

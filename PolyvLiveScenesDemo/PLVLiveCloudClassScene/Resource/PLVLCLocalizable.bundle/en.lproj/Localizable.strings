@@ -209,10 +209,25 @@
 "实时字幕" = "Subtitles";
 "推广外链" = "Promote Links";
 
+/** 多会场 */
+"多会场" = "MultiMeeting";
+"会场直播间" = "Live Broadcast Room";
+"主会场" = "Main Meeting";
+"没有更多了" = "No more updates";
+"播放中" = "Playing";
+"直播未开始" = "Live Not Started";
+"未开始" = "Not Started";
+"等待中" = "Waiting";
+"回放中" = "Replaying";
+"直播中" = "Live";
+"暂无直播" = "Not Live";
+
+
 /** icon */
 "plvlc_chatroom_giftbox" = "plvlc_chatroom_giftbox_en";
 "plvlc_chatroom_delay_password_redpack" = "plvlc_chatroom_delay_password_redpack_en";
 "plvlc_chatroom_lottery_widget_icon" = "plvlc_chatroom_lottery_widget_icon_en";
+"plvlc_chatroom_welfare_lottery_widget_icon" = "plvlc_chatroom_welfare_lottery_widget_icon_en";
 "plvlc_chatroom_redpack" = "plvlc_chatroom_redpack_en";
 "plvlc_media_video_rest" = "plvlc_media_video_rest_en";
 "plvlc_chatroom_password_redpack" = "plvlc_chatroom_password_redpack_en";
