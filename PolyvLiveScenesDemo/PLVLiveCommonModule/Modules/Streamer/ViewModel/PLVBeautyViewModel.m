@@ -27,6 +27,8 @@
 @property (nonatomic, assign) BOOL beautyIsOpen; // 当前 美颜是否开启
 @property (nonatomic, assign, getter=isSelectedOriginFilter) BOOL selectedOriginFilter; // 当前 是否选中原图滤镜
 
+@property (nonatomic, assign) PLVBeautySDKType beautySDKType; // 美颜级别
+
 @end
 
 static NSString *kBeautyOptionDictKey = @"kPLVBeautyOptionDictKey";
@@ -44,12 +46,14 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     static PLVBeautyViewModel *viewModel = nil;
     dispatch_once(&onceToken, ^{
         viewModel = [[PLVBeautyViewModel alloc] init];
+        viewModel.beautySDKType = PLVBeautySDKTypeProfessional;
     });
     return viewModel;
 }
 
-- (void)startBeautyWithManager:(PLVBeautyManager *)beautyManager {
+- (void)startBeautyWithManager:(PLVBeautyManager *)beautyManager sdkType:(PLVBeautySDKType)type{
     self.beautyManager = beautyManager;
+    self.beautySDKType = type;
     self.beautyIsReady = YES;
     self.beautyIsOpen = [self getBeautyOpenStatus];
     [self initFilterOption];

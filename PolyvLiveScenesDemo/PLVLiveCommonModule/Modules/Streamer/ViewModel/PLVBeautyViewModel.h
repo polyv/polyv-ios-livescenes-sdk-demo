@@ -17,6 +17,11 @@ typedef NS_ENUM(NSInteger, PLVBeautyType) {
     PLVBeautyTypeFace // 脸部细节
 };
 
+typedef NS_ENUM(NSInteger, PLVBeautySDKType){
+    PLVBeautySDKTypeProfessional = 1,
+    PLVBeautySDKTypeLight
+};
+
 @class PLVBeautyViewModel;
 @protocol PLVBeautyViewModelDelegate <NSObject>
 
@@ -44,12 +49,14 @@ typedef NS_ENUM(NSInteger, PLVBeautyType) {
 @property (nonatomic, strong, readonly) NSMutableArray<PLVBFilterOption *> *filterOptionArray;
 /// 当前选择了什么美颜类型
 @property (nonatomic, assign, readonly) PLVBeautyType beautyType;
+/// 美颜sdk类型 1:高级美颜 2 保利威轻美颜
+@property (nonatomic, assign, readonly) PLVBeautySDKType beautySDKType;
 
 /// 单例方法
 + (instancetype)sharedViewModel;
 
 /// 开启美颜
-- (void)startBeautyWithManager:(PLVBeautyManager *)beautyManager;
+- (void)startBeautyWithManager:(PLVBeautyManager *)beautyManager sdkType:(PLVBeautySDKType )type;
 
 /// 用于资源释放、状态位清零
 - (void)clear;

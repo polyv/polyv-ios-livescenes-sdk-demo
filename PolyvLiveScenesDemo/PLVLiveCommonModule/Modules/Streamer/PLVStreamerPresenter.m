@@ -686,22 +686,29 @@ PLVChannelClassManagerDelegate
 #pragma mark 美颜管理
 
 - (void)initBeauty {
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
-        [self.rtcStreamerManager initBeauty];
+    if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty){
+        if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+            /// 高级美颜
+            [self.rtcStreamerManager initBeauty];
+        }
+        else if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled){
+            /// 轻美颜
+            [self.rtcStreamerManager initLightBeauty];
+        }
     }
 }
 
 /// 开启或关闭 美颜处理
 /// @param enabled 开启或停止 (YES:开启；NO:关闭)
 - (void)enableBeautyProcess:(BOOL)enabled {
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+    if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
         [self.rtcStreamerManager enableBeautyProcess:enabled];
     }
 }
 
 /// 获取美颜管理器
 - (PLVBeautyManager *)shareBeautyManager {
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+    if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
         return [self.rtcStreamerManager shareBeautyManager];
     }
     return nil;

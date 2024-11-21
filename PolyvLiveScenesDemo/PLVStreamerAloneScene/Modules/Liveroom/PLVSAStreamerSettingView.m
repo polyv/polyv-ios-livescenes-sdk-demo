@@ -161,7 +161,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 - (void)setupUI {
     [self addSubview:self.backButton];
     [self addSubview:self.startButton];
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+    if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
         [self addSubview:self.beautyButton];
     }
     
@@ -212,9 +212,9 @@ PLVSAExternalDeviceSwitchSheetDelegate
     
     CGFloat backButttonTop = originY + 9;
     CGFloat startButtonBottom = bottom + (isLandscape ? 16 : 45);
-    CGFloat startButtonWidth = [PLVRoomDataManager sharedManager].roomData.appBeautyEnabled ? 206 : 320;
+    CGFloat startButtonWidth = [PLVRoomDataManager sharedManager].roomData.canUseBeauty ? 206 : 320;
     startButtonWidth += (self.showStreamScale ? 75 : 0);
-    CGFloat beautyButtonWidth = [PLVRoomDataManager sharedManager].roomData.appBeautyEnabled ? 114 : 0;
+    CGFloat beautyButtonWidth = [PLVRoomDataManager sharedManager].roomData.canUseBeauty ? 114 : 0;
     CGFloat configViewWidth = startButtonWidth + 8 + beautyButtonWidth;
     CGFloat channelNameLableLeft = 28;
     CGFloat lineViewLeft = 24;
@@ -238,7 +238,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
     /// 初始化时默认收起输入框
     [self takeBackTextView];
     
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+    if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
         /// 美颜按钮
         CGFloat beautyX = (CGRectGetWidth(self.bounds) - startButtonWidth - beautyButtonWidth - 8) / 2;
         self.beautyButton.frame = CGRectMake(beautyX, self.bounds.size.height - startButtonBottom - 50, beautyButtonWidth, 50);

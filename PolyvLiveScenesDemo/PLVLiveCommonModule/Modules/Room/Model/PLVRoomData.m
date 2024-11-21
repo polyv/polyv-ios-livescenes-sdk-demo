@@ -363,4 +363,24 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
     return PLVChannelLinkMicMediaType_Unknown;
 }
 
+#pragma mark 美颜开关
+- (BOOL)lightBeautyEnabled{
+    if ([PLVFdUtil checkStringUseable:self.appBeautyType] && [self.appBeautyType isEqualToString:@"gpu"]){
+        return YES;
+    }
+    return NO;
+}
+
+- (int)canUseBeauty{
+    if (self.appBeautyEnabled){
+        return YES;
+    }
+    else if (self.lightBeautyEnabled){
+        if ([PLVFdUtil checkStringUseable:self.menuInfo.rtcType] && [self.menuInfo.rtcType isEqualToString:@"trtc"]){
+            return YES;
+        }
+    }
+    return NO;
+}
+
 @end

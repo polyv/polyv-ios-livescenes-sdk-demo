@@ -47,7 +47,7 @@
         [self.contentView addSubview:self.titleSplitLine];
         [self.contentView addSubview:self.baseTitleLabel];
         NSMutableArray *muButtonArray = [NSMutableArray array];
-        if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+        if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
             [self.contentView addSubview:self.beautyButton];
             [muButtonArray addObject:self.beautyButton];
         }

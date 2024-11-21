@@ -335,6 +335,7 @@
         roomData.isOnlyAudio = PLV_SafeBoolForDictKey(data, @"isOnlyAudio");
         roomData.liveStatusIsLiving = PLV_SafeBoolForDictKey(data, @"liveStatus");
         roomData.appBeautyEnabled = PLV_SafeBoolForDictKey(data, @"appBeautyEnabled");
+        roomData.appBeautyType = PLV_SafeStringForDictKey(data, @"appBeautyType");
         roomData.guestTranAuthEnabled = PLV_SafeBoolForDictKey(data, @"guestTranAuthEnabled");
         roomData.appWebStartResolutionRatio = PLV_SafeStringForDictKey(data, @"appWebStartResolutionRatio");
         roomData.appWebStartResolutionRatioEnabled = PLV_SafeBoolForDictKey(data, @"appWebStartResolutionRatioEnabled");

@@ -182,7 +182,7 @@
                                                                    self.mirrorButton]];
     
     // 美颜按钮
-    if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled) {
+    if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
         [buttonSuperView addSubview:self.beautyButton];
         [muButtonArray addObject:self.beautyButton];
     }

@@ -1203,7 +1203,13 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (result == 0) {
         // 配置美颜
         PLVBeautyManager *beautyManager = [self.streamerPresenter shareBeautyManager];
-        [[PLVBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager];
+        // 设置美颜sdk 类型
+        if ([PLVRoomDataManager sharedManager].roomData.appBeautyEnabled){
+            [[PLVBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager sdkType:PLVBeautySDKTypeProfessional];
+        }
+        else if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled){
+            [[PLVBeautyViewModel sharedViewModel] startBeautyWithManager:beautyManager sdkType:PLVBeautySDKTypeLight];
+        }
     } else {
         [PLVSAUtils showToastInHomeVCWithMessage:[NSString stringWithFormat:PLVLocalizedString(@"美颜初始化失败 %d 请重进直播间"), result]];
     }

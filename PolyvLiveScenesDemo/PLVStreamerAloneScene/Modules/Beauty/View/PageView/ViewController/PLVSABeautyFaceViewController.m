@@ -55,15 +55,23 @@ static int kItemLineNum = 3; // 每行item数
 #pragma mark - [ Override ]
 - (void)setupDataArray {
     [super setupDataArray];
-    self.dataArray = [NSArray arrayWithObjects:
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvsa_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvsa_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"下颌") imageName:@"plvsa_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"额头") imageName:@"plvsa_beauty_face_head" beautyOption:PLVBBeautyOption_ReshapeDeformForeHead],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvsa_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦鼻") imageName:@"plvsa_beauty_face_nose" beautyOption:PLVBBeautyOption_ReshapeDeformNose],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"嘴巴") imageName:@"plvsa_beauty_face_mouth" beautyOption:PLVBBeautyOption_ReshapeDeformZoomMouth],
-                  [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"美牙") imageName:@"plvsa_beauty_face_whitenTeeth" beautyOption:PLVBBeautyOption_ReshapeBeautyWhitenTeeth],nil];
+    if ([PLVBeautyViewModel sharedViewModel].beautySDKType == PLVBeautySDKTypeProfessional){
+        self.dataArray = [NSArray arrayWithObjects:
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvsa_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvsa_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"下颌") imageName:@"plvsa_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"额头") imageName:@"plvsa_beauty_face_head" beautyOption:PLVBBeautyOption_ReshapeDeformForeHead],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvsa_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦鼻") imageName:@"plvsa_beauty_face_nose" beautyOption:PLVBBeautyOption_ReshapeDeformNose],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"嘴巴") imageName:@"plvsa_beauty_face_mouth" beautyOption:PLVBBeautyOption_ReshapeDeformZoomMouth],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"美牙") imageName:@"plvsa_beauty_face_whitenTeeth" beautyOption:PLVBBeautyOption_ReshapeBeautyWhitenTeeth],nil];
+    }
+    else if ([PLVBeautyViewModel sharedViewModel].beautySDKType == PLVBeautySDKTypeLight){
+        // 保利威轻美颜 重新配置数据
+        self.dataArray = [NSArray arrayWithObjects:
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvsa_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvsa_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],nil];
+    }
 }
 
 - (void)showContentView {
