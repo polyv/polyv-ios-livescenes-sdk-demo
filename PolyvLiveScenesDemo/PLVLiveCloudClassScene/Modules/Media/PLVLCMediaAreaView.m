@@ -622,7 +622,7 @@ PLVLCDocumentPaintModeViewDelegate
     
     NSString *channelId = self.roomData.channelId;
     NSString *videoId = self.playerPresenter.videoId;
-    NSString *fileId = self.roomData.menuInfo.materialLibraryEnabled ? self.playerPresenter.fileId : self.roomData.recordFile.fileId;
+    NSString *fileId = self.playerPresenter.fileId;
     if ([PLVFdUtil checkStringUseable:channelId] &&
         ([PLVFdUtil checkStringUseable:videoId] || [PLVFdUtil checkStringUseable:fileId])) { // videoId 在app启动后立马取值不一定有值，需要递归处理
         if (self.roomData.recordEnable || self.roomData.menuInfo.materialLibraryEnabled) {
@@ -954,7 +954,7 @@ PLVLCDocumentPaintModeViewDelegate
         _pptView.backgroundColor = [PLVColorUtil colorFromHexString:@"#2B3045"];
         UIImage *pptBgImage = [self getImageWithName:@"plvlc_media_ppt_placeholder"];
         [_pptView setBackgroudImage:pptBgImage widthScale:180.0/375.0];
-        [_pptView loadRequestWitParamString:@"hasPageBtn=0"];
+        [_pptView loadRequestWitParamString:@"hasPageBtn=0&useVisibleControl=true"];
         [_pptView openChangePPTPermission];
     }
     return _pptView;
@@ -1282,6 +1282,11 @@ PLVLCDocumentPaintModeViewDelegate
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.advertView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.pinMsgPopupView.closeButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+        return YES;
+    } else if (skinView.isPPTOnMain && [PLVLCBasePlayerSkinView checkView:self.pptView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+        if (!skinView.skinShow) {
+            [skinView controlsSwitchShowStatusWithAnimation:YES];
+        }
         return YES;
     }else{
         BOOL externalViewHandle = NO;

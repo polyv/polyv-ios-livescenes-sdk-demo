@@ -353,7 +353,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
                 *stop = YES;
             }
         }];
-        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) {
+        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK) {
             [self.bitRateButton setTitle:videoParam.qualityName forState:UIControlStateNormal];
         } else {
             [self.bitRateButton setTitle:videoParam.qualityEnName forState:UIControlStateNormal];

@@ -94,11 +94,12 @@
 - (void)setLikeCount:(NSUInteger)likeCount {
     _likeCount = likeCount;
     NSString *string = nil;
+    BOOL currentLanguageModeZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
     if (likeCount < 0) {
         string = @"";
-    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && likeCount > 9999) {
+    } else if (currentLanguageModeZH && likeCount > 9999) {
         string = [NSString stringWithFormat:@"%.1fw", likeCount/10000.0];
-    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && likeCount > 999) {
+    } else if (!currentLanguageModeZH && likeCount > 999) {
         string = [NSString stringWithFormat:@"%.1fk", likeCount/1000.0];
     } else {
         string = [NSString stringWithFormat:@"%zd", likeCount];

@@ -264,4 +264,18 @@
     self.lastPoint = p;
 }
 
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    // 如果当前视图的透明度为 0，则不接收触摸事件
+    if (self.alpha < 0.01 || !self.userInteractionEnabled) {
+        return nil;
+    }
+
+    // 检查触摸点是否在当前视图内
+    if ([self pointInside:point withEvent:event]) {
+        return self; // 返回当前视图
+    }
+
+    return nil; // 如果不在当前视图内，返回 nil
+}
+
 @end

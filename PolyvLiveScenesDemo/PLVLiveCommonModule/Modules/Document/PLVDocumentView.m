@@ -159,6 +159,9 @@ UIGestureRecognizerDelegate
         if (self.scene == PLVDocumentViewSceneStreamer && self.viewerType == PLVRoomUserTypeTeacher) {
             _webView.userInteractionEnabled = YES;
             self.hasPaintPermission = YES;
+        } else if (self.scene == PLVDocumentViewSceneCloudClass) {
+            _webView.userInteractionEnabled = YES;
+            self.hasPaintPermission = NO;
         } else {
             _webView.userInteractionEnabled = NO;
             self.hasPaintPermission = NO;
@@ -307,8 +310,10 @@ UIGestureRecognizerDelegate
 - (void)setDocumentUserInteractionEnabled:(BOOL)enabled {
     BOOL streamerUser = (self.scene == PLVDocumentViewSceneStreamer);
     BOOL watchUser = (self.scene == PLVDocumentViewSceneCloudClass);
-    if (streamerUser || watchUser) {
+    if (streamerUser) {
         self.webView.userInteractionEnabled = enabled;
+        self.hasPaintPermission = enabled;
+    } else if (watchUser) {
         self.hasPaintPermission = enabled;
     }
 }
@@ -499,12 +504,13 @@ UIGestureRecognizerDelegate
         [self receiveChangePPTPositionMessageWithjsonObject:jsonDict];
     } else if ([subEvent isEqualToString:@"onSliceID"] ||
               [subEvent isEqualToString:@"onSliceOpen"] ||
-              [subEvent isEqualToString:@"onSliceStart"] ||
               [subEvent isEqualToString:@"onSliceDraw"] ||
               [subEvent isEqualToString:@"onSliceControl"]) {
         [self receiveOnSliceMessageWithjson:jsonString jsonObject:jsonDict];
     } else if ([subEvent isEqualToString:@"TEACHER_SET_PERMISSION"]){
         [self receiveTeacherSetPermissionMessageWithJSONObject:jsonDict];
+    } else if ([subEvent isEqualToString:@"onSliceStart"]) {
+        [self receiveOnSliceStartMessageWithjson:jsonString jsonObject:jsonDict];
     }
 }
 
@@ -570,6 +576,47 @@ UIGestureRecognizerDelegate
             [self.delegate documentView_changePPTPositionToMain:pptToMain];
         }
     }
+}
+
+- (void)receiveOnSliceStartMessageWithjson:(NSString *)jsonString
+                                jsonObject:(NSDictionary *)jsonDict {
+    if (self.scene != PLVDocumentViewSceneCloudClass &&
+        self.scene != PLVDocumentViewSceneEcommerce &&
+        self.scene != PLVDocumentViewSceneStreamer) {
+        return;
+    }
+    
+    if (self.scene == PLVDocumentViewSceneStreamer) {
+        NSDictionary * dataDict = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+        NSString *eventType = PLV_SafeStringForDictKey(dataDict, @"type");
+        if (![eventType isEqualToString:@"changeVideoAndPPTPosition"]) { // 切换主副屏时，消息体内未返回autoId与pageId字段，此事件下，不需要更新
+            NSInteger autoId = PLV_SafeIntegerForDictKey(dataDict, @"autoId");
+            NSInteger pageId = PLV_SafeIntegerForDictKey(dataDict, @"pageId");
+            self.autoId = autoId;
+            self.currPageNum = pageId;
+        }
+        [self.jsBridge refreshPPTWithJsonObject:jsonDict delay:0];
+    }else {
+        if (self.videoType != PLVChannelVideoType_Playback) { // 新增条件判断：非直播回放时，才更新画笔数据
+            if ([self.delegate respondsToSelector:@selector(documentView_getRefreshDelayTime)]) {
+                unsigned int delayTime = [self.delegate documentView_getRefreshDelayTime];
+                [self.jsBridge refreshPPTWithJsonObject:jsonDict delay:delayTime];
+            }
+        }
+        if ([PLVFdUtil checkStringUseable:PLV_SafeStringForDictKey(jsonDict, @"videoAndPPTPosition")]) {
+            BOOL pptToMain = [PLV_SafeStringForDictKey(jsonDict, @"videoAndPPTPosition") isEqualToString:@"ppt"];
+            NSString *pptWatchLayout = PLV_SafeStringForDictKey([PLVRoomDataManager sharedManager].roomData.menuInfo.watchThemeModel, @"watchLayout");
+            if ([PLVFdUtil checkStringUseable:pptWatchLayout] && ![pptWatchLayout isEqualToString:@"followTeacher"]) {
+                pptToMain = [pptWatchLayout isEqualToString:@"ppt"];
+            }
+            self.mainSpeakerPPTOnMain = pptToMain;
+            if (self.delegate && [self.delegate respondsToSelector:@selector(documentView_changePPTPositionToMain:)]) {
+                [self.delegate documentView_changePPTPositionToMain:pptToMain];
+            }
+            
+        }
+    }
+    
 }
 
 - (void)receiveAssistantSliceControltEventWithJsonObject:(NSDictionary *)jsonObject {

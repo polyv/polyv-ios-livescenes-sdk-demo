@@ -1,0 +1,42 @@
+
+/* Class = "UILabel"; text = "© 2013-2024 易方信息科技股份有限公司 版权所有"; ObjectID = "37N-te-f8q"; */
+"37N-te-f8q.text" = "© 2013-2024 イーファン情報技術株式会社 全著作権所有";
+
+/* Class = "UIButton"; normalTitle = "Button"; ObjectID = "CdR-QO-0x5"; */
+"CdR-QO-0x5.normalTitle" = "Button";
+
+/* Class = "UIButton"; normalTitle = "直播带货场景"; ObjectID = "DUG-WS-h72"; */
+"DUG-WS-h72.normalTitle" = "ライブコマースシーン";
+
+/* Class = "UIButton"; normalTitle = "登录"; ObjectID = "Dg2-5S-4sA"; */
+"Dg2-5S-4sA.normalTitle" = "ログイン";
+
+/* Class = "UITextField"; placeholder = "用户ID"; ObjectID = "GGH-lc-kaL"; */
+"GGH-lc-kaL.placeholder" = "ユーザーID";
+
+/* Class = "UITextField"; placeholder = "频道ID\t"; ObjectID = "Nsa-Mh-god"; */
+"Nsa-Mh-god.placeholder" = "チャンネルID\t";
+
+/* Class = "UITextField"; placeholder = "视频ID"; ObjectID = "RY3-Lx-2fF"; */
+"RY3-Lx-2fF.placeholder" = "ビデオID";
+
+/* Class = "UITextField"; placeholder = "App Secret"; ObjectID = "Wke-gG-7wN"; */
+"Wke-gG-7wN.placeholder" = "App Secret";
+
+/* Class = "UILabel"; text = "POLYV云课堂"; ObjectID = "bNm-2F-B9h"; */
+"bNm-2F-B9h.text" = "POLYVクラウド教室";
+
+/* Class = "UIButton"; normalTitle = "云课堂场景"; ObjectID = "d7V-MP-SkI"; */
+"d7V-MP-SkI.normalTitle" = "クラウド教室シーン";
+
+/* Class = "UITextField"; placeholder = "App ID"; ObjectID = "jDV-Zg-QiY"; */
+"jDV-Zg-QiY.placeholder" = "App ID";
+
+/* Class = "UILabel"; text = "点播列表"; ObjectID = "l4c-x7-iig"; */
+"l4c-x7-iig.text" = "オンデマンドリスト";
+
+/* Class = "UIButton"; normalTitle = "回放"; ObjectID = "pNv-DS-Rax"; */
+"pNv-DS-Rax.normalTitle" = "再生";
+
+/* Class = "UIButton"; normalTitle = "直播"; ObjectID = "r2V-SM-gAK"; */
+"r2V-SM-gAK.normalTitle" = "ライブ";

@@ -125,7 +125,7 @@
 
 - (void)setupVideoParams:(PLVClientPushStreamTemplateVideoParams *)videoParams {
     NSString *resolutionDetails = @"";
-    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) {
+    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK) {
         self.resolutionTitleLabel.text = videoParams.qualityName;
         resolutionDetails = [NSString stringWithFormat:@"分辨率：%.0fp，", videoParams.videoResolution.height];
     } else {

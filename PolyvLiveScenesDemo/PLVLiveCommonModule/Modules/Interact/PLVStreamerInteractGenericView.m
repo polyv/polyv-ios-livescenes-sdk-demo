@@ -53,7 +53,7 @@ PLVStreamerInteractWebViewBridgeDelegate
     NSString *urlString = PLVLiveConstantsStreamerInteractWebViewURL;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
-    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
+    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK) ? @"zh_CN" : @"en";
     urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d&lang=%@", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
     NSURL *interactURL = [NSURL URLWithString:urlString];
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:interactURL cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:20.0];

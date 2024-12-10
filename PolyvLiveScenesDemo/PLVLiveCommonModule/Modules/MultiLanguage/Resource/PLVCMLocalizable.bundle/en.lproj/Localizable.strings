@@ -406,6 +406,8 @@
 "切换并下麦所有用户" = "Switch and hang up viewers";
 "开启观众连麦" = "Allow voice chat";
 "关闭观众连麦" = "Forbid voice chat";
+"开启观众连麦" = "Allow voice\nchat";
+"关闭观众连麦" = "Forbid voice\nchat";
 "“连麦”功能更新啦" = "New Voice Chat available";
 "点击此功能按钮可开启观众连麦" = "Click here to allow viewer requesting voice chat";
 "当前网络信号弱，开启失败，请检查网络！" = "Weak network signal, activation failed. Check your connection!";

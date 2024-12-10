@@ -205,6 +205,7 @@ UITableViewDataSource
         [_leaveMicButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_leaveMicButton addTarget:self action:@selector(leaveMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _leaveMicButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;
+        _leaveMicButton.enabled = NO;
     }
     return _leaveMicButton;
 }
@@ -342,6 +343,13 @@ UITableViewDataSource
         _sipMemberButtonRedDot.hidden = YES;
     }
     return _sipMemberButtonRedDot;
+}
+
+- (void)setRemoveAllAudiencesButtonEnable:(BOOL)removeAllAudiencesButtonEnable {
+    _removeAllAudiencesButtonEnable = removeAllAudiencesButtonEnable;
+    if (removeAllAudiencesButtonEnable != self.leaveMicButton.enabled) {
+        self.leaveMicButton.enabled = removeAllAudiencesButtonEnable;
+    }
 }
 
 #pragma mark Utils

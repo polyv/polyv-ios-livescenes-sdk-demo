@@ -74,6 +74,7 @@ PLVSALinkMicWindowsViewDelegate
 
 - (void)clear {
     [self.windowsView removeFromSuperview];
+    [self setBgImageViewImage];
 }
 
 - (void)updateUsersLinkMicDuration {
@@ -132,8 +133,21 @@ PLVSALinkMicWindowsViewDelegate
 }
 
 - (void)setBgImageViewImage {
+    NSString *portraitChatBgImg = [PLVRoomDataManager sharedManager].roomData.menuInfo.portraitChatBgImg;
     if ([PLVSAUtils sharedUtils].isLandscape) {
         self.bgImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_bg_landscape"];
+    } else if ([PLVFdUtil checkStringUseable:portraitChatBgImg]) {
+        if ([portraitChatBgImg hasPrefix:@"//"]) {
+            portraitChatBgImg = [@"https:" stringByAppendingString:portraitChatBgImg];
+        }
+        
+        int opacity = [PLVRoomDataManager sharedManager].roomData.menuInfo.portraitChatBgImgOpacity.intValue;
+        if (opacity> 0 && opacity <= 50) {
+            NSString *opacityString = [NSString stringWithFormat:@"?x-oss-process=image/blur,r_%d,s_%d", opacity, opacity];
+            portraitChatBgImg = [portraitChatBgImg stringByAppendingString:opacityString];
+        }
+        
+        [PLVSAUtils setImageView:self.bgImageView url:[NSURL URLWithString:portraitChatBgImg] placeholderImage:[PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_bg"]];
     } else {
         self.bgImageView.image = [PLVSAUtils imageForLinkMicResource:@"plvsa_linkmic_bg"];
     }

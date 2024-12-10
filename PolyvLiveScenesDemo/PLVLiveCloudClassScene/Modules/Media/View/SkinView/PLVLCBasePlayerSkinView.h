@@ -76,6 +76,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @property (nonatomic, strong) PLVProgressSlider * progressSlider; // 仅直播回放
 @property (nonatomic, strong) PLVLCDocumentToolView *documentToolView; // 文档工具视图
 @property (nonatomic, strong) PLVLCMediaProgressView *progressView; // 仅直播回放
+@property (nonatomic, assign, readonly) BOOL isPPTOnMain;
 
 - (CGFloat)getLabelTextWidth:(UILabel *)label;
 

@@ -309,9 +309,28 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         }
     } else if (type == PLVLCKeyboardMoreButtonTypeSwitchLanguage) {
         __weak typeof(self) weakSelf = self;
-        [PLVActionSheet showActionSheetWithTitle:nil cancelBtnTitle:PLVLocalizedString(@"取消") destructiveBtnTitle:nil otherBtnTitles:@[@"简体中文-ZH", @"English-EN"] handler:^(PLVActionSheet * _Nonnull actionSheet, NSInteger index) {
+        [PLVActionSheet showActionSheetWithTitle:nil cancelBtnTitle:PLVLocalizedString(@"取消") destructiveBtnTitle:nil otherBtnTitles:@[@"简体中文-ZH", @"English-EN", @"繁體中文-ZH", @"日本語-JA", @"한국어-KO"] handler:^(PLVActionSheet * _Nonnull actionSheet, NSInteger index) {
             if (index > 0) {
-                PLVMultiLanguageMode selectedLanguage = (index == 1 ?PLVMultiLanguageModeZH : PLVMultiLanguageModeEN);
+                PLVMultiLanguageMode selectedLanguage = PLVMultiLanguageModeZH;
+                switch (index) {
+                    case 1:
+                        selectedLanguage = PLVMultiLanguageModeZH;
+                        break;
+                    case 2:
+                        selectedLanguage = PLVMultiLanguageModeEN;
+                        break;
+                    case 3:
+                        selectedLanguage = PLVMultiLanguageModeZH_HK;
+                        break;
+                    case 4:
+                        selectedLanguage = PLVMultiLanguageModeJA;
+                        break;
+                    case 5:
+                        selectedLanguage = PLVMultiLanguageModeKO;
+                        break;
+                    default:
+                        break;
+                }
                 if (selectedLanguage != [PLVMultiLanguageManager sharedManager].currentLanguage) {
                     if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(keyboardMoreView:switchLanguageMode:)]) {
                         [weakSelf.delegate keyboardMoreView:weakSelf switchLanguageMode:selectedLanguage];

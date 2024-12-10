@@ -232,9 +232,10 @@
 
 - (void)updateOnlineListButton:(NSInteger)onlineCount {
     NSString *onlineCountString = [NSString stringWithFormat:@"%ld",onlineCount];
-    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && onlineCount > 10000) {
+    BOOL currentLanguageModeZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
+    if (currentLanguageModeZH && onlineCount > 10000) {
         onlineCountString = [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0];
-    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && onlineCount > 1000) {
+    } else if (!currentLanguageModeZH && onlineCount > 1000) {
         onlineCountString = [NSString stringWithFormat:@"%0.1fk", onlineCount / 1000.0];
     }
     [self.onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineCountString] forState:UIControlStateNormal];

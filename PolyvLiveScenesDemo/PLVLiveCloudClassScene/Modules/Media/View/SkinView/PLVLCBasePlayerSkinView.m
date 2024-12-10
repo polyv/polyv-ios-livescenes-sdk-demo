@@ -38,6 +38,8 @@ UIGestureRecognizerDelegate>
 @property (nonatomic, assign) NSTimeInterval duration;
 @property (nonatomic, assign) NSTimeInterval scrubTime;
 
+@property (nonatomic, assign) BOOL isPPTOnMain;
+
 @end
 
 @implementation PLVLCBasePlayerSkinView
@@ -189,9 +191,10 @@ UIGestureRecognizerDelegate>
 
 - (void)setPlayTimesLabelWithTimes:(NSInteger)times{
     NSString *timesString = [NSString stringWithFormat:@"%ld",times];
-    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && times > 10000) {
+    BOOL currentLanguageModeZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
+    if (currentLanguageModeZH && times > 10000) {
         timesString = [NSString stringWithFormat:@"%0.1fw", times / 10000.0];
-    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && times > 1000) {
+    } else if (!currentLanguageModeZH && times > 1000) {
         timesString = [NSString stringWithFormat:@"%0.1fk", times / 1000.0];
     }
     self.playTimesLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"%@次播放"),timesString];
@@ -200,9 +203,10 @@ UIGestureRecognizerDelegate>
 
 - (void)setPlayTimesLabelWithOnlineUsers:(NSInteger)onlineUsers {
     NSString *onlineUsersString = [NSString stringWithFormat:@"%ld",onlineUsers];
-    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && onlineUsers > 10000) {
+    BOOL currentLanguageModeZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
+    if (currentLanguageModeZH && onlineUsers > 10000) {
         onlineUsersString = [NSString stringWithFormat:@"%0.1fw", onlineUsers / 10000.0];
-    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && onlineUsers > 1000) {
+    } else if (!currentLanguageModeZH && onlineUsers > 1000) {
         onlineUsersString = [NSString stringWithFormat:@"%0.1fk", onlineUsers / 1000.0];
     }
     self.playTimesLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineUsersString];
@@ -416,7 +420,17 @@ UIGestureRecognizerDelegate>
 }
 
 - (void)setupMainSpeakerPPTOnMain:(BOOL)mainSpeakerPPTOnMain {
+    self.isPPTOnMain = mainSpeakerPPTOnMain;
     [self.documentToolView setupMainSpeakerPPTOnMain:mainSpeakerPPTOnMain];
+}
+
+- (void)setIsPPTOnMain:(BOOL)isPPTOnMain {
+    _isPPTOnMain = isPPTOnMain;
+    if (isPPTOnMain) {
+        [self removeGestureRecognizer:self.panGR];
+    } else {
+        [self addGestureRecognizer:self.panGR];
+    }
 }
 
 - (void)checkMainSpeakerPPTOnMainAndSetData{

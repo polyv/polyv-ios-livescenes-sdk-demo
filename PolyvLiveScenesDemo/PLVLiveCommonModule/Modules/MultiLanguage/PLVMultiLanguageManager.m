@@ -73,6 +73,12 @@
             languageMode = PLVMultiLanguageModeZH;
         } else if ([language isEqualToString:@"en"]) {
             languageMode = PLVMultiLanguageModeEN;
+        } else if ([language isEqualToString:@"zh_HK"]) {
+            languageMode = PLVMultiLanguageModeZH_HK;
+        } else if ([language isEqualToString:@"ja"]) {
+            languageMode = PLVMultiLanguageModeJA;
+        } else if ([language isEqualToString:@"ko"]) {
+            languageMode = PLVMultiLanguageModeKO;
         } else if ([language isEqualToString:@"follow_browser"]) {
             languageMode = PLVMultiLanguageModeSyetem;
         }
@@ -124,10 +130,16 @@
     PLVMultiLanguageMode mode = PLVMultiLanguageModeEN;
     NSArray *languages = [NSLocale preferredLanguages];
     NSString *systemlanguage = [languages objectAtIndex:0];
-    if ([systemlanguage containsString:@"zh-Hans"] || [systemlanguage containsString:@"zh-Hant"]) {
+    if ([systemlanguage containsString:@"zh-Hans"] ) {
         mode = PLVMultiLanguageModeZH;
     } else if ([systemlanguage containsString:@"en"]) {
         mode = PLVMultiLanguageModeEN;
+    } else if ([systemlanguage containsString:@"zh-Hant"] || [systemlanguage containsString:@"zh-HK"]) {
+        mode = PLVMultiLanguageModeZH_HK;
+    } else if ([systemlanguage containsString:@"ja"]) {
+        mode = PLVMultiLanguageModeJA;
+    } else if ([systemlanguage containsString:@"ko"]) {
+        mode = PLVMultiLanguageModeKO;
     }
     
     return mode;
@@ -182,6 +194,12 @@
     NSString *appLanguage = @"en";
     if (self.currentLanguage == PLVMultiLanguageModeZH) {
         appLanguage = @"zh-Hans";
+    } else if (self.currentLanguage == PLVMultiLanguageModeZH_HK) {
+        appLanguage = @"zh-HK";
+    } else if (self.currentLanguage == PLVMultiLanguageModeJA) {
+        appLanguage = @"ja";
+    } else if (self.currentLanguage == PLVMultiLanguageModeKO) {
+        appLanguage = @"ko";
     }
     
     /// 更新SDK 语言

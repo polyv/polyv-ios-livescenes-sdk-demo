@@ -126,20 +126,26 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonAuthSpeaker)]) {
         NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonAuthSpeaker];
         CGSize textSize = [text sizeWithAttributes:attributes];
-        width = MAX(textSize.width + 70, width);
-    } else if (self.chatUser.banned) {
+        width = MAX(textSize.width + 90, width);
+    }
+    
+    if (self.chatUser.banned) {
         NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonBanned];
         CGSize textSize = [text sizeWithAttributes:attributes];
-        width = MAX(textSize.width + 70, width);
-    } else if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonKick)]) {
+        width = MAX(textSize.width + 90, width);
+    }
+    
+    if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonKick)]) {
         NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonKick];
         CGSize textSize = [text sizeWithAttributes:attributes];
-        width = MAX(textSize.width + 70, width);
-    } else if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonCamera)] ||
+        width = MAX(textSize.width + 90, width);
+    }
+    
+    if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonCamera)] ||
                [self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonMicrophone)]) {
         NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonMicrophone];
         CGSize textSize = [text sizeWithAttributes:attributes];
-        width = MAX(textSize.width + 70, width);
+        width = MAX(textSize.width + 90, width);
     }
     
     if (isPad) {

@@ -454,8 +454,12 @@
         _allowRaiseHandButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _allowRaiseHandButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _allowRaiseHandButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
-        [_allowRaiseHandButton setTitle:PLVLocalizedString(@"开启观众连麦") forState:UIControlStateNormal];
-        [_allowRaiseHandButton setTitle:PLVLocalizedString(@"关闭观众连麦") forState:UIControlStateSelected];
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+        NSString *normalTitle = isPad && !isLandscape ? PLVLocalizedString(@"开启观众连麦") : PLVLocalizedString(@"开启观众\n连麦");
+        NSString *selectedTitle = isPad && !isLandscape ? PLVLocalizedString(@"关闭观众连麦") : PLVLocalizedString(@"关闭观众\n连麦");
+        [_allowRaiseHandButton setTitle:normalTitle forState:UIControlStateNormal];
+        [_allowRaiseHandButton setTitle:selectedTitle forState:UIControlStateSelected];
         [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn"] forState:UIControlStateNormal];
         [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn_selected"] forState:UIControlStateSelected];
         [_allowRaiseHandButton addTarget:self action:@selector(allowRaiseHandButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -483,6 +487,7 @@
         [_removeAllAudiencesButton setTitle:PLVLocalizedString(@"观众下麦") forState:UIControlStateNormal];
         [_removeAllAudiencesButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_link_mic_remove_audiences_btn"] forState:UIControlStateNormal];
         [_removeAllAudiencesButton addTarget:self action:@selector(removeAllAudiencesButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _removeAllAudiencesButton.enabled = NO;
     }
     return _removeAllAudiencesButton;
 }
@@ -517,6 +522,15 @@
         _scrollView.pagingEnabled = YES;
     }
     return _scrollView;
+}
+
+#pragma mark - Setters
+
+- (void)setRemoveAllAudiencesEnable:(BOOL)removeAllAudiencesEnable {
+    _removeAllAudiencesEnable = removeAllAudiencesEnable;
+    if (removeAllAudiencesEnable != self.removeAllAudiencesButton.enabled) {
+        self.removeAllAudiencesButton.enabled = removeAllAudiencesEnable;
+    }
 }
 
 #pragma mark setButtonFrame
@@ -661,7 +675,7 @@
             }
         }];
         
-        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) {
+        if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK) {
             title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityName];
         } else {
             title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityEnName];

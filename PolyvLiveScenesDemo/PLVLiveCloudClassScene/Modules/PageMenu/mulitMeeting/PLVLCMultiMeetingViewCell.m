@@ -94,9 +94,10 @@
     
     NSInteger pv = [model.pv integerValue];
     NSString *pvString = [NSString stringWithFormat:@"%ld",pv];
-    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && pv > 10000) {
+    BOOL currentLanguageModeZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
+    if (currentLanguageModeZH && pv > 10000) {
         pvString = [NSString stringWithFormat:@"%0.1fw", pv / 10000.0];
-    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && pv > 1000) {
+    } else if (!currentLanguageModeZH && pv > 1000) {
         pvString = [NSString stringWithFormat:@"%0.1fk", pv / 1000.0];
     }
     self.playtimesLabel.text = pvString;

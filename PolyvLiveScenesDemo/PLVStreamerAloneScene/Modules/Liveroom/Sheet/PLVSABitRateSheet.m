@@ -301,7 +301,7 @@ UITableViewDelegate
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     PLVClientPushStreamTemplateVideoParams *videoParams = self.resolutionDataArray[indexPath.row];
-    NSString *message = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH ? videoParams.qualityName : videoParams.qualityEnName;
+    NSString *message = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK ? videoParams.qualityName : videoParams.qualityEnName;
     [PLVSAUtils showToastWithMessage:[NSString stringWithFormat:PLVLocalizedString(@"已切换为%@"), message] inView:[PLVSAUtils sharedUtils].homeVC.view];
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvsaBitRateSheet:didSelectStreamQualityLevel:)]) {

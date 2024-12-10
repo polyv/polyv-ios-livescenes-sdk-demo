@@ -722,9 +722,10 @@ PLVECWelfareLotteryWidgetViewDelegate
 
 - (void)updateOnlineListButton:(NSInteger)onlineCount {
     NSString *onlineCountString = [NSString stringWithFormat:@"%ld",onlineCount];
-    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH && onlineCount > 10000) {
+    BOOL currentLanguageModeZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
+    if (currentLanguageModeZH && onlineCount > 10000) {
         onlineCountString = [NSString stringWithFormat:@"%0.1fw", onlineCount / 10000.0];
-    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN && onlineCount > 1000) {
+    } else if (!currentLanguageModeZH && onlineCount > 1000) {
         onlineCountString = [NSString stringWithFormat:@"%0.1fk", onlineCount / 1000.0];
     }
     [self.onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineCountString] forState:UIControlStateNormal];
@@ -1075,7 +1076,7 @@ PLVECWelfareLotteryWidgetViewDelegate
         } else {
             [_pushView hide];
         }
-    } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
+    } else if (status == 3 || status == 2 || status == 11) { // 收到 删除/下架/取消推送商品 消息时进行处理
         [ _pushView hide];
     }
 }
@@ -1292,7 +1293,7 @@ PLVECWelfareLotteryWidgetViewDelegate
     item6.title = PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle);
     item6.iconImageName = @"plvec_live_languageswitch_btn";
     item6.selectedIconImageName = @"plvec_live_languageswitch_btn";
-    item6.selected = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeEN);
+    item6.selected = ([PLVMultiLanguageManager sharedManager].currentLanguage != PLVMultiLanguageModeZH);
     [muArray addObject:item6];
     
     if ([PLVFdUtil checkArrayUseable:self.interactButtonArray]) {
@@ -1346,9 +1347,28 @@ PLVECWelfareLotteryWidgetViewDelegate
     } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle)]) {
         moreView.hidden = YES;
         __weak typeof(self) weakSelf = self;
-        [PLVActionSheet showActionSheetWithTitle:nil cancelBtnTitle:PLVLocalizedString(@"取消") destructiveBtnTitle:nil otherBtnTitles:@[@"简体中文-ZH", @"English-EN"] handler:^(PLVActionSheet * _Nonnull actionSheet, NSInteger index) {
+        [PLVActionSheet showActionSheetWithTitle:nil cancelBtnTitle:PLVLocalizedString(@"取消") destructiveBtnTitle:nil otherBtnTitles:@[@"简体中文-ZH", @"English-EN", @"繁體中文-ZH", @"日本語-JA", @"한국어-KO"] handler:^(PLVActionSheet * _Nonnull actionSheet, NSInteger index) {
             if (index > 0) {
-                PLVMultiLanguageMode selectedLanguage = (index == 1 ?PLVMultiLanguageModeZH : PLVMultiLanguageModeEN);
+                PLVMultiLanguageMode selectedLanguage = PLVMultiLanguageModeZH;
+                switch (index) {
+                    case 1:
+                        selectedLanguage = PLVMultiLanguageModeZH;
+                        break;
+                    case 2:
+                        selectedLanguage = PLVMultiLanguageModeEN;
+                        break;
+                    case 3:
+                        selectedLanguage = PLVMultiLanguageModeZH_HK;
+                        break;
+                    case 4:
+                        selectedLanguage = PLVMultiLanguageModeJA;
+                        break;
+                    case 5:
+                        selectedLanguage = PLVMultiLanguageModeKO;
+                        break;
+                    default:
+                        break;
+                }
                 if (selectedLanguage != [PLVMultiLanguageManager sharedManager].currentLanguage) {
                     if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(homePageView:switchLanguageMode:)]) {
                         [weakSelf.delegate homePageView:weakSelf switchLanguageMode:selectedLanguage];

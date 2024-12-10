@@ -57,6 +57,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) BOOL mediaGranted; /// 当前是否对麦克风和摄像头进行授权
 
+@property (nonatomic, assign) BOOL removeAllAudiencesButtonEnable;
+
 /// 初始化方法
 /// @param userList 当前成员列表数据
 /// @param userCount 在线成员总数（在线成员总数不一定等于数组userList的count）

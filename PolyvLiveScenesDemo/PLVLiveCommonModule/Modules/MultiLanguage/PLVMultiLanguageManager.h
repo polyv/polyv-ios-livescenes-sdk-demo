@@ -18,6 +18,9 @@ typedef NS_ENUM(NSInteger, PLVMultiLanguageMode) {
     PLVMultiLanguageModeSyetem = 0,
     PLVMultiLanguageModeZH,
     PLVMultiLanguageModeEN,
+    PLVMultiLanguageModeZH_HK,
+    PLVMultiLanguageModeJA,
+    PLVMultiLanguageModeKO,
 };
 
 typedef NS_ENUM(NSInteger, PLVMultiLanguageLiveScene) {

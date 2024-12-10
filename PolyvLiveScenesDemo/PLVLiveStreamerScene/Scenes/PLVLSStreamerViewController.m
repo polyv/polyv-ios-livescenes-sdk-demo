@@ -1183,6 +1183,7 @@ PLVLSLinkMicSettingSheetDelegate
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray{
     [self.linkMicAreaView reloadLinkMicUserWindows];
     [self.memberPresenter refreshUserListWithLinkMicOnlineUserArray:onlineUserArray];
+    self.memberSheet.removeAllAudiencesButtonEnable = [PLVFdUtil checkArrayUseable:onlineUserArray] && onlineUserArray.count > 1;
 }
 
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter

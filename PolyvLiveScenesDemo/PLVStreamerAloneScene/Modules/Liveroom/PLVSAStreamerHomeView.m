@@ -359,6 +359,7 @@ PLVSALinkMicSettingSheetDelegate
     [self.toolbarAreaView updateOnlineUserCount:onlineUserCount];
     // 显示布局切换新手引导，当前连麦人数大于1时显示视图
     [self showLayoutSwitchGuideWithUserCount:onlineUserCount];
+    self.moreInfoSheet.removeAllAudiencesEnable = onlineUserCount > 1;
 }
 
 - (void)changeFlashButtonSelectedState:(BOOL)selectedState{

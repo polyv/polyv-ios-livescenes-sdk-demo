@@ -1045,7 +1045,7 @@ PLVECChatroomViewModelProtocol
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchLanguageMode:(NSInteger)languageMode {
     [PLVFdUtil showAlertWithTitle:nil message:PLVLocalizedString(@"PLVAlertSwitchLanguageTips") viewController:[PLVFdUtil getCurrentViewController] cancelActionTitle:PLVLocalizedString(@"取消") cancelActionStyle:UIAlertActionStyleDefault cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle") confirmActionStyle:UIAlertActionStyleDestructive confirmActionBlock:^(UIAlertAction * _Nonnull action) {
-        [[PLVMultiLanguageManager sharedManager] updateLanguage:MAX(MIN(languageMode, PLVMultiLanguageModeEN), PLVMultiLanguageModeSyetem)];
+        [[PLVMultiLanguageManager sharedManager] updateLanguage:MAX(MIN(languageMode, PLVMultiLanguageModeKO), PLVMultiLanguageModeSyetem)];
     }];
 }
 

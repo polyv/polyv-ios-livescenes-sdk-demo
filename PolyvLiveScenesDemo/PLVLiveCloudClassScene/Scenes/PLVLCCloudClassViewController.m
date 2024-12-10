@@ -942,7 +942,7 @@ PLVLCOnlineListSheetDelegate
         } else {
             [_pushView hide];
         }
-    } else if (status == 3 || status == 2) { // 收到 删除/下架商品 消息时进行处理
+    } else if (status == 3 || status == 2 || status == 11) { // 收到 删除/下架/取消推送商品 消息时进行处理
         [ _pushView hide];
     } else if (status == 10) { // 收到 关闭商品列表 消息时进行处理
         NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(jsonDict, @"content");

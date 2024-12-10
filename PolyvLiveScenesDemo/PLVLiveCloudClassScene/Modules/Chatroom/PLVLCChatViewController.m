@@ -1141,7 +1141,7 @@ UITableViewDataSource
                confirmActionTitle:PLVLocalizedString(@"PLVAlertConfirmTitle")
                confirmActionStyle:UIAlertActionStyleDestructive
                confirmActionBlock:^(UIAlertAction * _Nonnull action) {
-        [[PLVMultiLanguageManager sharedManager] updateLanguage:MAX(MIN(languageMode, PLVMultiLanguageModeEN), PLVMultiLanguageModeSyetem)];
+        [[PLVMultiLanguageManager sharedManager] updateLanguage:MAX(MIN(languageMode, PLVMultiLanguageModeKO), PLVMultiLanguageModeSyetem)];
     }];
 }
 

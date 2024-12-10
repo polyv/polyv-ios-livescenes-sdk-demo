@@ -1,0 +1,33 @@
+/* 
+  Localizable.strings
+  MultiLanguage
+
+  Created by Dhan on 2024/11/21.
+  
+*/
+
+"%@(我) 赠送了 %@"="%1$@ (저는)%2$@ 을 (를) 선물했습니다.";
+
+"公告：" = "공지:";
+
+"切换清晰度" = "선명도 전환";
+
+"加载直播..." = "라이브 로드...";
+
+"发起提问" = "질문 시작";
+
+"提问频道" = "질문 채널";
+
+"聊点什么～" = "무슨 얘기 좀 하자~";
+
+"连麦成功，已为你切换到竖屏模式" = "연맥 성공, 당신을 위해 세로 모드로 전환";
+
+
+/** icon */
+"plv_chatroom_askquestion_default_btn" = "plv_chatroom_askquestion_default_btn_en";
+"plv_chatroom_askquestion_selected_btn" = "plv_chatroom_askquestion_selected_btn_en";
+"plvec_chatroom_delay_password_redpack" = "plvec_chatroom_delay_password_redpack_en";
+"plvec_chatroom_lottery_widget_icon" = "plvec_chatroom_lottery_widget_icon_en";
+"plvec_chatroom_welfare_lottery_widget_icon" = "plvec_chatroom_welfare_lottery_widget_icon_en";
+"plvec_home_giftbox_btn" = "plvec_home_giftbox_btn_en";
+"plvec_home_redpack_btn" = "plvec_home_redpack_btn_en";
