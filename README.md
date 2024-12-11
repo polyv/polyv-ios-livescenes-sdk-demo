@@ -52,7 +52,7 @@
 
 ### 3 体验 Demo
 
-Demo [下载链接](https://www.pgyer.com/IzFQ) （密码：polyv）
+Demo [Testfight版本体验链接](https://testflight.apple.com/join/7XxnEJxS) 
 
 ### 4 Wiki 文档
 
