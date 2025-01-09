@@ -20,7 +20,6 @@
 @interface PLVSAMoreInfoSheet ()
 
 // UI
-@property (nonatomic, strong) UILabel *titleLabel; // 标题
 @property (nonatomic, strong) UILabel *baseTitleLabel; // 基础功能标题
 @property (nonatomic, strong) UIButton *cameraButton; // 摄像头
 @property (nonatomic, strong) UIButton *microphoneButton; // 麦克风
@@ -40,11 +39,14 @@
 @property (nonatomic, strong) NSArray *buttonArray;
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
 @property (nonatomic, strong) UIButton *signInButton; // 签到
+@property (nonatomic, strong) UIButton *giftRewardButton; // 礼物打赏
+@property (nonatomic, strong) UIButton *giftEffectsButton; // 礼物特效
 @property (nonatomic, strong) NSArray *interactiveButtonArray; // 互动
 @property (nonatomic, strong) UIScrollView *scrollView; // 按钮承载视图
 
 // 数据
 @property (nonatomic, assign) NSTimeInterval allowRaiseHandButtonLastTimeInterval; // 开启/关闭观众连麦上一次点击的时间戳
+@property (nonatomic, assign) BOOL closeGiftReward; // 是否关闭礼物打赏
 
 @end
 
@@ -61,6 +63,7 @@
     self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
         [self initUI];
+        [self getGiftRewardSettings];
         
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
         if (!isPad && [self.buttonArray count] > 10) { // 超过两行
@@ -77,13 +80,10 @@
 
 - (void)layoutSubviews {
     [super layoutSubviews];
-    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     
-    CGFloat titleX = isLandscape ? 32 : (isPad ? 56 :16);
     CGFloat titleY = (self.bounds.size.height > 667 || isLandscape) ? 32 : 18;
-    self.titleLabel.frame = CGRectMake(titleX, titleY, 50, 18);
-    self.scrollView.frame = CGRectMake(0, CGRectGetMaxY(self.titleLabel.frame) + 8, CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - CGRectGetMaxY(self.titleLabel.frame) - 8);
+    self.scrollView.frame = CGRectMake(0, titleY, CGRectGetWidth(self.contentView.frame), CGRectGetHeight(self.contentView.frame) - titleY);
     
     CGSize buttonSize = [self getMaxButtonSize];
     
@@ -162,10 +162,14 @@
     self.closeRoomButton.selected = closeRoom;
 }
 
+- (void)setCloseGiftReward:(BOOL)closeGiftReward {
+    _closeGiftReward = closeGiftReward;
+    self.giftRewardButton.selected = closeGiftReward;
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)initUI {
-    [self.contentView addSubview:self.titleLabel];
     [self.contentView addSubview:self.scrollView];
     
     UIView *buttonSuperView = self.scrollView;
@@ -215,24 +219,6 @@
     [buttonSuperView addSubview:self.badNetworkButton];
     [muButtonArray addObject:self.badNetworkButton];
     
-    // 显示新版连麦举手
-    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
-        [buttonSuperView addSubview:self.allowRaiseHandButton];
-        [muButtonArray addObject:self.allowRaiseHandButton];
-    }
-    
-    // 显示观众下麦
-    if ([PLVSAMoreInfoSheet showRemoveAllAudiencesButton]) {
-        [buttonSuperView addSubview:self.removeAllAudiencesButton];
-        [muButtonArray addObject:self.removeAllAudiencesButton];
-    }
-    
-    // 显示新版连麦设置
-    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
-        [buttonSuperView addSubview:self.linkMicSettingButton];
-        [muButtonArray addObject:self.linkMicSettingButton];
-    }
-    
     // 混流布局
     if ([PLVSAMoreInfoSheet showMixLayoutButton]) {
         [buttonSuperView addSubview:self.mixLayoutButton];
@@ -243,20 +229,37 @@
     
     [buttonSuperView addSubview:self.interactiveTitleLabel];
     [buttonSuperView addSubview:self.signInButton];
-    self.interactiveButtonArray = @[self.signInButton];
+    NSMutableArray *muInteractiveButtonArray = [NSMutableArray arrayWithArray:@[self.signInButton]];
+    if ([PLVSAMoreInfoSheet showGiftRewardRewardButton]) {
+        [buttonSuperView addSubview:self.giftRewardButton];
+        [muInteractiveButtonArray addObject:self.giftRewardButton];
+    }
+    
+    [buttonSuperView addSubview:self.giftEffectsButton];
+    [muInteractiveButtonArray addObject:self.giftEffectsButton];
+    
+    // 显示新版连麦举手
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        [buttonSuperView addSubview:self.allowRaiseHandButton];
+        [muInteractiveButtonArray addObject:self.allowRaiseHandButton];
+    }
+    
+    // 显示观众下麦
+    if ([PLVSAMoreInfoSheet showRemoveAllAudiencesButton]) {
+        [buttonSuperView addSubview:self.removeAllAudiencesButton];
+        [muInteractiveButtonArray addObject:self.removeAllAudiencesButton];
+    }
+    
+    // 显示新版连麦设置
+    if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
+        [buttonSuperView addSubview:self.linkMicSettingButton];
+        [muInteractiveButtonArray addObject:self.linkMicSettingButton];
+    }
+    
+    self.interactiveButtonArray = [muInteractiveButtonArray copy];
 }
 
 #pragma mark Getter
-
-- (UILabel *)titleLabel {
-    if (!_titleLabel) {
-        _titleLabel = [[UILabel alloc] init];
-        _titleLabel.text = PLVLocalizedString(@"更多");
-        _titleLabel.font = [UIFont systemFontOfSize:18];
-        _titleLabel.textColor = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:1/1.0];
-    }
-    return _titleLabel;
-}
 
 - (UILabel *)baseTitleLabel {
     if (!_baseTitleLabel) {
@@ -454,10 +457,8 @@
         _allowRaiseHandButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _allowRaiseHandButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _allowRaiseHandButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
-        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
-        NSString *normalTitle = isPad && !isLandscape ? PLVLocalizedString(@"开启观众连麦") : PLVLocalizedString(@"开启观众\n连麦");
-        NSString *selectedTitle = isPad && !isLandscape ? PLVLocalizedString(@"关闭观众连麦") : PLVLocalizedString(@"关闭观众\n连麦");
+        NSString *normalTitle = PLVLocalizedString(@"申请连麦");
+        NSString *selectedTitle = PLVLocalizedString(@"取消申请连麦") ;
         [_allowRaiseHandButton setTitle:normalTitle forState:UIControlStateNormal];
         [_allowRaiseHandButton setTitle:selectedTitle forState:UIControlStateSelected];
         [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn"] forState:UIControlStateNormal];
@@ -513,6 +514,32 @@
         [_signInButton addTarget:self action:@selector(signInButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _signInButton;
+}
+
+- (UIButton *)giftRewardButton {
+    if (!_giftRewardButton) {
+        _giftRewardButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _giftRewardButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _giftRewardButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_giftRewardButton setTitle:PLVLocalizedString(@"礼物打赏") forState:UIControlStateNormal];
+        [_giftRewardButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_reward_btn_open"] forState:UIControlStateNormal];
+        [_giftRewardButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_reward_btn_close"] forState:UIControlStateSelected];
+        [_giftRewardButton addTarget:self action:@selector(giftRewardButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _giftRewardButton;
+}
+
+- (UIButton *)giftEffectsButton {
+    if (!_giftEffectsButton) {
+        _giftEffectsButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _giftEffectsButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _giftEffectsButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_giftEffectsButton setTitle:PLVLocalizedString(@"礼物特效") forState:UIControlStateNormal];
+        [_giftEffectsButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_effects_btn_open"] forState:UIControlStateNormal];
+        [_giftEffectsButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_effects_btn_close"] forState:UIControlStateSelected];
+        [_giftEffectsButton addTarget:self action:@selector(giftEffectsButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _giftEffectsButton;
 }
 
 - (UIScrollView *)scrollView {
@@ -735,7 +762,7 @@
 }
 
 + (BOOL)showMixLayoutButton {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.showMixLayoutButtonEnabled;
 }
 
 + (BOOL)showLinkMicNewStrategy {
@@ -745,6 +772,25 @@
 
 + (BOOL)showRemoveAllAudiencesButton {
     return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
++ (BOOL)showGiftRewardRewardButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
+- (void)getGiftRewardSettings {
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
+        return;
+    }
+    __weak typeof(self) weakSelf = self;
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    [PLVLiveVideoAPI requestDonateWithChannelId:channelId completion:^(NSDictionary * _Nonnull data) {
+        if ([PLVFdUtil checkDictionaryUseable:data]) {
+            weakSelf.closeGiftReward = [PLV_SafeStringForDictKey(data, @"donateGiftEnabled") isEqualToString:@"N"];
+        }
+    } failure:^(NSError * _Nonnull error) {
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose, @"PLVSAMoreInfoSheet request donate setting error: %@", error.localizedDescription);
+    }];
 }
 
 #pragma mark - Event
@@ -893,6 +939,30 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapSignInButton:)]) {
         [self.delegate moreInfoSheetDidTapSignInButton:self];
+    }
+}
+
+- (void)giftRewardButtonAction {
+    self.closeGiftReward = !self.giftRewardButton.selected;
+    
+    __weak typeof(self) weakSelf = self;
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    [PLVLiveVideoAPI updateDonateGiftWithChannelId:channelId donateGiftEnabled:!self.closeGiftReward completion:^{
+        if ([weakSelf.delegate respondsToSelector:@selector(moreInfoSheetDidChangeCloseGiftReward:)]) {
+            [weakSelf.delegate moreInfoSheetDidChangeCloseGiftReward:weakSelf];
+        }
+    } failure:^(NSError * _Nonnull error) {
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeVerbose, @"PLVSAMoreInfoSheet update donate gift request error: %@", error.localizedDescription);
+        weakSelf.closeGiftReward = !weakSelf.closeGiftReward;
+    }];
+}
+
+- (void)giftEffectsButtonAction {
+    self.giftEffectsButton.selected = !self.giftEffectsButton.selected;
+
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeCloseRoom:)]) {
+        [self.delegate moreInfoSheet:self didCloseGiftEffects:self.giftEffectsButton.selected];
     }
 }
 

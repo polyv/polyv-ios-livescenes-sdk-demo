@@ -279,7 +279,7 @@ PLVShareLiveSheetDelegate
     // 如果本地有记录优先读取
     NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kPLVSASettingMixLayoutKey, self.channelId];
     NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:mixLayoutKey];
-    if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
+    if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString] && [PLVRoomDataManager sharedManager].roomData.showMixLayoutButtonEnabled) {
         PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
         if (saveMixLayout >= 1 && saveMixLayout <=3) {
             return saveMixLayout;

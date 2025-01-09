@@ -288,6 +288,15 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
     self.linkmicNewStrategyEnabled = menuInfo.newMicEnabled;
     self.defaultOpenMicLinkEnabled = menuInfo.defaultOpenMicLinkEnabled;
     self.transmitMode = menuInfo.transmitMode;
+    self.showMixLayoutButtonEnabled = menuInfo.showMixLayoutButtonEnabled;
+    self.showOrientationButtonEnabled = menuInfo.showHVScreenButtonEnabled;
+    if ([PLVFdUtil checkStringUseable:menuInfo.defaultScreenOrientation]) {
+        if ([menuInfo.defaultScreenOrientation isEqualToString:@"horizontal"]) {
+            self.appDefaultLandScapeEnabled = YES;
+        } else if ([menuInfo.defaultScreenOrientation isEqualToString:@"portrait"]) {
+            self.appDefaultLandScapeEnabled = NO;
+        }
+    }
     
     PLVChannelType apiChannelType = PLVChannelTypeUnknown;
     if ([menuInfo.scene isEqualToString:@"ppt"]) {

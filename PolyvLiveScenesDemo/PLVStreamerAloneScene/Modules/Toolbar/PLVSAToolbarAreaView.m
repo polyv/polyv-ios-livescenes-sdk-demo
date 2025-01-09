@@ -32,8 +32,6 @@
 ///  └── (PLVSAToolbarAreaView) self (lowest)
 ///    ├── (UIButton) chatButton
 ///    ├── (UIButton) linkMicButton
-///    ├── (UIButton) memberButton
-///    ├── (UIView) memberBadgeView
 ///    ├── (UIButton) commodityButton
 ///    ├── (UIButton) moreButton
 ///    ├── (PLVSASendMessageView) sendMessageView
@@ -70,8 +68,6 @@
         if (!(roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0) || roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
             [self addSubview:self.linkMicButton];
         }
-        [self addSubview:self.memberButton];
-        [self addSubview:self.memberBadgeView];
         [self addSubview:self.commodityButton];
         [self addSubview:self.moreButton];
     }
@@ -105,22 +101,14 @@
     self.moreButton.frame = CGRectMake(self.bounds.size.width - 36 - marginLeft, 8, 36, 36);
 
     self.commodityButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 12 - 36, 8, 36, 36);
-
-    self.memberButton.frame = CGRectMake(([self canManageCommodity] ? CGRectGetMinX(self.commodityButton.frame) : CGRectGetMinX(self.moreButton.frame)) - 12 - 36, 8, 36, 36);
-
-    self.memberBadgeView.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) - 10, 8, 10, 10);
     
-    CGFloat originX = CGRectGetMinX(self.memberButton.frame);
+    CGFloat originX = [self canManageCommodity] ? CGRectGetMinX(self.commodityButton.frame) : CGRectGetMinX(self.moreButton.frame);
     self.linkMicButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
     originX = self.linkMicButton.isHidden || !self.linkMicButton.superview ? originX : CGRectGetMinX(self.linkMicButton.frame);
     self.layoutSwitchButton.frame = CGRectMake(originX - 12 - 36, 8, 36, 36);
 }
 
 #pragma mark - [ Public Method ]
-
-- (void)showMemberBadge:(BOOL)show{
-    self.memberBadgeView.hidden = !show;
-}
 
 - (void)setChannelLinkMicOpen:(BOOL)channelLinkMicOpen {
     _channelLinkMicOpen = channelLinkMicOpen;
@@ -219,25 +207,6 @@
         _linkMicButton.hidden = self.isGuest;
     }
     return _linkMicButton;
-}
-
-- (UIButton *)memberButton {
-    if (!_memberButton) {
-        _memberButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_memberButton setImage:[PLVSAUtils imageForToolbarResource:@"plvsa_toolbar_btn_member"] forState:UIControlStateNormal];
-        [_memberButton addTarget:self action:@selector(memberButtonAction) forControlEvents:UIControlEventTouchUpInside];
-    }
-    return _memberButton;
-}
-
-- (UIView *)memberBadgeView {
-    if (!_memberBadgeView) {
-        _memberBadgeView = [[UIView alloc] init];
-        _memberBadgeView.backgroundColor = [UIColor redColor];
-        _memberBadgeView.layer.cornerRadius = 5;
-        _memberBadgeView.hidden = YES;
-    }
-    return _memberBadgeView;
 }
 
 - (UIButton *)moreButton {
@@ -351,13 +320,6 @@
     }
 }
 
-- (void)memberButtonAction {
-    self.memberBadgeView.hidden = YES;
-    if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapMemberButton:)]) {
-        [self.delegate toolbarAreaViewDidTapMemberButton:self];
-    }
-}
 
 - (void)commodityButtonAction {
     if (self.delegate && [self.delegate respondsToSelector:@selector(toolbarAreaViewDidTapCommodityButton:)]) {

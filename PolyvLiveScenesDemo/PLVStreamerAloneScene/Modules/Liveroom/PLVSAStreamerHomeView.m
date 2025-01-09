@@ -99,6 +99,9 @@ PLVSALinkMicSettingSheetDelegate
 @property (nonatomic, strong) PLVSASwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
 @property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
 @property (nonatomic, strong) PLVStreamerPopoverView *popoverView; // 浮动区域
+@property (nonatomic, strong) UIView *networkDisconnectMaskView; // 网络断开遮罩
+@property (nonatomic, strong) UIImageView *networkDisconnectImageView; // 网络断开提示图片
+@property (nonatomic, strong) UILabel *networkDisconnectLabel; // 网络断开提示
 
 /// 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser *localOnlineUser; // 本地用户模型，使用弱引用
@@ -243,6 +246,10 @@ PLVSALinkMicSettingSheetDelegate
     }
     
     self.pinMsgPopupView.frame = CGRectMake((self.homePageView.bounds.size.width - 320)/2, (isLandscape ? 65 : 132), 320, 58);
+    
+    self.networkDisconnectMaskView.frame = self.bounds;
+    self.networkDisconnectImageView.frame = CGRectMake((self.bounds.size.width - 56) / 2, (self.bounds.size.height - 87) / 2, 56, 56);
+    self.networkDisconnectLabel.frame = CGRectMake(left, CGRectGetMaxY(self.networkDisconnectImageView.frame) + 8, self.bounds.size.width - left *2, 23);
 }
 
 #pragma mark - [ Override ]
@@ -296,6 +303,23 @@ PLVSALinkMicSettingSheetDelegate
 
 - (void)setNetworkQuality:(PLVBRTCNetworkQuality)netState {
     self.statusbarAreaView.netState = (PLVSAStatusBarNetworkQuality)netState;
+    UIView *signalButton = (UIView *)self.statusbarAreaView.signalButton;
+    if (netState == PLVBRTCNetworkQuality_Down) {
+        if (self.networkDisconnectMaskView.hidden) {
+            self.networkDisconnectMaskView.hidden = NO;
+        }
+        
+        if (signalButton.superview != self.networkDisconnectMaskView) {
+            CGRect signalButtonRect = [signalButton convertRect:signalButton.bounds toView:self.networkDisconnectMaskView];
+            [signalButton removeFromSuperview];
+            [self.networkDisconnectMaskView addSubview:signalButton];
+            signalButton.frame = signalButtonRect;
+        }
+    } else if (!self.networkDisconnectMaskView.hidden) {
+        self.networkDisconnectMaskView.hidden = YES;
+        [signalButton removeFromSuperview];
+        [self.statusbarAreaView addSubview:signalButton];
+    }
 }
 
 - (void)updateUserList:(NSArray <PLVChatUser *> *)userList
@@ -324,7 +348,7 @@ PLVSALinkMicSettingSheetDelegate
 
 - (void)showMemberBadge:(BOOL)show {
     if ([self canManagerLinkMic]) {
-        [self.toolbarAreaView showMemberBadge:show];
+        [self.statusbarAreaView showMemberBadge:show];
     }
 }
 
@@ -337,15 +361,16 @@ PLVSALinkMicSettingSheetDelegate
     CGFloat padding = isPad ? 24 : ([PLVSAUtils sharedUtils].isLandscape ? 36 : 8);
     CGRect frame = self.linkMicTipView.frame;
     CGSize selfSize = self.bounds.size;
-    CGFloat bottom = [PLVSAUtils sharedUtils].areaInsets.bottom;
     CGFloat right = [PLVSAUtils sharedUtils].areaInsets.right + padding;
+    
+    UIView *memberButton = (UIView *)self.statusbarAreaView.memberButton;
+    CGRect memberButtonRect = [self convertRect:memberButton.frame toView:self.homePageView];
     if (self.scrollView.contentOffset.x == 0) {
-        frame.origin.x = selfSize.width - frame.size.width - right;
-        frame.origin.y = selfSize.height - bottom  - 20 - frame.size.height ;
+        frame.origin.x = CGRectGetMidX(memberButtonRect) - frame.size.width / 2 + right / 2;
     } else {
-        frame.origin.x = selfSize.width *2 - frame.size.width - right;
-        frame.origin.y = CGRectGetMinY(self.toolbarAreaView.frame) - frame.size.height - 16;
+        frame.origin.x = selfSize.width + CGRectGetMidX(memberButtonRect) - frame.size.width / 2 + right / 2;
     }
+    frame.origin.y = self.statusbarAreaView.frame.origin.y + CGRectGetMaxY(memberButtonRect) + 6;
     
     self.linkMicTipView.frame = frame;
     [self.linkMicTipView show];
@@ -412,9 +437,13 @@ PLVSALinkMicSettingSheetDelegate
     self.linkMicWindowsView = linkMicWindowsView;
     
     [self addSubview:self.scrollView];
-    [self insertSubview:self.linkMicWindowsView.fullScreenContentView aboveSubview:self.scrollView];
-    [self insertSubview:self.closeButton aboveSubview:self.scrollView];
+    [self insertSubview:self.networkDisconnectMaskView aboveSubview:self.scrollView];
+    [self insertSubview:self.closeButton aboveSubview:self.networkDisconnectMaskView];
     [self insertSubview:self.popoverView aboveSubview:self.closeButton]; /// 保证高于 closeButton
+    [self insertSubview:self.linkMicWindowsView.fullScreenContentView aboveSubview:self.closeButton];
+    
+    [self.networkDisconnectMaskView addSubview:self.networkDisconnectLabel];
+    [self.networkDisconnectMaskView addSubview:self.networkDisconnectImageView];
 
     // 迁移连麦窗口到homeView上
     [self.linkMicWindowsView removeFromSuperview];
@@ -881,6 +910,33 @@ PLVSALinkMicSettingSheetDelegate
     return _switchSuccessTipsView;
 }
 
+- (UIView *)networkDisconnectMaskView {
+    if (!_networkDisconnectMaskView) {
+        _networkDisconnectMaskView = [[UIView alloc] init];
+        _networkDisconnectMaskView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.6);
+        _networkDisconnectMaskView.hidden = YES;
+    }
+    return _networkDisconnectMaskView;
+}
+
+- (UIImageView *)networkDisconnectImageView {
+    if (!_networkDisconnectImageView) {
+        _networkDisconnectImageView = [[UIImageView alloc] initWithImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_error"]];
+    }
+    return _networkDisconnectImageView;
+}
+
+- (UILabel *)networkDisconnectLabel {
+    if (!_networkDisconnectLabel) {
+        _networkDisconnectLabel = [[UILabel alloc] init];
+        _networkDisconnectLabel.textColor = PLV_UIColorFromRGB(@"#FFFFFF");
+        _networkDisconnectLabel.font = [UIFont fontWithName:@"PingFangSC" size:16];
+        _networkDisconnectLabel.text = PLVLocalizedString(@"网络断开，直播已暂停");
+        _networkDisconnectLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _networkDisconnectLabel;
+}
+
 #pragma mark - [ Event ]
 
 #pragma mark Action
@@ -918,6 +974,10 @@ PLVSALinkMicSettingSheetDelegate
     [self.channelInfoSheet showInView:self];
 }
 
+- (void)statusbarAreaViewDidTapMemberButton:(PLVSAStatusbarAreaView *)statusBarAreaView {
+    [self.memberSheet showInView:self];
+}
+
 #pragma mark PLVSAToolbarAreaViewDelegate
 
 - (void)toolbarAreaViewDidLinkMicLayoutSwitchButton:(PLVSAToolbarAreaView *)toolbarAreaView layoutSwitchButtonSelected:(BOOL)selected {
@@ -940,10 +1000,6 @@ PLVSALinkMicSettingSheetDelegate
     } else {
         [self linkMicButtonSelected:selected videoLinkMic:[self currentChannelLinkMicMediaType] == PLVChannelLinkMicMediaType_Video];
     }
-}
-
-- (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView {
-    [self.memberSheet showInView:self];
 }
 
 - (void)toolbarAreaViewDidTapVideoLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected {
@@ -1051,6 +1107,14 @@ PLVSALinkMicSettingSheetDelegate
 
 - (void)moreInfoSheetDidTapSignInButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
     [self.popoverView.interactView openInteractViewWithEventName:@"SHOW_SIGN"];
+}
+
+- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects {
+    self.chatroomAreaView.closeGiftEffects = closeGiftEffects;
+}
+
+- (void)moreInfoSheetDidChangeCloseGiftReward:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"开启/关闭打赏设置后，观众需刷新页面或重进直播间")];
 }
 
 #pragma mark PLVSABitRateSheetDelegate

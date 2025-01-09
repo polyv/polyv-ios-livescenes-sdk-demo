@@ -130,6 +130,8 @@
 
 "礼物打赏" = "Gifts Reward";
 
+"礼物特效" = "Gifts Effects";
+
 "礼物打赏功能未开启" = "The gift reward function is not enabled";
 
 "积分打赏" = "Points Reward";
@@ -468,6 +470,8 @@
 "不开启" = "Turn off";
 "温馨提示" = "Reminder";
 "注意：媒体音量下，使用手机应用所产生提示音、音视频声音也将被采集并直播出去，请谨慎开启！" = "Caution: With media volume, app sounds and media playback will also be broadcasted. Use with care.";
+"网络断开，直播已暂停" = "Network down, live stream paused";
+"直播回放" = "Live Replay";
 
 /**  美颜  */
 "下颌" = "Jaw";

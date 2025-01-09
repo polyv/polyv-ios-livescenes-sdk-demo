@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import "PLVLinkMicUserDefine.h"
+#import "PLVLSSignalButton.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -76,6 +77,9 @@ typedef NS_ENUM(NSInteger, PLVLSStatusBarControls){
 @property (nonatomic, assign) PLVLSStatusBarNetworkQuality netState; // 网络状态，设置该值同时更新界面网络状态
 
 @property (nonatomic, strong, readonly) UIButton *linkmicButton;
+
+@property (nonatomic, strong, readonly) PLVLSSignalButton *signalButton;
+@property (nonatomic, strong, readonly) UIButton *stopPushButton;
 
 /// 禁止点击上课按钮
 /// @param enable YES - 禁止 NO - 解除禁止

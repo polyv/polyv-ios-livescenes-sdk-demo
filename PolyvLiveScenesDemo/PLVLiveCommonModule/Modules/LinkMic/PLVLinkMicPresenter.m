@@ -985,7 +985,7 @@ PLVLinkMicManagerDelegate
                         [weakSelf muteUser:user.linkMicUserId mediaType:@"video" mute:!weakSelf.cameraDefaultOpen];
                     }else{
                         BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"audio" defaultMuteStatus:YES];
-                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"video" defaultMuteStatus:YES];
+                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:user.linkMicUserId mediaType:@"video" defaultMuteStatus:!(user.userType == PLVSocketUserTypeGuest || user.userType == PLVSocketUserTypeTeacher)];
                         
                         /// 设置初始值
                         [user updateUserCurrentMicOpen:micOpen];

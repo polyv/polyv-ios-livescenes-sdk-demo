@@ -26,9 +26,6 @@ typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
 /// 点击连麦按钮回调
 - (void)toolbarAreaViewDidTapLinkMicButton:(PLVSAToolbarAreaView *)toolbarAreaView linkMicButtonSelected:(BOOL)selected;
 
-/// 点击人员按钮回调
-- (void)toolbarAreaViewDidTapMemberButton:(PLVSAToolbarAreaView *)toolbarAreaView;;
-
 /// 点击商品库按钮回调
 - (void)toolbarAreaViewDidTapCommodityButton:(PLVSAToolbarAreaView *)toolbarAreaView;
 
@@ -55,10 +52,6 @@ typedef NS_ENUM(NSUInteger, PLVSAToolbarLinkMicButtonStatus) {
 
 // 连麦布局切换(默认平铺，选中为主讲模式)
 @property (nonatomic, strong, readonly) UIButton *layoutSwitchButton;
-
-/// 人员按钮右上角红点显示或隐藏
-/// @param show YES: 显示；NO：隐藏
-- (void)showMemberBadge:(BOOL)show;
 
 /// 更新状态栏连麦用户数量
 /// @note 更新用户数量时，会更新连麦布局切换按钮显示状态 （大于1时显示）

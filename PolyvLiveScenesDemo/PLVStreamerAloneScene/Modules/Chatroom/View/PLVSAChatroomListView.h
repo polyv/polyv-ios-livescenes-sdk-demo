@@ -36,6 +36,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVSAChatroomListViewDelegate> delegate;
 
+@property (nonatomic, assign) BOOL closeGiftEffects;
+
 /// 发送消息
 - (void)didSendMessage;
 

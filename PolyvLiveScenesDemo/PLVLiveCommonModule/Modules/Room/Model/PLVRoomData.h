@@ -203,6 +203,10 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, copy) NSString *defaultOpenMicLinkEnabled;
 // 频道默认开关，仅新版连麦生效
 @property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType defaultChannelLinkMicMediaType;
+// 后台是否显示混流布局按钮，YES显示，NO不显示（仅适用于纯视频开播）
+@property (nonatomic, assign) BOOL showMixLayoutButtonEnabled;
+// 后台是否显示横竖屏按钮，YES显示，NO不显示（仅适用于纯视频开播）
+@property (nonatomic, assign) BOOL showOrientationButtonEnabled;
 
 #pragma mark SIP独有属性
 /// 支持SIP模式

@@ -7,7 +7,6 @@
 //
 
 #import "PLVLSStatusAreaView.h"
-#import "PLVLSSignalButton.h"
 #import "PLVLSLinkMicMenuPopup.h"
 #import "PLVLSLinkMicGuestMenuPopup.h"
 #import "PLVLSNetworkStatePopup.h"
@@ -124,9 +123,13 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     
     originX = self.timeLabel.hidden ? originX : (CGRectGetMaxX(self.timeLabel.frame) - 5 + 12);
     self.signalButton.hidden = YES;
+    CGRect signalButtonFrame = self.signalButton.frame;
     if (controlsInDemand & PLVLSStatusBarControls_SignalButton) {
         self.signalButton.hidden = NO;
-        self.signalButton.frame = CGRectMake(originX, 12, self.signalButton.buttonCalWidth, 20);
+        signalButtonFrame = CGRectMake(originX, 12, self.signalButton.buttonCalWidth, 20);
+        if (self.signalButton.superview == self) {
+            self.signalButton.frame = signalButtonFrame;
+        }
     }
     
     /// 右侧控件
@@ -138,7 +141,9 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         self.startPushButton.hidden = self.inClass;
         self.stopPushButton.hidden = !self.inClass;
         self.startPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 80, 28);
-        self.stopPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 80, 28);
+        if (self.stopPushButton.superview == self) {
+            self.stopPushButton.frame = CGRectMake(originX, (kStatusBarHeight - 28) / 2.0, 80, 28);
+        }
     }
     
     self.settingButton.hidden = YES;
@@ -191,10 +196,10 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     if (_networkStatePopup) {
         CGFloat width = self.networkStatePopup.bubbleSize.width;
         CGFloat height = self.networkStatePopup.bubbleSize.height;
-        CGFloat originX = MAX(0, self.frame.origin.x + self.signalButton.frame.origin.x + self.signalButton.frame.size.width - width); // 弹层与按钮右侧对齐
+        CGFloat originX = MAX(0, self.frame.origin.x + signalButtonFrame.origin.x + signalButtonFrame.size.width - width); // 弹层与按钮右侧对齐
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
-        CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
+        CGRect buttonRect = [self convertRect:signalButtonFrame toView:self.superview];
         
         [self.networkStatePopup refreshWithBubbleFrame:rect buttonFrame:buttonRect];
         if (self.networkStatePopup.showing) {

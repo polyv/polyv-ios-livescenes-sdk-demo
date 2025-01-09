@@ -62,6 +62,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 签到按钮 触发回调
 - (void)moreInfoSheetDidTapSignInButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 礼物特效 按钮 触发回调
+- (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects;
+
+/// 点击 礼物特效 按钮 触发回调
+- (void)moreInfoSheetDidChangeCloseGiftReward:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 /// 更多信息弹层

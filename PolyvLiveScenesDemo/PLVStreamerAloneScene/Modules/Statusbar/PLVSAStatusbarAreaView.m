@@ -28,6 +28,7 @@
 ///  └── (PLVSAStatusbarAreaView) self (lowest)
 ///    ├── (PLVSAStatusBarButton) channelInfoButton
 ///    ├── (PLVSAStatusBarButton) memberButton
+///    ├── (UIView) memberBadgeView
 ///    ├── (PLVSAStatusBarButton) timeButton
 ///    ├── (PLVSAStatusBarButton) teacherNameButton
 ///    └── (PLVSAStatusBarButton) signalButton
@@ -35,6 +36,7 @@
 
 @property (nonatomic, strong) PLVSAStatusBarButton *channelInfoButton; // 频道信息按钮
 @property (nonatomic, strong) PLVSAStatusBarButton *memberButton; // 人员按钮
+@property (nonatomic, strong) UIView *memberBadgeView; // 等待连麦提示红点
 @property (nonatomic, strong) PLVSAStatusBarButton *timeButton; // 时间按钮
 @property (nonatomic, strong) PLVSAStatusBarButton *teacherNameButton; // 讲师按钮
 @property (nonatomic, strong) PLVSAStatusBarButton *signalButton; // 信号视图
@@ -55,8 +57,9 @@
         self.backgroundColor = [UIColor clearColor];
 
         [self addSubview:self.channelInfoButton];
-        [self addSubview:self.memberButton];
         [self addSubview:self.timeButton];
+        [self addSubview:self.memberButton];
+        [self addSubview:self.memberBadgeView];
         [self addSubview:self.signalButton];
         [self addSubview:self.teacherNameButton];
     }
@@ -83,10 +86,12 @@
     
     self.channelInfoButton.frame = CGRectMake(marginX, marginTop, self.channelInfoButton.buttonCalWidth, 36);
     
-    CGFloat width = self.memberButton.frame.size.width;
-    self.memberButton.frame = CGRectMake(CGRectGetMaxX(self.channelInfoButton.frame) + padding, marginTop, width, 36);
+    self.timeButton.frame = CGRectMake(CGRectGetMaxX(self.channelInfoButton.frame) + padding, marginTop, 100, 36);
     
-    self.timeButton.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) + padding, marginTop, 100, 36);
+    CGFloat width = self.memberButton.frame.size.width;
+    self.memberButton.frame = CGRectMake(CGRectGetMaxX(self.timeButton.frame) + padding, marginTop, width, 36);
+    
+    self.memberBadgeView.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) - 10, 10, 6, 6);
 
     width = self.teacherNameButton.frame.size.width;
     self.teacherNameButton.frame = CGRectMake(marginX, CGRectGetMaxY(self.channelInfoButton.frame) + padding, width, 20);
@@ -98,15 +103,20 @@
         signalControlX = self.bounds.size.width - self.signalButton.buttonCalWidth - marginX;
         signalControlY = CGRectGetMaxY(self.channelInfoButton.frame) + padding;
     }
-    self.signalButton.frame = CGRectMake(signalControlX, signalControlY, self.signalButton.buttonCalWidth, 20);
+    
+    CGRect signalButtonFrame = CGRectMake(signalControlX, signalControlY, self.signalButton.buttonCalWidth, 20);
+    if (self.signalButton.superview == self) {
+        self.signalButton.frame = signalButtonFrame;
+    }
+    
     
     if (_networkStatePopup) {
         CGFloat width = self.networkStatePopup.bubbleSize.width;
         CGFloat height = self.networkStatePopup.bubbleSize.height;
-        CGFloat originX = MAX(0, self.frame.origin.x + CGRectGetMaxX(self.signalButton.frame) - width); // 弹层与按钮右侧对齐
-        CGFloat originY = self.frame.origin.y + CGRectGetMaxY(self.signalButton.frame) + 4.0;
+        CGFloat originX = MAX(0, self.frame.origin.x + CGRectGetMaxX(signalButtonFrame) - width); // 弹层与按钮右侧对齐
+        CGFloat originY = self.frame.origin.y + CGRectGetMaxY(signalButtonFrame) + 4.0;
         CGRect rect = CGRectMake(originX, originY, width, height);
-        CGRect buttonRect = [self convertRect:self.signalButton.frame toView:self.superview];
+        CGRect buttonRect = [self convertRect:signalButtonFrame toView:self.superview];
         
         [self.networkStatePopup refreshWithBubbleFrame:rect buttonFrame:buttonRect];
         if (self.networkStatePopup.showing) {
@@ -137,6 +147,10 @@
 
 - (void)updateRTT:(NSInteger)rtt upLoss:(NSInteger)upLoss downLoss:(NSInteger)downLoss {
     [self.networkStatePopup updateRTT:rtt upLoss:upLoss downLoss:downLoss];
+}
+
+- (void)showMemberBadge:(BOOL)show{
+    self.memberBadgeView.hidden = !show;
 }
 
 #pragma mark - [ Private Method ]
@@ -181,8 +195,23 @@
         } else {
             _memberButton.font = [UIFont systemFontOfSize:14];
         }
+        
+        __weak typeof(self) weakSelf = self;
+        _memberButton.didTapHandler = ^{
+            [weakSelf memberButtonAction];
+        };
     }
     return _memberButton;
+}
+
+- (UIView *)memberBadgeView {
+    if (!_memberBadgeView) {
+        _memberBadgeView = [[UIView alloc] init];
+        _memberBadgeView.backgroundColor = [UIColor redColor];
+        _memberBadgeView.layer.cornerRadius = 3;
+        _memberBadgeView.hidden = YES;
+    }
+    return _memberBadgeView;
 }
 
 - (PLVSAStatusBarButton *)timeButton {
@@ -217,7 +246,11 @@
             if (weakSelf.networkStatePopup.showing) {
                 [weakSelf.networkStatePopup dismiss];
             } else {
-                [weakSelf.networkStatePopup showAtView:weakSelf.superview];
+                if (weakSelf == weakSelf.signalButton.superview) {
+                    [weakSelf.networkStatePopup showAtView:weakSelf.superview];
+                } else {
+                    [weakSelf.networkStatePopup showAtView:weakSelf.signalButton.superview];
+                }
             }
         }];
     }
@@ -378,6 +411,13 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(statusbarAreaViewDidTapChannelInfoButton:)]) {
         [self.delegate statusbarAreaViewDidTapChannelInfoButton:self];
+    }
+}
+
+- (void)memberButtonAction {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(statusbarAreaViewDidTapMemberButton:)]) {
+        [self.delegate statusbarAreaViewDidTapMemberButton:self];
     }
 }
 

@@ -196,6 +196,14 @@ PLVSAChatroomListViewDelegate
     }
 }
 
+- (void)setCloseGiftEffects:(BOOL)closeGiftEffects {
+    _closeGiftEffects = closeGiftEffects;
+    if (closeGiftEffects) {
+        self.giftView.hidden = closeGiftEffects;
+    }
+    self.chatroomListView.closeGiftEffects = closeGiftEffects;
+}
+
 #pragma mark 显示欢迎语
 
 - (void)showWelcomeWithMessage:(NSString *)welcomeMessage {
@@ -313,11 +321,15 @@ PLVSAChatroomListViewDelegate
 }
 
 - (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel giftNickName:(nonnull NSString *)nickName giftImageUrl:(nonnull NSString *)giftImageUrl giftNum:(NSInteger)giftNum giftContent:(nonnull NSString *)giftContent {
-    [self.giftView showGiftAnimation:nickName giftImageUrl:giftImageUrl giftNum:giftNum giftContent:giftContent];
+    if (!self.closeGiftEffects) {
+        [self.giftView showGiftAnimation:nickName giftImageUrl:giftImageUrl giftNum:giftNum giftContent:giftContent];
+    }
 }
 
 - (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel giftNickName:(NSString *)nickName cashGiftContent:(NSString *)cashGiftContent {
-    [self.giftView showGiftAnimation:nickName cashGiftContent:cashGiftContent];
+    if (!self.closeGiftEffects) {
+        [self.giftView showGiftAnimation:nickName cashGiftContent:cashGiftContent];
+    }
 }
 
 - (void)chatroomViewModel_loadImageEmotionSuccess:(NSArray<NSDictionary *> *)dictArray {

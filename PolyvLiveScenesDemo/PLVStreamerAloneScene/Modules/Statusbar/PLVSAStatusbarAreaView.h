@@ -28,6 +28,9 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 /// 点击直播信息回调
 - (void)statusbarAreaViewDidTapChannelInfoButton:(PLVSAStatusbarAreaView *)statusBarAreaView;
 
+/// 点击人员列表回调
+- (void)statusbarAreaViewDidTapMemberButton:(PLVSAStatusbarAreaView *)statusBarAreaView;
+
 @end
 
 @interface PLVSAStatusbarAreaView : UIView
@@ -43,11 +46,17 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 /// 讲师按钮
 @property (nonatomic, strong, readonly) PLVSAStatusBarButton *teacherNameButton;
 
+/// 人员按钮
+@property (nonatomic, strong, readonly) PLVSAStatusBarButton *memberButton;
+
 /// 已上课时长，同时更新界面时长文本
 @property (nonatomic, assign) NSTimeInterval duration;
 
 /// 网络状态，设置该值同时更新界面网络状态
 @property (nonatomic, assign) PLVSAStatusBarNetworkQuality netState;
+
+/// 信号视图
+@property (nonatomic, strong, readonly) PLVSAStatusBarButton *signalButton;
 
 /// 开播老师昵称，同时更新界面老师昵称文本
 @property (nonatomic, copy) NSString *teacherName;
@@ -66,6 +75,10 @@ typedef NS_ENUM(NSInteger, PLVSAStatusBarNetworkQuality){
 - (void)startClass:(BOOL)start;
 
 - (void)updateRTT:(NSInteger)rtt upLoss:(NSInteger)upLoss downLoss:(NSInteger)downLoss;
+
+/// 人员按钮右上角红点显示或隐藏
+/// @param show YES: 显示；NO：隐藏
+- (void)showMemberBadge:(BOOL)show;
 
 @end
 

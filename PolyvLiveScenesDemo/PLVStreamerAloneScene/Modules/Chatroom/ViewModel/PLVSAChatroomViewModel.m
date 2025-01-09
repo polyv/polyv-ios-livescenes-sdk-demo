@@ -36,6 +36,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 // 数据数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArray; /// 公聊全部消息数组
 
+@property (nonatomic, strong) NSMutableArray <PLVChatModel *> *chatArrayWithoutReward; /// 屏蔽礼物打赏消息数组
+
 #pragma mark 聊天数据管理
 
 /// 公聊数据管理计时器，间隔30秒触发一次
@@ -80,6 +82,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     
     // 初始化消息数组，预设初始容量
     self.chatArray = [[NSMutableArray alloc] initWithCapacity:500];
+    self.chatArrayWithoutReward = [[NSMutableArray alloc] initWithCapacity:500];
     
     // 初始化聊天室Presenter并设置delegate
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10];
@@ -262,6 +265,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     
     [self.chatArray addObject:model];
+    if (![PLVSARewardMessageCell isModelValid:model]) {
+        [self.chatArrayWithoutReward addObject:model];
+    }
     dispatch_semaphore_signal(_chatArrayLock);
     
     [self notifyListenerDidSendMessage];
@@ -307,6 +313,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
     
     [self.chatArray addObject:model];
+    if (![PLVSARewardMessageCell isModelValid:model]) {
+        [self.chatArrayWithoutReward addObject:model];
+    }
     dispatch_semaphore_signal(_chatArrayLock);
     
     [self notifyListenerDidResendMessage];
@@ -350,6 +359,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         
         if ([model isKindOfClass:[PLVChatModel class]]) {
             [self.chatArray addObject:model];
+            if (![PLVSARewardMessageCell isModelValid:model]) {
+                [self.chatArrayWithoutReward addObject:model];
+            }
         }
     }
     dispatch_semaphore_signal(_chatArrayLock);
@@ -368,6 +380,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         NSString *modelMsgId = [model msgId];
         if (modelMsgId && [modelMsgId isEqualToString:msgId]) {
             [self.chatArray removeObject:model];
+            [self.chatArrayWithoutReward removeObject:model];
             break;
         }
     }
@@ -380,6 +393,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)removeAllPublicChatModels {
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     [self.chatArray removeAllObjects];
+    [self.chatArrayWithoutReward removeAllObjects];
     dispatch_semaphore_signal(_chatArrayLock);
     
     [self notifyListenerDidMessageDeleted];
@@ -391,6 +405,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     for (PLVChatModel *model in modelArray) {
         if ([model isKindOfClass:[PLVChatModel class]]) {
             [self.chatArray insertObject:model atIndex:0];
+            if (![PLVSARewardMessageCell isModelValid:model]) {
+                [self.chatArrayWithoutReward insertObject:model atIndex:0];
+            }
         }
     }
     BOOL first = ([self.chatArray count] <= [modelArray count]);
@@ -428,6 +445,29 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
             model.msgState = PLVChatMsgStateUnknown;
         }
     }
+    
+    NSArray *tempChatArrayWithoutReward = [self.chatArrayWithoutReward copy];
+    for (PLVChatModel *model in tempChatArrayWithoutReward) {
+        NSString *modelMsgId = [model msgId];
+        // 含有严禁词且发送失败的消息，msgID为空
+        if (modelMsgId && modelMsgId.length > 0) {
+            continue;
+        }
+        // 该消息已标记为包含严禁词消息
+        if ([model isProhibitMsg]) {
+            continue;
+        }
+        
+        NSString *content = [model content];
+        //只要含有违禁词，都需要处理，不局限于最近一条
+        if (content &&
+            [content isKindOfClass:[NSString class]] &&
+            [content containsString:word]) {
+            model.prohibitWord = word;
+            model.msgState = PLVChatMsgStateUnknown;
+        }
+    }
+    
     dispatch_semaphore_signal(_chatArrayLock);
     
     [self notifyListenerDidSendProhibitMessgae];
@@ -444,6 +484,22 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_wait(_chatArrayLock, DISPATCH_TIME_FOREVER);
     NSArray *tempChatArray = [self.chatArray copy];
     for (PLVChatModel *model in tempChatArray) {
+        // 该消息已标记为包含违规图片消息
+        if ([model isProhibitMsg]) {
+            continue;
+        }
+        
+        NSString *tempMsgId = [model msgId];
+        if (tempMsgId &&
+            [tempMsgId isKindOfClass:[NSString class]] &&
+            [tempMsgId isEqualToString:msgId]) {
+            model.prohibitWord = tempMsgId;
+            break;
+        }
+    }
+    
+    NSArray *tempChatArrayWithoutReward = [self.chatArrayWithoutReward copy];
+    for (PLVChatModel *model in tempChatArrayWithoutReward) {
         // 该消息已标记为包含违规图片消息
         if ([model isProhibitMsg]) {
             continue;
@@ -474,6 +530,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     for (PLVChatModel *tempModel in tempCharArray) {
         if (tempModel == model) {
             [self.chatArray removeObject:model];
+            break;
+        }
+    }
+    
+    NSArray *tempCharArrayWithoutReward = [self.chatArrayWithoutReward copy];
+    for (PLVChatModel *tempModel in tempCharArrayWithoutReward) {
+        if (tempModel == model) {
+            [self.chatArrayWithoutReward removeObject:model];
             break;
         }
     }
@@ -663,6 +727,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         NSUInteger removalCount = self.chatArray.count - kPLVSAMaxPublicChatMessageCount;
         NSRange removalRange = NSMakeRange(0, removalCount);
         [self.chatArray removeObjectsInRange:removalRange];
+        
+        [self.chatArrayWithoutReward removeAllObjects];
+        
+        for (PLVChatModel *model in self.chatArray) {
+            if (![PLVSARewardMessageCell isModelValid:model]) {
+                [self.chatArrayWithoutReward addObject:model];
+            }
+        }
         
         NSTimeInterval lastTime =self.chatArray.firstObject.time;
         NSUInteger count = 0;

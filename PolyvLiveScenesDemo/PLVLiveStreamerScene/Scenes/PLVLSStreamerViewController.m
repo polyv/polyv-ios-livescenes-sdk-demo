@@ -92,6 +92,9 @@ PLVLSLinkMicSettingSheetDelegate
 @property (nonatomic, strong) PLVLSLinkMicSettingSheet *linkMicSettingSheet; // 连麦设置弹层
 @property (nonatomic, strong) PLVLSLinkMicUpdateTipsView *linkMicUpdateTipsView;
 @property (nonatomic, strong) PLVStreamerPopoverView *popoverView; // 浮动区域
+@property (nonatomic, strong) UIView *networkDisconnectMaskView; // 网络断开遮罩
+@property (nonatomic, strong) UIImageView *networkDisconnectImageView; // 网络断开提示图片
+@property (nonatomic, strong) UILabel *networkDisconnectLabel; // 网络断开提示
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -224,6 +227,10 @@ PLVLSLinkMicSettingSheetDelegate
         [_mixLayoutSheet refreshWithSheetWidth:sheetWidth];
     }
     self.popoverView.frame = self.view.bounds;
+    
+    self.networkDisconnectMaskView.frame = self.view.bounds;
+    self.networkDisconnectImageView.frame = CGRectMake((self.view.bounds.size.width - 56) / 2, (self.view.bounds.size.height - 87) / 2, 56, 56);
+    self.networkDisconnectLabel.frame = CGRectMake(PLVLSUtils.safeSidePad, CGRectGetMaxY(self.networkDisconnectImageView.frame) + 8, self.view.bounds.size.width - PLVLSUtils.safeSidePad *2, 23);
 }
 
 #pragma mark - Initialize
@@ -235,6 +242,9 @@ PLVLSLinkMicSettingSheetDelegate
     [self.view addSubview:self.chatroomAreaView];
     // 非全屏状态下，顶部 statusAreaView 必须在最顶端，需最后添加进去
     [self.view addSubview:self.statusAreaView];
+    [self.view addSubview:self.networkDisconnectMaskView];
+    [self.networkDisconnectMaskView addSubview:self.networkDisconnectImageView];
+    [self.networkDisconnectMaskView addSubview:self.networkDisconnectLabel];
     [self.view addSubview:self.linkMicUpdateTipsView];
     // 屏蔽签到功能 
     // [self.view addSubview:self.popoverView];
@@ -489,11 +499,38 @@ PLVLSLinkMicSettingSheetDelegate
     return _popoverView;
 }
 
+- (UIView *)networkDisconnectMaskView {
+    if (!_networkDisconnectMaskView) {
+        _networkDisconnectMaskView = [[UIView alloc] init];
+        _networkDisconnectMaskView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.6);
+        _networkDisconnectMaskView.hidden = YES;
+    }
+    return _networkDisconnectMaskView;
+}
+
+- (UIImageView *)networkDisconnectImageView {
+    if (!_networkDisconnectImageView) {
+        _networkDisconnectImageView = [[UIImageView alloc] initWithImage:[PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_btn_error"]];
+    }
+    return _networkDisconnectImageView;
+}
+
+- (UILabel *)networkDisconnectLabel {
+    if (!_networkDisconnectLabel) {
+        _networkDisconnectLabel = [[UILabel alloc] init];
+        _networkDisconnectLabel.textColor = PLV_UIColorFromRGB(@"#FFFFFF");
+        _networkDisconnectLabel.font = [UIFont fontWithName:@"PingFangSC" size:16];
+        _networkDisconnectLabel.text = PLVLocalizedString(@"网络断开，直播已暂停");
+        _networkDisconnectLabel.textAlignment = NSTextAlignmentCenter;
+    }
+    return _networkDisconnectLabel;
+}
+
 #pragma mark - Private
 
 - (void)documentFullscreen:(BOOL)fullscreen {
     if (fullscreen) {
-        [self.view insertSubview:self.documentAreaView aboveSubview:self.statusAreaView];
+        [self.view insertSubview:self.documentAreaView aboveSubview:self.networkDisconnectMaskView];
     } else {
         [self.view insertSubview:self.documentAreaView atIndex:0];
     }
@@ -1145,6 +1182,33 @@ PLVLSLinkMicSettingSheetDelegate
     }
     if (updateNetState) {
         self.statusAreaView.netState = statusBarNetworkQuality;
+        UIView *signalButton = (UIView *)self.statusAreaView.signalButton;
+        BOOL inClass = self.statusAreaView.inClass;
+        if (statusBarNetworkQuality == PLVLSStatusBarNetworkQuality_Down && inClass) {
+            if (self.networkDisconnectMaskView.hidden) {
+                self.networkDisconnectMaskView.hidden = NO;
+            }
+            
+            if (signalButton.superview != self.networkDisconnectMaskView) {
+                CGRect signalButtonRect = [signalButton convertRect:signalButton.bounds toView:self.networkDisconnectMaskView];
+                [signalButton removeFromSuperview];
+                [self.networkDisconnectMaskView addSubview:signalButton];
+                signalButton.frame = signalButtonRect;
+            }
+            
+            if (self.statusAreaView.stopPushButton.superview != self.networkDisconnectMaskView) {
+                CGRect stopPushButtonRect = [self.statusAreaView.stopPushButton convertRect:self.statusAreaView.stopPushButton.bounds toView:self.networkDisconnectMaskView];
+                [self.statusAreaView.stopPushButton removeFromSuperview];
+                [self.networkDisconnectMaskView addSubview:self.statusAreaView.stopPushButton];
+                self.statusAreaView.stopPushButton.frame = stopPushButtonRect;
+            }
+        } else if (!self.networkDisconnectMaskView.hidden) {
+            self.networkDisconnectMaskView.hidden = YES;
+            [signalButton removeFromSuperview];
+            [self.statusAreaView addSubview:signalButton];
+            [self.statusAreaView.stopPushButton removeFromSuperview];
+            [self.statusAreaView addSubview:self.statusAreaView.stopPushButton];
+        }
     }
 }
 

@@ -245,6 +245,13 @@ UITableViewDataSource
     return NO;
 }
 
+#pragma mark Setter
+
+- (void)setCloseGiftEffects:(BOOL)closeGiftEffects {
+    _closeGiftEffects = closeGiftEffects;
+    [self.tableView reloadData];
+}
+
 #pragma mark cell callback
 
 - (void)resendSpeakMessage:(PLVChatModel *)model {
@@ -308,7 +315,7 @@ UITableViewDataSource
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [[[PLVSAChatroomViewModel sharedViewModel] chatArray] count];
+    return self.closeGiftEffects ? [[[PLVSAChatroomViewModel sharedViewModel] chatArrayWithoutReward] count] : [[[PLVSAChatroomViewModel sharedViewModel] chatArray] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -317,7 +324,7 @@ UITableViewDataSource
     }
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    PLVChatModel *model = [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
+    PLVChatModel *model = self.closeGiftEffects ? [[PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward objectAtIndex:indexPath.row] : [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     
     if ([PLVSASpeakMessageCell isModelValid:model]) {
         static NSString *speakMessageCellIdentify = @"PLVSASpeakMessageCell";

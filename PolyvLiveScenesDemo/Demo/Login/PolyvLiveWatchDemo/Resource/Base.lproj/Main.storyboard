@@ -243,8 +243,8 @@
                                                     </userDefinedRuntimeAttribute>
                                                 </userDefinedRuntimeAttributes>
                                             </button>
-                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="© 2013-2024 易方信息科技股份有限公司 版权所有" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="37N-te-f8q">
-                                                <rect key="frame" x="66.5" y="755" width="281" height="17"/>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="© 2013-2025 易方信息科技股份有限公司 版权所有" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="37N-te-f8q">
+                                                <rect key="frame" x="67" y="755" width="280" height="17"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="17" id="xcj-cl-94N"/>
                                                 </constraints>

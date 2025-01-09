@@ -97,6 +97,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 全部消息数组
 @property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArray;
 
+/// 屏蔽礼物打赏消息数组
+@property (nonatomic, strong, readonly) NSMutableArray <PLVChatModel *> *chatArrayWithoutReward;
+
 /// 图片表情资源数组
 @property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 

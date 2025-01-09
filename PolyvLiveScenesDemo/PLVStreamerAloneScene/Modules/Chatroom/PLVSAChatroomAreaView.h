@@ -31,6 +31,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @note Setter 方法内实现发送禁言操作
 @property (nonatomic, assign) BOOL closeRoom;
 
+/// 当前 禁用礼物特效是否开启
+@property (nonatomic, assign) BOOL closeGiftEffects;
+
 /// 发送评论下墙消息
 - (void)sendCancleTopPinMessage;
 
