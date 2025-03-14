@@ -36,6 +36,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 视频加载缓慢时缺省页显示时间，默认15秒
 @property (nonatomic, assign) NSInteger defaultPageShowDuration;
 
+/// 退到后台 是否自动开启小窗播放
+@property (nonatomic, assign) BOOL updateCanAutoStartPictureInPicture;
+
 #pragma mark 数据
 /// 当前播放器的频道号
 @property (nonatomic, copy, readonly) NSString * channelId;
@@ -126,6 +129,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 播放器当前的缩放尺寸
 @property (nonatomic, assign,readonly) IJKMPMovieScalingMode scalingMode;
+
+/// 当前播放器是否播放中
+@property (nonatomic, assign, readonly) BOOL isPlaying;
 
 #pragma mark UI
 /// 外部传入的，负责承载播放器画面的父视图

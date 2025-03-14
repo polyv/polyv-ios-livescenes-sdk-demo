@@ -57,6 +57,11 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// @param dict 福利抽奖挂件评论
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView welfareLotteryCommentSuccess:(NSDictionary *)dict;
 
+/// 强制签到：未在规定时间内签到回调  需要退出直播间
+/// @param interactView 互动视图
+/// @param dict 未签到数据
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView notCheckInTime:(NSDictionary *)dict;
+
 @end
 
 /// 互动视图

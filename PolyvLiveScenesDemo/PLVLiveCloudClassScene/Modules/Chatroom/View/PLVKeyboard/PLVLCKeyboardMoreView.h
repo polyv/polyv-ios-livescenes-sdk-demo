@@ -35,6 +35,9 @@
 /// @param on YES - 只看教师；NO - 查看全部
 - (void)keyboardMoreView_onlyTeacher:(PLVLCKeyboardMoreView *)moreView on:(BOOL)on;
 
+/// 播放设置
+- (void)keyboardMoreView_PipSet:(PLVLCKeyboardMoreView *)moreView;
+
 @end
 
 @interface PLVLCKeyboardMoreView : UIView
@@ -55,6 +58,9 @@
 
 /// 礼物打赏特效开关按钮是否隐藏，默认 YES；YES - 隐藏，NO - 显示
 @property (nonatomic, assign) BOOL hideRewardDisplaySwitch;
+
+/// 支持小窗播放设置 YES
+@property (nonatomic, assign) BOOL enablePipSet;
 
 /// 切换聊天室关闭状态
 - (void)changeCloseRoomStatus:(BOOL)closeRoom;

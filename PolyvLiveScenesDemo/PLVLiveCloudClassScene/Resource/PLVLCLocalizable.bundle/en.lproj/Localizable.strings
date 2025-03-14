@@ -96,6 +96,12 @@
 
 "弹幕速度" = "Barrage Speed";
 
+"已开启弹幕" = "Barrage enabled";
+
+"已关闭弹幕" = "Barrage disabled";
+
+"已调整布局" = "Layout adjusted";
+
 "当前为专注模式，无法发言" = "Currently in focus mode, unable to speak";
 
 "快速" = "very fast";

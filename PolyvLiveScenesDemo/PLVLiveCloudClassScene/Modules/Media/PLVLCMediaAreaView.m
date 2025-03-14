@@ -258,7 +258,7 @@ PLVLCDocumentPaintModeViewDelegate
 
     self.watermarkView.frame = self.contentBackgroudView.frame;
         
-    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 58);
+    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 66);
 }
 
 #pragma mark - [ Public Methods ]
@@ -459,7 +459,7 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 - (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
-    [self.pinMsgPopupView showPopupView:show message:message];
+    [self.pinMsgPopupView updatePopupViewWithMessage:message];
 }
 
 #pragma mark 网络质量
@@ -507,7 +507,15 @@ PLVLCDocumentPaintModeViewDelegate
     }
 }
 
+- (void)setUpdateCanAutoStartPictureInPicture:(BOOL)updateCanAutoStartPictureInPicture{
+    [self.playerPresenter setUpdateCanAutoStartPictureInPicture:updateCanAutoStartPictureInPicture];
+}
+
 #pragma mark Getter
+
+- (BOOL)isPlaying{
+    return self.playerPresenter.isPlaying;
+}
 
 - (BOOL)advertPlaying {
     return self.playerPresenter.advertPlaying;
@@ -1181,6 +1189,13 @@ PLVLCDocumentPaintModeViewDelegate
             }
         }];
     }
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (currentFullScreen && self.inRTCRoom && roomData.channelType == PLVChannelTypeAlone && roomData.videoType == PLVChannelVideoType_Live) {
+        if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:userWannaLinkMicAreaViewShow:onSkinView:)]) {
+            [self.delegate plvLCMediaAreaView:self userWannaLinkMicAreaViewShow:YES onSkinView:self.skinView];
+        }
+    }
 }
 
 - (void)plvLCBasePlayerSkinViewSynchOtherView:(PLVLCBasePlayerSkinView *)skinView{
@@ -1281,7 +1296,7 @@ PLVLCDocumentPaintModeViewDelegate
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.advertView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
-    }else if ([PLVLCBasePlayerSkinView checkView:self.pinMsgPopupView.closeButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
+    }else if ([PLVLCBasePlayerSkinView checkView:self.pinMsgPopupView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
     } else if (skinView.isPPTOnMain && [PLVLCBasePlayerSkinView checkView:self.pptView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         if (!skinView.skinShow) {
@@ -1335,11 +1350,12 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 - (BOOL)plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:(PLVLCBasePlayerSkinView *)skinView {
+    BOOL enablePictureInPictureButton = [PLVRoomDataManager sharedManager].roomData.canSupportPictureInPicure;
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMicProcess:)]) {
         BOOL inLinkMicProcess = [self.delegate plvLCMediaAreaViewGetInLinkMicProcess:self];
-        return !inLinkMicProcess;
+        return (!inLinkMicProcess && enablePictureInPictureButton);
     }
-    return YES;
+    return enablePictureInPictureButton;
 }
 
 #pragma mark PLVLCFloatViewDelegate
@@ -1628,7 +1644,7 @@ PLVLCDocumentPaintModeViewDelegate
         [self.watermarkView removeFromSuperview];
         [self.floatView forceShowFloatView:NO];
         [self.skinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_None];
-        [self.pinMsgPopupView showPopupView:NO message:nil];
+        [self.pinMsgPopupView updatePopupViewWithMessage:nil];
         
         /// 停止跑马灯
         [self.marqueeView stop];

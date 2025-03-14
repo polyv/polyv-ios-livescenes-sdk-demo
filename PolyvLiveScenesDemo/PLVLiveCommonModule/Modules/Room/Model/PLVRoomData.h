@@ -93,6 +93,32 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 /// @note 直播和回放场景有效， 开启防系统截屏后，不支持系统画中画播放
 @property (nonatomic, assign) BOOL systemScreenShotProtect;
 
+/// 退出直播间 自动启动小窗播放  默认NO
+@property (nonatomic, assign) BOOL disableStartPipWhenExitLiveRoom;
+/// 退到app 后台 自动启动小窗播放 默认NO
+@property (nonatomic, assign) BOOL disableStartPipWhenEnterBackground;
+
+/// 系统小窗开关控制说明
+///  1）系统版本 14.0 以上（15.0 以上支持自动启动小窗）
+///  2）防录屏开关 关闭
+///  3）防截屏开关 关闭
+///  4）平台管理后台开启小窗功能 开启
+///  5）退出直播间自动开启小窗开关 开启
+///  6）app退到后台自动开启小窗开关 开启
+///  7）播放器状态  播放中
+///
+/// 退到app 后台，是否可以自动开启小窗播放
+/// @note YES ，需要满足小窗开关条件 1）2）3）4）5）6）7）
+@property (nonatomic, assign, readonly) BOOL canAutoStartPictureInPicture;
+
+/// 离开直播间页面 开启小窗
+/// @Note YES, 需要满足条件 1）2）3）4）5）7）
+@property (nonatomic, assign, readonly) BOOL needStartPictureInPictureWhenExitLiveRoom;
+
+/// 是否支持小窗功能
+/// @note YES 需要满足 1）2）3）4)
+@property (nonatomic, assign, readonly) BOOL canSupportPictureInPicure;
+
 #pragma mark 直播独有属性
 /// 直播状态
 @property (nonatomic, assign) PLVChannelLiveStreamState liveState;

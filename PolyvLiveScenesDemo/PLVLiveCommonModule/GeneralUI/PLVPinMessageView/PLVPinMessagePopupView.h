@@ -24,7 +24,7 @@ typedef void (^PLVPinMessageViewCancelTopActionBlock)(PLVSpeakTopMessage *messag
 
 @property (nonatomic, strong, readonly) UIButton *closeButton;
 
-- (void)showPopupView:(BOOL)show message:(PLVSpeakTopMessage * _Nullable)message;
+- (void)updatePopupViewWithMessage:(PLVSpeakTopMessage * _Nullable)message;
 
 @end
 

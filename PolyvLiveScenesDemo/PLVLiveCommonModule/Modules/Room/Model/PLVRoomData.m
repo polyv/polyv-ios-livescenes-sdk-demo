@@ -26,6 +26,9 @@ NSString *PLVRoomDataKeyPathSipPassword   = @"sipPassword";
 NSString *PLVRoomDataKeyPathSectionEnable = @"sectionEnable";
 NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
 
+NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenExitLiveRoom = @"KRoomData_DisableStartPipWhenExitLiveRoom";
+NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomData_DdisableStartPipWhenEnterBackground";
+
 @interface PLVRoomData ()
 
 @property (nonatomic, strong) PLVLiveVideoChannelMenuInfo *menuInfo;
@@ -39,6 +42,16 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
 @implementation PLVRoomData
 
 #pragma mark - [ Public Method ]
+
+- (instancetype)init{
+    if (self = [super init]){
+        _disableStartPipWhenEnterBackground = [[[NSUserDefaults standardUserDefaults]
+                                                objectForKey:PLVRoomDataKeyDisableStartPipWhenEnterBackground] boolValue];
+        _disableStartPipWhenExitLiveRoom = [[[NSUserDefaults standardUserDefaults]
+                                                objectForKey:PLVRoomDataKeyDisableStartPipWhenExitLiveRoom] boolValue];
+    }
+    return self;
+}
 
 - (void)setupRoomUser:(PLVRoomUser *)roomUser {
     if (!roomUser) {
@@ -102,6 +115,10 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
     }
     if ([PLVFdUtil checkDictionaryUseable:extraParam]) {
         [mutableDict addEntriesFromDictionary:extraParam];
+    }
+    NSString *chatToken = [PLVSocketManager sharedManager].chatToken;
+    if ([PLVFdUtil checkStringUseable:chatToken]) {
+        [mutableDict setObject:chatToken forKey:@"chatToken"];
     }
     
     return mutableDict;
@@ -380,7 +397,7 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
     return NO;
 }
 
-- (int)canUseBeauty{
+- (BOOL)canUseBeauty{
     if (self.appBeautyEnabled){
         return YES;
     }
@@ -390,6 +407,65 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
         }
     }
     return NO;
+}
+
+#pragma mark -- 小窗控制开关
+- (BOOL)canAutoStartPictureInPicture{
+    BOOL can = NO;
+    if (@available(iOS 15.0, *)){
+        if (self.menuInfo.fenestrulePlayEnabled &&
+            !self.captureScreenProtect &&
+            !self.systemScreenShotProtect &&
+            !self.disableStartPipWhenExitLiveRoom &&
+            !self.disableStartPipWhenEnterBackground){
+            
+            can = YES;
+        }
+    }
+           
+    return can;
+}
+
+- (BOOL)needStartPictureInPictureWhenExitLiveRoom{
+    BOOL need = NO;
+    if (@available(iOS 15.0, *)){
+        if ( self.menuInfo.fenestrulePlayEnabled &&
+            !self.captureScreenProtect &&
+            !self.systemScreenShotProtect &&
+            !self.disableStartPipWhenExitLiveRoom){
+            need = YES;
+        }
+    }
+    
+    return need;
+}
+
+- (BOOL)canSupportPictureInPicure{
+    BOOL need = NO;
+    if (@available(iOS 14.0, *)){
+        if ( self.menuInfo.fenestrulePlayEnabled &&
+            !self.captureScreenProtect &&
+            !self.systemScreenShotProtect ){
+            
+            need = YES;
+        }
+    }
+          
+    return need;
+}
+
+- (void)setDisableStartPipWhenEnterBackground:(BOOL)disableStartPipWhenEnterBackground{
+    _disableStartPipWhenEnterBackground = disableStartPipWhenEnterBackground;
+    NSNumber* value = [NSNumber numberWithBool:disableStartPipWhenEnterBackground];
+    [[NSUserDefaults standardUserDefaults] setObject:value forKey:PLVRoomDataKeyDisableStartPipWhenEnterBackground];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)setDisableStartPipWhenExitLiveRoom:(BOOL)disableStartPipWhenExitLiveRoom{
+    _disableStartPipWhenExitLiveRoom = disableStartPipWhenExitLiveRoom;
+    NSNumber* value = [NSNumber numberWithBool:disableStartPipWhenExitLiveRoom];
+    [[NSUserDefaults standardUserDefaults] setObject:value forKey:PLVRoomDataKeyDisableStartPipWhenExitLiveRoom];
+    [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
 @end

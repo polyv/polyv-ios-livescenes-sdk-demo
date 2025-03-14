@@ -26,6 +26,7 @@
 #import "PLVECPlayerContolView.h"
 #import "PLVECMoreView.h"
 #import "PLVECSwitchView.h"
+#import "PLVECPIPPlaysetPopView.h"
 #import "PLVECLotteryWidgetView.h"
 #import "PLVECWelfareLotteryWidgetView.h"
 
@@ -40,6 +41,7 @@ static NSString *const PLVECHomePageView_Data_RouteItemTitle     = @"线路";
 static NSString *const PLVECHomePageView_Data_QualityItemTitle   = @"清晰度";
 static NSString *const PLVECHomePageView_Data_DelayModeItemTitle = @"模式";
 static NSString *const PLVECHomePageView_Data_PictureInPictureItemTitle = @"小窗播放";
+static NSString *const PLVECHomePageView_Data_PictureInPicturePlaySetItemTitle = @"播放设置";
 static NSString *const PLVECHomePageView_Data_SwitchLanguageItemTitle = @"PLVLiveLanguageSwitchTitle";
 static NSString *const PLVECHomePageView_Data_PlaySpeedItemTitle = @"播放速度";
 static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
@@ -102,6 +104,7 @@ PLVECWelfareLotteryWidgetViewDelegate
 
 @property (nonatomic, strong) PLVECMoreView *moreView;                 // 更多视图
 @property (nonatomic, strong) PLVECSwitchView *switchView;             // 切换视图
+@property (nonatomic, strong) PLVECPIPPlaysetPopView *pipPopView;      // 小窗播放设置
 @property (nonatomic, weak) PLVECCommodityViewController *commodityVC; // 商品视图
 @property (nonatomic, strong) PLVCommodityPushView *pushView;        // 商品推送视图
 @property (nonatomic, weak) PLVECPlaybackListViewController *playbackListVC;     //回放列表视图
@@ -378,6 +381,33 @@ PLVECWelfareLotteryWidgetViewDelegate
     return _switchView;
 }
 
+- (PLVECPIPPlaysetPopView *)pipPopView{
+    if (!_pipPopView){
+        CGFloat viewH = 266;
+        __weak typeof(self) weakSelf = self;
+        _pipPopView = [[PLVECPIPPlaysetPopView alloc] initWithFrame:CGRectMake(0, self.bounds.size.height - viewH, self.bounds.size.width, viewH)];
+        _pipPopView.exitRoomSwitchChanged = ^(BOOL on) {
+            //
+            [PLVRoomDataManager sharedManager].roomData.disableStartPipWhenExitLiveRoom = !on;
+            if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(homePageView:autoStartPIP:)]){
+                BOOL can = [[PLVRoomDataManager sharedManager].roomData canAutoStartPictureInPicture];
+                [weakSelf.delegate homePageView:weakSelf autoStartPIP:can];
+            }
+        };
+        _pipPopView.enterBackSwitchChanged = ^(BOOL on) {
+            //
+            [PLVRoomDataManager sharedManager].roomData.disableStartPipWhenEnterBackground = !on;
+            if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(homePageView:autoStartPIP:)]){
+                BOOL can = [[PLVRoomDataManager sharedManager].roomData canAutoStartPictureInPicture];
+                [weakSelf.delegate homePageView:weakSelf autoStartPIP:can];
+            }
+        };
+        _pipPopView.hidden = YES;
+        [self addSubview:_pipPopView];
+    }
+    return _pipPopView;
+}
+
 - (PLVCommodityPushView *)pushView {
     if (!_pushView) {
         _pushView = [[PLVCommodityPushView alloc] initWithType:PLVCommodityPushViewTypeEC];
@@ -546,7 +576,7 @@ PLVECWelfareLotteryWidgetViewDelegate
 
     if (!playing &&
         [PLVRoomDataManager sharedManager].roomData.liveState != PLVChannelLiveStreamState_Live) {
-        [self.pinMsgPopupView showPopupView:NO message:nil];
+        [self.pinMsgPopupView updatePopupViewWithMessage:nil];
     }
 }
 
@@ -709,7 +739,7 @@ PLVECWelfareLotteryWidgetViewDelegate
 }
 
 - (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
-    [self.pinMsgPopupView showPopupView:show message:message];
+    [self.pinMsgPopupView updatePopupViewWithMessage:message];
 }
 
 - (void)playbackDidShowMemoryPlayTip {
@@ -864,9 +894,15 @@ PLVECWelfareLotteryWidgetViewDelegate
     
     CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
     self.moreView.frame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(CGRectGetWidth(self.bounds) - 375, 0, 375, CGRectGetHeight(self.bounds)) : CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height);
-    self.switchView.frame = self.moreView.frame;
+    if ([PLVECUtils sharedUtils].isLandscape){
+        self.pipPopView.frame = self.moreView.frame;
+    }
+    else{
+        CGFloat viewH = 266;
+        self.pipPopView.frame = CGRectMake(0, self.bounds.size.height - viewH, self.bounds.size.width, viewH);
+    }
     
-    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 58);
+    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 66);
 
     CGFloat onlineListButtonWidth = [self.onlineListButton.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT,23)].width + 16;
     self.onlineListButton.frame = fullScreen ? CGRectMake(CGRectGetWidth(self.bounds) - onlineListButtonWidth - 40, 15, onlineListButtonWidth, 23) : CGRectMake(CGRectGetWidth(self.bounds) - onlineListButtonWidth - 63, 15, onlineListButtonWidth, 23);
@@ -1231,7 +1267,7 @@ PLVECWelfareLotteryWidgetViewDelegate
         [self.delegate respondsToSelector:@selector(homePageView_inLinkMic:)]) {
         inLinkMic = [self.delegate homePageView_inLinkMic:self];
     }
-    
+    BOOL canEnablePictureInPicture = [PLVRoomDataManager sharedManager].roomData.canSupportPictureInPicure;
     if (!inLinkMic && self.isPlaying && self.type == PLVECHomePageType_Live) {
         if (!self.noDelayWatchMode) {
             PLVECMoreViewItem *item1 = [[PLVECMoreViewItem alloc] init];
@@ -1264,17 +1300,14 @@ PLVECWelfareLotteryWidgetViewDelegate
             [muArray addObject:item4];
         }
         
-        if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive &&
-            [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported] && 
-            ![PLVRoomDataManager sharedManager].roomData.captureScreenProtect &&
-            ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect) {
+        if (canEnablePictureInPicture &&
+            ![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
             PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
             item5.title = PLVLocalizedString(PLVECHomePageView_Data_PictureInPictureItemTitle);
             item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
             [muArray addObject:item5];
         }
-    } else if (self.type == PLVECHomePageType_Playback &&
-               [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported]) {
+    } else if (canEnablePictureInPicture && self.type == PLVECHomePageType_Playback ) {
         PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
         item5.title = PLVLocalizedString(PLVECHomePageView_Data_PictureInPictureItemTitle);
         item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
@@ -1289,6 +1322,16 @@ PLVECWelfareLotteryWidgetViewDelegate
         [muArray addObject:speedItem];
     }
     
+    // 小窗播放交互设置
+    if (canEnablePictureInPicture){
+        PLVECMoreViewItem *itemPlaySet = [[PLVECMoreViewItem alloc] init];
+        itemPlaySet.title = PLVLocalizedString(PLVECHomePageView_Data_PictureInPicturePlaySetItemTitle);
+        itemPlaySet.iconImageName = @"plvec_live_pipinpic_playset";
+        itemPlaySet.selectedIconImageName = @"plvec_live_pipinpic_playset";
+        [muArray addObject:itemPlaySet];
+    }
+        
+    // 语言切换
     PLVECMoreViewItem *item6 = [[PLVECMoreViewItem alloc] init];
     item6.title = PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle);
     item6.iconImageName = @"plvec_live_languageswitch_btn";
@@ -1376,7 +1419,14 @@ PLVECWelfareLotteryWidgetViewDelegate
                 }
             }
         }];
-    } else {
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_PictureInPicturePlaySetItemTitle)]) {
+        // 小窗交互设置
+        self.moreView.hidden = YES;
+        self.pipPopView.hidden = NO;
+        self.pipPopView.exitRoomState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenExitLiveRoom;
+        self.pipPopView.enterBackState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenEnterBackground;
+    }
+    else {
         __block NSString *eventName;
         [self.interactButtonArray enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
             if ([PLVFdUtil checkDictionaryUseable:obj]) {

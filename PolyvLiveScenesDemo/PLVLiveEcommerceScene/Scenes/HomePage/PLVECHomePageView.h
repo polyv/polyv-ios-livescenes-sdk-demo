@@ -66,6 +66,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 打开小窗播放
 - (void)homePageViewClickPictureInPicture:(PLVECHomePageView *)homePageView;
 
+/// 退到后台自动启动小窗控制开关
+- (void)homePageView:(PLVECHomePageView *)homePageView autoStartPIP:(BOOL)autoStart;
+
 /// 点击语言切换按钮
 - (void)homePageView:(PLVECHomePageView *)homePageView switchLanguageMode:(NSInteger)languageMode;
 

@@ -62,6 +62,7 @@ PLVECChatroomViewModelProtocol
 #pragma mark 数据
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
+@property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
 
 #pragma mark 模块
@@ -186,7 +187,7 @@ PLVECChatroomViewModelProtocol
 
 - (void)viewWillDisappear:(BOOL)animated {
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
-    if ([PLVECFloatingWindow sharedInstance].hidden) {
+    if ([PLVECFloatingWindow sharedInstance].hidden && ![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         [self.playerVC mute];
     }
 }
@@ -359,9 +360,11 @@ PLVECChatroomViewModelProtocol
 }
 
 - (void)openCommodityDetailViewControllerWithURL:(NSURL *)commodityURL {
-    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive && 
+    if (![PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive &&
         ![PLVRoomDataManager sharedManager].roomData.captureScreenProtect &&
-        ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect) {
+        ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect &&
+        [PLVRoomDataManager sharedManager].roomData.menuInfo.fenestrulePlayEnabled) {
+
         // 打开应用内悬浮窗
         if (self.linkMicAreaView.inLinkMic) {
             [[PLVECFloatingWindow sharedInstance] showContentView:self.linkMicAreaView.firstSiteCanvasView];
@@ -486,7 +489,35 @@ PLVECChatroomViewModelProtocol
 #pragma mark - [ Event ]
 #pragma mark Action
 - (void)closeButtonAction:(UIButton *)button {
-    [self exitCurrentController];
+    // 退出直播间，开启画中画
+    if ([PLVRoomDataManager sharedManager].roomData.needStartPictureInPictureWhenExitLiveRoom && self.playerVC.playing){
+        if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+            self.logoutWhenStopPictureInPicutre = YES;
+            if (self.navigationController) {
+                [self.navigationController popViewControllerAnimated:YES];
+            } else {
+                [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+                [self dismissViewControllerAnimated:YES completion:nil];
+            }
+        }
+        else{
+            // 开启画中画后，再退出当前页面
+            [self.playerVC startPictureInPicture];
+            __weak typeof(self) weakSelf = self;
+            self.needExitViewController = ^{
+                weakSelf.logoutWhenStopPictureInPicutre = YES;
+                if (weakSelf.navigationController) {
+                    [weakSelf.navigationController popViewControllerAnimated:YES];
+                } else {
+                    [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+                    [weakSelf dismissViewControllerAnimated:YES completion:nil];
+                }
+            };
+        }
+    }
+    else{
+        [self exitCurrentController];
+    }
 }
 
 #pragma mark Notification
@@ -837,6 +868,12 @@ PLVECChatroomViewModelProtocol
     [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = [PLVLivePictureInPictureRestoreManager sharedInstance];
     // 开启画中画之后，让PLVLivePictureInPictureRestoreManager持有本控制器，使得退出本页面后还能通过画中画恢复
     [PLVLivePictureInPictureRestoreManager sharedInstance].holdingViewController = self;
+    
+    // 退出直播间
+    if (self.needExitViewController){
+        self.needExitViewController();
+        self.needExitViewController = nil;
+    }
 }
 
 /// 画中画开启错误
@@ -1040,7 +1077,25 @@ PLVECChatroomViewModelProtocol
         [hud.label setText:PLVLocalizedString(@"正在开启小窗...")];
         [hud hideAnimated:YES afterDelay:3.0];
         [self.playerVC startPictureInPicture];
+        
+        // 手动触发 开启系统画中画
+        // 复用退出直播间 开启画中画逻辑
+        __weak typeof(self) weakSelf = self;
+        self.needExitViewController = ^{
+            weakSelf.logoutWhenStopPictureInPicutre = YES;
+            if (weakSelf.navigationController) {
+                [weakSelf.navigationController popViewControllerAnimated:YES];
+            } else {
+                [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+                [weakSelf dismissViewControllerAnimated:YES completion:nil];
+            }
+        };
     }
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView autoStartPIP:(BOOL)autoStart{
+    // 动态配置 自动启动小窗开关
+    self.playerVC.updaeCanAutoStartPictureInPicture = autoStart;
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchLanguageMode:(NSInteger)languageMode {
@@ -1177,6 +1232,18 @@ PLVECChatroomViewModelProtocol
     if ([PLVFdUtil checkStringUseable:comment]) {
         [[PLVECChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];
     }
+}
+
+/// 强制签到: 未在规定时间内签到
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView notCheckInTime:(NSDictionary *)dict{
+    // 退出直播间
+    __weak typeof(self) weakSelf = self;
+    plv_dispatch_main_async_safe(^{
+        [PLVECUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"您未按时签到，自动退出直播间") view:weakSelf.view afterDelay:3.0];
+    })
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
+    });
 }
 
 #pragma mark PLVLCMessagePopupViewDelegate

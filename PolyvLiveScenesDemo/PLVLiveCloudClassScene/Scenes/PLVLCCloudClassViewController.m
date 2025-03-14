@@ -35,6 +35,7 @@
 #import "PLVLiveToast.h"
 #import "PLVSecureView.h"
 #import "PLVLCOnlineListSheet.h"
+#import "PLVLCMediaPipSet.h"
 
 // 工具
 #import "PLVLCUtils.h"
@@ -65,6 +66,7 @@ PLVLCOnlineListSheetDelegate
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, strong) NSURL *commodityURL;
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
+@property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
 
 #pragma mark 状态
@@ -117,6 +119,7 @@ PLVLCOnlineListSheetDelegate
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
 @property (nonatomic, strong) PLVLCLiveRoomPlayerSkinView * liveRoomSkinView;// 横屏频道皮肤
 @property (nonatomic, strong) PLVLCOnlineListSheet *onlineListSheet;
+@property (nonatomic, strong) PLVLCMediaPipSet *pipPopSet;  // 小窗播放交互控制
 
 @property (nonatomic, assign) BOOL inBackground;
 @property (nonatomic, assign) BOOL enableSysScreenShot;
@@ -232,7 +235,11 @@ PLVLCOnlineListSheetDelegate
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didBecomeActive:) name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(interfaceOrientationDidChange:) name:UIApplicationDidChangeStatusBarOrientationNotification object:nil];
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenInteractApp:) name:PLVLCChatroomOpenInteractAppNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenInteractApp:)
+                                                 name:PLVLCChatroomOpenInteractAppNotification object:nil];
+    
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenPipSet:) 
+                                                 name:PLVLCChatroomOpenPipSetNotification object:nil];
 
     if (self.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         /// 监听事件
@@ -402,8 +409,8 @@ PLVLCOnlineListSheetDelegate
         
         CGFloat commonPadding = isPad ? 30 : 16;
         
-        CGFloat leftPadding = P_SafeAreaLeftEdgeInsets() + commonPadding;
-        CGFloat rightPadding = P_SafeAreaRightEdgeInsets();
+        CGFloat leftPadding = self.view.safeAreaInsets.left + commonPadding;
+        CGFloat rightPadding = self.view.safeAreaInsets.right;
         if ([PLVFdUtil isiPhoneXSeries]) {
             rightPadding += 10;
         }
@@ -463,7 +470,7 @@ PLVLCOnlineListSheetDelegate
     [self.liveRoomSkinView setTitleLabelWithText:roomData.menuInfo.name];
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
     self.liveRoomSkinView.guideChatLabel.hidden = !self.menuAreaView.chatVctrl;
-    self.liveRoomSkinView.rewardButton.hidden = !self.menuAreaView.chatVctrl;
+    self.liveRoomSkinView.rewardButton.hidden = !self.menuAreaView.chatVctrl || !self.menuAreaView.chatVctrl.enableReward;
     [self.liveRoomSkinView showCommodityButton:self.menuAreaView.showCommodityMenu];
 }
 
@@ -664,6 +671,31 @@ PLVLCOnlineListSheetDelegate
     return _onlineListSheet;
 }
 
+- (PLVLCMediaPipSet *)pipPopSet{
+    if (!_pipPopSet){
+        CGFloat viewH = 226;
+        _pipPopSet = [[PLVLCMediaPipSet alloc] initWithSheetHeight:viewH];
+        [_pipPopSet setSheetCornerRadius:8];
+        __weak typeof(self) weakSelf = self;
+        _pipPopSet.exitRoomSwitchChanged = ^(BOOL on) {
+            //
+            [PLVRoomDataManager sharedManager].roomData.disableStartPipWhenExitLiveRoom = !on;
+            BOOL can = [[PLVRoomDataManager sharedManager].roomData canAutoStartPictureInPicture];
+            // 播放器更新小窗自动开启标志
+            weakSelf.mediaAreaView.updateCanAutoStartPictureInPicture = can;
+        };
+        _pipPopSet.enterBackSwitchChanged = ^(BOOL on) {
+            //
+            [PLVRoomDataManager sharedManager].roomData.disableStartPipWhenEnterBackground = !on;
+            BOOL can = [[PLVRoomDataManager sharedManager].roomData canAutoStartPictureInPicture];
+            // 播放器更新小窗自动开启标志
+            weakSelf.mediaAreaView.updateCanAutoStartPictureInPicture = can;
+        };
+    }
+    
+    return _pipPopSet;
+}
+
 - (PLVChannelType)channelType{
     return [PLVRoomDataManager sharedManager].roomData.channelType;
 }
@@ -695,6 +727,7 @@ PLVLCOnlineListSheetDelegate
         self.fullScreenDifferent = (self.currentLandscape != fullScreen);
     }
     self.currentLandscape = fullScreen;
+    
     
     // 全屏播放器皮肤 liveRoomSkinView 的弹幕按钮 danmuButton 为显示状态，且为非选中状态，且当前为横屏时，才显示弹幕
     BOOL danmuEnable = !self.liveRoomSkinView.danmuButton.selected && !self.liveRoomSkinView.danmuButton.hidden;
@@ -732,6 +765,13 @@ PLVLCOnlineListSheetDelegate
     if ([PLVFdUtil checkStringUseable:notif.object]) {
         [self.popoverView.interactView openInteractAppWithEventName:notif.object];
     }
+}
+
+/// 打开小窗设置面板
+- (void)notificationForOpenPipSet:(NSNotification *)notif{
+    self.pipPopSet.exitRoomState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenExitLiveRoom;
+    self.pipPopSet.enterBackState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenEnterBackground;
+    [self.pipPopSet showInView:self.view];
 }
 
 #pragma mark - [ Delegate ]
@@ -1072,15 +1112,36 @@ PLVLCOnlineListSheetDelegate
 /// 用户希望退出当前页面
 - (void)plvLCMediaAreaViewWannaBack:(PLVLCMediaAreaView *)mediaAreaView{
     // 在打开画中画的时候退出直播间，则直接退出，当前控制器会被PLVLivePictureInPictureRestoreManager持有不被释放，恢复的时候再次显示
-    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-        self.logoutWhenStopPictureInPicutre = YES;
-        if (self.navigationController) {
-            [self.navigationController popViewControllerAnimated:YES];
-        } else {
-            [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
-            [self dismissViewControllerAnimated:YES completion:nil];
+    // 退出直播间，开启画中画
+    if ([PLVRoomDataManager sharedManager].roomData.needStartPictureInPictureWhenExitLiveRoom &&
+        self.mediaAreaView.isPlaying){
+        if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+            // 已经开启画中画，直接退出
+            self.logoutWhenStopPictureInPicutre = YES;
+            if (self.navigationController) {
+                [self.navigationController popViewControllerAnimated:YES];
+            } else {
+                [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+                [self dismissViewControllerAnimated:YES completion:nil];
+            }
         }
-    }else {
+        else{
+            // 开启画中画后，再退出当前页面
+            [self.mediaAreaView startPictureInPicture];
+            __weak typeof(self) weakSelf = self;
+            self.needExitViewController = ^{
+                weakSelf.logoutWhenStopPictureInPicutre = YES;
+                if (weakSelf.navigationController) {
+                    [weakSelf.navigationController popViewControllerAnimated:YES];
+                } else {
+                    [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+                    [weakSelf dismissViewControllerAnimated:YES completion:nil];
+                }
+            };
+        }
+    }
+    else{
+        // 未开启退出直播间 自动启动小窗 直接退出
         [self.linkMicAreaView leaveLinkMicOnlyEmit];
         [self exitCurrentController];
     }
@@ -1307,6 +1368,18 @@ PLVLCOnlineListSheetDelegate
 
 - (void)plvLCMediaAreaViewWannaStartPictureInPicture:(PLVLCMediaAreaView *)mediaAreaView {
     self.linkMicAreaView.currentControlBar.pictureInPictureStarted = YES;
+    // 手动触发 开启系统画中画
+    // 复用退出直播间 开启画中画逻辑
+    __weak typeof(self) weakSelf = self;
+    self.needExitViewController = ^{
+        weakSelf.logoutWhenStopPictureInPicutre = YES;
+        if (weakSelf.navigationController) {
+            [weakSelf.navigationController popViewControllerAnimated:YES];
+        } else {
+            [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = YES;
+            [weakSelf dismissViewControllerAnimated:YES completion:nil];
+        }
+    };
 }
 
 #pragma mark PLVLCLiveRoomPlayerSkinViewDelegate
@@ -1323,6 +1396,10 @@ PLVLCOnlineListSheetDelegate
     } else {
         self.chatLandscapeView.hidden = YES;
     }
+    
+    /// 弹窗提醒
+    NSString *tip = showDanmu ? PLVLocalizedString(@"已开启弹幕") : PLVLocalizedString(@"已关闭弹幕");
+    [PLVLiveToast showToastWithMessage:tip inView:self.view afterDelay:3.0];
 }
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
@@ -1350,6 +1427,17 @@ PLVLCOnlineListSheetDelegate
 
 - (void)plvLCLiveRoomPlayerSkinViewOnlineListButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
     [self.onlineListSheet showInView:self.view];
+}
+
+- (void)plvLCLiveRoomPlayerSkinViewLinkMicFullscreenButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaLinkMicAreaViewShow:(BOOL)show {
+    /// 告知 连麦区域视图
+    [self.linkMicAreaView showAreaView:show];
+    
+    /// 更新布局
+    [self updateUI];
+    
+    /// 弹窗提醒
+    [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"已调整布局") inView:self.view afterDelay:3.0];
 }
 
 #pragma mark PLVLCLinkMicAreaViewDelegate
@@ -1611,10 +1699,18 @@ PLVLCOnlineListSheetDelegate
     // 开启画中画之后，让PLVLivePictureInPictureRestoreManager持有本控制器，使得退出本页面后还能通过画中画恢复
     [PLVLivePictureInPictureRestoreManager sharedInstance].holdingViewController = self;
     
-    if (!self.commodityURL) {
+    if (self.commodityURL) {
+        [self jumpToCommodityDetailViewController];
+
         return;
     }
-    [self jumpToCommodityDetailViewController];
+    else{
+        // 退出直播间
+        if (self.needExitViewController){
+            self.needExitViewController();
+            self.needExitViewController = nil;
+        }
+    }
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPictureFailedToStartWithError:(NSError *)error {
@@ -1706,6 +1802,19 @@ PLVLCOnlineListSheetDelegate
         [[PLVLCChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];
     }
 }
+
+/// 强制签到: 未在规定时间内签到
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView notCheckInTime:(NSDictionary *)dict{
+    // 退出直播间
+    __weak typeof(self) weakSelf = self;
+    plv_dispatch_main_async_safe(^{
+        [PLVLCUtils showHUDWithTitle:nil detail:PLVLocalizedString(@"您未按时签到，自动退出直播间") view:weakSelf.view afterDelay:3.0];
+    })
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(3.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [weakSelf exitCurrentController]; // 使用weakSelf，不影响self释放内存
+    });
+}
+
 #pragma mark PLVLCChatLandscapeViewDelegate
 
 - (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView alertLongContentMessage:(PLVChatModel *)model {

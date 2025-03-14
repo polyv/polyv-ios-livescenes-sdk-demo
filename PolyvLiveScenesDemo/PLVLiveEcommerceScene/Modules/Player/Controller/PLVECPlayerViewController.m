@@ -611,6 +611,11 @@ PLVPlayerPresenterDelegate
     self.fullScreenButton.alpha = show ? 1.0 : 0.0;
 }
 
+- (void)setUpdaeCanAutoStartPictureInPicture:(BOOL)updaeCanAutoStartPictureInPicture{
+    _updaeCanAutoStartPictureInPicture = updaeCanAutoStartPictureInPicture;
+    self.playerPresenter.updateCanAutoStartPictureInPicture = updaeCanAutoStartPictureInPicture;
+}
+
 #pragma mark 回放方法
 
 - (void)seek:(NSTimeInterval)time {

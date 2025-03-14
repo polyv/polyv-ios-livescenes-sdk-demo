@@ -45,6 +45,8 @@ NSString *PLVLCChatroomOpenRewardViewNotification = @"PLVLCChatroomOpenRewardVie
 
 NSString *PLVInteractUpdateChatButtonCallbackNotification = @"PLVInteractUpdateChatButtonCallbackNotification";
 
+NSString *PLVLCChatroomOpenPipSetNotification = @"PLVLCChatroomOpenPipSetNotification";
+
 @interface PLVLCChatViewController ()<
 PLVLCKeyboardToolViewDelegate,
 PLVLCLikeButtonViewDelegate,
@@ -256,6 +258,7 @@ UITableViewDataSource
         _keyboardToolView = [[PLVLCKeyboardToolView alloc] init];
         _keyboardToolView.delegate = self;
         _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback);
+        _keyboardToolView.enablePipSet = [PLVRoomDataManager sharedManager].roomData.canSupportPictureInPicure;
         if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
             [_keyboardToolView changePlaceholderText:PLVLocalizedString(@"聊天室暂时关闭")];
         }
@@ -341,6 +344,10 @@ UITableViewDataSource
         _welfareLotteryWidgetView.delegate = self;
     }
     return _welfareLotteryWidgetView;
+}
+
+- (BOOL)enableReward {
+    return self.keyboardToolView.enableReward;
 }
 
 #pragma mark - Action
@@ -951,7 +958,9 @@ UITableViewDataSource
         if (!cell) {
             cell = [[PLVLCFileMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:fileMessageCellIdentify];
         }
-        CGFloat fileMessageCellWidth = self.likeButtonView.frame.origin.x - 8;// 气泡保证不遮挡点赞按钮
+        CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
+        CGFloat centerPadding = rightPadding + 40.0 / 2.0; // 40pt宽的按钮屏幕右间距为rightPadding，悬浮按钮都跟40pt宽的按钮垂直对齐
+        CGFloat fileMessageCellWidth = self.likeButtonView.hidden ? self.tableView.frame.size.width : self.tableView.frame.size.width - PLVLCLikeButtonViewWidth / 2.0 - centerPadding - 8;// 气泡保证不遮挡点赞按钮（有点赞按钮时）
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:fileMessageCellWidth];
         return cell;
     } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
@@ -1155,6 +1164,10 @@ UITableViewDataSource
     self.keyboardToolView.frame = rect;
     [self.keyboardToolView updateTextViewAndButton];
     [self.view layoutIfNeeded];
+}
+
+- (void)keyboardToolView_pipSet:(PLVLCKeyboardToolView *)toolView{
+    [[NSNotificationCenter defaultCenter] postNotificationName:PLVLCChatroomOpenPipSetNotification object:nil];
 }
 
 #pragma mark - PLVLCLikeButtonView Delegate

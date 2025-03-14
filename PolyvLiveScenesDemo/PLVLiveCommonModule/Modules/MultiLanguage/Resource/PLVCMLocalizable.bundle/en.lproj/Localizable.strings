@@ -200,6 +200,12 @@
 
 "麦克风或摄像头" = "Microphone or Camera";
 
+"播放设置" = "Playback Settings";
+
+"退出直播间自动启用小窗" = "Enable floating window on exit";
+
+"退至应用后台自动启用小窗" = "Enable floating window on background";
+
 /**  表情图片打赏  */
 "收到" = "Received";
 "涨知识" = "Increase Knowledge";
@@ -628,3 +634,4 @@
 "图片不合法" = "Illegal image";
 "图片已保存到相册" = "Picture saved to photo album";
 "应用需要获取您的相册权限，请前往设置" = "The app needs to obtain your photo album permissions, please go to settings";
+"您未按时签到，自动退出直播间" = "You do not sign in on time, automatically quit the live room";

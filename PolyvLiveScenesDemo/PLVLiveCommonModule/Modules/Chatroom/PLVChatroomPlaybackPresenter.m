@@ -103,15 +103,69 @@ PLVPlaybackMessageManagerDelegate
     return [muArray copy];
 }
 
-- (NSArray <PLVChatModel *> *)speakTopChatModelArrayFromPlaybackMessageArray:(NSArray <PLVPlaybackMessage *> *)playbackMessageArray {
+- (NSArray <PLVChatModel *> *)speakTopChatModelArrayFromPlaybackMessageArray:(NSArray <PLVPlaybackMessage *> *)playbackMessageArray playbackTime:(NSTimeInterval)playbackTime {
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:[playbackMessageArray count]];
+    NSMutableArray *speakTopMuArray = [[NSMutableArray alloc] initWithCapacity:[playbackMessageArray count]];
     for (PLVPlaybackMessage *playbackMessage in playbackMessageArray) {
         if ([playbackMessage.message isKindOfClass:[PLVSpeakTopMessage class]]) {
-            PLVChatModel *chatModel = [PLVChatModel chatModelFromPlaybackMessage:playbackMessage];
-            [muArray addObject:chatModel];
+            [speakTopMuArray addObject:playbackMessage];
+            if (playbackTime < 0) {
+                PLVChatModel *chatModel = [PLVChatModel chatModelFromPlaybackMessage:playbackMessage];
+                [muArray addObject:chatModel];
+            }
+        }
+    }
+    if (playbackTime >= 0) {
+        NSMutableArray<PLVPlaybackMessage *> *speakTopMessageAtTimeMuArray = [[NSMutableArray alloc] initWithCapacity:3];
+        for (PLVPlaybackMessage *playbackMessage in speakTopMuArray) {
+            PLVSpeakTopMessage *message = (PLVSpeakTopMessage *)playbackMessage.message;
+            if (message.relativeTime > playbackTime * 1000) {
+                continue;// 如果数据晚于指定时间，跳过
+            }
+            if ([message.action isEqualToString:@"top"]) {// 如果是置顶消息，最多保留3条
+                for (PLVPlaybackMessage *topMessage in speakTopMessageAtTimeMuArray) {
+                    PLVSpeakTopMessage *currentTopMessage = (PLVSpeakTopMessage *)topMessage.message;
+                    if ([PLVFdUtil checkStringUseable:message.nick] && [PLVFdUtil checkStringUseable:message.content] && [currentTopMessage.nick isEqualToString:message.nick] && [currentTopMessage.content isEqualToString:message.content]) {
+                        [speakTopMessageAtTimeMuArray removeObject:topMessage];
+                        break;
+                    }
+                }
+                if (speakTopMessageAtTimeMuArray.count >= 3) {
+                    [speakTopMessageAtTimeMuArray removeLastObject];
+                }
+                // 插入新数据
+                [speakTopMessageAtTimeMuArray insertObject:playbackMessage atIndex:0];
+            } else { // 如果是取消置顶消息，查找并移除匹配的消息
+                for (PLVPlaybackMessage *topMessage in speakTopMessageAtTimeMuArray) {
+                    PLVSpeakTopMessage *currentTopMessage = (PLVSpeakTopMessage *)topMessage.message;
+                    if ([PLVFdUtil checkStringUseable:message.nick] && [PLVFdUtil checkStringUseable:message.content] && [currentTopMessage.nick isEqualToString:message.nick] && [currentTopMessage.content isEqualToString:message.content]) {
+                        [speakTopMessageAtTimeMuArray removeObject:topMessage];
+                        break;
+                    }
+                }
+            }
+        }
+        if (speakTopMessageAtTimeMuArray.count > 0) {
+            PLVPlaybackMessage *lastMessage = [speakTopMessageAtTimeMuArray firstObject];
+            PLVSpeakTopMessage *lastTopMessage = (PLVSpeakTopMessage *)lastMessage.message;
+            NSMutableArray *others = [NSMutableArray arrayWithArray:lastTopMessage.others];
+            for (NSUInteger i = 1; i < speakTopMessageAtTimeMuArray.count; i++) {
+                PLVSpeakTopMessage *otherMessage = (PLVSpeakTopMessage *)speakTopMessageAtTimeMuArray[i].message;
+                if ([PLVFdUtil checkDictionaryUseable:[otherMessage toDictionary]]) {
+                    [others addObject:[otherMessage toDictionary]];
+                }
+            }
+            lastTopMessage.others = [others copy];
+            lastMessage.message = lastTopMessage;
+            PLVChatModel *lastChatModel = [PLVChatModel chatModelFromPlaybackMessage:lastMessage];
+            [muArray addObject:lastChatModel];
         }
     }
     return [muArray copy];
+}
+
+- (NSArray <PLVChatModel *> *)speakTopChatModelArrayFromPlaybackMessageArray:(NSArray <PLVPlaybackMessage *> *)playbackMessageArray {
+    return [self speakTopChatModelArrayFromPlaybackMessageArray:playbackMessageArray playbackTime:-1];
 }
 
 /// 获取当前播放时间节点，单位毫秒，异常情况时返回-1
@@ -178,7 +232,8 @@ PLVPlaybackMessageManagerDelegate
             [self.delegate didReceiveChatModels:chatModelArray chatroomPlaybackPresenter:self];
         }
         
-        NSArray <PLVChatModel *>*speakTopChatModelArray = [self speakTopChatModelArrayFromPlaybackMessageArray:messageArray];
+        NSArray <PLVPlaybackMessage *>*topMessageArray = [self.manager playbackSpeakTopMessageBefore:self.currentPlaybackTime];
+        NSArray <PLVChatModel *>*speakTopChatModelArray = [self speakTopChatModelArrayFromPlaybackMessageArray:topMessageArray playbackTime:self.currentPlaybackTime];
         if ([self.delegate respondsToSelector:@selector(didReceiveSpeakTopChatModels:autoLoad:chatroomPlaybackPresenter:)]) {
             [self.delegate didReceiveSpeakTopChatModels:speakTopChatModelArray autoLoad:YES chatroomPlaybackPresenter:self];
         }
@@ -211,7 +266,7 @@ PLVPlaybackMessageManagerDelegate
         }
     }
     
-    NSArray <PLVChatModel *>*speakTopChatModelArray = [self speakTopChatModelArrayFromPlaybackMessageArray:playbackMessags];
+    NSArray <PLVChatModel *>*speakTopChatModelArray = [self speakTopChatModelArrayFromPlaybackMessageArray:playbackMessags playbackTime:[self getPlaybackTime]];
     if ([self.delegate respondsToSelector:@selector(didReceiveSpeakTopChatModels:autoLoad:chatroomPlaybackPresenter:)]) {
         [self.delegate didReceiveSpeakTopChatModels:speakTopChatModelArray autoLoad:NO chatroomPlaybackPresenter:self];
     }

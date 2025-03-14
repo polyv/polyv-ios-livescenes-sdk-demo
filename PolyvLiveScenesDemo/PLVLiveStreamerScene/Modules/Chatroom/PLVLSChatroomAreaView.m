@@ -171,8 +171,8 @@ PLVLSChatroomViewModelProtocol
     }
 }
 
-- (void)cancleTopPinMessage {
-    BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:nil toTop:NO];
+- (void)cancelTopPinMessage:(NSString * _Nullable)msgId {
+    BOOL success = [[PLVLSChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:msgId toTop:NO];
     if (!success) {
         plv_dispatch_main_async_safe((^{
             NSString *message = [NSString stringWithFormat:@"%@%@", PLVLocalizedString(@"下墙"), PLVLocalizedString(@"消息发送失败")];

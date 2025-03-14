@@ -49,11 +49,15 @@ extern NSString *PLVLCChatroomOpenInteractAppNotification;
 
 extern NSString *PLVLCChatroomOpenRewardViewNotification;
 
+extern NSString *PLVLCChatroomOpenPipSetNotification;
+
 @interface PLVLCChatViewController : UIViewController
 
 @property (nonatomic, weak) id<PLVLCChatViewControllerDelegate> delegate;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
+
+@property (nonatomic, assign) BOOL enableReward;
 
 /// 点赞悬浮按钮（含点赞数、点赞动画）自定义视图
 @property (nonatomic, strong) PLVLCLikeButtonView *likeButtonView;

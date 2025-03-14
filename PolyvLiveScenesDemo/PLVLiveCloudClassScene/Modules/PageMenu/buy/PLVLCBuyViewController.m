@@ -135,6 +135,11 @@ PLVProductWebViewBridgeDelegate>
     }
     [mutableDict addEntriesFromDictionary:sessionDict];
     
+    NSString *chatToken = [PLVSocketManager sharedManager].chatToken;
+    if ([PLVFdUtil checkStringUseable:chatToken]) {
+        [mutableDict setObject:chatToken forKey:@"chatToken"];
+    }
+    
     return mutableDict;
 }
 

@@ -107,7 +107,7 @@ UIGestureRecognizerDelegate
     self.pptView.frame = self.switchContentView.bounds;
     self.docPlaceholder.frame = self.switchContentView.bounds;
     self.waitLivePlaceholderView.frame = self.switchContentView.bounds;
-    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, 25, 320, 58);
+    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, 25, 320, 66);
     
     CGSize bgSize = self.bounds.size;
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width == self.bounds.size.width;
@@ -337,7 +337,7 @@ UIGestureRecognizerDelegate
 
 - (void)finishClass {
     self.pptView.startClass = NO;
-    [self.pinMsgPopupView showPopupView:NO message:nil];
+    [self.pinMsgPopupView updatePopupViewWithMessage:nil];
     
     if (self.viewerType == PLVRoomUserTypeGuest) {
         [self.toolView setFullScreenButtonSelected:NO];
@@ -404,7 +404,7 @@ UIGestureRecognizerDelegate
 }
 
 - (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
-    [self.pinMsgPopupView showPopupView:show message:message];
+    [self.pinMsgPopupView updatePopupViewWithMessage:message];
 }
 
 #pragma mark - [ Private Methods ]

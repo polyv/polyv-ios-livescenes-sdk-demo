@@ -49,7 +49,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)documentChangeFullScreen:(BOOL)fullScreen;
 
 /// 评论下墙操作
-- (void)cancleTopPinMessage;
+- (void)cancelTopPinMessage:(NSString * _Nullable)msgId;
 
 @end
 

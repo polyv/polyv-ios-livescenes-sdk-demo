@@ -320,6 +320,10 @@ PLVInteractWebViewBridgeDelegate>
     }
     NSString *liveScene = self.liveType == PLVInteractGenericViewLiveTypeLC ? @"0" : @"1";
     [mutableDict setObject:liveScene forKey:@"liveScene"]; // 0 表示云课堂场景，1 表示直播带货场景
+    NSString *chatToken = [PLVSocketManager sharedManager].chatToken;
+    if ([PLVFdUtil checkStringUseable:chatToken]) {
+        [mutableDict setObject:chatToken forKey:@"chatToken"];
+    }
 
     return mutableDict;
 }
@@ -490,6 +494,13 @@ PLVInteractWebViewBridgeDelegate>
     }
 }
 
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge notCheckInWithJSONObject:(id)jsonObject{
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:notCheckInTime:)]) {
+        [self.delegate plvInteractGenericView:self notCheckInTime:dict];
+    }
+}
+
 - (NSDictionary *)getAPPInfoInInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge {
     return [self getUserInfo];
 }
@@ -515,9 +526,13 @@ PLVInteractWebViewBridgeDelegate>
         return (NSDictionary *)jsonObject;
     }
     
-    NSData *jsonData = [jsonObject dataUsingEncoding:NSUTF8StringEncoding];
-    NSDictionary *dataDict = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:nil];
-    return dataDict;
+    if ([PLVFdUtil checkStringUseable:jsonObject]){
+        NSData *jsonData = [jsonObject dataUsingEncoding:NSUTF8StringEncoding];
+        NSDictionary *dataDict = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:nil];
+        return dataDict;
+    }
+    
+    return nil;
 }
 
 @end

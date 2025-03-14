@@ -28,6 +28,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     PLVLCKeyboardMoreButtonTypeOpenBulletin,
     PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay,
     PLVLCKeyboardMoreButtonTypeSwitchLanguage,
+    PLVLCKeyboardMoreButtonTypePipSet
 };
 
 @interface PLVLCMoreCollectionViewCell : UICollectionViewCell
@@ -98,6 +99,12 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             [self.moreBtn setTitle:PLVLocalizedString(@"PLVLiveLanguageSwitchTitle") forState:UIControlStateNormal];
             [self.moreBtn setTitle:PLVLocalizedString(@"PLVLiveLanguageSwitchTitle") forState:UIControlStateSelected];
             break;
+        case PLVLCKeyboardMoreButtonTypePipSet:
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_btn_pipset"] forState:UIControlStateNormal];
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_btn_pipset"] forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"播放设置") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"播放设置") forState:UIControlStateSelected];
+            break;
         default:
             break;
     }
@@ -135,6 +142,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         _sendImageEnable = YES;
         _hideRewardDisplaySwitch = YES;
         _onlyTeacherEnable = YES;
+        _enablePipSet = YES;
         
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1.0];
         
@@ -230,7 +238,12 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 }
 
 - (NSInteger)getNativeAddButtonCount {
-    if (self.disableInteraction) { return 1; }
+    if (self.disableInteraction) {
+        if (self.enablePipSet){
+            return 2; // language + pipset
+        }
+        return 1; // language
+    }
     
     NSInteger buttonCount = 0;
     buttonCount += (self.onlyTeacherEnable ? 1 : 0);
@@ -238,6 +251,9 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     buttonCount += (!self.hiddenBulletin ? 1 : 0);
     buttonCount += (!self.hideRewardDisplaySwitch ? 1 : 0);
     buttonCount += 1;
+    if (self.enablePipSet){
+        buttonCount += 1; // for pip set
+    }
 
     return buttonCount;
 }
@@ -338,6 +354,10 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
                 }
             }
         }];
+    } else if (type == PLVLCKeyboardMoreButtonTypePipSet) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_PipSet:)]) {
+            [self.delegate keyboardMoreView_PipSet:self];
+        }
     } else if (type == PLVLCKeyboardMoreButtonTypeUnknow) {
         NSInteger defaultCount = [self getNativeAddButtonCount];
         if (button.tag < defaultCount + self.dynamicDataArray.count) {
@@ -357,7 +377,14 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     if (self.disableInteraction) {
         if (index == 0) {
             return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
-        } else {
+        } else if (index == 1){
+            if (self.enablePipSet){
+                return PLVLCKeyboardMoreButtonTypePipSet;
+            } else{
+                return PLVLCKeyboardMoreButtonTypeUnknow;
+            }
+        }
+        else{
             return PLVLCKeyboardMoreButtonTypeUnknow;
         }
     }
@@ -379,6 +406,9 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             } else if (index == (3 + overlayIndex)) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
             }
+            else if (index == (4 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypePipSet;
+            }
         } else {
             if (index == 1 && !self.hiddenBulletin) {
                 return PLVLCKeyboardMoreButtonTypeOpenBulletin;
@@ -386,6 +416,9 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
                 return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
             } else if (index == (1 + overlayIndex)) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
+            }
+            else if (index == (2 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypePipSet;
             }
         }
     } else {
@@ -401,6 +434,9 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             } else if (index == (2 + overlayIndex)) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
             }
+            else if (index == (3 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypePipSet;
+            }
         } else {
             if (index == 0 && !self.hiddenBulletin) {
                 return PLVLCKeyboardMoreButtonTypeOpenBulletin;
@@ -408,6 +444,9 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
                 return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
             } else if (index == (0 + overlayIndex)) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
+            }
+            else if (index == (1 + overlayIndex)) {
+                return PLVLCKeyboardMoreButtonTypePipSet;
             }
         }
     }

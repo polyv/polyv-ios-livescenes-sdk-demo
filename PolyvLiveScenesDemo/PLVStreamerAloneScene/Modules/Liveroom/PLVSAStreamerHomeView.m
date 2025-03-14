@@ -245,7 +245,7 @@ PLVSALinkMicSettingSheetDelegate
         self.switchSuccessTipsView.frame = CGRectMake(originX, originY, width, height);
     }
     
-    self.pinMsgPopupView.frame = CGRectMake((self.homePageView.bounds.size.width - 320)/2, (isLandscape ? 65 : 132), 320, 58);
+    self.pinMsgPopupView.frame = CGRectMake((self.homePageView.bounds.size.width - 320)/2, (isLandscape ? 65 : 132), 320, 66);
     
     self.networkDisconnectMaskView.frame = self.bounds;
     self.networkDisconnectImageView.frame = CGRectMake((self.bounds.size.width - 56) / 2, (self.bounds.size.height - 87) / 2, 56, 56);
@@ -283,7 +283,7 @@ PLVSALinkMicSettingSheetDelegate
     [self.statusbarAreaView startClass:start];
     [self.moreInfoSheet startClass:start];
     [self.memberSheet startClass:start];
-    [self.pinMsgPopupView showPopupView:NO message:nil];
+    [self.pinMsgPopupView updatePopupViewWithMessage:nil];
     PLVSAToolbarLinkMicButtonStatus linkMicbButtonStatus = start ? PLVSAToolbarLinkMicButtonStatus_Default : PLVSAToolbarLinkMicButtonStatus_NotLive;
     [self updateToolbarLinkMicButtonStatus:linkMicbButtonStatus];
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
@@ -428,7 +428,7 @@ PLVSALinkMicSettingSheetDelegate
 }
 
 - (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
-    [self.pinMsgPopupView showPopupView:show message:message];
+    [self.pinMsgPopupView updatePopupViewWithMessage:message];
 }
 
 #pragma mark - [ Private Method ]
@@ -853,7 +853,7 @@ PLVSALinkMicSettingSheetDelegate
         _pinMsgPopupView.hidden = YES;
         __weak typeof(self) weakSelf = self;
         _pinMsgPopupView.cancelTopActionBlock = ^(PLVSpeakTopMessage * _Nonnull message) {
-            [weakSelf.chatroomAreaView sendCancleTopPinMessage];
+            [weakSelf.chatroomAreaView sendCancelTopPinMessage:message.msgId];
         };
     }
     return _pinMsgPopupView;

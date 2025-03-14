@@ -182,6 +182,7 @@ PLVLCKeyboardMoreViewDelegate
         _moreboard.delegate = self;
         _moreboard.sendImageEnable = self.enableSendImage;
         _moreboard.hiddenBulletin = self.hiddenBulletin;
+        _moreboard.enablePipSet = self.enablePipSet;
     }
     return _moreboard;
 }
@@ -760,6 +761,13 @@ PLVLCKeyboardMoreViewDelegate
     [self tapAction:nil];
     if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:switchLanguageMode:)]) {
         [self.delegate keyboardToolView:self switchLanguageMode:languageMode];
+    }
+}
+
+- (void)keyboardMoreView_PipSet:(PLVLCKeyboardMoreView *)moreView{
+    [self tapAction:nil];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_pipSet:)]){
+        [self.delegate keyboardToolView_pipSet:self];
     }
 }
 

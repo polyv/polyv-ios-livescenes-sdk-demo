@@ -35,7 +35,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, assign) BOOL closeGiftEffects;
 
 /// 发送评论下墙消息
-- (void)sendCancleTopPinMessage;
+- (void)sendCancelTopPinMessage:(NSString * _Nullable)msgId;
 
 @end
 

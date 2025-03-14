@@ -1043,7 +1043,7 @@ PLVLSLinkMicSettingSheetDelegate
 }
 
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView cancelTopPinMessage:(PLVSpeakTopMessage *)message {
-    [self.chatroomAreaView cancleTopPinMessage];
+    [self.chatroomAreaView cancelTopPinMessage:message.msgId];
 }
 
 #pragma mark - PLVSocketManager Protocol

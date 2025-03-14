@@ -159,11 +159,7 @@ UIGestureRecognizerDelegate>
         }
         // 除了直播状态决定之外，还需要根据外界的其他因素决定是否显示画中画按钮
         if (!self.pictureInPictureButton.hidden) {
-            if (self.baseDelegate &&
-                [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:)]) {
-                BOOL show = [self.baseDelegate plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:self];
-                self.pictureInPictureButton.hidden = !show;
-            }
+            self.pictureInPictureButton.hidden = ![self canShowPictureInPictureButton];
         }
         // 不支持画中画的设备隐藏按钮，开启防截屏功能的
         if (!self.pictureInPictureButton.hidden) {
@@ -380,7 +376,8 @@ UIGestureRecognizerDelegate>
     BOOL supported = [[PLVLivePictureInPictureManager sharedInstance] checkPictureInPictureSupported] &&
     ![PLVRoomDataManager sharedManager].roomData.captureScreenProtect &&
     ![PLVRoomDataManager sharedManager].roomData.systemScreenShotProtect;
-    self.pictureInPictureButton.hidden = supported ? !show : YES;
+    BOOL canShow = [self canShowPictureInPictureButton];
+    self.pictureInPictureButton.hidden = (supported && canShow) ? !show : YES;
 }
 
 /// 刷新更多按钮显示
@@ -438,6 +435,14 @@ UIGestureRecognizerDelegate>
         [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewShouldShowDocumentToolView:)]) {
         [self setupMainSpeakerPPTOnMain:[self.baseDelegate plvLCBasePlayerSkinViewShouldShowDocumentToolView:self]];
     }
+}
+
+- (BOOL)canShowPictureInPictureButton {
+    if (self.baseDelegate &&
+        [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:)]) {
+        return [self.baseDelegate plvLCBasePlayerSkinViewShouldShowPictureInPictureButton:self];
+    }
+    return NO;
 }
 
 - (void)autoHideSkinView {

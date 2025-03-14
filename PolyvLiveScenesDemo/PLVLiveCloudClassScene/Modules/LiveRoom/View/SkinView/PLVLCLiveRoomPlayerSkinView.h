@@ -121,6 +121,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param liveRoomPlayerSkinView 横屏 直播间播放器皮肤视图
 - (void)plvLCLiveRoomPlayerSkinViewOnlineListButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView;
 
+- (void)plvLCLiveRoomPlayerSkinViewLinkMicFullscreenButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaLinkMicAreaViewShow:(BOOL)show;
+
 @end
 
 NS_ASSUME_NONNULL_END

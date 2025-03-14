@@ -238,6 +238,16 @@ PLVDefaultPageViewDelegate
     return self.livePlayer.audioMode;
 }
 
+- (BOOL)isPlaying{
+    if (self.livePlayer){
+        return self.livePlayer.playing;;
+    }else if (self.livePlaybackPlayer){
+        return self.livePlaybackPlayer.playing;
+    }
+    
+    return NO;
+}
+
 - (UIImageView *)logoImageView {
     return self.logoView.logoImageView;
 }
@@ -394,6 +404,12 @@ PLVDefaultPageViewDelegate
     [self.livePlaybackPlayer cancelMute];
 }
 
+- (void)setUpdateCanAutoStartPictureInPicture:(BOOL)updateCanAutoStartPictureInPicture{
+    _updateCanAutoStartPictureInPicture = updateCanAutoStartPictureInPicture;
+    self.livePlayer.updateAutoStartPictureInPicture = updateCanAutoStartPictureInPicture;
+    self.livePlaybackPlayer.updateAutoStartPictureInPicture = updateCanAutoStartPictureInPicture;
+}
+
 #pragma mark 直播相关
 - (void)switchLiveToAudioMode:(BOOL)audioMode{
     self.logoView.hidden = audioMode;
@@ -498,18 +514,27 @@ PLVDefaultPageViewDelegate
 - (void)setupPlayer{
     NSString * userIdForAccount = [PLVLiveVideoConfig sharedInstance].userId;
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    BOOL canAutoStartPictureInPicture = NO;
+    if (@available(iOS 15.0, *)) {
+        if (self.currentExternalRoomData.canAutoStartPictureInPicture &&
+            [PLVLivePictureInPictureManager sharedInstance].pictureInPictureMode == PLVLivePictureInPictureMode_IJKPlayer) {
+            canAutoStartPictureInPicture = YES;
+        }
+    }
     if (self.currentVideoType == PLVChannelVideoType_Live) { /// 直播
         self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId];
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.pictureInPictureDelegate = self;
-        self.livePlayer.canAutoStartPictureInPicture = !roomData.captureScreenProtect && !roomData.systemScreenShotProtect;
         self.livePlayer.channelWatchPublicStream = self.channelWatchPublicStream;
         self.livePlayer.channelWatchNoDelay = self.channelWatchNoDelay;
         self.livePlayer.channelWatchQuickLive = self.channelWatchQuickLive;
         [self.livePlayer setupDisplaySuperview:self.playerBackgroundView];
         self.livePlayer.videoToolBox = NO;
         self.livePlayer.chaseFrame = NO;
+        self.livePlayer.canAutoStartPictureInPicture = canAutoStartPictureInPicture && 
+                                                    !roomData.captureScreenProtect &&
+                                                    !roomData.systemScreenShotProtect;
         
         if (self.channelWatchPublicStream) {
             [self setupPublicStreamPlayer];
@@ -525,12 +550,14 @@ PLVDefaultPageViewDelegate
         }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.livePlaybackDelegate = self;
-        self.livePlaybackPlayer.canAutoStartPictureInPicture = !roomData.captureScreenProtect && !roomData.systemScreenShotProtect;
         self.livePlaybackPlayer.pictureInPictureDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
 
         self.livePlaybackPlayer.videoToolBox = NO;
         self.livePlaybackPlayer.customParam = self.currentExternalCustomParam;
+        self.livePlaybackPlayer.canAutoStartPictureInPicture = canAutoStartPictureInPicture &&
+                                                            !roomData.captureScreenProtect &&
+                                                            !roomData.systemScreenShotProtect;
     }
 }
 

@@ -29,7 +29,7 @@
              [fitView isKindOfClass:PLVECHomePageView.class]) && self.pinMsgPopupView.hidden == NO) {
             for (NSInteger k = self.pinMsgPopupView.subviews.count - 1; k >= 0; k--) {
                 UIView *grandChildren = self.pinMsgPopupView.subviews[k];
-                if ([grandChildren isKindOfClass:UIButton.class]) {
+                if ([grandChildren isKindOfClass:UIButton.class] || [grandChildren isKindOfClass:UIScrollView.class]) {
                     CGPoint grandChildrenPoint = [self convertPoint:point toView:grandChildren];
                     UIView *fitPopupView = [grandChildren hitTest:grandChildrenPoint withEvent:event];
                     if (fitPopupView) {

@@ -61,6 +61,9 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)keyboardToolView:(PLVLCKeyboardToolView *)moreView switchLanguageMode:(NSInteger)languageMode;
 /// 键盘显示互动功能入口
 - (void)keyboardToolView_showIarEntranceView:(PLVLCKeyboardToolView *)iarEntranceView show:(BOOL)show;
+/// 小窗播放设置
+- (void)keyboardToolView_pipSet:(PLVLCKeyboardToolView *)toolView;
+
 
 @end
 
@@ -79,6 +82,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) NSArray *imageEmotions;
 /// 是否隐藏礼物打赏按钮，默认NO；YES - 显示，NO - 隐藏
 @property (nonatomic, assign) BOOL enableReward;
+/// 是否支持小窗播放设置
+@property (nonatomic, assign) BOOL enablePipSet;
 
 /// 面板状态
 @property (nonatomic, assign, readonly) PLVLCKeyboardToolState toolState;

@@ -101,8 +101,8 @@ PLVSAChatroomListViewDelegate
 
 #pragma mark - [ Public Method ]
 
-- (void)sendCancleTopPinMessage {
-    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:nil toTop:NO];
+- (void)sendCancelTopPinMessage:(NSString * _Nullable)msgId {
+    BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:msgId toTop:NO];
     if (!success) {
         NSString *message = [NSString stringWithFormat:@"%@%@", PLVLocalizedString(@"下墙"), PLVLocalizedString(@"消息发送失败")];
         [PLVSAUtils showToastInHomeVCWithMessage:message];
