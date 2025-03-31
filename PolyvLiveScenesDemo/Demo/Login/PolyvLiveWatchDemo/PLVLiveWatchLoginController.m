@@ -19,6 +19,7 @@
 #import "PLVBugReporter.h"
 
 #import <PLVLiveScenesSDK/PLVLivePictureInPictureManager.h>
+#import "PLVLivePictureInPictureRestoreManager.h"
 
 #define PushOrModel 0 // 进入页面方式（1-push、0-model）
 static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_demo";
@@ -102,6 +103,18 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
+}
+
+- (void)viewDidAppear:(BOOL)animated{
+    [super viewDidAppear:animated];
+    
+    // 检查当前方向并强制切换到竖屏
+    // 适配iphoneSE 8P 等部分机型
+    BOOL isLandscape = self.view.bounds.size.width > self.view.bounds.size.height;
+    if (isLandscape) {
+        // 强制切换到竖屏
+        [PLVFdUtil changeDeviceOrientation:UIDeviceOrientationPortrait];
+    }
 }
 
 - (void)dealloc {
@@ -305,10 +318,22 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
             [PLVBugReporter setUserIdentifier:roomUser.viewerId];
         };
         
-        // 如果当前正在开启系统画中画，那么需要不走恢复逻辑关闭画中画
+        // 如果当前正在开启系统画中画
         if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-            [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
-            [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+            if ([PLVFdUtil checkStringUseable:self.channelIdTF.text] &&
+                [[PLVRoomDataManager sharedManager].roomData.channelId isEqualToString:self.channelIdTF.text] &&
+                [[PLVLivePictureInPictureRestoreManager sharedInstance].holdingViewController isKindOfClass:[PLVLCCloudClassViewController class]]){
+                // 同一直播间,不走登入流程;  关闭画中画,恢复直播间
+                [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+                return;
+            }
+            else{
+                // 不同直播间,关闭并清理, 走登入流程
+                [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+                [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+                [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+            }
+            
         }
         if (self.liveSelectView.hidden) { // 回放
             [self loginCloudClassPlaybackRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone successHandler:successBlock];
@@ -337,10 +362,22 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
             [PLVBugReporter setUserIdentifier:roomUser.viewerId];
         };
         
-        // 如果当前正在开启系统画中画，那么需要不走恢复逻辑关闭画中画
+        // 如果当前正在开启系统画中画
         if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
-            [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
-            [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+            if ([PLVFdUtil checkStringUseable:self.channelIdTF.text] &&
+                [[PLVRoomDataManager sharedManager].roomData.channelId isEqualToString:self.channelIdTF.text] &&
+                [[PLVLivePictureInPictureRestoreManager sharedInstance].holdingViewController isKindOfClass:[PLVECWatchRoomViewController class]]){
+                // 同一直播间,不走登入流程;  关闭画中画,恢复直播间
+                [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+                return;
+            }
+            else{
+                // 不同直播间,关闭并清理,走登入流程
+                [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+                [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+                [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+            }
+            
         }
         if (self.liveSelectView.hidden) { // 回放
             [self loginEcommercePlaybackRoomWithChannelType:PLVChannelTypeAlone successHandler:successBlock];

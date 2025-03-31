@@ -37,6 +37,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// 发送评论下墙消息
 - (void)sendCancelTopPinMessage:(NSString * _Nullable)msgId;
 
+- (NSAttributedString *)currentNewMessage;
+
 @end
 
 NS_ASSUME_NONNULL_END

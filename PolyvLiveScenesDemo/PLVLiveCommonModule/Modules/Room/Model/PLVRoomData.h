@@ -233,6 +233,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign) BOOL showMixLayoutButtonEnabled;
 // 后台是否显示横竖屏按钮，YES显示，NO不显示（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL showOrientationButtonEnabled;
+// 是否开启桌面消息，YES开启，NO关闭（仅适用于纯视频开播）
+@property (nonatomic, assign) BOOL desktopChatEnabled;
 
 #pragma mark SIP独有属性
 /// 支持SIP模式

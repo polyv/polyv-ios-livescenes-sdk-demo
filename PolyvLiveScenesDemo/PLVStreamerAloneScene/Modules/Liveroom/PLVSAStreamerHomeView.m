@@ -36,6 +36,8 @@
 #import "PLVSALinkMicSettingSheet.h"
 #import "PLVStreamerPopoverView.h"
 #import "PLVPinMessagePopupView.h"
+#import "PLVSADesktopChatSettingSheet.h"
+#import "PLVStickerCanvas.h"
 
 // 模块
 #import "PLVChatModel.h"
@@ -57,7 +59,8 @@ PLVSAMemberSheetDelegate,
 PLVSALinkMicTipViewDelegate,
 PLVSAMixLayoutSheetDelegate,
 PLVSABadNetworkSwitchSheetDelegate,
-PLVSALinkMicSettingSheetDelegate
+PLVSALinkMicSettingSheetDelegate,
+PLVSADesktopChatSettingSheetDelegate
 >
 /// view hierarchy
 ///
@@ -92,6 +95,7 @@ PLVSALinkMicSettingSheetDelegate
 @property (nonatomic, strong) PLVSABadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
 @property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet; // 混流布局选择面板
 @property (nonatomic, strong) PLVSALinkMicSettingSheet *linkMicSettingSheet; // 连麦设置选择面板
+@property (nonatomic, strong) PLVSADesktopChatSettingSheet *desktopChatSettingSheet; // 桌面消息设置选择面板
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
 @property (nonatomic, strong) PLVSACameraAndMicphoneStateView *cameraAndMicphoneStateView; // 摄像头与麦克风状态视图
 @property (nonatomic, strong) PLVSALinkMicLayoutSwitchGuideView *layoutSwitchGuideView; // 布局切换新手引导
@@ -385,6 +389,9 @@ PLVSALinkMicSettingSheetDelegate
     // 显示布局切换新手引导，当前连麦人数大于1时显示视图
     [self showLayoutSwitchGuideWithUserCount:onlineUserCount];
     self.moreInfoSheet.removeAllAudiencesEnable = onlineUserCount > 1;
+    
+    // 更新贴图按钮状态 连麦时不支持贴图选择
+    self.moreInfoSheet.stickerEnable = (onlineUserCount <= 1);
 }
 
 - (void)changeFlashButtonSelectedState:(BOOL)selectedState{
@@ -393,6 +400,9 @@ PLVSALinkMicSettingSheetDelegate
 
 - (void)changeScreenShareButtonSelectedState:(BOOL)selectedState{
     [self.moreInfoSheet changeScreenShareButtonSelectedState:selectedState];
+    
+    // 屏幕共享时不支持贴图选择
+    self.moreInfoSheet.stickerEnable = !selectedState;
 }
 
 - (void)changeAllowRaiseHandButtonSelectedState:(BOOL)selectedState {
@@ -429,6 +439,26 @@ PLVSALinkMicSettingSheetDelegate
 
 - (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message {
     [self.pinMsgPopupView updatePopupViewWithMessage:message];
+}
+
+- (NSAttributedString *)currentNewMessage {
+    return self.chatroomAreaView.currentNewMessage;
+}
+
+- (void)addStickerCanvasView:(PLVStickerCanvas *)stickerView editMode:(BOOL)editMode{
+    if (editMode){
+        // 最上层图层
+        [self addSubview:stickerView];
+        [self bringSubviewToFront:stickerView];
+    }
+    else{
+        // 本地RTC 渲染图层上面
+        [self.linkMicWindowsView insertSubview:stickerView atIndex:1];
+    }
+}
+
+- (void)updateDesktopChatEnable:(BOOL)enable {
+    self.desktopChatSettingSheet.desktopChatEnable = enable;
 }
 
 #pragma mark - [ Private Method ]
@@ -821,6 +851,19 @@ PLVSALinkMicSettingSheetDelegate
     return _linkMicSettingSheet;
 }
 
+- (PLVSADesktopChatSettingSheet *)desktopChatSettingSheet {
+    if (!_desktopChatSettingSheet) {
+        CGFloat heightScale = 0.266;
+        CGFloat widthScale = 0.44;
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = maxWH * heightScale;
+        CGFloat sheetLandscapeWidth = maxWH * widthScale;
+        _desktopChatSettingSheet = [[PLVSADesktopChatSettingSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _desktopChatSettingSheet.delegate = self;
+    }
+    return _desktopChatSettingSheet;
+}
+
 - (PLVSALinkMicTipView *)linkMicTipView {
     if (!_linkMicTipView) {
         _linkMicTipView = [[PLVSALinkMicTipView alloc] init];
@@ -1058,6 +1101,10 @@ PLVSALinkMicSettingSheetDelegate
     }
 }
 
+- (void)moreInfoSheetDidTapDesktopChatButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.desktopChatSettingSheet showInView:self];
+}
+
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeCloseRoom:(BOOL)closeRoom {
     self.chatroomAreaView.closeRoom = closeRoom;
 }
@@ -1107,6 +1154,13 @@ PLVSALinkMicSettingSheetDelegate
 
 - (void)moreInfoSheetDidTapSignInButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
     [self.popoverView.interactView openInteractViewWithEventName:@"SHOW_SIGN"];
+}
+
+/// 点击 贴纸按钮 触发回调
+- (void)moreInfoSheetDidTapStickerButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapStickerButton:)]) {
+        [self.delegate streamerHomeViewDidTapStickerButton:self];
+    }
 }
 
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects {
@@ -1231,6 +1285,14 @@ PLVSALinkMicSettingSheetDelegate
 - (void)plvsaLinkMicSettingSheet_wannaChangeLinkMicType:(BOOL)linkMicOnAudio {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeView:wannaChangeLinkMicType:)]) {
         [self.delegate streamerHomeView:self wannaChangeLinkMicType:linkMicOnAudio];
+    }
+}
+
+#pragma mark PLVSADesktopChatSettingSheetDelegate
+
+- (void)desktopChatSettingSheet:(PLVSADesktopChatSettingSheet *)sheet didChangeDesktopChatEnable:(BOOL)desktopChatEnable {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeDesktopChatEnable:)]) {
+        [self.delegate streamerHomeView:self didChangeDesktopChatEnable:desktopChatEnable];
     }
 }
 

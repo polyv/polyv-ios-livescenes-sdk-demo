@@ -543,13 +543,12 @@ PLVDefaultPageViewDelegate
         self.livePlayer.customParam = self.currentExternalCustomParam;
     }else if (self.currentVideoType == PLVChannelVideoType_Playback){ /// 回放
         if (self.recordEnable) {
-            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId recordFile:self.recordFile];
+            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId recordFile:self.recordFile liveDelegate:self];
         } else {
             BOOL vodList = roomData.menuInfo.materialLibraryEnabled ? NO : self.vodList;
-            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId vodId:self.vodId vodList:vodList];
+            self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId vodId:self.vodId vodList:vodList liveDelegate:self];
         }
         self.livePlaybackPlayer.delegate = self;
-        self.livePlaybackPlayer.livePlaybackDelegate = self;
         self.livePlaybackPlayer.pictureInPictureDelegate = self;
         [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
 

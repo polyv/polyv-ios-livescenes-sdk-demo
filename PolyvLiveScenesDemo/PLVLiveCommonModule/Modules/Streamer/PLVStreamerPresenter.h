@@ -374,6 +374,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///       NO: 本地视频预览无论是否镜像，远端观看效果均不镜像，即效果相互独立，互不干扰；
 - (void)setupLocalVideoPreviewSameAsRemoteWatch:(BOOL)localSameAsRemote;
 
+/// 设置贴纸图片
+///
+/// @param stickerImage 贴纸图片资源
+- (void)setStickerImage:(nullable UIImage *)stickerImage;
+
 #pragma mark CDN流管理
 /// 开始推流
 ///

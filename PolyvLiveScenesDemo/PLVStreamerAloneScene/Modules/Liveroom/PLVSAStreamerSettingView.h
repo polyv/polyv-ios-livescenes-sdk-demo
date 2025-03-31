@@ -94,6 +94,8 @@
 - (void)streamerSettingViewTopSettingButtonClickWithNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel;
 /// 外接设备改变
 - (void)streamerSettingViewExternalDeviceButtonClickWithExternalDeviceEnabled:(BOOL)enabled;
+/// 贴纸按钮点击
+- (void)streamerSettingViewDidClickStickerButton:(PLVSAStreamerSettingView *)streamerSettingView;
 
 @end
 

@@ -633,6 +633,30 @@ PLVLCDocumentPaintModeViewDelegate
     NSString *fileId = self.playerPresenter.fileId;
     if ([PLVFdUtil checkStringUseable:channelId] &&
         ([PLVFdUtil checkStringUseable:videoId] || [PLVFdUtil checkStringUseable:fileId])) { // videoId 在app启动后立马取值不一定有值，需要递归处理
+        
+        PLVPlaybackVideoInfoModel *videoInfo = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+        if ([videoInfo isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]] && [PLVRoomDataManager sharedManager].roomData.noNetWorkOfflineIntroductionEnabled) { // 检查无网时是否本地视频需要使用离线PPT播放
+            // 本地回放视频信息
+            PLVPlaybackLocalVideoInfoModel *localPlaybackVideoInfo = (PLVPlaybackLocalVideoInfoModel *)videoInfo;
+            NSString *localHtmlPath = localPlaybackVideoInfo.localHtmlPath;
+            NSString *accessPath = localPlaybackVideoInfo.fileIdPath;
+            [self.pptView loadRequestWithLocalHtml:localHtmlPath allowingReadAccessToURL:accessPath];
+            [self.pptView pptSetOfflinePath:localPlaybackVideoInfo.pptPath];
+            
+            if ([localPlaybackVideoInfo.listType isEqualToString:@"record"]) {
+                if ([PLVFdUtil checkStringUseable:fileId] && [localPlaybackVideoInfo.fileId isEqualToString:fileId]) {
+                    [self.pptView pptLocalStartWithVideoId:localPlaybackVideoInfo.fileId vid:localPlaybackVideoInfo.fileId];
+                    return;
+                }
+            } else {
+                NSString *vid = [PLVRoomDataManager sharedManager].roomData.vid;
+                if ([PLVFdUtil checkStringUseable:vid] && [localPlaybackVideoInfo.vid isEqualToString:vid]) {
+                    [self.pptView pptLocalStartWithVideoId:localPlaybackVideoInfo.videoId vid:localPlaybackVideoInfo.videoPoolId];
+                    return;
+                }
+            }
+        }
+        
         if (self.roomData.recordEnable || self.roomData.menuInfo.materialLibraryEnabled) {
             [self.pptView pptStartWithFileId:fileId channelId:channelId];
         } else {
@@ -669,6 +693,10 @@ PLVLCDocumentPaintModeViewDelegate
         
         PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x"] selectedIndex:1];
         speedModel.optionSpecifiedWidth = 40.0;
+        if (@available(iOS 15.0, *)) { // iOS15以上支持
+            speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x",@"3.0x"] selectedIndex:1];
+            speedModel.optionSpecifiedWidth = 35.0;
+        }
         
         NSMutableArray * modelArray = [[NSMutableArray alloc] init];
         if (downloadModel) { [modelArray addObject:downloadModel]; }
@@ -1416,6 +1444,7 @@ PLVLCDocumentPaintModeViewDelegate
         [self switchToNoDelayWatchMode:model.selectedIndex == 0];
     } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_DownloadOptionTitle)]) {
         // 用户点击了“下载”按钮
+        [self.downloadSheet updatePlaybackInfoWithData:[PLVRoomDataManager sharedManager].roomData];
         [self.downloadSheet showInView:self.superview];
     }
 }
@@ -1825,6 +1854,21 @@ PLVLCDocumentPaintModeViewDelegate
     NSString *videoId = [PLVRoomDataManager sharedManager].roomData.videoId;
     NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
     [self.playerPresenter changeVid:vid];
+    PLVPlaybackVideoInfoModel *videoInfo = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+    if ([videoInfo isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]] && [PLVFdUtil checkStringUseable:vid] && [videoInfo.vid isEqualToString:vid] && [PLVRoomDataManager sharedManager].roomData.noNetWorkOfflineIntroductionEnabled) {
+        // 本地回放视频信息
+        PLVPlaybackLocalVideoInfoModel *localPlaybackVideoInfo = (PLVPlaybackLocalVideoInfoModel *)videoInfo;
+        NSString *localHtmlPath = localPlaybackVideoInfo.localHtmlPath;
+        NSString *accessPath = localPlaybackVideoInfo.fileIdPath;
+        [self.pptView loadRequestWithLocalHtml:localHtmlPath allowingReadAccessToURL:accessPath];
+        [self.pptView pptSetOfflinePath:localPlaybackVideoInfo.pptPath];
+        if ([localPlaybackVideoInfo.listType isEqualToString:@"record"]) {
+            [self.pptView pptLocalStartWithVideoId:localPlaybackVideoInfo.fileId vid:localPlaybackVideoInfo.fileId];
+        }else {
+            [self.pptView pptLocalStartWithVideoId:localPlaybackVideoInfo.videoId vid:localPlaybackVideoInfo.videoPoolId];
+        }
+        return;
+    }
     [self.pptView pptStartWithVideoId:videoId channelId:channelId];
 }
 

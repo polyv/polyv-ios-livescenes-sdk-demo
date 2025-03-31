@@ -26,6 +26,7 @@
 @property (nonatomic, strong) UIButton *cameraReverseButton; // 翻转
 @property (nonatomic, strong) UIButton *mirrorButton; // 镜像
 @property (nonatomic, strong) UIButton *screenShareButton; // 屏幕共享
+@property (nonatomic, strong) UIButton *desktopChatButton; // 桌面消息
 @property (nonatomic, strong) UIButton *flashButton; // 闪光灯
 @property (nonatomic, strong) UIButton *cameraBitRateButton; // 摄像头清晰度
 @property (nonatomic, strong) UIButton *closeRoomButton; // 全体禁言
@@ -33,6 +34,7 @@
 @property (nonatomic, strong) UIButton *shareButton; // 分享
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
 @property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局
+@property (nonatomic, strong) UIButton *stickerButton; // 贴纸
 @property (nonatomic, strong) UIButton *allowRaiseHandButton; // 开启/关闭观众连麦
 @property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
 @property (nonatomic, strong) UIButton *removeAllAudiencesButton; // 观众下麦
@@ -42,6 +44,7 @@
 @property (nonatomic, strong) UIButton *giftRewardButton; // 礼物打赏
 @property (nonatomic, strong) UIButton *giftEffectsButton; // 礼物特效
 @property (nonatomic, strong) NSArray *interactiveButtonArray; // 互动
+
 @property (nonatomic, strong) UIScrollView *scrollView; // 按钮承载视图
 
 // 数据
@@ -195,6 +198,10 @@
     if ([PLVSAMoreInfoSheet canScreenShare]) {
         [buttonSuperView addSubview:self.screenShareButton];
         [muButtonArray addObject:self.screenShareButton];
+        if (@available(iOS 15.0, *)) {
+            [buttonSuperView addSubview:self.desktopChatButton];
+            [muButtonArray addObject:self.desktopChatButton];
+        }
     }
     
     // 闪光灯、清晰度
@@ -224,6 +231,10 @@
         [buttonSuperView addSubview:self.mixLayoutButton];
         [muButtonArray addObject:self.mixLayoutButton];
     }
+    
+    // 贴纸按钮
+    [buttonSuperView addSubview:self.stickerButton];
+    [muButtonArray addObject:self.stickerButton];
     
     self.buttonArray = [muButtonArray copy];
     
@@ -350,6 +361,20 @@
         _screenShareButton.enabled = NO;
     }
     return _screenShareButton;
+}
+
+- (UIButton *)desktopChatButton {
+    if (!_desktopChatButton) {
+        _desktopChatButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _desktopChatButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _desktopChatButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_desktopChatButton setTitle:PLVLocalizedString(@"桌面消息") forState:UIControlStateNormal];
+        [_desktopChatButton setTitle:PLVLocalizedString(@"桌面消息") forState:UIControlStateSelected];
+        [_desktopChatButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_desktopChat"] forState:UIControlStateNormal];
+        [_desktopChatButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_desktopChat"] forState:UIControlStateSelected];
+        [_desktopChatButton addTarget:self action:@selector(desktopChatButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _desktopChatButton;
 }
 
 - (UIButton *)flashButton {
@@ -542,6 +567,18 @@
     return _giftEffectsButton;
 }
 
+- (UIButton *)stickerButton {
+    if (!_stickerButton) {
+        _stickerButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _stickerButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _stickerButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_stickerButton setTitle:PLVLocalizedString(@"贴纸") forState:UIControlStateNormal];
+        [_stickerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sticker"] forState:UIControlStateNormal];
+        [_stickerButton addTarget:self action:@selector(stickerButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _stickerButton;
+}
+
 - (UIScrollView *)scrollView {
     if (!_scrollView) {
         _scrollView = [[UIScrollView alloc] init];
@@ -557,6 +594,13 @@
     _removeAllAudiencesEnable = removeAllAudiencesEnable;
     if (removeAllAudiencesEnable != self.removeAllAudiencesButton.enabled) {
         self.removeAllAudiencesButton.enabled = removeAllAudiencesEnable;
+    }
+}
+
+- (void)setStickerEnable:(BOOL)stickerEnable{
+    _stickerEnable = stickerEnable;
+    if (_stickerButton){
+        _stickerButton.enabled = stickerEnable;
     }
 }
 
@@ -845,6 +889,14 @@
     }
 }
 
+- (void)desktopChatButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapDesktopChatButton:)]) {
+        [self.delegate moreInfoSheetDidTapDesktopChatButton:self];
+    }
+}
+
 - (void)flashButtonAction {
     self.flashButton.selected = !self.flashButton.selected;
     [self changeFlashButtonSelectedState:self.flashButton.selected];
@@ -963,6 +1015,13 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeCloseRoom:)]) {
         [self.delegate moreInfoSheet:self didCloseGiftEffects:self.giftEffectsButton.selected];
+    }
+}
+
+- (void)stickerButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapStickerButton:)]) {
+        [self.delegate moreInfoSheetDidTapStickerButton:self];
     }
 }
 

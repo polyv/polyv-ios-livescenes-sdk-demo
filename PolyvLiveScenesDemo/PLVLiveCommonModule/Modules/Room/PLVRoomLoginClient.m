@@ -692,7 +692,7 @@
                     
                     // 将当前的roomData配置到PLVRoomDataManager进行管理
                     [[PLVRoomDataManager sharedManager] configRoomData:currentRoomData];
-                     
+                    !completion ?: completion(currentRoomData.customParam);
                 }
             };
             
@@ -700,12 +700,12 @@
                 if (channelMenuInfo.watchEventTrackEnabled) {
                     [[PLVWLogReporterManager sharedManager] enableTrackEventReport:YES];
                 }
-                requestDataBlock(blockCount +1, blockRoomData);
+                requestDataBlock(blockCount +=1, blockRoomData);
             }];
             
             [PLVLiveVideoAPI verifyVodPermissionWithChannelId:channelId.integerValue vid:vid userId:userId appId:appId completion:^(NSDictionary * _Nonnull data) {
                 [PLVLiveVideoConfig setPrivateDomainWithData:data];
-                requestDataBlock(blockCount +1, blockRoomData);
+                requestDataBlock(blockCount +=1, blockRoomData);
             } failure:^(NSError * _Nonnull error) {
                 !failure ?: failure(PLVLocalizedString(@"登录校验失败"));
                 PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s verify vod permission with【%@】(登录校验失败)", __FUNCTION__, error);

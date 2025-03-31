@@ -32,6 +32,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 屏幕共享 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeScreenShareOpen:(BOOL)screenShareOpen;
 
+/// 点击 桌面消息 按钮 触发回调
+- (void)moreInfoSheetDidTapDesktopChatButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 /// 点击 闪光灯 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didChangeFlashOpen:(BOOL)flashOpen;
 
@@ -61,6 +64,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 点击 签到按钮 触发回调
 - (void)moreInfoSheetDidTapSignInButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
+/// 点击 贴纸按钮 触发回调
+- (void)moreInfoSheetDidTapStickerButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
 /// 点击 礼物特效 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects;
@@ -101,6 +107,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 当前 观众下麦 是否可用
 @property (nonatomic, assign) BOOL removeAllAudiencesEnable;
+
+/// 当前 贴图功能是否可用
+/// 连麦场景，屏幕共享场景不可用
+@property (nonatomic, assign) BOOL stickerEnable;
 
 /// 开始上课/结束上课
 /// @param start YES - 开始上课 NO - 结束上课

@@ -62,6 +62,8 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, strong) UIButton *streamScaleButton;
 /// 混流布局
 @property (nonatomic, strong) UIButton *mixLayoutButton;
+/// 贴纸按钮
+@property (nonatomic, strong) UIButton *stickerButton;
 /// 降噪模式
 @property (nonatomic, strong) UIButton *noiseCancellationModeButton;
 /// 外接设备
@@ -199,6 +201,9 @@ PLVSAExternalDeviceSwitchSheetDelegate
         [self.buttonView addSubview:self.mixLayoutButton];
         [muButtonArray addObject:self.mixLayoutButton];
     }
+
+    [self.buttonView addSubview:self.stickerButton];
+    [muButtonArray addObject:self.stickerButton];
     
     if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
         [self.buttonView addSubview:self.playbackSettingButton];
@@ -570,6 +575,15 @@ PLVSAExternalDeviceSwitchSheetDelegate
     return _streamScaleButton;
 }
 
+- (UIButton *)stickerButton {
+    if (!_stickerButton) {
+        _stickerButton = [self buttonWithTitle:PLVLocalizedString(@"贴纸") NormalImageString:@"plvsa_liveroom_btn_sticker" selectedImageString:@"plvsa_liveroom_btn_sticker"];
+        [_stickerButton addTarget:self action:@selector(stickerButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _stickerButton.titleEdgeInsets = UIEdgeInsetsMake(_stickerButton.imageView.frame.size.height + 4, - 67, 0, -38);
+    }
+    return _stickerButton;
+}
+
 - (UIButton *)noiseCancellationModeButton {
     if (!_noiseCancellationModeButton) {
         _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"降噪") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
@@ -866,6 +880,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
     }];
 }
 
+- (void)stickerButtonAction:(UIButton *)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickStickerButton:)]) {
+        [self.delegate streamerSettingViewDidClickStickerButton:self];
+    }
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark <UITextViewDelegate>
@@ -921,7 +941,20 @@ PLVSAExternalDeviceSwitchSheetDelegate
         [NSStringFromClass([touch.view.superview class]) isEqualToString:@"UITableViewCellContentView"]) {
         return NO;
     }
-    return  YES;
+    return YES;
+}
+
+#pragma mark - Override UIView Methods
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    UIView *hitView = [super hitTest:point withEvent:event];
+    
+    // 如果点击的是当前视图本身(而不是子视图)，则不响应事件
+    if (hitView == self || [hitView isEqual:self.configView] || [hitView isEqual:self.buttonView]) {
+        return nil;
+    }
+    
+    return hitView;
 }
 
 #pragma mark <PLVSABitRateSheetDelegate>

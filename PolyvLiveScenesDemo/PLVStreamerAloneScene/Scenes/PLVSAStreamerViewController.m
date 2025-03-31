@@ -7,11 +7,13 @@
 //
 
 #import "PLVSAStreamerViewController.h"
+#import <UIKit/UIKit.h>
 
 // 工具类
 #import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVBroadcastNotificationsManager.h"
+#import "PLVSAScreenShareCustomPictureInPictureManager.h"
 
 // UI
 #import "PLVSALinkMicAreaView.h"
@@ -24,6 +26,8 @@
 #import "PLVBroadcastExtensionLauncher.h"
 #import "PLVSABeautySheet.h"
 #import "PLVShareLiveSheet.h"
+#import "PLVStickerCanvas.h"
+#import "PLVSAScreenSharePipCustomView.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -35,6 +39,8 @@
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <Photos/Photos.h>
+#import "PLVImagePickerViewController.h"
 
 static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
 static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
@@ -59,12 +65,18 @@ PLVMemberPresenterDelegate,
 PLVSAStreamerHomeViewDelegate,
 PLVSABeautySheetDelegate,
 UIGestureRecognizerDelegate,
-PLVShareLiveSheetDelegate
+PLVShareLiveSheetDelegate,
+PLVStickerCanvasDelegate,
+UINavigationControllerDelegate,
+PLVSAScreenShareCustomPictureInPictureManagerDelegate
 >
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVStreamerPresenter *streamerPresenter;
 @property (nonatomic, strong) PLVMemberPresenter *memberPresenter;
+@property (nonatomic, strong) UIView *screenShareCustomPipDisplayView;
+
+@property (nonatomic, strong) PLVSAScreenShareCustomPictureInPictureManager *screenShareCustomPIPManager API_AVAILABLE(ios(15.0));
 
 @property (nonatomic, copy) void (^tryStartClassBlock) (void); // 用于无法立刻’尝试开始上课‘，后续需自动’尝试开始‘上课的场景；执行优先级低于 [tryResumeClassBlock]
 @property (nonatomic, copy) void (^tryResumeClassBlock) (void); // 用于在合适的时机，进行’恢复直播‘处理；执行优先级高于 [tryStartClassBlock]
@@ -92,6 +104,7 @@ PLVShareLiveSheetDelegate
 ///    ├─ (PLVSAShadowMaskView) shadowMaskView
 ///    └─ (PLVSAStreamerHomeView) homeView
 ///          └── (PLVSALinkMicWindowsView) linkMicWindowsView
+///                 └── (PLVStickerCanvas) stickerCanvas
 ///
 /// 开播结束（viewState为PLVSAStreamerViewStateFinishSteam时）
 /// (UIView) self.view
@@ -107,6 +120,7 @@ PLVShareLiveSheetDelegate
 @property (nonatomic, strong) PLVSAStreamerFinishView *finishView; // 结束开播的结束页
 @property (nonatomic, strong) PLVSABeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
+@property (nonatomic, strong) PLVStickerCanvas *stickerCanvas; // 贴图组件
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
 @property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
 
@@ -120,6 +134,7 @@ PLVShareLiveSheetDelegate
 @property (nonatomic, assign) BOOL localUserScreenShareOpen; // 本地用户是否开启了屏幕共享
 @property (nonatomic, assign) BOOL otherUserFullScreen; // 非本地用户开启了全屏
 @property (nonatomic, assign, readonly) PLVBLinkMicStreamScale streamScale; // 当前直播流比例
+@property (nonatomic, assign) BOOL isInBackground; // 是否位于后台
 
 @end
 
@@ -167,6 +182,15 @@ PLVShareLiveSheetDelegate
     _countDownView.frame = self.view.bounds;
     _homeView.frame = self.view.bounds;
     _finishView.frame = self.view.bounds;
+    
+    if (_stickerCanvas){
+        CGRect newFrame = self.view.bounds;
+        if ( !CGRectEqualToRect(newFrame, _stickerCanvas.frame)){
+            // 横竖屏 清空水印
+            [self.streamerPresenter setStickerImage:nil];
+            _stickerCanvas.frame = newFrame;
+        }
+    }
 }
 
 #pragma mark - [ Override ]
@@ -199,6 +223,10 @@ PLVShareLiveSheetDelegate
 
 /// 登出操作
 - (void)logout {
+    if (@available(iOS 15.0, *)) {
+        self.screenShareCustomPIPManager = nil;
+        [[NSNotificationCenter defaultCenter] removeObserver:self];
+    }
     [self socketLogout];
     [PLVRoomLoginClient logout];
     [self.streamerPresenter enableBeautyProcess:NO]; // 关闭美颜管理器
@@ -325,6 +353,24 @@ PLVShareLiveSheetDelegate
     return NO;
 }
 
+- (void)updateScreenShareCustomManagerState {
+    if (@available(iOS 15.0, *)) {
+        if (self.localUserScreenShareOpen && [PLVRoomDataManager sharedManager].roomData.desktopChatEnabled) {
+            if (!self.screenShareCustomPIPManager) {
+                self.screenShareCustomPIPManager = [[PLVSAScreenShareCustomPictureInPictureManager alloc] initWithDisplaySuperview:self.screenShareCustomPipDisplayView];
+                self.screenShareCustomPIPManager.delegate = self;
+            }
+            [self.screenShareCustomPIPManager startPictureInPictureSource];
+            self.screenShareCustomPIPManager.autoEnterPictureInPicture = self.localUserScreenShareOpen && [PLVRoomDataManager sharedManager].roomData.desktopChatEnabled;
+        } else {
+            if (self.isInBackground) {
+                return;
+            }
+            self.screenShareCustomPIPManager = nil;
+        }
+    }
+}
+
 #pragma mark Getter & Setter
 
 - (PLVSALinkMicAreaView *)linkMicAreaView {
@@ -420,6 +466,10 @@ PLVShareLiveSheetDelegate
 #pragma mark Initialize
 
 - (void)setupUI {
+    if (@available(iOS 15.0, *)) {
+        self.screenShareCustomPipDisplayView = [[UIView alloc] initWithFrame:CGRectMake(0, 100, 400, 58)];
+        [self.view addSubview:self.screenShareCustomPipDisplayView];
+    }
     [self.view addSubview:self.linkMicAreaView];
     [self.view addSubview:self.shadowMaskView];
     [self.view addSubview:self.settingView];
@@ -484,6 +534,12 @@ PLVShareLiveSheetDelegate
     [self.settingView synchExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
     [self saveSelectedExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
     
+    // 屏幕共享初始化
+    if (@available(iOS 15.0, *)) {
+        self.screenShareCustomPIPManager = [[PLVSAScreenShareCustomPictureInPictureManager alloc] initWithDisplaySuperview:self.screenShareCustomPipDisplayView];
+        self.screenShareCustomPIPManager.delegate = self;
+    }
+    
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
 }
 
@@ -498,6 +554,10 @@ PLVShareLiveSheetDelegate
             }
         }
     }];
+    if (@available(iOS 15.0, *)) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleEnterForeground) name:UIApplicationDidBecomeActiveNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleEnterBackground) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    }
 }
 
 /// 设置直播间 流比例
@@ -544,14 +604,17 @@ PLVShareLiveSheetDelegate
     }
     
     if (self.viewState == PLVSAStreamerViewStateBeginSteam) {
+        // 直播准备
         [self.view addSubview:self.countDownView];
         [self.countDownView startCountDown];
     } else if (self.viewState == PLVSAStreamerViewStateSteaming) {
+        // 直播中
         [self setupHomeView];
         [self.view addSubview:self.homeView];
         // 更新连麦列表
         [self.linkMicAreaView reloadLinkMicUserWindows];
     } else if (self.viewState == PLVSAStreamerViewStateFinishSteam) {
+        // 直播结束
         [self.linkMicAreaView clear];
         [self.view addSubview:self.finishView];
     }
@@ -564,6 +627,10 @@ PLVShareLiveSheetDelegate
     [self.homeView updateUserList:[self.memberPresenter userList]
                         userCount:self.memberPresenter.userCount
                       onlineCount:[self.streamerPresenter.onlineUserArray count]];
+    // 添加贴图图层
+    if (self.stickerCanvas){
+        [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
+    }
 }
 
 #pragma mark Start Class
@@ -810,6 +877,34 @@ PLVShareLiveSheetDelegate
     }
 }
 
+#pragma mark 前后台
+
+- (void)handleEnterForeground {
+    if (self.isInBackground) {
+        self.isInBackground = NO;
+        if (@available(iOS 15.0, *)) {
+            BOOL pictureInPictureActive = self.screenShareCustomPIPManager && self.screenShareCustomPIPManager.pictureInPictureActive;
+            BOOL shouldStartPictureInPicture = self.localUserScreenShareOpen && [PLVRoomDataManager sharedManager].roomData.desktopChatEnabled;
+            if (self.screenShareCustomPIPManager && !self.screenShareCustomPIPManager.pictureInPictureActive && shouldStartPictureInPicture) { // 回到前台 如果小窗未启动 且屏幕共享+桌面消息开，需要关掉桌面消息，销毁小窗控制器 当重启桌面消息再重建小窗控制器
+                self.screenShareCustomPIPManager = nil;
+                [PLVRoomDataManager sharedManager].roomData.desktopChatEnabled = NO;
+                [self.homeView updateDesktopChatEnable:NO];
+            } else if (pictureInPictureActive && shouldStartPictureInPicture) {
+                [self.screenShareCustomPIPManager stopPictureInPicture];
+            } else if (pictureInPictureActive && !shouldStartPictureInPicture) { // 回到前台如果小窗启动，且屏幕共享关掉，需关闭小窗
+                self.screenShareCustomPIPManager = nil;
+            }
+            if (self.screenShareCustomPIPManager) {
+                self.screenShareCustomPIPManager.autoEnterPictureInPicture = self.localUserScreenShareOpen && [PLVRoomDataManager sharedManager].roomData.desktopChatEnabled;
+            }
+        }
+    }
+}
+
+- (void)handleEnterBackground {
+    self.isInBackground = YES;
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark PLVMemberPresenterDelegate
@@ -988,6 +1083,10 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
     [self.linkMicAreaView reloadLinkMicUserWindows];
     [self.memberPresenter refreshUserListWithLinkMicOnlineUserArray:onlineUserArray];
     [self.homeView updateHomeViewOnlineUserCount:onlineUserArray.count];
+    
+    // 连麦状态中，隐藏贴图组件
+    BOOL isInLinkMic = (onlineUserArray.count > 1);
+    self.stickerCanvas.hidden = isInLinkMic;
 }
 
 /// ‘主讲权限’ 发生变化
@@ -1131,6 +1230,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         [PLVSAUtils showToastWithMessage:message inView:self.view];
     }
     [self.homeView changeScreenShareButtonSelectedState:currentScreenShareOpen];
+    [self updateScreenShareCustomManagerState];
+    
+    // 屏幕共享开启、关闭 对应隐藏贴图视图
+    self.stickerCanvas.hidden = currentScreenShareOpen;
 }
 
 /// 远程用户的  ’屏幕共享开关状态‘  发生变化
@@ -1360,6 +1463,75 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
 }
 
+- (void)streamerSettingViewDidClickStickerButton:(PLVSAStreamerSettingView *)streamerSettingView {
+    if (self.streamerPresenter.currentCameraOpen) {
+        // 检查相册权限
+        PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
+        if (status == PHAuthorizationStatusNotDetermined) {
+            [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+                if (status == PHAuthorizationStatusAuthorized) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self showImagePicker];
+                    });
+                }
+            }];
+        } else if (status == PHAuthorizationStatusAuthorized) {
+            [self showImagePicker];
+        } else {
+            // 无权限时提示用户
+            [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"相册权限申请")
+                                 Message:PLVLocalizedString(@"请前往“设置-隐私”开启权限")
+                       cancelActionTitle:PLVLocalizedString(@"取消")
+                       cancelActionBlock:nil
+                      confirmActionTitle:PLVLocalizedString(@"设置")
+                      confirmActionBlock:^{
+                NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                    [[UIApplication sharedApplication] openURL:url];
+                }
+            }];
+        }
+    } else {
+        [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"请开启摄像头后使用") inView:self.view];
+    }
+}
+
+// 显示图片选择器
+- (void)showImagePicker {
+    PLVImagePickerViewController *imagePickerVC = [[PLVImagePickerViewController alloc] initWithColumnNumber:4];
+    imagePickerVC.allowPickingOriginalPhoto = YES;
+    imagePickerVC.allowPickingVideo = NO;
+    imagePickerVC.allowTakePicture = NO;
+    imagePickerVC.allowTakeVideo = NO;
+    imagePickerVC.maxImagesCount = 10;
+    __weak typeof(self) weakSelf = self;
+    
+    if (self.stickerCanvas.curImageCount > 0){
+        imagePickerVC.maxImagesCount = 10 - self.stickerCanvas.curImageCount ;
+    }
+    [imagePickerVC setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
+        //实现图片选择回调
+        if (photos.count > 0) {
+            // 不使用懒加载初始化
+            if (!weakSelf.stickerCanvas){
+                
+                weakSelf.stickerCanvas = [[PLVStickerCanvas alloc] init];
+                weakSelf.stickerCanvas.delegate = self;
+            }
+            [self.view insertSubview:weakSelf.stickerCanvas aboveSubview:self.settingView];
+            weakSelf.stickerCanvas.frame = self.view.bounds;
+            [weakSelf.stickerCanvas layoutIfNeeded];
+            
+            [weakSelf.stickerCanvas showCanvasWithImages:photos];
+        }
+    }];
+     
+    [imagePickerVC setImagePickerControllerDidCancelHandle:^{
+        //实现图片选择取消回调
+    }];
+    [self presentViewController:imagePickerVC animated:YES completion:nil];
+}
+
 #pragma mark PLVSAStreamerHomeViewProtocol
 
 - (void)bandUsersInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUserId:(NSString *)userId banned:(BOOL)banned {
@@ -1420,6 +1592,12 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (@available(iOS 11.0, *)) {
         if (screenShareOpen) {
             [self.homeView changeScreenShareButtonSelectedState:NO];
+            if (@available(iOS 15.0, *)) { // 提前启动避免秒切后台无法启动浮窗
+                if (!self.screenShareCustomPIPManager) {
+                    self.screenShareCustomPIPManager = [[PLVSAScreenShareCustomPictureInPictureManager alloc] initWithDisplaySuperview:self.screenShareCustomPipDisplayView];
+                    self.screenShareCustomPIPManager.delegate = self;
+                }
+            }
             if (@available(iOS 12.0, *)) {
                 [[PLVBroadcastExtensionLauncher sharedInstance] launch];
             } else {
@@ -1585,6 +1763,16 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }];
 }
 
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeDesktopChatEnable:(BOOL)desktopChatEnable {
+    [PLVRoomDataManager sharedManager].roomData.desktopChatEnabled = desktopChatEnable;
+    [self updateScreenShareCustomManagerState];
+}
+
+/// 贴图按钮点击
+- (void)streamerHomeViewDidTapStickerButton:(PLVSAStreamerHomeView *)homeView{
+    [self showImagePicker];
+}
+
 #pragma mark PLVSABeautySheetDelegate
 - (void)beautySheet:(PLVSABeautySheet *)beautySheet didChangeOn:(BOOL)on {
     [self.streamerPresenter enableBeautyProcess:on];
@@ -1620,4 +1808,52 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [PLVSAUtils showToastWithMessage:message inView:self.view];
 }
 
+#pragma mark -- PLVStickerCanvasDelegate
+- (void)stickerCanvasExitEditMode:(PLVStickerCanvas *)stickerCanvas{
+    // 退出贴图编辑模式
+    self.stickerCanvas.enableEdit = NO;
+
+    UIImage *image = [self.stickerCanvas generateImageWithTransparentBackground];
+    // 将图片传递给Streampresent 管理
+    [self.streamerPresenter setStickerImage:image];
+    
+    if (_viewState == PLVSAStreamerViewStateBeforeSteam){
+        [self.view insertSubview:self.stickerCanvas belowSubview:self.settingView];
+    }
+    else if (_viewState == PLVSAStreamerViewStateBeginSteam){
+        
+    }
+    else if (_viewState == PLVSAStreamerViewStateSteaming){
+        // 直播中
+        [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
+    }
+    else if (_viewState == PLVSAStreamerViewStateFinishSteam){
+        
+    }
+}
+
+- (void)stickerCanvasEnterEditMode:(PLVStickerCanvas *)stickerCanvas{
+    // 进入贴图编辑模式
+    self.stickerCanvas.enableEdit = YES;
+    if (_viewState == PLVSAStreamerViewStateBeforeSteam){
+        [self.view insertSubview:self.stickerCanvas aboveSubview:self.settingView];
+    }
+    else if (_viewState == PLVSAStreamerViewStateBeginSteam){
+        
+    }
+    else if (_viewState == PLVSAStreamerViewStateSteaming){
+        [self.homeView addStickerCanvasView:self.stickerCanvas editMode:YES];
+    }
+    else if (_viewState == PLVSAStreamerViewStateFinishSteam){
+        
+    }
+}
+
+#pragma mark PLVSAScreenShareCustomPictureInPictureManagerDelegate
+
+- (void)PLVSAScreenShareCustomPictureInPictureManager_needUpdateContent {
+    [self.screenShareCustomPIPManager updateContent:self.homeView.currentNewMessage networkState:self.streamerPresenter.networkQuality];
+}
+
 @end
+

@@ -24,6 +24,11 @@
 #import "PLVRoomDataManager.h"
 #import "PLVChatModel.h"
 
+typedef NS_ENUM(NSInteger, PLVSAMessageType) {
+    PLVSAMessageTypeChat = 0,    // 用户发言
+    PLVSAMessageTypeJoin         // 用户进入
+};
+
 @interface PLVSAChatroomAreaView ()<
 PLVSAChatroomViewModelDelegate,
 PLVSAChatroomListViewDelegate
@@ -52,6 +57,9 @@ PLVSAChatroomListViewDelegate
 /// 数据
 @property (nonatomic, assign) NSUInteger newMessageCount; // 未读消息条数
 @property (nonatomic, assign) CGRect originWelcomViewFrame; // 新用户进入欢迎视图原frame
+@property (nonatomic, strong) NSTimer *messageTimer;
+@property (nonatomic, strong) NSDictionary *currentShowingMessage;
+@property (nonatomic, strong) NSDictionary *nextShowMessage;
 
 @end
 
@@ -76,8 +84,13 @@ PLVSAChatroomListViewDelegate
         
         // 提前初始化 sendMsgView，避免弹出时才初始化导致卡顿
         [self sendMsgView];
+        [self startMessageTimer];
     }
     return self;
+}
+
+- (void)dealloc {
+    [self stopMessageTimer];
 }
 
 #pragma mark - [ Override ]
@@ -265,6 +278,20 @@ PLVSAChatroomListViewDelegate
         // 统计未读消息数
         [self addNewMessageCount];
     }
+    
+    // 获取最新消息
+    if ([PLVFdUtil checkArrayUseable:viewModel.chatArray]) {
+        PLVChatModel *lastModel = viewModel.chatArray.lastObject;
+        if (lastModel && [lastModel isKindOfClass:[PLVChatModel class]] && lastModel.content) {
+            NSDictionary *attributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Regular" size:12]};
+            NSMutableAttributedString *chatAttr = [[NSMutableAttributedString alloc] initWithString:[NSString stringWithFormat:@"%@: ", lastModel.user.userName] attributes:attributes];
+            NSDictionary *contentAttributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FFFFFF"], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Regular" size:12]};
+            NSAttributedString *contentAttr = [[NSAttributedString alloc] initWithString:lastModel.content attributes:contentAttributes];
+            [chatAttr appendAttributedString:contentAttr];
+            [self addMessage:chatAttr type:PLVSAMessageTypeChat];
+        }
+    }
+    
     if ([PLVSAChatroomViewModel sharedViewModel].chatArray.count > 10) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomAreaView_showSlideRightView)]) {
             [self.delegate chatroomAreaView_showSlideRightView];
@@ -317,6 +344,12 @@ PLVSAChatroomListViewDelegate
     if (string.length > 0) {
         NSString *welcomeMessage = [NSString stringWithFormat:PLVLocalizedString(@"欢迎 %@ 进入直播间"), string];
         [self showWelcomeWithMessage:welcomeMessage];
+        NSDictionary *attributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Regular" size:12]};
+        NSMutableAttributedString *welcomeAttr = [[NSMutableAttributedString alloc] initWithString:string attributes:attributes];
+        NSDictionary *contentAttributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FFFFFF"], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Regular" size:12]};
+        NSAttributedString *contentAttr = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@" 进入直播间") attributes:contentAttributes];
+        [welcomeAttr appendAttributedString:contentAttr];
+        [self addMessage:welcomeAttr type:PLVSAMessageTypeJoin];
     }
 }
 
@@ -365,6 +398,73 @@ PLVSAChatroomListViewDelegate
             [PLVSAUtils showToastInHomeVCWithMessage:message];
         }
     }
+}
+
+#pragma mark Message Queue Management
+
+- (void)startMessageTimer {
+    [self stopMessageTimer];
+    self.messageTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(checkMessageQueue) userInfo:nil repeats:YES];
+}
+
+- (void)stopMessageTimer {
+    [self.messageTimer invalidate];
+    self.messageTimer = nil;
+}
+
+- (void)checkMessageQueue {
+    if (!self.currentShowingMessage && self.nextShowMessage) {
+        [self showNextMessage];
+        return;
+    }
+    
+    if (self.currentShowingMessage) {
+        NSTimeInterval currentTime = [[NSDate date] timeIntervalSince1970];
+        NSTimeInterval showTime = [self.currentShowingMessage[@"showTime"] doubleValue];
+        NSTimeInterval duration = [self.currentShowingMessage[@"duration"] doubleValue];
+        
+        if (currentTime - showTime >= duration) {
+            if (self.nextShowMessage) {
+                [self showNextMessage];
+            }
+        }
+    }
+}
+
+- (void)showNextMessage {
+    if (self.nextShowMessage) {
+        self.currentShowingMessage = self.nextShowMessage;
+        self.nextShowMessage = nil;
+    }
+}
+
+
+- (void)addMessage:(NSAttributedString *)content type:(PLVSAMessageType)type {
+    if (!content || content.length == 0) {
+        return;
+    }
+    
+    NSTimeInterval duration = (type == PLVSAMessageTypeChat) ? 2.0 : 1.0;
+    NSDictionary *message = @{
+        @"content": content,
+        @"type": @(type),
+        @"showTime": @([[NSDate date] timeIntervalSince1970]),
+        @"duration": @(duration)
+    };
+    
+    self.nextShowMessage = message;
+    
+    if (!self.currentShowingMessage) {
+        [self showNextMessage];
+    }
+}
+
+#pragma mark - Override Methods
+
+- (NSAttributedString *)currentNewMessage {
+    NSString *string = PLVLocalizedString(@"暂无聊天消息");
+    NSDictionary *attributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Regular" size:12]};
+    return self.currentShowingMessage ? self.currentShowingMessage[@"content"] : [[NSAttributedString alloc] initWithString:string attributes:attributes];
 }
 
 @end

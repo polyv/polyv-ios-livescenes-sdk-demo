@@ -289,6 +289,10 @@ PLVChannelClassManagerDelegate
     }
 }
 
+- (void)setStickerImage:(UIImage *)stickerImage{
+    [self.rtcStreamerManager setStickerImage:stickerImage];
+}
+
 #pragma mark CDN流管理
 - (int)startPushStream{
     if (self.micCameraGranted) {

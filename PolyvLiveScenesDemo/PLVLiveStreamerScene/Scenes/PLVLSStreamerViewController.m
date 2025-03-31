@@ -324,6 +324,10 @@ PLVLSLinkMicSettingSheetDelegate
     return UIInterfaceOrientationLandscapeRight;
 }
 
+- (UIRectEdge)preferredScreenEdgesDeferringSystemGestures {
+    return UIRectEdgeTop;
+}
+
 #pragma mark - Getter
 
 - (PLVLSChannelInfoSheet *)channelInfoSheet {

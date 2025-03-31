@@ -15,6 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVSAStreamerHomeView, PLVLinkMicOnlineUser, PLVLinkMicOnlineUser, PLVSALinkMicWindowsView, PLVRTCStatistics;
+@class PLVStickerCanvas;
 
 @protocol PLVSAStreamerHomeViewDelegate <NSObject>
 
@@ -98,6 +99,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 点击 观众下麦 按钮触发回调
 - (void)streamerHomeViewDidTapRemoveAllAudiencesButton:(PLVSAStreamerHomeView *)homeView;
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeDesktopChatEnable:(BOOL)desktopChatEnable;
+
+/// 贴图按钮点击
+- (void)streamerHomeViewDidTapStickerButton:(PLVSAStreamerHomeView *)homeView;
 
 @end
 
@@ -185,6 +191,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param show 是否显示 评论上墙视图
 /// @param message 消息详情模型
 - (void)showPinMessagePopupView:(BOOL)show message:(PLVSpeakTopMessage *)message;
+
+/// 获取当前最新消息
+- (NSAttributedString *)currentNewMessage;
+
+/// 更新桌面聊天是否开启
+- (void)updateDesktopChatEnable:(BOOL)enable;
+
+/// 添加贴图视图
+/// @param stickerView  贴图组件
+/// @param editMode 是否编辑模式加入 会影响到图层布局
+- (void)addStickerCanvasView:(PLVStickerCanvas *)stickerView editMode:(BOOL)editMode;
 
 @end
 

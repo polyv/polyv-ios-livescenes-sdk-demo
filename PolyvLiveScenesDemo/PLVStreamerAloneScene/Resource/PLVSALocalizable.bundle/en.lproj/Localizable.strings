@@ -68,6 +68,22 @@
 
 "屏幕共享需讲师授权" = "Screen sharing requires teacher authorization";
 
+"桌面消息" = "Desktop message";
+
+"系统设置引导" = "System settings guidance";
+
+"1. 在设置中找到'通用'" = "1. Find 'General' in the settings";
+
+"2. 选择'画中画'功能" = "2. Select the 'Picture in Picture' function";
+
+"3. 允许'自动开启画中画'" = "3. Allow 'automatic activation of picture in picture'";
+
+"仅限屏幕共享期间有效，需开启系统「自动开启画中画」权限" = "Valid only during screen sharing period, system 'auto enable picture in picture' permission must be enabled";
+
+"查看引导" = "View guidance";
+
+"暂无聊天消息" = "No chat messages at the moment";
+
 "已切换为%@" = "Switched to %@";
 
 "已开启%@连麦，观众可以申请连麦" = "%@ calling has been enabled. Viewers can request to call in";
