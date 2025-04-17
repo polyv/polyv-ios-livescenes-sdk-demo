@@ -30,6 +30,7 @@
 @property (nonatomic, strong) UIView * lotteryWidgetView;
 @property (nonatomic, strong) UIButton *rewardButton;
 @property (nonatomic, strong) UIButton *commodityButton;
+@property (nonatomic, strong) UIButton *linkMicFullscreenButton;
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
 
 @end
@@ -319,6 +320,7 @@
         originX += CGRectGetWidth(self.refreshButton.frame) + 5;
     }
     self.floatViewShowButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
+    self.linkMicFullscreenButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);;
 }
 
 - (void)refreshDanmuButtonFrame {
@@ -332,6 +334,9 @@
     }
     if (!self.floatViewShowButton.hidden && self.floatViewShowButton.superview) {
         originX += CGRectGetWidth(self.floatViewShowButton.frame) + 5;
+    }
+    if (!self.linkMicFullscreenButton.hidden && self.linkMicFullscreenButton.superview) {
+        originX += CGRectGetWidth(self.linkMicFullscreenButton.frame) + 5;
     }
     self.danmuButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
     originX += CGRectGetWidth(self.danmuButton.frame) + 5;
@@ -545,6 +550,19 @@
     return _landscapeInputView;
 }
 
+- (UIButton *)linkMicFullscreenButton {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (!_linkMicFullscreenButton && roomData.channelType == PLVChannelTypeAlone && roomData.videoType == PLVChannelVideoType_Live) {
+        _linkMicFullscreenButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_linkMicFullscreenButton setImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_skin_floatview_open_new"] forState:UIControlStateNormal];
+        [_linkMicFullscreenButton setImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_skin_floatview_close_new"] forState:UIControlStateSelected];
+        _linkMicFullscreenButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_linkMicFullscreenButton addTarget:self action:@selector(linkMicFullscreenButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _linkMicFullscreenButton.hidden = YES;
+    }
+    return _linkMicFullscreenButton;
+}
+
 #pragma mark Private Setter
 
 - (void)setDanmuButtonShow:(BOOL)danmuButtonShow {
@@ -566,6 +584,7 @@
     [self addSubview:self.cardPushBackgroudView];
     [self addSubview:self.lotteryWidgetView];
     [self addSubview:self.commodityButton];
+    [self addSubview:self.linkMicFullscreenButton];
     [self addSubview:self.landscapeInputView];
 
     // 注意：懒加载过程中已增加判断，若场景不匹配，将创建失败并返回nil
@@ -578,6 +597,15 @@
 
 - (void)switchSkinViewLiveStatusTo:(PLVLCBasePlayerSkinViewLiveStatus)skinViewLiveStatus{
     [super switchSkinViewLiveStatusTo:skinViewLiveStatus];
+    
+    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 直播场景
+        if (skinViewLiveStatus < PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC) {
+            self.linkMicFullscreenButton.hidden = YES;
+        } else {
+            self.linkMicFullscreenButton.hidden = NO;
+            self.linkMicFullscreenButton.selected = NO;
+        }
+    }
     
     if (_skinViewLiveStatus == skinViewLiveStatus) { return; }
 
@@ -709,6 +737,13 @@
 - (void)commodityButtonAction:(UIButton *)sender {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:)]) {
         [self.delegate plvLCLiveRoomPlayerSkinViewCommodityButtonClicked:self];
+    }
+}
+
+- (void)linkMicFullscreenButtonAction:(UIButton *)sender {
+    self.linkMicFullscreenButton.selected = !self.linkMicFullscreenButton.selected;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinViewLinkMicFullscreenButtonClicked:userWannaLinkMicAreaViewShow:)]) {
+        [self.delegate plvLCLiveRoomPlayerSkinViewLinkMicFullscreenButtonClicked:self userWannaLinkMicAreaViewShow:!self.linkMicFullscreenButton.selected];
     }
 }
 

@@ -49,7 +49,7 @@
         [item removeFromSuperview];
     }
     
-    CGFloat width = (CGRectGetWidth(self.bounds) - 30) / (items.count>5 ? 5 : items.count);
+    CGFloat width = (CGRectGetWidth(self.bounds) - 30) / (items.count > 0 ? items.count : 1);
     for (int i = 0; i < items.count; i++) {
         UIButton *itemBtn = [UIButton buttonWithType:UIButtonTypeCustom];
         itemBtn.frame = CGRectMake(15 + (width-66)/2 + width*i, 68, 66, 26);

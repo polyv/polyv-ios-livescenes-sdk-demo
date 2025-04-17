@@ -48,6 +48,8 @@ extern NSString *PLVLCChatroomOpenRewardViewNotification;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
+@property (nonatomic, assign) BOOL enableReward;
+
 /// 点赞悬浮按钮（含点赞数、点赞动画）自定义视图
 @property (nonatomic, strong) PLVLCLikeButtonView *likeButtonView;
 

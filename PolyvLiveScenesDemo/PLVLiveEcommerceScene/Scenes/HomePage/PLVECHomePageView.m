@@ -1254,6 +1254,9 @@ PLVECLotteryWidgetViewDelegate
     } else if (self.switchViewType == PLVECSwitchViewType_CodeRate) {
         return self.codeRateItems;
     } else if (self.switchViewType == PLVECSwitchViewType_Speed) {
+        if (@available(iOS 15.0, *)) { // iOS15以上支持3倍速
+            return @[@"0.5x", @"1.0x", @"1.25x", @"1.5x", @"2.0x" ,@"3.0x"];
+        }
         return @[@"0.5x", @"1.0x", @"1.25x", @"1.5x", @"2.0x"];
     } else if (self.switchViewType == PLVECSwitchViewType_DelayMode) {
         return @[PLVLocalizedString(@"无延迟"), PLVLocalizedString(@"正常延迟")];
@@ -1278,7 +1281,11 @@ PLVECLotteryWidgetViewDelegate
     } else if (self.switchViewType == PLVECSwitchViewType_Speed) {
         self.curSpeedIndex = selectedIndex;
         CGFloat speed = [[selectedItem substringToIndex:selectedItem.length] floatValue];
-        speed = MIN(2.0, MAX(0.5, speed));
+        if (@available(iOS 15.0, *)) {
+            speed = MIN(3.0, MAX(0.5, speed));
+        } else {
+            speed = MIN(2.0, MAX(0.5, speed));
+        }
         if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:switchSpeed:)]) {
             [self.delegate homePageView:self switchSpeed:speed];
         }

@@ -635,6 +635,10 @@ PLVLCDocumentPaintModeViewDelegate
         
         PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x"] selectedIndex:1];
         speedModel.optionSpecifiedWidth = 40.0;
+        if (@available(iOS 15.0, *)) { // iOS15以上支持
+            speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x",@"3.0x"] selectedIndex:1];
+            speedModel.optionSpecifiedWidth = 35.0;
+        }
         
         NSMutableArray * modelArray = [[NSMutableArray alloc] init];
         if (downloadModel) { [modelArray addObject:downloadModel]; }
@@ -1137,6 +1141,13 @@ PLVLCDocumentPaintModeViewDelegate
                 [weakSelf.delegate plvLCMediaAreaViewWannaBack:weakSelf];
             }
         }];
+    }
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (currentFullScreen && self.inRTCRoom && roomData.channelType == PLVChannelTypeAlone && roomData.videoType == PLVChannelVideoType_Live) {
+        if ([self.delegate respondsToSelector:@selector(plvLCMediaAreaView:userWannaLinkMicAreaViewShow:onSkinView:)]) {
+            [self.delegate plvLCMediaAreaView:self userWannaLinkMicAreaViewShow:YES onSkinView:self.skinView];
+        }
     }
 }
 

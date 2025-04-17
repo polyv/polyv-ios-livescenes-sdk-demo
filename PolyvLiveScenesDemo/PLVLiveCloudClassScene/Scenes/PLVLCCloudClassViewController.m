@@ -432,7 +432,7 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self.liveRoomSkinView setTitleLabelWithText:roomData.menuInfo.name];
     [self.liveRoomSkinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
     self.liveRoomSkinView.guideChatLabel.hidden = !self.menuAreaView.chatVctrl;
-    self.liveRoomSkinView.rewardButton.hidden = !self.menuAreaView.chatVctrl;
+    self.liveRoomSkinView.rewardButton.hidden = !self.menuAreaView.chatVctrl || !self.menuAreaView.chatVctrl.enableReward;
     [self.liveRoomSkinView showCommodityButton:self.menuAreaView.showCommodityMenu];
 }
 
@@ -1185,6 +1185,10 @@ PLVLCLandscapeMessagePopupViewDelegate
     } else {
         self.chatLandscapeView.hidden = YES;
     }
+    
+    /// 弹窗提醒
+    NSString *tip = showDanmu ? PLVLocalizedString(@"已开启弹幕") : PLVLocalizedString(@"已关闭弹幕");
+    [PLVToast showToastWithMessage:tip inView:self.view afterDelay:3.0];
 }
 
 - (void)plvLCLiveRoomPlayerSkinViewDanmuSettingButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView {
@@ -1208,6 +1212,17 @@ PLVLCLandscapeMessagePopupViewDelegate
     [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:YES];
     // 加载商品库视图
     [self.menuAreaView displayProductPageToExternalView:self.view];
+}
+
+- (void)plvLCLiveRoomPlayerSkinViewLinkMicFullscreenButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaLinkMicAreaViewShow:(BOOL)show {
+    /// 告知 连麦区域视图
+    [self.linkMicAreaView showAreaView:show];
+    
+    /// 更新布局
+    [self updateUI];
+    
+    /// 弹窗提醒
+    [PLVToast showToastWithMessage:PLVLocalizedString(@"已调整布局") inView:self.view afterDelay:3.0];
 }
 
 #pragma mark PLVLCLinkMicAreaViewDelegate

@@ -103,11 +103,15 @@ PLVPlayerPresenterDelegate
     CGSize boundsSize = self.view.bounds.size;
     CGSize playerBgSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    if (boundsSize.width > boundsSize.height) {
+    BOOL hasWarmUpImage = self.roomData.channelInfo.warmUpType == PLVChannelWarmUpType_Image || (self.roomData.channelInfo.warmUpType == PLVChannelWarmUpType_None && [PLVFdUtil checkStringUseable:self.roomData.menuInfo.coverImageFinal]);
+    if (hasWarmUpImage) {
+        self.playerBackgroundView.frame = self.view.bounds;
+    } else if (boundsSize.width > boundsSize.height) {
         self.playerBackgroundView.frame = CGRectMake(0, (boundsSize.height - playerBgSize.height) / 2.0, playerBgSize.width, playerBgSize.height);
     } else {
         self.playerBackgroundView.frame = CGRectMake(0, boundsSize.height * 0.166, playerBgSize.width, playerBgSize.height);
     }
+
     
     // 设置音频模式背景图位置、尺寸
     self.audioAnimalView.frame = self.playerBackgroundView.frame;
@@ -146,7 +150,8 @@ PLVPlayerPresenterDelegate
 - (CGRect)getDisplayViewRect {
     CGSize containerSize = self.view.bounds.size;
     if (self.videoSize.width == 0 || self.videoSize.height == 0 ||
-        containerSize.width == 0 || containerSize.height == 0) {
+        containerSize.width == 0 || containerSize.height == 0
+        || (self.playerPresenter.currentVideoType == PLVChannelVideoType_Live && self.playerPresenter.currentStreamState == PLVChannelLiveStreamState_End)) {
         return CGRectZero;
     }
     
@@ -304,7 +309,22 @@ PLVPlayerPresenterDelegate
 
 - (UIImageView *)backgroundView {
     if (!_backgroundView) {
+        NSString *portraitChatBgImg = [PLVRoomDataManager sharedManager].roomData.menuInfo.portraitChatBgImg;
         _backgroundView = [[UIImageView alloc] init];
+        _backgroundView.contentMode = UIViewContentModeScaleAspectFill;
+        if ([PLVFdUtil checkStringUseable:portraitChatBgImg]) {
+            if ([portraitChatBgImg hasPrefix:@"//"]) {
+                portraitChatBgImg = [@"https:" stringByAppendingString:portraitChatBgImg];
+            }
+            
+            int opacity = [PLVRoomDataManager sharedManager].roomData.menuInfo.portraitChatBgImgOpacity.intValue;
+            if (opacity> 0 && opacity <= 50) {
+                NSString *opacityString = [NSString stringWithFormat:@"?x-oss-process=image/blur,r_%d,s_%d", opacity, opacity];
+                portraitChatBgImg = [portraitChatBgImg stringByAppendingString:opacityString];
+            }
+            
+            [_backgroundView sd_setImageWithURL:[NSURL URLWithString:portraitChatBgImg]];
+        }
     }
     return _backgroundView;
 }
@@ -320,7 +340,7 @@ PLVPlayerPresenterDelegate
 - (UIView *)contentBackgroudView{
     if (!_contentBackgroudView) {
         _contentBackgroudView = [[UIView alloc]init];
-        _contentBackgroudView.backgroundColor = [UIColor blackColor];
+        _contentBackgroudView.backgroundColor = [UIColor clearColor];
     }
     return _contentBackgroudView;
 }
@@ -665,7 +685,7 @@ PLVPlayerPresenterDelegate
     if (newestStreamState == PLVChannelLiveStreamState_End &&
          channelInfo.warmUpType == PLVChannelWarmUpType_None) {
         self.contentBackgroudView.hidden = YES;
-        self.displayRect = self.backgroundView.frame;
+        self.displayRect = self.playerBackgroundView.frame;
         self.contentBackgroudView.frame = self.displayRect;
         self.pictureInPicturePlaceholderView.frame = self.displayRect;
         [self.marqueeView stop];
@@ -682,6 +702,20 @@ PLVPlayerPresenterDelegate
         [self.watermarkView removeFromSuperview];
         self.fullScreenEnable = NO;
         [self fullScreenButtonShowInView:NO];
+    }
+    
+    if (newestStreamState == PLVChannelLiveStreamState_End && (channelInfo.warmUpType == PLVChannelWarmUpType_Image || (channelInfo.warmUpType == PLVChannelWarmUpType_None && [PLVFdUtil checkStringUseable:self.roomData.menuInfo.coverImageFinal]))) {
+        if (self.contentBackgroudView.hidden) {
+            self.contentBackgroudView.hidden = NO;
+        }
+        self.playerBackgroundView.hidden = YES;
+        self.displayRect = self.playerBackgroundView.frame;
+        self.contentBackgroudView.frame = self.displayRect;
+        self.pictureInPicturePlaceholderView.frame = self.displayRect;
+    } else if (newestStreamState == PLVChannelLiveStreamState_End) {
+        self.playerBackgroundView.hidden = NO;
+    } else if (newestStreamState == PLVChannelLiveStreamState_Live) {
+        self.playerBackgroundView.hidden = YES;
     }
 }
 
