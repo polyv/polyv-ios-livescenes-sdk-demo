@@ -379,6 +379,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param stickerImage 贴纸图片资源
 - (void)setStickerImage:(nullable UIImage *)stickerImage;
 
+/// 设置抠像模式  背景图资源
+/// @param mode 抠像模式
+/// @param matBgImage 抠像后填充背景
+- (void)setAIMattingMode:(PLVBLinkMicAIMattingMode)mode image:(nullable UIImage *)matBgImage;
+
 #pragma mark CDN流管理
 /// 开始推流
 ///

@@ -30,6 +30,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSTimer *loginTimer;
 /// 暂未上报的登录用户数组
 @property (nonatomic, strong) NSMutableArray <PLVChatUser *> *loginUserArray;
+/// 暂未上报的登出用户数组
+@property (nonatomic, strong) NSMutableArray <NSString *> *logoutUserArray;
 /// 当前时间段内是否发生当前用户的登录事件
 @property (nonatomic, assign) BOOL isMyselfLogin;
 
@@ -49,6 +51,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     /// 操作数组的信号量，防止多线程读写数组
     dispatch_semaphore_t _chatArrayLock;
     dispatch_semaphore_t _loginArrayLock;
+    dispatch_semaphore_t _logoutArrayLock;
     
     /// PLVSocketManager回调的执行队列
     dispatch_queue_t socketDelegateQueue;
@@ -79,6 +82,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     // 初始化信号量
     _chatArrayLock = dispatch_semaphore_create(1);
     _loginArrayLock = dispatch_semaphore_create(1);
+    _logoutArrayLock = dispatch_semaphore_create(1);
     
     // 初始化消息数组，预设初始容量
     self.chatArray = [[NSMutableArray alloc] initWithCapacity:500];
@@ -99,6 +103,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                                                      userInfo:nil
                                                       repeats:YES];
     self.loginUserArray = [[NSMutableArray alloc] initWithCapacity:10];
+    self.logoutUserArray = [[NSMutableArray alloc] initWithCapacity:10];
     
     // 初始化公聊数据管理计时器
     self.publicChatManagerTimer = [NSTimer scheduledTimerWithTimeInterval:6
@@ -651,6 +656,20 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+/// 有用户登出
+- (void)logoutEvent:(NSDictionary *)data {
+    if (!self.loginTimer || !self.loginTimer.valid) {// 如果没有上报任务则无需统计登录数据
+        return;
+    }
+    
+    NSString *nick = PLV_SafeStringForDictKey(data, @"nick");
+    if ([PLVFdUtil checkStringUseable:nick]) {
+        dispatch_semaphore_wait(_logoutArrayLock, DISPATCH_TIME_FOREVER);
+        [self.logoutUserArray addObject:nick];
+        dispatch_semaphore_signal(_logoutArrayLock);
+    }
+}
+
 - (void)loginTimerAction {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel:loginUsers:)]) {
         if (self.isMyselfLogin) {
@@ -678,6 +697,29 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                 [self.loginUserArray removeObjectAtIndex:0];
                 dispatch_semaphore_signal(_loginArrayLock);
             }
+        }
+    }
+    
+    /// 上报登出事件
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel:logoutUsers:)]) {
+        if ([self.logoutUserArray count] >= 10) {
+            NSArray *logoutUserArray = [self.logoutUserArray copy];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.delegate chatroomViewModel:self logoutUsers:logoutUserArray];
+            });
+            
+            dispatch_semaphore_wait(_logoutArrayLock, DISPATCH_TIME_FOREVER);
+            [self.logoutUserArray removeAllObjects];
+            dispatch_semaphore_signal(_logoutArrayLock);
+        } else if ([self.logoutUserArray count] > 0) {
+            NSString *nick = self.logoutUserArray[0];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.delegate chatroomViewModel:self logoutUsers:@[nick]];
+            });
+            
+            dispatch_semaphore_wait(_logoutArrayLock, DISPATCH_TIME_FOREVER);
+            [self.logoutUserArray removeObjectAtIndex:0];
+            dispatch_semaphore_signal(_logoutArrayLock);
         }
     }
 }
@@ -780,6 +822,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     // 有人送礼物
     if ([subEvent isEqualToString:@"REWARD"]) {
         [self rewardMessageEvent:jsonDict];
+    }
+    // 有用户登出聊天室
+    if ([subEvent isEqualToString:@"LOGOUT"]) {
+        [self logoutEvent:jsonDict];
     }
 }
 

@@ -22,6 +22,7 @@
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜按钮
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
 @property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局按钮
+@property (nonatomic, strong) UIButton *aiMattingButton; // AI抠像按钮
 @property (nonatomic, strong) UIButton *shareButton; // 分享按钮
 @property (nonatomic, strong) UIButton *badNetworkButton; //  弱网处理按钮
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
@@ -63,13 +64,18 @@
             [self.contentView addSubview:self.mixLayoutButton];
             [muButtonArray addObject:self.mixLayoutButton];
         }
+        if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled) {
+            [self.contentView addSubview:self.aiMattingButton];
+            [muButtonArray addObject:self.aiMattingButton];
+        }
+        
         NSMutableArray *interactMuButtonArray = [NSMutableArray array];
         [self.contentView addSubview:self.interactiveTitleLabel];
-        [self.contentView addSubview:self.signInButton];
-        // 屏蔽签到功能
-        self.interactiveTitleLabel.hidden = YES;
-        self.signInButton.hidden = YES;
-        [interactMuButtonArray addObject:self.signInButton];
+        if ([self showSignInButton]) {
+            [self.contentView addSubview:self.signInButton];
+            [interactMuButtonArray addObject:self.signInButton];
+        }
+        self.interactiveTitleLabel.hidden = [interactMuButtonArray count] == 0;
         [self.contentView addSubview:self.buttonSplitLine];
         [self.contentView addSubview:self.logoutButtonLabel];
         [self.contentView addSubview:self.logoutButton];
@@ -159,7 +165,12 @@
 }
 
 - (BOOL)showMixLayoutButton {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && roomData.showMixLayoutButtonEnabled && roomData.appStartMultiplexingLayoutEnabled;
+}
+
+- (BOOL)showSignInButton {
+    return [PLVRoomDataManager sharedManager].roomData.appStartCheckinEnabled;
 }
 
 #pragma mark Getter
@@ -225,10 +236,18 @@
 
 - (UIButton *)mixLayoutButton {
     if (!_mixLayoutButton) {
-        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局") NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
+        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局Btn") NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
         [_mixLayoutButton addTarget:self action:@selector(mixLayoutAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _mixLayoutButton;
+}
+
+- (UIButton *)aiMattingButton {
+    if (!_aiMattingButton) {
+        _aiMattingButton = [self buttonWithTitle:PLVLocalizedString(@"虚拟背景") NormalImageString:@"plvls_liveroom_btn_virtual_bg" selectedImageString:@"plvls_liveroom_btn_virtual_bg"];
+        [_aiMattingButton addTarget:self action:@selector(aiMattingAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _aiMattingButton;
 }
 
 - (UILabel *)interactiveTitleLabel {
@@ -377,6 +396,15 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapMixLayoutButton:)]) {
         [self.delegate moreInfoSheetDidTapMixLayoutButton:self];
+    }
+}
+
+- (void)aiMattingAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapAIMattingButton:)]) {
+        [self.delegate moreInfoSheetDidTapAIMattingButton:self];
     }
 }
 

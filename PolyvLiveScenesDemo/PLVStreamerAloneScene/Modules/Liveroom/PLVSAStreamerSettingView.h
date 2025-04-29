@@ -96,6 +96,8 @@
 - (void)streamerSettingViewExternalDeviceButtonClickWithExternalDeviceEnabled:(BOOL)enabled;
 /// 贴纸按钮点击
 - (void)streamerSettingViewDidClickStickerButton:(PLVSAStreamerSettingView *)streamerSettingView;
+/// 虚拟背景按钮点击
+- (void)streamerSettingViewDidClickVirtualBackgroundButton:(PLVSAStreamerSettingView *)streamerSettingView;
 
 @end
 

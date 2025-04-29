@@ -35,6 +35,7 @@
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
 @property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局
 @property (nonatomic, strong) UIButton *stickerButton; // 贴纸
+@property (nonatomic, strong) UIButton *aiMattingButton; // AI抠像
 @property (nonatomic, strong) UIButton *allowRaiseHandButton; // 开启/关闭观众连麦
 @property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
 @property (nonatomic, strong) UIButton *removeAllAudiencesButton; // 观众下麦
@@ -236,18 +237,29 @@
     [buttonSuperView addSubview:self.stickerButton];
     [muButtonArray addObject:self.stickerButton];
     
+    // AI抠像按钮
+    if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled) {
+        [buttonSuperView addSubview:self.aiMattingButton];
+        [muButtonArray addObject:self.aiMattingButton];
+    }
+    
     self.buttonArray = [muButtonArray copy];
     
     [buttonSuperView addSubview:self.interactiveTitleLabel];
-    [buttonSuperView addSubview:self.signInButton];
-    NSMutableArray *muInteractiveButtonArray = [NSMutableArray arrayWithArray:@[self.signInButton]];
-    if ([PLVSAMoreInfoSheet showGiftRewardRewardButton]) {
+    NSMutableArray *muInteractiveButtonArray = [NSMutableArray array];
+    if ([PLVSAMoreInfoSheet showSignInButton]) {
+        [buttonSuperView addSubview:self.signInButton];
+        [muInteractiveButtonArray addObject:self.signInButton];
+    }
+    if ([PLVSAMoreInfoSheet showGiftRewardButton]) {
         [buttonSuperView addSubview:self.giftRewardButton];
         [muInteractiveButtonArray addObject:self.giftRewardButton];
     }
     
-    [buttonSuperView addSubview:self.giftEffectsButton];
-    [muInteractiveButtonArray addObject:self.giftEffectsButton];
+    if ([PLVSAMoreInfoSheet showGiftEffectsButton]) {
+        [buttonSuperView addSubview:self.giftEffectsButton];
+        [muInteractiveButtonArray addObject:self.giftEffectsButton];
+    }
     
     // 显示新版连麦举手
     if ([PLVSAMoreInfoSheet showLinkMicNewStrategy]) {
@@ -268,6 +280,7 @@
     }
     
     self.interactiveButtonArray = [muInteractiveButtonArray copy];
+    self.interactiveTitleLabel.hidden = [self.interactiveButtonArray count] == 0;
 }
 
 #pragma mark Getter
@@ -289,6 +302,7 @@
         _cameraButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateNormal];
         [_cameraButton setTitle:PLVLocalizedString(@"摄像头") forState:UIControlStateSelected];
+        _cameraButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_close"] forState:UIControlStateNormal];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_open"] forState:UIControlStateSelected];
         [_cameraButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_camera_disabled"] forState:UIControlStateSelected|UIControlStateDisabled];
@@ -307,6 +321,7 @@
         _microphoneButton.titleLabel.numberOfLines = 0;
         [_microphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateNormal];
         [_microphoneButton setTitle:PLVLocalizedString(@"麦克风") forState:UIControlStateSelected];
+        _microphoneButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_close"] forState:UIControlStateNormal];
         [_microphoneButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_micphone_open"] forState:UIControlStateSelected];
         [_microphoneButton addTarget:self action:@selector(microphoneButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -320,6 +335,7 @@
         _cameraReverseButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _cameraReverseButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_cameraReverseButton setTitle:PLVLocalizedString(@"翻转") forState:UIControlStateNormal];
+        _cameraReverseButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_cameraReverseButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_cameraReverse"] forState:UIControlStateNormal];
         [_cameraReverseButton addTarget:self action:@selector(cameraReverseButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -333,6 +349,7 @@
         _mirrorButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_mirrorButton setTitle:PLVLocalizedString(@"镜像") forState:UIControlStateNormal];
         [_mirrorButton setTitle:PLVLocalizedString(@"镜像") forState:UIControlStateSelected];
+        _mirrorButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorClose"] forState:UIControlStateNormal];
         [_mirrorButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_mirrorOpen"] forState:UIControlStateSelected];
         [_mirrorButton addTarget:self action:@selector(mirrorButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -354,6 +371,7 @@
         }
         [_screenShareButton setTitle:normalTitle forState:UIControlStateNormal];
         [_screenShareButton setTitle:PLVLocalizedString(@"结束共享") forState:UIControlStateSelected];
+        _screenShareButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_open"] forState:UIControlStateNormal];
         [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_close"] forState:UIControlStateSelected];
         [_screenShareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_screenshare_disabled"] forState:UIControlStateDisabled];
@@ -368,8 +386,11 @@
         _desktopChatButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _desktopChatButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _desktopChatButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_desktopChatButton setTitle:PLVLocalizedString(@"桌面消息") forState:UIControlStateNormal];
-        [_desktopChatButton setTitle:PLVLocalizedString(@"桌面消息") forState:UIControlStateSelected];
+        _desktopChatButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _desktopChatButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_desktopChatButton setTitle:PLVLocalizedString(@"桌面消息Btn") forState:UIControlStateNormal];
+        [_desktopChatButton setTitle:PLVLocalizedString(@"桌面消息Btn") forState:UIControlStateSelected];
+        _desktopChatButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_desktopChatButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_desktopChat"] forState:UIControlStateNormal];
         [_desktopChatButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_desktopChat"] forState:UIControlStateSelected];
         [_desktopChatButton addTarget:self action:@selector(desktopChatButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -384,6 +405,7 @@
         _flashButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_flashButton setTitle:PLVLocalizedString(@"闪光灯") forState:UIControlStateNormal];
         [_flashButton setTitle:PLVLocalizedString(@"闪光灯") forState:UIControlStateSelected];
+        _flashButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_flashButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_flash_close"] forState:UIControlStateNormal];
         [_flashButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_flash_open"] forState:UIControlStateSelected];
         [_flashButton addTarget:self action:@selector(flashButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -398,6 +420,7 @@
         _cameraBitRateButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         _cameraBitRateButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
         [_cameraBitRateButton setTitle:@"" forState:UIControlStateNormal];
+        _cameraBitRateButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_hd"] forState:UIControlStateNormal];
         [_cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_hd"] forState:UIControlStateSelected];
         [_cameraBitRateButton addTarget:self action:@selector(cameraBitRateButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -418,6 +441,7 @@
         NSString *selectedTitle = isPad && !isLandscape ? PLVLocalizedString(@"取消全体禁言") : PLVLocalizedString(@"取消全体\n禁言");
         [_closeRoomButton setTitle:normalTitle forState:UIControlStateNormal];
         [_closeRoomButton setTitle:selectedTitle forState:UIControlStateSelected];
+        _closeRoomButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_closeRoomButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_allmicphoneClose"] forState:UIControlStateNormal];
         [_closeRoomButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_allmicphoneClose"] forState:UIControlStateSelected];
         [_closeRoomButton addTarget:self action:@selector(closeRoomButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -431,6 +455,7 @@
         _beautyButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _beautyButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_beautyButton setTitle:PLVLocalizedString(@"美颜") forState:UIControlStateNormal];
+        _beautyButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_more"] forState:UIControlStateNormal];
         [_beautyButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_beauty_more"] forState:UIControlStateSelected];
         [_beautyButton addTarget:self action:@selector(beautyButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -444,6 +469,7 @@
         _shareButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _shareButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_shareButton setTitle:PLVLocalizedString(@"分享") forState:UIControlStateNormal];
+        _shareButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_shareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_share"] forState:UIControlStateNormal];
         [_shareButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_share"] forState:UIControlStateSelected];
         [_shareButton addTarget:self action:@selector(shareButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -457,6 +483,7 @@
         _badNetworkButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _badNetworkButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_badNetworkButton setTitle:PLVLocalizedString(@"弱网处理") forState:UIControlStateNormal];
+        _badNetworkButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_badNetworkButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_badNetwork_switch_btn"] forState:UIControlStateNormal];
         [_badNetworkButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_badNetwork_switch_btn"] forState:UIControlStateSelected];
         [_badNetworkButton addTarget:self action:@selector(badNetworkButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -469,7 +496,10 @@
         _mixLayoutButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _mixLayoutButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _mixLayoutButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_mixLayoutButton setTitle:PLVLocalizedString(@"混流布局") forState:UIControlStateNormal];
+        _mixLayoutButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _mixLayoutButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_mixLayoutButton setTitle:PLVLocalizedString(@"混流布局Btn") forState:UIControlStateNormal];
+        _mixLayoutButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateNormal];
         [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateSelected];
         [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -482,10 +512,12 @@
         _allowRaiseHandButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _allowRaiseHandButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _allowRaiseHandButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
-        NSString *normalTitle = PLVLocalizedString(@"申请连麦");
-        NSString *selectedTitle = PLVLocalizedString(@"取消申请连麦") ;
+        _allowRaiseHandButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _allowRaiseHandButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        NSString *normalTitle = PLVLocalizedString(@"申请连麦Btn");
         [_allowRaiseHandButton setTitle:normalTitle forState:UIControlStateNormal];
-        [_allowRaiseHandButton setTitle:selectedTitle forState:UIControlStateSelected];
+        [_allowRaiseHandButton setTitle:normalTitle forState:UIControlStateSelected];
+        _allowRaiseHandButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn"] forState:UIControlStateNormal];
         [_allowRaiseHandButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_audience_raise_hand_btn_selected"] forState:UIControlStateSelected];
         [_allowRaiseHandButton addTarget:self action:@selector(allowRaiseHandButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -498,7 +530,10 @@
         _linkMicSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _linkMicSettingButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _linkMicSettingButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
-        [_linkMicSettingButton setTitle:PLVLocalizedString(@"连麦设置") forState:UIControlStateNormal];
+        _linkMicSettingButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _linkMicSettingButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_linkMicSettingButton setTitle:PLVLocalizedString(@"连麦设置Btn") forState:UIControlStateNormal];
+        _linkMicSettingButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_linkMicSettingButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_link_mic_setting_btn"] forState:UIControlStateNormal];
         [_linkMicSettingButton addTarget:self action:@selector(linkMicSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
@@ -510,7 +545,10 @@
         _removeAllAudiencesButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _removeAllAudiencesButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _removeAllAudiencesButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
+        _removeAllAudiencesButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _removeAllAudiencesButton.titleLabel.textAlignment = NSTextAlignmentCenter;
         [_removeAllAudiencesButton setTitle:PLVLocalizedString(@"观众下麦") forState:UIControlStateNormal];
+        _removeAllAudiencesButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_removeAllAudiencesButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_link_mic_remove_audiences_btn"] forState:UIControlStateNormal];
         [_removeAllAudiencesButton addTarget:self action:@selector(removeAllAudiencesButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _removeAllAudiencesButton.enabled = NO;
@@ -534,6 +572,7 @@
         _signInButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _signInButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         [_signInButton setTitle:PLVLocalizedString(@"签到") forState:UIControlStateNormal];
+        _signInButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_signInButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_signIn_btn"] forState:UIControlStateNormal];
         [_signInButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_signIn_btn"] forState:UIControlStateSelected];
         [_signInButton addTarget:self action:@selector(signInButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -546,7 +585,10 @@
         _giftRewardButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _giftRewardButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _giftRewardButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _giftRewardButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _giftRewardButton.titleLabel.textAlignment = NSTextAlignmentCenter;
         [_giftRewardButton setTitle:PLVLocalizedString(@"礼物打赏") forState:UIControlStateNormal];
+        _giftRewardButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_giftRewardButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_reward_btn_open"] forState:UIControlStateNormal];
         [_giftRewardButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_reward_btn_close"] forState:UIControlStateSelected];
         [_giftRewardButton addTarget:self action:@selector(giftRewardButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -559,7 +601,10 @@
         _giftEffectsButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _giftEffectsButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _giftEffectsButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _giftEffectsButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _giftEffectsButton.titleLabel.textAlignment = NSTextAlignmentCenter;
         [_giftEffectsButton setTitle:PLVLocalizedString(@"礼物特效") forState:UIControlStateNormal];
+        _giftEffectsButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_giftEffectsButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_effects_btn_open"] forState:UIControlStateNormal];
         [_giftEffectsButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_gift_effects_btn_close"] forState:UIControlStateSelected];
         [_giftEffectsButton addTarget:self action:@selector(giftEffectsButtonAction) forControlEvents:UIControlEventTouchUpInside];
@@ -572,11 +617,27 @@
         _stickerButton = [UIButton buttonWithType:UIButtonTypeCustom];
         _stickerButton.titleLabel.font = [UIFont systemFontOfSize:12];
         _stickerButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
-        [_stickerButton setTitle:PLVLocalizedString(@"贴纸") forState:UIControlStateNormal];
+        [_stickerButton setTitle:PLVLocalizedString(@"贴图") forState:UIControlStateNormal];
+        _stickerButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_stickerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_sticker"] forState:UIControlStateNormal];
         [_stickerButton addTarget:self action:@selector(stickerButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _stickerButton;
+}
+
+- (UIButton *)aiMattingButton {
+    if (!_aiMattingButton) {
+        _aiMattingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _aiMattingButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _aiMattingButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _aiMattingButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _aiMattingButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_aiMattingButton setTitle:PLVLocalizedString(@"虚拟背景") forState:UIControlStateNormal];
+        _aiMattingButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_aiMattingButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_virtual_bg"] forState:UIControlStateNormal];
+        [_aiMattingButton addTarget:self action:@selector(aiMattingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _aiMattingButton;
 }
 
 - (UIScrollView *)scrollView {
@@ -672,25 +733,29 @@
 
 - (void)setButtonInsets {
     NSArray *mergeButtonArray = [self.buttonArray arrayByAddingObjectsFromArray:self.interactiveButtonArray];
+    if (mergeButtonArray.count == 0) {
+        return;
+    }
+    UIButton *firstButton = mergeButtonArray[0];
     for (int i = 0; i < mergeButtonArray.count ; i++) {
         UIButton *but = mergeButtonArray[i];
         CGFloat padding = 12;
-        CGFloat imageBottom = but.titleLabel.intrinsicContentSize.height;
+        CGFloat imageBottom = firstButton.titleLabel.intrinsicContentSize.height;
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
             imageBottom += padding;
         }
         
         [but setTitleEdgeInsets:
-               UIEdgeInsetsMake(but.frame.size.height/2 + padding,
-                                -but.imageView.frame.size.width,
+               UIEdgeInsetsMake(firstButton.frame.size.height/2 + padding,
+                                -firstButton.imageView.frame.size.width,
                                 0,
                                 0)];
         [but setImageEdgeInsets:
                    UIEdgeInsetsMake(
                                0,
-                               (but.frame.size.width-but.imageView.frame.size.width)/2,
+                               (firstButton.frame.size.width-firstButton.imageView.frame.size.width)/2,
                                 imageBottom,
-                               (but.frame.size.width-but.imageView.frame.size.width)/2)];
+                               (firstButton.frame.size.width-firstButton.imageView.frame.size.width)/2)];
     }
 }
 
@@ -806,7 +871,8 @@
 }
 
 + (BOOL)showMixLayoutButton {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.showMixLayoutButtonEnabled;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && roomData.showMixLayoutButtonEnabled && roomData.appStartMultiplexingLayoutEnabled;
 }
 
 + (BOOL)showLinkMicNewStrategy {
@@ -814,12 +880,20 @@
     return roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0 && roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
 }
 
-+ (BOOL)showRemoveAllAudiencesButton {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
++ (BOOL)showSignInButton {
+    return [PLVRoomDataManager sharedManager].roomData.appStartCheckinEnabled;
 }
 
-+ (BOOL)showGiftRewardRewardButton {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
++ (BOOL)showRemoveAllAudiencesButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0;
+}
+
++ (BOOL)showGiftRewardButton {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.appStartGiftDonateEnabled;
+}
+
++ (BOOL)showGiftEffectsButton {
+    return [PLVRoomDataManager sharedManager].roomData.appStartGiftEffectEnabled;
 }
 
 - (void)getGiftRewardSettings {
@@ -1022,6 +1096,13 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapStickerButton:)]) {
         [self.delegate moreInfoSheetDidTapStickerButton:self];
+    }
+}
+
+- (void)aiMattingButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapAiMattingButton:)]) {
+        [self.delegate moreInfoSheetDidTapAiMattingButton:self];
     }
 }
 

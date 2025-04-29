@@ -49,6 +49,11 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
                                                 objectForKey:PLVRoomDataKeyDisableStartPipWhenEnterBackground] boolValue];
         _disableStartPipWhenExitLiveRoom = [[[NSUserDefaults standardUserDefaults]
                                                 objectForKey:PLVRoomDataKeyDisableStartPipWhenExitLiveRoom] boolValue];
+        _appStartMemberListEnabled = YES;
+        _appStartMultiplexingLayoutEnabled = YES;
+        _appStartCheckinEnabled = YES;
+        _appStartGiftDonateEnabled = YES;
+        _appStartGiftEffectEnabled = YES;
     }
     return self;
 }

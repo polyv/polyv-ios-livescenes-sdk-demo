@@ -68,6 +68,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 贴纸按钮 触发回调
 - (void)moreInfoSheetDidTapStickerButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 AI抠像按钮 触发回调
+- (void)moreInfoSheetDidTapAiMattingButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 /// 点击 礼物特效 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects;
 

@@ -201,7 +201,9 @@ UITableViewDataSource
         _leaveMicButton.layer.borderColor = [PLVColorUtil colorFromHexString:colorHex].CGColor;
         _leaveMicButton.layer.masksToBounds = YES;
         _leaveMicButton.titleLabel.font = [UIFont systemFontOfSize:12];
-        [_leaveMicButton setTitle:PLVLocalizedString(@"观众下麦") forState:UIControlStateNormal];
+        NSString *normalTitle = PLVLocalizedString(@"观众下麦");
+        normalTitle = [normalTitle stringByReplacingOccurrencesOfString:@"\n" withString:@""];
+        [_leaveMicButton setTitle:normalTitle forState:UIControlStateNormal];
         [_leaveMicButton setTitleColor:[PLVColorUtil colorFromHexString:colorHex] forState:UIControlStateNormal];
         [_leaveMicButton addTarget:self action:@selector(leaveMicButtonAction) forControlEvents:UIControlEventTouchUpInside];
         _leaveMicButton.hidden = ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) ? NO : YES;

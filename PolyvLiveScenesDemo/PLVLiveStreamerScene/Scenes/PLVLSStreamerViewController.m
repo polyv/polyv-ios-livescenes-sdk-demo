@@ -31,6 +31,7 @@
 #import "PLVLSLinkMicSettingSheet.h"
 #import "PLVLSLinkMicUpdateTipsView.h"
 #import "PLVStreamerPopoverView.h"
+#import "PLVVirtualBackgroudSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -63,7 +64,8 @@ PLVLSMoreInfoSheetDelegate,
 PLVShareLiveSheetDelegate,
 PLVLSBadNetworkSwitchSheetDelegate,
 PLVLSMixLayoutSheetDelegate,
-PLVLSLinkMicSettingSheetDelegate
+PLVLSLinkMicSettingSheetDelegate,
+PLVVirtualBackgroudSheetDelegate
 >
 
 #pragma mark 功能
@@ -84,6 +86,7 @@ PLVLSLinkMicSettingSheetDelegate
 @property (nonatomic, strong) PLVLSCountDownView *coutBackView; // 开始上课时的倒数蒙层
 @property (nonatomic, strong) PLVLSBeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVLSMoreInfoSheet *moreInfoSheet; // 更多弹层
+@property (nonatomic, strong) PLVVirtualBackgroudSheet *aiMattingSheet; // AI抠像组件
 @property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
 @property (nonatomic, strong) PLVLSBadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
 @property (nonatomic, strong) PLVLSBadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
@@ -246,8 +249,7 @@ PLVLSLinkMicSettingSheetDelegate
     [self.networkDisconnectMaskView addSubview:self.networkDisconnectImageView];
     [self.networkDisconnectMaskView addSubview:self.networkDisconnectLabel];
     [self.view addSubview:self.linkMicUpdateTipsView];
-    // 屏蔽签到功能 
-    // [self.view addSubview:self.popoverView];
+     [self.view addSubview:self.popoverView];
 
     // 初始化
     [self.settingSheet initView]; /// 仅用于初始化
@@ -1536,6 +1538,33 @@ PLVLSLinkMicSettingSheetDelegate
     [self.popoverView.interactView openInteractViewWithEventName:@"SHOW_SIGN"];
 }
 
+- (void)moreInfoSheetDidTapAIMattingButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self showAIMattingSheet];
+}
+
+/// AI 抠像设置面板弹出
+- (void)showAIMattingSheet{
+    if (self.streamerPresenter.currentCameraOpen) {
+        // 实现虚拟背景功能
+        NSInteger width = self.view.bounds.size.width;
+        NSInteger height = width;
+        BOOL isFullscreen = [UIScreen mainScreen].bounds.size.width >  [UIScreen mainScreen].bounds.size.height;
+        if (isFullscreen){
+            width = [UIScreen mainScreen].bounds.size.height;
+            height = width;
+        }
+        if (!self.aiMattingSheet){
+            self.aiMattingSheet = [[PLVVirtualBackgroudSheet alloc] initWithSheetHeight:width sheetLandscapeWidth:height];
+            self.aiMattingSheet.delegate = self;
+        }
+        [self.aiMattingSheet showInView:self.view];
+        
+    } else {
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"请开启摄像头后使用") inView:self.view];
+    }
+}
+
+
 #pragma mark PLVShareLiveSheetDelegate
 
 - (void)shareLiveSheetCopyLinkFinished:(PLVShareLiveSheet *)shareLiveSheet {
@@ -1604,6 +1633,23 @@ PLVLSLinkMicSettingSheetDelegate
                 [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
             }
         }];
+    }
+}
+
+#pragma mark PLVVirtualBackgroudSheetDelegate
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet matType:(PLVVirtualBackgroudMatType)matType image:(UIImage *)matBgImage{
+    switch (matType) {
+        case PLVVirtualBackgroudMatTypeNone:
+            [self.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeNone image:matBgImage];
+            break;
+        case PLVVirtualBackgroudMatTypeBlur:
+            [self.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeBlue image:matBgImage];
+            break;
+        case PLVVirtualBackgroudMatTypeCustomImage:
+            [self.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeCustomImage image:matBgImage];
+            break;
+        default:
+            break;
     }
 }
 

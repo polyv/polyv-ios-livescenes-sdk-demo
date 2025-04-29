@@ -99,6 +99,8 @@ extern NSString *PLVLCChatroomOpenPipSetNotification;
 /// @param dict 福利抽奖插件数据
 - (void)updateWelfareLotteryWidgetInfo:(NSDictionary *)dict;
 
+- (CGFloat)getKeyboardToolViewHeight;
+
 @end
 
 NS_ASSUME_NONNULL_END

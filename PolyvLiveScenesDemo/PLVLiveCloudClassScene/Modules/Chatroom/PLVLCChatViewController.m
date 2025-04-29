@@ -87,6 +87,7 @@ UITableViewDataSource
 @property (nonatomic, assign) BOOL playbackEnable;
 /// 弱引用首页持有的聊天回放viewModel
 @property (nonatomic, weak) PLVLCChatroomPlaybackViewModel *playbackViewModel;
+@property (nonatomic, strong) UIImageView *bgImageView; // 默认背景图
 
 @end
 
@@ -96,7 +97,7 @@ UITableViewDataSource
 
 - (void)setupUI {
     self.view.backgroundColor = [PLVColorUtil colorFromHexString:@"#202127"];
-    
+    [self.view addSubview:self.bgImageView];
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.menuInfo.transmitMode &&
         roomData.menuInfo.mainRoom) {
@@ -125,6 +126,7 @@ UITableViewDataSource
 
 - (void)viewWillLayoutSubviews {
     [super viewWillLayoutSubviews];
+    self.bgImageView.frame = self.view.bounds;
      
     if (self.hasLayoutSubView) { // 调整布局
         CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
@@ -155,6 +157,7 @@ UITableViewDataSource
 
 - (void)viewDidLayoutSubviews {
     if (!self.hasLayoutSubView) { // 初次布局
+        self.bgImageView.frame = self.view.bounds;
         CGFloat height = [self.keyboardToolView getKeyboardToolViewHeight] + P_SafeAreaBottomEdgeInsets();
         CGRect inputRect = CGRectMake(0, CGRectGetHeight(self.view.bounds) - height, CGRectGetWidth(self.view.bounds), height);
         [self.keyboardToolView addAtView:self.view frame:inputRect];
@@ -350,6 +353,32 @@ UITableViewDataSource
     return self.keyboardToolView.enableReward;
 }
 
+- (UIImageView *)bgImageView {
+    if (!_bgImageView) {
+        NSString *chatBackgroundImage = [PLVRoomDataManager sharedManager].roomData.menuInfo.chatBackgroundImage;
+        _bgImageView = [[UIImageView alloc] init];
+        _bgImageView.contentMode = UIViewContentModeScaleAspectFill;
+        _bgImageView.layer.masksToBounds = YES;
+        if ([PLVFdUtil checkStringUseable:chatBackgroundImage]) {
+            if ([chatBackgroundImage hasPrefix:@"//"]) {
+                chatBackgroundImage = [@"https:" stringByAppendingString:chatBackgroundImage];
+            }
+            
+            int opacity = [PLVRoomDataManager sharedManager].roomData.menuInfo.chatBackgroundImageOpacity.intValue;
+            if (opacity> 0 && opacity <= 50) {
+                NSString *opacityString = [NSString stringWithFormat:@"?x-oss-process=image/blur,r_%d,s_%d", opacity, opacity];
+                chatBackgroundImage = [chatBackgroundImage stringByAppendingString:opacityString];
+            }
+            
+            [_bgImageView sd_setImageWithURL:[NSURL URLWithString:chatBackgroundImage]];
+            _bgImageView.hidden = NO;
+        } else {
+            _bgImageView.hidden = YES;
+        }
+    }
+    return _bgImageView;
+}
+
 #pragma mark - Action
 
 - (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
@@ -475,6 +504,10 @@ UITableViewDataSource
     } else {
         [self.welfareLotteryWidgetView hideWidgetView];
     }
+}
+
+- (CGFloat)getKeyboardToolViewHeight {
+    return [self.keyboardToolView getKeyboardToolViewHeight];
 }
 
 #pragma mark - Private Method

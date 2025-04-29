@@ -13,7 +13,7 @@
 #import "PLVECChatroomViewModel.h"
 #import "PLVECBulletinView.h"
 #import "PLVECCommodityViewController.h"
-#import "PLVCommodityPushView.h"
+#import "PLVCommodityPushSmallCardView.h"
 #import "PLVECPlaybackListViewController.h"
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
 
@@ -66,7 +66,7 @@ PLVPlayerContolViewDelegate,
 PLVECMoreViewDelegate,
 PLVPlayerSwitchViewDelegate,
 PLVECCommodityViewControllerDelegate,
-PLVCommodityPushViewDelegate,
+PLVCommodityPushSmallCardViewDelegate,
 PLVSocketManagerProtocol,
 PLVECChatroomViewDelegate,
 PLVECCardPushButtonViewDelegate,
@@ -106,7 +106,7 @@ PLVECWelfareLotteryWidgetViewDelegate
 @property (nonatomic, strong) PLVECSwitchView *switchView;             // 切换视图
 @property (nonatomic, strong) PLVECPIPPlaysetPopView *pipPopView;      // 小窗播放设置
 @property (nonatomic, weak) PLVECCommodityViewController *commodityVC; // 商品视图
-@property (nonatomic, strong) PLVCommodityPushView *pushView;        // 商品推送视图
+@property (nonatomic, strong) PLVCommodityPushSmallCardView *pushView;        // 商品推送视图
 @property (nonatomic, weak) PLVECPlaybackListViewController *playbackListVC;     //回放列表视图
 @property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
 
@@ -408,9 +408,9 @@ PLVECWelfareLotteryWidgetViewDelegate
     return _pipPopView;
 }
 
-- (PLVCommodityPushView *)pushView {
+- (PLVCommodityPushSmallCardView *)pushView {
     if (!_pushView) {
-        _pushView = [[PLVCommodityPushView alloc] initWithType:PLVCommodityPushViewTypeEC];
+        _pushView = [[PLVCommodityPushSmallCardView alloc] init];
         _pushView.delegate = self;
     }
     return _pushView;
@@ -852,11 +852,8 @@ PLVECWelfareLotteryWidgetViewDelegate
         }
         CGFloat questionnaireButtonOriginY = bulletinView ? CGRectGetMaxY(bulletinView.frame) + 10 : CGRectGetMaxY(self.liveRoomInfoView.frame) + 15;
         self.questionnaireButton.frame =  CGRectMake(15, questionnaireButtonOriginY, 68, 28);
-        if (fullScreen) {
-            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, 308, 128);
-        } else {
-            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 90, 128);
-        }
+        CGFloat padding = 12.0;
+        self.pushView.frame = CGRectMake((CGRectGetWidth(self.frame) - padding - 104), CGRectGetMinY(self.shoppingCartButton.frame) - 204 - padding, 104, 204);
     } else if (self.type == PLVECHomePageType_Playback) {
         // 聊天室布局
         self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-P_SafeAreaBottomEdgeInsets());
@@ -883,11 +880,8 @@ PLVECWelfareLotteryWidgetViewDelegate
             self.cardPushButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECCardPushButtonViewWidth/2, widgetOriginY, PLVECCardPushButtonViewWidth, PLVECCardPushButtonViewHeight);
         }
         
-        if (fullScreen) {
-            self.pushView.frame = CGRectMake(CGRectGetMinX(self.shoppingCartButton.frame) - 304 + P_SafeAreaLeftEdgeInsets(), CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, 308, 128);
-        } else {
-            self.pushView.frame = CGRectMake(CGRectGetMidX(self.shoppingCartButton.frame) - CGRectGetWidth(self.bounds) + 142, CGRectGetMinY(self.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(self.bounds) - 90, 128);
-        }
+        CGFloat padding = 12.0;
+        self.pushView.frame = CGRectMake((CGRectGetWidth(self.frame) - padding - 104), CGRectGetMinY(self.shoppingCartButton.frame) - 204 - padding, 104, 204);
         [self.playbackListVC viewWillLayoutSubviews];
     }
     [self.commodityVC viewWillLayoutSubviews];
@@ -1101,10 +1095,11 @@ PLVECWelfareLotteryWidgetViewDelegate
         }
         
         if ([model.productPushRule isEqualToString:@"smallCard"]) {
+            CGFloat padding = 12.0;
             __weak typeof(self)weakSelf = self;
             plv_dispatch_main_async_safe(^{
                 [weakSelf.pushView setModel:model];
-                [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake(-(CGRectGetWidth(weakSelf.frame)), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 128 - 6, CGRectGetWidth(weakSelf.bounds) - 90, 128)];
+                [weakSelf.pushView showOnView:weakSelf initialFrame:CGRectMake((CGRectGetWidth(weakSelf.frame) - padding - 104), CGRectGetMinY(weakSelf.shoppingCartButton.frame) - 204 - padding, 104, 204)];
             })
             if (self.visiable) {
                 [self.pushView reportTrackEvent];
@@ -1165,15 +1160,15 @@ PLVECWelfareLotteryWidgetViewDelegate
     [self playbackTimeChanged];
 }
 
-#pragma mark PLVCommodityPushViewDelegate
+#pragma mark PLVCommodityPushSmallCardViewDelegate
 
-- (void)plvCommodityPushViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
+- (void)PLVCommodityPushSmallCardViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
     if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:didClickCommodityDetail:)]) {
         [self.delegate homePageView:self didClickCommodityDetail:commodity];
     }
 }
 
-- (void)plvCommodityPushViewDidShowJobDetail:(NSDictionary *)data {
+- (void)PLVCommodityPushSmallCardViewDidShowJobDetail:(NSDictionary *)data {
     if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:didShowJobDetail:)]) {
         [self.delegate homePageView:self didShowJobDetail:data];
     }

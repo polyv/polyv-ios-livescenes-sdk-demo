@@ -105,6 +105,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 贴图按钮点击
 - (void)streamerHomeViewDidTapStickerButton:(PLVSAStreamerHomeView *)homeView;
 
+/// AI抠像按钮点击
+- (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView;
+
 @end
 
 @interface PLVSAStreamerHomeView : UIView

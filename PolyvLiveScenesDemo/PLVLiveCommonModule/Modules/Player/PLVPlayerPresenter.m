@@ -55,6 +55,7 @@ PLVDefaultPageViewDelegate
 /// (UIView) displayView (外部通过 [setupPlayerWithDisplayView:] 方法传入)
 ///  └── (PLVPlayerPresenterBackgroundView) backgroundView
 ///      ├── (UIView) playerBackgroundView
+///      └── (UIImageView) liveCoverImageView
 ///      ├── (UIImageView) warmUpImageView
 ///      ├── (UIActivityIndicatorView) activityView
 ///      ├── (UILabel) loadSpeedLabel
@@ -68,6 +69,7 @@ PLVDefaultPageViewDelegate
 @property (nonatomic, strong) PLVDefaultPageView * defaultPageView;
 @property (nonatomic, strong) UIActivityIndicatorView * activityView;
 @property (nonatomic, strong) UILabel * loadSpeedLabel;
+@property (nonatomic, strong) UIImageView *liveCoverImageView;
 
 #pragma mark 功能对象
 @property (nonatomic, strong) PLVLivePlayer * livePlayer;
@@ -259,6 +261,18 @@ PLVDefaultPageViewDelegate
         _defaultPageView.hidden = YES;
     }
     return _defaultPageView;
+}
+
+- (UIImageView *)liveCoverImageView {
+    if (!_liveCoverImageView) {
+        _liveCoverImageView = [[UIImageView alloc] init];
+        _liveCoverImageView.hidden = YES;
+        _liveCoverImageView.userInteractionEnabled = NO;
+        _liveCoverImageView.contentMode = UIViewContentModeScaleAspectFit;
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(liveCoverImageViewTapAction:)];
+        [_liveCoverImageView addGestureRecognizer:tap];
+    }
+    return _liveCoverImageView;
 }
 
 #pragma mark Setter
@@ -604,6 +618,7 @@ PLVDefaultPageViewDelegate
     __weak typeof(self) weakSelf = self;
     self.backgroundView.layoutSubviewsBlock = ^(BOOL sizeAvailable) {
         weakSelf.logoView.frame = weakSelf.backgroundView.frame;
+        weakSelf.liveCoverImageView.frame = weakSelf.backgroundView.bounds;
         if (sizeAvailable && !weakSelf.activityView.constraints.count) {
             UIView * superView = weakSelf.backgroundView;
             UIActivityIndicatorView * activityView = weakSelf.activityView;
@@ -642,6 +657,10 @@ PLVDefaultPageViewDelegate
 
 - (void)setupPlayerLogoImage {
     [self.backgroundView addSubview:self.logoView];
+}
+
+- (void)setupPlayerCoverImage {
+    [self.backgroundView insertSubview:self.liveCoverImageView belowSubview:self.warmUpImageView];
 }
 
 - (void)savePlaybackLastTime {
@@ -893,8 +912,20 @@ PLVDefaultPageViewDelegate
 #pragma mark - [ Action ]
 - (void)warmUpImageViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
     NSString *warmUpContentUrlString = self.channelInfo.warmUpImageHREF;
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:warmUpContentUrlString]];
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if ([PLVFdUtil checkStringUseable:menuInfo.imageClickUrl]) {
+        warmUpContentUrlString = menuInfo.imageClickUrl;
+    }
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:warmUpContentUrlString] options:@{} completionHandler:nil];
 }
+
+- (void)liveCoverImageViewTapAction:(UITapGestureRecognizer *)gestureRecognizer {
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if ([PLVFdUtil checkStringUseable:menuInfo.imageClickUrl]) {
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:menuInfo.imageClickUrl] options:@{} completionHandler:nil];
+    }
+}
+
 
 #pragma mark - [ Event ]
 #pragma mark Timer
@@ -1121,6 +1152,10 @@ PLVDefaultPageViewDelegate
         if (self.publicStreamWatching && (newestStreamState == PLVChannelLiveStreamState_End || newestStreamState == PLVChannelLiveStreamState_Stop)) {
             [self.streamPlayer clearPlayer];
         }
+        PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+        if (newestStreamState == PLVChannelLiveStreamState_End && [PLVFdUtil checkStringUseable:menuInfo.coverImageFinal] && livePlayer.channelInfo.warmUpType == PLVChannelWarmUpType_None) {
+            [self plvLivePlayer:livePlayer showWarmUpImage:YES warmUpImageURLString:menuInfo.coverImageFinal];
+        }
     }
     
     if ([self.delegate respondsToSelector:@selector(playerPresenter:streamStateUpdate:streamStateDidChanged:)]) {
@@ -1224,6 +1259,10 @@ PLVDefaultPageViewDelegate
 /// 直播播放器 需展示暖场图片
 - (void)plvLivePlayer:(PLVLivePlayer *)livePlayer showWarmUpImage:(BOOL)show warmUpImageURLString:(NSString *)warmUpImageURLString{
     if (show) {
+        PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+        if ([PLVFdUtil checkStringUseable:menuInfo.coverImageFinal]) {
+            warmUpImageURLString = menuInfo.coverImageFinal;
+        }
         self.warmUpImageView.hidden = NO;
         if ([warmUpImageURLString containsString:@".gif"]) {
             [[SDWebImageDownloader sharedDownloader]downloadImageWithURL:[NSURL URLWithString:warmUpImageURLString] options:SDWebImageDownloaderUseNSURLCache progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
@@ -1238,6 +1277,9 @@ PLVDefaultPageViewDelegate
             [self.warmUpImageView sd_setImageWithURL:[NSURL URLWithString:warmUpImageURLString] placeholderImage:nil options:SDWebImageRetryFailed];
         }
         NSString *warmUpImageHREF = self.currentChannelInfo.warmUpImageHREF;
+        if ([PLVFdUtil checkStringUseable:menuInfo.coverImageFinal]) {
+            warmUpImageHREF = menuInfo.imageClickUrl;
+        }
         if ([PLVFdUtil checkStringUseable:warmUpImageHREF]) {
             self.warmUpImageView.userInteractionEnabled = YES;
         }

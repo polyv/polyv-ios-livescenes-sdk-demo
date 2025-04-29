@@ -11,7 +11,7 @@
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVLCLiveRoomLandscapeInputView.h"
-#import "PLVCommodityPushView.h"
+#import "PLVCommodityPushSmallCardView.h"
 #import "PLVRoomDataManager.h"
 #import "PLVChatModel.h"
 
@@ -754,7 +754,7 @@
                 continue;
             } else if ([subview isKindOfClass:PLVLCMediaCountdownTimeView.class]) {
                 continue;
-            } else if ([subview isKindOfClass:PLVCommodityPushView.class]) {
+            } else if ([subview isKindOfClass:PLVCommodityPushSmallCardView.class]) {
                 continue;
             } else if ([subview isKindOfClass:PLVLCMediaProgressView.class]) {
                 continue;

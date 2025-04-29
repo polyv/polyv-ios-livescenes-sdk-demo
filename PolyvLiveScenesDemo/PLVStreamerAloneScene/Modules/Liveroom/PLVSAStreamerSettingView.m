@@ -64,6 +64,8 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, strong) UIButton *mixLayoutButton;
 /// 贴纸按钮
 @property (nonatomic, strong) UIButton *stickerButton;
+/// 虚拟背景按钮
+@property (nonatomic, strong) UIButton *virtualBackgroundButton;
 /// 降噪模式
 @property (nonatomic, strong) UIButton *noiseCancellationModeButton;
 /// 外接设备
@@ -181,6 +183,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
     if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
         [self.buttonView addSubview:self.beautyButton];
         [muButtonArray addObject:self.beautyButton];
+    }
+    
+    // 虚拟背景
+    if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled) {
+        [self.buttonView addSubview:self.virtualBackgroundButton];
+        [muButtonArray addObject:self.virtualBackgroundButton];
     }
     
     [self.buttonView addSubview:self.mirrorButton];
@@ -336,6 +344,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
     button.imageEdgeInsets = UIEdgeInsetsMake(0,2,25,2);
     button.titleEdgeInsets = UIEdgeInsetsMake(38,-28,0,0);
     [button.titleLabel setTextAlignment:NSTextAlignmentCenter];
+    [button.titleLabel setLineBreakMode:NSLineBreakByWordWrapping];
     
     return button;
 }
@@ -577,16 +586,25 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (UIButton *)stickerButton {
     if (!_stickerButton) {
-        _stickerButton = [self buttonWithTitle:PLVLocalizedString(@"贴纸") NormalImageString:@"plvsa_liveroom_btn_sticker" selectedImageString:@"plvsa_liveroom_btn_sticker"];
+        _stickerButton = [self buttonWithTitle:PLVLocalizedString(@"贴图") NormalImageString:@"plvsa_liveroom_btn_sticker" selectedImageString:@"plvsa_liveroom_btn_sticker"];
         [_stickerButton addTarget:self action:@selector(stickerButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _stickerButton.titleEdgeInsets = UIEdgeInsetsMake(_stickerButton.imageView.frame.size.height + 4, - 67, 0, -38);
     }
     return _stickerButton;
 }
 
+- (UIButton *)virtualBackgroundButton {
+    if (!_virtualBackgroundButton) {
+        _virtualBackgroundButton = [self buttonWithTitle:PLVLocalizedString(@"虚拟背景") NormalImageString:@"plvsa_liveroom_btn_virtual_bg" selectedImageString:@"plvsa_liveroom_btn_virtual_bg"];
+        [_virtualBackgroundButton addTarget:self action:@selector(virtualBackgroundButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _virtualBackgroundButton.titleEdgeInsets = UIEdgeInsetsMake(_virtualBackgroundButton.imageView.frame.size.height + 4, - 67, 0, -38);
+    }
+    return _virtualBackgroundButton;
+}
+
 - (UIButton *)noiseCancellationModeButton {
     if (!_noiseCancellationModeButton) {
-        _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"降噪") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
+        _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"降噪Btn") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
         [_noiseCancellationModeButton addTarget:self action:@selector(noiseCancellationModeButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _noiseCancellationModeButton.titleEdgeInsets = UIEdgeInsetsMake(_noiseCancellationModeButton.imageView.frame.size.height + 4, - 67, 0, -38);
     }
@@ -595,7 +613,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (UIButton *)externalDeviceButton {
     if (!_externalDeviceButton) {
-        _externalDeviceButton = [self buttonWithTitle:PLVLocalizedString(@"外接设备") NormalImageString:@"plvsa_liveroom_btn_external_device" selectedImageString:@"plvsa_liveroom_btn_external_device"];
+        _externalDeviceButton = [self buttonWithTitle:PLVLocalizedString(@"外接设备Btn") NormalImageString:@"plvsa_liveroom_btn_external_device" selectedImageString:@"plvsa_liveroom_btn_external_device"];
         [_externalDeviceButton addTarget:self action:@selector(externalDeviceButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _externalDeviceButton.titleEdgeInsets = UIEdgeInsetsMake(_externalDeviceButton.imageView.frame.size.height + 4, - 67, 0, -38);
     }
@@ -700,7 +718,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (UIButton *)mixLayoutButton {
     if (!_mixLayoutButton) {
-        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局") NormalImageString:@"plvsa_liveroom_btn_mixLayout" selectedImageString:@"plvsa_liveroom_btn_mixLayout"];
+        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局Btn") NormalImageString:@"plvsa_liveroom_btn_mixLayout" selectedImageString:@"plvsa_liveroom_btn_mixLayout"];
         [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _mixLayoutButton.titleEdgeInsets = UIEdgeInsetsMake(_mixLayoutButton.imageView.frame.size.height + 4, - 67, 0, -38);
     }
@@ -760,7 +778,8 @@ PLVSAExternalDeviceSwitchSheetDelegate
 }
 
 - (BOOL)showMixLayout {
-    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.showMixLayoutButtonEnabled;
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && roomData.showMixLayoutButtonEnabled && roomData.appStartMultiplexingLayoutEnabled;
 }
 
 - (BOOL)showOrientation {
@@ -883,6 +902,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
 - (void)stickerButtonAction:(UIButton *)sender {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickStickerButton:)]) {
         [self.delegate streamerSettingViewDidClickStickerButton:self];
+    }
+}
+
+- (void)virtualBackgroundButtonAction:(UIButton *)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickVirtualBackgroundButton:)]) {
+        [self.delegate streamerSettingViewDidClickVirtualBackgroundButton:self];
     }
 }
 

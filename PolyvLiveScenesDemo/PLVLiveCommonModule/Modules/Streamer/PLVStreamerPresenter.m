@@ -293,6 +293,10 @@ PLVChannelClassManagerDelegate
     [self.rtcStreamerManager setStickerImage:stickerImage];
 }
 
+- (void)setAIMattingMode:(PLVBLinkMicAIMattingMode)mode image:(UIImage *)matBgImage{
+    [self.rtcStreamerManager setAIMattingMode:mode image:matBgImage];
+}
+
 #pragma mark CDN流管理
 - (int)startPushStream{
     if (self.micCameraGranted) {

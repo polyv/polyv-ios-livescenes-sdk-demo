@@ -80,6 +80,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 更新章节菜单Tab
 - (void)updateSectionMenuTab;
 
+- (CGFloat)getKeyboardToolViewHeight;
+
 @end
 
 @protocol PLVLCLivePageMenuAreaViewDelegate <NSObject>

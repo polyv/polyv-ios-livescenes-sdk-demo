@@ -1018,6 +1018,9 @@ PLVSADesktopChatSettingSheetDelegate
 }
 
 - (void)statusbarAreaViewDidTapMemberButton:(PLVSAStatusbarAreaView *)statusBarAreaView {
+    if (![PLVRoomDataManager sharedManager].roomData.appStartMemberListEnabled) {
+        return;
+    }
     [self.memberSheet showInView:self];
 }
 
@@ -1163,6 +1166,13 @@ PLVSADesktopChatSettingSheetDelegate
     }
 }
 
+/// 点击 AI抠像 按钮 触发回调
+- (void)moreInfoSheetDidTapAiMattingButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapAiMattingButton:)]) {
+        [self.delegate streamerHomeViewDidTapAiMattingButton:self];
+    }
+}
+
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects {
     self.chatroomAreaView.closeGiftEffects = closeGiftEffects;
 }
@@ -1267,6 +1277,9 @@ PLVSADesktopChatSettingSheetDelegate
     [self.linkMicTipView dismiss];
     // 回到第二屏
     [self.scrollView setContentOffset:CGPointMake(self.scrollView.bounds.size.width, 0)];
+    if (![PLVRoomDataManager sharedManager].roomData.appStartMemberListEnabled) {
+        return;
+    }
     // 显示成员列表
     [self.memberSheet showInView:self];
 }

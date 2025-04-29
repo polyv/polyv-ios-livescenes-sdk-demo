@@ -128,9 +128,9 @@
 
 "礼物" = "Gift";
 
-"礼物打赏" = "Gifts Reward";
+"礼物打赏" = "Gifts\n Reward";
 
-"礼物特效" = "Gifts Effects";
+"礼物特效" = "Gifts\n Effects";
 
 "礼物打赏功能未开启" = "The gift reward function is not enabled";
 
@@ -295,6 +295,8 @@
 "直播间太过火爆了，请稍后再来(2050407)" = "The live room is too hot, please come back later(2050407)";
 "当前直播间已被禁止直播" = "The current live room has been banned from live";
 "欢迎 %@ 进入直播间" = "welcome %@ join";
+" 进入直播间" = " join";
+" 离开直播间" = " leave";
 "暂无直播" = "Not Live";
 "暂无直播介绍～" = "No live broadcast introduction~";
 "频道信息" = "Channel Info";
@@ -335,11 +337,18 @@
 "参与直播需要摄像头权限，请前往系统设置开启权限" = "Camera permission is required to join the call. Please enable it in your system settings";
 "参与直播需要麦克风权限，请前往系统设置开启权限" = "Microphone permission is required to join the call. Please enable it in your system settings";
 
+"虚拟背景" = "Virtual\n Background";
+"自定义" = "Custom";
+"背景模糊" = "Background Blur";
+"确认要删除该背景图片吗？" = "Are you sure you want to delete this background image?";
+"本地图片" = "Local Pictures";
+
 /**  连麦  */
 "尚未开通，请联系管理员" = "Not activated yet, please contact the administrator";
 "未连麦" = "Not in a call";
 "请求中..." = "Requesting";
 "申请连麦" = "Apply for a call";
+"申请连麦Btn" = "Voice call";
 "申请视频连麦" = "Apply video call";
 "申请音频连麦" = "Apply audio call";
 "邀请你视频连麦" = "Inviting video call";
@@ -357,7 +366,7 @@
 "结束连麦" = "Hang up";
 "挂断" = "Hang up";
 "下麦" = "Hang up";
-"观众下麦" = "Hang up audiences";
+"观众下麦" = "Disconnect\n viewer";
 "全员静音" = "Mute all";
 "取消全员静音" = "Unmute all";
 "已下麦观众" = "Audiences have been hanged up";
@@ -404,6 +413,7 @@
 "正常下麦" = "normal termination";
 "连麦管理" = "Voice chat config";
 "连麦设置" = "Voice chat setting";
+"连麦设置Btn" = "Voice chat\n setting";
 "注：更改连麦方式时，需要确保当前无人正在连麦" = "Note: Before switching voice chat type, you should make sure nobody connected";
 "若需要固定该配置，请前往频道下-角色设置-角色权限-功能配置-连麦设置-默认连麦方式修改" = "To set a default voice chat method, adjust the settings in the Channel > Role Permissions > Functional Configuration";
 "已开启观众连麦" = "Viewer voice chat enabled";
@@ -441,6 +451,7 @@
 "流畅优先" = "Fluency priority";
 "画质优先" = "Quality priority";
 "混流布局" = "Mix layout";
+"混流布局Btn" = "Mix\n layout";
 "网络延迟：%zdms" = "Network latency: %zdms";
 "网络延迟：ms" = "Network latency: ms";
 "已授予主讲权限" = "The lecture permission has been granted";
@@ -464,11 +475,13 @@
 "音视频权限申请" = "Audio and video permission application";
 "暂不支持" = "Not supported";
 "降噪" = "Noise Reduction";
+"降噪Btn" = "Noise\n Reduction";
 "自适应降噪" = "Adaptive";
 "提供声源智能识别和降噪的能力，适用于会议、教育培训等大多数直播场景"= "Smartly refines audio for meetings and education";
 "均衡降噪" = "Balanced";
 "提供统一的降噪效果，主要减少背景中的环境噪音，对人声和主要声音有较好的保留效果，适用于氛围型直播场景" = "Delivers targeted noise cancellation to minimize environmental sounds, preserving speech and key audio for atmospheric live broadcasts";
 "外接设备" = "External Device";
+"外接设备Btn" = "External\n Device";
 "适用于直播过程中，通过外接麦克风收集音量的场景时，开启此功能后将切换至媒体音量，保证正常收音。" = "For live streaming with an external mic, enable this feature to switch to media volume for clear audio capture.";
 "开启" = "Enable";
 "关闭" = "Disable";
@@ -478,6 +491,7 @@
 "注意：媒体音量下，使用手机应用所产生提示音、音视频声音也将被采集并直播出去，请谨慎开启！" = "Caution: With media volume, app sounds and media playback will also be broadcasted. Use with care.";
 "网络断开，直播已暂停" = "Network down, live stream paused";
 "直播回放" = "Live Replay";
+"贴图" = "Sticker";
 
 /**  美颜  */
 "下颌" = "Jaw";
@@ -590,7 +604,7 @@
 "删除" = "Delete";
 "前往设置" = "Go to settings";
 "帮助" = "Help";
-"确定" = "Sure";
+"确定" = "Confirm";
 "设置" = "Setting";
 "更多" = "More";
 "标题" = "title";

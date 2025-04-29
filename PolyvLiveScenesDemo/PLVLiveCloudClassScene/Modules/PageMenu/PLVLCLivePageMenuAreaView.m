@@ -279,6 +279,14 @@ PLVRoomDataManagerProtocol
     return commodityMenu;
 }
 
+- (CGFloat)getKeyboardToolViewHeight {
+    if (self.chatVctrl) {
+        return [self.chatVctrl getKeyboardToolViewHeight];
+    } else {
+        return 56.0;
+    }
+}
+
 #pragma mark - Private Method
 
 - (void)updateChannelMenuInfo {

@@ -26,6 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidTapSignInButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheetDidTapAIMattingButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 @interface PLVLSMoreInfoSheet : PLVLSSideSheet

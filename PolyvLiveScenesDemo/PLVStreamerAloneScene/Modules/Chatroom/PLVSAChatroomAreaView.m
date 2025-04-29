@@ -26,7 +26,8 @@
 
 typedef NS_ENUM(NSInteger, PLVSAMessageType) {
     PLVSAMessageTypeChat = 0,    // 用户发言
-    PLVSAMessageTypeJoin         // 用户进入
+    PLVSAMessageTypeJoin,        // 用户进入
+    PLVSAMessageTypeLeave        // 用户登出
 };
 
 @interface PLVSAChatroomAreaView ()<
@@ -350,6 +351,40 @@ PLVSAChatroomListViewDelegate
         NSAttributedString *contentAttr = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@" 进入直播间") attributes:contentAttributes];
         [welcomeAttr appendAttributedString:contentAttr];
         [self addMessage:welcomeAttr type:PLVSAMessageTypeJoin];
+    }
+}
+
+
+- (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel logoutUsers:(NSArray<NSString *> *)userArray {
+    if (![PLVFdUtil checkArrayUseable:userArray]) {
+        return;
+    }
+    NSString *string = @"";
+    if (userArray && [userArray count] > 0) {
+        if ([userArray count] >= 10) {
+            NSMutableString *mutableString = [[NSMutableString alloc] init];
+            for (int i = 0; i < 3; i++) {
+                NSString *nick = userArray[i];
+                if (nick && nick.length > 0) {
+                    [mutableString appendFormat:@"%@、", nick];
+                }
+            }
+            if (mutableString.length > 1) {
+                string = [[mutableString copy] substringToIndex:mutableString.length - 1];
+                string = [NSString stringWithFormat:PLVLocalizedString(@"%@等%zd人"), string, [userArray count]];
+            }
+        } else {
+            string = userArray[0];
+        }
+    }
+    
+    if (string.length > 0) {
+        NSDictionary *attributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FFFFFF" alpha:0.6], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Regular" size:12]};
+        NSMutableAttributedString *leaveAttr = [[NSMutableAttributedString alloc] initWithString:string attributes:attributes];
+        NSDictionary *contentAttributes = @{NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#FFFFFF"], NSFontAttributeName: [UIFont fontWithName:@"PingFangSC-Regular" size:12]};
+        NSAttributedString *contentAttr = [[NSAttributedString alloc] initWithString:PLVLocalizedString(@" 离开直播间") attributes:contentAttributes];
+        [leaveAttr appendAttributedString:contentAttr];
+        [self addMessage:leaveAttr type:PLVSAMessageTypeLeave];
     }
 }
 

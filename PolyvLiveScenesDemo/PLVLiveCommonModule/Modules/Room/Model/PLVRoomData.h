@@ -229,12 +229,22 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, copy) NSString *defaultOpenMicLinkEnabled;
 // 频道默认开关，仅新版连麦生效
 @property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType defaultChannelLinkMicMediaType;
-// 后台是否显示混流布局按钮，YES显示，NO不显示（仅适用于纯视频开播）
+// 后台是否显示混流布局按钮，YES显示，NO不显示
 @property (nonatomic, assign) BOOL showMixLayoutButtonEnabled;
 // 后台是否显示横竖屏按钮，YES显示，NO不显示（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL showOrientationButtonEnabled;
 // 是否开启桌面消息，YES开启，NO关闭（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL desktopChatEnabled;
+// 开播端是否显示成员列表开关
+@property (nonatomic, assign) BOOL appStartMemberListEnabled;
+// 开播端是否显示混流布局开关
+@property (nonatomic, assign) BOOL appStartMultiplexingLayoutEnabled;
+// 开播端是否显示签到开关
+@property (nonatomic, assign) BOOL appStartCheckinEnabled;
+// 开播端是否显示礼物打赏开关
+@property (nonatomic, assign) BOOL appStartGiftDonateEnabled;
+// 开播端是否显示礼物特效开关
+@property (nonatomic, assign) BOOL appStartGiftEffectEnabled;
 
 #pragma mark SIP独有属性
 /// 支持SIP模式

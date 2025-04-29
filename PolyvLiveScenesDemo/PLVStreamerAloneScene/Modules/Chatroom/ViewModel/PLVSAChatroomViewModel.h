@@ -58,6 +58,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param userArray 登录聊天室的用户数组，如果为nil，表示当前时间段内当前用户有登录事件
 - (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray;
 
+/// 当前时间段内如果有用户登出聊天室，间隔2秒触发一次
+/// 用于显示‘屏幕共享桌面消息’
+/// @param userArray 登录聊天室的用户数组
+- (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel logoutUsers:(NSArray <NSString *> *)userArray;
+
 /// 接收到礼物打赏时触发
 /// 用于显示礼物打赏动画
 - (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel

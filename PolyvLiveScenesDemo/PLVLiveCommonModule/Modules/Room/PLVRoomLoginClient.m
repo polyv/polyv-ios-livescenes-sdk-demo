@@ -348,6 +348,15 @@
         roomData.linkmicNewStrategyEnabled = PLV_SafeBoolForDictKey(data, @"newMicEnabled");
         roomData.defaultOpenMicLinkEnabled = PLV_SafeStringForDictKey(data, @"defaultOpenMicLinkEnabled");
         
+        NSDictionary *appStartConfig = PLV_SafeDictionaryForDictKey(data, @"appStartConfig");
+        if ([PLVFdUtil checkDictionaryUseable:appStartConfig]) {
+            roomData.appStartMemberListEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartMemberListEnabled");
+            roomData.appStartMultiplexingLayoutEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartMultiplexingLayoutEnabled");
+            roomData.appStartCheckinEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartCheckinEnabled");
+            roomData.appStartGiftDonateEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartGiftDonateEnabled");
+            roomData.appStartGiftEffectEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartGiftEffectEnabled");
+        }
+        
         // 初始化直播间用户数据
         NSString *teacherNickname = PLV_SafeStringForDictKey(data, @"teacherNickname");
         if (nickName && [nickName isKindOfClass:[NSString class]] && nickName.length > 0) {

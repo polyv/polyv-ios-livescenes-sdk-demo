@@ -25,7 +25,7 @@
 #import "PLVLCLiveRoomPlayerSkinView.h"
 #import "PLVLCChatLandscapeView.h"
 #import "PLVRewardDisplayManager.h"
-#import "PLVCommodityPushView.h"
+#import "PLVCommodityPushSmallCardView.h"
 #import "PLVBaseNavigationController.h"
 #import "PLVCommodityDetailViewController.h"
 #import "PLVCommodityCardDetailView.h"
@@ -49,7 +49,7 @@ PLVLCLiveRoomPlayerSkinViewDelegate,
 PLVLCLivePageMenuAreaViewDelegate,
 PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
-PLVCommodityPushViewDelegate,
+PLVCommodityPushSmallCardViewDelegate,
 PLVCommodityDetailViewControllerDelegate,
 PLVPopoverViewDelegate,
 PLVInteractGenericViewDelegate,
@@ -113,7 +113,7 @@ PLVLCOnlineListSheetDelegate
 @property (nonatomic, strong) PLVPopoverView *popoverView;              // 浮动区域
 @property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager; // 礼物打赏动画管理器
 @property (nonatomic, strong) UIView *rewardSvgaView;                   // 礼物打赏动画父视图 （仅在横屏下有效）
-@property (nonatomic, strong) PLVCommodityPushView *pushView;           // 商品推送视图
+@property (nonatomic, strong) PLVCommodityPushSmallCardView *pushView;           // 商品推送视图
 @property (nonatomic, strong) PLVCommodityCardDetailView *cardDetailView;           // 卡片推送加载视图
 
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
@@ -368,6 +368,7 @@ PLVLCOnlineListSheetDelegate
     }
     
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    CGFloat padding = 12;
     if (!fullScreen) {
         // 竖屏
         self.linkMicAreaView.hidden = !self.linkMicAreaView.inRTCRoom;
@@ -378,11 +379,11 @@ PLVLCOnlineListSheetDelegate
             [self.mediaAreaView.skinView synchOtherSkinViewState:self.liveRoomSkinView];
             [self.menuAreaView.chatVctrl resumeFloatingButtonViewLayout];
             [self.menuAreaView rollbackProductPageContentView];
-            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, isPad ? 308 : CGRectGetWidth(self.view.frame) - 60, 128)];
+            [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(CGRectGetWidth(self.menuAreaView.frame) - padding - 104, CGRectGetHeight(self.menuAreaView.frame) - [self.menuAreaView getKeyboardToolViewHeight] - P_SafeAreaBottomEdgeInsets() - padding - 204, 104, 204)];
             [self.cardDetailView hiddenCardDetailView];
         }
-
-        CGRect mediaAreaViewFrame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetWidth(self.view.bounds) * PPTPlayerViewScale + P_SafeAreaTopEdgeInsets());
+        
+        CGRect mediaAreaViewFrame = CGRectMake(0, 0, CGRectGetWidth(self.view.bounds), CGRectGetWidth(self.view.bounds) * PPTPlayerViewScale + self.view.safeAreaInsets.top);
         self.mediaAreaView.frame = mediaAreaViewFrame;
         [self enableRewardSvgaPlayer:NO];
         
@@ -424,7 +425,7 @@ PLVLCOnlineListSheetDelegate
             [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
             [self.liveRoomSkinView displayLotteryWidgetView:self.menuAreaView.chatVctrl.lotteryWidgetView];
             [self.liveRoomSkinView displayWelfareLotteryWidgetView:self.menuAreaView.chatVctrl.welfareLotteryWidgetView];
-            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(- CGRectGetWidth(self.view.frame), CGRectGetMinY(self.chatLandscapeView.frame) + (CGRectGetHeight(self.chatLandscapeView.frame) - 128), 308, 128)];
+            [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(CGRectGetWidth(self.liveRoomSkinView.frame) - padding - 104 - P_SafeAreaRightEdgeInsets(), CGRectGetMinY(self.liveRoomSkinView.playButton.frame) - padding - 204, 104, 204)];
             [self.cardDetailView hiddenCardDetailView];
         }
         [self.view insertSubview:self.chatLandscapeView belowSubview:self.liveRoomSkinView];
@@ -638,12 +639,9 @@ PLVLCOnlineListSheetDelegate
     return _rewardDisplayManager;
 }
 
-- (PLVCommodityPushView *)pushView {
+- (PLVCommodityPushSmallCardView *)pushView {
     if (!_pushView) {
-        _pushView = [[PLVCommodityPushView alloc] initWithType:PLVCommodityPushViewTypeLC];
-        _pushView.layer.masksToBounds = YES;
-        _pushView.layer.cornerRadius = 4;
-        _pushView.backgroundColor = [UIColor whiteColor];
+        _pushView = [[PLVCommodityPushSmallCardView alloc] init];
         _pushView.delegate = self;
     }
     return _pushView;
@@ -974,10 +972,11 @@ PLVLCOnlineListSheetDelegate
         if ([model.productPushRule isEqualToString:@"smallCard"]) {
             [self.pushView setModel:model];
             [self.pushView reportTrackEvent];
+            CGFloat padding = 12.0;
             if (self.currentLandscape) {
-                [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), CGRectGetHeight(self.view.frame) - 128 - 16, 308, 128)];
+                [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(CGRectGetWidth(self.liveRoomSkinView.frame) - padding - 104 - P_SafeAreaRightEdgeInsets(), CGRectGetMinY(self.liveRoomSkinView.playButton.frame) - padding - 204, 104, 204)];
             } else {
-                [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(-CGRectGetWidth(self.view.frame), 60, CGRectGetWidth(self.view.frame) - 60, 128)];
+                [self.pushView showOnView:self.menuAreaView initialFrame:CGRectMake(CGRectGetWidth(self.menuAreaView.frame) - padding - 104, CGRectGetHeight(self.menuAreaView.frame) - [self.menuAreaView getKeyboardToolViewHeight] - P_SafeAreaBottomEdgeInsets() - padding - 204, 104, 204)];
             }
         } else {
             [_pushView hide];
@@ -1587,7 +1586,7 @@ PLVLCOnlineListSheetDelegate
 }
 
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductCommodityModel:(PLVCommodityModel *)commodity {
-    [self plvCommodityPushViewDidClickCommodityDetail:commodity];
+    [self PLVCommodityPushSmallCardViewDidClickCommodityDetail:commodity];
 }
 
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowJobDetail:(NSDictionary *)data {
@@ -1640,9 +1639,9 @@ PLVLCOnlineListSheetDelegate
     [self.liveRoomSkinView showWelfareLotteryWidgetView:show];
 }
 
-#pragma mark  PLVCommodityPushViewDelegate
+#pragma mark  PLVCommodityPushSmallCardViewDelegate
 
-- (void)plvCommodityPushViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
+- (void)PLVCommodityPushSmallCardViewDidClickCommodityDetail:(PLVCommodityModel *)commodity {
     [self.pushView sendProductClickedEvent:commodity];
     if ([commodity.buyType isEqualToString:@"inner"]) { /// 直接购买
     } else if ([commodity.buyType isEqualToString:@"link"]) { /// 外链购买
@@ -1667,7 +1666,7 @@ PLVLCOnlineListSheetDelegate
     }
 }
 
-- (void)plvCommodityPushViewDidShowJobDetail:(NSDictionary *)data {
+- (void)PLVCommodityPushSmallCardViewDidShowJobDetail:(NSDictionary *)data {
     [self.popoverView.interactView openJobDetailWithData:data];
 }
 
@@ -1789,7 +1788,7 @@ PLVLCOnlineListSheetDelegate
 }
 
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetail:(PLVCommodityModel *)commodity {
-    [self plvCommodityPushViewDidClickCommodityDetail:commodity];
+    [self PLVCommodityPushSmallCardViewDidClickCommodityDetail:commodity];
 }
 
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateWelfareLotteryWidget:(NSDictionary *)dict {

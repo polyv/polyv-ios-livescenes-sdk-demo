@@ -28,6 +28,7 @@
 #import "PLVShareLiveSheet.h"
 #import "PLVStickerCanvas.h"
 #import "PLVSAScreenSharePipCustomView.h"
+#import "PLVVirtualBackgroudSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -68,7 +69,8 @@ UIGestureRecognizerDelegate,
 PLVShareLiveSheetDelegate,
 PLVStickerCanvasDelegate,
 UINavigationControllerDelegate,
-PLVSAScreenShareCustomPictureInPictureManagerDelegate
+PLVSAScreenShareCustomPictureInPictureManagerDelegate,
+PLVVirtualBackgroudSheetDelegate
 >
 
 #pragma mark 模块
@@ -121,6 +123,7 @@ PLVSAScreenShareCustomPictureInPictureManagerDelegate
 @property (nonatomic, strong) PLVSABeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
 @property (nonatomic, strong) PLVStickerCanvas *stickerCanvas; // 贴图组件
+@property (nonatomic, strong) PLVVirtualBackgroudSheet *aiMattingSheet; // AI抠像组件
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
 @property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
 
@@ -1532,6 +1535,32 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self presentViewController:imagePickerVC animated:YES completion:nil];
 }
 
+- (void)streamerSettingViewDidClickVirtualBackgroundButton:(PLVSAStreamerSettingView *)streamerSettingView {
+    [self showAIMattingSheet];
+}
+
+/// AI 抠像设置面板弹出
+- (void)showAIMattingSheet{
+    if (self.streamerPresenter.currentCameraOpen) {
+        // 实现虚拟背景功能
+        NSInteger width = self.view.bounds.size.width;
+        NSInteger height = width;
+        BOOL isFullscreen = [UIScreen mainScreen].bounds.size.width >  [UIScreen mainScreen].bounds.size.height;
+        if (isFullscreen){
+            width = [UIScreen mainScreen].bounds.size.height;
+            height = width;
+        }
+        if (!self.aiMattingSheet){
+            self.aiMattingSheet = [[PLVVirtualBackgroudSheet alloc] initWithSheetHeight:width sheetLandscapeWidth:height];
+            self.aiMattingSheet.delegate = self;
+        }
+        [self.aiMattingSheet showInView:self.view];
+        
+    } else {
+        [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"请开启摄像头后使用") inView:self.view];
+    }
+}
+
 #pragma mark PLVSAStreamerHomeViewProtocol
 
 - (void)bandUsersInStreamerHomeView:(PLVSAStreamerHomeView *)homeView withUserId:(NSString *)userId banned:(BOOL)banned {
@@ -1773,6 +1802,11 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self showImagePicker];
 }
 
+/// 虚拟背景按钮点击
+- (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView {
+    [self showAIMattingSheet];
+}
+
 #pragma mark PLVSABeautySheetDelegate
 - (void)beautySheet:(PLVSABeautySheet *)beautySheet didChangeOn:(BOOL)on {
     [self.streamerPresenter enableBeautyProcess:on];
@@ -1853,6 +1887,23 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)PLVSAScreenShareCustomPictureInPictureManager_needUpdateContent {
     [self.screenShareCustomPIPManager updateContent:self.homeView.currentNewMessage networkState:self.streamerPresenter.networkQuality];
+}
+
+#pragma mark PLVVirtualBackgroudSheetDelegate
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet matType:(PLVVirtualBackgroudMatType)matType image:(UIImage *)matBgImage{
+    switch (matType) {
+        case PLVVirtualBackgroudMatTypeNone:
+            [self.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeNone image:matBgImage];
+            break;
+        case PLVVirtualBackgroudMatTypeBlur:
+            [self.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeBlue image:matBgImage];
+            break;
+        case PLVVirtualBackgroudMatTypeCustomImage:
+            [self.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeCustomImage image:matBgImage];
+            break;
+        default:
+            break;
+    }
 }
 
 @end
