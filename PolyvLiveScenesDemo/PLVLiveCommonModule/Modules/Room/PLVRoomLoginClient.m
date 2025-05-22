@@ -162,6 +162,9 @@
             
             // 使用roomUserHandler配置用户对象
             PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:roomData.channelType];
+            if (roomUserHandler) {
+                roomUserHandler(roomUser);
+            }
             [roomData setupRoomUser:roomUser];
             
             // 注册日志管理器
@@ -691,7 +694,7 @@
                     // 使用roomUserHandler配置用户对象
                     PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:offlineInfoChannelType];
                     if (roomUserHandler) {
-                        roomUserHandler(currentRoomData.roomUser);
+                        roomUserHandler(roomUser);
                     }
                     [currentRoomData setupRoomUser:roomUser];
                     
@@ -733,7 +736,7 @@
             // 使用roomUserHandler配置用户对象
             PLVRoomUser *roomUser = [[PLVRoomUser alloc] initWithChannelType:offlineInfoChannelType];
             if (roomUserHandler) {
-                roomUserHandler(roomData.roomUser);
+                roomUserHandler(roomUser);
             }
             [roomData setupRoomUser:roomUser];
             

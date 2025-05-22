@@ -28,6 +28,9 @@
 /// 功能开关选中图片
 @property (nonatomic, strong) UIImage * switchSelectedImage;
 
+/// 自定义字典
+@property (nonatomic, strong) NSDictionary *customDictionary;
+
 
 @end
 
@@ -93,6 +96,20 @@
     }
     model.mediaMoreModelMode = PLVLCMediaMoreModelMode_Switch;
     model.selectedIndex = selected ? 1 : 0;
+    return model;
+}
+
++ (instancetype)modelWithCustomTitle:(NSString *)customTitle dictionary:(NSDictionary *)dictionary {
+    PLVLCMediaMoreModel * model = [[PLVLCMediaMoreModel alloc] init];
+    if ([PLVFdUtil checkStringUseable:customTitle]) {
+        model.optionTitle = customTitle;
+    } else {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreModel - modelWithcustomTitle failed, set optionTitle failed, optionTitle:%@",customTitle);
+        return nil;
+    }
+    
+    model.customDictionary = dictionary;
+    model.mediaMoreModelMode = PLVLCMediaMoreModelMode_Custom;
     return model;
 }
 

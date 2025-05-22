@@ -9,11 +9,12 @@
 #import "PLVLCMediaMoreView.h"
 
 #import "PLVLCMediaMoreCell.h"
+#import "PLVLCSubtitleSettingCell.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
-@interface PLVLCMediaMoreView () <UITableViewDataSource, UITableViewDelegate, PLVLCMediaMoreCellDelegate>
+@interface PLVLCMediaMoreView () <UITableViewDataSource, UITableViewDelegate, PLVLCMediaMoreCellDelegate, PLVLCSubtitleSettingCellDelegate>
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL moreViewShow;
@@ -239,30 +240,54 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
     static NSString * cellId = @"PLVLCMediaMoreCellId";
+    static NSString *subtitleCellId = @"PLVLCSubtitleSettingCellId";
     
     PLVLCMediaMoreModel * model;
-    PLVLCMediaMoreCell * cell = [tableView dequeueReusableCellWithIdentifier:cellId];
-    if (!cell) {
-        cell = [[PLVLCMediaMoreCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellId];
-        cell.selectionStyle = UITableViewCellSelectionStyleNone;
-        cell.delegate = self;
-    }
+    UITableViewCell *cell;
     
     if (indexPath.row == 0 && [PLVFdUtil checkArrayUseable:self.switchesDataArray]) {
-        [cell setSwitchesDataArray:self.switchesDataArray];
+        // 创建普通 Cell
+        PLVLCMediaMoreCell *moreCell = [tableView dequeueReusableCellWithIdentifier:cellId];
+        if (!moreCell) {
+            moreCell = [[PLVLCMediaMoreCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellId];
+            moreCell.selectionStyle = UITableViewCellSelectionStyleNone;
+            moreCell.delegate = self;
+        }
+        [moreCell setSwitchesDataArray:self.switchesDataArray];
+        cell = moreCell;
         for (int i = 0; i < self.switchesDataArray.count; i++) {
             if ([self.switchesDataArray[i].optionTitle isEqualToString:PLVLocalizedString(@"弹幕")]) {
-                self.danmuCell = cell;
+                self.danmuCell = (PLVLCMediaMoreCell *)cell;
             }
         }
     } else {
         NSInteger currentRow = [PLVFdUtil checkArrayUseable:self.switchesDataArray] ? (indexPath.row - 1) : indexPath.row;
         if (currentRow < self.optionsDataArray.count) {
             model = self.optionsDataArray[currentRow];
+            if ([model.optionTitle isEqualToString:PLVLocalizedString(@"回放字幕")]) {
+                // 创建字幕设置 Cell
+                PLVLCSubtitleSettingCell *subtitleCell = [tableView dequeueReusableCellWithIdentifier:subtitleCellId];
+                if (!subtitleCell) {
+                    subtitleCell = [[PLVLCSubtitleSettingCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:subtitleCellId];
+                    subtitleCell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    subtitleCell.delegate = self;
+                }
+                NSArray *subtitleList = PLV_SafeArraryForDictKey(model.customDictionary, @"subtitleList");
+                [subtitleCell setupWithSubtitleList:subtitleList];
+                cell = subtitleCell;
+            } else {
+                PLVLCMediaMoreCell *moreCell = [tableView dequeueReusableCellWithIdentifier:cellId];
+                if (!moreCell) {
+                    moreCell = [[PLVLCMediaMoreCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellId];
+                    moreCell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    moreCell.delegate = self;
+                }
+                [moreCell setModel:model];
+                cell = moreCell;
+            }
         }else{
             PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaMoreView - get model failed, indexPath illegal:%@",indexPath);
         }
-        [cell setModel:model];
     }
     return cell;
 }
@@ -271,7 +296,15 @@
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    return fullScreen || isPad ? 88.0 : 56.0;
+    NSInteger currentRow = [PLVFdUtil checkArrayUseable:self.switchesDataArray] ? (indexPath.row - 1) : indexPath.row;
+    BOOL isSubtitleCell = NO;
+    if (currentRow < self.optionsDataArray.count) {
+        PLVLCMediaMoreModel *model = self.optionsDataArray[currentRow];
+        if ([model.optionTitle isEqualToString:PLVLocalizedString(@"回放字幕")]) {
+            isSubtitleCell = YES;
+        }
+    }
+    return fullScreen || isPad || isSubtitleCell ? 88.0 : 56.0;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{
@@ -286,6 +319,13 @@
     [self switchShowStatusWithAnimationAfterDelay:0.1]; /// 延后 0.1秒 回收页面，保证用户可感知已选中
 }
 
+#pragma mark PLVLCSubtitleSettingCellDelegate
+
+- (void)PLVLCSubtitleSettingCell:(PLVLCSubtitleSettingCell *)cell didUpdateSubtitleState:(PLVPlaybackSubtitleModel *)originalSubtitle translateSubtitle:(PLVPlaybackSubtitleModel *)translateSubtitle {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaMoreView:didUpdateSubtitleState:translateSubtitle:)]) {
+        [self.delegate plvLCMediaMoreView:self didUpdateSubtitleState:originalSubtitle translateSubtitle:translateSubtitle];
+    }
+}
 
 #pragma mark - [ Event ]
 - (void)tapGestureAction:(UITapGestureRecognizer *)tap{

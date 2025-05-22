@@ -689,12 +689,14 @@ PLVDefaultPageViewDelegate
     NSMutableDictionary *infoDict = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackLastTimeInfo];
     NSMutableDictionary *lastTimeDict = infoDict[viewerId];
     NSTimeInterval lastTime = 0;
-    if (self.recordEnable && [PLVFdUtil checkStringUseable:self.fileId]) {
+    if (self.livePlaybackPlayer.lastKeepPlayTime >= 0) { // 优先使用跨端续播数据
+        lastTime = self.livePlaybackPlayer.lastKeepPlayTime;
+    } else if (self.recordEnable && [PLVFdUtil checkStringUseable:self.fileId]) {
         lastTime = [lastTimeDict[self.fileId] doubleValue];
     } else if ([PLVFdUtil checkStringUseable:self.vodId]) {
         lastTime = [lastTimeDict[self.vodId] doubleValue];
     }
-    if (lastTime != 0 && (self.livePlaybackPlayer.duration - lastTime) > 1) {
+    if (lastTime != 0 && (self.livePlaybackPlayer.duration - lastTime) > 10) {
         [self seekLivePlaybackToTime:lastTime];
     }
 }

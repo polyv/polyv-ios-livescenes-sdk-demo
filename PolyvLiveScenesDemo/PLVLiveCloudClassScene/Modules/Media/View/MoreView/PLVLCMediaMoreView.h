@@ -12,6 +12,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVPlaybackSubtitleModel;
 @protocol PLVLCMediaMoreViewDelegate;
 
 /// 媒体更多视图
@@ -56,6 +57,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)plvLCMediaMoreView:(PLVLCMediaMoreView *)moreView optionItemSelected:(PLVLCMediaMoreModel *)model;
 
+- (void)plvLCMediaMoreView:(PLVLCMediaMoreView *)moreView didUpdateSubtitleState:(PLVPlaybackSubtitleModel *)originalSubtitle translateSubtitle:(PLVPlaybackSubtitleModel *)translateSubtitle;
 @end
 
 

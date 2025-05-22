@@ -65,7 +65,7 @@
         [self addSubview:self.chatButton];
         [self addSubview:self.layoutSwitchButton];
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        if (!roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0 && roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
+        if (!roomData.linkmicNewStrategyEnabled && roomData.interactNumLimit > 0 && (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher || roomData.roomUser.viewerType == PLVRoomUserTypeGuest)) {
             [self addSubview:self.linkMicButton];
         }
         [self addSubview:self.commodityButton];

@@ -11,6 +11,7 @@
 typedef NS_ENUM(NSUInteger, PLVLCMediaMoreModelMode) {
     PLVLCMediaMoreModelMode_Options = 0, // 参数选项模式
     PLVLCMediaMoreModelMode_Switch = 1, // 功能开关模式
+    PLVLCMediaMoreModelMode_Custom = 2, // 自定义模式
 };
 
 NS_ASSUME_NONNULL_BEGIN
@@ -54,6 +55,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// 功能开关选中图片
 @property (nonatomic, strong, readonly) UIImage * _Nullable switchSelectedImage;
 
+/// 自定义字典
+///
+/// @note 仅可在创建Model自定义时，配置此值
+@property (nonatomic, strong, readonly) NSDictionary *customDictionary;
+
 #pragma mark - [ 方法 ]
 #pragma mark 创建
 /// 创建 Model
@@ -85,6 +91,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param selectedImage 功能开关选中图片
 /// @param selected  默认功能开关是否选中
 + (instancetype)modelWithSwitchTitle:(NSString *)switchTitle normalImage:(UIImage *)normalImage selectedImage:(UIImage *)selectedImage selected:(BOOL)selected;
+
+/// 创建Model 自定义
+///
+/// @param customTitle  自定义标题
+/// @param dictionary  自定义字典
++ (instancetype)modelWithCustomTitle:(NSString *)customTitle dictionary:(NSDictionary *)dictionary;
 
 #pragma mark 数据处理
 /// 判断两个 moreModel 之间是否属于同一系列

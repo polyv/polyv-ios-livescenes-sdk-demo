@@ -16,6 +16,7 @@
 #import "PLVLCMediaDanmuSettingView.h"
 #import "PLVPinMessagePopupView.h"
 #import "PLVLCOnlineListRuleSheet.h"
+#import "PLVLiveScenesSubtitleView.h"
 
 // 模块
 #import "PLVDocumentView.h"
@@ -37,6 +38,7 @@ static NSString *const PLVLCMediaAreaView_Data_QualityOptionTitle = @"视频质�
 static NSString *const PLVLCMediaAreaView_Data_RouteOptionTitle = @"线路";
 static NSString *const PLVLCMediaAreaView_Data_LiveDelayOptionTitle = @"延迟";
 static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
+static NSString *const PLVLCMediaAreaView_Data_subtitleOptionTitle  = @"回放字幕";
 static NSInteger const PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum = 5;
 static NSString * const kUserDefaultDanmuSpeed = @"UserDefaultDanmuSpeed";
 static NSString *const PLVLCMediaSwitchNormalDelayAttributeName = @"switchnormaldelay";
@@ -79,9 +81,12 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, assign) UIView *pictureInPictureOriginView;   // 画中画视图的起始视图，这个视图必须是激活状态的，否则无法开启画中画。
 @property (nonatomic, strong) PLVLCDownloadBottomSheet *downloadSheet;
 @property (nonatomic, strong) PLVLCOnlineListRuleSheet *onlineListRuleSheet;
+@property (nonatomic, strong) PLVLiveScenesSubtitleView *subtitleView; // 字幕组件
+@property (nonatomic, strong) NSTimer *subtitleTimer; // 字幕定时器
 
 #pragma mark 数据
 @property (nonatomic, readonly) PLVRoomData *roomData;  // 只读，当前直播间数据
+@property (nonatomic, strong) NSMutableDictionary *subtitleCache; // 存储临时字幕数据
 
 #pragma mark UI
 /// view hierarchy
@@ -171,6 +176,10 @@ PLVLCDocumentPaintModeViewDelegate
 
 #pragma mark - [ Life Period ]
 - (void)dealloc {
+    if (_subtitleTimer) {
+        [_subtitleTimer invalidate];
+        _subtitleTimer = nil;
+    }
     PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s", __FUNCTION__);
 }
 
@@ -179,6 +188,7 @@ PLVLCDocumentPaintModeViewDelegate
         self.tryPlayPPTViewNum = 0;
         [self setupUI];
         [self setupModule];
+        self.subtitleCache = [NSMutableDictionary dictionary];
     }
     return self;
 }
@@ -257,7 +267,7 @@ PLVLCDocumentPaintModeViewDelegate
     }
 
     self.watermarkView.frame = self.contentBackgroudView.frame;
-        
+    self.subtitleView.frame = self.contentBackgroudView.frame;
     self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 66);
 }
 
@@ -575,6 +585,8 @@ PLVLCDocumentPaintModeViewDelegate
     [self addSubview:self.contentBackgroudView];
     
     [self contentBackgroundViewDisplaySubview:self.canvasView]; // 无直播时的默认状态，是‘播放器画面’位于主屏
+
+    [self addSubview:self.subtitleView];
     
     [self addSubview:self.danmuView];
     
@@ -702,6 +714,11 @@ PLVLCDocumentPaintModeViewDelegate
         if (downloadModel) { [modelArray addObject:downloadModel]; }
         if ([PLVRoomDataManager sharedManager].roomData.menuInfo.playbackMultiplierEnabled) {
             [modelArray addObject:speedModel];
+        }
+        
+        if ([PLVFdUtil checkArrayUseable:[PLVRoomDataManager sharedManager].roomData.playbackVideoInfo.subtitleList]) {
+            PLVLCMediaMoreModel *subtitleModel = [PLVLCMediaMoreModel modelWithCustomTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_subtitleOptionTitle) dictionary:@{@"subtitleList" : [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo.subtitleList}];
+            [modelArray addObject:subtitleModel];
         }
         
         return modelArray;
@@ -906,6 +923,58 @@ PLVLCDocumentPaintModeViewDelegate
         });
     }];
 }
+
+#pragma mark Subtitle
+
+- (void)loadDefaultSubtitle:(PLVPlaybackVideoInfoModel *)videoInfo {
+    if ([PLVFdUtil checkArrayUseable:videoInfo.availableSubtitleList]) {
+        PLVPlaybackSubtitleModel *originalSubtitle = nil;
+        PLVPlaybackSubtitleModel *translateSubtitle = nil;
+        for (PLVPlaybackSubtitleModel *subtitle in videoInfo.availableSubtitleList) {
+            if (subtitle.isOriginal && !originalSubtitle) {
+                originalSubtitle = subtitle;
+            }
+            if (!subtitle.isOriginal && !translateSubtitle) {
+                translateSubtitle = subtitle;
+            }
+            if (originalSubtitle && translateSubtitle) {
+                break;
+            }
+        }
+        
+        [self plvLCMediaMoreView:self.moreView didUpdateSubtitleState:originalSubtitle translateSubtitle:translateSubtitle];
+    }
+}
+
+- (void)updateSubtitle {
+    [self.subtitleView showSubtilesWithPlaytime:self.currentPlayTime];
+}
+
+- (void)requestStringWithUrl:(NSString *)url completion:(void (^)(NSString *string))completion {
+    if (![PLVFdUtil checkStringUseable:url]) {
+        completion(@"");
+        return;
+    }
+    
+    NSString *localCache = PLV_SafeStringForDictKey(self.subtitleCache, url);
+    if ([PLVFdUtil checkStringUseable:localCache]) {
+        completion(localCache);
+        return;
+    }
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:url]];
+    __weak typeof(self) weakSelf = self;
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        NSString *string = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+        if ([PLVFdUtil checkStringUseable:string] && completion) {
+            [weakSelf.subtitleCache setValue:string forKey:url];
+            completion(string);
+        } else {
+            completion(@"");
+        }
+    }] resume];
+}
+
 
 #pragma mark Getter
 - (CGFloat)topPaddingBelowiOS11{
@@ -1121,6 +1190,14 @@ PLVLCDocumentPaintModeViewDelegate
         _pinMsgPopupView.hidden = YES;
     }
     return _pinMsgPopupView;
+}
+
+- (PLVLiveScenesSubtitleView *)subtitleView {
+    if (!_subtitleView) {
+        // Note: 可调整字体显示颜色和背景
+        _subtitleView = [[PLVLiveScenesSubtitleView alloc] initBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.6) fontSize1:16.0 textColor1:PLV_UIColorFromRGBA(@"#FFFFFF", 1.0) fontSize2:14.0 textColor2:PLV_UIColorFromRGBA(@"#F0F1F5", 1.0)];
+    }
+    return _subtitleView;
 }
 
 - (BOOL)inLinkMic{
@@ -1449,6 +1526,60 @@ PLVLCDocumentPaintModeViewDelegate
     }
 }
 
+- (void)plvLCMediaMoreView:(PLVLCMediaMoreView *)moreView didUpdateSubtitleState:(PLVPlaybackSubtitleModel *)originalSubtitle translateSubtitle:(PLVPlaybackSubtitleModel *)translateSubtitle {
+    if (self.subtitleTimer) {
+        [self.subtitleTimer invalidate];
+        self.subtitleTimer = nil;
+    }
+    
+    PLVPlaybackVideoInfoModel* playbackVideoInfo = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+    if (!originalSubtitle && !translateSubtitle) {
+        [self.subtitleView setSubtitleContent1:nil subtitleContent2:nil];
+        return;
+    } else if (originalSubtitle && translateSubtitle) { // 双字幕
+        __block NSString *srtContent;
+        __block NSString *srtContent2;
+        if ([playbackVideoInfo isKindOfClass:PLVPlaybackLocalVideoInfoModel.class]) {
+            PLVPlaybackLocalVideoInfoModel *playbackLocalVideoInfo = (PLVPlaybackLocalVideoInfoModel *)playbackVideoInfo;
+            NSString *originalSubtitlePath = [NSString stringWithFormat:@"%@/%@", playbackLocalVideoInfo.subTitleFolderPath, [originalSubtitle.srtUrl lastPathComponent]];
+            NSString *translateSubtitlePath = [NSString stringWithFormat:@"%@/%@", playbackLocalVideoInfo.subTitleFolderPath, [translateSubtitle.srtUrl lastPathComponent]];
+            NSError *error;
+           srtContent = [NSString stringWithContentsOfFile:originalSubtitlePath
+                                                                                 encoding:NSUTF8StringEncoding
+                                                                                    error:&error];
+           srtContent2 = [NSString stringWithContentsOfFile:translateSubtitlePath
+                                                                                 encoding:NSUTF8StringEncoding
+                                                                                    error:&error];
+        } else {
+            dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+            [self requestStringWithUrl:originalSubtitle.srtUrl completion:^(NSString *string) {
+                srtContent = string;
+                dispatch_semaphore_signal(semaphore);
+            }];
+            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+            [self requestStringWithUrl:translateSubtitle.srtUrl completion:^(NSString *string) {
+                srtContent2 = string;
+                dispatch_semaphore_signal(semaphore);
+            }];
+            dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+        }
+        [self.subtitleView setSubtitleContent1:srtContent subtitleContent2:srtContent2];
+    } else { // 单字幕
+        PLVPlaybackSubtitleModel *currentModel = originalSubtitle ?: translateSubtitle;
+        if ([playbackVideoInfo isKindOfClass:PLVPlaybackLocalVideoInfoModel.class]) {
+            PLVPlaybackLocalVideoInfoModel *playbackLocalVideoInfo = (PLVPlaybackLocalVideoInfoModel *)playbackVideoInfo;
+            NSString *subtitlePath = [NSString stringWithFormat:@"%@/%@", playbackLocalVideoInfo.subTitleFolderPath, [currentModel.srtUrl lastPathComponent]];
+            NSString *srtContent = [NSString stringWithContentsOfFile:subtitlePath encoding:NSUTF8StringEncoding error:nil];
+            [self.subtitleView setSubtitleContent1:srtContent subtitleContent2:nil];
+        } else {
+            [self requestStringWithUrl:currentModel.srtUrl completion:^(NSString *string) {
+                [self.subtitleView setSubtitleContent1:string subtitleContent2:nil];
+            }];
+        }
+    }
+    self.subtitleTimer = [NSTimer scheduledTimerWithTimeInterval:0.2 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(updateSubtitle) userInfo:nil repeats:YES];
+}
+
 #pragma mark PLVLCMediaPlayerCanvasViewDelegate
 /// ‘播放画面’按钮被点击
 - (void)plvLCMediaPlayerCanvasViewPlayCanvasButtonClicked:(PLVLCMediaPlayerCanvasView *)playerCanvasView{
@@ -1607,6 +1738,11 @@ PLVLCDocumentPaintModeViewDelegate
     
     [self.moreView refreshTableViewWithDataArray:[self getMoreViewDefaultDataArray]];
     [self.moreView refreshTableView];
+    
+    // 加载默认字幕
+    if (self.videoType == PLVChannelVideoType_Playback) {
+        [self loadDefaultSubtitle:videoInfo];
+    }
     
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playbackVideoInfoDidUpdated:)]) {
         [self.delegate plvLCMediaAreaView:self playbackVideoInfoDidUpdated:videoInfo];
