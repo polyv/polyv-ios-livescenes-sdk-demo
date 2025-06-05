@@ -287,6 +287,10 @@
 }
 
 - (BOOL)canEnableProductClickButton {
+    if (!self.model.openPriceEnable && !([self.model.productType isEqualToString:@"finance"] || [self.model.productType isEqualToString:@"position"]) ) {
+        return NO;
+    }
+    
     if ([self.model.buyType isEqualToString:@"inner"]) {
         // 检查直接购买的条件
         return YES;
@@ -524,13 +528,44 @@
         self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_delivering_icon"];
     } else { // 普通产品
         realPriceStr = [NSString stringWithFormat:@"¥ %@", model.realPrice];
-        if ([model.priceType isEqualToString:@"CUSTOM"]) {
+        if (!model.openPriceEnable) {
+            // 使用富文本显示 "¥ ?? 待开价"
+            NSMutableAttributedString *priceAttributedText = [[NSMutableAttributedString alloc] init];
+            
+            // "¥ ??" 部分 - 主价格样式
+            NSString *priceSymbolText = @"¥ ??";
+            NSDictionary *priceAttributes = @{
+                NSFontAttributeName:  [UIFont fontWithName:@"PingFangSC-Medium" size:16],
+                NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FF5252"]
+            };
+            NSAttributedString *priceSymbolAttr = [[NSAttributedString alloc] initWithString:priceSymbolText attributes:priceAttributes];
+            [priceAttributedText appendAttributedString:priceSymbolAttr];
+            
+            NSAttributedString *spaceAttr = [[NSAttributedString alloc] initWithString:@" " attributes:nil];
+            [priceAttributedText appendAttributedString:spaceAttr];
+            
+            NSString *waitPriceText = PLVLocalizedString(@"待开价");
+            NSDictionary *waitPriceAttributes = @{
+                NSFontAttributeName:  [UIFont fontWithName:@"PingFangSC-Regular" size:12],
+                NSForegroundColorAttributeName: [PLVColorUtil colorFromHexString:@"#999999"]
+            };
+            NSAttributedString *waitPriceAttr = [[NSAttributedString alloc] initWithString:waitPriceText attributes:waitPriceAttributes];
+            [priceAttributedText appendAttributedString:waitPriceAttr];
+            
+            self.productDescLabel.attributedText = priceAttributedText;
+        } else if ([model.priceType isEqualToString:@"CUSTOM"]) {
             realPriceStr = model.customPrice;
+            self.productDescLabel.text = realPriceStr;
         } else if ([model.realPrice isEqualToString:@"0"]) {
             realPriceStr = PLVLocalizedString(@"免费");
         }
+        
         self.currentProductTips = self.normalProductTips;
-        self.productDescLabel.text = realPriceStr;
+        if (model.openPriceEnable) {
+            self.productDescLabel.attributedText = nil; // 清除之前的富文本设置，使用普通text
+            self.productDescLabel.text = realPriceStr;
+        }
+        
         self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_hotsale_icon"];
         NSString *jumpBtnTitle = [PLVFdUtil checkStringUseable:model.btnShow] ? model.btnShow : PLVLocalizedString(@"去购买");
         [self.jumpTextButton setTitle:jumpBtnTitle forState:UIControlStateNormal];
@@ -579,6 +614,7 @@
     }];
     
     self.jumpTextButton.enabled = [self canEnableProductClickButton];
+    self.jumpTextButton.backgroundColor = [self canEnableProductClickButton] ? [PLVColorUtil colorFromHexString:@"#FF5252"] : [PLVColorUtil colorFromHexString:@"#FAA9AA"];
     
     // 更新热度标签
     [self setTipTitleLabelContent:self.clickTimes animated:NO];

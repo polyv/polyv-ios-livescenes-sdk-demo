@@ -261,4 +261,10 @@ PLVSALinkMicWindowsViewDelegate
     }
 }
 
+- (void)linkMicWindowsViewDidClickStopScreenSharing:(PLVSALinkMicWindowsView *)windowsView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicAreaViewDidClickStopScreenSharing:)]) {
+        [self.delegate linkMicAreaViewDidClickStopScreenSharing:self];
+    }
+}
+
 @end

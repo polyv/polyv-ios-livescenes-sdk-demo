@@ -118,6 +118,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param callback 获取剩余时间的回调
 - (void)plvSALinkMicWindowsView:(PLVSALinkMicWindowsView *)windowsView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback;
 
+/// 本地用户点击停止屏幕共享按钮
+/// @param windowsView 连麦窗口列表视图
+- (void)linkMicWindowsViewDidClickStopScreenSharing:(PLVSALinkMicWindowsView *)windowsView;
+
 @end
 
 NS_ASSUME_NONNULL_END

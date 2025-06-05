@@ -814,6 +814,12 @@ PLVSALinkMicPreviewViewDelegate
     [PLVSAUtils showToastInHomeVCWithMessage:message];
 }
 
+- (void)linkMicWindowCellDidClickStopScreenSharing:(PLVSALinkMicWindowCell *)collectionViewCell {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowsViewDidClickStopScreenSharing:)]) {
+        [self.delegate linkMicWindowsViewDidClickStopScreenSharing:self];
+    }
+}
+
 #pragma mark PLVSALinkMicPreviewViewDelegate
 - (void)plvSALinkMicPreviewViewAcceptLinkMicInvitation:(PLVSALinkMicPreviewView *)linkMicPreView {
     [self.localOnlineUser wantOpenUserMic:self.linkMicPreView.micOpen];

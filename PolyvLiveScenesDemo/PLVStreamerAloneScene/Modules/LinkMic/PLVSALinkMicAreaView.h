@@ -111,6 +111,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param callback 获取剩余时间的回调
 - (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback;
 
+/// 用户点击停止屏幕共享按钮
+/// @param areaView 连麦窗口列表视图
+- (void)linkMicAreaViewDidClickStopScreenSharing:(PLVSALinkMicAreaView *)areaView;
+
 @end
 
 NS_ASSUME_NONNULL_END

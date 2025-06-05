@@ -28,7 +28,7 @@
 ///          ├── (UILabel) nickNameLabel
 ///          ├── (UIButton) closeFullScreenButton
 ///          └── (UIButton) micButton
-@property (nonatomic, strong) UIView *contentBackgroudView; // 内容背景视图 (负责承载 不同类型的内容画面[RTC画面、PPT画面]；直接决定了’内容画面‘在Cell中的布局、图层、圆角)
+@property (nonatomic, strong) UIView *contentBackgroudView; // 内容背景视图 (负责承载 不同类型的内容画面[RTC画面、PPT画面]；直接决定了'内容画面'在Cell中的布局、图层、圆角)
 @property (nonatomic, strong) UILabel *nickNameLabel; // 昵称文本框 (负责展示 用户昵称)
 @property (nonatomic, strong) UIButton *micButton; // 麦克风按钮 (负责展示 不同状态下的麦克风图标)
 @property (nonatomic, strong) UILabel *linkMicStatusLabel;       // 连麦状态文本框 (负责展示 连麦状态)
@@ -36,6 +36,7 @@
 @property (nonatomic, strong) UIButton *closeFullScreenButton; // 关闭全屏 按钮
 @property (nonatomic, strong) UIImageView *screenSharingImageView; // 屏幕共享时 背景图
 @property (nonatomic, strong) UILabel *screenSharingLabel; // 屏幕共享时 文本框
+@property (nonatomic, strong) UIButton *screenSharingStopButton; // 屏幕共享停止按钮
 @property (nonatomic, strong) UIImageView *timerIcon; // 计时器图标
 @property (nonatomic, strong) UILabel *linkMicDuration; // 连麦时长
 @property (nonatomic, assign) BOOL linkMicDurationShow;
@@ -80,6 +81,13 @@
     self.screenSharingImageView.frame = CGRectMake((contentViewWidth - 44)/2, (contentViewHeight - 44)/2 - 20, 44, 44);
     CGFloat sharingLabelWidth = [self.screenSharingLabel sizeThatFits:CGSizeMake(MAXFLOAT, 18)].width;
     self.screenSharingLabel.frame = CGRectMake((contentViewWidth - sharingLabelWidth)/2, CGRectGetMaxY(self.screenSharingImageView.frame) + 4, sharingLabelWidth, 18);
+    
+    NSString *stopButtonTitle = [self.screenSharingStopButton titleForState:UIControlStateNormal] ?: PLVLocalizedString(@"结束共享");
+    UIFont *stopButtonFont = self.screenSharingStopButton.titleLabel.font ?: [UIFont fontWithName:@"PingFang SC" size:14];
+    CGFloat stopButtonTextWidth = [stopButtonTitle sizeWithAttributes:@{NSFontAttributeName: stopButtonFont}].width;
+    CGFloat stopButtonWidth = stopButtonTextWidth + 44;
+    CGFloat stopButtonHeight = 32;
+    self.screenSharingStopButton.frame = CGRectMake((contentViewWidth - stopButtonWidth)/2, CGRectGetMaxY(self.screenSharingLabel.frame) + 12, stopButtonWidth, stopButtonHeight);
     
     CGFloat nickNameLabelWidth = contentViewWidth -  CGRectGetMaxX(self.micButton.frame) - leftPadding - 8;
     self.nickNameLabel.frame = CGRectMake(CGRectGetMaxX(self.micButton.frame) + 8, CGRectGetMinY(self.micButton.frame), nickNameLabelWidth, 14);
@@ -217,6 +225,7 @@
     [self.contentView addSubview:self.closeFullScreenButton];
     [self.contentView addSubview:self.screenSharingImageView];
     [self.contentView addSubview:self.screenSharingLabel];
+    [self.contentView addSubview:self.screenSharingStopButton];
 
     UITapGestureRecognizer *singleTapGesture = [[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(handleSingleTap)];
     singleTapGesture.numberOfTapsRequired = 1;
@@ -269,6 +278,7 @@
     BOOL localUserScreenShareOpen = onlineUser.localUser ? onlineUser.currentScreenShareOpen : NO;
     self.screenSharingLabel.hidden = !localUserScreenShareOpen;
     self.screenSharingImageView.hidden = !localUserScreenShareOpen;
+    self.screenSharingStopButton.hidden = !localUserScreenShareOpen;
     [onlineUser.canvasView rtcViewShow:!localUserScreenShareOpen && onlineUser.currentCameraShouldShow];
     onlineUser.canvasView.placeholderImageView.hidden = localUserScreenShareOpen;
 }
@@ -299,6 +309,14 @@
     plv_dispatch_main_async_safe(^{
         if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowCell:didScreenShareForRemoteUser:)]) {
             [self.delegate linkMicWindowCell:self didScreenShareForRemoteUser:onlineUser];
+        }
+    })
+}
+
+- (void)callbackForScreenSharingStop {
+    plv_dispatch_main_async_safe(^{
+        if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowCellDidClickStopScreenSharing:)]) {
+            [self.delegate linkMicWindowCellDidClickStopScreenSharing:self];
         }
     })
 }
@@ -389,6 +407,21 @@
     return _screenSharingLabel;
 }
 
+- (UIButton *)screenSharingStopButton {
+    if (!_screenSharingStopButton) {
+        _screenSharingStopButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _screenSharingStopButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#FF5053"];
+        [_screenSharingStopButton setTitle:PLVLocalizedString(@"结束共享") forState:UIControlStateNormal];
+        [_screenSharingStopButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        _screenSharingStopButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
+        _screenSharingStopButton.layer.cornerRadius = 16;
+        _screenSharingStopButton.clipsToBounds = YES;
+        [_screenSharingStopButton addTarget:self action:@selector(screenSharingStopButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _screenSharingStopButton.hidden = YES;
+    }
+    return _screenSharingStopButton;
+}
+
 - (UIImageView *)timerIcon {
     if (!_timerIcon) {
         _timerIcon = [[UIImageView alloc] init];
@@ -417,6 +450,10 @@
 
 - (void)closeFullScreenButtonAction {
     [self callbackForCellDidFullScreen:NO];
+}
+
+- (void)screenSharingStopButtonAction {
+    [self callbackForScreenSharingStop];
 }
 
 #pragma mark Gesture

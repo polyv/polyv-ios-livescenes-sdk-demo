@@ -160,6 +160,8 @@
 
 "确定结束连麦吗？" = "Confirm disconnecting the call?";
 
+"确定结束屏幕共享吗？" = "Are you sure you want to stop screen sharing?";
+
 "确定踢出%@吗？" = "Are you sure you want to kick %@?";
 
 "确定重置吗" = "Are you sure you want to reset?";
@@ -173,6 +175,8 @@
 "等待接听中，是否取消" = "Call pending. Cancel call?";
 
 "结束共享" = "Stop Sharing";
+
+"结束" = "Stop";
 
 "网络延迟:10ms" = "Network latency:10ms";
 

@@ -64,7 +64,7 @@
             [self.contentView addSubview:self.mixLayoutButton];
             [muButtonArray addObject:self.mixLayoutButton];
         }
-        if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled) {
+        if ([PLVRoomDataManager sharedManager].roomData.mattingEnabled) {
             [self.contentView addSubview:self.aiMattingButton];
             [muButtonArray addObject:self.aiMattingButton];
         }

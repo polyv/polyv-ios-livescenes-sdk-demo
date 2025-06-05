@@ -110,6 +110,7 @@ PLVRoomDataManagerProtocol
         
         self.pageController = [[PLVLCPageController alloc] init];
         [self addSubview:self.pageController.view];
+        [self.liveRoom addChildViewController:self.pageController];
         
         PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;
         if (roomData.menuInfo || roomData.noNetWorkOfflineIntroductionEnabled) {

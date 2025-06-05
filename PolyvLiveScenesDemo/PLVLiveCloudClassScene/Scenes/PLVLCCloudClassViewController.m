@@ -993,6 +993,12 @@ PLVLCOnlineListSheetDelegate
         
         [self.menuAreaView updateProductMenuTab:contentDict];
         [self.liveRoomSkinView showCommodityButton:enabled];
+    } else if (status == 5) { // 收到 商品信息变动 消息时进行处理
+        NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
+        if (model.productId && self.pushView.model.productId && self.pushView.model.productId == model.productId) {            [self.pushView setModel:model];
+        }
+        
     }
 }
 

@@ -145,6 +145,10 @@ PLVVirtualBackgroudSheetDelegate
 
 #pragma mark - [ Life Cycle ]
 
+- (void)dealloc{
+    NSLog(@"PLVSAStreamerViewController - dealloc");
+}
+
 - (instancetype)init {
     self = [super init];
     if (self) {
@@ -380,6 +384,7 @@ PLVVirtualBackgroudSheetDelegate
     if (!_linkMicAreaView) {
         _linkMicAreaView = [[PLVSALinkMicAreaView alloc] init];
         _linkMicAreaView.delegate = self;
+        _linkMicAreaView.userInteractionEnabled = NO;
     }
     return _linkMicAreaView;
 }
@@ -615,6 +620,7 @@ PLVVirtualBackgroudSheetDelegate
         [self setupHomeView];
         [self.view addSubview:self.homeView];
         // 更新连麦列表
+        self.linkMicAreaView.userInteractionEnabled = YES;
         [self.linkMicAreaView reloadLinkMicUserWindows];
     } else if (self.viewState == PLVSAStreamerViewStateFinishSteam) {
         // 直播结束
@@ -1373,6 +1379,13 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)plvSALinkMicAreaView:(PLVSALinkMicAreaView *)areaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
     [self.streamerPresenter requestLocalUserInviteLinkMicTTLCallback:callback];
+}
+
+- (void)linkMicAreaViewDidClickStopScreenSharing:(PLVSALinkMicAreaView *)areaView {
+    __weak typeof(self) weakSelf = self;
+    [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"确定结束屏幕共享吗？") Message:@"" cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"结束") confirmActionBlock:^{
+        [weakSelf streamerHomeView:weakSelf.homeView didChangeScreenShareOpen:NO];
+    }];
 }
 
 #pragma mark PLVSAStreamerSettingViewDelegate

@@ -203,10 +203,13 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign) BOOL appBeautyEnabled;
 /// 美颜类型  保利威轻美颜 高级美颜优先级高于轻美颜
 @property (nonatomic, copy) NSString *appBeautyType;
-/// 是否支持轻美颜
-@property (nonatomic, assign, readonly) BOOL lightBeautyEnabled;
 /// 美颜sdk需要和rtc 匹配， 增加判断是否可以使用美颜
 @property (nonatomic, assign, readonly) BOOL canUseBeauty;
+/// 是否支持轻美颜
+@property (nonatomic, assign, readonly) BOOL lightBeautyEnabled;
+/// 是否支持AI 抠像
+@property (nonatomic, assign, readonly) BOOL mattingEnabled;
+
 /// 后台开启 APP纯视频横屏开播 默认比例(16:9 , 4:3)
 @property (nonatomic, copy) NSString *appWebStartResolutionRatio;
 /// 后台是否开启 APP纯视频横屏开播可调比例功能

@@ -1109,6 +1109,11 @@ PLVECWelfareLotteryWidgetViewDelegate
         }
     } else if (status == 3 || status == 2 || status == 11) { // 收到 删除/下架/取消推送商品 消息时进行处理
         [ _pushView hide];
+    } else if (status == 5) { // 收到 商品信息变动 消息时进行处理
+        NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
+        if (model.productId && self.pushView.model.productId && self.pushView.model.productId == model.productId) {            [self.pushView setModel:model];
+        }
     }
 }
 

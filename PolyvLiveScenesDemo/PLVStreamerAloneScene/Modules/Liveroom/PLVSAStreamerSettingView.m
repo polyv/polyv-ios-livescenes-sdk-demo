@@ -186,7 +186,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
     }
     
     // 虚拟背景
-    if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled) {
+    if ([PLVRoomDataManager sharedManager].roomData.mattingEnabled) {
         [self.buttonView addSubview:self.virtualBackgroundButton];
         [muButtonArray addObject:self.virtualBackgroundButton];
     }

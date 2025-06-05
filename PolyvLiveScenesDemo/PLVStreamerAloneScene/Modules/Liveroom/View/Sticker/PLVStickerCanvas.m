@@ -158,6 +158,9 @@ PLVStickerImageViewDelegate
 }
 
 - (UIImage *)generateImageWithTransparentBackground {
+    if (self.contentView.subviews.count == 0)
+        return nil;
+    
     // 创建一个带透明通道的上下文
     CGSize canvasSize = self.contentView.bounds.size;
     UIGraphicsBeginImageContextWithOptions(canvasSize, NO, [UIScreen mainScreen].scale);

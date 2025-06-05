@@ -238,7 +238,7 @@
     [muButtonArray addObject:self.stickerButton];
     
     // AI抠像按钮
-    if ([PLVRoomDataManager sharedManager].roomData.lightBeautyEnabled) {
+    if ([PLVRoomDataManager sharedManager].roomData.mattingEnabled) {
         [buttonSuperView addSubview:self.aiMattingButton];
         [muButtonArray addObject:self.aiMattingButton];
     }

@@ -1220,6 +1220,19 @@ PLVChannelClassManagerDelegate
         if ([PLVFdUtil checkStringUseable:onlineUser.linkMicUserId]) {
             PLVRTCStreamerMixUser * mixUser = [[PLVRTCStreamerMixUser alloc] init];
             mixUser.userRTCId = onlineUser.linkMicUserId;
+            
+            // 设置 nickname，如果是本地用户，去掉"(我)"标识
+            NSString *nickname = onlineUser.nickname;
+            if (onlineUser.localUser && nickname) {
+                // 使用正则表达式去掉形如 " (xxx)" 的后缀
+                NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:@" \\([^)]*\\)$" options:0 error:nil];
+                if (regex) {
+                    NSRange range = NSMakeRange(0, nickname.length);
+                    nickname = [regex stringByReplacingMatchesInString:nickname options:0 range:range withTemplate:@""];
+                }
+            }
+            mixUser.nickname = nickname;
+            
             if (onlineUser.currentScreenShareOpen) {
                 mixUser.renderMode = PLVRTCStreamerMixUserRenderMode_FitBlackBase;
                 mixUser.inputType = PLVRTCStreamerMixUserInputType_AudioVideo;

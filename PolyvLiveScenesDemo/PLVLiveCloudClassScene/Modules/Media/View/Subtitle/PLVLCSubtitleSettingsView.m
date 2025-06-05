@@ -188,7 +188,7 @@
     self.originalSubtitleButton.frame = CGRectMake( CGRectGetMaxX(self.titleLabel.frame) + padding, CGRectGetMinY(self.titleLabel.frame), controlsHeight, controlsHeight);
     CGFloat originalSubtitleLabelWidth = [self.originalSubtitleLabel sizeThatFits:CGSizeMake(120, controlsHeight)].width;
     self.originalSubtitleLabel.frame = CGRectMake( CGRectGetMaxX(self.originalSubtitleButton.frame) + 4, CGRectGetMinY(self.originalSubtitleButton.frame), originalSubtitleLabelWidth, controlsHeight);
-    CGFloat translateSubtitleLabelOriginY = !self.originalEnabled ? CGRectGetMinY(self.originalSubtitleLabel.frame) : CGRectGetMaxY(self.originalSubtitleButton.frame) + 8;
+    CGFloat translateSubtitleLabelOriginY = self.originalSubtitleLabel.hidden ? CGRectGetMinY(self.originalSubtitleLabel.frame) : CGRectGetMaxY(self.originalSubtitleButton.frame) + 8;
     self.translateSubtitleButton.frame = CGRectMake(CGRectGetMaxX(self.titleLabel.frame) + padding, translateSubtitleLabelOriginY, controlsHeight, controlsHeight);
     CGFloat translateSubtitleLabelWidth = [self.translateSubtitleLabel sizeThatFits:CGSizeMake(120, controlsHeight)].width;
     self.translateSubtitleLabel.frame = CGRectMake( CGRectGetMaxX(self.translateSubtitleButton.frame) + 4, translateSubtitleLabelOriginY, translateSubtitleLabelWidth, controlsHeight);

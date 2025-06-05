@@ -402,6 +402,11 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
     return NO;
 }
 
+// 暂时和轻美颜功能绑定
+- (BOOL)mattingEnabled{
+    return [self lightBeautyEnabled];
+}
+
 - (BOOL)canUseBeauty{
     if (self.appBeautyEnabled){
         return YES;

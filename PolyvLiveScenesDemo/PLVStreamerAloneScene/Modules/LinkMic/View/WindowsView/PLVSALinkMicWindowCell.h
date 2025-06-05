@@ -42,6 +42,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)linkMicWindowCell:(PLVSALinkMicWindowCell *)collectionViewCell didScreenShareForRemoteUser:(PLVLinkMicOnlineUser *)onlineUser;
 
+- (void)linkMicWindowCellDidClickStopScreenSharing:(PLVSALinkMicWindowCell *)collectionViewCell;
+
 @end
 
 NS_ASSUME_NONNULL_END
