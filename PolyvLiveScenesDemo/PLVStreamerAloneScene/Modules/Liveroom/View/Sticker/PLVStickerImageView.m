@@ -38,7 +38,7 @@ PLVStickerImageViewDelegate
 - (instancetype)initWithFrame:(CGRect)frame contentImage:(UIImage *)contentImage {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor blueColor];
+        self.backgroundColor = [UIColor clearColor];
         _stickerMinScale = 0.1;
         _stickerMaxScale = 10;
         _enablePinchGesture = YES;
@@ -245,6 +245,7 @@ PLVStickerImageViewDelegate
     _enablePinchGesture = enableEdit;
     
     [self setEnabledControl:enableEdit];
+    [self setEnabledBorder:enableEdit];
 }
 
 #pragma mark - Helper Methods
