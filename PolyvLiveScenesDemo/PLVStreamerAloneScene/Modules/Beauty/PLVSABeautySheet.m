@@ -131,6 +131,7 @@ PLVSABeautySwitchDelegate
         [self.delegate respondsToSelector:@selector(beautySheet:didChangeShow:)]) {
         [self.delegate beautySheet:self didChangeShow:YES];
     }
+    
     [super showInView:parentView];
 }
 

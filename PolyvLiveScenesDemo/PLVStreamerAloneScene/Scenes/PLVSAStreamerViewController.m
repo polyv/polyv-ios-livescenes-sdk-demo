@@ -329,18 +329,18 @@ PLVVirtualBackgroudSheetDelegate
     [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)level] forKey:KPLVSANoiseCancellationLevelKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
-/// 读取本地降噪模式
+/// 读取本地声音音质模式
 - (PLVBLinkMicNoiseCancellationLevel)getLocalNoiseCancellationLevel {
     // 如果本地有记录优先读取
     NSString *saveNoiseCancellationLevelString = [[NSUserDefaults standardUserDefaults] objectForKey:KPLVSANoiseCancellationLevelKey];
     if ([PLVFdUtil checkStringUseable:saveNoiseCancellationLevelString]) {
         PLVBLinkMicNoiseCancellationLevel saveNoiseCancellationLevel = saveNoiseCancellationLevelString.integerValue;
-        if (saveNoiseCancellationLevel >= 1 && saveNoiseCancellationLevel <= 2) {
+        if (saveNoiseCancellationLevel >= 1 && saveNoiseCancellationLevel <= 3) {
             return saveNoiseCancellationLevel;
         }
     }
     // 默认降噪模式
-    return PLVBLinkMicNoiseCancellationLevelAggressive;
+    return PLVBLinkMicNoiseCancellationLevelDefault;
 }
 
 /// 保存当前选择的外接设备开关到本地
@@ -936,6 +936,27 @@ PLVVirtualBackgroudSheetDelegate
 
 - (NSArray *)currentWaitUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter{
     return self.streamerPresenter.waitUserArray;
+}
+
+// 搜索相关回调
+- (void)memberPresenter:(PLVMemberPresenter *)memberPresenter didChangeSearchState:(BOOL)isSearching {
+    if (self.viewState != PLVSAStreamerViewStateSteaming) {
+        return;
+    }
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [weakSelf.homeView updateSearchState:isSearching];
+    });
+}
+
+- (void)memberPresenter:(PLVMemberPresenter *)memberPresenter didUpdateSearchResults:(NSArray<PLVChatUser *> *)results {
+    if (self.viewState != PLVSAStreamerViewStateSteaming) {
+        return;
+    }
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [weakSelf.homeView updateSearchResults:results];
+    });
 }
 
 #pragma mark PLVSocketManager Protocol
@@ -1818,6 +1839,16 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 /// 虚拟背景按钮点击
 - (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView {
     [self showAIMattingSheet];
+}
+
+/// 开始搜索
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didStartSearchWithKeyword:(NSString *)keyword {
+    [self.memberPresenter startSearchWithKeyword:keyword];
+}
+
+/// 取消搜索
+- (void)streamerHomeViewDidCancelSearch:(PLVSAStreamerHomeView *)homeView {
+    [self.memberPresenter cancelSearch];
 }
 
 #pragma mark PLVSABeautySheetDelegate

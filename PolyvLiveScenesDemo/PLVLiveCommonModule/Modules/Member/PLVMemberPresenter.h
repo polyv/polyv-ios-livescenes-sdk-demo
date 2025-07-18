@@ -67,6 +67,12 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 /// 获取当前等待用户列表
 - (NSArray *)currentWaitUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter;
 
+/// 搜索状态变化回调
+- (void)memberPresenter:(PLVMemberPresenter *)memberPresenter didChangeSearchState:(BOOL)isSearching;
+
+/// 搜索结果更新回调
+- (void)memberPresenter:(PLVMemberPresenter *)memberPresenter didUpdateSearchResults:(NSArray<PLVChatUser *> *)results;
+
 @end
 
 @interface PLVMemberPresenter : NSObject
@@ -82,6 +88,15 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 
 /// 聊天室移出人数
 @property (nonatomic, assign, readonly) NSInteger kickedCount;
+
+/// 当前搜索关键词
+@property (nonatomic, copy, readonly) NSString *currentSearchKeyword;
+
+/// 是否正在搜索
+@property (nonatomic, assign, readonly) BOOL isSearching;
+
+/// 搜索结果列表
+@property (nonatomic, strong, readonly) NSArray<PLVChatUser *> *searchResults;
 
 /// 自动获取聊天室在线列表，每间隔20秒获取一次并自动更新成员列表
 - (void)start;
@@ -115,6 +130,27 @@ typedef NS_ENUM(NSInteger, PLVMemberOrderIndex) {
 
 /// 更新成员列表中已连麦用户数据
 - (void)refreshUserListWithLinkMicOnlineUserArray:(NSArray <PLVLinkMicOnlineUser *>*)linkMicOnlineUserArray;
+
+#pragma mark - 搜索功能
+
+/// 开始搜索成员
+/// @param keyword 搜索关键词
+- (void)startSearchWithKeyword:(NSString *)keyword;
+
+/// 取消搜索
+- (void)cancelSearch;
+
+/// 清除搜索结果
+- (void)clearSearchResults;
+
+/// 获取搜索结果（按现有排序规则排序）
+- (NSArray<PLVChatUser *> *)getSearchResults;
+
+/// 获取当前搜索关键词（只读）
+- (NSString *)getCurrentSearchKeyword;
+
+/// 获取是否正在搜索状态（只读）
+- (BOOL)isSearching;
 
 @end
 

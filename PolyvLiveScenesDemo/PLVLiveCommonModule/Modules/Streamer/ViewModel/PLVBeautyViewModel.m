@@ -31,7 +31,7 @@
 
 @end
 
-static NSString *kBeautyOptionDictKey = @"kPLVBeautyOptionDictKey";
+static NSString *kBeautyOptionDictKey = @"kPLVGPUBeautyOptionDictKey";
 static NSString *kBeautyFilterOptionDictKey = @"kPLVBeautyFilterOptionDictKey";
 static NSString *kBeautyFilterSelectKey = @"kPLVBeautyFilterSelectKey";
 static NSString *kBeautyOpenKey = @"kPLVBeautyopenKey";
@@ -59,12 +59,17 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     [self initFilterOption];
     [self initBeautyOption];
     [self sendBeautyOpenLog];
+    
+    // 重置当前选中的美颜类型
+    // 否则美颜类型（滤镜） 美颜选项（美颜磨皮）不匹配 导致初始参数错误
+    self.beautyType = PLVBeautyTypeWhiten;
 }
 
 - (void)clear {
     self.beautyManager = nil;
     self.beautyIsReady = NO;
     self.beautyIsOpen = NO;
+    self.beautyType = PLVBeautyTypeWhiten;
 }
 
 - (void)beautyOpen:(BOOL)open {
@@ -196,9 +201,9 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 - (NSMutableDictionary<NSString *,NSNumber *> *)beautyOptionDefaultDict {
     if (!_beautyOptionDefaultDict) {
         _beautyOptionDefaultDict = [NSMutableDictionary dictionary];
-        [_beautyOptionDefaultDict setObject:@(0.70) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_BeautyWhiten]];
+        [_beautyOptionDefaultDict setObject:@(0.25) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_BeautyWhiten]];
         [_beautyOptionDefaultDict setObject:@(0.25) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_BeautySharp]];
-        [_beautyOptionDefaultDict setObject:@(0.85) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_BeautySmooth]];
+        [_beautyOptionDefaultDict setObject:@(0.50) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_BeautySmooth]];
         [_beautyOptionDefaultDict setObject:@(0.35) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_ReshapeDeformOverAll]];
         [_beautyOptionDefaultDict setObject:@(0.25) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_ReshapeDeformEye]];
         [_beautyOptionDefaultDict setObject:@(0.30) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_ReshapeDeformNose]];
@@ -214,9 +219,19 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
 - (PLVBFilterOption *)defaultFilterOption {
     if (!_defaultFilterOption) {
         _defaultFilterOption = [[NSClassFromString(@"PLVBFilterOption") alloc] init];
-        _defaultFilterOption.filterName = @"原图";
-        _defaultFilterOption.filterSpellName = @"origin";
-        _defaultFilterOption.filterKey = @"";
+        // 保利威美颜 无需添加默认选项
+        if (self.beautySDKType != PLVBeautySDKTypeLight){
+            _defaultFilterOption.filterName = @"原图";
+            _defaultFilterOption.filterSpellName = @"origin";
+            _defaultFilterOption.filterKey = @"";
+        }
+        else{
+            _defaultFilterOption.filterName = @"原图";
+            _defaultFilterOption.filterSpellName = @"cusnoeffect";
+            _defaultFilterOption.filterKey = @"";
+            _defaultFilterOption.filterType = PLVBFilterType_Original;
+        }
+     
     }
     return _defaultFilterOption;
 }
@@ -245,6 +260,16 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
     NSDictionary *beautyFilterOptionDict = [[NSUserDefaults standardUserDefaults] objectForKey:kBeautyFilterOptionDictKey];
     if ([PLVFdUtil checkDictionaryUseable:beautyFilterOptionDict]) { // 从本地取缓存
         self.beautyFilterOptionDict = [NSMutableDictionary dictionaryWithDictionary:beautyFilterOptionDict];
+        
+        // 修复缓存中滤镜强度为0的问题，确保使用默认值0.5
+        [self.filterOptionArray enumerateObjectsUsingBlock:^(PLVBFilterOption *filterOption, NSUInteger idx, BOOL * _Nonnull stop) {
+            NSString *key = filterOption.filterSpellName;
+            if (key && ![self.beautyFilterOptionDict objectForKey:key]){
+                // 缓存中不存在该滤镜
+                NSNumber *defaultValue = [NSNumber numberWithFloat:kBeautyFilterOptionDefaultIntensity];
+                plv_dict_set(self.beautyFilterOptionDict, key, defaultValue);
+            }
+        }];
     } else { // 默认配置
         self.beautyFilterOptionDict = [NSMutableDictionary dictionary];
         [self.filterOptionArray enumerateObjectsUsingBlock:^(PLVBFilterOption *filterOption, NSUInteger idx, BOOL * _Nonnull stop) {
@@ -399,6 +424,33 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
         return;
     }
     [[PLVWLogReporterManager sharedManager] reportWithEvent:@"resetBeauty" modul:@"beauty" information:[self beautyLogInfo] patch:YES];
+}
+
+/// 同步当前美颜参数到UI
+- (void)syncCurrentBeautyParametersToUI {
+    if (!self.beautyIsOpen || !self.beautyIsReady) {
+        return;
+    }
+    
+    // 如果当前选中的是滤镜模式，通知滤镜强度
+    if (self.beautyType == PLVBeautyTypeFilter && self.currentFilterOption) {
+        CGFloat intensity;
+        if (![PLVFdUtil checkStringUseable:self.currentFilterOption.filterKey]) {
+            // 原图滤镜，隐藏强度滑动视图
+            intensity = -1;
+        } else {
+            intensity = PLV_SafeFloatForDictKey(self.beautyFilterOptionDict, self.currentFilterOption.filterSpellName);
+        }
+        [self notifyListenerDidChangeIntensity:intensity defaultIntensity:kBeautyFilterOptionDefaultIntensity];
+        [self notifyListenerDidChangeFilterName];
+    }
+    // 如果当前选中的是美颜特效模式，通知特效强度
+    else if ((self.beautyType == PLVBeautyTypeWhiten || self.beautyType == PLVBeautyTypeFace) && 
+             self.currentBeautyOption != -1) {
+        CGFloat intensity = PLV_SafeFloatForDictKey(self.beautyOptionDict, [NSString stringWithFormat:@"%zd", self.currentBeautyOption]);
+        CGFloat defaultIntensity = PLV_SafeFloatForDictKey(self.beautyOptionDefaultDict, [NSString stringWithFormat:@"%zd", self.currentBeautyOption]);
+        [self notifyListenerDidChangeIntensity:intensity defaultIntensity:defaultIntensity];
+    }
 }
 
 @end

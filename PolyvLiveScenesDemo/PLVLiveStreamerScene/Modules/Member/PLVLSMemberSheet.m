@@ -15,6 +15,9 @@
 /// UI
 #import "PLVLSMemberCell.h"
 #import "PLVLSSipView.h"
+// 通用UI组件
+#import "PLVLiveSearchBar.h"
+#import "PLVLiveEmptyView.h"
 
 /// 模块
 #import "PLVRoomDataManager.h"
@@ -24,12 +27,15 @@
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
+static const CGFloat kSearchBarHeight = 36.0;
+static const CGFloat kSearchBarMargin = 16.0;
 
 @interface PLVLSMemberSheet ()<
 PLVLSMemberCellDelegate,
 PLVLSSipViewDelegate,
 UITableViewDelegate,
-UITableViewDataSource
+UITableViewDataSource,
+PLVLiveSearchBarDelegate
 >
 
 /// UI
@@ -38,7 +44,10 @@ UITableViewDataSource
 @property (nonatomic, strong) UIButton *linkMicSettingButton;
 @property (nonatomic, strong) UIButton *muteButton;
 @property (nonatomic, strong) UIView *titleLine;
+@property (nonatomic, strong) PLVLiveSearchBar *searchBar;
+@property (nonatomic, strong) UIView *searchContainerView;
 @property (nonatomic, strong) UITableView *tableView;
+@property (nonatomic, strong) PLVLiveEmptyView *emptyView;
 @property (nonatomic, strong) PLVLSSipView *sipView;
 @property (nonatomic, strong) UIButton *sipMemberButton;
 @property (nonatomic, strong) UIView *moveLine;
@@ -46,6 +55,7 @@ UITableViewDataSource
 
 /// 数据
 @property (nonatomic, strong) NSArray <PLVChatUser *> *userList;
+@property (nonatomic, strong) NSArray <PLVChatUser *> *searchResults;
 @property (nonatomic, assign) NSInteger userCount;
 @property (nonatomic, assign) NSInteger onlineCount;
 @property (nonatomic, assign) BOOL tableViewEditing; // 列表是否处于左滑中状态
@@ -54,6 +64,8 @@ UITableViewDataSource
 @property (nonatomic, assign) BOOL isRealMainSpeaker; // 本地用户是否是主讲
 @property (nonatomic, assign) BOOL startClass; // 是否开始上课
 @property (nonatomic, assign) BOOL enableLinkMic; // 是否开启连麦
+@property (nonatomic, assign) BOOL isSearching; // 是否正在搜索
+@property (nonatomic, copy) NSString *currentSearchText; // 当前搜索文本
 
 @end
 
@@ -109,9 +121,21 @@ UITableViewDataSource
     self.linkMicSettingButton.frame = CGRectMake(buttonOriginX + buttonWidth * 2 + buttonMargin * 2, buttonTop, buttonWidth, 28);
     self.titleLine.frame = CGRectMake(16, titleLineTop, self.sheetWidth - 16 - PLVLSUtils.safeSidePad, 1);
     
-    CGFloat tableViewOriginY = CGRectGetMaxY(self.titleLine.frame);
+    // 搜索容器视图
+    CGFloat searchContainerY = CGRectGetMaxY(self.titleLine.frame);
+    CGFloat searchContainerHeight = kSearchBarHeight + kSearchBarMargin * 2;
+    self.searchContainerView.frame = CGRectMake(16, searchContainerY, CGRectGetWidth(self.titleLine.frame), searchContainerHeight);
+    
+    // 搜索框
+    self.searchBar.frame = CGRectMake(0, kSearchBarMargin, CGRectGetWidth(self.searchContainerView.frame), kSearchBarHeight);
+    
+    // 表格视图
+    CGFloat tableViewOriginY = searchContainerY + searchContainerHeight;
     self.tableView.frame = CGRectMake(16, tableViewOriginY, CGRectGetWidth(self.titleLine.frame), self.bounds.size.height - tableViewOriginY);
     self.sipView.frame = CGRectMake(0, CGRectGetMinY(self.tableView.frame), CGRectGetWidth(self.tableView.frame) + 16, CGRectGetHeight(self.tableView.frame));
+    
+    // 空状态视图居中显示
+    self.emptyView.frame = CGRectMake(0, tableViewOriginY, self.contentView.bounds.size.width, self.bounds.size.height - tableViewOriginY);
         
     self.sipMemberButton.frame = CGRectMake(CGRectGetMaxX(self.memberButton.frame) + 24, CGRectGetMinY(self.memberButton.frame), 85, 22);
     self.sipMemberButtonRedDot.frame = CGRectMake(CGRectGetWidth(self.sipMemberButton.frame) - 2 - 6, 4, 6, 6);
@@ -154,7 +178,41 @@ UITableViewDataSource
     [self.sipView showNewIncomingTelegramView];
 }
 
-#pragma mark - [Private Method ]
+- (void)setSearching:(BOOL)isSearching {
+    _isSearching = isSearching;
+    [self updateUI];
+}
+
+- (void)updateSearchResults:(NSArray<PLVChatUser *> *)searchResults {
+    self.searchResults = searchResults;
+    [self.tableView reloadData];
+}
+
+#pragma mark - [ Override Method ]
+
+- (void)dismiss {
+    // 重置搜索状态
+    [self resetSearchState];
+    
+    // 调用父类的dismiss方法
+    [super dismiss];
+}
+
+#pragma mark - [ Private Method ]
+
+- (void)resetSearchState {
+    self.isSearching = NO;
+    self.searchResults = nil;
+    self.currentSearchText = @"";
+    [self.searchBar clearSearchText];
+    
+    // 调用取消搜索代理方法
+    if ([self.delegate respondsToSelector:@selector(memberSheetDidCancelSearch:)]) {
+        [self.delegate memberSheetDidCancelSearch:self];
+    }
+    
+    [self updateUI];
+}
 
 - (void)setupUI {
     [self.contentView addSubview:self.memberButton];
@@ -164,6 +222,7 @@ UITableViewDataSource
     }
     [self.contentView addSubview:self.muteButton];
     [self.contentView addSubview:self.titleLine];
+    [self.contentView addSubview:self.searchContainerView];
     [self.contentView addSubview:self.tableView];
     if ([PLVRoomDataManager sharedManager].roomData.sipEnabled) {
         [self.contentView addSubview:self.sipView];
@@ -171,6 +230,8 @@ UITableViewDataSource
         [self.sipMemberButton addSubview:self.sipMemberButtonRedDot];
     }
     [self.contentView addSubview:self.moveLine];
+    [self.searchContainerView addSubview:self.searchBar];
+    [self.contentView addSubview:self.emptyView];
 }
 
 - (void)updateUI {
@@ -187,10 +248,52 @@ UITableViewDataSource
         } else {
             [self.tableView reloadData];
         }
+        
+        // 更新空状态视图显示
+        [self updateEmptyStateVisibility];
     });
 }
 
+- (void)updateEmptyStateVisibility {
+    NSArray *displayMembers = [self currentDisplayList];
+    
+    if (displayMembers.count == 0 && [PLVFdUtil checkStringUseable:self.currentSearchText]) {
+        [self.emptyView setSearchNoResultStateWithText:PLVLocalizedString(@"未找到相关成员")];
+        self.emptyView.hidden = NO;
+        self.tableView.hidden = YES;
+    } else {
+        self.emptyView.hidden = YES;
+        self.tableView.hidden = NO;
+    }
+}
+
+- (NSArray<PLVChatUser *> *)currentDisplayList {
+    // 根据搜索文本是否存在来判断显示哪个列表
+    if ([PLVFdUtil checkStringUseable:self.currentSearchText]) {
+        return self.searchResults ?: @[];
+    } else {
+        return self.userList;
+    }
+}
+
 #pragma mark Getter & Setter
+
+- (UIView *)searchContainerView {
+    if (!_searchContainerView) {
+        _searchContainerView = [[UIView alloc] init];
+        _searchContainerView.backgroundColor = [UIColor clearColor];
+    }
+    return _searchContainerView;
+}
+
+- (PLVLiveSearchBar *)searchBar {
+    if (!_searchBar) {
+        _searchBar = [[PLVLiveSearchBar alloc] initWithFrame:CGRectZero];
+        _searchBar.delegate = self;
+        _searchBar.placeholder = PLVLocalizedString(@"搜索成员");
+    }
+    return _searchBar;
+}
 
 - (UIButton *)leaveMicButton {
     if (!_leaveMicButton) {
@@ -317,6 +420,14 @@ UITableViewDataSource
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
     }
     return _tableView;
+}
+
+- (PLVLiveEmptyView *)emptyView {
+    if (!_emptyView) {
+        _emptyView = [[PLVLiveEmptyView alloc] init];
+        _emptyView.hidden = YES;
+    }
+    return _emptyView;
 }
 
 - (PLVLSSipView *)sipView {
@@ -495,11 +606,12 @@ UITableViewDataSource
 #pragma mark UITableViewDataSource
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return [self.userList count];;
+    return [[self currentDisplayList] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row >= [self.userList count]) {
+    NSArray *displayList = [self currentDisplayList];
+    if (indexPath.row >= [displayList count]) {
         return [PLVLSMemberCell new];
     }
     
@@ -509,7 +621,7 @@ UITableViewDataSource
         cell = [[PLVLSMemberCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:cellIdentifier];
         cell.delegate = self;
     }
-    PLVChatUser *user = self.userList[indexPath.row];
+    PLVChatUser *user = displayList[indexPath.row];
     [cell updateUser:user];
     BOOL isLoginUser = [self isLoginUser:user.userId];
     if (isLoginUser && !self.mediaGranted) {
@@ -544,6 +656,47 @@ UITableViewDataSource
     if (self.tableViewEditing) {
         [[NSNotificationCenter defaultCenter] postNotificationName:PLVLSMemberCellNotification object:nil];
     }
+}
+
+#pragma mark PLVLiveSearchBarDelegate
+
+- (void)searchBar:(PLVLiveSearchBar *)searchBar didChangeSearchText:(NSString *)searchText {
+    self.currentSearchText = searchText;
+    // 根据搜索文本是否存在来设置搜索状态
+    self.isSearching = [PLVFdUtil checkStringUseable:searchText];
+    
+    if ([self.delegate respondsToSelector:@selector(memberSheet:didChangeSearchText:)]) {
+        [self.delegate memberSheet:self didChangeSearchText:searchText];
+    }
+    
+    [self updateUI];
+}
+
+- (void)searchBarDidBeginEditing:(PLVLiveSearchBar *)searchBar {
+    // 搜索框开始编辑时的处理
+}
+
+- (void)searchBarDidEndEditing:(PLVLiveSearchBar *)searchBar {
+    // 搜索框结束编辑时的处理
+    // 如果搜索文本为空，则取消搜索
+    if (![PLVFdUtil checkStringUseable:self.currentSearchText]) {
+        if ([self.delegate respondsToSelector:@selector(memberSheetDidCancelSearch:)]) {
+            [self.delegate memberSheetDidCancelSearch:self];
+        }
+    }
+}
+
+- (void)searchBarDidTapClearButton:(PLVLiveSearchBar *)searchBar {
+    self.currentSearchText = @"";
+    self.isSearching = NO;
+    self.searchResults = nil;
+    
+    // 调用取消搜索代理方法
+    if ([self.delegate respondsToSelector:@selector(memberSheetDidCancelSearch:)]) {
+        [self.delegate memberSheetDidCancelSearch:self];
+    }
+    
+    [self updateUI];
 }
 
 @end

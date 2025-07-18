@@ -24,9 +24,30 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+@protocol PLVSAMemberSheetSearchDelegate <NSObject>
+
+@optional
+/// 开始搜索
+/// @param keyword 搜索关键词
+- (void)memberSheet:(PLVSAMemberSheet *)memberSheet didStartSearchWithKeyword:(NSString *)keyword;
+
+/// 取消搜索
+- (void)memberSheetDidCancelSearch:(PLVSAMemberSheet *)memberSheet;
+
+/// 搜索状态变化
+/// @param isSearching 是否正在搜索
+- (void)memberSheet:(PLVSAMemberSheet *)memberSheet didChangeSearchState:(BOOL)isSearching;
+
+/// 搜索结果更新
+/// @param results 搜索结果
+- (void)memberSheet:(PLVSAMemberSheet *)memberSheet didUpdateSearchResults:(NSArray<PLVChatUser *> *)results;
+
+@end
+
 @interface PLVSAMemberSheet : PLVSABottomSheet
 
 @property (nonatomic, weak) id<PLVSAMemberSheetDelegate> delegate;
+@property (nonatomic, weak) id<PLVSAMemberSheetSearchDelegate> searchDelegate;
 
 /// 初始化方法
 /// @param userList 当前成员列表数据
@@ -48,6 +69,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否开启音视频连麦
 /// @param enable YES 开启，NO关闭
 - (void)enableAudioVideoLinkMic:(BOOL)enable;
+
+/// 更新搜索状态（由外部调用）
+/// @param isSearching 是否正在搜索
+- (void)updateSearchState:(BOOL)isSearching;
+
+/// 更新搜索结果（由外部调用）
+/// @param results 搜索结果
+- (void)updateSearchResults:(NSArray<PLVChatUser *> *)results;
 
 @end
 

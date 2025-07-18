@@ -39,6 +39,9 @@ UICollectionViewDelegateFlowLayout
 - (void)layoutSubviews{
     [super layoutSubviews];
     self.mainCollectionView.frame = self.bounds;
+    
+    // 强制刷新collection view的布局，确保cell尺寸正确
+    [self.mainCollectionView.collectionViewLayout invalidateLayout];
 }
 
 #pragma mark - [ Public Method ]
@@ -97,7 +100,8 @@ UICollectionViewDelegateFlowLayout
     UICollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:PLVLSBeautyPageContentViewCellID forIndexPath:indexPath];
     
     UIViewController *vc = self.childViewControllerArray[indexPath.row];
-    vc.view.frame = self.bounds;
+    // 使用cell的bounds而不是self.bounds，确保尺寸正确
+    vc.view.frame = cell.contentView.bounds;
     [self.parentViewController addChildViewController:vc]; //A
     for (UIView *view in cell.contentView.subviews) { // 清除cell.contentView子视图缓存
         if (view &&
@@ -106,6 +110,8 @@ UICollectionViewDelegateFlowLayout
         }
     }
     [cell.contentView addSubview:vc.view];
+    // 设置autoresizing mask确保子视图能够自动适应布局变化
+    vc.view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     [vc didMoveToParentViewController:self.parentViewController]; //B
     return cell;
     //A B这两个操作是为了让子vc继承父vc的一些方法，比如navigation push等等。。
@@ -113,7 +119,8 @@ UICollectionViewDelegateFlowLayout
 
 #pragma mark UICollectionViewDelegateFlowLayout
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout*)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath{
-    return self.frame.size;
+    // 使用bounds而不是frame，bounds更准确反映当前视图的实际可用空间
+    return self.bounds.size;
 }
 
 

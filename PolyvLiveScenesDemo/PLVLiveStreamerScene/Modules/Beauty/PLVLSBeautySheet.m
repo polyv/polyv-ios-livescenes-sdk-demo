@@ -102,6 +102,7 @@ PLVLSBeautySwitchDelegate
         [self.delegate respondsToSelector:@selector(beautySheet:didChangeShow:)]) {
         [self.delegate beautySheet:self didChangeShow:YES];
     }
+    
     [super showInView:parentView];
 }
 
@@ -247,6 +248,11 @@ PLVLSBeautySwitchDelegate
     }
     [self setNeedsLayout];
     [self layoutIfNeeded];
+    
+    // 确保美颜内容视图也能正确刷新布局
+    if ([self.beautyContentView respondsToSelector:@selector(refreshContentViewLayout)]) {
+        [self.beautyContentView refreshContentViewLayout];
+    }
 }
 
 - (void)beautyViewModel:(PLVBeautyViewModel *)beautyViewModel didChangeFilterName:(NSString *)filterName {

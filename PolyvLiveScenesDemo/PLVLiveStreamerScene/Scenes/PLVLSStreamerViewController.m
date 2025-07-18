@@ -30,6 +30,8 @@
 #import "PLVLSMixLayoutSheet.h"
 #import "PLVLSLinkMicSettingSheet.h"
 #import "PLVLSLinkMicUpdateTipsView.h"
+#import "PLVLSNoiseCancellationModeSwitchSheet.h"
+#import "PLVLSExternalDeviceSwitchSheet.h"
 #import "PLVStreamerPopoverView.h"
 #import "PLVVirtualBackgroudSheet.h"
 
@@ -47,6 +49,8 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSString *const kPLVLSSettingMixLayoutKey = @"kPLVLSSettingMixLayoutKey";
+static NSString *const KPLVLSNoiseCancellationLevelKey = @"KPLVLSNoiseCancellationLevelKey";
+static NSString *const KPLVLSExternalDeviceEnabledKey = @"KPLVLSExternalDeviceEnabledKey";
 
 @interface PLVLSStreamerViewController ()<
 PLVSocketManagerProtocol,
@@ -65,6 +69,8 @@ PLVShareLiveSheetDelegate,
 PLVLSBadNetworkSwitchSheetDelegate,
 PLVLSMixLayoutSheetDelegate,
 PLVLSLinkMicSettingSheetDelegate,
+PLVLSNoiseCancellationModeSwitchSheetDelegate,
+PLVLSExternalDeviceSwitchSheetDelegate,
 PLVVirtualBackgroudSheetDelegate
 >
 
@@ -93,6 +99,8 @@ PLVVirtualBackgroudSheetDelegate
 @property (nonatomic, strong) PLVLSSwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
 @property (nonatomic, strong) PLVLSMixLayoutSheet *mixLayoutSheet; // 混流布局弹层
 @property (nonatomic, strong) PLVLSLinkMicSettingSheet *linkMicSettingSheet; // 连麦设置弹层
+@property (nonatomic, strong) PLVLSNoiseCancellationModeSwitchSheet *noiseCancellationModeSwitchSheet; // 声音音质弹层
+@property (nonatomic, strong) PLVLSExternalDeviceSwitchSheet *externalDeviceSwitchSheet; // 外接设备弹层
 @property (nonatomic, strong) PLVLSLinkMicUpdateTipsView *linkMicUpdateTipsView;
 @property (nonatomic, strong) PLVStreamerPopoverView *popoverView; // 浮动区域
 @property (nonatomic, strong) UIView *networkDisconnectMaskView; // 网络断开遮罩
@@ -107,6 +115,8 @@ PLVVirtualBackgroudSheetDelegate
 @property (nonatomic, assign) BOOL chatroomAreaViewOriginalShow; // chatroomAreaView原本的显示状态
 @property (nonatomic, assign) BOOL allowRaiseHand; // 缓存上课前的举手按钮，默认是NO
 @property (nonatomic, assign) PLVChannelLinkMicMediaType linkMicMediaTypeCache; // 缓存上课前的连麦类型，
+@property (nonatomic, assign) PLVBLinkMicNoiseCancellationLevel noiseCancellationLevel; // 当前频道降噪等级
+@property (nonatomic, assign) BOOL externalDeviceEnabled; // 当前频道外接设备是否开启
 
 @end
 
@@ -291,6 +301,18 @@ PLVVirtualBackgroudSheetDelegate
     
     // 初始化美颜
     [self.streamerPresenter initBeauty];
+    
+    // 同步降噪等级
+    PLVBLinkMicNoiseCancellationLevel noiseCancellationLevel = [self getLocalNoiseCancellationLevel];
+    [self.streamerPresenter setupNoiseCancellationLevel:noiseCancellationLevel];
+    self.noiseCancellationLevel = self.streamerPresenter.noiseCancellationLevel;
+    [self saveSelectedNoiseCancellationLevel:self.streamerPresenter.noiseCancellationLevel];
+    
+    // 同步外接设备
+    BOOL externalDeviceEnabled = [self getLocalExternalDeviceEnabled];
+    [self.streamerPresenter enableExternalDevice:externalDeviceEnabled];
+    self.externalDeviceEnabled = self.streamerPresenter.localExternalDeviceEnabled;
+    [self saveSelectedExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
 }
 
 - (void)getEdgeInset {
@@ -490,6 +512,24 @@ PLVVirtualBackgroudSheetDelegate
     return _linkMicSettingSheet;
 }
 
+- (PLVLSNoiseCancellationModeSwitchSheet *)noiseCancellationModeSwitchSheet {
+    if (!_noiseCancellationModeSwitchSheet) {
+        CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
+        _noiseCancellationModeSwitchSheet = [[PLVLSNoiseCancellationModeSwitchSheet alloc] initWithSheetWidth:sheetWidth];
+        _noiseCancellationModeSwitchSheet.delegate = self;
+    }
+    return _noiseCancellationModeSwitchSheet;
+}
+
+- (PLVLSExternalDeviceSwitchSheet *)externalDeviceSwitchSheet {
+    if (!_externalDeviceSwitchSheet) {
+        CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
+        _externalDeviceSwitchSheet = [[PLVLSExternalDeviceSwitchSheet alloc] initWithSheetWidth:sheetWidth];
+        _externalDeviceSwitchSheet.delegate = self;
+    }
+    return _externalDeviceSwitchSheet;
+}
+
 - (PLVLSLinkMicUpdateTipsView *)linkMicUpdateTipsView {
     if (!_linkMicUpdateTipsView) {
         _linkMicUpdateTipsView = [[PLVLSLinkMicUpdateTipsView alloc] init];
@@ -580,6 +620,44 @@ PLVVirtualBackgroudSheetDelegate
         }
     }
     return PLVMixLayoutType_MainSpeaker; // 默认混流布局为主讲模式
+}
+
+/// 保存当前选择的降噪模式到本地
+- (void)saveSelectedNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)level {
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)level] forKey:KPLVLSNoiseCancellationLevelKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+/// 读取本地声音音质模式
+- (PLVBLinkMicNoiseCancellationLevel)getLocalNoiseCancellationLevel {
+    // 如果本地有记录优先读取
+    NSString *saveNoiseCancellationLevelString = [[NSUserDefaults standardUserDefaults] objectForKey:KPLVLSNoiseCancellationLevelKey];
+    if ([PLVFdUtil checkStringUseable:saveNoiseCancellationLevelString]) {
+        PLVBLinkMicNoiseCancellationLevel saveNoiseCancellationLevel = saveNoiseCancellationLevelString.integerValue;
+        if (saveNoiseCancellationLevel >= 1 && saveNoiseCancellationLevel <= 3) {
+            return saveNoiseCancellationLevel;
+        }
+    }
+    // 默认降噪模式
+    return PLVBLinkMicNoiseCancellationLevelDefault;
+}
+
+/// 保存当前选择的外接设备开关到本地
+- (void)saveSelectedExternalDeviceEnabled:(BOOL)enabled {
+    [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%@",enabled ? @"Y": @"N"] forKey:KPLVLSExternalDeviceEnabledKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+/// 读取本地外接设备开关
+- (BOOL)getLocalExternalDeviceEnabled {
+    // 如果本地有记录优先读取
+    NSString *saveExternalDeviceEnabledString = [[NSUserDefaults standardUserDefaults] objectForKey:KPLVLSExternalDeviceEnabledKey];
+    if ([PLVFdUtil checkStringUseable:saveExternalDeviceEnabledString] &&
+        [saveExternalDeviceEnabledString isEqualToString:@"Y"]) {
+        return YES;
+    }
+    // 默认外接设备关闭
+    return NO;
 }
 
 #pragma mark - Start Class
@@ -1021,6 +1099,16 @@ PLVVirtualBackgroudSheetDelegate
     [self.statusAreaView hasNewMember];
 }
 
+- (void)memberSheet:(PLVLSMemberSheet *)memberSheet didChangeSearchText:(NSString *)searchText {
+    // 调用memberPresenter的搜索方法
+    [self.memberPresenter startSearchWithKeyword:searchText];
+}
+
+- (void)memberSheetDidCancelSearch:(PLVLSMemberSheet *)memberSheet {
+    // 调用memberPresenter的取消搜索方法
+    [self.memberPresenter cancelSearch];
+}
+
 #pragma mark - PLVSDocumentAreaView Delegate
 
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView openBrush:(BOOL)isOpen {
@@ -1146,6 +1234,16 @@ PLVVirtualBackgroudSheetDelegate
 
 - (NSArray *)currentWaitUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter{
     return self.streamerPresenter.waitUserArray;
+}
+
+- (void)memberPresenter:(PLVMemberPresenter *)memberPresenter didChangeSearchState:(BOOL)isSearching {
+    // 更新成员列表的搜索状态
+    [self.memberSheet setSearching:isSearching];
+}
+
+- (void)memberPresenter:(PLVMemberPresenter *)memberPresenter didUpdateSearchResults:(NSArray<PLVChatUser *> *)results {
+    // 更新成员列表的搜索结果
+    [self.memberSheet updateSearchResults:results];
 }
 
 #pragma mark - PLVStreamerPresenterDelegate
@@ -1542,6 +1640,14 @@ PLVVirtualBackgroudSheetDelegate
     [self showAIMattingSheet];
 }
 
+- (void)moreInfoSheetDidTapNoiseCancellationModeButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.noiseCancellationModeSwitchSheet showInView:self.view currentNoiseCancellationLevel:self.noiseCancellationLevel];
+}
+
+- (void)moreInfoSheetDidTapExternalDeviceButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.externalDeviceSwitchSheet showInView:self.view currentExternalDeviceEnabled:self.externalDeviceEnabled];
+}
+
 /// AI 抠像设置面板弹出
 - (void)showAIMattingSheet{
     if (self.streamerPresenter.currentCameraOpen) {
@@ -1601,6 +1707,32 @@ PLVVirtualBackgroudSheetDelegate
     PLVRTCStreamerMixLayoutType mixLayoutType = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
     [self.streamerPresenter setupMixLayoutType:mixLayoutType];
     [self saveSelectedMixLayoutType:type];
+}
+
+#pragma mark PLVLSNoiseCancellationModeSwitchSheetDelegate
+
+- (void)noiseCancellationModeSwitchSheet:(PLVLSNoiseCancellationModeSwitchSheet *)noiseCancellationModeSwitchSheet wannaChangeNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
+    [self.streamerPresenter setupNoiseCancellationLevel:noiseCancellationLevel];
+    self.noiseCancellationLevel = self.streamerPresenter.noiseCancellationLevel;
+    [self saveSelectedNoiseCancellationLevel:self.streamerPresenter.noiseCancellationLevel];
+}
+
+#pragma mark PLVLSExternalDeviceSwitchSheetDelegate
+
+- (void)externalDeviceSwitchSheet:(PLVLSExternalDeviceSwitchSheet *)externalDeviceSwitchSheet wannaChangeExternalDevice:(BOOL)enabled {
+    if (enabled) {
+        __weak typeof(self) weakSelf = self;
+        [PLVLSUtils showAlertWithTitle:PLVLocalizedString(@"温馨提示") message:PLVLocalizedString(@"注意：媒体音量下，使用手机应用所产生提示音、音视频声音也将被采集并直播出去，请谨慎开启！") cancelActionTitle:PLVLocalizedString(@"不开启") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确认开启") confirmActionBlock:^{
+            [weakSelf.streamerPresenter enableExternalDevice:enabled];
+            weakSelf.externalDeviceEnabled = weakSelf.streamerPresenter.localExternalDeviceEnabled;
+            [weakSelf saveSelectedExternalDeviceEnabled:weakSelf.streamerPresenter.localExternalDeviceEnabled];
+            [weakSelf.externalDeviceSwitchSheet dismiss];
+        }];
+    } else {
+        [self.streamerPresenter enableExternalDevice:enabled];
+        self.externalDeviceEnabled = self.streamerPresenter.localExternalDeviceEnabled;
+        [self saveSelectedExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
+    }
 }
 
 #pragma mark PLVLSLinkMicSettingSheetDelegate

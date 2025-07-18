@@ -40,6 +40,7 @@
     if (self) {
         self.linkMicOnAudio = [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video;
         [self initUI];
+        [self updateButtonStates];
     }
     return self;
 }
@@ -91,8 +92,7 @@
 - (void)updateLinkMicType:(BOOL)linkMicOnAudio {
     if (self.linkMicOnAudio != linkMicOnAudio) {
         self.linkMicOnAudio = linkMicOnAudio;
-        self.audioTypeButton.selected = linkMicOnAudio;
-        self.videoTypeButton.selected = !linkMicOnAudio;
+        [self updateButtonStates];
         if (self.selectedTag == 0) {
             self.selectedView.frame = CGRectMake(CGRectGetMidX(self.audioTypeButton.frame) - 2, CGRectGetMaxY(self.audioTypeButton.frame) + 3, 4, 4);
         } else {
@@ -101,6 +101,13 @@
         [self setNeedsLayout];
         [self layoutIfNeeded];
     }
+}
+
+#pragma mark - Private
+
+- (void)updateButtonStates {
+    self.audioTypeButton.selected = self.linkMicOnAudio;
+    self.videoTypeButton.selected = !self.linkMicOnAudio;
 }
 
 #pragma mark - Getter
@@ -134,7 +141,6 @@
         [_audioTypeButton setTitleColor:PLV_UIColorFromRGBA(@"#F0F1F5", 0.6) forState:UIControlStateNormal];
         [_audioTypeButton setTitleColor:PLV_UIColorFromRGB(@"#4399FF") forState:UIControlStateSelected];
         [_audioTypeButton addTarget:self action:@selector(optionButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        _audioTypeButton.selected = YES;
     }
     return _audioTypeButton;
 }

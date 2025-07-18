@@ -23,6 +23,8 @@
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
 @property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局按钮
 @property (nonatomic, strong) UIButton *aiMattingButton; // AI抠像按钮
+@property (nonatomic, strong) UIButton *noiseCancellationModeButton; // 声音音质按钮
+@property (nonatomic, strong) UIButton *externalDeviceButton; // 外接设备按钮
 @property (nonatomic, strong) UIButton *shareButton; // 分享按钮
 @property (nonatomic, strong) UIButton *badNetworkButton; //  弱网处理按钮
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
@@ -68,6 +70,10 @@
             [self.contentView addSubview:self.aiMattingButton];
             [muButtonArray addObject:self.aiMattingButton];
         }
+        [self.contentView addSubview:self.noiseCancellationModeButton];
+        [muButtonArray addObject:self.noiseCancellationModeButton];
+        [self.contentView addSubview:self.externalDeviceButton];
+        [muButtonArray addObject:self.externalDeviceButton];
         
         NSMutableArray *interactMuButtonArray = [NSMutableArray array];
         [self.contentView addSubview:self.interactiveTitleLabel];
@@ -250,6 +256,22 @@
     return _aiMattingButton;
 }
 
+- (UIButton *)noiseCancellationModeButton {
+    if (!_noiseCancellationModeButton) {
+        _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"声音音质Btn") NormalImageString:@"plvls_liveroom_btn_noise_reduction" selectedImageString:@"plvls_liveroom_btn_noise_reduction"];
+        [_noiseCancellationModeButton addTarget:self action:@selector(noiseCancellationModeButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _noiseCancellationModeButton;
+}
+
+- (UIButton *)externalDeviceButton {
+    if (!_externalDeviceButton) {
+        _externalDeviceButton = [self buttonWithTitle:PLVLocalizedString(@"外接设备Btn") NormalImageString:@"plvls_liveroom_btn_external_device" selectedImageString:@"plvls_liveroom_btn_external_device"];
+        [_externalDeviceButton addTarget:self action:@selector(externalDeviceButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _externalDeviceButton;
+}
+
 - (UILabel *)interactiveTitleLabel {
     if (!_interactiveTitleLabel) {
         _interactiveTitleLabel = [[UILabel alloc] init];
@@ -414,6 +436,24 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapSignInButton:)]) {
         [self.delegate moreInfoSheetDidTapSignInButton:self];
+    }
+}
+
+- (void)noiseCancellationModeButtonAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapNoiseCancellationModeButton:)]) {
+        [self.delegate moreInfoSheetDidTapNoiseCancellationModeButton:self];
+    }
+}
+
+- (void)externalDeviceButtonAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapExternalDeviceButton:)]) {
+        [self.delegate moreInfoSheetDidTapExternalDeviceButton:self];
     }
 }
 

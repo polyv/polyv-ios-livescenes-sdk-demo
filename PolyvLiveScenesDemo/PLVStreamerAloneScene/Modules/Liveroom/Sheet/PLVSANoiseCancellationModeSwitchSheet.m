@@ -80,11 +80,14 @@
     [self addSubview:self.selectedImageView];
     
     if (self.noiseCancellationLevel == PLVBLinkMicNoiseCancellationLevelAggressive) {
-        self.titleLabel.text = PLVLocalizedString(@"自适应降噪");
-        self.detailLabel.text = PLVLocalizedString(@"提供声源智能识别和降噪的能力，适用于会议、教育培训等大多数直播场景");
+        self.titleLabel.text = PLVLocalizedString(@"人声模式");
+        self.detailLabel.text = PLVLocalizedString(@"适合语音通话为主的场景，比如在线会议，语音通话");
     } else if (self.noiseCancellationLevel == PLVBLinkMicNoiseCancellationLevelSoft) {
-        self.titleLabel.text = PLVLocalizedString(@"均衡降噪");
-        self.detailLabel.text = PLVLocalizedString(@"提供统一的降噪效果，主要减少背景中的环境噪音，对人声和主要声音有较好的保留效果，适用于氛围型直播场景");
+        self.titleLabel.text = PLVLocalizedString(@"音乐模式");
+        self.detailLabel.text = PLVLocalizedString(@"适合需要高保真传输音乐的场景，比如K歌、音乐直播等");
+    } else if (self.noiseCancellationLevel == PLVBLinkMicNoiseCancellationLevelDefault) {
+        self.titleLabel.text = PLVLocalizedString(@"默认模式");
+        self.detailLabel.text = PLVLocalizedString(@"默认的声音音质，如无特殊需求推荐选择");
     }
 }
 
@@ -133,8 +136,11 @@
 @interface PLVSANoiseCancellationModeSwitchSheet()
 
 @property (nonatomic, strong) UILabel *sheetTitleLabel; // 弹层顶部标题
-@property (nonatomic, strong) PLVSANoiseCancellationModeSwitchButton *adaptiveModeButton; // 自适应降噪按钮
-@property (nonatomic, strong) PLVSANoiseCancellationModeSwitchButton *balancedModeButton; // 均衡降噪按钮
+@property (nonatomic, strong) UIScrollView *buttonScrollView; // 按钮滚动容器
+@property (nonatomic, strong) UIView *buttonContainerView; // 按钮容器视图
+@property (nonatomic, strong) PLVSANoiseCancellationModeSwitchButton *speechModeButton; // 人声模式按钮
+@property (nonatomic, strong) PLVSANoiseCancellationModeSwitchButton *musicModeButton; // 音乐模式按钮
+@property (nonatomic, strong) PLVSANoiseCancellationModeSwitchButton *defaultModeButton; // 默认音质按钮
 
 @end
 
@@ -148,21 +154,43 @@
     BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     CGFloat contentViewWidth = self.contentView.bounds.size.width;
+    CGFloat contentViewHeight = self.contentView.bounds.size.height;
     
-    CGFloat titleLabelOirignX = isPad ? 56 : 32;
-    self.sheetTitleLabel.frame = CGRectMake(titleLabelOirignX, 32, contentViewWidth - titleLabelOirignX, 18);
+    // 标题布局
+    CGFloat titleLabelOriginX = isPad ? 56 : 32;
+    self.sheetTitleLabel.frame = CGRectMake(titleLabelOriginX, 32, contentViewWidth - titleLabelOriginX * 2, 18);
     
-    CGFloat buttonOriginX = isLandscape ? 32 : (isPad ? 56 : 16);
-    CGFloat buttonOriginY = 80.0;
-    CGFloat buttonWidth = contentViewWidth - buttonOriginX * 2;
+    // 滚动视图布局
+    CGFloat scrollViewOriginX = isLandscape ? 32 : (isPad ? 56 : 16);
+    CGFloat scrollViewOriginY = 80.0;
+    CGFloat scrollViewWidth = contentViewWidth - scrollViewOriginX * 2;
+    CGFloat scrollViewHeight = contentViewHeight - scrollViewOriginY - 32; // 预留底部间距
+    
+    self.buttonScrollView.frame = CGRectMake(scrollViewOriginX, scrollViewOriginY, scrollViewWidth, scrollViewHeight);
+    
+    // 按钮容器布局
+    CGFloat buttonOriginX = 0;
+    CGFloat buttonOriginY = 0;
+    CGFloat buttonWidth = scrollViewWidth;
     CGFloat buttonHeight = 116.0;
     CGFloat buttonPadding = 12.0;
     
-    self.adaptiveModeButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
-    buttonOriginY += buttonHeight + buttonPadding;
-    buttonHeight += 22;
-
-    self.balancedModeButton.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+    // 获取所有按钮
+    NSArray *buttons = [self allButtons];
+    
+    // 计算总高度
+    CGFloat totalHeight = buttons.count * buttonHeight + (buttons.count - 1) * buttonPadding;
+    
+    self.buttonContainerView.frame = CGRectMake(0, 0, buttonWidth, totalHeight);
+    
+    // 布局每个按钮
+    for (UIView *button in buttons) {
+        button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+        buttonOriginY += buttonHeight + buttonPadding;
+    }
+    
+    // 设置滚动视图内容大小
+    self.buttonScrollView.contentSize = CGSizeMake(buttonWidth, totalHeight);
 }
 
 #pragma mark - [ Override ]
@@ -171,9 +199,17 @@
     self = [super initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
     if (self) {
         [self.contentView addSubview:self.sheetTitleLabel];
+        [self.contentView addSubview:self.buttonScrollView];
+        [self.buttonScrollView addSubview:self.buttonContainerView];
         
-        [self.contentView addSubview:self.adaptiveModeButton];
-        [self.contentView addSubview:self.balancedModeButton];
+        // 添加按钮到容器中
+        [self.buttonContainerView addSubview:self.speechModeButton];
+        [self.buttonContainerView addSubview:self.musicModeButton];
+        [self.buttonContainerView addSubview:self.defaultModeButton];
+        
+        // 配置滚动视图
+        self.buttonScrollView.decelerationRate = UIScrollViewDecelerationRateFast;
+        self.buttonScrollView.indicatorStyle = UIScrollViewIndicatorStyleWhite;
     }
     return self;
 }
@@ -182,17 +218,46 @@
 
 - (void)showInView:(UIView *)parentView currentNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
     if (noiseCancellationLevel == PLVBLinkMicNoiseCancellationLevelAggressive) {
-        self.adaptiveModeButton.selected = YES;
-        self.balancedModeButton.selected = NO;
+        self.speechModeButton.selected = YES;
+        self.musicModeButton.selected = NO;
+        self.defaultModeButton.selected = NO;
     } else if (noiseCancellationLevel == PLVBLinkMicNoiseCancellationLevelSoft) {
-        self.adaptiveModeButton.selected = NO;
-        self.balancedModeButton.selected = YES;
+        self.speechModeButton.selected = NO;
+        self.musicModeButton.selected = YES;
+        self.defaultModeButton.selected = NO;
+    } else if (noiseCancellationLevel == PLVBLinkMicNoiseCancellationLevelDefault) {
+        self.speechModeButton.selected = NO;
+        self.musicModeButton.selected = NO;
+        self.defaultModeButton.selected = YES;
     }
     
     [self showInView:parentView];
 }
 
 #pragma mark - [ Private Method ]
+
+// 获取所有按钮的数组
+- (NSArray<PLVSANoiseCancellationModeSwitchButton *> *)allButtons {
+    NSMutableArray *buttons = [NSMutableArray array];
+    
+    // 添加现有按钮
+    if (self.defaultModeButton) [buttons addObject:self.defaultModeButton];
+    if (self.speechModeButton) [buttons addObject:self.speechModeButton];
+    if (self.musicModeButton) [buttons addObject:self.musicModeButton];
+    
+    // 可以在这里添加新按钮
+    
+    return [buttons copy];
+}
+
+// 动态添加新按钮的方法
+- (void)addNewButton:(PLVSANoiseCancellationModeSwitchButton *)newButton {
+    [self.buttonContainerView addSubview:newButton];
+    
+    // 重新布局
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+}
 
 #pragma mark Getter
 
@@ -201,31 +266,62 @@
         _sheetTitleLabel = [[UILabel alloc] init];
         _sheetTitleLabel.textColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:1];
         _sheetTitleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:18];
-        _sheetTitleLabel.text = PLVLocalizedString(@"降噪");
+        _sheetTitleLabel.text = PLVLocalizedString(@"声音音质");
     }
     return _sheetTitleLabel;
 }
 
-- (PLVSANoiseCancellationModeSwitchButton *)adaptiveModeButton {
-    if (!_adaptiveModeButton) {
-        _adaptiveModeButton = [[PLVSANoiseCancellationModeSwitchButton alloc] initWithNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelAggressive];
+- (UIScrollView *)buttonScrollView {
+    if (!_buttonScrollView) {
+        _buttonScrollView = [[UIScrollView alloc] init];
+        _buttonScrollView.showsVerticalScrollIndicator = YES;
+        _buttonScrollView.showsHorizontalScrollIndicator = NO;
+        _buttonScrollView.bounces = YES;
+        _buttonScrollView.alwaysBounceVertical = NO;
+        _buttonScrollView.backgroundColor = [UIColor clearColor];
+    }
+    return _buttonScrollView;
+}
+
+- (UIView *)buttonContainerView {
+    if (!_buttonContainerView) {
+        _buttonContainerView = [[UIView alloc] init];
+        _buttonContainerView.backgroundColor = [UIColor clearColor];
+    }
+    return _buttonContainerView;
+}
+
+- (PLVSANoiseCancellationModeSwitchButton *)speechModeButton {
+    if (!_speechModeButton) {
+        _speechModeButton = [[PLVSANoiseCancellationModeSwitchButton alloc] initWithNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelAggressive];
         __weak typeof(self) weakSelf = self;
-        [_adaptiveModeButton setButtonActionBlock:^(BOOL selected) {
+        [_speechModeButton setButtonActionBlock:^(BOOL selected) {
             [weakSelf selectNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelAggressive selected:selected];
         }];
     }
-    return _adaptiveModeButton;
+    return _speechModeButton;
 }
 
-- (PLVSANoiseCancellationModeSwitchButton *)balancedModeButton {
-    if (!_balancedModeButton) {
-        _balancedModeButton = [[PLVSANoiseCancellationModeSwitchButton alloc] initWithNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelSoft];
+- (PLVSANoiseCancellationModeSwitchButton *)musicModeButton {
+    if (!_musicModeButton) {
+        _musicModeButton = [[PLVSANoiseCancellationModeSwitchButton alloc] initWithNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelSoft];
         __weak typeof(self) weakSelf = self;
-        [_balancedModeButton setButtonActionBlock:^(BOOL selected) {
+        [_musicModeButton setButtonActionBlock:^(BOOL selected) {
             [weakSelf selectNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelSoft selected:selected];
         }];
     }
-    return _balancedModeButton;
+    return _musicModeButton;
+}
+
+- (PLVSANoiseCancellationModeSwitchButton *)defaultModeButton {
+    if (!_defaultModeButton) {
+        _defaultModeButton = [[PLVSANoiseCancellationModeSwitchButton alloc] initWithNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelDefault];
+        __weak typeof(self) weakSelf = self;
+        [_defaultModeButton setButtonActionBlock:^(BOOL selected) {
+            [weakSelf selectNoiseCancellationLevel:PLVBLinkMicNoiseCancellationLevelDefault selected:selected];
+        }];
+    }
+    return _defaultModeButton;
 }
 
 #pragma mark - [ Event ]

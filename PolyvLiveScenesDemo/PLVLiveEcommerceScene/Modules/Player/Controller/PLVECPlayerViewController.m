@@ -158,7 +158,7 @@ PLVPlayerPresenterDelegate
     
     if (self.videoSize.width >= self.videoSize.height) { // 视频源宽大于高时，屏幕等宽，等比缩放居中显示
         CGFloat width = containerSize.width;
-        CGFloat height = containerSize.width / self.videoSize.width * self.videoSize.height;
+        CGFloat height = MIN(containerSize.width / self.videoSize.width * self.videoSize.height, containerSize.height);
         CGFloat originY = fabs(containerSize.height * 0.48 - height);
         if (containerSize.width > containerSize.height) {
             return CGRectMake(0, (containerSize.height - height) / 2.0, width, height);

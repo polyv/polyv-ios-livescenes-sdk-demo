@@ -41,6 +41,14 @@
     self.contentView.frame = self.bounds;
 }
 
+// 强制刷新内容视图布局，用于处理开播时的布局变化
+- (void)refreshContentViewLayout {
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+    [self.contentView setNeedsLayout];
+    [self.contentView layoutIfNeeded];
+}
+
 #pragma mark - [ Public Method ]
 
 - (void)selectContentViewWithType:(PLVBeautyType)type {

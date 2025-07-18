@@ -49,6 +49,16 @@ NS_ASSUME_NONNULL_BEGIN
 /// 拨号入会列表已更新
 - (void)sipUserListDidChangedInMemberSheet:(PLVLSMemberSheet *)memberSheet;
 
+@optional
+/// 搜索文本变化回调
+/// @param memberSheet 成员列表弹层
+/// @param searchText 搜索文本
+- (void)memberSheet:(PLVLSMemberSheet *)memberSheet didChangeSearchText:(NSString *)searchText;
+
+/// 取消搜索回调
+/// @param memberSheet 成员列表弹层
+- (void)memberSheetDidCancelSearch:(PLVLSMemberSheet *)memberSheet;
+
 @end
 
 @interface PLVLSMemberSheet : PLVLSSideSheet
@@ -84,6 +94,14 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 显示SIP来电提醒
 - (void)showNewIncomingTelegramView;
+
+/// 设置搜索状态
+/// @param isSearching 是否正在搜索
+- (void)setSearching:(BOOL)isSearching;
+
+/// 更新搜索结果
+/// @param searchResults 搜索结果列表
+- (void)updateSearchResults:(NSArray <PLVChatUser *> *)searchResults;
 
 @end
 

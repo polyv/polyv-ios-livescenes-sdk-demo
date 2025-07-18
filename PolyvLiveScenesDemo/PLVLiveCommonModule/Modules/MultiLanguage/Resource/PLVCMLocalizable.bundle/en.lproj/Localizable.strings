@@ -476,12 +476,6 @@
 "错误" = "Error";
 "音视频权限申请" = "Audio and video permission application";
 "暂不支持" = "Not supported";
-"降噪" = "Noise Reduction";
-"降噪Btn" = "Noise\n Reduction";
-"自适应降噪" = "Adaptive";
-"提供声源智能识别和降噪的能力，适用于会议、教育培训等大多数直播场景"= "Smartly refines audio for meetings and education";
-"均衡降噪" = "Balanced";
-"提供统一的降噪效果，主要减少背景中的环境噪音，对人声和主要声音有较好的保留效果，适用于氛围型直播场景" = "Delivers targeted noise cancellation to minimize environmental sounds, preserving speech and key audio for atmospheric live broadcasts";
 "外接设备" = "External Device";
 "外接设备Btn" = "External\n Device";
 "适用于直播过程中，通过外接麦克风收集音量的场景时，开启此功能后将切换至媒体音量，保证正常收音。" = "For live streaming with an external mic, enable this feature to switch to media volume for clear audio capture.";
@@ -556,6 +550,16 @@
 "马卡龙" = "Macaron";
 "高级灰" = "Elegant Gray";
 "黑白" = "Black White";
+
+"冷白" = "Cool White";
+"牛奶" = "Milk";
+"蓝调" = "Blue Tone";
+"元气" = "Vitality";
+"清新" = "Fresh";
+"质感" = "Texture";
+"粉瓷" = "Porcelain";
+"樱红" = "Cherry Red";
+"唯美" = "Aesthetic";
 
 "重置" = "Reset";
 "重置成功" = "Reset successful";
@@ -677,3 +681,18 @@
 "回放字幕" = "Playback Subtitle";
 "翻译字幕" = "Translation Subtitle";
 "原生字幕" = "Native Subtitle";
+
+/** 搜索功能 */
+"搜索成员" = "Search Members";
+"未找到相关成员" = "No related members found";
+
+/** Audio Quality Settings */
+"声音音质Btn" = "Audio\n Quality";
+"声音音质" = "Audio Quality";
+"人声模式" = "Voice Mode";
+"适合语音通话为主的场景，比如在线会议，语音通话" = "Ideal for voice-focused scenarios like online meetings and voice calls";
+"音乐模式" = "Music Mode";
+"适合需要高保真传输音乐的场景，比如K歌、音乐直播等" = "Perfect for high-fidelity music transmission scenarios like karaoke and music live streaming";
+"默认模式" = "Default Mode";
+"默认的声音音质，如无特殊需求推荐选择" = "Default audio quality, recommended if no special requirements";
+

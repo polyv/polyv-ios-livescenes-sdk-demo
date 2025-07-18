@@ -416,7 +416,7 @@
     if (!_showIdLabel) {
         _showIdLabel = [[UILabel alloc] init];
         _showIdLabel.textColor = [PLVColorUtil colorFromHexString:@"#FFFFFF"];
-        _showIdLabel.font = [UIFont fontWithName:@"D-DIN-Bold" size:12];
+        _showIdLabel.font = [UIFont fontWithName:@"D-DIN-PRO" size:12];
         _showIdLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _showIdLabel;

@@ -763,11 +763,12 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
                     NSDictionary *dict = historyList[i];
                     PLVChatModel *model = [weakSelf modelWithHistoryDict:dict];
                     if (model) {
-                        if (model.time > 0) {
-                            if (model.time < weakSelf.lastTime || weakSelf.lastTime == 0) {
-                                weakSelf.lastTime = model.time;
+                        NSTimeInterval time = PLV_SafeIntegerForDictKey(dict, @"time");
+                        if (time > 0) {
+                            if (time < weakSelf.lastTime || weakSelf.lastTime == 0) {
+                                weakSelf.lastTime = time;
                                 weakSelf.lastTimeMessageIndex = 1;
-                            } else if (model.time == weakSelf.lastTime) {
+                            } else if (time == weakSelf.lastTime) {
                                 weakSelf.lastTimeMessageIndex++;
                             }
                         }
@@ -955,7 +956,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     BOOL overLen = PLV_SafeBoolForDictKey(dict, @"overLen");
     PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
     message.msgId = msgId;
-    message.content = [self convertSpecialString:content];
+    message.content = content;
     message.time = time;
     message.overLen = overLen;
     
@@ -1516,7 +1517,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSArray *values = PLV_SafeArraryForDictKey(data, @"values");
     NSString *msgId = PLV_SafeStringForDictKey(data, @"id");
     NSDictionary *quote = PLV_SafeDictionaryForDictKey(data, @"quote");
-    NSString *content = [self convertSpecialString:(NSString *)values.firstObject];
+    NSString *content = (NSString *)values.firstObject;
     NSTimeInterval time = PLV_SafeIntegerForDictKey(data, @"time");
     NSString *source = PLV_SafeStringForDictKey(data, @"source");
     NSString *msgSource = PLV_SafeStringForDictKey(data, @"msgSource");
@@ -1949,15 +1950,6 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     BOOL isLoginUser = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     return isLoginUser;
-}
-
-- (NSString *)convertSpecialString:(NSString *)content {
-    if (![PLVFdUtil checkStringUseable:content]) {
-        return content;
-    }
-    
-    content = [content stringByReplacingOccurrencesOfString:@"&#39;" withString:@"'"];
-    return content;
 }
 
 @end

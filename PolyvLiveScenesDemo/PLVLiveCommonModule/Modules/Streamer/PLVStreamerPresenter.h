@@ -202,7 +202,7 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 ///       默认 NO；修改此项配置，可调用 [setupLocalVideoPreviewSameAsRemoteWatch:] 方法
 @property (nonatomic, assign, readonly) BOOL localVideoPreviewSameAsRemoteWatch;
 
-/// 当前 降噪等级(默认值:PLVBLinkMicNoiseCancellationLevelAggressive)
+/// 当前 降噪等级(默认值:PLVBLinkMicNoiseCancellationLevelDeafult)
 @property (nonatomic, assign, readonly) PLVBLinkMicNoiseCancellationLevel noiseCancellationLevel;
 
 /// 当前 支持外接设备 是否开启，默认关闭

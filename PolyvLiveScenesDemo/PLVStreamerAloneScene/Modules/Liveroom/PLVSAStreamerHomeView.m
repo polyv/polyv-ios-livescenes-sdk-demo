@@ -56,6 +56,7 @@ PLVAStatusbarAreaViewDelegate,
 PLVSAToolbarAreaViewDelegate,
 PLVSAMoreInfoSheetDelegate,
 PLVSAMemberSheetDelegate,
+PLVSAMemberSheetSearchDelegate,
 PLVSALinkMicTipViewDelegate,
 PLVSAMixLayoutSheetDelegate,
 PLVSABadNetworkSwitchSheetDelegate,
@@ -779,6 +780,7 @@ PLVSADesktopChatSettingSheetDelegate
     if (!_memberSheet) {
         _memberSheet = [[PLVSAMemberSheet alloc] initWithUserList:self.userList userCount:self.userCount];
         _memberSheet.delegate = self;
+        _memberSheet.searchDelegate = self;
         
         __weak typeof(self) weakSelf = self;
         _memberSheet.didCloseSheet = ^{
@@ -1306,6 +1308,63 @@ PLVSADesktopChatSettingSheetDelegate
 - (void)desktopChatSettingSheet:(PLVSADesktopChatSettingSheet *)sheet didChangeDesktopChatEnable:(BOOL)desktopChatEnable {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeDesktopChatEnable:)]) {
         [self.delegate streamerHomeView:self didChangeDesktopChatEnable:desktopChatEnable];
+    }
+}
+
+#pragma mark PLVSAMemberSheetSearchDelegate
+
+- (void)memberSheet:(PLVSAMemberSheet *)memberSheet didStartSearchWithKeyword:(NSString *)keyword {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeView:didStartSearchWithKeyword:)]) {
+        [self.delegate streamerHomeView:self didStartSearchWithKeyword:keyword];
+    }
+}
+
+- (void)memberSheetDidCancelSearch:(PLVSAMemberSheet *)memberSheet {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidCancelSearch:)]) {
+        [self.delegate streamerHomeViewDidCancelSearch:self];
+    }
+}
+
+- (void)memberSheet:(PLVSAMemberSheet *)memberSheet didChangeSearchState:(BOOL)isSearching {
+    [memberSheet updateSearchState:isSearching];
+}
+
+- (void)memberSheet:(PLVSAMemberSheet *)memberSheet didUpdateSearchResults:(NSArray<PLVChatUser *> *)results {
+    [memberSheet updateSearchResults:results];
+}
+
+#pragma mark - 搜索相关方法
+
+/// 开始搜索
+/// @param keyword 搜索关键词
+- (void)startSearchWithKeyword:(NSString *)keyword {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeView:didStartSearchWithKeyword:)]) {
+        [self.delegate streamerHomeView:self didStartSearchWithKeyword:keyword];
+    }
+}
+
+/// 取消搜索
+- (void)cancelSearch {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidCancelSearch:)]) {
+        [self.delegate streamerHomeViewDidCancelSearch:self];
+    }
+}
+
+/// 更新搜索状态
+/// @param isSearching 是否正在搜索
+- (void)updateSearchState:(BOOL)isSearching {
+    if (self.memberSheet && self.memberSheet.searchDelegate && 
+        [self.memberSheet.searchDelegate respondsToSelector:@selector(memberSheet:didChangeSearchState:)]) {
+        [self.memberSheet.searchDelegate memberSheet:self.memberSheet didChangeSearchState:isSearching];
+    }
+}
+
+/// 更新搜索结果
+/// @param results 搜索结果
+- (void)updateSearchResults:(NSArray<PLVChatUser *> *)results {
+    if (self.memberSheet && self.memberSheet.searchDelegate && 
+        [self.memberSheet.searchDelegate respondsToSelector:@selector(memberSheet:didUpdateSearchResults:)]) {
+        [self.memberSheet.searchDelegate memberSheet:self.memberSheet didUpdateSearchResults:results];
     }
 }
 

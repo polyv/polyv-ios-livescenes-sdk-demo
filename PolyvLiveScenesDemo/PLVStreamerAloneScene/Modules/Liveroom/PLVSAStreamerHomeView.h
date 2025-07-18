@@ -15,7 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVSAStreamerHomeView, PLVLinkMicOnlineUser, PLVLinkMicOnlineUser, PLVSALinkMicWindowsView, PLVRTCStatistics;
-@class PLVStickerCanvas;
+@class PLVStickerCanvas, PLVMemberPresenter;
 
 @protocol PLVSAStreamerHomeViewDelegate <NSObject>
 
@@ -108,6 +108,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// AI抠像按钮点击
 - (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView;
 
+/// 开始搜索
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didStartSearchWithKeyword:(NSString *)keyword;
+
+/// 取消搜索
+- (void)streamerHomeViewDidCancelSearch:(PLVSAStreamerHomeView *)homeView;
+
 @end
 
 @interface PLVSAStreamerHomeView : UIView
@@ -152,7 +158,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param show YES: 显示；NO：隐藏
 - (void)showMemberBadge:(BOOL)show;
 
-/// 显示 有新用户等待连麦，弹出“有人正在申请连麦”提示
+/// 显示 有新用户等待连麦，弹出"有人正在申请连麦"提示
 - (void)showNewWaitUserAdded;
 
 /// 添加外部连麦引导视图
@@ -205,6 +211,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param stickerView  贴图组件
 /// @param editMode 是否编辑模式加入 会影响到图层布局
 - (void)addStickerCanvasView:(PLVStickerCanvas *)stickerView editMode:(BOOL)editMode;
+
+/// 开始搜索
+/// @param keyword 搜索关键词
+- (void)startSearchWithKeyword:(NSString *)keyword;
+
+/// 取消搜索
+- (void)cancelSearch;
+
+/// 更新搜索状态
+/// @param isSearching 是否正在搜索
+- (void)updateSearchState:(BOOL)isSearching;
+
+/// 更新搜索结果
+/// @param results 搜索结果
+- (void)updateSearchResults:(NSArray<PLVChatUser *> *)results;
 
 @end
 

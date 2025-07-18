@@ -147,7 +147,7 @@
         _xSymbolLabel.textAlignment = NSTextAlignmentCenter;
         _xSymbolLabel.textColor = [UIColor colorWithRed:245/255.0 green:124/255.0 blue:0/255.0 alpha:1.0];
         CGAffineTransform matrix = CGAffineTransformMake(1, 0, tanf(5 * (CGFloat)M_PI / 180), 1, 0, 0);
-        UIFontDescriptor * fontDesc = [UIFontDescriptor fontDescriptorWithName:@"Helvetica-BoldOblique" matrix:matrix];
+        UIFontDescriptor * fontDesc = [UIFontDescriptor fontDescriptorWithName:@"PingFangSC-Semibold" matrix:matrix];
         _xSymbolLabel.font = [UIFont fontWithDescriptor:fontDesc size:20];
     }
     return _xSymbolLabel;
@@ -160,7 +160,7 @@
         _numLabel.textAlignment = NSTextAlignmentLeft;
         _numLabel.textColor = [UIColor colorWithRed:245/255.0 green:124/255.0 blue:0/255.0 alpha:1.0];
         CGAffineTransform matrix = CGAffineTransformMake(1, 0, tanf(5 * (CGFloat)M_PI / 180), 1, 0, 0);
-        UIFontDescriptor * fontDesc = [UIFontDescriptor fontDescriptorWithName:@"Helvetica-BoldOblique" matrix:matrix];
+        UIFontDescriptor * fontDesc = [UIFontDescriptor fontDescriptorWithName:@"PingFangSC-Semibold" matrix:matrix];
         _numLabel.font = [UIFont fontWithDescriptor:fontDesc size:28];
     }
     return _numLabel;

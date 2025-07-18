@@ -28,6 +28,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidTapAIMattingButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheetDidTapNoiseCancellationModeButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
+- (void)moreInfoSheetDidTapExternalDeviceButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
 @end
 
 @interface PLVLSMoreInfoSheet : PLVLSSideSheet

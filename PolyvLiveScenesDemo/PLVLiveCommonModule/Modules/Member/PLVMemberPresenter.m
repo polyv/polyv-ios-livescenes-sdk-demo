@@ -46,6 +46,12 @@ PLVSocketManagerProtocol // socket协议
 ///  是否需要刷新UI
 @property (nonatomic, assign) BOOL needRefreshUI;
 
+// 搜索相关属性
+@property (nonatomic, copy) NSString *currentSearchKeyword;
+@property (nonatomic, assign) BOOL isSearching;
+@property (nonatomic, strong) NSArray<PLVChatUser *> *searchResults;
+@property (nonatomic, strong) dispatch_source_t searchDebounceTimer;
+
 @end
 
 @implementation PLVMemberPresenter {
@@ -71,6 +77,9 @@ PLVSocketManagerProtocol // socket协议
 
 - (void)dealloc {
     [self.timer invalidate];
+    if (self.searchDebounceTimer) {
+        dispatch_source_cancel(self.searchDebounceTimer);
+    }
 }
 
 #pragma mark - [ Public Method ]
@@ -151,6 +160,56 @@ PLVSocketManagerProtocol // socket协议
     }
     user.banned = banned;
     self.needRefreshUI = YES;
+}
+
+#pragma mark - 搜索功能
+
+- (void)startSearchWithKeyword:(NSString *)keyword {
+    if (!keyword || keyword.length == 0) {
+        [self clearSearchResults];
+        return;
+    }
+    
+    self.currentSearchKeyword = keyword;
+    
+    // 防抖处理（1秒）
+    [self debounceSearchWithKeyword:keyword];
+}
+
+- (void)cancelSearch {
+    // 取消防抖定时器
+    if (self.searchDebounceTimer) {
+        dispatch_source_cancel(self.searchDebounceTimer);
+        self.searchDebounceTimer = nil;
+    }
+    
+    self.isSearching = NO;
+    self.currentSearchKeyword = @"";
+    
+    // 通知代理搜索状态变化
+    if ([self.delegate respondsToSelector:@selector(memberPresenter:didChangeSearchState:)]) {
+        [self.delegate memberPresenter:self didChangeSearchState:NO];
+    }
+}
+
+- (void)clearSearchResults {
+    self.searchResults = @[];
+    self.currentSearchKeyword = @"";
+    self.isSearching = NO;
+    
+    // 通知代理搜索结果更新
+    if ([self.delegate respondsToSelector:@selector(memberPresenter:didUpdateSearchResults:)]) {
+        [self.delegate memberPresenter:self didUpdateSearchResults:@[]];
+    }
+}
+
+- (NSArray<PLVChatUser *> *)getSearchResults {
+    if (!self.searchResults || self.searchResults.count == 0) {
+        return @[];
+    }
+    
+    // 按现有排序规则对搜索结果进行排序
+    return [self sortSearchResults:self.searchResults];
 }
 
 #pragma mark 连麦业务相关
@@ -289,6 +348,11 @@ PLVSocketManagerProtocol // socket协议
     self.userArrayForUI = [[NSArray alloc] init];
     self.kickedUserArray = [[NSMutableArray alloc] initWithCapacity:20];
     
+    // 初始化搜索相关属性
+    self.currentSearchKeyword = @"";
+    self.isSearching = NO;
+    self.searchResults = @[];
+    
     // 监听socket消息
     socketDelegateQueue = dispatch_get_global_queue(0, DISPATCH_QUEUE_PRIORITY_DEFAULT);
     [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
@@ -396,6 +460,10 @@ PLVSocketManagerProtocol // socket协议
     [self replaceAllUsers:newUserDic];
     [self refreshUserListWithLinkMicOnlineUserArray:self.currentOnlineUserArray];
     [self refreshUserListWithLinkMicWaitUserArray:self.currentWaitUserArray];
+    
+    // 如果当前有搜索结果，更新搜索结果中的用户对象以保持连麦状态
+    [self updateSearchResultsWithLocalUsers];
+    
     self.needRefreshUI = YES;
 }
 
@@ -421,6 +489,9 @@ PLVSocketManagerProtocol // socket协议
             self.userCount++;
             self.needRefreshUI = YES;
             dispatch_semaphore_signal(_localUserMDicLock);
+            
+            // 如果当前有搜索结果，更新搜索结果中的用户对象以保持连麦状态
+            [self updateSearchResultsWithLocalUsers];
         } else {
             self.userCount++;
         }
@@ -456,6 +527,9 @@ PLVSocketManagerProtocol // socket协议
     self.userCount--;
     self.needRefreshUI = YES;
     dispatch_semaphore_signal(_localUserMDicLock);
+    
+    // 如果当前有搜索结果，更新搜索结果中的用户对象以保持连麦状态
+    [self updateSearchResultsWithLocalUsers];
 }
 
 /// socket 接收到用户修改昵称的消息时
@@ -606,6 +680,133 @@ PLVSocketManagerProtocol // socket协议
         }
     }
     dispatch_semaphore_signal(_kickedUserArrayLock);
+}
+
+#pragma mark 搜索功能实现
+
+- (void)debounceSearchWithKeyword:(NSString *)keyword {
+    // 取消之前的定时器
+    if (self.searchDebounceTimer) {
+        dispatch_source_cancel(self.searchDebounceTimer);
+    }
+    
+    // 创建新的定时器
+    self.searchDebounceTimer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
+    dispatch_source_set_timer(self.searchDebounceTimer, 
+                             dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), 
+                             DISPATCH_TIME_FOREVER, 
+                             (int64_t)(0.1 * NSEC_PER_SEC));
+    
+    dispatch_source_set_event_handler(self.searchDebounceTimer, ^{
+        [self performSearchWithKeyword:keyword];
+        dispatch_source_cancel(self.searchDebounceTimer);
+        self.searchDebounceTimer = nil;
+    });
+    
+    dispatch_resume(self.searchDebounceTimer);
+}
+
+- (void)performSearchWithKeyword:(NSString *)keyword {
+    // 更新搜索状态
+    self.isSearching = YES;
+    
+    // 通知代理搜索状态变化
+    if ([self.delegate respondsToSelector:@selector(memberPresenter:didChangeSearchState:)]) {
+        [self.delegate memberPresenter:self didChangeSearchState:YES];
+    }
+    
+    // 调用现有的搜索API
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *roomId = roomData.channelId;
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestSearchUserListWithRoomId:roomId
+                                                nick:keyword
+                                           getStatus:1
+                                             success:^(NSArray *userList) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            weakSelf.isSearching = NO;
+            
+            // 将搜索结果转换为PLVChatUser对象，并尝试用本地用户替换
+            NSMutableArray<PLVChatUser *> *results = [NSMutableArray array];
+            if (userList && [userList isKindOfClass:[NSArray class]]) {
+                for (NSDictionary *userDict in userList) {
+                    if ([userDict isKindOfClass:[NSDictionary class]]) {
+                        NSString *userId = userDict[@"userId"];
+                        if ([PLVFdUtil checkStringUseable:userId]) {
+                            // 尝试从本地用户字典中获取用户，保持连麦状态等信息
+                            PLVChatUser *localUser = weakSelf.localUserMDic[userId];
+                            if (localUser) {
+                                // 使用本地用户对象，但更新基本信息（如昵称可能已更改）
+                                PLVChatUser *searchUser = [[PLVChatUser alloc] initWithUserInfo:userDict];
+                                localUser.userName = searchUser.userName; // 更新昵称
+                                localUser.avatarUrl = searchUser.avatarUrl; // 更新头像
+                                localUser.userType = searchUser.userType; // 更新用户类型
+                                [results addObject:localUser];
+                            } else {
+                                // 本地没有该用户，创建新的用户对象
+                                PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+                                [results addObject:user];
+                            }
+                        } else {
+                            // userId无效，创建新的用户对象
+                            PLVChatUser *user = [[PLVChatUser alloc] initWithUserInfo:userDict];
+                            [results addObject:user];
+                        }
+                    }
+                }
+            }
+            
+            weakSelf.searchResults = [results copy];
+            
+            // 通知代理搜索状态变化
+            if ([weakSelf.delegate respondsToSelector:@selector(memberPresenter:didChangeSearchState:)]) {
+                [weakSelf.delegate memberPresenter:weakSelf didChangeSearchState:NO];
+            }
+            
+            // 通知代理搜索结果更新
+            if ([weakSelf.delegate respondsToSelector:@selector(memberPresenter:didUpdateSearchResults:)]) {
+                [weakSelf.delegate memberPresenter:weakSelf didUpdateSearchResults:weakSelf.searchResults];
+            }
+        });
+    } failure:^(NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            weakSelf.isSearching = NO;
+            weakSelf.searchResults = @[];
+            
+            // 通知代理搜索状态变化
+            if ([weakSelf.delegate respondsToSelector:@selector(memberPresenter:didChangeSearchState:)]) {
+                [weakSelf.delegate memberPresenter:weakSelf didChangeSearchState:NO];
+            }
+            
+            // 通知代理搜索结果更新
+            if ([weakSelf.delegate respondsToSelector:@selector(memberPresenter:didUpdateSearchResults:)]) {
+                [weakSelf.delegate memberPresenter:weakSelf didUpdateSearchResults:@[]];
+            }
+        });
+    }];
+}
+
+- (NSArray<PLVChatUser *> *)sortSearchResults:(NSArray<PLVChatUser *> *)results {
+    if (!results || results.count == 0) {
+        return @[];
+    }
+    
+    // 使用现有的排序规则对搜索结果进行排序
+    __weak typeof(self) weakSelf = self;
+    return [results sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+        PLVChatUser *user1 = (PLVChatUser *)obj1;
+        PLVChatUser *user2 = (PLVChatUser *)obj2;
+        PLVMemberOrderIndex orderIndex1 = [weakSelf memberOrderIndexWithUserType:user1];
+        PLVMemberOrderIndex orderIndex2 = [weakSelf memberOrderIndexWithUserType:user2];
+        if (orderIndex1 < orderIndex2) {
+            return NSOrderedAscending;
+        }
+        if (orderIndex1 > orderIndex2) {
+            return NSOrderedDescending;
+        }
+        return NSOrderedSame;
+    }];
 }
 
 #pragma mark UI刷新定时器回调
@@ -771,6 +972,41 @@ PLVSocketManagerProtocol // socket协议
         [self shieldEvent:jsonDict banned:NO];
     } else if ([subEvent isEqualToString:@"SET_NICK"]) {
         [self setNickEvent:jsonDict];
+    }
+}
+
+- (void)updateSearchResultsWithLocalUsers {
+    // 如果当前没有搜索结果，直接返回
+    if (!self.searchResults || self.searchResults.count == 0) {
+        return;
+    }
+    
+    // 更新搜索结果，用本地用户对象替换以保持连麦状态
+    NSMutableArray<PLVChatUser *> *updatedResults = [NSMutableArray array];
+    
+    for (PLVChatUser *searchUser in self.searchResults) {
+        NSString *userId = searchUser.userId;
+        if ([PLVFdUtil checkStringUseable:userId]) {
+            // 尝试从本地用户字典中获取用户
+            PLVChatUser *localUser = self.localUserMDic[userId];
+            if (localUser) {
+                // 使用本地用户对象，保持连麦状态等信息
+                [updatedResults addObject:localUser];
+            } else {
+                // 本地没有该用户，保持原搜索结果
+                [updatedResults addObject:searchUser];
+            }
+        } else {
+            // userId无效，保持原搜索结果
+            [updatedResults addObject:searchUser];
+        }
+    }
+    
+    self.searchResults = [updatedResults copy];
+    
+    // 通知代理搜索结果更新
+    if ([self.delegate respondsToSelector:@selector(memberPresenter:didUpdateSearchResults:)]) {
+        [self.delegate memberPresenter:self didUpdateSearchResults:self.searchResults];
     }
 }
 

@@ -21,6 +21,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 重置美颜
 - (void)resetBeauty;
 
+/// 强制刷新内容视图布局，用于处理开播时的布局变化
+- (void)refreshContentViewLayout;
+
 @end
 
 NS_ASSUME_NONNULL_END

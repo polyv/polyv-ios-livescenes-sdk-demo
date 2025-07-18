@@ -604,7 +604,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (UIButton *)noiseCancellationModeButton {
     if (!_noiseCancellationModeButton) {
-        _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"降噪Btn") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
+        _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"声音音质Btn") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
         [_noiseCancellationModeButton addTarget:self action:@selector(noiseCancellationModeButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _noiseCancellationModeButton.titleEdgeInsets = UIEdgeInsetsMake(_noiseCancellationModeButton.imageView.frame.size.height + 4, - 67, 0, -38);
     }
