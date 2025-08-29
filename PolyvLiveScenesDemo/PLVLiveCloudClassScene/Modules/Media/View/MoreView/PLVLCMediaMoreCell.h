@@ -12,6 +12,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#define PLVLCMediaMoreCellOptionCountPerRow 4
+
 @protocol PLVLCMediaMoreCellDelegate;
 
 /// 媒体更多视图TableviewCell

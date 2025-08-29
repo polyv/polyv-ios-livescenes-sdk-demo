@@ -650,6 +650,10 @@ PLVPlayerPresenterDelegate
     self.playButton.hidden = YES;
 }
 
+- (NSInteger)getCachedPlaybackSpeedIndex {
+    return [self.playerPresenter getCachedPlaybackSpeedIndex];
+}
+
 #pragma mark - PLVPlayerPresenterDelegate Delegate
 /// 播放器 ‘正在播放状态’ 发生改变
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter playerPlayingStateDidChanged:(BOOL)playing{

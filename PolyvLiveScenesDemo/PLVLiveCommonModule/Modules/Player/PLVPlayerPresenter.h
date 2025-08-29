@@ -244,6 +244,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param fileId 暂存视频fileId
 - (void)changeFileId:(NSString *)fileId;
 
+#pragma mark 播放速度记忆功能
+/// 获取支持的播放速度数组
+- (NSArray<NSString *> *)getSupportedPlaybackSpeeds;
+
+/// 获取缓存的播放速度
+- (CGFloat)getCachedPlaybackSpeed;
+
+/// 获取缓存播放速度对应的UI选中索引
+- (NSInteger)getCachedPlaybackSpeedIndex;
+
+/// 自动恢复保存的播放速度（仅回放场景有效）
+- (void)restoreCachedPlaybackSpeed;
+
 @end
 
 @protocol PLVPlayerPresenterDelegate <NSObject>

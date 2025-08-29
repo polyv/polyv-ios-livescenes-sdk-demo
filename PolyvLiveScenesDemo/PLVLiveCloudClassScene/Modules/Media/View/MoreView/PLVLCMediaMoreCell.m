@@ -71,10 +71,16 @@
             
             CGFloat buttonsPadding = 16.0;
             CGFloat buttonX;
+            CGFloat buttonY;
+            // 如果按钮数量超过4个 需要换行布局
+            NSInteger buttonColumn = i % PLVLCMediaMoreCellOptionCountPerRow;
+            NSInteger buttonRow = i / PLVLCMediaMoreCellOptionCountPerRow;
             if (isSwitchMode) {
-                buttonX = (i == 0 ? optionTitleLabelX : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+                buttonX = (buttonColumn == 0 ? optionTitleLabelX : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+                buttonY = (buttonRow == 0 ? topPadding: topPadding + controlsHeight*buttonRow + (buttonRow -1)*10);
             } else {
-                buttonX = (i == 0 ? leftPadding : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+                buttonX = (buttonColumn == 0 ? leftPadding : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+                buttonY = (buttonRow == 0 ? topPadding: topPadding + controlsHeight*buttonRow + (buttonRow -1)*10);
             }
             CGFloat buttonWidth = [button.titleLabel sizeThatFits:CGSizeMake(100, controlsHeight)].width + (12 * 2);
             if (self.currentModel.optionSpecifiedWidth > 0) {
@@ -82,7 +88,8 @@
             }else if (buttonWidth < 66.0) {
                 buttonWidth = 66.0;
             }
-            button.frame = CGRectMake(buttonX, topPadding, buttonWidth, controlsHeight);
+            
+            button.frame = CGRectMake(buttonX, buttonY, buttonWidth, controlsHeight);
             if (isSwitchMode) {
                 button.titleEdgeInsets = UIEdgeInsetsMake(0, -button.imageView.frame.size.width, -button.imageView.frame.size.height, 0);
                 button.imageEdgeInsets = UIEdgeInsetsMake(-button.titleLabel.intrinsicContentSize.height, 0, 0, -button.titleLabel.intrinsicContentSize.width);
@@ -100,17 +107,29 @@
             UIButton * button = self.buttonsArray[i];
             
             CGFloat buttonsPadding = 16.0;
-            if (self.buttonsArray.count >= 5) {
-                buttonsPadding = 8.0;
+            CGFloat topPadding = 32.0;
+            CGFloat buttonX;
+            CGFloat buttonY;
+            NSInteger button_H = 26;
+
+            // 如果按钮数量超过4个 需要换行布局
+            NSInteger buttonColumn = i % PLVLCMediaMoreCellOptionCountPerRow;
+            NSInteger buttonRow = i / PLVLCMediaMoreCellOptionCountPerRow;
+            if (isSwitchMode) {
+                buttonX = (buttonColumn == 0 ? 0 : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+                buttonY = (buttonRow == 0 ? topPadding: topPadding + button_H*buttonRow + (buttonRow -1)*10);
+            } else {
+                buttonX = (buttonColumn == 0 ? leftPadding : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+                buttonY = (buttonRow == 0 ? topPadding: topPadding + button_H*buttonRow + (buttonRow -1)*10);
             }
-            CGFloat buttonX = (i == 0 ? leftPadding : CGRectGetMaxX(lastButton.frame) + buttonsPadding);
+
             CGFloat buttonWidth = [button.titleLabel sizeThatFits:CGSizeMake(100, 26.0)].width + (12 * 2);
             if (self.currentModel.optionSpecifiedWidth > 0) {
                 buttonWidth = self.currentModel.optionSpecifiedWidth;
-            }else if (buttonWidth < 66.0) {
+            } else if (buttonWidth < 66.0){
                 buttonWidth = 66.0;
             }
-            button.frame = CGRectMake(buttonX, 32, buttonWidth, 26.0);
+            button.frame = CGRectMake(buttonX, buttonY, buttonWidth, button_H);
             if (isSwitchMode) {
                 button.frame = CGRectMake(buttonX, 0, buttonWidth, 52.0);
                 button.titleEdgeInsets = UIEdgeInsetsMake(0, -button.imageView.frame.size.width, -button.imageView.frame.size.height, 0);

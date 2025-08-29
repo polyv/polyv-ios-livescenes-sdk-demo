@@ -256,7 +256,7 @@ didReceiveInteractMessageString:(NSString *)msgString
         return;
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:linkString]];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:linkString] options:@{} completionHandler:nil];
     });
 }
 

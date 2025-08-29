@@ -146,7 +146,7 @@ PLVECWelfareLotteryWidgetViewDelegate
     if (self) {
         self.type = type;
         self.delegate = delegate;
-        self.curSpeedIndex = 1;
+        self.curSpeedIndex = 2; // 默认1.0x
         
         [self setupUI];
         
@@ -608,6 +608,17 @@ PLVECWelfareLotteryWidgetViewDelegate
     self.curDelayModeIndex = noDelayWatchMode ? 0 : 1;
     self.noDelayWatchMode = noDelayWatchMode;
     [self updateDelayModeSwitchViewHiddenState];
+}
+
+/// 根据缓存的播放速度初始化UI选中状态（仅回放场景有效）
+- (void)initSpeedIndexFromCache {
+    if (self.type != PLVECHomePageType_Playback) {
+        return;
+    }
+    
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_getCachedPlaybackSpeedIndex:)]) {
+        self.curSpeedIndex = [self.delegate homePageView_getCachedPlaybackSpeedIndex:self];
+    }
 }
 
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
@@ -1476,10 +1487,11 @@ PLVECWelfareLotteryWidgetViewDelegate
     } else if (self.switchViewType == PLVECSwitchViewType_CodeRate) {
         return self.codeRateItems;
     } else if (self.switchViewType == PLVECSwitchViewType_Speed) {
-        if (@available(iOS 15.0, *)) { // iOS15以上支持3倍速
-            return @[@"0.5x", @"1.0x", @"1.25x", @"1.5x", @"2.0x" ,@"3.0x"];
+        if (@available(iOS 15.0, *)) {
+            return @[@"0.5x", @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"3.0x"];
+        } else {
+            return @[@"0.5x", @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x"];
         }
-        return @[@"0.5x", @"1.0x", @"1.25x", @"1.5x", @"2.0x"];
     } else if (self.switchViewType == PLVECSwitchViewType_DelayMode) {
         return @[PLVLocalizedString(@"无延迟"), PLVLocalizedString(@"正常延迟")];
     } else {
@@ -1502,14 +1514,15 @@ PLVECWelfareLotteryWidgetViewDelegate
         }
     } else if (self.switchViewType == PLVECSwitchViewType_Speed) {
         self.curSpeedIndex = selectedIndex;
-        CGFloat speed = [[selectedItem substringToIndex:selectedItem.length] floatValue];
+        CGFloat speed = selectedItem.floatValue;
         if (@available(iOS 15.0, *)) {
             speed = MIN(3.0, MAX(0.5, speed));
         } else {
             speed = MIN(2.0, MAX(0.5, speed));
         }
+        
         if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:switchSpeed:)]) {
-            [self.delegate homePageView:self switchSpeed:speed];
+            [self.delegate homePageView:self switchSpeed:speed]; // PLVPlayerPresenter会自动保存速度
         }
     } else if (self.switchViewType == PLVECSwitchViewType_DelayMode) {
         self.curDelayModeIndex = selectedIndex;

@@ -36,7 +36,7 @@ PLVProductWebViewBridgeDelegate
     if ([PLVECUtils sharedUtils].isLandscape) {
         self.webView.frame = CGRectMake(CGRectGetWidth(self.view.bounds) - 375 , 0, 375, CGRectGetMaxY(self.view.frame));
     } else {
-        CGFloat height = 410;
+        CGFloat height = 460;
         CGRect frame = CGRectMake(0, CGRectGetHeight(self.view.bounds)-height, CGRectGetWidth(self.view.bounds), height);
         self.webView.frame = frame;
     }
@@ -135,7 +135,7 @@ PLVProductWebViewBridgeDelegate
         if (@available(iOS 13.0, *)) {
             config.defaultWebpagePreferences.preferredContentMode = WKContentModeMobile;
         }
-        CGFloat height = 410;
+        CGFloat height = 460;
         CGRect frame = CGRectMake(0, CGRectGetHeight(self.view.bounds)-height, CGRectGetWidth(self.view.bounds), height);
         _webView = [[WKWebView alloc] initWithFrame:frame configuration:config];
         _webView.autoresizingMask = (UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth);

@@ -796,6 +796,8 @@ PLVECChatroomViewModelProtocol
 
 - (void)playerController:(PLVECPlayerViewController *)playerController playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)videoInfo {
     [self.homePageView updatePlaybackVideoInfo];
+    // 在播放器准备就绪且回放信息更新后，初始化播放速度UI状态（从缓存中恢复）
+    [self.homePageView initSpeedIndexFromCache];
 }
 
 - (void)playerControllerShowMemoryPlayTip:(PLVECPlayerViewController *)playerController {
@@ -1018,7 +1020,7 @@ PLVECChatroomViewModelProtocol
     /// 播放广告中点击暂停按钮跳转页面
     NSString *advertHref = [PLVRoomDataManager sharedManager].roomData.channelInfo.advertHref;
     if (self.playerVC.advertPlaying && [PLVFdUtil checkStringUseable:advertHref]) {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:advertHref]];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:advertHref] options:@{} completionHandler:nil];
         [self.homePageView updatePlayerState:NO];
         return;
     }
@@ -1036,6 +1038,13 @@ PLVECChatroomViewModelProtocol
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchSpeed:(CGFloat)speed {
     [self.playerVC speedRate:speed];
+}
+
+- (NSInteger)homePageView_getCachedPlaybackSpeedIndex:(PLVECHomePageView *)homePageView {
+    if (self.playerVC) {
+        return [self.playerVC getCachedPlaybackSpeedIndex];
+    }
+    return 2; // 播放器未初始化时返回默认1.0x的索引
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {

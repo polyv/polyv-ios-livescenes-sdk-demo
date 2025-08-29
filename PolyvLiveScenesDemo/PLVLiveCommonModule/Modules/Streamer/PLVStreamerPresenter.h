@@ -787,6 +787,17 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
            linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
                  authSpeaker:(BOOL)authSpeaker;
 
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
+           linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
+                 authFirstSite:(BOOL)authFirstSite;
+
+/// 第一画面发生改变
+///
+/// @param presenter 推流管理器
+/// @param firstSiteUserId 当前第一画面用户ID
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter firstSiteChanged:(NSString *)firstSiteUserId;
+
 /// 连麦在线用户需要强制下麦
 ///
 /// @param presenter 推流管理器

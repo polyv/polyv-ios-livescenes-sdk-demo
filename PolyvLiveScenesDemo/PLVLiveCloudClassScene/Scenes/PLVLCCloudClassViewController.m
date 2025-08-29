@@ -1369,6 +1369,11 @@ PLVLCOnlineListSheetDelegate
         [self setupChatroomPlaybackViewModel];
     }
     [self.menuAreaView updateSectionMenuTab];
+    if ([PLVRoomDataManager sharedManager].roomData.recordEnable || [PLVRoomDataManager sharedManager].roomData.menuInfo.materialLibraryEnabled) {
+        [self.menuAreaView updateAISummaryVideoInfoWithFileId:videoInfo.fileId];
+    } else {
+        [self.menuAreaView updateAISummaryVideoInfoWithVideoId:videoInfo.videoId];
+    }
 }
 
 - (void)plvLCMediaAreaViewWannaStartPictureInPicture:(PLVLCMediaAreaView *)mediaAreaView {
@@ -1587,7 +1592,7 @@ PLVLCOnlineListSheetDelegate
     return self.mediaAreaView.currentPlayTime;
 }
 
-- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView seekTime:(NSTimeInterval)time{
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView seekTime:(NSTimeInterval)time {
     [self.mediaAreaView seekLivePlaybackToTime:time];
 }
 
@@ -1643,6 +1648,18 @@ PLVLCOnlineListSheetDelegate
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView welfareLotteryWidgetShowStatusChanged:(BOOL)show {
     self.welfareLotteryWidgetShowed = show;
     [self.liveRoomSkinView showWelfareLotteryWidgetView:show];
+}
+
+- (void)plvLCLivePageMenuAreaViewShouldSetupVideo:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType == PLVChannelVideoType_Playback) {
+        PLVPlaybackVideoInfoModel *videoInfo = roomData.playbackVideoInfo;
+        if (roomData.recordEnable ||roomData.menuInfo.materialLibraryEnabled) {
+            [self.menuAreaView updateAISummaryVideoInfoWithFileId:videoInfo.fileId];
+        } else {
+            [self.menuAreaView updateAISummaryVideoInfoWithVideoId:videoInfo.videoId];
+        }
+    }
 }
 
 #pragma mark  PLVCommodityPushSmallCardViewDelegate

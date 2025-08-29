@@ -41,7 +41,7 @@ static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
     
     CGFloat labelWidth = self.cellWidth - xPadding * 2;
     CGSize chatLabelSize = [self.chatLabel.attributedText boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT)
-                                                                       options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading
+                                                                       options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading|NSStringDrawingUsesDeviceMetrics
                                                                        context:nil].size;
     CGFloat chatLabelHeight = 0;
     if (chatLabelSize.height <= 24) {
@@ -86,7 +86,7 @@ static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
     CGRect chatLabelRect = CGRectZero;
     if (chatLabelString) {
         CGFloat labelWidth = cellWidth - xPadding * 2;
-        chatLabelRect = [chatLabelString boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading context:nil];
+        chatLabelRect = [chatLabelString boundingRectWithSize:CGSizeMake(labelWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin|NSStringDrawingUsesFontLeading|NSStringDrawingUsesDeviceMetrics context:nil];
         CGFloat chatLabelHeight = 0;
         if (chatLabelRect.size.height <= 24) { //一行
             chatLabelHeight = 20;

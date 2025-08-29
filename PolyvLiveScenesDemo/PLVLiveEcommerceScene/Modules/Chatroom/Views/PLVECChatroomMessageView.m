@@ -13,6 +13,7 @@
 #import "PLVECChatCell.h"
 #import "PLVECQuoteChatCell.h"
 #import "PLVECLongContentChatCell.h"
+#import "PLVECCustomIntroductionMessageCell.h"
 #import "PLVECNewMessageView.h"
 #import "PLVECUtils.h"
 #import "PLVLiveToast.h"
@@ -427,6 +428,14 @@ PLVECChatroomPlaybackViewModelDelegate
             [weakSelf alertToShowFullContentWithModel:model];
         }];
         return cell;
+    } else if ([PLVECCustomIntroductionMessageCell isModelValid:model]) {
+        static NSString *customIntroductionMessageCellIdentify = @"PLVECCustomIntroductionMessageCell";
+        PLVECCustomIntroductionMessageCell *cell = (PLVECCustomIntroductionMessageCell *)[tableView dequeueReusableCellWithIdentifier:customIntroductionMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVECCustomIntroductionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:customIntroductionMessageCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -459,6 +468,11 @@ PLVECChatroomPlaybackViewModelDelegate
     } else if ([PLVECLongContentChatCell isModelValid:model]) {
         if (model.cellHeightForV == 0.0) {
             model.cellHeightForV = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
+    } else if ([PLVECCustomIntroductionMessageCell isModelValid:model]) {
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVECCustomIntroductionMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
         }
         cellHeight = model.cellHeightForV;
     }

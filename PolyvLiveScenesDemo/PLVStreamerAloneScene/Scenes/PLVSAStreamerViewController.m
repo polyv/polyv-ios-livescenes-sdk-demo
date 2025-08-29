@@ -27,6 +27,7 @@
 #import "PLVSABeautySheet.h"
 #import "PLVShareLiveSheet.h"
 #import "PLVStickerCanvas.h"
+#import "PLVStickerManager.h"
 #import "PLVSAScreenSharePipCustomView.h"
 #import "PLVVirtualBackgroudSheet.h"
 
@@ -41,7 +42,6 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <Photos/Photos.h>
-#import "PLVImagePickerViewController.h"
 
 static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
 static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
@@ -67,7 +67,7 @@ PLVSAStreamerHomeViewDelegate,
 PLVSABeautySheetDelegate,
 UIGestureRecognizerDelegate,
 PLVShareLiveSheetDelegate,
-PLVStickerCanvasDelegate,
+PLVStickerManagerDelegate,
 UINavigationControllerDelegate,
 PLVSAScreenShareCustomPictureInPictureManagerDelegate,
 PLVVirtualBackgroudSheetDelegate
@@ -122,7 +122,9 @@ PLVVirtualBackgroudSheetDelegate
 @property (nonatomic, strong) PLVSAStreamerFinishView *finishView; // 结束开播的结束页
 @property (nonatomic, strong) PLVSABeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVShareLiveSheet *shareLiveSheet; // 分享直播弹层
-@property (nonatomic, strong) PLVStickerCanvas *stickerCanvas; // 贴图组件
+@property (nonatomic, weak) PLVStickerCanvas *stickerCanvas; // 贴图组件
+@property (nonatomic, assign) CGRect stickerCanvasFrame; // 判断canvas 布局发生变化
+@property (nonatomic, strong) PLVStickerManager *stickerManager; // 贴图管理器
 @property (nonatomic, strong) PLVVirtualBackgroudSheet *aiMattingSheet; // AI抠像组件
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
 @property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
@@ -190,12 +192,12 @@ PLVVirtualBackgroudSheetDelegate
     _homeView.frame = self.view.bounds;
     _finishView.frame = self.view.bounds;
     
-    if (_stickerCanvas){
-        CGRect newFrame = self.view.bounds;
-        if ( !CGRectEqualToRect(newFrame, _stickerCanvas.frame)){
+    if (self.stickerCanvas){
+        CGRect newFrame = self.stickerCanvas.frame;
+        if ( !CGRectEqualToRect(newFrame, self.stickerCanvasFrame)){
             // 横竖屏 清空水印
             [self.streamerPresenter setStickerImage:nil];
-            _stickerCanvas.frame = newFrame;
+            self.stickerCanvasFrame = self.stickerCanvas.frame;
         }
     }
 }
@@ -671,7 +673,7 @@ PLVVirtualBackgroudSheetDelegate
                         confirmActionTitle:PLVLocalizedString(@"设置") confirmActionBlock:^{
                 NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                 if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                    [[UIApplication sharedApplication] openURL:url];
+                    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
                 }
             }];
         }
@@ -1508,12 +1510,12 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
             [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
                 if (status == PHAuthorizationStatusAuthorized) {
                     dispatch_async(dispatch_get_main_queue(), ^{
-                        [self showImagePicker];
+                        [self showStickerManager];
                     });
                 }
             }];
         } else if (status == PHAuthorizationStatusAuthorized) {
-            [self showImagePicker];
+            [self showStickerManager];
         } else {
             // 无权限时提示用户
             [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"相册权限申请")
@@ -1524,7 +1526,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
                       confirmActionBlock:^{
                 NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                 if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                    [[UIApplication sharedApplication] openURL:url];
+                    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
                 }
             }];
         }
@@ -1533,40 +1535,13 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }
 }
 
-// 显示图片选择器
-- (void)showImagePicker {
-    PLVImagePickerViewController *imagePickerVC = [[PLVImagePickerViewController alloc] initWithColumnNumber:4];
-    imagePickerVC.allowPickingOriginalPhoto = YES;
-    imagePickerVC.allowPickingVideo = NO;
-    imagePickerVC.allowTakePicture = NO;
-    imagePickerVC.allowTakeVideo = NO;
-    imagePickerVC.maxImagesCount = 10;
-    __weak typeof(self) weakSelf = self;
-    
-    if (self.stickerCanvas.curImageCount > 0){
-        imagePickerVC.maxImagesCount = 10 - self.stickerCanvas.curImageCount ;
+// 显示贴图管理器
+- (void)showStickerManager {
+    if (!self.stickerManager) {
+        self.stickerManager = [[PLVStickerManager alloc] initWithParentView:self.view];
+        self.stickerManager.delegate = self;
     }
-    [imagePickerVC setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
-        //实现图片选择回调
-        if (photos.count > 0) {
-            // 不使用懒加载初始化
-            if (!weakSelf.stickerCanvas){
-                
-                weakSelf.stickerCanvas = [[PLVStickerCanvas alloc] init];
-                weakSelf.stickerCanvas.delegate = self;
-            }
-            [self.view insertSubview:weakSelf.stickerCanvas aboveSubview:self.settingView];
-            weakSelf.stickerCanvas.frame = self.view.bounds;
-            [weakSelf.stickerCanvas layoutIfNeeded];
-            
-            [weakSelf.stickerCanvas showCanvasWithImages:photos];
-        }
-    }];
-     
-    [imagePickerVC setImagePickerControllerDidCancelHandle:^{
-        //实现图片选择取消回调
-    }];
-    [self presentViewController:imagePickerVC animated:YES completion:nil];
+    [self.stickerManager showStickerTypeSelection];
 }
 
 - (void)streamerSettingViewDidClickVirtualBackgroundButton:(PLVSAStreamerSettingView *)streamerSettingView {
@@ -1833,7 +1808,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 /// 贴图按钮点击
 - (void)streamerHomeViewDidTapStickerButton:(PLVSAStreamerHomeView *)homeView{
-    [self showImagePicker];
+    [self showStickerManager];
 }
 
 /// 虚拟背景按钮点击
@@ -1886,44 +1861,35 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [PLVSAUtils showToastWithMessage:message inView:self.view];
 }
 
-#pragma mark -- PLVStickerCanvasDelegate
-- (void)stickerCanvasExitEditMode:(PLVStickerCanvas *)stickerCanvas{
-    // 退出贴图编辑模式
-    self.stickerCanvas.enableEdit = NO;
+#pragma mark PLVStickerManagerDelegate
 
-    UIImage *image = [self.stickerCanvas generateImageWithTransparentBackground];
-    // 将图片传递给Streampresent 管理
-    [self.streamerPresenter setStickerImage:image];
+- (void)stickerManagerDidEnterEditMode:(PLVStickerManager *)manager {
+    // 进入贴图编辑模式
+    if (!self.stickerCanvas) {
+        self.stickerCanvas = manager.stickerCanvas;
+    }
     
-    if (_viewState == PLVSAStreamerViewStateBeforeSteam){
-        [self.view insertSubview:self.stickerCanvas belowSubview:self.settingView];
-    }
-    else if (_viewState == PLVSAStreamerViewStateBeginSteam){
-        
-    }
-    else if (_viewState == PLVSAStreamerViewStateSteaming){
-        // 直播中
-        [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
-    }
-    else if (_viewState == PLVSAStreamerViewStateFinishSteam){
-        
+    if (self.stickerCanvas) {
+        if (_viewState == PLVSAStreamerViewStateBeforeSteam) {
+            [self.view insertSubview:self.stickerCanvas aboveSubview:self.settingView];
+        } else if (_viewState == PLVSAStreamerViewStateSteaming) {
+            [self.homeView addStickerCanvasView:self.stickerCanvas editMode:YES];
+        }
     }
 }
 
-- (void)stickerCanvasEnterEditMode:(PLVStickerCanvas *)stickerCanvas{
-    // 进入贴图编辑模式
-    self.stickerCanvas.enableEdit = YES;
-    if (_viewState == PLVSAStreamerViewStateBeforeSteam){
-        [self.view insertSubview:self.stickerCanvas aboveSubview:self.settingView];
-    }
-    else if (_viewState == PLVSAStreamerViewStateBeginSteam){
+- (void)stickerManagerDidExitEditMode:(PLVStickerManager *)manager {
+    // 退出贴图编辑模式
+    if (self.stickerCanvas) {
+        UIImage *image = [manager generateStickerImage];
+        // 将图片传递给Streampresent 管理
+        [self.streamerPresenter setStickerImage:image];
         
-    }
-    else if (_viewState == PLVSAStreamerViewStateSteaming){
-        [self.homeView addStickerCanvasView:self.stickerCanvas editMode:YES];
-    }
-    else if (_viewState == PLVSAStreamerViewStateFinishSteam){
-        
+        if (_viewState == PLVSAStreamerViewStateBeforeSteam) {
+            [self.view insertSubview:self.stickerCanvas belowSubview:self.settingView];
+        } else if (_viewState == PLVSAStreamerViewStateSteaming) {
+            [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
+        }
     }
 }
 

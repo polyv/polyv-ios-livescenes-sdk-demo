@@ -308,7 +308,9 @@
         
         NSInteger rtcMaxResolution = [data[@"rtcMaxResolution"] integerValue];
         PLVResolutionType videoResolution = PLVResolutionType180P;
-        if (rtcMaxResolution >= 720) {
+        if (rtcMaxResolution >= 1080) {
+            videoResolution = PLVResolutionType1080P;
+        } else if (rtcMaxResolution >= 720) {
             videoResolution = PLVResolutionType720P;
         } else if (rtcMaxResolution == 360) {
             videoResolution = PLVResolutionType360P;

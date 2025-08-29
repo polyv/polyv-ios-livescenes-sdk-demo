@@ -29,6 +29,39 @@ NSString *PLVRoomDataKeyPathPlaybackListEnable = @"playbackListEnable";
 NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenExitLiveRoom = @"KRoomData_DisableStartPipWhenExitLiveRoom";
 NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomData_DdisableStartPipWhenEnterBackground";
 
+#pragma mark - PLVPlaybackResumeConfig
+
+@implementation PLVPlaybackResumeConfig
+
+- (instancetype)init {
+    self = [super init];
+    if (self) {
+        _enabled = YES;
+        _headThreshold = 10.0;
+        _tailThreshold = 10.0;
+    }
+    return self;
+}
+
++ (instancetype)defaultConfig {
+    return [[self alloc] init];
+}
+
++ (instancetype)configWithHeadThreshold:(NSTimeInterval)headThreshold 
+                           tailThreshold:(NSTimeInterval)tailThreshold {
+    PLVPlaybackResumeConfig *config = [[self alloc] init];
+    config.headThreshold = MAX(0, headThreshold); // 确保不为负数
+    config.tailThreshold = MAX(0, tailThreshold); // 确保不为负数
+    return config;
+}
+
+- (NSString *)description {
+    return [NSString stringWithFormat:@"PLVPlaybackResumeConfig: enabled=%@, head=%.1fs, tail=%.1fs", 
+            @(self.enabled), self.headThreshold, self.tailThreshold];
+}
+
+@end
+
 @interface PLVRoomData ()
 
 @property (nonatomic, strong) PLVLiveVideoChannelMenuInfo *menuInfo;
@@ -54,6 +87,9 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
         _appStartCheckinEnabled = YES;
         _appStartGiftDonateEnabled = YES;
         _appStartGiftEffectEnabled = YES;
+        
+        // 初始化续播配置
+        _playbackResumeConfig = [PLVPlaybackResumeConfig defaultConfig];
     }
     return self;
 }

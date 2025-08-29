@@ -312,6 +312,10 @@ UIPageViewControllerDelegate
     [collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
     
     if (self.controllers.count > indexPath.item) {
+        // 通知新的VC即将显示
+        UIViewController *willShowVC = self.controllers[indexPath.item];
+        [self notifyViewControllerWillAppear:willShowVC];
+        
         NSArray *showController = @[self.controllers[indexPath.item]];
         [self.pageController setViewControllers:showController direction:0 animated:NO completion:nil];
     }
@@ -350,6 +354,12 @@ UIPageViewControllerDelegate
 willTransitionToViewControllers:(NSArray *)pendingViewControllers {
     NSUInteger index = [self indexOfViewController:pendingViewControllers.firstObject];
     self.nextIndex = index;
+    
+    // 通知即将显示的子VC
+    if (index != NSNotFound && index < self.controllers.count) {
+        UIViewController *willShowVC = self.controllers[index];
+        [self notifyViewControllerWillAppear:willShowVC];
+    }
 }
 
 -(void)pageViewController:(UIPageViewController *)pageViewController
@@ -400,6 +410,13 @@ willTransitionToViewControllers:(NSArray *)pendingViewControllers {
 }
 
 #pragma mark - Private Methods
+
+// 通知VC即将显示
+- (void)notifyViewControllerWillAppear:(UIViewController *)viewController {
+    if (viewController && [viewController respondsToSelector:@selector(viewWillAppear:)]) {
+        [viewController viewWillAppear:NO];
+    }
+}
 
 -(void)selecteAtIndex:(NSUInteger)index {
     self.selectedIndex = index;

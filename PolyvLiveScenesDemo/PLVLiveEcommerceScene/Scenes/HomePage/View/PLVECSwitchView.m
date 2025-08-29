@@ -49,20 +49,49 @@
         [item removeFromSuperview];
     }
     
-    CGFloat width = (CGRectGetWidth(self.bounds) - 30) / (items.count > 0 ? items.count : 1);
-    for (int i = 0; i < items.count; i++) {
-        UIButton *itemBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-        itemBtn.frame = CGRectMake(15 + (width-66)/2 + width*i, 68, 66, 26);
-        itemBtn.layer.cornerRadius = 13.0;
-        itemBtn.layer.masksToBounds = YES;
-        itemBtn.tag = 100 + i;
-        [itemBtn setTitle:PLVLocalizedString(items[i]) forState:UIControlStateNormal];
-        itemBtn.titleLabel.font = [UIFont systemFontOfSize:14.0];
-        [itemBtn addTarget:self action:@selector(itemButtonAction:) forControlEvents:UIControlEventTouchUpInside];
-        [self addSubview:itemBtn];
-        
-        [self setItemButton:itemBtn selected:i==self.selectedIndex];
+    // 元素多余4个分两行
+    if (items.count > 4) {
+        for (int i = 0; i < items.count; i++) {
+            // 计算row和column索引
+            NSInteger row = i / 4;              // 行索引：每4个元素为一行
+            NSInteger column = i % 4;           // 列索引：在当前行的位置
+            
+            // 计算按钮位置
+            CGFloat rowWidth = (CGRectGetWidth(self.bounds) - 30) / 4;
+            CGFloat x = 15 + (rowWidth - 66) / 2 + rowWidth * column;
+            CGFloat y = 50 + row * 36;  // 行间距36
+            
+            UIButton *itemBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+            itemBtn.frame = CGRectMake(x, y, 66, 26);
+            itemBtn.layer.cornerRadius = 13.0;
+            itemBtn.layer.masksToBounds = YES;
+            itemBtn.tag = 100 + i;
+            [itemBtn setTitle:PLVLocalizedString(items[i]) forState:UIControlStateNormal];
+            itemBtn.titleLabel.font = [UIFont systemFontOfSize:14.0];
+            [itemBtn addTarget:self action:@selector(itemButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+            [self addSubview:itemBtn];
+            
+            [self setItemButton:itemBtn selected:i==self.selectedIndex];
+        }
     }
+    else{
+         CGFloat width = (CGRectGetWidth(self.bounds) - 30) / (items.count > 0 ? items.count : 1);
+         for (int i = 0; i < items.count; i++) {
+            UIButton *itemBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+            itemBtn.frame = CGRectMake(15 + (width-66)/2 + width*i, 68, 66, 26);
+            itemBtn.layer.cornerRadius = 13.0;
+            itemBtn.layer.masksToBounds = YES;
+            itemBtn.tag = 100 + i;
+            [itemBtn setTitle:PLVLocalizedString(items[i]) forState:UIControlStateNormal];
+            itemBtn.titleLabel.font = [UIFont systemFontOfSize:14.0];
+            [itemBtn addTarget:self action:@selector(itemButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+            [self addSubview:itemBtn];
+            
+            [self setItemButton:itemBtn selected:i==self.selectedIndex];
+        }
+    }
+
+   
     self.items = items;
 }
 

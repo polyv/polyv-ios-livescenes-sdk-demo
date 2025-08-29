@@ -12,6 +12,8 @@
 #import "PLVECChatCell.h"
 #import "PLVECQuoteChatCell.h"
 #import "PLVECLongContentChatCell.h"
+#import "PLVECCustomIntroductionMessageCell.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSInteger kPLVECMaxPublicChatMessageCount = 500;
 
@@ -59,6 +61,8 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *partOfPublicChatArray;
 /// 私聊消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *privateChatArray;
+/// 是否第一次加载通知消息
+@property (nonatomic, assign) BOOL firstTimeLoadCustomIntroduction;
 
 @end
 
@@ -108,6 +112,18 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.publicChatArray = [NSMutableArray arrayWithCapacity:500];
     self.partOfPublicChatArray = [NSMutableArray arrayWithCapacity:100];
     self.privateChatArray = [NSMutableArray arrayWithCapacity:100];
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    BOOL isZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
+    NSString *notificationText = isZH ? roomData.menuInfo.chatCustomIntroduction : roomData.menuInfo.chatCustomIntroductionEn;
+    if ([PLVFdUtil checkStringUseable:notificationText] && [PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+        PLVCustomIntroductionMessage *notifyMsg = [[PLVCustomIntroductionMessage alloc] init];
+        notifyMsg.content = notificationText;
+        PLVChatModel *model = [[PLVChatModel alloc] init];
+        model.message = notifyMsg;
+        [self.publicChatArray addObject:model];
+        self.firstTimeLoadCustomIntroduction = YES;
+    }
 
     // 初始化聊天室Presenter并设置delegate
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10 childRoomAllow:YES];
@@ -400,6 +416,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         } else if ([PLVECLongContentChatCell isModelValid:model]) {
             model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
             model.cellHeightForV = [PLVECLongContentChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        } else if ([PLVECCustomIntroductionMessageCell isModelValid:model]) {
+            model.attributeString = [PLVECCustomIntroductionMessageCell contentLabelAttributedStringWithMessage:model.message];
+            model.cellHeightForV = [PLVECCustomIntroductionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
         }
         
         if ([model isKindOfClass:[PLVChatModel class]]) {
@@ -469,6 +488,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         }
     }
     BOOL first = ([self.publicChatArray count] <= [modelArray count]);
+    if (self.firstTimeLoadCustomIntroduction && [self.publicChatArray count] >= 1) { // 含有通知消息的需要单独判断
+        first = (([self.publicChatArray count] - 1) <= [modelArray count]);
+        self.firstTimeLoadCustomIntroduction = NO;
+    }
     dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyListenerLoadHistorySuccess:noMore firstTime:first];

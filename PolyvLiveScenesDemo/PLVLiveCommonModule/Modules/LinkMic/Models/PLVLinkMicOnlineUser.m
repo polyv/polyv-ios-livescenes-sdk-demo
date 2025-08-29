@@ -22,6 +22,7 @@
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock> * currentStatusVoiceChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock> * currentSpeakerAuthChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserScreenShareOpenChangedBlock> * currentScreenShareOpenChanged_MultiReceiverMap;
+@property (nonatomic, strong) NSMapTable <id, PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock> * currentFirstSiteChanged_MultiReceiverMap;
 @property (nonatomic, strong) NSTimer *forceStopLinkMicTimer;
 @property (nonatomic, assign) NSUInteger forceStopLinkMicTimerCount;
 
@@ -51,6 +52,7 @@
 @property (nonatomic, assign) BOOL updateUserCurrentStatusVoiceCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentSpeakerAuthCallbackBefore;
 @property (nonatomic, assign) BOOL updateUserCurrentScreenShareOpenCallbackBefore;
+@property (nonatomic, assign) BOOL updateUserCurrentFirstSiteCallbackBefore;
 @property (nonatomic, assign) CGFloat currentVolume;
 @property (nonatomic, assign) BOOL currentMicOpen;
 @property (nonatomic, assign) BOOL currentCameraOpen;
@@ -66,6 +68,7 @@
 @property (nonatomic, assign) BOOL currentScreenShareOpen;
 @property (nonatomic, assign) PLVLinkMicUserLinkMicStatus linkMicStatus;
 @property (nonatomic, assign) BOOL forceCloseLinkMicIfNeed;
+@property (nonatomic, assign) BOOL currentFirstSite;
 
 @end
 
@@ -150,6 +153,13 @@
         _currentScreenShareOpenChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
     }
     return _currentScreenShareOpenChanged_MultiReceiverMap;
+}
+
+- (NSMapTable<id,PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock> *)currentFirstSiteChanged_MultiReceiverMap{
+    if (!_currentFirstSiteChanged_MultiReceiverMap) {
+        _currentFirstSiteChanged_MultiReceiverMap = [NSMapTable weakToStrongObjectsMapTable];
+    }
+    return _currentFirstSiteChanged_MultiReceiverMap;
 }
 
 - (NSTimeInterval)currentLinkMicDuration {
@@ -553,6 +563,37 @@
     }
 }
 
+- (void)updateUserCurrentFirstSite:(BOOL)isFirstSite {
+    BOOL needCallBack = (_currentFirstSite != isFirstSite);
+
+    /// 注：
+    /// _currentFirstSite 默认值为NO， isFirstSite 值为NO时不需要更新
+    if (!_updateUserCurrentFirstSiteCallbackBefore && needCallBack) {
+        needCallBack = YES;
+    }
+    
+    _currentFirstSite = isFirstSite;
+    if (needCallBack && self.currentFirstSiteChangedBlock) {
+        _updateUserCurrentFirstSiteCallbackBefore = YES;
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.currentFirstSiteChangedBlock(weakSelf); }
+        })
+    }
+    
+    if (needCallBack && _currentFirstSiteChanged_MultiReceiverMap.count > 0) {
+        _updateUserCurrentFirstSiteCallbackBefore = YES;
+        NSEnumerator * enumerator = [_currentFirstSiteChanged_MultiReceiverMap objectEnumerator];
+        PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock block;
+        __weak typeof(self) weakSelf = self;
+        while ((block = [enumerator nextObject])) {
+            plv_dispatch_main_async_safe(^{
+                if (weakSelf) { block(weakSelf); }
+            })
+        }
+    }
+}
+
 - (void)updateUserIsGuestTransferPermission:(BOOL)isGuestTransferPermission {
     _isGuestTransferPermission = isGuestTransferPermission;
 }
@@ -753,6 +794,15 @@
     }
 }
 
+- (void)wantAuthUserFirstSite:(BOOL)authFirstSite {
+    if (self.wantAuthFirstSiteBlock) {
+        __weak typeof(self) weakSelf = self;
+        plv_dispatch_main_async_safe(^{
+            if (weakSelf) { weakSelf.wantAuthFirstSiteBlock(weakSelf, authFirstSite); }
+        })
+    }
+}
+
 #pragma mark 多接收方回调配置
 - (void)addWillDeallocBlock:(PLVLinkMicOnlineUserWillDeallocBlock)strongBlock blockKey:(id)weakBlockKey{
     if (!strongBlock) {
@@ -880,6 +930,22 @@
         return;
     }
     [self.currentScreenShareOpenChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
+}
+
+- (void)addCurrentFirstSiteChangedBlock:(PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock)strongBlock blockKey:(id)weakBlockKey{
+    if (!strongBlock) {
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentFirstSiteChangedBlock failed，strongBlock illegal");
+        return;
+    }
+    if (!weakBlockKey) {
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentFirstSiteChangedBlock failed，weakBlockKey illegal:%@",weakBlockKey);
+        return;
+    }
+    if (self.currentFirstSiteChanged_MultiReceiverMap.count > 20) {
+        PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicOnlineUser - addCurrentFirstSiteChangedBlock failed，block registration limit has been reached");
+        return;
+    }
+    [self.currentFirstSiteChanged_MultiReceiverMap setObject:strongBlock forKey:weakBlockKey];
 }
 
 @end

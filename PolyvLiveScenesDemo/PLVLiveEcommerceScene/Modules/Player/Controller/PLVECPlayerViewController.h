@@ -217,6 +217,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 切换回放
 - (void)changeVid:(NSString *)vid;
 
+/// 获取缓存播放速度对应的UI选中索引
+- (NSInteger)getCachedPlaybackSpeedIndex;
+
 #pragma mark 视图
 
 /// 在[无延迟播放场景] 下 播放器区域中展示的一个内容视图

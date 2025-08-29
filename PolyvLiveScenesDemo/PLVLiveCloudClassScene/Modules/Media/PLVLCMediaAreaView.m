@@ -703,12 +703,23 @@ PLVLCDocumentPaintModeViewDelegate
             downloadModel = [PLVLCMediaMoreModel modelWithSwitchTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_DownloadOptionTitle) normalImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selectedImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_download_item"] selected:NO];
         }
         
-        PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x"] selectedIndex:1];
-        speedModel.optionSpecifiedWidth = 40.0;
-        if (@available(iOS 15.0, *)) { // iOS15以上支持
-            speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:@[@"0.5x",@"1.0x",@"1.25x",@"1.5x",@"2.0x",@"3.0x"] selectedIndex:1];
-            speedModel.optionSpecifiedWidth = 35.0;
+        // 获取支持的播放速度和用户上次使用的速度
+        NSArray *supportedSpeeds = [self.playerPresenter getSupportedPlaybackSpeeds];
+        CGFloat cachedSpeed = [self.playerPresenter getCachedPlaybackSpeed];
+        
+        // 找到缓存速度对应的索引
+        NSInteger selectedIndex = 2; // 默认1.0x的索引
+        for (NSInteger i = 0; i < supportedSpeeds.count; i++) {
+            NSString *speedStr = supportedSpeeds[i];
+            CGFloat speed = speedStr.floatValue;
+            if (fabs(speed - cachedSpeed) < 0.01) {
+                selectedIndex = i;
+                break;
+            }
         }
+        
+        PLVLCMediaMoreModel * speedModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle) optionItemsArray:supportedSpeeds selectedIndex:selectedIndex];
+        speedModel.optionSpecifiedWidth = 45.0;
         
         NSMutableArray * modelArray = [[NSMutableArray alloc] init];
         if (downloadModel) { [modelArray addObject:downloadModel]; }
@@ -1513,9 +1524,9 @@ PLVLCDocumentPaintModeViewDelegate
         // 用户点选了”线路“中的选项
         [self.playerPresenter switchLiveToLineIndex:model.selectedIndex];
     } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_SpeedOptionTitle)]) {
-        // 用户点选了”倍速“中的选项
-        CGFloat speed = [[model.currentSelectedItemString substringToIndex:model.currentSelectedItemString.length - 1] floatValue];
-        [self.playerPresenter switchLivePlaybackSpeedRate:speed];
+        // 用户点选了"倍速"中的选项
+        CGFloat speed = model.currentSelectedItemString.floatValue;
+        [self.playerPresenter switchLivePlaybackSpeedRate:speed]; // PLVPlayerPresenter会自动保存速度
     } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_LiveDelayOptionTitle)]) {
         // 用户点选了“延迟”中的选项
         [self switchToNoDelayWatchMode:model.selectedIndex == 0];

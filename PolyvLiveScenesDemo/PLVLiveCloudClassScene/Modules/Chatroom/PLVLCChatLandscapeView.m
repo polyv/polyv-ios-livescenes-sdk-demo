@@ -18,6 +18,7 @@
 #import "PLVLCLandscapeImageEmotionCell.h"
 #import "PLVLCLandscapeQuoteCell.h"
 #import "PLVLCLandscapeFileCell.h"
+#import "PLVLCLandscapeCustomIntroductionMessageCell.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
@@ -585,7 +586,7 @@ UITableViewDataSource
             [weakSelf notifyDelegateToReplyChatModel:model];
         }];
         return cell;
-    } if ([PLVLCLandscapeFileCell isModelValid:model]) {
+    } else if ([PLVLCLandscapeFileCell isModelValid:model]) {
         static NSString *filekMessageCellIdentify = @"PLVLCLandscapeFileCell";
         PLVLCLandscapeFileCell *cell = (PLVLCLandscapeFileCell *)[tableView dequeueReusableCellWithIdentifier:filekMessageCellIdentify];
         if (!cell) {
@@ -593,7 +594,7 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
-    } if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
+    } else if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
         static NSString *redpackMessageCellIdentify = @"PLVLCLandscapeRedpackMessageCell";
         PLVLCLandscapeRedpackMessageCell *cell = (PLVLCLandscapeRedpackMessageCell *)[tableView dequeueReusableCellWithIdentifier:redpackMessageCellIdentify];
         if (!cell) {
@@ -603,6 +604,14 @@ UITableViewDataSource
         [cell setRedpackTapHandler:^(PLVChatModel * _Nonnull model) {
             [weakSelf didTapRedpackModel:model];
         }];
+        return cell;
+    } else if ([PLVLCLandscapeCustomIntroductionMessageCell isModelValid:model]) {
+        static NSString *customIntroductionMessageCellIdentify = @"PLVLCLandscapeCustomIntroductionMessageCell";
+        PLVLCLandscapeCustomIntroductionMessageCell *cell = (PLVLCLandscapeCustomIntroductionMessageCell *)[tableView dequeueReusableCellWithIdentifier:customIntroductionMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLandscapeCustomIntroductionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:customIntroductionMessageCellIdentify];
+        }
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
@@ -658,6 +667,11 @@ UITableViewDataSource
     } else if ([PLVLCLandscapeRedpackMessageCell isModelValid:model]) {
         if (model.cellHeightForH == 0.0) {
             model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
+    } else if ([PLVLCLandscapeCustomIntroductionMessageCell isModelValid:model]) {
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeCustomIntroductionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         }
         cellHeight = model.cellHeightForH;
     }

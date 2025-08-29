@@ -14,6 +14,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString *PLVLCChatroomFunctionGotNotification;
 
+@class PLVPlaybackResumeConfig;
+
 /// 推流分辨率设置
 typedef NS_ENUM (NSInteger, PLVResolutionType) {
     PLVResolutionType180P = 0, // 180p（标清）
@@ -148,6 +150,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, strong) NSArray<PLVLivePlaybackSectionModel *> *sectionList;
 /// 无网络且播放离线缓存情况下是否展示直播介绍页面
 @property (nonatomic, assign) BOOL noNetWorkOfflineIntroductionEnabled;
+/// 回放续播配置，默认为10秒阈值
+@property (nonatomic, strong) PLVPlaybackResumeConfig *playbackResumeConfig;
 
 #pragma mark 聊天室独有属性
 
@@ -297,6 +301,32 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 /// 将清晰度枚举值转换成字符串
 /// @return 返回值为nil时表示参数resolutionType出错，无法转换
 + (NSString * _Nullable)mixLayoutTypeStringWithType:(PLVMixLayoutType)mixLayoutType;
+
+@end
+
+#pragma mark - PLVPlaybackResumeConfig 回放续播配置
+
+@interface PLVPlaybackResumeConfig : NSObject
+
+/// 是否启用自定义续播阈值，默认YES
+@property (nonatomic, assign) BOOL enabled;
+
+/// 头部阈值（秒），播放位置小于此值时不续播，默认10秒
+/// 例如：设置为1，表示播放位置小于1秒时从头播放
+@property (nonatomic, assign) NSTimeInterval headThreshold;
+
+/// 尾部阈值（秒），剩余时长小于此值时不续播，默认10秒
+/// 例如：设置为1，表示剩余时长小于1秒时从头播放
+@property (nonatomic, assign) NSTimeInterval tailThreshold;
+
+/// 创建默认配置（头尾都是10秒）
++ (instancetype)defaultConfig;
+
+/// 创建自定义配置
+/// @param headThreshold 头部阈值
+/// @param tailThreshold 尾部阈值
++ (instancetype)configWithHeadThreshold:(NSTimeInterval)headThreshold
+                           tailThreshold:(NSTimeInterval)tailThreshold;
 
 @end
 

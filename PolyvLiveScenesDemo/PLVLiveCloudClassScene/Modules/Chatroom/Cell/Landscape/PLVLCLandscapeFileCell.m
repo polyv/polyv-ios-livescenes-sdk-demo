@@ -224,7 +224,7 @@
     PLVFileMessage *message = (PLVFileMessage *)self.model.message;
     NSString *url = message.url;
     if ([PLVFdUtil checkStringUseable:url]) {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url] options:@{} completionHandler:nil];
     }
 }
 

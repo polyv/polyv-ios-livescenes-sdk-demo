@@ -66,6 +66,7 @@ PLVLiveSearchBarDelegate
 @property (nonatomic, assign) BOOL enableLinkMic; // 是否开启连麦
 @property (nonatomic, assign) BOOL isSearching; // 是否正在搜索
 @property (nonatomic, copy) NSString *currentSearchText; // 当前搜索文本
+@property (nonatomic, assign) BOOL isRealFirstScreen;
 
 @end
 
@@ -580,6 +581,10 @@ PLVLiveSearchBarDelegate
 
 - (BOOL)localUserIsRealMainSpeakerInCell:(PLVLSMemberCell *)cell {
     return self.isRealMainSpeaker;
+}
+
+- (BOOL)localUserIsRealFirstSiteInCell:(PLVLSMemberCell *)cell {
+    return self.isRealFirstScreen;
 }
     
 #pragma mark PLVLSSipViewDelegate

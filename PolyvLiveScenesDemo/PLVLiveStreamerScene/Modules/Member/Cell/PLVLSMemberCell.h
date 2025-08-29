@@ -30,6 +30,9 @@ extern NSString *PLVLSMemberCellNotification;
 
 - (BOOL)localUserIsRealMainSpeakerInCell:(PLVLSMemberCell *)cell;
 
+/// 本地用户是否是第一画面
+- (BOOL)localUserIsRealFirstSiteInCell:(PLVLSMemberCell *)cell;
+
 /// 是否开启音视频连麦（YES开启，NO关闭）
 - (BOOL)enableAudioVideoLinkMicInCell:(PLVLSMemberCell *)cell;
 

@@ -198,7 +198,7 @@
 - (void)tapGestureViewAction {
     NSString *url = self.fileMessage.url;
     if ([PLVFdUtil checkStringUseable:url]) {
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url] options:@{} completionHandler:nil];
     }
 }
 

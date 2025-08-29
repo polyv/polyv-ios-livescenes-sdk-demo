@@ -18,6 +18,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)plv_StickerViewDidTapContentView:(PLVStickerImageView *)stickerView;
 - (void)plv_StickerViewHandleMove:(PLVStickerImageView *)stickerView point:(CGPoint)point gestureEnded:(BOOL)ended;
+// 新增：Done按钮点击回调
+- (void)plv_StickerViewDidTapDoneButton:(PLVStickerImageView *)stickerView;
 
 @end
 

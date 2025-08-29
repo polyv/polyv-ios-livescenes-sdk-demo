@@ -267,10 +267,10 @@ static CGFloat kToolbarHeight = 32.0;
                                    message:PLVLocalizedString(@"请前往“设置-隐私”开启权限")
                          cancelActionTitle:PLVLocalizedString(@"取消")
                          cancelActionBlock:nil
-                        confirmActionTitle:PLVLocalizedString(@"前往设置") confirmActionBlock:^{
+                        confirmActionTitle:PLVLocalizedString(@"前往设置")                         confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                        [[UIApplication sharedApplication] openURL:url];
+                        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
                     }
             }];
         }

@@ -107,9 +107,9 @@
 - (void)cardView:(PLVECCardView *)cardView didInteractWithURL:(NSURL *)URL {
     PLV_LOG_INFO(PLVConsoleLogModuleTypeVerbose,@"%@ %@", NSStringFromSelector(_cmd),URL);
     if ([cardView isKindOfClass:PLVECBulletinCardView.class]) {
-        [[UIApplication sharedApplication] openURL:URL];
+        [[UIApplication sharedApplication] openURL:URL options:@{} completionHandler:nil];
     } else if ([cardView isKindOfClass:PLVECLiveIntroductionCardView.class]) {
-        [[UIApplication sharedApplication] openURL:URL];
+        [[UIApplication sharedApplication] openURL:URL options:@{} completionHandler:nil];
     }
 }
 

@@ -25,6 +25,9 @@
 #import "PLVLCLandscapeQuoteCell.h"
 #import "PLVLCLandscapeFileCell.h"
 #import "PLVLCLandscapeRedpackMessageCell.h"
+#import "PLVLCCustomIntroductionMessageCell.h"
+#import "PLVLCLandscapeCustomIntroductionMessageCell.h"
+#import "PLVMultiLanguageManager.h"
 
 static NSInteger kPLVLCMaxPublicChatMessageCount = 500;
 
@@ -91,6 +94,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 /// 私聊消息数组
 @property (nonatomic, strong) NSMutableArray <PLVChatModel *> *privateChatArray;
 
+/// 是否第一次加载通知消息
+@property (nonatomic, assign) BOOL firstTimeLoadCustomIntroduction;
+
 @end
 
 @implementation PLVLCChatroomViewModel {
@@ -149,6 +155,17 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.partOfPublicChatArray = [NSMutableArray arrayWithCapacity:100];
     self.partOfSpecialIdentityPublicChatArray = [NSMutableArray arrayWithCapacity:100];
     self.privateChatArray = [NSMutableArray arrayWithCapacity:20];
+    
+    BOOL isZH = [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK;
+    NSString *notificationText = isZH ? roomData.menuInfo.chatCustomIntroduction : roomData.menuInfo.chatCustomIntroductionEn;
+    if ([PLVFdUtil checkStringUseable:notificationText] && roomData.videoType == PLVChannelVideoType_Live) {
+        PLVCustomIntroductionMessage *notifyMsg = [[PLVCustomIntroductionMessage alloc] init];
+        notifyMsg.content = notificationText;
+        PLVChatModel *model = [[PLVChatModel alloc] init];
+        model.message = notifyMsg;
+        [self.publicChatArray addObject:model];
+        self.firstTimeLoadCustomIntroduction = YES;
+    }
     
     // 初始化聊天室Presenter并设置delegate
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:20];
@@ -505,6 +522,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
         model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
         model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCCustomIntroductionMessageCell isModelValid:model]) {
+        model.attributeString = [PLVLCCustomIntroductionMessageCell contentLabelAttributedStringWithMessage:model.message];
+        model.landscapeAttributeString = [PLVLCLandscapeCustomIntroductionMessageCell contentLabelAttributedStringWithMessage:model.message];
+        model.cellHeightForV = [PLVLCCustomIntroductionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeCustomIntroductionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
     }
     
     [self.publicChatArray addObject:model];
@@ -557,6 +579,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
             } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
                 model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
                 model.cellHeightForH = [PLVLCLandscapeRedpackMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+            } else if ([PLVLCCustomIntroductionMessageCell isModelValid:model]) {
+                model.attributeString = [PLVLCCustomIntroductionMessageCell contentLabelAttributedStringWithMessage:model.message];
+                model.landscapeAttributeString = [PLVLCLandscapeCustomIntroductionMessageCell contentLabelAttributedStringWithMessage:model.message];
+                model.cellHeightForV = [PLVLCCustomIntroductionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+                model.cellHeightForH = [PLVLCLandscapeCustomIntroductionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
             }
             
             [self.publicChatArray addObject:model];
@@ -629,6 +656,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         }
     }
     BOOL first = ([self.publicChatArray count] <= [modelArray count]);
+    if (self.firstTimeLoadCustomIntroduction && [self.publicChatArray count] >= 1) { // 含有通知消息的需要单独判断
+        first = (([self.publicChatArray count] - 1) <= [modelArray count]);
+        self.firstTimeLoadCustomIntroduction = NO;
+    }
     dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyDelegatesLoadHistorySuccess:noMore firstTime:first];

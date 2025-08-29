@@ -8,13 +8,16 @@
 
 #import "PLVStickerCanvas.h"
 #import "PLVStickerImageView.h"
+#import "PLVStickerTextView.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import "PLVSAUtils.h"
 
 const NSInteger maxStickerImage = 10;
+const NSInteger maxStickerText = 10;
 
 @interface PLVStickerCanvas ()<
-PLVStickerImageViewDelegate
+PLVStickerImageViewDelegate,
+PLVStickerTextViewDelegate
 >
 
 @property (nonatomic, strong) UIView *cusMskView;
@@ -23,20 +26,26 @@ PLVStickerImageViewDelegate
 @property (nonatomic, strong) UIButton *deleteButton;
 
 @property (nonatomic, assign) NSInteger curImageCount;
+@property (nonatomic, assign) NSInteger curTextCount;
 @property (nonatomic, strong) NSArray *images;
+
 @end
 
 @implementation PLVStickerCanvas
 
-- (instancetype)init{
-    if (self = [super init]){
+- (instancetype)initWithFrame:(CGRect)frame{
+    if (self = [super initWithFrame:frame]){
         UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction:)];
         [self addGestureRecognizer:tapGesture];
+        self.clipsToBounds = YES;
+        self.contentView.clipsToBounds = YES;
       
         [self addSubview:self.cusMskView];
         [self addSubview:self.contentView];
         
         self.isFullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+        
+        [self updateUI];
     }
     return self;
 }
@@ -44,18 +53,29 @@ PLVStickerImageViewDelegate
 - (void)layoutSubviews{
     [super layoutSubviews];
     
+    [self updateUI];
+}
+
+- (void)updateUI{
+    // 需要和rtc摄像头采集的图像分辨率比例一致 默认9：16
     BOOL curFullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (curFullScreen){
-        NSInteger height = self.bounds.size.height;
+        CGFloat height = self.bounds.size.height;
         CGFloat width = height * 16/ 9;
         CGFloat x = (self.bounds.size.width - width)/2;
         CGFloat y = 0;
         self.contentView.frame = CGRectMake(x, y, width, height);
     }
     else{
-        NSInteger width = self.bounds.size.width;
+        CGFloat width = self.bounds.size.width;
         CGFloat height = width * 16/ 9;
-        CGFloat x = 0;
+
+        if (height > self.bounds.size.height){
+            height = self.bounds.size.height;
+            width = height * 9/ 16;
+        }
+
+        CGFloat x = (self.bounds.size.width - width)/2;
         CGFloat y = (self.bounds.size.height - height)/2;
         self.contentView.frame = CGRectMake(x, y, width, height);;
     }
@@ -71,7 +91,9 @@ PLVStickerImageViewDelegate
 
 - (void)revertLayout{
     for (UIView *subView in self.contentView.subviews){
-        [subView removeFromSuperview];
+        if ([subView isKindOfClass:[PLVStickerImageView class]]){
+            [subView removeFromSuperview];
+        }
     }
     
     NSInteger defaultWidth = 150;
@@ -87,6 +109,16 @@ PLVStickerImageViewDelegate
         imageview.delegate = self;
         
         [self.contentView addSubview:imageview];
+    }
+    
+    // 文字贴图重置坐标
+    for (UIView *subView in self.contentView.subviews){
+        if ([subView isKindOfClass:[PLVStickerTextView class]]){
+            PLVStickerTextView *textView = (PLVStickerTextView *)subView;
+            NSInteger startX = (self.contentView.bounds.size.width - textView.frame.size.width)/2;
+            NSInteger startY = (self.contentView.bounds.size.height - textView.frame.size.height)/2 - 80;
+            textView.frame = CGRectMake(startX, startY, textView.frame.size.width, textView.frame.size.height);
+        }
     }
 }
 
@@ -124,6 +156,9 @@ PLVStickerImageViewDelegate
     for (UIView *subview in self.contentView.subviews) {
         if ([subview isKindOfClass:[PLVStickerImageView class]]) {
             PLVStickerImageView *view = (PLVStickerImageView *)subview;
+            view.enableEdit = enableEdit;
+        } else if ([subview isKindOfClass:[PLVStickerTextView class]]) {
+            PLVStickerTextView *view = (PLVStickerTextView *)subview;
             view.enableEdit = enableEdit;
         }
     }
@@ -171,8 +206,7 @@ PLVStickerImageViewDelegate
     
     // 遍历所有子视图并渲染
     for (UIView *subview in self.contentView.subviews) {
-        if ([subview isKindOfClass:[PLVStickerImageView class]]) {
-
+        if ([subview isKindOfClass:[PLVStickerImageView class]] || [subview isKindOfClass:[PLVStickerTextView class]]) {
             // 保存当前上下文状态
             CGContextSaveGState(context);
             
@@ -197,17 +231,33 @@ PLVStickerImageViewDelegate
     return image;
 }
 
+- (BOOL)hasMaxTextCount{
+    return self.curTextCount >= maxStickerText;
+}
+
 - (void)tapAction:(UITapGestureRecognizer *)tapGesture{
+    // 如果当前处于文字贴纸添加或者编辑状态 （StickerTemplateView 显示中）不处理
+    if (self.currentEditingTextView.editState >= PLVStickerTextEditStateActionVisible)
+        return;
+
+    // 重置所有文本贴纸状态
+    [self resetAllTextViewsState];
+
+    // 重置所有图片贴纸状态
+    [self resetAllImageViewsState];
+
+    self.cusMskView.hidden = YES;
+    self.enableEdit = NO;
+    
     // 关闭编辑模式
     if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasExitEditMode:)]){
         [self.delegate stickerCanvasExitEditMode:self];
     }
-    self.cusMskView.hidden = YES;
 }
 
 - (BOOL)isDeleteAllSticker{
-    for (UIView *subview in self.subviews) {
-        if ([subview isKindOfClass:[PLVStickerImageView class]]) {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerImageView class]] || [subview isKindOfClass:[PLVStickerTextView class]]) {
             return NO;
         }
     }
@@ -216,11 +266,34 @@ PLVStickerImageViewDelegate
 
 #pragma mark -- PLVStickerImageViewDelegate
 - (void)plv_StickerViewDidTapContentView:(PLVStickerImageView *)stickerView{
+    // 检查并处理模版界面状态：当从文本贴纸切换到图片贴纸时
+    [self handleTemplateViewStateBeforeSwitchingToImageSticker];
+
+    // 实现贴纸焦点切换的互斥逻辑：当图片贴纸被选中时，重置所有文本贴纸状态
+    [self resetAllTextViewsState];
+
+    // 重置其他图片贴纸的选中状态（互斥选中）
+    [self resetOtherImageViewsStateExcept:stickerView];
+
+    // 设置当前图片贴纸为选中状态
+    stickerView.enabledBorder = YES;
+
     // 进入编辑模式
+    self.enableEdit = YES;
     self.cusMskView.hidden = NO;
     if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasEnterEditMode:)]){
         [self.delegate stickerCanvasEnterEditMode:self];
     }
+    
+    // 前一个获取焦点的贴纸组件去掉焦点
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerImageView class]]) {
+            PLVStickerImageView *view = (PLVStickerImageView *)subview;
+            view.enabledBorder = NO;
+        }
+    }
+    // 获取焦点
+    stickerView.enabledBorder = YES;
 }
 
 - (void)plv_StickerViewHandleMove:(PLVStickerImageView *)stickerView point:(CGPoint)point gestureEnded:(BOOL)gestureEnded{
@@ -245,5 +318,281 @@ PLVStickerImageViewDelegate
     }
 }
 
+- (void)plv_StickerViewDidTapDoneButton:(PLVStickerImageView *)stickerView {
+    // 完成编辑，退出编辑模式
+    [self tapAction:nil];  // 调用现有的退出编辑方法
+}
+
+- (void)addTextStickerWithModel:(PLVStickerTextModel *)textModel {
+    if (self.curTextCount >= maxStickerText) {
+        NSLog(@"已达到最大文本贴图数量限制: %ld", (long)maxStickerText);
+        return;
+    }
+    
+    // 默认初始位置
+    NSInteger startX = (self.contentView.bounds.size.width - textModel.defaultSize.width)/2;
+    NSInteger startY = (self.contentView.bounds.size.height - textModel.defaultSize.height)/2 - 80;
+    CGRect frame = CGRectMake(startX, startY, textModel.defaultSize.width, textModel.defaultSize.height);
+    PLVStickerTextView *textView = [[PLVStickerTextView alloc] initWithFrame:frame textModel:textModel];
+
+    textView.delegate = self;
+    textView.enableEdit = YES;
+    // 标记为新增贴纸
+    textView.isNewlyAdded = YES;
+    // 新增的stickertext 处于编辑状态
+    textView.editState = PLVStickerTextEditStateActionVisible;
+    
+    [self.contentView addSubview:textView];
+    self.curTextCount++;
+}
+
+- (void)updateTextStickerWithModel:(PLVStickerTextModel *)textModel {
+    // 更新当前 拥有焦点的贴纸数据
+    if (self.currentEditingTextView) {
+        // 更新样式和文案
+        [self.currentEditingTextView updateTextMode:textModel];
+    }
+    else{
+        
+    }    
+}
+
+- (void)executeDone{
+    if (self.currentEditingTextView){
+        [self.currentEditingTextView executeDone];
+    }
+}
+
+- (void)executeCancel{
+    if (self.currentEditingTextView){
+        [self.currentEditingTextView executeCancel];
+    }
+}
+
+- (void)exitEditMode{
+    // 重置当前贴纸状态 否则tapAction 不会顺利执行
+    if (self.currentEditingTextView){
+        self.currentEditingTextView.editState = PLVStickerTextEditStateNormal;
+    }
+
+    // 借用手势点击事件处理方法
+    [self tapAction:nil];
+}
+
+- (void)executeCancelDelete:(PLVStickerTextView *)textView {
+    NSLog(@"executeCancelDelete: isNewlyAdded = %@", textView.isNewlyAdded ? @"YES" : @"NO");
+    if (textView.isNewlyAdded) {
+        // 新增的贴纸：直接删除
+        NSLog(@"删除新增贴纸");
+        [textView removeFromSuperview];
+        self.curTextCount--;
+    } else {
+        // 已存在的贴纸：恢复显示
+        NSLog(@"恢复已存在贴纸显示");
+        textView.hidden = NO;
+    }
+}
+
+- (void)executeConfirmDelete:(PLVStickerTextView *)textView {
+    // 无论新增还是已存在的贴纸，都彻底删除
+    [textView removeFromSuperview];
+    self.curTextCount--;
+    
+    // 检查是否删除了所有贴纸
+    if ([self isDeleteAllSticker]) {
+        // 退出编辑模式
+        [self tapAction:nil];
+        self.curTextCount = 0;
+    }
+}
+
+- (PLVStickerTextView *)currentEditingTextView{
+    // 逆序遍历 找到第一个处于编辑状态的贴纸    
+    for (NSInteger i = self.contentView.subviews.count - 1; i >= 0; i--) {
+        UIView *subview = self.contentView.subviews[i];
+        if ([subview isKindOfClass:[PLVStickerTextView class]]) {
+            PLVStickerTextView *textView = (PLVStickerTextView *)subview;
+            // 检查是否处于编辑状态（除了普通状态都算编辑状态）
+            if (textView.editState != PLVStickerTextEditStateNormal) {
+                return textView;
+            }
+        }
+    }
+    return nil;
+}
+
+#pragma mark -- PLVStickerTextViewDelegate
+
+- (void)plv_StickerTextViewDidTapContentView:(PLVStickerTextView *)stickerTextView {
+    // 实现贴纸焦点切换的互斥逻辑：当文本贴纸被选中时，重置所有图片贴纸状态
+    [self resetAllImageViewsState];
+
+    // 进入编辑模式
+    self.cusMskView.hidden = NO;
+    self.enableEdit = YES;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasEnterEditMode:)]){
+        [self.delegate stickerCanvasEnterEditMode:self];
+    }
+}
+
+- (void)plv_StickerTextViewHandleMove:(PLVStickerTextView *)stickerTextView point:(CGPoint)point gestureEnded:(BOOL)ended {
+    NSLog(@"text point: %@", NSStringFromCGPoint(point));
+    [self addSubview:self.deleteButton];
+    self.deleteButton.hidden = ended;
+
+    self.deleteButton.frame = CGRectMake((self.bounds.size.width - 160)/2, (self.bounds.size.height - 42 -35), 160, 42);
+    if (CGRectContainsPoint(self.deleteButton.frame, point)){
+        self.deleteButton.backgroundColor = [UIColor redColor];
+        if (ended){
+            [stickerTextView removeFromSuperview];
+            self.curTextCount--;
+            if ([self isDeleteAllSticker]){
+                // 退出编辑模式
+                [self tapAction:nil];
+                self.curTextCount = 0;
+            }
+        }
+    }else{
+        [self.deleteButton setBackgroundColor:[PLVColorUtil colorFromHexString:@"#000000" alpha:0.6]];
+    }
+}
+
+- (void)plv_StickerTextViewDidBeginEditing:(PLVStickerTextView *)stickerTextView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasBeginEditingText:)]) {
+        [self.delegate stickerCanvasBeginEditingText:self];
+    }
+}
+
+- (void)plv_StickerTextViewDidEndEditing:(PLVStickerTextView *)stickerTextView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasEndEditingText:)]) {
+        [self.delegate stickerCanvasEndEditingText:self];
+    }
+}
+
+- (void)plv_StickerTextView:(PLVStickerTextView *)stickerTextView didChangeEditState:(PLVStickerTextEditState)editState {
+    // 处理文本贴纸状态变化
+    switch (editState) {
+        case PLVStickerTextEditStateSelected:
+        case PLVStickerTextEditStateActionVisible:
+        case PLVStickerTextEditStateTextEditing:
+            // 取消其他文本贴纸的选中状态（互斥选中）
+            [self resetOtherTextViewsStateExcept:stickerTextView];
+            
+            // 进入编辑模式
+            self.cusMskView.hidden = NO;
+            self.enableEdit = YES;
+            if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasEnterEditMode:)]) {
+                [self.delegate stickerCanvasEnterEditMode:self];
+            }
+            
+            // 单独回调文本贴纸状态变化
+            if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasTextEditStateChanged:textView:)]){
+                [self.delegate stickerCanvasTextEditStateChanged:self textView:stickerTextView];
+            }
+            
+            break;
+            
+        case PLVStickerTextEditStateNormal:
+            // 检查是否还有其他文本贴纸处于编辑状态
+            if (![self hasAnyTextViewInEditState]) {
+                // 退出编辑模式
+                self.cusMskView.hidden = YES;
+                self.enableEdit = NO;
+                if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasExitEditMode:)]) {
+                    [self.delegate stickerCanvasExitEditMode:self];
+                }
+            }
+            break;
+    }
+}
+
+#pragma mark - State Management Helper Methods
+
+- (void)resetOtherTextViewsStateExcept:(PLVStickerTextView *)exceptTextView {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerTextView class]] && subview != exceptTextView) {
+            PLVStickerTextView *textView = (PLVStickerTextView *)subview;
+            [textView resetToNormalState];
+        }
+    }
+}
+
+- (void)resetAllTextViewsState {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerTextView class]]) {
+            PLVStickerTextView *textView = (PLVStickerTextView *)subview;
+            [textView resetToNormalState];
+        }
+    }
+}
+
+- (BOOL)hasAnyTextViewInEditState {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerTextView class]]) {
+            PLVStickerTextView *textView = (PLVStickerTextView *)subview;
+            if (textView.editState != PLVStickerTextEditStateNormal) {
+                return YES;
+            }
+        }
+    }
+    return NO;
+}
+
+- (void)plv_StickerTextViewDidTapDeleteButton:(PLVStickerTextView *)stickerTextView {
+    // 进入删除模式，设置模版界面的删除状态
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasTextViewDidEnterDeleteMode:)]) {
+        [self.delegate stickerCanvasTextViewDidEnterDeleteMode:stickerTextView];
+    }
+}
+
+#pragma mark - Image Sticker State Management Helper Methods
+
+/// 重置除指定图片贴纸外的其他图片贴纸状态
+- (void)resetOtherImageViewsStateExcept:(PLVStickerImageView *)exceptImageView {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerImageView class]] && subview != exceptImageView) {
+            PLVStickerImageView *imageView = (PLVStickerImageView *)subview;
+            imageView.enabledBorder = NO; // 取消边框显示，表示取消选中
+        }
+    }
+}
+
+/// 重置所有图片贴纸状态
+- (void)resetAllImageViewsState {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerImageView class]]) {
+            PLVStickerImageView *imageView = (PLVStickerImageView *)subview;
+            imageView.enabledBorder = NO; // 取消边框显示，表示取消选中
+        }
+    }
+}
+
+#pragma mark - Template View State Management
+
+/// 处理模版界面状态：当从文本贴纸切换到图片贴纸时
+- (void)handleTemplateViewStateBeforeSwitchingToImageSticker {
+    // 检查是否有文本贴纸处于编辑状态且模版界面可能正在显示
+    if ([self hasTextStickerInEditingState]) {
+        // 通过代理通知上层处理模版界面状态
+        if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasRequestHandleTemplateViewState:)]) {
+            [self.delegate stickerCanvasRequestHandleTemplateViewState:self];
+        }
+    }
+}
+
+/// 检查是否有文本贴纸处于编辑状态
+- (BOOL)hasTextStickerInEditingState {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerTextView class]]) {
+            PLVStickerTextView *textView = (PLVStickerTextView *)subview;
+            // 检查是否处于actionshow或textedit状态
+            if (textView.editState == PLVStickerTextEditStateActionVisible ||
+                textView.editState == PLVStickerTextEditStateTextEditing) {
+                return YES;
+            }
+        }
+    }
+    return NO;
+}
 
 @end

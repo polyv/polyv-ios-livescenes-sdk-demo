@@ -18,6 +18,7 @@
 #import "PLVLCBuyViewController.h"
 #import "PLVLCNoNetworkDescViewController.h"
 #import "PLVLCOnlineListViewController.h"
+#import "PLVLCAISummaryViewController.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
@@ -47,6 +48,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString) {
         return PLVLCLivePageMenuTypeBuy;
     } else if ([menuString isEqualToString:@"members"]) {
         return PLVLCLivePageMenuTypeMembers;
+    } else if ([menuString isEqualToString:@"aiSummary"]) {
+        return PLVLCLivePageMenuTypeAISummary;
     }
     return PLVLCLivePageMenuTypeUnknown;
 }
@@ -57,6 +60,7 @@ PLVLCBuyViewControllerDelegate,
 PLVLCSectionViewControllerDelegate,
 PLVLCChatViewControllerDelegate,
 PLVLCOnlineListViewControllerDelegate,
+PLVLCAISummaryViewControllerDelegate,
 PLVRoomDataManagerProtocol
 >
 
@@ -80,6 +84,8 @@ PLVRoomDataManagerProtocol
 
 /// 成员列表页
 @property (nonatomic, strong) PLVLCOnlineListViewController *onlineListVctrl;
+/// AI看功能页
+@property (nonatomic, strong) PLVLCAISummaryViewController *aiSummaryVctrl;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
@@ -110,7 +116,6 @@ PLVRoomDataManagerProtocol
         
         self.pageController = [[PLVLCPageController alloc] init];
         [self addSubview:self.pageController.view];
-        [self.liveRoom addChildViewController:self.pageController];
         
         PLVRoomData * roomData = [PLVRoomDataManager sharedManager].roomData;
         if (roomData.menuInfo || roomData.noNetWorkOfflineIntroductionEnabled) {
@@ -288,6 +293,18 @@ PLVRoomDataManagerProtocol
     }
 }
 
+- (void)updateAISummaryVideoInfoWithVideoId:(NSString *)videoId {
+    if (self.aiSummaryVctrl) {
+        [self.aiSummaryVctrl updateVideoInfoWithVideoId:videoId videoType:@"playback"];
+    }
+}
+
+- (void)updateAISummaryVideoInfoWithFileId:(NSString *)fileId {
+    if (self.aiSummaryVctrl) {
+        [self.aiSummaryVctrl updateVideoInfoWithVideoId:fileId videoType:@"record"];
+    }
+}
+
 #pragma mark - Private Method
 
 - (void)updateChannelMenuInfo {
@@ -388,6 +405,12 @@ PLVRoomDataManagerProtocol
         vctrl.delegate = self;
         self.onlineListVctrl = vctrl;
         return vctrl;
+    } else if (menuType == PLVLCLivePageMenuTypeAISummary && [PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) {
+        // AI看功能使用常量管理的WebView地址
+        PLVLCAISummaryViewController *vctrl = [[PLVLCAISummaryViewController alloc] init];
+        vctrl.delegate = self;
+        self.aiSummaryVctrl = vctrl;
+        return vctrl;
     }
     
     return nil;
@@ -434,6 +457,20 @@ PLVRoomDataManagerProtocol
 - (void)plvLCSectionView:(PLVLCSectionViewController *)PLVLCSectionViewController seekTime:(NSTimeInterval)time {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:seekTime:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self seekTime:time];
+    }
+}
+
+#pragma mark - PLVLCAISummaryViewControllerDelegate
+
+- (void)aiSummaryViewController:(PLVLCAISummaryViewController *)viewController seekToTime:(NSTimeInterval)time {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:seekTime:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self seekTime:time];
+    }
+}
+
+- (void)aiSummaryViewControllerShouldSetupVideo:(PLVLCAISummaryViewController *)viewController {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaViewShouldSetupVideo:)]) {
+        [self.delegate plvLCLivePageMenuAreaViewShouldSetupVideo:self];
     }
 }
 

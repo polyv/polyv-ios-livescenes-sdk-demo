@@ -34,6 +34,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 @property (nonatomic, strong) UIButton *cameraSwitchButton;
 @property (nonatomic, strong) UIButton *linkmicButton;
 @property (nonatomic, strong) UIButton *authSpeakerButton;
+@property (nonatomic, strong) UIButton *authFirstSiteButton;
 @property (nonatomic, strong) UIView *seperatorLine;
 @property (nonatomic, strong) UIView *leftDragingView;  // 触发左滑view
 @property (nonatomic, strong) UIImageView *handUpImageView;
@@ -54,6 +55,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraShouldShowChangedBlock cameraShouldShowChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCameraFrontChangedBlock cameraFrontChangedBlock;
 @property (nonatomic, strong) PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock currentSpeakerAuthChangedBlock;
+@property (nonatomic, strong) PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock currentFirstSiteChangedBlock;
 
 @end
 
@@ -84,6 +86,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
             [self.gestureView addSubview:self.cameraSwitchButton];
         }
         [self.gestureView addSubview:self.authSpeakerButton];
+        [self.gestureView addSubview:self.authFirstSiteButton];
         [self.gestureView addSubview:self.linkmicButton];
         [self.gestureView addSubview:self.handUpImageView];
 
@@ -126,11 +129,17 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     self.linkmicButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
     self.handUpImageView.frame = CGRectMake(rightOriginX - 20 - 4, 12, 20, 20);
     if (self.isOnlyAudio) {
-        if (!self.authSpeakerButton.hidden) {
-            self.authSpeakerButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+        if (!self.authFirstSiteButton.hidden) {
+            self.authFirstSiteButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+            rightOriginX = CGRectGetMinX(self.authFirstSiteButton.frame) - 44;
         }
         
-        self.microPhoneButton.frame = CGRectMake(rightOriginX - 44, 2, 44, 44);
+        if (!self.authSpeakerButton.hidden) {
+            self.authSpeakerButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+            rightOriginX = CGRectGetMinX(self.authSpeakerButton.frame) - 44;
+        }
+        
+        self.microPhoneButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
     } else {
         if (!self.cameraSwitchButton.isHidden) {
             self.cameraSwitchButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
@@ -139,6 +148,11 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         
         if (rightOriginX == CGRectGetMinX(self.linkmicButton.frame) && !self.linkmicButton.hidden) {
             rightOriginX = CGRectGetMinX(self.linkmicButton.frame) - 44;
+        }
+        
+        if (!self.authFirstSiteButton.isHidden) {
+            self.authFirstSiteButton.frame = CGRectMake(rightOriginX, 2, 44, 44);
+            rightOriginX = CGRectGetMinX(self.authFirstSiteButton.frame) - 44;
         }
         
         if (!self.authSpeakerButton.isHidden) {
@@ -299,6 +313,17 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     return _authSpeakerButton;
 }
 
+- (UIButton *)authFirstSiteButton{
+    if (!_authFirstSiteButton) {
+        _authFirstSiteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_authFirstSiteButton setImage:[PLVLSUtils imageForMemberResource:@"plvls_member_first_site_default_btn"] forState:UIControlStateNormal];
+        [_authFirstSiteButton setImage:[PLVLSUtils imageForMemberResource:@"plvls_member_first_site_auth_btn"] forState:UIControlStateSelected];
+        [_authFirstSiteButton addTarget:self action:@selector(authFirstSiteButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _authFirstSiteButton.hidden = YES;
+    }
+    return _authFirstSiteButton;
+}
+
 - (UIView *)seperatorLine {
     if (!_seperatorLine) {
         _seperatorLine = [[UIView alloc] init];
@@ -365,6 +390,18 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     return _currentSpeakerAuthChangedBlock;
 }
 
+- (PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock)currentFirstSiteChangedBlock{
+    if (!_currentFirstSiteChangedBlock) {
+        __weak typeof(self) weakSelf = self;
+        _currentFirstSiteChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if ([onlineUser.userId isEqualToString:weakSelf.user.userId]) {
+                weakSelf.authFirstSiteButton.selected = onlineUser.currentFirstSite;
+            }
+        };
+    }
+    return _currentFirstSiteChangedBlock;
+}
+
 #pragma mark - Action
 
 - (void)microPhoneButtonAction {
@@ -428,6 +465,19 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         [self.user.onlineUser wantAuthUserSpeaker:self.authSpeakerButton.isSelected];
     }else{
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeVerbose,@"PLVLSMemberCell - authSpeakerButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
+    }
+}
+
+- (void)authFirstSiteButtonAction {
+    self.authFirstSiteButton.userInteractionEnabled = NO; // 授权按钮点击间隔，防止短时间内重复点击
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self.authFirstSiteButton.userInteractionEnabled = YES;
+    });
+    self.authFirstSiteButton.selected = !self.authFirstSiteButton.isSelected;
+    if (self.user.onlineUser) {
+        [self.user.onlineUser wantAuthUserFirstSite:self.authFirstSiteButton.isSelected];
+    }else{
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeVerbose,@"PLVLSMemberCell - authFirstSiteButtonAction may be failed , onlineUser nil, userId %@",self.user.userId);
     }
 }
 
@@ -621,11 +671,17 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 
 - (void)refreshAuthControlButtonsState {
     self.authSpeakerButton.hidden = YES;
+    self.authFirstSiteButton.hidden = YES;
     if (self.user.onlineUser) {
         BOOL showSpeakerAuthButton = [self hasManageSpeakerAuth] && self.user.onlineUser.userType == PLVRoomUserTypeGuest;
         self.authSpeakerButton.hidden = !showSpeakerAuthButton;
         self.authSpeakerButton.selected = self.user.onlineUser.isRealMainSpeaker;
         [self.user.onlineUser addCurrentSpeakerAuthChangedBlock:self.currentSpeakerAuthChangedBlock blockKey:self];
+        
+        BOOL showFirstSiteAuthButton = [self hasManageFirstSiteAuth] && (self.user.onlineUser.userType == PLVRoomUserTypeGuest || self.user.onlineUser.userType == PLVRoomUserTypeStudent || self.user.onlineUser.userType == PLVRoomUserTypeSlice);
+        self.authFirstSiteButton.hidden = !showFirstSiteAuthButton;
+        self.authFirstSiteButton.selected = self.user.onlineUser.currentFirstSite;
+        [self.user.onlineUser addCurrentFirstSiteChangedBlock:self.currentFirstSiteChangedBlock blockKey:self];
     }
 }
 
@@ -785,6 +841,15 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
     return NO;
 }
 
+- (BOOL)hasManageFirstSiteAuth {
+    PLVRoomUserType userType = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType;
+    if (userType == PLVRoomUserTypeTeacher ||
+        userType == PLVRoomUserTypeGuest) {
+        return YES;
+    }
+    return NO;
+}
+
 - (void)checkMediaGrantedCompletion:(void (^)(void))completion  {
     BOOL isLoginUser = [self isLoginUser:self.user.userId];
     if (!isLoginUser) {
@@ -800,10 +865,10 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
                                    message:PLVLocalizedString(@"请前往“设置-隐私”开启权限")
                          cancelActionTitle:PLVLocalizedString(@"取消")
                          cancelActionBlock:nil
-                        confirmActionTitle:PLVLocalizedString(@"前往设置") confirmActionBlock:^{
+                        confirmActionTitle:PLVLocalizedString(@"前往设置")                         confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                        [[UIApplication sharedApplication] openURL:url];
+                        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
                     }
             }];
         }

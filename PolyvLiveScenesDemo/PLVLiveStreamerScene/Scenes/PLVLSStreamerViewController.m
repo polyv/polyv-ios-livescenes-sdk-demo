@@ -689,7 +689,7 @@ PLVVirtualBackgroudSheetDelegate
                         confirmActionTitle:PLVLocalizedString(@"前往设置") confirmActionBlock:^{
                     NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                        [[UIApplication sharedApplication] openURL:url];
+                        [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
                     }
             }];
             [weakSelf.chatroomAreaView microphoneButtonOpen:NO];
@@ -1372,7 +1372,11 @@ PLVVirtualBackgroudSheetDelegate
         }
     }
 
-    [self.linkMicAreaView updateFirstSiteWindowCellWithUserId:onlineUser.linkMicUserId toFirstSite:onlineUser.isRealMainSpeaker];
+    
+}
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser authFirstSite:(BOOL)authFirstSite {
+    [self.linkMicAreaView updateFirstSiteWindowCellWithUserId:onlineUser.linkMicUserId toFirstSite:onlineUser.currentFirstSite];
 }
 
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter wantForceCloseOnlineUserLinkMic:(PLVLinkMicOnlineUser *)onlineUser lastFailed:(BOOL)lastFailed {

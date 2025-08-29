@@ -41,6 +41,8 @@ typedef void (^PLVLinkMicOnlineUserHandUpChangedBlock)(PLVLinkMicOnlineUser * on
 typedef void (^PLVLinkMicOnlineUserCurrentStatusVoiceChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’当前的主讲权限‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
+/// [状态] 用户的 '第一画面权限' 改变Block
+typedef void (^PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’屏幕共享开关状态‘ 改变Block
 typedef void (^PLVLinkMicOnlineUserScreenShareOpenChangedBlock)(PLVLinkMicOnlineUser * onlineUser);
 /// [状态] 用户的 ’连麦状态‘ 改变Block
@@ -75,6 +77,8 @@ typedef void (^PLVLinkMicOnlineUserWantAuthUserSpeakerBlock)(PLVLinkMicOnlineUse
 typedef void (^PLVLinkMicOnlineUserWantOpenScreenShareBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantOpen);
 /// [事件] 希望改变该用户PPT是否在主视图 回调Block
 typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantChange);
+/// [事件] 希望授予用户第一画面权限 回调Block
+typedef void (^PLVLinkMicOnlineUserWantAuthUserFirstSiteBlock)(PLVLinkMicOnlineUser * onlineUser, BOOL wantAuth);
  
 /// RTC在线用户模型
 ///
@@ -160,6 +164,12 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 仅在isRealMainSpeaker状态值 有改变时会触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCurrentSpeakerAuthChangedBlock currentSpeakerAuthChangedBlock;
+
+/// [状态] 用户的 '第一画面权限' 改变Block
+///
+/// @note 仅在currentFirstSite状态值 有改变时会触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock currentFirstSiteChangedBlock;
 
 /// [状态] 用户的 ‘屏幕共享开关状态’ 改变Block
 ///
@@ -248,6 +258,12 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @note 由 [wantChangeUserPPTToMain] 方法直接触发；
 ///       将在主线程回调；
 @property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantChangePPTToMainBlock wantChangePPTToMainBlock;
+
+/// [事件] 希望授予用户第一画面权限 回调Block
+///
+/// @note 由 [wantAuthUserFirstScreen] 方法直接触发；
+///       将在主线程回调；
+@property (nonatomic, copy, nullable) PLVLinkMicOnlineUserWantAuthUserFirstSiteBlock wantAuthFirstSiteBlock;
 
 
 /// 是否为 本地主讲 (即‘第一画面’；可能是本地点击而成为的主讲)
@@ -359,6 +375,9 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 当前用户连麦时长
 @property (nonatomic, assign, readonly) NSTimeInterval currentLinkMicDuration;
 
+/// 当前用户是否为第一画面
+@property (nonatomic, assign, readonly) BOOL currentFirstSite;
+
 #pragma mark - [ 方法 ]
 #pragma mark 创建
 
@@ -454,6 +473,8 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// 取消用户的强制下麦定时器，该方法会重置强制下麦状态
 - (void)cancelForceCloseLinkTimer;
 
+- (void)updateUserCurrentFirstSite:(BOOL)isFirstSite;
+
 #pragma mark 通知机制
 /// 希望该用户申请加入连麦
 ///
@@ -540,6 +561,8 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 ///
 /// @param pptToMain 是否希望切换该用户的PPT位置到主视图 (YES:在主视图，NO:不切换到主视图)
 - (void)wantChangeUserPPTToMain:(BOOL)pptToMain;
+
+- (void)wantAuthUserFirstSite:(BOOL)authFirstSite;
 
 #pragma mark 多接收方回调配置
 /// 使用 blockKey 添加一个 ’用户模型 即将销毁‘ 回调Block
@@ -629,6 +652,17 @@ typedef void (^PLVLinkMicOnlineUserWantChangePPTToMainBlock)(PLVLinkMicOnlineUse
 /// @param strongBlock ’主讲授权状态‘ 改变Block (强引用)
 /// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
 - (void)addScreenShareOpenChangedBlock:(PLVLinkMicOnlineUserScreenShareOpenChangedBlock)strongBlock blockKey:(id)weakBlockKey;
+
+/// 使用 blockKey 添加一个 '第一画面权限' 改变Block
+///
+/// @note (1) 仅当您所处于的业务场景里，需要多个模块，同时接收回调时，才需要认识该方法；
+///           否则，建议直接使用属性声明中的 [currentFirstSiteChangedBlock]，将更加便捷；
+///       (2) 具体回调规则，与 [currentFirstSiteChangedBlock] 相同无异；
+///       (3) 无需考虑 '什么时机去释放、去解除绑定'，随着 weakBlockKey 销毁，strongBlock 也将自动销毁；
+///
+/// @param strongBlock '第一画面权限' 改变Block (强引用)
+/// @param weakBlockKey 接收方Key (用于区分接收方；建议直接传 接收方 对象本身；弱引用)
+- (void)addCurrentFirstSiteChangedBlock:(PLVLinkMicOnlineUserCurrentFirstSiteChangedBlock)strongBlock blockKey:(id)weakBlockKey;
 
 @end
 

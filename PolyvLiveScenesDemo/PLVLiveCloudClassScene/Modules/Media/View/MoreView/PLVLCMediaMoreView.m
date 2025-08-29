@@ -298,13 +298,19 @@
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     NSInteger currentRow = [PLVFdUtil checkArrayUseable:self.switchesDataArray] ? (indexPath.row - 1) : indexPath.row;
     BOOL isSubtitleCell = NO;
+    CGFloat adjustHeight = 0;
     if (currentRow < self.optionsDataArray.count) {
         PLVLCMediaMoreModel *model = self.optionsDataArray[currentRow];
         if ([model.optionTitle isEqualToString:PLVLocalizedString(@"回放字幕")]) {
             isSubtitleCell = YES;
         }
+        
+        if (model.optionItemsArray.count > PLVLCMediaMoreCellOptionCountPerRow){
+            NSInteger rowCount = model.optionItemsArray.count/PLVLCMediaMoreCellOptionCountPerRow + 1;
+            adjustHeight += (rowCount - 1)* 10;
+        }
     }
-    return fullScreen || isPad || isSubtitleCell ? 88.0 : 56.0;
+    return fullScreen || isPad || isSubtitleCell ? (88.0 + adjustHeight ) : (56.0 + adjustHeight);
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath{

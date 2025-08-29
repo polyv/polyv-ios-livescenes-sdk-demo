@@ -20,6 +20,8 @@ static NSString * const kUserDefaultPlaybackLastTimeInfo = @"UserDefaultPlayback
 
 static NSString * const kUserDefaultPlaybackMaxPositionInfo = @"UserDefaultPlaybackMaxPositionInfo";
 
+static NSString * const kUserDefaultPlaybackSpeed = @"UserDefaultPlaybackSpeed";
+
 @interface PLVPlayerPresenterBackgroundView : UIView /// 仅 PLVPlayerPresenter 内部使用的背景视图类
 
 /// 子视图布局时机回调
@@ -495,6 +497,9 @@ PLVDefaultPageViewDelegate
     }
     
     [self.livePlaybackPlayer switchLivePlaybackSpeedRate:toSpeed];
+    
+    // 自动保存播放速度
+    [self saveCachePlaybackSpeed:toSpeed];
 }
 
 - (void)changeVid:(NSString *)vid {
@@ -696,7 +701,20 @@ PLVDefaultPageViewDelegate
     } else if ([PLVFdUtil checkStringUseable:self.vodId]) {
         lastTime = [lastTimeDict[self.vodId] doubleValue];
     }
-    if (lastTime != 0 && (self.livePlaybackPlayer.duration - lastTime) > 10) {
+    
+    // 获取续播配置
+    PLVPlaybackResumeConfig *resumeConfig = [PLVRoomDataManager sharedManager].roomData.playbackResumeConfig;
+    if (!resumeConfig.enabled) {
+        return; // 续播功能已禁用
+    }
+    
+    NSTimeInterval headThreshold = resumeConfig.headThreshold;
+    NSTimeInterval tailThreshold = resumeConfig.tailThreshold;
+    
+    // 使用自定义阈值进行续播判断
+    if (lastTime != 0 && 
+        lastTime > headThreshold && 
+        (self.livePlaybackPlayer.duration - lastTime) > tailThreshold) {
         [self seekLivePlaybackToTime:lastTime];
     }
 }
@@ -1427,7 +1445,7 @@ PLVDefaultPageViewDelegate
     [self setupPlayerLogoImage];
 }
 
-/// 直播回放播放器 ‘回放视频信息’ 发生改变
+/// 直播回放播放器 '回放视频信息' 发生改变
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer playbackVideoInfoDidUpdated:(PLVPlaybackVideoInfoModel *)playbackVideoInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     self.vodId = playbackVideoInfo.vid;
@@ -1441,6 +1459,9 @@ PLVDefaultPageViewDelegate
     if ([self.delegate respondsToSelector:@selector(playerPresenter:playbackVideoInfoDidUpdated:)]) {
         [self.delegate playerPresenter:self playbackVideoInfoDidUpdated:playbackVideoInfo];
     }
+    
+    // 回放视频信息更新后，自动恢复保存的播放速度
+    [self restoreCachedPlaybackSpeed];
 }
 
 - (void)plvLivePlaybackPlayer:(PLVLivePlaybackPlayer *)livePlaybackPlayer sectionEnabled:(BOOL)sectionEnabled recordEnabled:(BOOL)recordEnabled {
@@ -1481,7 +1502,7 @@ PLVDefaultPageViewDelegate
 }
 
 - (void)plvAdvertView:(PLVAdvertView *)advertView clickStartAdvertWithHref:(NSURL *)advertHref {
-    [[UIApplication sharedApplication] openURL:advertHref];
+    [[UIApplication sharedApplication] openURL:advertHref options:@{} completionHandler:nil];
 }
 
 #pragma mark PLVPublicStreamPlayerDelegate
@@ -1536,6 +1557,88 @@ PLVDefaultPageViewDelegate
 - (void)plvDefaultPageViewWannaSwitchLine:(PLVDefaultPageView *)defaultPageView {
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterWannaSwitchLine:)]) {
         [self.delegate playerPresenterWannaSwitchLine:self];
+    }
+}
+
+#pragma mark - 播放速度记忆功能
+
+/// 获取支持的播放速度数组
+- (NSArray<NSString *> *)getSupportedPlaybackSpeeds {
+    if (@available(iOS 15.0, *)) {
+        return @[@"0.5x", @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x", @"3.0x"];
+    } else {
+        return @[@"0.5x", @"0.75x", @"1.0x", @"1.25x", @"1.5x", @"2.0x"];
+    }
+}
+
+/// 获取缓存的播放速度
+- (CGFloat)getCachedPlaybackSpeed {
+    if (![PLVFdUtil checkStringUseable:self.channelId]) {
+        return 1.0; // 默认1.0倍速
+    }
+    
+    NSDictionary *speedDict = [[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackSpeed];
+    if ([PLVFdUtil checkDictionaryUseable:speedDict]) {
+        NSNumber *speed = speedDict[self.channelId];
+        if (speed && [speed isKindOfClass:[NSNumber class]]) {
+            CGFloat speedValue = speed.floatValue;
+            // 验证速度值是否在有效范围内
+            NSArray *supportedSpeeds = [self getSupportedPlaybackSpeeds];
+            for (NSString *speedStr in supportedSpeeds) {
+                CGFloat supportedSpeed = speedStr.floatValue;
+                if (fabs(speedValue - supportedSpeed) < 0.01) {
+                    return speedValue;
+                }
+            }
+        }
+    }
+    return 1.0; // 默认1.0倍速
+}
+
+/// 保存播放速度到缓存
+- (void)saveCachePlaybackSpeed:(CGFloat)speed {
+    if (![PLVFdUtil checkStringUseable:self.channelId]) {
+        return;
+    }
+    
+    NSMutableDictionary *speedDict = [[[NSUserDefaults standardUserDefaults] objectForKey:kUserDefaultPlaybackSpeed] mutableCopy];
+    if (!speedDict) {
+        speedDict = [NSMutableDictionary dictionary];
+    }
+    
+    speedDict[self.channelId] = @(speed);
+    [[NSUserDefaults standardUserDefaults] setObject:speedDict forKey:kUserDefaultPlaybackSpeed];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+/// 获取缓存播放速度对应的UI选中索引
+- (NSInteger)getCachedPlaybackSpeedIndex {
+    CGFloat cachedSpeed = [self getCachedPlaybackSpeed];
+    NSArray *supportedSpeeds = [self getSupportedPlaybackSpeeds];
+    
+    // 找到缓存速度对应的索引
+    for (NSInteger i = 0; i < supportedSpeeds.count; i++) {
+        NSString *speedStr = supportedSpeeds[i];
+        CGFloat speed = speedStr.floatValue;
+        if (fabs(speed - cachedSpeed) < 0.01) {
+            return i;
+        }
+    }
+    
+    // 如果没有找到匹配的速度，返回默认1.0x的索引
+    return 2;
+}
+
+/// 自动恢复保存的播放速度（仅回放场景有效）
+- (void)restoreCachedPlaybackSpeed {
+    if (self.currentVideoType == PLVChannelVideoType_Playback) {
+        CGFloat cachedSpeed = [self getCachedPlaybackSpeed];
+        if (cachedSpeed != 1.0) { // 只有当缓存的速度不是默认值时才应用
+            // 延迟应用，确保播放器已经初始化完成
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self switchLivePlaybackSpeedRate:cachedSpeed];
+            });
+        }
     }
 }
 

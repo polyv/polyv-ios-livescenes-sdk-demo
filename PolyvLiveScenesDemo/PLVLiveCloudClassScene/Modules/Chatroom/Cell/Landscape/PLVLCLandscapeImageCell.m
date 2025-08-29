@@ -50,7 +50,7 @@
     CGFloat bubbleXPadding = 12.0; // 气泡与nickLabel的左右内间距
     
     NSAttributedString *nickAttributeString = self.nickLabel.attributedText;
-    CGSize nickLabelSize = [nickAttributeString boundingRectWithSize:CGSizeMake(MAXFLOAT, 16) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    CGSize nickLabelSize = [nickAttributeString boundingRectWithSize:CGSizeMake(MAXFLOAT, 16) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading | NSStringDrawingUsesDeviceMetrics context:nil].size;
     self.nickLabel.frame = CGRectMake(originX, originY, nickLabelSize.width, 16);
     originY += 16 + 4; // nickLabel跟图片之间距离4
     

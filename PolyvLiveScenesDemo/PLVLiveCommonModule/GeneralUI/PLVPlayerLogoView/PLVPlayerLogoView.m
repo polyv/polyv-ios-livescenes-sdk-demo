@@ -206,7 +206,7 @@
 #pragma mark Action
 
 - (void)tapAction {
-    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.logoHref]];
+    [[UIApplication sharedApplication] openURL:[NSURL URLWithString:self.logoHref] options:@{} completionHandler:nil];
 }
 
 @end

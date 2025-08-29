@@ -126,7 +126,7 @@ PLVStreamerCommodityWebViewBridgeDelegate>
 - (void)webView:(WKWebView *)webView decidePolicyForNavigationAction:(WKNavigationAction *)navigationAction decisionHandler:(void (^)(WKNavigationActionPolicy))decisionHandler{
     if (navigationAction.navigationType == WKNavigationTypeLinkActivated){
         NSString * url = navigationAction.request.URL.absoluteString;
-        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url]];
+        [[UIApplication sharedApplication] openURL:[NSURL URLWithString:url] options:@{} completionHandler:nil];
         decisionHandler(WKNavigationActionPolicyCancel);
     }else{
         decisionHandler(WKNavigationActionPolicyAllow);

@@ -59,7 +59,7 @@ static CGFloat kButtonoHeight = 34.0;
     CGFloat maxTextViewWidth = self.cellWidth - xPadding * 2;
     CGSize textViewSize = [self.textView sizeThatFits:CGSizeMake(maxTextViewWidth, MAXFLOAT)];
     
-    CGSize contentLabelSize = [self.textView.attributedText boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    CGSize contentLabelSize = [self.textView.attributedText boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading | NSStringDrawingUsesDeviceMetrics context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     CGFloat textViewHeight = 8 + contentHeight + 8; // textView文本与textView的内部有上下间距8
     self.textView.frame = CGRectMake(xPadding, yPadding, textViewSize.width, textViewHeight);
@@ -117,7 +117,7 @@ static CGFloat kButtonoHeight = 34.0;
         model.landscapeAttributeString = contentLabelString;
     }
     
-    CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
+    CGSize contentLabelSize = [contentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading | NSStringDrawingUsesDeviceMetrics context:nil].size;
     CGFloat contentHeight = MIN(contentLabelSize.height, kMaxFoldedContentHeight);
     CGFloat bubbleHeight = 4 + contentHeight + 4 + kButtonoHeight; // content文本与气泡的内部有上下间距4
     

@@ -60,6 +60,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 切换播放速率
 - (void)homePageView:(PLVECHomePageView *)homePageView switchSpeed:(CGFloat)speed;
 
+/// 获取缓存的播放速率对应的UI选中索引
+- (NSInteger)homePageView_getCachedPlaybackSpeedIndex:(PLVECHomePageView *)homePageView;
+
 /// 切换延迟模式
 - (void)homePageView:(PLVECHomePageView *)homePageView switchToNoDelayWatchMode:(BOOL)noDelayWatchMode;
 
@@ -157,6 +160,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 - (void)updateCodeRateItems:(NSArray <NSString *>*)codeRates defaultCodeRate:(NSString *)codeRate;
 
 - (void)updateNoDelayWatchMode:(BOOL)noDelayWatchMode;
+
+/// 根据缓存的播放速度初始化UI选中状态（仅回放场景有效）
+- (void)initSpeedIndexFromCache;
 
 - (void)updateDowloadProgress:(CGFloat)dowloadProgress
                playedProgress:(CGFloat)playedProgress

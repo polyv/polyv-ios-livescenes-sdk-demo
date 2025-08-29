@@ -70,7 +70,9 @@ static CGFloat kItemHeight = 61; // item高度
         // 保利威轻美颜 重新配置数据
         self.dataArray = [NSArray arrayWithObjects:
             [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvls_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
-            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvls_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],nil];
+            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvls_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
+            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"下颌") imageName:@"plvls_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
+            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvls_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],nil];
     }
 }
 

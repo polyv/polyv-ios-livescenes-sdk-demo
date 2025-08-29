@@ -667,6 +667,19 @@ PLVChannelClassManagerDelegate
     return user;
 }
 
+- (PLVLinkMicOnlineUser *)findOnlineUserWithUserId:(NSString *)userId {
+    if (![PLVFdUtil checkStringUseable:userId]) {
+        return nil;
+    }
+    
+    for (PLVLinkMicOnlineUser *user in self.onlineUserArray) {
+        if ([user.linkMicUserId isEqualToString:userId]) {
+            return user;
+        }
+    }
+    return nil;
+}
+
 - (NSInteger)findWaitUserModelIndexWithFiltrateBlock:(BOOL (^)(PLVLinkMicWaitUser * _Nonnull waitUser))filtrateBlockBlock{
     NSInteger targetIndex = -1;
     for (int i = 0; i < self.waitUserArray.count; i++) {
@@ -1242,7 +1255,7 @@ PLVChannelClassManagerDelegate
                 mixUser.inputType = onlineUser.currentCameraOpen ? PLVRTCStreamerMixUserInputType_AudioVideo : PLVRTCStreamerMixUserInputType_Audio;
                 mixUser.streamType = PLVRTCStreamerMixUserStreamType_Camera;
             }
-            if (onlineUser.isRealMainSpeaker) {
+            if (onlineUser.currentFirstSite) {
                 [mixUserList insertObject:mixUser atIndex:0];
             } else {
                 [mixUserList addObject:mixUser];
@@ -1450,6 +1463,10 @@ PLVChannelClassManagerDelegate
             [weakSelf authLinkMicOnlineUser:onlineUser speakerAuth:wantAuth];
         };
         
+        localOnlineUser.wantAuthFirstSiteBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL wantAuth) {
+            [weakSelf authLinkMicOnlineUserFirstSite:onlineUser firstSiteAuth:wantAuth];
+        };
+        
         /// 监听 本地用户 状态变化Block
         [localOnlineUser addMicOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             [weakSelf callbackForLocalUserMicOpenChanged];
@@ -1477,6 +1494,9 @@ PLVChannelClassManagerDelegate
 
         [localOnlineUser addScreenShareOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             [weakSelf callbackForLocalUserScreenShareOpenChanged];
+        } blockKey:self];
+        [localOnlineUser addCurrentFirstSiteChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            [weakSelf callbackForLinkMicUser:onlineUser authFirstSite:onlineUser.currentFirstSite];
         } blockKey:self];
     }else{
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"createLocalOnlineUser failed, localOnlineUser exist %p",_localOnlineUser);
@@ -1693,7 +1713,7 @@ PLVChannelClassManagerDelegate
     }
 }
 
-/// 解析‘连麦用户列表数据’ 并 刷新用户数组
+/// 解析'连麦用户列表数据' 并 刷新用户数组
 - (BOOL)refreshLinkMicOnlineUserListWithDataDictionary:(NSDictionary *)dataDictionary targetLinkMicUserId:(NSString *)targetLinkMicUserId{
     if (self.rtcRoomJoinStatus != PLVStreamerPresenterRoomJoinStatus_Joined) {
         PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"refreshLinkMicOnlineUserListWithDataDictionary failed %lu",(unsigned long)self.rtcRoomJoinStatus);
@@ -1746,8 +1766,8 @@ PLVChannelClassManagerDelegate
         }
         
         if (!includeTargetLinkMicUser) {
-            /// 仅在仍未找到‘目标用户’，会取本次‘添加用户’的返回值
-            /// 因为若添加过程，已找到‘目标用户’，则本次方法的结果已确认，避免被覆盖
+            /// 仅在仍未找到'目标用户'，会取本次'添加用户'的返回值
+            /// 因为若添加过程，已找到'目标用户'，则本次方法的结果已确认，避免被覆盖
             includeTargetLinkMicUser = returnValue_includeTargetLinkMicUser;
         }
     }
@@ -1803,11 +1823,18 @@ PLVChannelClassManagerDelegate
             [weakSelf authLinkMicOnlineUser:onlineUser speakerAuth:wantAuth];
         };
         
+        onlineUser.wantAuthFirstSiteBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser, BOOL wantAuth) {
+            [weakSelf authLinkMicOnlineUserFirstSite:onlineUser firstSiteAuth:wantAuth];
+        };
+        
         /// 监听 远端用户 状态变化Block
         [onlineUser addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             [weakSelf callbackForLinkMicUser:onlineUser authSpeaker:onlineUser.isRealMainSpeaker];
         } blockKey:self];
         
+        [onlineUser addCurrentFirstSiteChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            [weakSelf callbackForLinkMicUser:onlineUser authFirstSite:onlineUser.currentFirstSite];
+        } blockKey:self];
         // 若是未上麦嘉宾，则不作添加
         if (onlineUser.userType == PLVSocketUserTypeGuest &&
             !onlineUser.currentStatusVoice) {
@@ -1840,7 +1867,7 @@ PLVChannelClassManagerDelegate
         PLVLinkMicOnlineUser * user1 = (PLVLinkMicOnlineUser *)obj1;
         PLVLinkMicOnlineUser * user2 = (PLVLinkMicOnlineUser *)obj2;
 
-        /// 此处不再依赖于‘枚举制定’来确定排序；
+        /// 此处不再依赖于'枚举制定'来确定排序；
         /// 角色排序逻辑，直接根据以下逻辑为准
         NSComparisonResult result1 = [weakSelf compareLinkMicOnlineUser1:user1 user2:user2 highPriorityType:PLVSocketUserTypeTeacher];
         if (result1 != -2) { return result1; }
@@ -1879,15 +1906,19 @@ PLVChannelClassManagerDelegate
     [self emitSocketMessge_authOnlineUserId:onlineUser.userId speakerAuth:auth];
 }
 
+- (void)authLinkMicOnlineUserFirstSite:(PLVLinkMicOnlineUser *)onlineUser firstSiteAuth:(BOOL)auth {
+    [self emitSocketMessge_authFirstSiteUserId:onlineUser.linkMicUserId auth:auth];
+}
+
 #pragma mark LinkMic WaitUser Manage
 - (BOOL)tryAddLinkMicWaitUser:(NSDictionary *)userInfo{
     BOOL addToOnlineArray = YES;
     NSString * userType = [NSString stringWithFormat:@"%@",userInfo[@"userType"]];
     NSString * userLinkMicUserId = [NSString stringWithFormat:@"%@",userInfo[@"userId"]];
     if ([@"guest" isEqualToString:userType]){
-        /// 用户类型为 ‘嘉宾’
+        /// 用户类型为 '嘉宾'
         if (self.channelGuestManualJoinLinkMic) {
-            /// ‘手动上麦’ 场景
+            /// '手动上麦' 场景
             if (self.viewerType == PLVRoomUserTypeGuest) {
                 addToOnlineArray = NO;
                 /// 本地嘉宾用户
@@ -1936,7 +1967,7 @@ PLVChannelClassManagerDelegate
                 }
             }
         }else{
-            /// ‘自动上麦’ 场景
+            /// '自动上麦' 场景
             addToOnlineArray = YES;
         }
     }
@@ -2101,7 +2132,7 @@ PLVChannelClassManagerDelegate
                         [self.localOnlineUser updateUserCurrentStatusVoice:YES];
                         [self callbackForLocalUserLinkMicStatusChanged:PLVLinkMicUserLinkMicStatus_Joined];
                         BOOL finalMicOpen = self.roomAllMicMute ? NO : self.currentMicOpen;
-                        /// 响应‘全体静音’房间开关
+                        /// 响应'全体静音'房间开关
                         if (self.roomAllMicMute && self.currentMicOpen) {
                             [self openLocalUserMic:NO];
                         }
@@ -2164,7 +2195,7 @@ PLVChannelClassManagerDelegate
     __weak typeof(self) weakSelf = self;
     [self removeLinkMicWaitUser:userId completion:^(BOOL removeSuccess) {
         if (!removeSuccess) {
-            /// 移除 ‘等待用户’ 失败，则可能是 ‘RTC在线用户’
+            /// 移除 '等待用户' 失败，则可能是 'RTC在线用户'
             [weakSelf removeLinkMicOnlineUser:userId];
         }
     }];
@@ -2241,10 +2272,55 @@ PLVChannelClassManagerDelegate
     __weak typeof(self) weakSelf = self;
     [self removeLinkMicWaitUser:linkMicUserId completion:^(BOOL removeSuccess) {
         if (!removeSuccess) {
-            /// 移除 ‘等待用户’ 失败，则可能是 ‘RTC在线用户’
+            /// 移除 '等待用户' 失败，则可能是 'RTC在线用户'
             [weakSelf removeLinkMicOnlineUser:linkMicUserId];
         }
     }];
+}
+
+/// 处理第一画面切换事件
+- (void)handleSocket_SwitchView:(NSDictionary *)jsonDict{
+    NSString *firstSiteUserId = [NSString stringWithFormat:@"%@",jsonDict[@"userId"]];
+    
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypeStreamer, @"PLVStreamerPresenter - handleSocket_SwitchView: firstSiteUserId=%@", firstSiteUserId);
+    
+    if (![PLVFdUtil checkStringUseable:firstSiteUserId]) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypeStreamer, @"PLVStreamerPresenter - handleSocket_SwitchView: firstSiteUserId is invalid");
+        return;
+    }
+    
+    // 更新所有用户的firstSite状态
+    [self updateAllUsersFirstSiteStatus:firstSiteUserId];
+}
+
+/// 更新所有用户的第一画面状态
+- (void)updateAllUsersFirstSiteStatus:(NSString *)firstSiteUserId {
+    if (self.arraySafeQueue) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_async(self.arraySafeQueue, ^{
+            PLV_LOG_DEBUG(PLVConsoleLogModuleTypeStreamer, @"PLVStreamerPresenter - updateAllUsersFirstSiteStatus: firstSiteUserId=%@", firstSiteUserId);
+            
+            // 更新本地用户状态
+            if (weakSelf.localOnlineUser) {
+                BOOL isFirstSite = [weakSelf.localOnlineUser.linkMicUserId isEqualToString:firstSiteUserId];
+                PLV_LOG_DEBUG(PLVConsoleLogModuleTypeStreamer, @"PLVStreamerPresenter - localOnlineUser.linkMicUserId=%@, isFirstSite=%d", weakSelf.localOnlineUser.linkMicUserId, isFirstSite);
+                [weakSelf.localOnlineUser updateUserCurrentFirstSite:isFirstSite];
+            }
+            
+            // 更新在线用户列表状态
+            for (PLVLinkMicOnlineUser *user in weakSelf.onlineUserArray) {
+                BOOL isFirstSite = [user.linkMicUserId isEqualToString:firstSiteUserId];
+                PLV_LOG_DEBUG(PLVConsoleLogModuleTypeStreamer, @"PLVStreamerPresenter - user.linkMicUserId=%@, isFirstSite=%d", user.linkMicUserId, isFirstSite);
+                [user updateUserCurrentFirstSite:isFirstSite];
+
+            }
+            
+            // 刷新UI
+            weakSelf.onlineUserArray = weakSelf.onlineUserMuArray;
+            [weakSelf callbackForLinkMicUserListRefresh];
+            [weakSelf updateMixUserList];
+        });
+    }
 }
 
 - (void)emitSocketMessge_authOnlineUserId:(NSString *)userId speakerAuth:(BOOL)auth {
@@ -2263,7 +2339,20 @@ PLVChannelClassManagerDelegate
     jsonDict[@"emitMode"] = @(0);
     jsonDict[@"roomId"] = [NSString stringWithFormat:@"%@", self.channelId];
     jsonDict[@"userId"] = [NSString stringWithFormat:@"%@", firstSiteUserId];
+    jsonDict[@"socketId"] = [NSString stringWithFormat:@"%@", [PLVSocketManager sharedManager].chatToken];
     [[PLVSocketManager sharedManager] emitEvent:PLVSocketLinkMicEventType_SwitchView_key content:jsonDict];
+}
+
+- (void)updateUserFirstSiteStatus:(NSString *)linkMicUserId isFirstSite:(BOOL)isFirstSite {
+    if (self.arraySafeQueue) {
+        __weak typeof(self) weakSelf = self;
+        dispatch_async(self.arraySafeQueue, ^{
+            PLVLinkMicOnlineUser *targetUser = [weakSelf findOnlineUserWithUserId:linkMicUserId];
+            if (targetUser) {
+                [targetUser updateUserCurrentFirstSite:isFirstSite];
+            }
+        });
+    }
 }
 
 // 本地用户请求加入连麦（status 1 请求，status 0 取消请求）
@@ -2464,6 +2553,14 @@ PLVChannelClassManagerDelegate
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:linkMicOnlineUser:authSpeaker:)]) {
             [self.delegate plvStreamerPresenter:self linkMicOnlineUser:linkMicOnlineUser authSpeaker:authSpeaker];
+        }
+    })
+}
+
+- (void)callbackForLinkMicUser:(PLVLinkMicOnlineUser *)linkMicOnlineUser authFirstSite:(BOOL)authFirstSite{
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:linkMicOnlineUser:authFirstSite:)]) {
+            [self.delegate plvStreamerPresenter:self linkMicOnlineUser:linkMicOnlineUser authFirstSite:authFirstSite];
         }
     })
 }
@@ -2762,7 +2859,7 @@ PLVChannelClassManagerDelegate
     /// Socket 断开时不作刷新请求，因连麦业务基本均依赖于 Scoket 服务
     if ([PLVSocketManager sharedManager].login) {
         __weak typeof(self) weakSelf = self;
-        // 请求，刷新‘连麦在线用户列表’
+        // 请求，刷新'连麦在线用户列表'
         [PLVLiveVideoAPI requestLinkMicOnlineListWithRoomId:self.channelId sessionId:self.sessionId completion:^(NSDictionary *dict) {
             if (weakSelf.arraySafeQueue) {
                 dispatch_async(weakSelf.arraySafeQueue, ^{
@@ -2834,6 +2931,8 @@ PLVChannelClassManagerDelegate
         [self handleSocket_JOIN_SUCCESS:jsonDict];
     } else if ([event isEqualToString:PLVSocketIOLinkMic_JOIN_LEAVE_key]) { /// 用户离开连麦
         [self handleSocket_JOIN_LEAVE:jsonDict];
+    } else if ([event isEqualToString:PLVSocketLinkMicEventType_SwitchView_key]) { /// 第一画面切换事件
+        [self handleSocket_SwitchView:jsonDict];
     } else if ([event isEqualToString:@"joinAnswer"]) {
         [self handleSocket_joinAnswer:jsonDict];
     }

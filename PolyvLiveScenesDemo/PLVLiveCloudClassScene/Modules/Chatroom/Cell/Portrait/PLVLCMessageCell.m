@@ -158,6 +158,7 @@
          ![message isKindOfClass:[PLVImageEmotionMessage class]] &&
          ![message isKindOfClass:[PLVFileMessage class]] &&
          ![message isKindOfClass:[PLVRedpackMessage class]] &&
+         ![message isKindOfClass:[PLVCustomIntroductionMessage class]] &&
          ![message isKindOfClass:[NSString class]])) {
         return NO;
     }

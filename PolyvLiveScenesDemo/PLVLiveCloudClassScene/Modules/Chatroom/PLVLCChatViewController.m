@@ -20,6 +20,7 @@
 #import "PLVLCQuoteMessageCell.h"
 #import "PLVLCRewardMessageCell.h"
 #import "PLVLCFileMessageCell.h"
+#import "PLVLCCustomIntroductionMessageCell.h"
 #import "PLVAlbumNavigationController.h"
 #import "PLVGiveRewardPresenter.h"
 #import "PLVRewardGoodsModel.h"
@@ -1007,6 +1008,17 @@ UITableViewDataSource
             [weakSelf didTapRedpackModel:model];
         }];
         return cell;
+    } else if ([PLVLCCustomIntroductionMessageCell isModelValid:model]) {
+        static NSString *customIntroductionMessageCellIdentify = @"PLVLCCustomIntroductionMessageCell";
+        PLVLCCustomIntroductionMessageCell *cell = (PLVLCCustomIntroductionMessageCell *)[tableView dequeueReusableCellWithIdentifier:customIntroductionMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCCustomIntroductionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:customIntroductionMessageCellIdentify];
+        }
+        CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
+        CGFloat centerPadding = rightPadding + 40.0 / 2.0; // 40pt宽的按钮屏幕右间距为rightPadding，悬浮按钮都跟40pt宽的按钮垂直对齐
+        CGFloat customIntroductionMessageCellWidth = self.likeButtonView.hidden ? self.tableView.frame.size.width : self.tableView.frame.size.width - PLVLCLikeButtonViewWidth / 2.0 - centerPadding - 8;// 气泡保证不遮挡点赞按钮（有点赞按钮时）
+        [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:customIntroductionMessageCellWidth];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -1025,6 +1037,10 @@ UITableViewDataSource
     }
     
     CGFloat cellHeight = 0.0;
+    
+    CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 右边距
+    CGFloat centerPadding = rightPadding + 40.0 / 2.0; // 40pt宽的按钮屏幕右间距为rightPadding，悬浮按钮都跟40pt宽的按钮垂直对齐
+    CGFloat fileMessageCellWidth = self.likeButtonView.hidden ? self.tableView.frame.size.width : self.tableView.frame.size.width - PLVLCLikeButtonViewWidth / 2.0 - centerPadding - 8;// 气泡保证不遮挡点赞按钮（有点赞按钮时）
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     if ([PLVLCSpeakMessageCell isModelValid:model]) {
@@ -1058,13 +1074,18 @@ UITableViewDataSource
         }
         cellHeight = model.cellHeightForV;
     } else if ([PLVLCFileMessageCell isModelValid:model]) {
-        if (model.cellHeightForV == 0.0) {
-            model.cellHeightForV = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        if (model.cellHeightForV == 0.0 || !self.likeButtonView.hidden) {
+            model.cellHeightForV = [PLVLCFileMessageCell cellHeightWithModel:model cellWidth:fileMessageCellWidth];
         }
         cellHeight = model.cellHeightForV;
     } else if ([PLVLCRedpackMessageCell isModelValid:model]) {
         if (model.cellHeightForV == 0.0) {
             model.cellHeightForV = [PLVLCRedpackMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForV;
+    } else if ([PLVLCCustomIntroductionMessageCell isModelValid:model]) {
+        if (model.cellHeightForV == 0.0 || !self.likeButtonView.hidden) {
+            model.cellHeightForV = [PLVLCCustomIntroductionMessageCell cellHeightWithModel:model cellWidth:fileMessageCellWidth];
         }
         cellHeight = model.cellHeightForV;
     }

@@ -70,7 +70,9 @@ static int kItemLineNum = 3; // 每行item数
         // 保利威轻美颜 重新配置数据
         self.dataArray = [NSArray arrayWithObjects:
             [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvsa_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
-            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvsa_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],nil];
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvsa_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"下颌") imageName:@"plvsa_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
+            [[PLVSABeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvsa_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],nil];
     }
 }
 

@@ -24,7 +24,8 @@ typedef NS_ENUM(NSInteger, PLVLCLivePageMenuType) {
     PLVLCLivePageMenuTypeQA,            // 问答功能
     PLVLCLivePageMenuTypeIframe,        // 推广外链
     PLVLCLivePageMenuTypeBuy,           // 边看边买
-    PLVLCLivePageMenuTypeMembers        // 成员列表
+    PLVLCLivePageMenuTypeMembers,       // 成员列表
+    PLVLCLivePageMenuTypeAISummary      // AI看功能
 };
 
 /// 将后端返回的menu字符串转化为枚举值PLVLCLivePageMenuType
@@ -81,6 +82,12 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 - (void)updateSectionMenuTab;
 
 - (CGFloat)getKeyboardToolViewHeight;
+
+/// 更新AI看Tab的回放视频信息
+- (void)updateAISummaryVideoInfoWithVideoId:(NSString *)videoId;
+
+/// 更新AI看Tab的暂存/素材库视频信息
+- (void)updateAISummaryVideoInfoWithFileId:(NSString *)fileId;
 
 @end
 
@@ -147,6 +154,10 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param show 当前的显示状态
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView welfareLotteryWidgetShowStatusChanged:(BOOL)show;
+
+/// AI看需要主动传递视频信息
+/// @param pageMenuAreaView 菜单视图
+- (void)plvLCLivePageMenuAreaViewShouldSetupVideo:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
 
 @end
 NS_ASSUME_NONNULL_END
