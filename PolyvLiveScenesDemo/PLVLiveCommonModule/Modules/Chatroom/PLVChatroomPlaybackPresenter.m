@@ -32,6 +32,9 @@ PLVPlaybackMessageManagerDelegate
 /// 回放消息管理器
 @property (nonatomic, strong) PLVPlaybackMessageManager *manager;
 
+/// 是否是重放模式
+@property (nonatomic, assign) BOOL isReplayMode;
+
 @end
 
 @implementation PLVChatroomPlaybackPresenter
@@ -46,18 +49,22 @@ PLVPlaybackMessageManagerDelegate
 
 #pragma mark - [ Public Method ]
 
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId {
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId isReplayMode:(BOOL)isReplayMode {
     self = [super init];
     if (self) {
+        self.isReplayMode = isReplayMode;
+
         self.channelId = (channelId && [channelId isKindOfClass:[NSString class]]) ? channelId : @"";
         self.sessionId = (sessionId && [sessionId isKindOfClass:[NSString class]]) ? sessionId : @"";
         self.videoId = (videoId && [videoId isKindOfClass:[NSString class]]) ? videoId : @"";
         
-        self.manager = [[PLVPlaybackMessageManager alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId];
+        self.manager = [[PLVPlaybackMessageManager alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId isReplayMode:isReplayMode];
         self.manager.delegate = self;
         
         // 创建定时器
-        [self createTimer];
+        if (self.isReplayMode) {
+            [self createTimer];
+        }
     }
     return self;
 }
@@ -86,8 +93,14 @@ PLVPlaybackMessageManagerDelegate
     }
 }
 
+/// 重放历史记录
 - (void)loadMoreMessageBefore:(NSTimeInterval)playbackTime {
     [self.manager loadMorePlaybackMessagBefore:playbackTime];
+}
+
+/// 回放 历史记录
+- (void)loadMorePlaybackChatMessage{
+    [self.manager loadMoreHistoryPlaybackChatMessages];
 }
 
 #pragma mark - [ Private Method ]
@@ -269,6 +282,18 @@ PLVPlaybackMessageManagerDelegate
     NSArray <PLVChatModel *>*speakTopChatModelArray = [self speakTopChatModelArrayFromPlaybackMessageArray:playbackMessags playbackTime:[self getPlaybackTime]];
     if ([self.delegate respondsToSelector:@selector(didReceiveSpeakTopChatModels:autoLoad:chatroomPlaybackPresenter:)]) {
         [self.delegate didReceiveSpeakTopChatModels:speakTopChatModelArray autoLoad:NO chatroomPlaybackPresenter:self];
+    }
+}
+
+- (void)loadMoreHistoryPlaybackChatMessagesSuccess:(NSArray<PLVPlaybackMessage *> *)playbackMessags playbackMessageManager:(PLVPlaybackMessageManager *)manager{
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(didLoadMoreChatModels:chatroomPlaybackPresenter:)]) {
+        if ([playbackMessags count] > 0) {
+            NSArray <PLVChatModel *>*chatModelArray = [self chatModelArrayFromPlaybackMessageArray:playbackMessags];
+            [self.delegate didLoadMoreChatModels:chatModelArray chatroomPlaybackPresenter:self];
+        } else { // 空数据也要触发回调，否则下拉控件不会停止旋转动画
+            [self.delegate didLoadMoreChatModels:@[] chatroomPlaybackPresenter:self];
+        }
     }
 }
 

@@ -19,6 +19,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, copy) void(^didTapReplyMenuItem)(PLVChatModel *model);
 
+@property (nonatomic, copy) void(^didTapBanUserMenuItem)(PLVChatModel *model);
+
+@property (nonatomic, copy) void(^didTapKickUserMenuItem)(PLVChatModel *model);
+
 - (void)didSendMessage;
 
 - (BOOL)didReceiveMessages;

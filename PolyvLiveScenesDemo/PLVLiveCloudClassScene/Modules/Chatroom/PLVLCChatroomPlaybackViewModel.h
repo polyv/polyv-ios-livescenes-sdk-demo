@@ -39,7 +39,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param channelId 频道号
 /// @param sessionId 当场回放的场次id
 /// @param videoId 当场回放的视频id
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId;
+/// @param isReplayMode 是否是重放模式（回放模式下有普通模式，重放模式）
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId isReplayMode:(BOOL)isReplayMode;
 
 /// 获取/更新回放视频时长
 - (void)updateDuration:(NSTimeInterval)duration;

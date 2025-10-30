@@ -684,6 +684,10 @@ PLVECChatroomViewModelProtocol
                 })
             }
         }
+    } else if ([subEvent isEqualToString:PLVSocketIOChatRoom_DEBUG_EVENT] &&[PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Live) {
+        plv_dispatch_main_async_safe(^{
+            [self debugMessageEvent:jsonDict];
+        })
     }
 }
 
@@ -748,6 +752,11 @@ PLVECChatroomViewModelProtocol
     plv_dispatch_main_async_safe(^{
         [PLVECUtils showHUDWithTitle:string detail:@"" view:self.view];
     })
+}
+
+- (void)debugMessageEvent:(NSDictionary *)jsonDict {
+    BOOL isDebug = PLV_SafeBoolForDictKey(jsonDict, @"isdebug");
+    [self.playerVC updateTestModeStatus:isDebug];
 }
 
 #pragma mark 更新 RoomData 属性

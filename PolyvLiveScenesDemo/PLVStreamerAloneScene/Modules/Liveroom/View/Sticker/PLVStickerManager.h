@@ -24,6 +24,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 贴图管理器退出编辑模式
 - (void)stickerManagerDidExitEditMode:(PLVStickerManager *)manager;
 
+/// 回调图片
+- (void)stickerManager:(PLVStickerManager *)manager didGenerateImage:(UIImage *)image;
+
+/// 回调音频
+- (void)stickerManager:(PLVStickerManager *)manager didUpdateAudioPacket:(NSDictionary *)audioPacket;
+
+/// 音频音量设置改变回调
+- (void)stickerManager:(PLVStickerManager *)manager didChangeAudioVolume:(CGFloat)stickerVolume microphoneVolume:(CGFloat)micVolume;
+
 @end
 
 @interface PLVStickerManager : NSObject
@@ -39,6 +48,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 显示贴图类型选择视图
 - (void)showStickerTypeSelection;
+
+/// 显示贴图类型 视频
+- (void)showStickerTypeForVideo;
 
 /// 生成贴图图像
 - (UIImage *)generateStickerImage;

@@ -42,6 +42,9 @@ PLVChatroomPlaybackPresenterDelegate
 /// 暂未上报的弹幕文本数组，数组最大容量kDanmuMaxCount
 @property (nonatomic, strong) NSMutableArray <NSString *> *danmuArray;
 
+/// 是否是重放模式
+@property (nonatomic, assign) BOOL isReplayMode;
+
 @end
 
 @implementation PLVLCChatroomPlaybackViewModel {
@@ -62,14 +65,15 @@ PLVChatroomPlaybackPresenterDelegate
 
 #pragma mark - [ Public Method ]
 
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId {
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId isReplayMode:(BOOL)isReplayMode {
     self = [super init];
     if (self) {
+        self.isReplayMode = isReplayMode;
         self.channelId = (channelId && [channelId isKindOfClass:[NSString class]]) ? channelId : @"";
         self.sessionId = (sessionId && [sessionId isKindOfClass:[NSString class]]) ? sessionId : @"";
         self.videoId = (videoId && [videoId isKindOfClass:[NSString class]]) ? videoId : @"";
         
-        self.presenter = [[PLVChatroomPlaybackPresenter alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId];
+        self.presenter = [[PLVChatroomPlaybackPresenter alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId isReplayMode:self.isReplayMode];
         self.presenter.delegate = self;
         
         // 多代理
@@ -83,7 +87,11 @@ PLVChatroomPlaybackPresenterDelegate
         // 初始化弹幕信号量、弹幕上报计时器、弹幕数组
         _danmuArrayLock = dispatch_semaphore_create(1);
         self.danmuArray = [[NSMutableArray alloc] initWithCapacity:kDanmuMaxCount];
-        [self createTimer];
+        if (self.isReplayMode) {
+            [self createTimer];
+        } else {
+            [self.presenter loadMorePlaybackChatMessage];
+        }
     }
     return self;
 }
@@ -93,15 +101,25 @@ PLVChatroomPlaybackPresenterDelegate
 }
 
 - (void)playbakTimeChanged {
+    if (!self.isReplayMode)
+        return;
+    
     [self.presenter playbakTimeChanged];
 }
 
 - (void)loadMoreMessages {
-    if ([self.chatArray count] > 0) {
-        PLVChatModel *chatModel = self.chatArray[0];
-        [self.presenter loadMoreMessageBefore:chatModel.playbackTime];
-    } else {
-        [self.presenter loadMoreMessageBefore:0];
+    if (self.isReplayMode){
+        // 聊天重放
+        if ([self.chatArray count] > 0) {
+            PLVChatModel *chatModel = self.chatArray[0];
+            [self.presenter loadMoreMessageBefore:chatModel.playbackTime];
+        } else {
+            [self.presenter loadMoreMessageBefore:0];
+        }
+    }
+    else{
+        // 聊天回放
+        [self.presenter loadMorePlaybackChatMessage];
     }
 }
 

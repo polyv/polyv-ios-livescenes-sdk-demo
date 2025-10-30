@@ -245,6 +245,42 @@ UITableViewDataSource
     return NO;
 }
 
+- (BOOL)allowBanUser {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    // 只有讲师和助教可以禁言用户
+    if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ||
+        roomData.roomUser.viewerType == PLVRoomUserTypeAssistant) {
+        return YES;
+    }
+    return NO;
+}
+
+- (BOOL)allowKickUser {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    // 只有讲师和助教可以踢出用户
+    if (roomData.roomUser.viewerType == PLVRoomUserTypeTeacher ||
+        roomData.roomUser.viewerType == PLVRoomUserTypeAssistant) {
+        return YES;
+    }
+    return NO;
+}
+
+- (BOOL)canManageUser:(PLVChatUser *)user {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    // 不能对自己操作
+    if ([user.userId isEqualToString:roomData.roomUser.viewerId]) {
+        return NO;
+    }
+    // 不能对讲师、助教、管理员、嘉宾操作
+    if (user.userType == PLVRoomUserTypeTeacher ||
+        user.userType == PLVRoomUserTypeAssistant ||
+        user.userType == PLVRoomUserTypeManager ||
+        user.userType == PLVRoomUserTypeGuest) {
+        return NO;
+    }
+    return YES;
+}
+
 #pragma mark Setter
 
 - (void)setCloseGiftEffects:(BOOL)closeGiftEffects {
@@ -286,6 +322,18 @@ UITableViewDataSource
     if(self.delegate &&
        [self.delegate respondsToSelector:@selector(chatroomListView:didTapPinMessageMenuItem:)]) {
         [self.delegate chatroomListView:self didTapPinMessageMenuItem:model];
+    }
+}
+
+- (void)didTapBanUserMenuItem:(PLVChatModel *)model {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomListView:didTapBanUserMenuItem:)]) {
+        [self.delegate chatroomListView:self didTapBanUserMenuItem:model];
+    }
+}
+
+- (void)didTapKickUserMenuItem:(PLVChatModel *)model {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomListView:didTapKickUserMenuItem:)]) {
+        [self.delegate chatroomListView:self didTapKickUserMenuItem:model];
     }
 }
 
@@ -334,6 +382,8 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         cell.allowPinMessage = self.allowPinMessage;
+        cell.allowBanUser = self.allowBanUser && [self canManageUser:model.user];
+        cell.allowKickUser = self.allowKickUser && [self canManageUser:model.user];
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -352,6 +402,14 @@ UITableViewDataSource
             [weakSelf didTapPinMessageMenuItem:model];
         }];
         
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
+        }];
+        
         return cell;
     } else if ([PLVSALongContentMessageCell isModelValid:model]) {
         static NSString *LongContentMessageCell = @"LongContentMessageCell";
@@ -361,6 +419,8 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         cell.allowPinMessage = self.allowPinMessage;
+        cell.allowBanUser = self.allowBanUser && [self canManageUser:model.user];
+        cell.allowKickUser = self.allowKickUser && [self canManageUser:model.user];
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
             [weakSelf didTapReplyMenuItem:model];
@@ -380,6 +440,12 @@ UITableViewDataSource
         [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
             [weakSelf didTapPinMessageMenuItem:model];
         }];
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
+        }];
         return cell;
     } else if ([PLVSAImageMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVSAImageMessageCell";
@@ -388,6 +454,8 @@ UITableViewDataSource
             cell = [[PLVSAImageMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowBanUser = self.allowBanUser && [self canManageUser:model.user];
+        cell.allowKickUser = self.allowKickUser && [self canManageUser:model.user];
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -402,6 +470,14 @@ UITableViewDataSource
             [weakSelf resendImageMessage:model];
         }];
         
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
+        }];
+        
         return cell;
     } else if ([PLVSAImageEmotionMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVSAImageEmotionMessageCell";
@@ -410,6 +486,8 @@ UITableViewDataSource
             cell = [[PLVSAImageEmotionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowBanUser = self.allowBanUser && [self canManageUser:model.user];
+        cell.allowKickUser = self.allowKickUser && [self canManageUser:model.user];
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -424,6 +502,14 @@ UITableViewDataSource
             [weakSelf resendImageEmotionMessage:model];
         }];
         
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
+        }];
+        
         return cell;
     } else if ([PLVSAQuoteMessageCell isModelValid:model]) {
         static NSString *quoteMessageCellIdentify = @"PLVSAQuoteMessageCell";
@@ -433,6 +519,8 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         cell.allowPinMessage = self.allowPinMessage;
+        cell.allowBanUser = self.allowBanUser && [self canManageUser:model.user];
+        cell.allowKickUser = self.allowKickUser && [self canManageUser:model.user];
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -449,6 +537,14 @@ UITableViewDataSource
         
         [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
             [weakSelf didTapPinMessageMenuItem:model];
+        }];
+        
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
         }];
         
         return cell;

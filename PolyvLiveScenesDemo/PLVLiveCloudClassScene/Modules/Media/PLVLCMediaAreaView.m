@@ -52,6 +52,7 @@ PLVLCMediaDanmuSettingViewDelegate,
 PLVLCMediaPlayerCanvasViewDelegate,
 PLVDocumentViewDelegate,
 PLVPlayerPresenterDelegate,
+PLVCastClientDelegate,
 PLVRoomDataManagerProtocol,
 PLVLCDocumentPaintModeViewDelegate
 >
@@ -72,6 +73,7 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, assign, readonly) BOOL pausedWatchNoDelay; //只读，是否暂停无延迟直播
 @property (nonatomic, assign) BOOL hasPaintPermission; // 用户是否拥有画笔权限（默认关闭）
 @property (nonatomic, assign) BOOL isInPaintMode; // 当前是否处于画笔模式
+@property (nonatomic, assign) BOOL castClientStartPlaying; // 投屏当前是否播放中
 @property (nonatomic, assign) BOOL preventScreenCapturing; // 当前是否处于防录屏状态
 
 #pragma mark 模块
@@ -241,7 +243,8 @@ PLVLCDocumentPaintModeViewDelegate
     [self.danmuView resetFrame:self.contentBackgroudView.frame];
 
     self.skinView.frame = self.bounds;
-    
+    [self resizeCastControlViewBg];
+
     CGFloat floatViewWidth = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 224 : 150;
     CGFloat floatViewHeight = floatViewWidth * PPTPlayerViewScale;
     
@@ -527,6 +530,10 @@ PLVLCDocumentPaintModeViewDelegate
     return self.playerPresenter.isPlaying;
 }
 
+- (BOOL)playingWarmUpVideo {
+    return self.playerPresenter.playingWarmUpVideo;
+}
+
 - (BOOL)advertPlaying {
     return self.playerPresenter.advertPlaying;
 }
@@ -620,6 +627,11 @@ PLVLCDocumentPaintModeViewDelegate
          
         /// PPT模块
         [self.floatView displayExternalView:self.pptView]; /// 无直播时的默认状态，是‘PPT画面’位于副屏(悬浮小窗)
+        /// 投屏模块
+        if ([PLVCastClient isAuthorizeSuccess]) {
+            self.castClient = [PLVCastClient sharedClient];
+            self.castClient.delegate = self;
+        }
         
     }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 直播回放 模块
@@ -900,6 +912,19 @@ PLVLCDocumentPaintModeViewDelegate
         // 设置跑马灯
         [weakSelf.marqueeView setPLVLiveMarqueeModel:model];
     });
+}
+
+#pragma mark - 投屏
+/// 调整投屏皮肤 frame
+- (void)resizeCastControlViewBg {
+    self.castClient.castControlView.frame = self.contentBackgroudView.frame;
+    UIInterfaceOrientation orientation = [UIApplication sharedApplication].statusBarOrientation;
+    BOOL isPortrait = UIInterfaceOrientationIsPortrait(orientation);
+    if (isPortrait) {
+        self.castClient.castControlView.castBgView.frame = CGRectMake(0, 0, self.skinView.frame.size.width, self.skinView.frame.size.height);
+    } else {
+        self.castClient.castControlView.castBgView.frame = [UIScreen mainScreen].bounds;
+    }
 }
 
 #pragma mark 防录屏水印
@@ -1384,6 +1409,16 @@ PLVLCDocumentPaintModeViewDelegate
     [[PLVLCUtils sharedUtils] setupDeviceOrientation:UIDeviceOrientationLandscapeLeft];
 }
 
+- (void)plvLCBasePlayerSkinViewCastButtonClicked:(PLVLCBasePlayerSkinView *)skinView {
+    if ([PLVRoomDataManager sharedManager].roomData.channelType == PLVChannelTypePPT) {
+        if ([self.castClient needShowMirrorTips]) {
+            [self.castClient showMirrorTipsView];
+            return;
+        }
+    }
+    [self.castClient pushTheDeviceSearchViewController];
+}
+
 - (void)plvLCBasePlayerSkinViewPaintButtonClicked:(PLVLCBasePlayerSkinView *)skinView {
     self.isInPaintMode = YES;
     self.pptView.startClass = (self.inRTCRoom && self.inLinkMic);
@@ -1664,6 +1699,33 @@ PLVLCDocumentPaintModeViewDelegate
     return self.playerPresenter.currentPlaybackTime * 1000;
 }
 
+#pragma mark PLVCastClientDelegate
+- (void)plvCastClientStartPlay {
+    self.castClientStartPlaying = YES;
+    if (self.channelWatchNoDelay) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveCastPlay:)]) {
+            [self.delegate plvLCMediaAreaView:self noDelayLiveCastPlay:YES];
+        }
+    } else {
+        [self.playerPresenter pausePlay];
+    }
+}
+
+- (void)plvCastClientQuitPlay {
+    if (!self.castClientStartPlaying) {
+        return;
+    }
+    
+    self.castClientStartPlaying = NO;
+    if (self.channelWatchNoDelay) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:noDelayLiveCastPlay:)]) {
+            [self.delegate plvLCMediaAreaView:self noDelayLiveCastPlay:NO];
+        }
+    } else {
+        [self.playerPresenter resumePlay];
+    }
+}
+
 #pragma mark PLVPlayerPresenterDelegate
 // 通用
 /// 播放器 ‘正在播放状态’ 发生改变
@@ -1673,6 +1735,9 @@ PLVLCDocumentPaintModeViewDelegate
     }
     if (playing) {
         [self.marqueeView start];
+        if (self.castClientStartPlaying) {
+            [self plvCastClientStartPlay];
+        }
     }else {
         [self.marqueeView pause];
     }
@@ -1706,6 +1771,10 @@ PLVLCDocumentPaintModeViewDelegate
         
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:playbackVideoSizeChange:)]) {
         [self.delegate plvLCMediaAreaView:self playbackVideoSizeChange:videoSize];
+    }
+    
+    if (self.castClientStartPlaying) {
+        [self plvCastClientStartPlay];
     }
 }
 
@@ -1844,6 +1913,13 @@ PLVLCDocumentPaintModeViewDelegate
     [self updateMoreviewWithData];
 }
 
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter currentDefinitionUrl:(NSString *)currentDefinitionUrl definitionsArray:(NSArray<NSDictionary *> *)definitionsArray codeRateOptions:(NSArray<NSString *> *)codeRateOptions currentCodeRate:(NSString *)currentCodeRate lineNum:(NSInteger)lineNum currentLineIndex:(NSInteger)currentLineIndex {
+    // 更新 ‘更多视图’
+    [self updateMoreviewWithData];
+    self.castClient.playUrlString = currentDefinitionUrl;
+    self.castClient.definitionsArray = definitionsArray;
+}
+    
 /// 直播播放器 需获知外部 ‘当前是否正在连麦’
 - (BOOL)playerPresenterGetInLinkMic:(PLVPlayerPresenter *)playerPresenter{
     return self.inLinkMic;
@@ -2019,6 +2095,12 @@ PLVLCDocumentPaintModeViewDelegate
     [self.pptView pptStartWithVideoId:videoId channelId:channelId];
 }
 
+- (void)roomDataManager_didPlayingStatusChanged:(BOOL)playing {
+    if (self.castClientStartPlaying && playing) {
+        [self plvCastClientStartPlay];
+    }
+}
+
 #pragma mark PLVLCDocumentPaintModeViewDelegate
 - (void)plvLCDocumentPaintModeViewExitPaintMode:(PLVLCDocumentPaintModeView *)paintModeView {
     self.isInPaintMode = NO;
@@ -2049,6 +2131,12 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
     return NO;
+}
+
+#pragma mark - [ Public Methods ]
+
+- (void)updateTestModeStatus:(BOOL)testModeStatus {
+    [self.playerPresenter updateTestModeStatus:testModeStatus];
 }
 
 @end

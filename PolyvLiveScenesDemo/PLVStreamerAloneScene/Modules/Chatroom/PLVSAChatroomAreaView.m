@@ -435,6 +435,54 @@ PLVSAChatroomListViewDelegate
     }
 }
 
+- (void)chatroomListView:(PLVSAChatroomListView *)listView didTapBanUserMenuItem:(PLVChatModel *)model {
+    [self banUser:model.user.userId userName:model.user.userName banned:!model.user.banned];
+}
+
+- (void)chatroomListView:(PLVSAChatroomListView *)listView didTapKickUserMenuItem:(PLVChatModel *)model {
+    [self kickUser:model.user.userId userName:model.user.userName];
+}
+
+#pragma mark - User Management
+
+- (void)banUser:(NSString *)userId userName:(NSString *)userName banned:(BOOL)banned {
+    __weak typeof(self) weakSelf = self;
+    if (banned) {
+        NSString *title = [NSString stringWithFormat:PLVLocalizedString(@"确定禁言%@吗？"), userName];
+        [PLVSAUtils showAlertWithTitle:title cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
+            BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:YES bannedUserId:userId];
+            if (success) {
+                NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"%@已被禁言"), userName];
+                [PLVSAUtils showToastInHomeVCWithMessage:message];
+            } else {
+                [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"禁言失败")];
+            }
+        }];
+    } else {
+        BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:NO bannedUserId:userId];
+        if (success) {
+            NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"%@已取消禁言"), userName];
+            [PLVSAUtils showToastInHomeVCWithMessage:message];
+        } else {
+            [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"取消禁言失败")];
+        }
+    }
+}
+
+- (void)kickUser:(NSString *)userId userName:(NSString *)userName {
+    NSString *title = [NSString stringWithFormat:PLVLocalizedString(@"确定踢出%@吗？"), userName];
+    NSString *message = PLVLocalizedString(@"踢出后用户将不可观看直播，确定踢出？");
+    [PLVSAUtils showAlertWithTitle:title Message:message cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
+        BOOL success = [[PLVChatroomManager sharedManager] sendKickMessageWithUserId:userId];
+        if (success) {
+            NSString *successMessage = [NSString stringWithFormat:PLVLocalizedString(@"%@已被踢出"), userName];
+            [PLVSAUtils showToastInHomeVCWithMessage:successMessage];
+        } else {
+            [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"踢出失败")];
+        }
+    }];
+}
+
 #pragma mark Message Queue Management
 
 - (void)startMessageTimer {

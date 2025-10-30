@@ -12,6 +12,13 @@
 
 NSString *PLVLCChatroomFunctionGotNotification = @"PLVLCChatroomFunctionGotNotification";
 
+NSString * const PLVStreamerPresenterMixBgURLNormalBlack    = @"https://liveimages.videocc.net/defaultImg/appsdk/backgroud/red.jpg";
+NSString * const PLVStreamerPresenterMixBgURLBlue   = @"https://liveimages.videocc.net/defaultImg/appsdk/backgroud/blue.jpg";
+NSString * const PLVStreamerPresenterMixBgURLBlack  = @"https://liveimages.videocc.net/defaultImg/appsdk/backgroud/black.jpg";
+NSString * const PLVStreamerPresenterMixBgURLGreen  = @"https://liveimages.videocc.net/defaultImg/appsdk/backgroud/green.jpg";
+NSString * const PLVStreamerPresenterMixBgURLPurple = @"https://liveimages.videocc.net/defaultImg/appsdk/backgroud/purple.jpg";
+NSString * const PLVStreamerPresenterMixBgURLOrange = @"https://liveimages.videocc.net/defaultImg/appsdk/backgroud/orange.jpg";
+
 NSString *PLVRoomDataKeyPathSessionId   = @"sessionId";
 NSString *PLVRoomDataKeyPathOnlineCount = @"onlineCount";
 NSString *PLVRoomDataKeyPathLikeCount   = @"likeCount";
@@ -314,6 +321,10 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
         streamerMixLayoutType = PLVRTCStreamerMixLayoutType_Tile;
     }else if (mixLayoutType == PLVMixLayoutType_MainSpeaker){
         streamerMixLayoutType = PLVRTCStreamerMixLayoutType_MainSpeaker;
+    } else if (mixLayoutType == PLVMixLayoutType_RightList) {
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_RightList;
+    } else if (mixLayoutType == PLVMixLayoutType_BottomList) {
+        streamerMixLayoutType = PLVRTCStreamerMixLayoutType_BottomList;
     }
     return streamerMixLayoutType;
 }
@@ -322,16 +333,83 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
     NSString *string = nil;
     switch (mixLayoutType) {
         case PLVMixLayoutType_Single:
-            string = PLVLocalizedString(@"单人模式");
+            string = PLVLocalizedString(@"单人演讲");
             break;
         case PLVMixLayoutType_Tile:
-            string = PLVLocalizedString(@"平铺模式");
+            string = PLVLocalizedString(@"宫格视图");
             break;
         case PLVMixLayoutType_MainSpeaker:
-            string = PLVLocalizedString(@"主讲模式");
+            string = PLVLocalizedString(@"底部悬浮");
+            break;
+        case PLVMixLayoutType_RightList:
+            string = PLVLocalizedString(@"右侧列表");
+            break;
+        case PLVMixLayoutType_BottomList:
+            string = PLVLocalizedString(@"底部列表");
             break;
     }
     return string;
+}
+
++ (NSString * _Nullable)mixBackgroundURLStringWithType:(PLVMixLayoutBackgroundColor)colorType {
+    switch (colorType) {
+        case PLVMixLayoutBackgroundColor_Black:
+            return PLVStreamerPresenterMixBgURLBlack;
+        case PLVMixLayoutBackgroundColor_Blue:
+            return PLVStreamerPresenterMixBgURLBlue;
+        case PLVMixLayoutBackgroundColor_Purple:
+            return PLVStreamerPresenterMixBgURLPurple;
+        case PLVMixLayoutBackgroundColor_Green:
+            return PLVStreamerPresenterMixBgURLGreen;
+        case PLVMixLayoutBackgroundColor_Orange:
+            return PLVStreamerPresenterMixBgURLOrange;
+        case PLVMixLayoutBackgroundColor_NormalBlack:
+            return PLVStreamerPresenterMixBgURLNormalBlack;
+        default:
+            return PLVStreamerPresenterMixBgURLBlack;
+    }
+}
+
++ (NSString * _Nullable)mixBackgroundDisplayNameForType:(PLVMixLayoutBackgroundColor)colorType {
+    switch (colorType) {
+        case PLVMixLayoutBackgroundColor_Black:
+            return PLVLocalizedString(@"炫彩黑");
+        case PLVMixLayoutBackgroundColor_Blue:
+            return PLVLocalizedString(@"星河蓝");
+        case PLVMixLayoutBackgroundColor_Purple:
+            return PLVLocalizedString(@"神秘紫");
+        case PLVMixLayoutBackgroundColor_Green:
+            return PLVLocalizedString(@"森林绿");
+        case PLVMixLayoutBackgroundColor_Orange:
+            return PLVLocalizedString(@"落日橘");
+        case PLVMixLayoutBackgroundColor_NormalBlack:
+            return PLVLocalizedString(@"正常黑");
+        default:
+            return PLVLocalizedString(@"炫彩黑");
+    }
+}
+
++ (PLVMixLayoutBackgroundColor)mixBackgroundColorTypeFromURLString:(NSString * _Nullable)urlString {
+    if (!urlString || urlString.length == 0) {
+        return PLVMixLayoutBackgroundColor_Black;
+    }
+    
+    if ([urlString isEqualToString:PLVStreamerPresenterMixBgURLBlack]) {
+        return PLVMixLayoutBackgroundColor_Black;
+    } else if ([urlString isEqualToString:PLVStreamerPresenterMixBgURLBlue]) {
+        return PLVMixLayoutBackgroundColor_Blue;
+    } else if ([urlString isEqualToString:PLVStreamerPresenterMixBgURLPurple]) {
+        return PLVMixLayoutBackgroundColor_Purple;
+    } else if ([urlString isEqualToString:PLVStreamerPresenterMixBgURLGreen]) {
+        return PLVMixLayoutBackgroundColor_Green;
+    } else if ([urlString isEqualToString:PLVStreamerPresenterMixBgURLOrange]) {
+        return PLVMixLayoutBackgroundColor_Orange;
+    } else if ([urlString isEqualToString:PLVStreamerPresenterMixBgURLNormalBlack]) {
+        return PLVMixLayoutBackgroundColor_NormalBlack;
+    }
+    
+    // 默认返回黑色
+    return PLVMixLayoutBackgroundColor_Black;
 }
 
 #pragma mark - [ Private Method ]
@@ -363,6 +441,55 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
         apiChannelType = PLVChannelTypeAlone;
     }
     self.channelType = apiChannelType;
+}
+
+- (NSString *)getSafeString:(NSString *)name{
+    NSString *newName = name? name: @"";
+    return newName;
+}
+
+- (void)saveMenuInfo{
+    if (!self.menuInfo || !self.roomUser.viewerId || !self.channelId) {
+        return;
+    }
+    
+    // 保存部分menuInfo 字段到本地
+    // NSUserDefault 保存NSDictionary
+    // viewerId + channelId 作为 key，保存 menuInfo 字段到本地
+    NSString *key = [NSString stringWithFormat:@"%@_%@", self.roomUser.viewerId, self.channelId];
+    NSMutableDictionary *menuInfoDict = [NSMutableDictionary dictionary];
+    // 基础数据 通过检测
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.name] forKey:@"name"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.coverImage] forKey:@"coverImage"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.publisher] forKey:@"publisher"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.likes] forKey:@"likes"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.pageView] forKey:@"pageView"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.startTime] forKey:@"startTime"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.status] forKey:@"status"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.watchStatus] forKey:@"watchStatus"];
+    [menuInfoDict setObject:@[] forKey:@"channelMenus"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.scene] forKey:@"scene"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.playBackEnabled] forKey:@"playbackEnabled"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.splashImg] forKey:@"splashImg"];
+    [menuInfoDict setObject:[NSNumber numberWithBool: self.menuInfo.hasPlayback] forKey:@"hasPlayback"];
+
+    // 所需数据
+    [menuInfoDict setObject:[NSNumber numberWithBool: self.menuInfo.viewerPptTurningEnabled] forKey:@"viewerPptTurningEnabled"];
+    [menuInfoDict setObject:[NSNumber numberWithBool: self.menuInfo.playbackMultiplierEnabled] forKey:@"playbackMultiplierEnabled"];
+    [menuInfoDict setObject:[NSNumber numberWithBool: self.menuInfo.playbackProgressBarEnabled] forKey:@"playbackProgressBarEnabled"];
+    [menuInfoDict setObject:[self getSafeString:self.menuInfo.playbackProgressBarOperationType] forKey:@"playbackProgressBarOperationType"];
+    [menuInfoDict setObject:[NSNumber numberWithBool: self.menuInfo.showPlayButtonEnabled] forKey:@"showPlayButtonEnabled"];
+    [[NSUserDefaults standardUserDefaults] setObject:menuInfoDict forKey:key];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)restoreMenuInfo {
+    NSString *key = [NSString stringWithFormat:@"%@_%@", self.roomUser.viewerId, self.channelId];
+    NSDictionary *menuInfoDict = [[NSUserDefaults standardUserDefaults] objectForKey:key];
+    if (menuInfoDict) {
+        PLVLiveVideoChannelMenuInfo *item = [[PLVLiveVideoChannelMenuInfo alloc] initWithDictionary:menuInfoDict];
+        self.menuInfo = item;
+    }
 }
 
 #pragma mark Getter & Setter
@@ -400,10 +527,16 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
         if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"flatten"]) {
             return PLVMixLayoutType_Tile;
         } else if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"lecture"]) {
+            return PLVMixLayoutType_Single;
+        } else if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"bottom"]) {
+            return PLVMixLayoutType_BottomList;
+        } else if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"bottomsuspend"]) {
             return PLVMixLayoutType_MainSpeaker;
+        } else if ([self.menuInfo.mobileAlonePushMixMode isEqualToString:@"right"]) {
+            return PLVMixLayoutType_RightList;
         }
     }
-    return PLVMixLayoutType_Tile; // 默认混流布局为平铺模式;
+    return PLVMixLayoutType_Tile; // 默认连麦布局为平铺模式;
 }
 
 - (void)setAppWebStartResolutionRatio:(NSString *)appWebStartResolutionRatio {

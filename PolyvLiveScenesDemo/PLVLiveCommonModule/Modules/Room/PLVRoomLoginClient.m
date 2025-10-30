@@ -11,6 +11,7 @@
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import "PLVCastClient.h"
 
 @implementation PLVRoomLoginClient
 
@@ -87,7 +88,11 @@
             PLV_LOG_ERROR(PLVConsoleLogModuleTypeRoom, @"%s get live channel menu info failed with nil（获取频道类型失败）", __FUNCTION__);
             return;
         }
-        
+        // 注册投屏
+        if (channelMenuInfo.projectionScreenEnabled)
+        {
+            [PLVCastClient startAuthorize];
+        }
         if (channelMenuInfo.watchEventTrackEnabled) {
             [[PLVWLogReporterManager sharedManager] enableTrackEventReport:YES];
         }
@@ -741,6 +746,8 @@
                 roomUserHandler(roomUser);
             }
             [roomData setupRoomUser:roomUser];
+            // 恢复menuInfo 数据
+            [roomData restoreMenuInfo];
             
             // 注册日志管理器
             [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId vId:vid];
@@ -859,6 +866,8 @@
                 roomUserHandler(roomUser);
             }
             [roomData setupRoomUser:roomUser];
+            // 恢复menuInfo 数据
+            [roomData restoreMenuInfo];
             
             // 注册日志管理器
             [[PLVWLogReporterManager sharedManager] registerReporterWithChannelId:channelId userId:userId];

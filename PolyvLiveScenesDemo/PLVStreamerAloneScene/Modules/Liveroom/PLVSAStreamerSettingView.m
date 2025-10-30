@@ -60,10 +60,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, strong) UIButton *orientationButton;
 /// 开播画面比例
 @property (nonatomic, strong) UIButton *streamScaleButton;
-/// 混流布局
+/// 连麦布局
 @property (nonatomic, strong) UIButton *mixLayoutButton;
 /// 贴纸按钮
 @property (nonatomic, strong) UIButton *stickerButton;
+/// 本地视频按钮  用于加载本地相册视频并播放
+@property (nonatomic, strong) UIButton *stickerVideoButton;
 /// 虚拟背景按钮
 @property (nonatomic, strong) UIButton *virtualBackgroundButton;
 /// 降噪模式
@@ -82,7 +84,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, strong) UITextView *channelNameTextView;
 /// 清晰度选择面板
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
-/// 混流布局选择面板
+/// 连麦布局选择面板
 @property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet;
 /// 降噪模式选择面板
 @property (nonatomic, strong) PLVSANoiseCancellationModeSwitchSheet *noiseCancellationModeSwitchSheet;
@@ -96,11 +98,11 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, assign) CGFloat channelNameLabelHeight;
 /// 初始化时的默认清晰度
 @property (nonatomic, assign) PLVResolutionType resolutionType;
-/// 初始化时的默认混流布局
+/// 初始化时的默认连麦布局
 @property (nonatomic, assign) PLVMixLayoutType mixLayoutType;
 /// 当前控制器是否可以进行屏幕旋转
 @property (nonatomic, assign) BOOL canAutorotate;
-/// 当前是否显示混流布局
+/// 当前是否显示连麦布局
 @property (nonatomic, assign) BOOL canMixLayout;
 /// 当前是否显示推流画面比例
 @property (nonatomic, assign, readonly) BOOL showStreamScale;
@@ -212,6 +214,9 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
     [self.buttonView addSubview:self.stickerButton];
     [muButtonArray addObject:self.stickerButton];
+    
+    [self.buttonView addSubview:self.stickerVideoButton];
+    [muButtonArray addObject:self.stickerVideoButton];
     
     if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
         [self.buttonView addSubview:self.playbackSettingButton];
@@ -435,14 +440,14 @@ PLVSAExternalDeviceSwitchSheetDelegate
     self.customMaskView.hidden = show;
 }
 
-/// 读取本地混流布局配置
+/// 读取本地连麦布局配置
 - (PLVMixLayoutType)getLocalMixLayoutType {
     // 如果本地有记录优先读取
     NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kSettingMixLayoutKey, [PLVRoomDataManager sharedManager].roomData.channelId];
     NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:mixLayoutKey];
     if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString] && [PLVRoomDataManager sharedManager].roomData.showMixLayoutButtonEnabled) {
         PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
-        if (saveMixLayout >= 1 && saveMixLayout <=3) {
+        if (saveMixLayout >= 1 && saveMixLayout <=5) {
             return saveMixLayout;
         }
     }
@@ -593,6 +598,15 @@ PLVSAExternalDeviceSwitchSheetDelegate
     return _stickerButton;
 }
 
+- (UIButton *)stickerVideoButton {
+    if (!_stickerVideoButton) {
+        _stickerVideoButton = [self buttonWithTitle:PLVLocalizedString(@"视频") NormalImageString:@"plvsa_liveroom_btn_local_video" selectedImageString:@"plvsa_liveroom_btn_local_video"];
+        [_stickerVideoButton addTarget:self action:@selector(stickerVideoButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _stickerVideoButton.titleEdgeInsets = UIEdgeInsetsMake(_stickerVideoButton.imageView.frame.size.height + 4, - 67, 0, -38);
+    }
+    return _stickerVideoButton;
+}
+
 - (UIButton *)virtualBackgroundButton {
     if (!_virtualBackgroundButton) {
         _virtualBackgroundButton = [self buttonWithTitle:PLVLocalizedString(@"虚拟背景") NormalImageString:@"plvsa_liveroom_btn_virtual_bg" selectedImageString:@"plvsa_liveroom_btn_virtual_bg"];
@@ -718,7 +732,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (UIButton *)mixLayoutButton {
     if (!_mixLayoutButton) {
-        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局Btn") NormalImageString:@"plvsa_liveroom_btn_mixLayout" selectedImageString:@"plvsa_liveroom_btn_mixLayout"];
+        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"连麦布局Btn") NormalImageString:@"plvsa_liveroom_btn_mixLayout" selectedImageString:@"plvsa_liveroom_btn_mixLayout"];
         [_mixLayoutButton addTarget:self action:@selector(mixLayoutButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _mixLayoutButton.titleEdgeInsets = UIEdgeInsetsMake(_mixLayoutButton.imageView.frame.size.height + 4, - 67, 0, -38);
     }
@@ -728,13 +742,13 @@ PLVSAExternalDeviceSwitchSheetDelegate
 - (PLVSAMixLayoutSheet *)mixLayoutSheet {
     if (!_mixLayoutSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat heightScale = isPad ? 0.233 : 0.285;
-        CGFloat widthScale = 0.23;
+        CGFloat heightScale = isPad ? 0.43 : 0.52;
+        CGFloat widthScale = 0.44;
         CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = maxWH * widthScale;
         _mixLayoutSheet = [[PLVSAMixLayoutSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
-        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:[self getLocalMixLayoutType]]; // 纯视频场景默认为平铺模式
+        [_mixLayoutSheet setupOptionsWithCurrentMixLayoutType:[self getLocalMixLayoutType] currentBackgroundColor:PLVMixLayoutBackgroundColor_Black]; // 纯视频场景默认为平铺模式
         _mixLayoutSheet.delegate = self;
     }
     return _mixLayoutSheet;
@@ -905,6 +919,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
     }
 }
 
+- (void)stickerVideoButtonAction:(UIButton *)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickStickerVideoButton:)]) {
+        [self.delegate streamerSettingViewDidClickStickerVideoButton:self];
+    }
+}
+
 - (void)virtualBackgroundButtonAction:(UIButton *)sender {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickVirtualBackgroundButton:)]) {
         [self.delegate streamerSettingViewDidClickVirtualBackgroundButton:self];
@@ -1003,6 +1023,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
 - (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet mixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewMixLayoutButtonClickWithMixLayoutType:)]) {
         [self.delegate streamerSettingViewMixLayoutButtonClickWithMixLayoutType:type];
+    }
+}
+
+- (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet didSelectBackgroundColor:(PLVMixLayoutBackgroundColor)colorType {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewMixLayoutButtonClickWithBackgroundColor:)]) {
+        [self.delegate streamerSettingViewMixLayoutButtonClickWithBackgroundColor:colorType];
     }
 }
 

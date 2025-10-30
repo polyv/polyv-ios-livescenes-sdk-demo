@@ -23,6 +23,9 @@
 #import "PLVLSUtils.h"
 #import "PLVMultiLanguageManager.h"
 
+/// 依赖库
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+
 static NSTimeInterval remindMessageTimerInterval = 30.0;
 
 @interface PLVLSChatroomAreaView ()<
@@ -210,6 +213,12 @@ PLVLSChatroomViewModelProtocol
         _chatroomListView.didTapReplyMenuItem = ^(PLVChatModel * _Nonnull model) {
             [weakSelf.sendMsgView showWithChatModel:model];
         };
+        _chatroomListView.didTapBanUserMenuItem = ^(PLVChatModel * _Nonnull model) {
+            [weakSelf handleBanUserWithModel:model];
+        };
+        _chatroomListView.didTapKickUserMenuItem = ^(PLVChatModel * _Nonnull model) {
+            [weakSelf handleKickUserWithModel:model];
+        };
     }
     return _chatroomListView;
 }
@@ -354,6 +363,51 @@ PLVLSChatroomViewModelProtocol
     }
     self.newMessageCount = 0;
     [self.receiveNewMessageView updateMessageCount:0];
+}
+
+/// 处理禁言用户
+- (void)handleBanUserWithModel:(PLVChatModel *)model {
+    if (!model || !model.user) {
+        return;
+    }
+    
+    NSString *userName = model.user.userName ?: @"";
+    BOOL isBanned = model.user.banned;
+    NSString *actionTitle = isBanned ? PLVLocalizedString(@"取消禁言") : PLVLocalizedString(@"禁言");
+    NSString *message = [NSString stringWithFormat:@"%@%@？", actionTitle, userName];
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLSUtils showAlertWithMessage:message cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
+        BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:!isBanned bannedUserId:model.user.userId];
+        if (success) {
+            NSString *toastMessage = isBanned ? PLVLocalizedString(@"已取消禁言") : PLVLocalizedString(@"已禁言");
+            [PLVLSUtils showToastWithMessage:toastMessage inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+        } else {
+            NSString *toastMessage = [NSString stringWithFormat:@"%@%@", actionTitle, PLVLocalizedString(@"失败")];
+            [PLVLSUtils showToastWithMessage:toastMessage inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+        }
+    }];
+}
+
+/// 处理踢出用户
+- (void)handleKickUserWithModel:(PLVChatModel *)model {
+    if (!model || !model.user) {
+        return;
+    }
+    
+    NSString *userName = model.user.userName ?: @"";
+    NSString *message = [NSString stringWithFormat:@"%@%@？", PLVLocalizedString(@"踢出"), userName];
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLSUtils showAlertWithMessage:message cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"确定") confirmActionBlock:^{
+        BOOL success = [[PLVChatroomManager sharedManager] sendKickMessageWithUserId:model.user.userId];
+        if (success) {
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"已踢出") inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+        } else {
+            NSString *toastMessage = [NSString stringWithFormat:@"%@%@", PLVLocalizedString(@"踢出"), PLVLocalizedString(@"失败")];
+            [PLVLSUtils showToastWithMessage:toastMessage inView:[PLVLSUtils sharedUtils].homeVC.view afterDelay:3.0];
+        }
+    }];
 }
 
 - (void)handleReceiveRemindMessages {

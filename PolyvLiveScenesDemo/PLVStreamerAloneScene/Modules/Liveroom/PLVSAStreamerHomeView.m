@@ -94,7 +94,7 @@ PLVSADesktopChatSettingSheetDelegate
 @property (nonatomic, strong) PLVSAMemberSheet *memberSheet; // 成员列表弹层
 @property (nonatomic, strong) PLVSAManageCommoditySheet *commoditySheet; // 商品库弹层
 @property (nonatomic, strong) PLVSABadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
-@property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet; // 混流布局选择面板
+@property (nonatomic, strong) PLVSAMixLayoutSheet *mixLayoutSheet; // 连麦布局选择面板
 @property (nonatomic, strong) PLVSALinkMicSettingSheet *linkMicSettingSheet; // 连麦设置选择面板
 @property (nonatomic, strong) PLVSADesktopChatSettingSheet *desktopChatSettingSheet; // 桌面消息设置选择面板
 @property (nonatomic, strong) PLVSALinkMicTipView *linkMicTipView; // 连麦提示视图
@@ -825,15 +825,16 @@ PLVSADesktopChatSettingSheetDelegate
 - (PLVSAMixLayoutSheet *)mixLayoutSheet {
     if (!_mixLayoutSheet) {
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        CGFloat heightScale = isPad ? 0.233 : 0.285;
-        CGFloat widthScale = 0.23;
+        CGFloat heightScale = isPad ? 0.43 : 0.52;
+        CGFloat widthScale = 0.44;
         CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = maxWH * widthScale;
         _mixLayoutSheet = [[PLVSAMixLayoutSheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
         _mixLayoutSheet.delegate = self;
         PLVMixLayoutType type = [self.delegate streamerHomeViewCurrentMixLayoutType:self];
-        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:type];
+        PLVMixLayoutBackgroundColor colorType = [self.delegate streamerHomeViewCurrentMixLayoutBackgroundColor:self];
+        [_mixLayoutSheet setupOptionsWithCurrentMixLayoutType:type currentBackgroundColor:colorType];
     }
     return _mixLayoutSheet;
 }
@@ -1058,6 +1059,13 @@ PLVSADesktopChatSettingSheetDelegate
     [self linkMicButtonSelected:selected videoLinkMic:NO];
 }
 
+- (void)toolbarAreaViewDidTapVideoMaterialButton:(PLVSAToolbarAreaView *)toolbarAreaView {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapVideoMaterialButton:)]) {
+        [self.delegate streamerHomeViewDidTapVideoMaterialButton:self];
+    }
+}
+
 #pragma mark PLVSAMoreInfoSheetDelegate
 
 - (void)moreInfoSheetDidTapCameraBitRateButton:(PLVSAMoreInfoSheet *)moreInfoSheet{
@@ -1165,6 +1173,13 @@ PLVSADesktopChatSettingSheetDelegate
 - (void)moreInfoSheetDidTapStickerButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapStickerButton:)]) {
         [self.delegate streamerHomeViewDidTapStickerButton:self];
+    }
+}
+
+/// 点击 视频贴纸按钮 触发回调
+- (void)moreInfoSheetDidTapStickerVideoButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapStickerVideoButton:)]) {
+        [self.delegate streamerHomeViewDidTapStickerVideoButton:self];
     }
 }
 
@@ -1292,6 +1307,13 @@ PLVSADesktopChatSettingSheetDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeMixLayoutType:)]) {
         [self.delegate streamerHomeView:self didChangeMixLayoutType:type];
+    }
+}
+
+- (void)plvsaMixLayoutSheet:(PLVSAMixLayoutSheet *)mixLayoutSheet didSelectBackgroundColor:(PLVMixLayoutBackgroundColor)colorType {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didChangeMixLayoutBackgroundColor:)]) {
+        [self.delegate streamerHomeView:self didChangeMixLayoutBackgroundColor:colorType];
     }
 }
 

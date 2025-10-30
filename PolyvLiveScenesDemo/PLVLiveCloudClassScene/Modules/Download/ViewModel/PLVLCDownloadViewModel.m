@@ -170,6 +170,27 @@
 - (void)enqueueDownloadQueueWithPlaybackPlayerModel:(PLVPlaybackVideoInfoModel *)playerModel
                                          completion:(void (^)(NSError *error))completion {
     [self.presenter enqueueDownloadQueueWithPlaybackPlayerModel:playerModel completion:completion];
+    
+    /*
+    // 设置获取token 的回调 加密视频下载需要用到
+    PLVDownloadPlaybackTaskInfo *taskInfo = [self checkAndGetPlaybackTaskInfoWithFileId:playerModel.fileId];
+    // 加密视频 外部传递token（异步方式，避免阻塞线程）
+    taskInfo.downloadGetTokenBlock = ^(void(^completion)(NSString * _Nullable token)){
+        
+        NSString *vid = [PLVRoomDataManager sharedManager].roomData.vid;
+        NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+        // 同步获取token（在子线程执行，不影响UI）
+        [PLVTestPlaybackVodAPI getVideoToken:vid viewerId:viewerId completion:^(NSString * _Nonnull videoToken, NSError * _Nonnull error) {
+            // 获取完成后回调
+            if (completion) {
+                completion(videoToken);
+            }
+        }];
+    };*/
+    
+    // 保存menuInfo 信息
+    // 断网离线登入需要menuInfo 缓存信息
+    [[PLVRoomDataManager sharedManager].roomData saveMenuInfo];
 }
 
 - (void)startDownloadWith:(PLVDownloadTaskInfo *)taskInfo {

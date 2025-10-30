@@ -33,8 +33,9 @@
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜
 @property (nonatomic, strong) UIButton *shareButton; // 分享
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
-@property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局
+@property (nonatomic, strong) UIButton *mixLayoutButton; // 连麦布局
 @property (nonatomic, strong) UIButton *stickerButton; // 贴纸
+@property (nonatomic, strong) UIButton *stickerVideoButton; // 视频类型贴纸
 @property (nonatomic, strong) UIButton *aiMattingButton; // AI抠像
 @property (nonatomic, strong) UIButton *allowRaiseHandButton; // 开启/关闭观众连麦
 @property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
@@ -227,7 +228,7 @@
     [buttonSuperView addSubview:self.badNetworkButton];
     [muButtonArray addObject:self.badNetworkButton];
     
-    // 混流布局
+    // 连麦布局
     if ([PLVSAMoreInfoSheet showMixLayoutButton]) {
         [buttonSuperView addSubview:self.mixLayoutButton];
         [muButtonArray addObject:self.mixLayoutButton];
@@ -236,6 +237,10 @@
     // 贴纸按钮
     [buttonSuperView addSubview:self.stickerButton];
     [muButtonArray addObject:self.stickerButton];
+    
+    // 视频贴纸按钮
+    [buttonSuperView addSubview:self.stickerVideoButton];
+    [muButtonArray addObject:self.stickerVideoButton];
     
     // AI抠像按钮
     if ([PLVRoomDataManager sharedManager].roomData.mattingEnabled) {
@@ -498,7 +503,7 @@
         _mixLayoutButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
         _mixLayoutButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
         _mixLayoutButton.titleLabel.textAlignment = NSTextAlignmentCenter;
-        [_mixLayoutButton setTitle:PLVLocalizedString(@"混流布局Btn") forState:UIControlStateNormal];
+        [_mixLayoutButton setTitle:PLVLocalizedString(@"连麦布局Btn") forState:UIControlStateNormal];
         _mixLayoutButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateNormal];
         [_mixLayoutButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_mixLayout_btn"] forState:UIControlStateSelected];
@@ -625,6 +630,19 @@
     return _stickerButton;
 }
 
+- (UIButton *)stickerVideoButton {
+    if (!_stickerVideoButton) {
+        _stickerVideoButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _stickerVideoButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _stickerVideoButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_stickerVideoButton setTitle:PLVLocalizedString(@"视频") forState:UIControlStateNormal];
+        _stickerVideoButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_stickerVideoButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_local_video"] forState:UIControlStateNormal];
+        [_stickerVideoButton addTarget:self action:@selector(stickerVideoButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _stickerVideoButton;
+}
+
 - (UIButton *)aiMattingButton {
     if (!_aiMattingButton) {
         _aiMattingButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -662,6 +680,9 @@
     _stickerEnable = stickerEnable;
     if (_stickerButton){
         _stickerButton.enabled = stickerEnable;
+    }
+    if (_stickerVideoButton){
+        _stickerVideoButton.enabled = stickerEnable;
     }
 }
 
@@ -1096,6 +1117,13 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapStickerButton:)]) {
         [self.delegate moreInfoSheetDidTapStickerButton:self];
+    }
+}
+
+- (void)stickerVideoButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapStickerVideoButton:)]) {
+        [self.delegate moreInfoSheetDidTapStickerVideoButton:self];
     }
 }
 

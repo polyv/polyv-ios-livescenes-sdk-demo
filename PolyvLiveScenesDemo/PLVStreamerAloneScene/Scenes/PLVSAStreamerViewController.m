@@ -42,6 +42,9 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <Photos/Photos.h>
+#import <AVFoundation/AVFoundation.h>
+#import <objc/runtime.h>
+#import "PLVImagePickerViewController.h"
 
 static NSString *kPLVSAUserDefaultsUserStreamInfo = @"kPLVSAUserDefaultsUserStreamInfo";
 static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
@@ -70,7 +73,8 @@ PLVShareLiveSheetDelegate,
 PLVStickerManagerDelegate,
 UINavigationControllerDelegate,
 PLVSAScreenShareCustomPictureInPictureManagerDelegate,
-PLVVirtualBackgroudSheetDelegate
+PLVVirtualBackgroudSheetDelegate,
+UIDocumentPickerDelegate
 >
 
 #pragma mark 模块
@@ -80,8 +84,8 @@ PLVVirtualBackgroudSheetDelegate
 
 @property (nonatomic, strong) PLVSAScreenShareCustomPictureInPictureManager *screenShareCustomPIPManager API_AVAILABLE(ios(15.0));
 
-@property (nonatomic, copy) void (^tryStartClassBlock) (void); // 用于无法立刻’尝试开始上课‘，后续需自动’尝试开始‘上课的场景；执行优先级低于 [tryResumeClassBlock]
-@property (nonatomic, copy) void (^tryResumeClassBlock) (void); // 用于在合适的时机，进行’恢复直播‘处理；执行优先级高于 [tryStartClassBlock]
+@property (nonatomic, copy) void (^tryStartClassBlock) (void); // 用于无法立刻'尝试开始上课'，后续需自动'尝试开始'上课的场景；执行优先级低于 [tryResumeClassBlock]
+@property (nonatomic, copy) void (^tryResumeClassBlock) (void); // 用于在合适的时机，进行'恢复直播'处理；执行优先级高于 [tryStartClassBlock]
 
 #pragma mark UI
 /// view hierarchy
@@ -304,21 +308,21 @@ PLVVirtualBackgroudSheetDelegate
     }
 }
 
-/// 保存当前选择的混流布局到本地
+/// 保存当前选择的连麦布局到本地
 - (void)saveSelectedMixLayoutType:(PLVMixLayoutType)mixLayoutType {
     NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kPLVSASettingMixLayoutKey, self.channelId];
     [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)mixLayoutType] forKey:mixLayoutKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-/// 读取本地混流布局配置
+/// 读取本地连麦布局配置
 - (PLVMixLayoutType)getLocalMixLayoutType {
     // 如果本地有记录优先读取
     NSString *mixLayoutKey = [NSString stringWithFormat:@"%@_%@", kPLVSASettingMixLayoutKey, self.channelId];
     NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:mixLayoutKey];
     if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString] && [PLVRoomDataManager sharedManager].roomData.showMixLayoutButtonEnabled) {
         PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
-        if (saveMixLayout >= 1 && saveMixLayout <=3) {
+        if (saveMixLayout >= 1 && saveMixLayout <= 5) {
             return saveMixLayout;
         }
     }
@@ -717,10 +721,10 @@ PLVVirtualBackgroudSheetDelegate
         }
     }else{
         if (!self.streamerPresenter.micCameraGranted) {
-            /// 重新‘准备上课’
+            /// 重新'准备上课'
             [self preapareStartClass];
         } else if(!self.streamerPresenter.inRTCRoom) {
-            /// 重新‘加入RTC房间‘
+            /// 重新'加入RTC房间'
             [self.streamerPresenter joinRTCChannel];
             self.tryStartClassBlock = ^{
                 [weakSelf tryStartClassRetryCount:0];
@@ -966,7 +970,7 @@ PLVVirtualBackgroudSheetDelegate
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString { // 登录成功
     if (![PLVRoomDataManager sharedManager].roomData.liveStatusIsLiving) {
         /// 正常场景下（即非异常退出而临时断流的场景）则正常加入RTC房间
-        /// 原因：异常退出场景下，加入RTC房间的操作，应延后至用户确认“是否恢复直播”后
+        /// 原因：异常退出场景下，加入RTC房间的操作，应延后至用户确认"是否恢复直播"后
         /// 讲师socket登录成功后可直接加入频道 嘉宾在进入房间后才可以加入频道
         if (self.viewerType == PLVRoomUserTypeTeacher) {
             [self.streamerPresenter joinRTCChannel];
@@ -1035,7 +1039,7 @@ PLVVirtualBackgroudSheetDelegate
 
 #pragma mark PLVStreamerPresenterDelegate
 
-/// ‘房间加入状态’ 发生改变
+/// '房间加入状态' 发生改变
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRtcRoomJoinStatus:(PLVStreamerPresenterRoomJoinStatus)currentRtcRoomJoinStatus
             inRTCRoomChanged:(BOOL)inRTCRoomChanged
                    inRTCRoom:(BOOL)inRTCRoom {
@@ -1060,7 +1064,7 @@ PLVVirtualBackgroudSheetDelegate
     }
 }
 
-/// ‘网络状态’ 发生变化
+/// '网络状态' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter networkQualityDidChanged:(PLVBRTCNetworkQuality)networkQuality {
     BOOL updateNetState = YES;
     if (self.viewerType == PLVRoomUserTypeGuest) {
@@ -1084,7 +1088,7 @@ PLVVirtualBackgroudSheetDelegate
     }
 }
 
-/// ’等待连麦用户数组‘ 发生改变
+/// '等待连麦用户数组' 发生改变
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
   linkMicWaitUserListRefresh:(NSArray <PLVLinkMicWaitUser *>*)waitUserArray
             newWaitUserAdded:(BOOL)newWaitUserAdded {
@@ -1109,7 +1113,7 @@ PLVVirtualBackgroudSheetDelegate
     [self.linkMicAreaView updateLocalUserLinkMicStatus:linkMicStatus];
 }
 
-/// ’RTC房间在线用户数组‘ 发生改变
+/// 'RTC房间在线用户数组' 发生改变
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
 linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray {
     [self.linkMicAreaView reloadLinkMicUserWindows];
@@ -1121,7 +1125,7 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
     self.stickerCanvas.hidden = isInLinkMic;
 }
 
-/// ‘主讲权限’ 发生变化
+/// '主讲权限' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
            linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
                  authSpeaker:(BOOL)authSpeaker {
@@ -1173,7 +1177,7 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
     }
 }
 
-/// ‘是否上课已开始’ 发生变化
+/// '是否上课已开始' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
       classStartedDidChanged:(BOOL)classStarted
           startClassInfoDict:(NSDictionary *)startClassInfoDict{
@@ -1184,13 +1188,13 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
     }
 }
 
-/// 当前 ’已有效推流时长‘ 定时回调
+/// 当前 '已有效推流时长' 定时回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
 currentPushStreamValidDuration:(NSTimeInterval)pushStreamValidDuration {
     [self.homeView setPushStreamDuration:pushStreamValidDuration];
 }
 
-/// 当前 ’单次重连时长‘ 定时回调
+/// 当前 '单次重连时长' 定时回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
 currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     if (reconnectingThisTimeDuration == 20) {
@@ -1198,7 +1202,7 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     }
 }
 
-/// 当前远端 ’已推流时长‘ 定时回调
+/// 当前远端 '已推流时长' 定时回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRemotePushDuration:(NSTimeInterval)currentRemotePushDuration{
     [self.homeView setPushStreamDuration:currentRemotePushDuration];
 }
@@ -1217,6 +1221,13 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     [self saveSelectedMixLayoutType:currentType];
 }
 
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutBackgroundImageUrlDidOccurError:(NSString *)imageUrl {
+    [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"网络异常，请恢复网络后重试") inView:[PLVSAUtils sharedUtils].homeVC.view];
+    PLVMixLayoutBackgroundColor currentColorType = [PLVRoomData mixBackgroundColorTypeFromURLString:imageUrl];
+    [self.settingView.mixLayoutSheet updateBackgroundSelectedColorType:currentColorType];
+    [self.homeView.mixLayoutSheet updateBackgroundSelectedColorType:currentColorType];
+}
+
 /// 已挂断 某位远端用户的连麦 事件回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
    didCloseRemoteUserLinkMic:(PLVLinkMicOnlineUser *)onlineUser {
@@ -1228,7 +1239,7 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     [PLVSAUtils showToastWithMessage:message inView:self.view];
 }
 
-/// 本地用户的 ’麦克风开关状态‘ 发生变化
+/// 本地用户的 '麦克风开关状态' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
      localUserMicOpenChanged:(BOOL)currentMicOpen {
     if (self.viewState == PLVSAStreamerViewStateSteaming) {
@@ -1238,7 +1249,7 @@ currentReconnectingThisTimeDuration:(NSInteger)reconnectingThisTimeDuration{
     [self.homeView setCurrentMicOpen:currentMicOpen];
 }
 
-/// 本地用户的 ’摄像头是否应该显示值‘ 发生变化
+/// 本地用户的 '摄像头是否应该显示值' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
 localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (self.viewState == PLVSAStreamerViewStateSteaming) {
@@ -1247,13 +1258,13 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     self.maxCameraZoomRatio = [self.streamerPresenter getMaxCameraZoomRatio];
 }
 
-/// 本地用户的 ’摄像头前后置状态值‘ 发生变化
+/// 本地用户的 '摄像头前后置状态值' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
  localUserCameraFrontChanged:(BOOL)currentCameraFront {
     self.maxCameraZoomRatio = [self.streamerPresenter getMaxCameraZoomRatio];
 }
 
-/// 本地用户的 ’屏幕共享开关状态‘ 发生变化
+/// 本地用户的 '屏幕共享开关状态' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserScreenShareOpenChanged:(BOOL)currentScreenShareOpen {
     self.localUserScreenShareOpen = currentScreenShareOpen;
     if (self.streamerPresenter.localOnlineUser.isRealMainSpeaker ||
@@ -1268,7 +1279,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     self.stickerCanvas.hidden = currentScreenShareOpen;
 }
 
-/// 远程用户的  ’屏幕共享开关状态‘  发生变化
+/// 远程用户的  '屏幕共享开关状态'  发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser screenShareOpenChanged:(BOOL)screenShareOpen {
 
 }
@@ -1288,7 +1299,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     }];
 }
 
-/// 推流管理器 ‘发生错误’ 回调
+/// 推流管理器 '发生错误' 回调
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
                didOccurError:(NSError *)error
                fullErrorCode:(NSString *)fullErrorCodeString {
@@ -1480,6 +1491,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self saveSelectedMixLayoutType:type];
 }
 
+- (void)streamerSettingViewMixLayoutButtonClickWithBackgroundColor:(PLVMixLayoutBackgroundColor)colorType {
+    [self.streamerPresenter setupMixLayoutBackgroundImageUrl:[PLVRoomData mixBackgroundURLStringWithType:colorType]];
+}
+
 - (void)streamerSettingViewTopSettingButtonClickWithNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
     [self.streamerPresenter setupNoiseCancellationLevel:noiseCancellationLevel];
     [self.settingView synchNoiseCancellationLevel:self.streamerPresenter.noiseCancellationLevel];
@@ -1542,6 +1557,20 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         self.stickerManager.delegate = self;
     }
     [self.stickerManager showStickerTypeSelection];
+}
+
+- (void)streamerSettingViewDidClickStickerVideoButton:(PLVSAStreamerSettingView *)streamerSettingView{
+    // 视频贴图 选择视频文件
+    [self showStickerManagerForVideo];
+}
+
+// 显示贴图管理器 视频贴图
+- (void)showStickerManagerForVideo{
+    if (!self.stickerManager) {
+        self.stickerManager = [[PLVStickerManager alloc] initWithParentView:self.view];
+        self.stickerManager.delegate = self;
+    }
+    [self.stickerManager showStickerTypeForVideo];
 }
 
 - (void)streamerSettingViewDidClickVirtualBackgroundButton:(PLVSAStreamerSettingView *)streamerSettingView {
@@ -1667,6 +1696,11 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     return mixLayoutType;
 }
 
+- (PLVMixLayoutBackgroundColor)streamerHomeViewCurrentMixLayoutBackgroundColor:(PLVSAStreamerHomeView *)homeView {
+    PLVMixLayoutBackgroundColor mixLayoutBackgroundColor = [PLVRoomData mixBackgroundColorTypeFromURLString:self.streamerPresenter.mixLayoutBackgroundImageUrl];
+    return mixLayoutBackgroundColor;
+}
+
 - (BOOL)streamerHomeViewChannelLinkMicOpen:(PLVSAStreamerHomeView *)homeView {
     return self.streamerPresenter.channelLinkMicOpen;
 }
@@ -1715,6 +1749,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     PLVRTCStreamerMixLayoutType streamerMixLayout = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
     [self.streamerPresenter setupMixLayoutType:streamerMixLayout];
     [self saveSelectedMixLayoutType:type];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutBackgroundColor:(PLVMixLayoutBackgroundColor)colorType {
+    [self.streamerPresenter setupMixLayoutBackgroundImageUrl:[PLVRoomData mixBackgroundURLStringWithType:colorType]];
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference {
@@ -1811,6 +1849,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self showStickerManager];
 }
 
+- (void)streamerHomeViewDidTapStickerVideoButton:(PLVSAStreamerHomeView *)homeView {
+    [self showStickerManagerForVideo];
+}
+
 /// 虚拟背景按钮点击
 - (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView {
     [self showAIMattingSheet];
@@ -1880,7 +1922,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (void)stickerManagerDidExitEditMode:(PLVStickerManager *)manager {
     // 退出贴图编辑模式
-    if (self.stickerCanvas) {
+    if (self.stickerCanvas || self.stickerManager.stickerCanvas.superview) {
+        if (!self.stickerCanvas) {
+            self.stickerCanvas = manager.stickerCanvas;
+        }
         UIImage *image = [manager generateStickerImage];
         // 将图片传递给Streampresent 管理
         [self.streamerPresenter setStickerImage:image];
@@ -1891,6 +1936,21 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
             [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
         }
     }
+}
+
+- (void)stickerManager:(PLVStickerManager *)manager didGenerateImage:(UIImage *)image {
+    // 将图片传递给Streampresent 管理
+    [self.streamerPresenter setStickerImage:image];
+}
+
+- (void)stickerManager:(PLVStickerManager *)manager didUpdateAudioPacket:(NSDictionary *)audioPacket {
+    // 将音频数据包传递给Streampresent 管理
+    [self.streamerPresenter setStickerAudioPacket:audioPacket];
+}
+
+- (void)stickerManager:(PLVStickerManager *)manager didChangeAudioVolume:(CGFloat)stickerVolume microphoneVolume:(CGFloat)micVolume {
+    // 通过StreamerPresenter设置音量
+    [self.streamerPresenter setStickerAudioVolume:stickerVolume microphoneVolume:micVolume];
 }
 
 #pragma mark PLVSAScreenShareCustomPictureInPictureManagerDelegate
@@ -1913,6 +1973,238 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
             break;
         default:
             break;
+    }
+}
+
+#pragma mark - Video File Picker
+
+- (void)presentVideoFilePickerWithCompletion:(void(^)(NSString * _Nullable filePath))completion {
+    // 检查相册权限
+    PHAuthorizationStatus status = [PHPhotoLibrary authorizationStatus];
+    
+    if (status == PHAuthorizationStatusNotDetermined) {
+        // 请求权限
+        [PHPhotoLibrary requestAuthorization:^(PHAuthorizationStatus status) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (status == PHAuthorizationStatusAuthorized) {
+                    [self showVideoPickerWithCompletion:completion];
+                } else {
+                    [PLVSAUtils showToastWithMessage:@"需要访问相册权限才能选择视频" inView:self.view];
+                    if (completion) completion(nil);
+                }
+            });
+        }];
+    } else if (status == PHAuthorizationStatusAuthorized) {
+        // 已有权限，直接显示选择器
+        [self showVideoPickerWithCompletion:completion];
+    } else {
+        // 无权限，提示用户去设置
+        [PLVSAUtils showAlertWithTitle:@"相册权限申请"
+                             Message:@"请前往‘设置-隐私’开启权限"
+                   cancelActionTitle:@"取消"
+                   cancelActionBlock:^{
+                       if (completion) completion(nil);
+                   }
+                  confirmActionTitle:@"设置"
+                  confirmActionBlock:^{
+                      NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                      if ([[UIApplication sharedApplication] canOpenURL:url]) {
+                          [[UIApplication sharedApplication] openURL:url];
+                      }
+                      if (completion) completion(nil);
+                  }];
+    }
+}
+
+// 显示视频选择器的新方法
+- (void)showVideoPickerWithCompletion:(void(^)(NSString * _Nullable filePath))completion {
+    // 创建视频获取选项
+    PHFetchOptions *options = [[PHFetchOptions alloc] init];
+    options.sortDescriptors = @[[NSSortDescriptor sortDescriptorWithKey:@"creationDate" ascending:NO]];
+    
+    // 获取视频文件
+    PHFetchResult<PHAsset *> *fetchResult = [PHAsset fetchAssetsWithMediaType:PHAssetMediaTypeVideo options:options];
+    
+    if (fetchResult.count == 0) {
+        [PLVSAUtils showToastWithMessage:@"相册中没有找到视频文件" inView:self.view];
+        if (completion) completion(nil);
+        return;
+    }
+    
+    // 如果只有一个视频，直接使用
+//    if (fetchResult.count == 1) {
+//        [self exportVideoFromAsset:fetchResult.firstObject completion:completion];
+//        return;
+//    }
+    
+    // 多个视频时，应该显示选择界面
+    // 这里暂时使用第一个视频，后续可以集成视频选择器
+    [self exportVideoFromAsset:fetchResult.firstObject completion:completion];
+}
+
+// 导出视频文件的方法
+- (void)exportVideoFromAsset:(PHAsset *)asset completion:(void(^)(NSString * _Nullable filePath))completion {
+    if (!asset) {
+        if (completion) completion(nil);
+        return;
+    }
+    
+    // 检查视频时长限制（例如限制在5分钟内）
+//    if (asset.duration > 300) { // 5分钟
+//        [PLVSAUtils showToastWithMessage:@"视频时长超过5分钟，请选择较短的视频" inView:self.view];
+//        if (completion) completion(nil);
+//        return;
+//    }
+    
+    PHImageManager *manager = [PHImageManager defaultManager];
+    PHVideoRequestOptions *videoOptions = [[PHVideoRequestOptions alloc] init];
+    videoOptions.version = PHVideoRequestOptionsVersionOriginal;
+    videoOptions.deliveryMode = PHVideoRequestOptionsDeliveryModeAutomatic;
+    videoOptions.networkAccessAllowed = YES;
+    
+    [manager requestAVAssetForVideo:asset 
+                            options:videoOptions 
+                      resultHandler:^(AVAsset * _Nullable avAsset, AVAudioMix * _Nullable audioMix, NSDictionary * _Nullable info) {
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (!avAsset) {
+                [PLVSAUtils showToastWithMessage:@"无法获取视频文件" inView:self.view];
+                if (completion) completion(nil);
+                return;
+            }
+            
+            // 检查是否为 AVURLAsset
+            if ([avAsset isKindOfClass:[AVURLAsset class]]) {
+                AVURLAsset *urlAsset = (AVURLAsset *)avAsset;
+                NSURL *videoURL = urlAsset.URL;
+                
+                if (videoURL && videoURL.path) {
+                    // 检查文件是否存在
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:videoURL.path]) {
+                        [PLVSAUtils showToastWithMessage:@"视频文件选择成功" inView:self.view];
+                        if (completion) completion(videoURL.path);
+                    } else {
+                        [PLVSAUtils showToastWithMessage:@"视频文件不存在" inView:self.view];
+                        if (completion) completion(nil);
+                    }
+                } else {
+                    [PLVSAUtils showToastWithMessage:@"无法获取视频文件路径" inView:self.view];
+                    if (completion) completion(nil);
+                }
+            } else {
+                // 如果不是 URLAsset，需要导出到本地
+                [self exportAVAssetToLocalFile:avAsset completion:completion];
+            }
+        });
+    }];
+}
+
+// 导出 AVAsset 到本地文件
+- (void)exportAVAssetToLocalFile:(AVAsset *)avAsset completion:(void(^)(NSString * _Nullable filePath))completion {
+    if (!avAsset) {
+        if (completion) completion(nil);
+        return;
+    }
+    
+    // 创建导出会话
+    AVAssetExportSession *exportSession = [[AVAssetExportSession alloc] initWithAsset:avAsset presetName:AVAssetExportPresetMediumQuality];
+    if (!exportSession) {
+        [PLVSAUtils showToastWithMessage:@"无法创建视频导出会话" inView:self.view];
+        if (completion) completion(nil);
+        return;
+    }
+    
+    // 创建临时文件路径
+    NSString *tempDir = NSTemporaryDirectory();
+    NSString *fileName = [NSString stringWithFormat:@"video_%@.mp4", @((int)[[NSDate date] timeIntervalSince1970])];
+    NSString *outputPath = [tempDir stringByAppendingPathComponent:fileName];
+    NSURL *outputURL = [NSURL fileURLWithPath:outputPath];
+    
+    // 删除已存在的文件
+    if ([[NSFileManager defaultManager] fileExistsAtPath:outputPath]) {
+        NSError *error;
+        [[NSFileManager defaultManager] removeItemAtPath:outputPath error:&error];
+    }
+    
+    exportSession.outputURL = outputURL;
+    exportSession.outputFileType = AVFileTypeMPEG4;
+    exportSession.shouldOptimizeForNetworkUse = YES;
+    
+    // 开始导出
+    [exportSession exportAsynchronouslyWithCompletionHandler:^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            switch (exportSession.status) {
+                case AVAssetExportSessionStatusCompleted: {
+                    if ([[NSFileManager defaultManager] fileExistsAtPath:outputPath]) {
+                        [PLVSAUtils showToastWithMessage:@"视频文件处理成功" inView:self.view];
+                        if (completion) completion(outputPath);
+                    } else {
+                        [PLVSAUtils showToastWithMessage:@"视频文件导出失败" inView:self.view];
+                        if (completion) completion(nil);
+                    }
+                    break;
+                }
+                case AVAssetExportSessionStatusFailed: {
+                    NSString *errorMsg = exportSession.error ? exportSession.error.localizedDescription : @"未知错误";
+                    [PLVSAUtils showToastWithMessage:[NSString stringWithFormat:@"视频导出失败: %@", errorMsg] inView:self.view];
+                    if (completion) completion(nil);
+                    break;
+                }
+                case AVAssetExportSessionStatusCancelled: {
+                    [PLVSAUtils showToastWithMessage:@"视频导出已取消" inView:self.view];
+                    if (completion) completion(nil);
+                    break;
+                }
+                default: {
+                    [PLVSAUtils showToastWithMessage:@"视频导出状态异常" inView:self.view];
+                    if (completion) completion(nil);
+                    break;
+                }
+            }
+        });
+    }];
+}
+
+#pragma mark - UIDocumentPickerDelegate
+
+- (void)documentPicker:(UIDocumentPickerViewController *)controller didPickDocumentsAtURLs:(NSArray<NSURL *> *)urls {
+    if (urls.count > 0) {
+        NSURL *videoURL = urls.firstObject;
+        NSString *filePath = videoURL.path;
+        
+        // 检查文件是否存在
+        if (![[NSFileManager defaultManager] fileExistsAtPath:filePath]) {
+            [PLVSAUtils showToastWithMessage:@"所选视频文件不存在" inView:self.view];
+            return;
+        }
+        
+        // 检查文件大小（限制为100MB）
+        NSError *error;
+        NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:filePath error:&error];
+        if (error) {
+            [PLVSAUtils showToastWithMessage:@"无法读取视频文件信息" inView:self.view];
+            return;
+        }
+        
+        NSNumber *fileSize = attributes[NSFileSize];
+        if (fileSize.longLongValue > 100 * 1024 * 1024) { // 100MB
+            [PLVSAUtils showToastWithMessage:@"视频文件过大，请选择小于100MB的文件" inView:self.view];
+            return;
+        }
+        
+        [PLVSAUtils showToastWithMessage:@"视频文件选择成功" inView:self.view];
+        
+        void(^completion)(NSString *) = objc_getAssociatedObject(controller, @"completion");
+        if (completion) {
+            completion(filePath);
+        }
+    }
+}
+
+- (void)documentPickerWasCancelled:(UIDocumentPickerViewController *)controller {
+    void(^completion)(NSString *) = objc_getAssociatedObject(controller, @"completion");
+    if (completion) {
+        completion(nil);
     }
 }
 

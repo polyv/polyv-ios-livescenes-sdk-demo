@@ -10,6 +10,7 @@
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 
 @interface PLVLCDownloadingCell ()
 
@@ -87,6 +88,24 @@
             weakSelf.sizeLabel.frame = CGRectMake(cellWidth - 112 - titLabelWidth, CGRectGetMaxY(weakSelf.progressView.frame) + 8, titLabelWidth, 20);
         }
     };
+    
+    /*
+    // 加密视频 外部传递token（异步方式，避免阻塞线程）
+    self.currentModel.downloadGetTokenBlock = ^(void(^completion)(NSString * _Nullable token)){
+        // 异步获取token，不阻塞当前线程
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSString *vid = [PLVRoomDataManager sharedManager].roomData.vid;
+            NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+            // 同步获取token（在子线程执行，不影响UI）
+            [PLVTestPlaybackVodAPI getVideoToken:vid viewerId:viewerId completion:^(NSString * _Nonnull videoToken, NSError * _Nonnull error) {
+                // 获取完成后回调
+                if (completion) {
+                    completion(videoToken);
+                }
+            }];
+        });
+    };*/
+    
     
     [self resetUI];
 }

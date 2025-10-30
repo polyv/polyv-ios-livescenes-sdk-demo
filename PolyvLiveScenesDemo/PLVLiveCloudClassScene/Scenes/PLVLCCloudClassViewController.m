@@ -17,6 +17,7 @@
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
 #import "PLVLivePictureInPictureRestoreManager.h"
 #import "PLVLCDownloadViewModel.h"
+#import "PLVCastClient.h"
 
 // UI
 #import "PLVLCMediaAreaView.h"
@@ -190,6 +191,9 @@ PLVLCOnlineListSheetDelegate
 
 -(void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    if (self.navigationController) {
+        self.navigationController.navigationBarHidden = YES;
+    }
     self.logoutWhenStopPictureInPicutre = NO;
 }
 
@@ -225,6 +229,8 @@ PLVLCOnlineListSheetDelegate
         [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
     }
     [self.linkMicAreaView leaveLinkMicOnlyEmit];
+    // 清理投屏相关资源，移除音量监听
+    [[PLVCastClient sharedClient] leave];
     [self exitCurrentController];
 }
 
@@ -246,6 +252,11 @@ PLVLCOnlineListSheetDelegate
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenBulletin:) name:PLVLCChatroomOpenBulletinNotification object:nil];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(notificationForOpenRewardView:) name:PLVLCChatroomOpenRewardViewNotification object:nil];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(exitCurrentController)
+                                                     name:PLVCastClientLeaveLiveCtrlNotification
+                                                   object:nil];
 
         
     } else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
@@ -268,16 +279,17 @@ PLVLCOnlineListSheetDelegate
     }
 }
 
-/// 是否支持开启聊天重放：当前处于回放场景、后端接口返回chatInputDisable为YES、已获取到当场回放的场次id
+/// 是否支持开启聊天回放：当前处于回放场景 、已获取到当场回放的场次id
 - (BOOL)enableChatroomPlaybackViewModel {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    return roomData.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId;
+    return roomData.videoType == PLVChannelVideoType_Playback && roomData.playbackSessionId;
 }
 
 /// 创建聊天室回放viewModel并更新到相关子视图
 - (void)setupChatroomPlaybackViewModel {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId videoId:roomData.playbackVideoInfo.fileId];
+    BOOL isReplayMode = roomData.menuInfo.chatPlaybackEnabled;
+    self.playbackViewModel = [[PLVLCChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId videoId:roomData.playbackVideoInfo.fileId isReplayMode:isReplayMode];
     self.playbackViewModel.delegate = self;
     
     [self.menuAreaView updatePlaybackViewModel:self.playbackViewModel];
@@ -288,6 +300,9 @@ PLVLCOnlineListSheetDelegate
     [PLVRoomLoginClient logout];
     [[PLVSocketManager sharedManager] logout];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    
+    // 清理投屏相关资源，移除音量监听
+    [[PLVCastClient sharedClient] leave];
     
     [[PLVLCChatroomViewModel sharedViewModel] clear];
     [[PLVLCDownloadViewModel sharedViewModel] clear];
@@ -320,7 +335,12 @@ PLVLCOnlineListSheetDelegate
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
-
+        
+        /// 加载投屏功能
+        UIViewController *nav = self.navigationController ? self.navigationController: self;
+        [[PLVCastClient sharedClient] setupWithNavigationController:nav channelID:roomData.channelId];
+        // 根据直播状态初始化投屏按钮显示
+        [self updateCastButtonShowStatus];
         
     }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 创建添加视图
@@ -399,6 +419,8 @@ PLVLCOnlineListSheetDelegate
         self.menuAreaView.frame = CGRectMake(0, menuAreaOriginY, CGRectGetWidth(self.view.bounds), CGRectGetHeight(self.view.bounds)-menuAreaOriginY);
         
         /// 图层管理
+        [self.view insertSubview:self.mediaAreaView.castClient.castControlView.castBgView aboveSubview:self.mediaAreaView.skinView];
+        [self.view insertSubview:self.mediaAreaView.castClient.castControlView aboveSubview:self.mediaAreaView.castClient.castControlView.castBgView];
         [self.view insertSubview:self.mediaAreaView.marqueeView aboveSubview:self.mediaAreaView]; /// 保证高于 mediaAreaView 即可
         [self.view insertSubview:self.mediaAreaView.floatView belowSubview:self.popoverView.interactView]; /// 保证低于 interactView
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView.interactView]; /// 保证低于 interactView 即可
@@ -480,6 +502,9 @@ PLVLCOnlineListSheetDelegate
     [PLVRoomLoginClient logout];
     [[PLVSocketManager sharedManager] logout];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    
+    // 清理投屏相关资源，移除音量监听
+    [[PLVCastClient sharedClient] leave];
 
     if (self.navigationController) {
         [self.navigationController popViewControllerAnimated:YES];
@@ -535,6 +560,20 @@ PLVLCOnlineListSheetDelegate
 - (void)noDelayLiveWannaPlay:(BOOL)play {
     [self.liveRoomSkinView setPlayButtonWithPlaying:play];
     [self.mediaAreaView.skinView setPlayButtonWithPlaying:play];
+}
+
+/// 更新投屏按钮显示状态（根据直播状态和连麦状态）
+- (void)updateCastButtonShowStatus {
+    // 只有在授权成功、直播中且未连麦时才显示投屏按钮
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    BOOL isLiving = (roomData.liveState == PLVChannelLiveStreamState_Live) || 
+                    self.mediaAreaView.noDelayLiveWatching;
+    BOOL canShowCast = [PLVCastClient isAuthorizeSuccess] && 
+                       isLiving && 
+                       !self.linkMicAreaView.inLinkMic;
+    
+    self.mediaAreaView.skinView.showCastButton = canShowCast;
+    self.liveRoomSkinView.showCastButton = canShowCast;
 }
 
 /// 是否在播放器区域展示打赏动画
@@ -882,6 +921,10 @@ PLVLCOnlineListSheetDelegate
                 })
             }
         }
+    } else if ([subEvent isEqualToString:PLVSocketIOChatRoom_DEBUG_EVENT] && self.videoType == PLVChannelVideoType_Live) {
+        plv_dispatch_main_async_safe(^{
+            [self debugMessageEvent:jsonDict];
+        })
     }
 }
 
@@ -1002,6 +1045,11 @@ PLVLCOnlineListSheetDelegate
     }
 }
 
+- (void)debugMessageEvent:(NSDictionary *)jsonDict {
+    BOOL isDebug = PLV_SafeBoolForDictKey(jsonDict, @"isdebug");
+    [self.mediaAreaView updateTestModeStatus:isDebug];
+}
+
 #pragma mark PLVLCChatroomViewModelProtocol
 
 - (void)chatroomManager_danmu:(NSString * )content {
@@ -1118,8 +1166,10 @@ PLVLCOnlineListSheetDelegate
 - (void)plvLCMediaAreaViewWannaBack:(PLVLCMediaAreaView *)mediaAreaView{
     // 在打开画中画的时候退出直播间，则直接退出，当前控制器会被PLVLivePictureInPictureRestoreManager持有不被释放，恢复的时候再次显示
     // 退出直播间，开启画中画
+    // 注意：暖场视频播放时不应该开启画中画，应直接退出
     if ([PLVRoomDataManager sharedManager].roomData.needStartPictureInPictureWhenExitLiveRoom &&
-        self.mediaAreaView.isPlaying){
+        self.mediaAreaView.isPlaying &&
+        !self.mediaAreaView.playingWarmUpVideo){
         if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
             // 已经开启画中画，直接退出
             self.logoutWhenStopPictureInPicutre = YES;
@@ -1176,7 +1226,7 @@ PLVLCOnlineListSheetDelegate
     return self.linkMicAreaView.inRTCRoom;
 }
 
-/// 直播 ‘流状态’ 更新
+/// 直播 '流状态' 更新
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView livePlayerStateDidChange:(PLVChannelLiveStreamState)livePlayerState{
     if (livePlayerState == PLVChannelLiveStreamState_Live) {
         [self stopCountdownTimer];
@@ -1197,9 +1247,12 @@ PLVLCOnlineListSheetDelegate
         
         [self.menuAreaView updateLiveStatus:PLVLCLiveStatusEnd];
     }
+    
+    // 统一更新投屏按钮显示状态
+    [self updateCastButtonShowStatus];
 }
 
-/// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
+/// [无延迟直播] 无延迟直播 '开始结束状态' 发生改变
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveStartUpdate:(BOOL)noDelayLiveStart{
     [self.linkMicAreaView startWatchNoDelay:noDelayLiveStart];
     if (noDelayLiveStart) {
@@ -1211,6 +1264,9 @@ PLVLCOnlineListSheetDelegate
         [self.liveRoomSkinView switchSkinViewLiveStatusTo:PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay];
     }
     [self.liveRoomSkinView setPlayButtonWithPlaying:noDelayLiveStart];
+    
+    // 统一更新投屏按钮显示状态
+    [self updateCastButtonShowStatus];
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView playerPlayingDidChange:(BOOL)playing{
@@ -1277,6 +1333,10 @@ PLVLCOnlineListSheetDelegate
     [self.liveRoomSkinView setProgressWithCachedProgress:cachedProgress playedProgress:playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:currentTimeString durationString:durationString];
 }
 
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveCastPlay:(BOOL)play {
+    [self.linkMicAreaView startWatchNoDelay:!play];
+}
+
 - (void)plvLCMediaAreaViewDidSeekSuccess:(PLVLCMediaAreaView *)mediaAreaView {
     [self.playbackViewModel playbakTimeChanged];
 }
@@ -1312,6 +1372,9 @@ PLVLCOnlineListSheetDelegate
     if (noDelayWatchMode) {
         [self.linkMicAreaView pauseWatchNoDelay:NO];
     }
+    
+    // 无延迟观看模式切换时，统一更新投屏按钮显示状态
+    [self updateCastButtonShowStatus];
 }
 
 /// [无延迟直播] 无延迟直播 ‘播放或暂停’
@@ -1475,7 +1538,7 @@ PLVLCOnlineListSheetDelegate
     [self.mediaAreaView displayContentView:externalView];
 }
 
-/// ‘是否在RTC房间中’ 状态值发生改变
+/// '是否在RTC房间中' 状态值发生改变
 - (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView inRTCRoomChanged:(BOOL)inRTCRoom{
     /// 告知 媒体区域视图
     PLVLCMediaAreaViewLiveSceneType sceneType;
@@ -1501,6 +1564,9 @@ PLVLCOnlineListSheetDelegate
         }
     }
     [self.liveRoomSkinView switchSkinViewLiveStatusTo:skinViewLiveStatus];
+    
+    // RTC房间状态改变时，统一更新投屏按钮显示状态
+    [self updateCastButtonShowStatus];
 }
 
 /// ‘RTC房间在线用户数’ 发生改变
@@ -1509,7 +1575,7 @@ PLVLCOnlineListSheetDelegate
     [self updateUI];
 }
 
-/// ‘是否正在连麦’状态值改变
+/// '是否正在连麦'状态值改变
 - (void)plvLCLinkMicAreaView:(PLVLCLinkMicAreaView *)linkMicAreaView inLinkMicChanged:(BOOL)inLinkMic{
     /// 告知 媒体区域视图
     PLVLCMediaAreaViewLiveSceneType sceneType;
@@ -1551,6 +1617,9 @@ PLVLCOnlineListSheetDelegate
             [self.linkMicAreaView pauseWatchNoDelay:NO];
         }
     }
+    
+    // 连麦状态改变时，统一更新投屏按钮显示状态
+    [self updateCastButtonShowStatus];
 }
 
 /// ‘连麦状态’状态值改变
@@ -1747,6 +1816,8 @@ PLVLCOnlineListSheetDelegate
         [PLVRoomLoginClient logout];
         [[PLVSocketManager sharedManager] logout];
         [[NSNotificationCenter defaultCenter] removeObserver:self];
+        // 清理投屏相关资源，移除音量监听
+        [[PLVCastClient sharedClient] leave];
         [[PLVLCChatroomViewModel sharedViewModel] clear];
     }
 }

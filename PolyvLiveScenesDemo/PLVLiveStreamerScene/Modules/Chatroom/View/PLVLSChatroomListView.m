@@ -142,6 +142,62 @@ UITableViewDataSource
     return NO;
 }
 
+/// 判断当前用户是否有权限禁言其他用户
+- (BOOL)allowBanUserWithModel:(PLVChatModel *)model {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVRoomUserType currentUserType = roomData.roomUser.viewerType;
+    
+    // 只有讲师、助教、管理员可以禁言
+    if (currentUserType != PLVRoomUserTypeTeacher &&
+        currentUserType != PLVRoomUserTypeAssistant &&
+        currentUserType != PLVRoomUserTypeManager) {
+        return NO;
+    }
+    
+    // 不能对自己进行禁言操作
+    if ([model.user.userId isEqualToString:roomData.roomUser.viewerId]) {
+        return NO;
+    }
+    
+    // 不能对讲师、助教、管理员、嘉宾进行禁言操作
+    if (model.user.userType == PLVRoomUserTypeTeacher ||
+        model.user.userType == PLVRoomUserTypeAssistant ||
+        model.user.userType == PLVRoomUserTypeManager ||
+        model.user.userType == PLVRoomUserTypeGuest) {
+        return NO;
+    }
+    
+    return YES;
+}
+
+/// 判断当前用户是否有权限踢出其他用户
+- (BOOL)allowKickUserWithModel:(PLVChatModel *)model {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVRoomUserType currentUserType = roomData.roomUser.viewerType;
+    
+    // 只有讲师、助教、管理员可以踢出
+    if (currentUserType != PLVRoomUserTypeTeacher &&
+        currentUserType != PLVRoomUserTypeAssistant &&
+        currentUserType != PLVRoomUserTypeManager) {
+        return NO;
+    }
+    
+    // 不能对自己进行踢出操作
+    if ([model.user.userId isEqualToString:roomData.roomUser.viewerId]) {
+        return NO;
+    }
+    
+    // 不能对讲师、助教、管理员、嘉宾进行踢出操作
+    if (model.user.userType == PLVRoomUserTypeTeacher ||
+        model.user.userType == PLVRoomUserTypeAssistant ||
+        model.user.userType == PLVRoomUserTypeManager ||
+        model.user.userType == PLVRoomUserTypeGuest) {
+        return NO;
+    }
+    
+    return YES;
+}
+
 #pragma mark - Action
 
 - (void)refreshAction:(MJRefreshNormalHeader *)refreshHeader {
@@ -327,6 +383,18 @@ UITableViewDataSource
     }
 }
 
+- (void)didTapBanUserMenuItem:(PLVChatModel *)model {
+    if (self.didTapBanUserMenuItem) {
+        self.didTapBanUserMenuItem(model);
+    }
+}
+
+- (void)didTapKickUserMenuItem:(PLVChatModel *)model {
+    if (self.didTapKickUserMenuItem) {
+        self.didTapKickUserMenuItem(model);
+    }
+}
+
 #pragma mark - UITableView DataSource
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
@@ -353,6 +421,8 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         cell.allowPinMessage = self.allowPinMessage;
+        cell.allowBanUser = [self allowBanUserWithModel:model];
+        cell.allowKickUser = [self allowKickUserWithModel:model];
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -373,6 +443,14 @@ UITableViewDataSource
             [weakSelf didTapPinMessageMenuItem:model];
         }];
         
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
+        }];
+        
         return cell;
     } else if ([PLVLSLongContentMessageCell isModelValid:model]) {
         static NSString *LongContentMessageCell = @"LongContentMessageCell";
@@ -382,6 +460,8 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         cell.allowPinMessage = self.allowPinMessage;
+        cell.allowBanUser = [self allowBanUserWithModel:model];
+        cell.allowKickUser = [self allowKickUserWithModel:model];
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
             if (weakSelf.didTapReplyMenuItem) {
@@ -404,6 +484,12 @@ UITableViewDataSource
         [cell setPinMessageHandler:^(PLVChatModel * _Nonnull model) {
             [weakSelf didTapPinMessageMenuItem:model];
         }];
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
+        }];
         return cell;
     } else if ([PLVLSImageMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVLSImageMessageCell";
@@ -412,6 +498,8 @@ UITableViewDataSource
             cell = [[PLVLSImageMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowBanUser = [self allowBanUserWithModel:model];
+        cell.allowKickUser = [self allowKickUserWithModel:model];
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
@@ -428,6 +516,14 @@ UITableViewDataSource
             [weakSelf.tableView reloadData];
         }];
         
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
+        }];
+        
         return cell;
     } else if ([PLVLSImageEmotionMessageCell isModelValid:model]) {
         static NSString *imageMessageCellIdentify = @"PLVLSImageEmotionMessageCell";
@@ -436,12 +532,22 @@ UITableViewDataSource
             cell = [[PLVLSImageEmotionMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:imageMessageCellIdentify];
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        cell.allowBanUser = [self allowBanUserWithModel:model];
+        cell.allowKickUser = [self allowKickUserWithModel:model];
         
         __weak typeof(self) weakSelf = self;
         [cell setReplyHandler:^(PLVChatModel * _Nonnull model) {
             if (weakSelf.didTapReplyMenuItem) {
                 weakSelf.didTapReplyMenuItem(model);
             }
+        }];
+        
+        [cell setBanUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapBanUserMenuItem:model];
+        }];
+        
+        [cell setKickUserHandler:^(PLVChatModel * _Nonnull model) {
+            [weakSelf didTapKickUserMenuItem:model];
         }];
         
         [cell setProhibitWordShowHandler:^{

@@ -9,6 +9,9 @@
 #import "PLVStickerCanvas.h"
 #import "PLVStickerImageView.h"
 #import "PLVStickerTextView.h"
+#import "PLVStickerVideoView.h"
+#import "PLVStickerPlayer.h"
+#import "PLVMediaPlayerSampleBufferDisplayView.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import "PLVSAUtils.h"
 
@@ -17,7 +20,8 @@ const NSInteger maxStickerText = 10;
 
 @interface PLVStickerCanvas ()<
 PLVStickerImageViewDelegate,
-PLVStickerTextViewDelegate
+PLVStickerTextViewDelegate,
+PLVStickerVideoViewDelegate
 >
 
 @property (nonatomic, strong) UIView *cusMskView;
@@ -120,6 +124,14 @@ PLVStickerTextViewDelegate
             textView.frame = CGRectMake(startX, startY, textView.frame.size.width, textView.frame.size.height);
         }
     }
+    
+    // 视频贴图重置坐标
+    for (UIView *subView in self.contentView.subviews){
+        if ([subView isKindOfClass:[PLVStickerVideoView class]]){
+            PLVStickerVideoView *videoView = (PLVStickerVideoView *)subView;
+            [videoView resetRect];
+        }
+    }
 }
 
 - (UIView *)cusMskView{
@@ -192,6 +204,20 @@ PLVStickerTextViewDelegate
     }
 }
 
+- (void)addVideoStickerWithURL:(NSURL *)fileURL{
+    // 图片默认显示宽度 100 根据image 宽高等比缩放默认显示高度
+    NSInteger defaultWidth = 150;
+    NSInteger defaultHeight = 150;
+    NSInteger x = 0;
+    NSInteger y = 0;
+    x = (self.contentView.bounds.size.width - defaultWidth)/2;
+    y = (self.contentView.bounds.size.height - defaultHeight)/2;
+    PLVStickerVideoView *imageview = [[PLVStickerVideoView alloc] initWithFrame:CGRectMake(x, y, defaultWidth, defaultHeight) videoURL:fileURL];;
+    imageview.delegate = self;
+    
+    [self.contentView addSubview:imageview];
+}
+
 - (UIImage *)generateImageWithTransparentBackground {
     if (self.contentView.subviews.count == 0)
         return nil;
@@ -206,7 +232,9 @@ PLVStickerTextViewDelegate
     
     // 遍历所有子视图并渲染
     for (UIView *subview in self.contentView.subviews) {
-        if ([subview isKindOfClass:[PLVStickerImageView class]] || [subview isKindOfClass:[PLVStickerTextView class]]) {
+        if ([subview isKindOfClass:[PLVStickerImageView class]] ||
+            [subview isKindOfClass:[PLVStickerTextView class]] ||
+            [subview isKindOfClass:[PLVStickerVideoView class]]) {
             // 保存当前上下文状态
             CGContextSaveGState(context);
             
@@ -216,8 +244,22 @@ PLVStickerTextViewDelegate
             // 应用子视图的变换（如果有）
             CGContextConcatCTM(context, subview.transform);
             
-            // 渲染子视图
-            [subview.layer renderInContext:context];
+            // 特殊处理视频贴图
+            if ([subview isKindOfClass:[PLVStickerVideoView class]]) {
+                PLVStickerVideoView *videoView = (PLVStickerVideoView *)subview;
+                UIImage *videoSnapshot = [self getVideoSnapshotFromVideoView:videoView];
+
+                if (videoSnapshot) {
+                    // 绘制视频截图
+                    [videoSnapshot drawInRect:CGRectMake(0, 0, subview.bounds.size.width, subview.bounds.size.height)];
+                } else {
+                    // 如果没有视频截图，渲染普通层
+                    [subview.layer renderInContext:context];
+                }
+            } else {
+                // 渲染其他类型的子视图
+                [subview.layer renderInContext:context];
+            }
             
             // 恢复上下文状态
             CGContextRestoreGState(context);
@@ -231,8 +273,45 @@ PLVStickerTextViewDelegate
     return image;
 }
 
+/// 从视频贴图中获取视频截图
+/// @param videoView 视频贴图视图
+- (UIImage *)getVideoSnapshotFromVideoView:(PLVStickerVideoView *)videoView {
+    if (!videoView || !videoView.player) {
+        return nil;
+    }
+    
+    // 使用播放器的公开snapshot接口
+    PLVStickerPlayer *player = videoView.player;
+    if ([player respondsToSelector:@selector(snapshot)]) {
+        UIImage *snapshot = [player snapshot];
+        if (snapshot) {
+            return snapshot;
+        }
+    }
+    
+    // 如果无法获取播放器截图，尝试使用drawViewHierarchyInRect方法作为备选方案
+    UIGraphicsBeginImageContextWithOptions(videoView.bounds.size, NO, [UIScreen mainScreen].scale);
+    BOOL success = [videoView drawViewHierarchyInRect:videoView.bounds afterScreenUpdates:NO];
+    UIImage *image = nil;
+    if (success) {
+        image = UIGraphicsGetImageFromCurrentImageContext();
+    }
+    UIGraphicsEndImageContext();
+    
+    return image;
+}
+
 - (BOOL)hasMaxTextCount{
     return self.curTextCount >= maxStickerText;
+}
+
+- (BOOL)hasVideo{
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerVideoView class]]) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
 - (void)tapAction:(UITapGestureRecognizer *)tapGesture{
@@ -246,6 +325,9 @@ PLVStickerTextViewDelegate
     // 重置所有图片贴纸状态
     [self resetAllImageViewsState];
 
+    // 重置所有视频贴纸状态（关闭控制栏）
+    [self resetAllVideoViewsState];
+
     self.cusMskView.hidden = YES;
     self.enableEdit = NO;
     
@@ -257,7 +339,9 @@ PLVStickerTextViewDelegate
 
 - (BOOL)isDeleteAllSticker{
     for (UIView *subview in self.contentView.subviews) {
-        if ([subview isKindOfClass:[PLVStickerImageView class]] || [subview isKindOfClass:[PLVStickerTextView class]]) {
+        if ([subview isKindOfClass:[PLVStickerImageView class]] || 
+            [subview isKindOfClass:[PLVStickerTextView class]] ||
+            [subview isKindOfClass:[PLVStickerVideoView class]]) {
             return NO;
         }
     }
@@ -321,6 +405,48 @@ PLVStickerTextViewDelegate
 - (void)plv_StickerViewDidTapDoneButton:(PLVStickerImageView *)stickerView {
     // 完成编辑，退出编辑模式
     [self tapAction:nil];  // 调用现有的退出编辑方法
+}
+
+#pragma mark PLVStickerVideoViewDelegate
+
+- (void)plv_StickerVideoViewDidTapContentView:(PLVStickerVideoView *)stickerView{
+    // 实现贴纸焦点切换的互斥逻辑：当视频贴纸被选中时，重置所有文本贴纸状态
+    [self resetAllTextViewsState];
+
+    // 重置所有图片贴纸状态
+    [self resetAllImageViewsState];
+
+    // 重置其他视频贴纸状态（关闭其他视频的控制栏）
+    [self resetOtherVideoViewsStateExcept:stickerView];
+
+    // 进入编辑模式
+    self.cusMskView.hidden = NO;
+    self.enableEdit = YES;
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasEnterEditMode:)]){
+        [self.delegate stickerCanvasEnterEditMode:self];
+    }
+}
+
+- (void)plv_StickerVideoViewDidUpdateAudioPacket:(PLVStickerVideoView *)stickerView audioPacket:(NSDictionary *)audioPacket {
+    // 处理音频数据包
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvasDidUpdateAudioPacket:audioPacket:)]) {
+        [self.delegate stickerCanvasDidUpdateAudioPacket:self audioPacket:audioPacket];
+    }
+}
+
+- (void)plv_StickerVideoView:(PLVStickerVideoView *)stickerView didChangeAudioVolume:(CGFloat)stickerVolume microphoneVolume:(CGFloat)micVolume {
+    // 传递音量设置变化给代理
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerCanvas:didChangeAudioVolume:microphoneVolume:)]) {
+        [self.delegate stickerCanvas:self didChangeAudioVolume:stickerVolume microphoneVolume:micVolume];
+    }
+}
+
+- (void)plv_StickerVideoViewDidTapDeleteButton:(PLVStickerVideoView *)stickerView {
+    // 检查是否删除了所有贴纸
+    if ([self isDeleteAllSticker]) {
+        // 退出编辑模式
+        [self tapAction:nil];
+    }
 }
 
 - (void)addTextStickerWithModel:(PLVStickerTextModel *)textModel {
@@ -563,6 +689,34 @@ PLVStickerTextViewDelegate
         if ([subview isKindOfClass:[PLVStickerImageView class]]) {
             PLVStickerImageView *imageView = (PLVStickerImageView *)subview;
             imageView.enabledBorder = NO; // 取消边框显示，表示取消选中
+        }
+    }
+}
+
+#pragma mark - Video Sticker State Management Helper Methods
+
+/// 重置除指定视频贴纸外的其他视频贴纸状态
+- (void)resetOtherVideoViewsStateExcept:(PLVStickerVideoView *)exceptVideoView {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerVideoView class]] && subview != exceptVideoView) {
+            PLVStickerVideoView *videoView = (PLVStickerVideoView *)subview;
+            // 关闭控制栏
+            [videoView hideVideoControl];
+            // 取消边框显示
+            videoView.enabledBorder = NO;
+        }
+    }
+}
+
+/// 重置所有视频贴纸状态
+- (void)resetAllVideoViewsState {
+    for (UIView *subview in self.contentView.subviews) {
+        if ([subview isKindOfClass:[PLVStickerVideoView class]]) {
+            PLVStickerVideoView *videoView = (PLVStickerVideoView *)subview;
+            // 关闭控制栏
+            [videoView hideVideoControl];
+            // 取消边框显示
+            videoView.enabledBorder = NO;
         }
     }
 }

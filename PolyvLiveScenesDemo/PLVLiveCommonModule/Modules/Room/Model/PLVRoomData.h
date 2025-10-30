@@ -31,11 +31,22 @@ typedef NS_ENUM (NSInteger, PLVQualityPreferenceType) {
     PLVQualityPreferenceTypeSmooth = 1, // 流畅度优先
 };
 
-/// 混流布局类型
+/// 连麦布局类型
 typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
-    PLVMixLayoutType_Single = 1, // 单人模式
-    PLVMixLayoutType_Tile = 2, // 平铺模式
-    PLVMixLayoutType_MainSpeaker = 3, // 主讲模式
+    PLVMixLayoutType_Single = 1, // 单人演讲（原单人模式）
+    PLVMixLayoutType_Tile = 2, // 宫格视图（原平铺模式）
+    PLVMixLayoutType_MainSpeaker = 3, // 底部悬浮 (原主讲模式)
+    PLVMixLayoutType_BottomList = 4, // 底部列表
+    PLVMixLayoutType_RightList = 5, // 右侧列表
+};
+
+typedef NS_ENUM(NSInteger, PLVMixLayoutBackgroundColor) {
+    PLVMixLayoutBackgroundColor_Black = 0,   // 炫彩黑
+    PLVMixLayoutBackgroundColor_Blue,        // 星河蓝
+    PLVMixLayoutBackgroundColor_Purple,      // 神秘紫
+    PLVMixLayoutBackgroundColor_Green,       // 森林绿
+    PLVMixLayoutBackgroundColor_Orange,      // 落日橘
+    PLVMixLayoutBackgroundColor_NormalBlack, // 正常黑
 };
 
 @interface PLVRoomData : NSObject
@@ -224,7 +235,7 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign) BOOL appDefaultLandScapeEnabled;
 /// 支持默认开启后置摄像头，YES默认开启后置摄像头，NO不开启（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL appDefaultPureViewEnabled;
-/// 支持默认混流布局类型（仅适用于纯视频开播）
+/// 支持默认连麦布局类型（仅适用于纯视频开播）
 @property (nonatomic, assign, readonly) PLVMixLayoutType defaultMixLayoutType;
 /// 推流画质优先/流畅优先，默认画质优先
 @property (nonatomic, assign, readonly) PLVQualityPreferenceType pushQualityPreference;
@@ -236,7 +247,7 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, copy) NSString *defaultOpenMicLinkEnabled;
 // 频道默认开关，仅新版连麦生效
 @property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType defaultChannelLinkMicMediaType;
-// 后台是否显示混流布局按钮，YES显示，NO不显示
+// 后台是否显示连麦布局按钮，YES显示，NO不显示
 @property (nonatomic, assign) BOOL showMixLayoutButtonEnabled;
 // 后台是否显示横竖屏按钮，YES显示，NO不显示（仅适用于纯视频开播）
 @property (nonatomic, assign) BOOL showOrientationButtonEnabled;
@@ -244,7 +255,7 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 @property (nonatomic, assign) BOOL desktopChatEnabled;
 // 开播端是否显示成员列表开关
 @property (nonatomic, assign) BOOL appStartMemberListEnabled;
-// 开播端是否显示混流布局开关
+// 开播端是否显示连麦布局开关
 @property (nonatomic, assign) BOOL appStartMultiplexingLayoutEnabled;
 // 开播端是否显示签到开关
 @property (nonatomic, assign) BOOL appStartCheckinEnabled;
@@ -282,6 +293,12 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 ///  更新入会信息
 - (void)updateSipInfo;
 
+/// 断网时恢复menuInfo信息
+- (void)restoreMenuInfo;
+
+/// 保存menuInfo信息
+- (void)saveMenuInfo;
+
 /// 将清晰度枚举值转换成字符串
 /// @return 返回值为nil时表示参数resolutionType出错，无法转换
 + (NSString * _Nullable)resolutionStringWithType:(PLVResolutionType)resolutionType;
@@ -301,6 +318,17 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutType) {
 /// 将清晰度枚举值转换成字符串
 /// @return 返回值为nil时表示参数resolutionType出错，无法转换
 + (NSString * _Nullable)mixLayoutTypeStringWithType:(PLVMixLayoutType)mixLayoutType;
+
+/// 将混流背景颜色枚举值转换成对应的URL字符串
++ (NSString * _Nullable)mixBackgroundURLStringWithType:(PLVMixLayoutBackgroundColor)colorType;
+
+/// 将混流背景颜色枚举值转换成对应的显示名称
++ (NSString * _Nullable)mixBackgroundDisplayNameForType:(PLVMixLayoutBackgroundColor)colorType;
+
+/// 根据URL字符串获取对应的混流背景颜色类型
++ (PLVMixLayoutBackgroundColor)mixBackgroundColorTypeFromURLString:(NSString * _Nullable)urlString;
+
+
 
 @end
 

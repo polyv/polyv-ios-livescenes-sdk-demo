@@ -252,6 +252,10 @@ PLVDefaultPageViewDelegate
     return NO;
 }
 
+- (BOOL)playingWarmUpVideo {
+    return self.livePlayer.playingWarmUpVideo;
+}
+
 - (UIImageView *)logoImageView {
     return self.logoView.logoImageView;
 }
@@ -426,6 +430,13 @@ PLVDefaultPageViewDelegate
     self.livePlaybackPlayer.updateAutoStartPictureInPicture = updateCanAutoStartPictureInPicture;
 }
 
+/// 处理DEBUG事件，更新测试模式状态
+- (void)updateTestModeStatus:(BOOL)testModeStatus {
+    if (self.livePlayer) {
+        self.livePlayer.testMode = testModeStatus;
+    }
+}
+
 #pragma mark 直播相关
 - (void)switchLiveToAudioMode:(BOOL)audioMode{
     self.logoView.hidden = audioMode;
@@ -541,7 +552,8 @@ PLVDefaultPageViewDelegate
         }
     }
     if (self.currentVideoType == PLVChannelVideoType_Live) { /// 直播
-        self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId];
+        BOOL testModeStatus = roomData.menuInfo.isDebug || roomData.menuInfo.testModeStatus;
+        self.livePlayer = [[PLVLivePlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId testMode:testModeStatus];
         self.livePlayer.delegate = self;
         self.livePlayer.liveDelegate = self;
         self.livePlayer.pictureInPictureDelegate = self;
@@ -566,6 +578,23 @@ PLVDefaultPageViewDelegate
         } else {
             BOOL vodList = roomData.menuInfo.materialLibraryEnabled ? NO : self.vodList;
             self.livePlaybackPlayer = [[PLVLivePlaybackPlayer alloc] initWithPLVAccountUserId:userIdForAccount channelId:self.channelId vodId:self.vodId vodList:vodList liveDelegate:self];
+            
+            /*
+            // 加密视频获取token
+            self.livePlaybackPlayer.asyncGetTokenBlock = ^(void(^completion)(NSDictionary *token)) {
+                dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                    
+                    NSString *videoId = [PLVRoomDataManager sharedManager].roomData.vid;
+                    NSString *viewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+                    [PLVTestPlaybackVodAPI getVideoToken:videoId viewerId:viewerId completion:^(NSString *videoToken, NSError *error) {
+                        if (completion) {
+                            NSDictionary *dicParams = @{@"playToken": videoToken, @"viewerId": viewerId };
+                            completion(dicParams);
+                        }
+                    }];
+                });
+            };*/
+            
         }
         self.livePlaybackPlayer.delegate = self;
         self.livePlaybackPlayer.pictureInPictureDelegate = self;
@@ -1250,9 +1279,9 @@ PLVDefaultPageViewDelegate
 }
 
 /// 直播播放器 ‘码率可选项、当前码率、线路可选数、当前线路‘ 发生改变
-- (void)plvLivePlayer:(PLVLivePlayer *)livePlayer codeRateOptions:(NSArray <NSString *> *)codeRateOptions currentCodeRate:(NSString *)currentCodeRate lineNum:(NSInteger)lineNum currentLineIndex:(NSInteger)currentLineIndex{
-    if ([self.delegate respondsToSelector:@selector(playerPresenter:codeRateOptions:currentCodeRate:lineNum:currentLineIndex:)]) {
-        [self.delegate playerPresenter:self codeRateOptions:codeRateOptions currentCodeRate:currentCodeRate lineNum:lineNum currentLineIndex:currentLineIndex];
+- (void)plvLivePlayer:(PLVLivePlayer *)livePlayer currentDefinitionUrl:(NSString *)currentDefinitionUrl definitionsArray:(NSArray<NSDictionary *> *)definitionsArray codeRateOptions:(NSArray<NSString *> *)codeRateOptions currentCodeRate:(NSString *)currentCodeRate lineNum:(NSInteger)lineNum currentLineIndex:(NSInteger)currentLineIndex {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenter:currentDefinitionUrl:definitionsArray:codeRateOptions:currentCodeRate:lineNum:currentLineIndex:)]) {
+        [self.delegate playerPresenter:self currentDefinitionUrl:currentDefinitionUrl definitionsArray:definitionsArray codeRateOptions:codeRateOptions currentCodeRate:currentCodeRate lineNum:lineNum currentLineIndex:currentLineIndex];
     }
 }
 

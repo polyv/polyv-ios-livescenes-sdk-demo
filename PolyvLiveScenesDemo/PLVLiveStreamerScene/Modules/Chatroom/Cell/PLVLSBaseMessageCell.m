@@ -39,7 +39,7 @@
 }
 
 - (BOOL)canBecomeFirstResponder {
-    return (self.allowCopy || self.allowReply);
+    return (self.allowCopy || self.allowReply || self.allowPinMessage || self.allowBanUser || self.allowKickUser);
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
@@ -53,6 +53,12 @@
     if (self.allowPinMessage && (action == @selector(pinMessage:))) {
         canPerform = YES;
     }
+    if (self.allowBanUser && (action == @selector(banUser:))) {
+        canPerform = YES;
+    }
+    if (self.allowKickUser && (action == @selector(kickUser:))) {
+        canPerform = YES;
+    }
     return canPerform;
 }
 
@@ -62,8 +68,10 @@
 - (void)setMenuItem {
     UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"复制") action:@selector(customCopy:)];
     UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"回复") action:@selector(reply:)];
-    UIMenuItem *pinMsgMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"上墙") action:@selector(pinMessage:)];    
-    NSMutableArray *menuItems = [NSMutableArray arrayWithCapacity:3];
+    UIMenuItem *pinMsgMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"上墙") action:@selector(pinMessage:)];
+    UIMenuItem *banUserMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"禁言") action:@selector(banUser:)];
+    UIMenuItem *kickUserMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"踢出") action:@selector(kickUser:)];
+    NSMutableArray *menuItems = [NSMutableArray arrayWithCapacity:5];
     // 是否含有严禁词并且发送失败时 || 提醒消息时
     if ((self.model.isProhibitMsg && self.model.prohibitWord) ||
         self.model.isRemindMsg) {
@@ -73,6 +81,12 @@
     }
     if (self.allowPinMessage) {
         [menuItems addObject:pinMsgMenuItem];
+    }
+    if (self.allowBanUser) {
+        [menuItems addObject:banUserMenuItem];
+    }
+    if (self.allowKickUser) {
+        [menuItems addObject:kickUserMenuItem];
     }
     UIMenuController *menuController = [UIMenuController sharedMenuController];
     [menuController setMenuItems:[menuItems copy]];
@@ -92,6 +106,18 @@
 - (void)pinMessage:(id)sender {
     if (self.pinMessageHandler) {
         self.pinMessageHandler(self.model);
+    }
+}
+
+- (void)banUser:(id)sender {
+    if (self.banUserHandler) {
+        self.banUserHandler(self.model);
+    }
+}
+
+- (void)kickUser:(id)sender {
+    if (self.kickUserHandler) {
+        self.kickUserHandler(self.model);
     }
 }
 

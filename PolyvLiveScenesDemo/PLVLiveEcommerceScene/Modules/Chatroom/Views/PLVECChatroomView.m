@@ -193,8 +193,11 @@ PLVECChatroomMessageViewDelegate
     [self.playbackViewModel clear];
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    if (self.videoType == PLVChannelVideoType_Playback && roomData.menuInfo.chatInputDisable && roomData.playbackSessionId) {
-        self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId videoId:roomData.playbackVideoInfo.fileId];
+    // 支持聊天回放
+    // 是否是重放场景
+    BOOL isReplayMode = roomData.menuInfo.chatPlaybackEnabled;
+    if (self.videoType == PLVChannelVideoType_Playback && roomData.playbackSessionId) {
+        self.playbackViewModel = [[PLVECChatroomPlaybackViewModel alloc] initWithChannelId:roomData.channelId sessionId:roomData.playbackSessionId videoId:roomData.playbackVideoInfo.fileId isReplayMode:isReplayMode];
         self.playbackViewModel.delegate = self;
         [self.playbackViewModel addUIDelegate:self delegateQueue:dispatch_get_main_queue()];
         [self.messageView updatePlaybackViewModel:self.playbackViewModel];

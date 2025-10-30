@@ -21,7 +21,7 @@
 @property (nonatomic, strong) UILabel *baseTitleLabel; // 基础功能标题
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜按钮
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
-@property (nonatomic, strong) UIButton *mixLayoutButton; // 混流布局按钮
+@property (nonatomic, strong) UIButton *mixLayoutButton; // 连麦布局按钮
 @property (nonatomic, strong) UIButton *aiMattingButton; // AI抠像按钮
 @property (nonatomic, strong) UIButton *noiseCancellationModeButton; // 声音音质按钮
 @property (nonatomic, strong) UIButton *externalDeviceButton; // 外接设备按钮
@@ -242,7 +242,7 @@
 
 - (UIButton *)mixLayoutButton {
     if (!_mixLayoutButton) {
-        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"混流布局Btn") NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
+        _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"连麦布局Btn") NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
         [_mixLayoutButton addTarget:self action:@selector(mixLayoutAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _mixLayoutButton;

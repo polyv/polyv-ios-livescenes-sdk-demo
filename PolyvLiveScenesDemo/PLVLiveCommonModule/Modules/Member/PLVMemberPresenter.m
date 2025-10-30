@@ -229,6 +229,9 @@ PLVSocketManagerProtocol // socket协议
     // 定义 waitUserDic 为 等待连麦成员字典，key 是 等待连麦成员id，value 是 等待连麦成员对象；长度为 M；
     NSMutableDictionary<NSString *, PLVLinkMicWaitUser *> *waitUserDic = [[NSMutableDictionary alloc] init];
     for (PLVLinkMicWaitUser *waitUser in newLinkMicWaitUserArray) {
+        if (![PLVFdUtil checkStringUseable:waitUser.userId]) {
+            continue;
+        }
         [waitUserDic setValue:waitUser forKey:waitUser.userId];
     }
     

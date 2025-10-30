@@ -97,7 +97,7 @@ PLVVirtualBackgroudSheetDelegate
 @property (nonatomic, strong) PLVLSBadNetworkSwitchSheet *badNetworkSwitchSheet; // 弱网处理弹层
 @property (nonatomic, strong) PLVLSBadNetworkTipsView *badNetworkTipsView; // 网络较差提示切换【流畅模式】气泡
 @property (nonatomic, strong) PLVLSSwitchSuccessTipsView *switchSuccessTipsView; // 切换【流畅模式】成功提示气泡
-@property (nonatomic, strong) PLVLSMixLayoutSheet *mixLayoutSheet; // 混流布局弹层
+@property (nonatomic, strong) PLVLSMixLayoutSheet *mixLayoutSheet; // 连麦布局弹层
 @property (nonatomic, strong) PLVLSLinkMicSettingSheet *linkMicSettingSheet; // 连麦设置弹层
 @property (nonatomic, strong) PLVLSNoiseCancellationModeSwitchSheet *noiseCancellationModeSwitchSheet; // 声音音质弹层
 @property (nonatomic, strong) PLVLSExternalDeviceSwitchSheet *externalDeviceSwitchSheet; // 外接设备弹层
@@ -496,7 +496,7 @@ PLVVirtualBackgroudSheetDelegate
     if (!_mixLayoutSheet) {
         CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
         _mixLayoutSheet = [[PLVLSMixLayoutSheet alloc] initWithSheetWidth:sheetWidth];
-        [_mixLayoutSheet setupMixLayoutTypeOptionsWithCurrentMixLayoutType:[self getLocalMixLayoutType]];
+        [_mixLayoutSheet setupOptionsWithCurrentMixLayoutType:[self getLocalMixLayoutType] currentBackgroundColor:PLVMixLayoutBackgroundColor_Black];
         _mixLayoutSheet.delegate = self;
     }
     return _mixLayoutSheet;
@@ -604,22 +604,22 @@ PLVVirtualBackgroudSheetDelegate
     [self dismissViewControllerAnimated:YES completion:nil];
 }
 
-/// 保存当前选择的混流布局到本地
+/// 保存当前选择的连麦布局到本地
 - (void)saveSelectedMixLayoutType:(PLVMixLayoutType)mixLayoutType {
     [[NSUserDefaults standardUserDefaults] setObject:[NSString stringWithFormat:@"%ld",(long)mixLayoutType] forKey:kPLVLSSettingMixLayoutKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-/// 读取本地混流布局配置
+/// 读取本地连麦布局配置
 - (PLVMixLayoutType)getLocalMixLayoutType {
     NSString *saveMixLayoutTypeString = [[NSUserDefaults standardUserDefaults] objectForKey:kPLVLSSettingMixLayoutKey];
     if ([PLVFdUtil checkStringUseable:saveMixLayoutTypeString]) {
         PLVMixLayoutType saveMixLayout = saveMixLayoutTypeString.integerValue;
-        if (saveMixLayout >= 1 && saveMixLayout <=3) {
+        if (saveMixLayout >= 1 && saveMixLayout <= 5) {
             return saveMixLayout;
         }
     }
-    return PLVMixLayoutType_MainSpeaker; // 默认混流布局为主讲模式
+    return PLVMixLayoutType_MainSpeaker; // 默认连麦布局为底部悬浮（原主讲模式）
 }
 
 /// 保存当前选择的降噪模式到本地
@@ -1423,6 +1423,13 @@ PLVVirtualBackgroudSheetDelegate
     [self.mixLayoutSheet updateMixLayoutType:currentType];
     [self saveSelectedMixLayoutType:currentType];
 }
+
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutBackgroundImageUrlDidOccurError:(NSString *)imageUrl {
+    [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"网络异常，请恢复网络后重试") inView:[PLVLSUtils sharedUtils].homeVC.view];
+    PLVMixLayoutBackgroundColor currentColorType = [PLVRoomData mixBackgroundColorTypeFromURLString:imageUrl];
+    [self.mixLayoutSheet updateBackgroundSelectedColorType:currentColorType];
+}
+
 /// sessionId 场次Id发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter sessionIdDidChanged:(NSString *)sessionId{
     [PLVRoomDataManager sharedManager].roomData.sessionId = sessionId;
@@ -1711,6 +1718,11 @@ PLVVirtualBackgroudSheetDelegate
     PLVRTCStreamerMixLayoutType mixLayoutType = [PLVRoomData streamerMixLayoutTypeWithMixLayoutType:type];
     [self.streamerPresenter setupMixLayoutType:mixLayoutType];
     [self saveSelectedMixLayoutType:type];
+}
+
+- (void)mixLayoutSheet_didSelectBackgroundColor:(PLVMixLayoutBackgroundColor)colorType {
+    NSString *imageUrl = [PLVRoomData mixBackgroundURLStringWithType:colorType];
+    [self.streamerPresenter setupMixLayoutBackgroundImageUrl:imageUrl];
 }
 
 #pragma mark PLVLSNoiseCancellationModeSwitchSheetDelegate

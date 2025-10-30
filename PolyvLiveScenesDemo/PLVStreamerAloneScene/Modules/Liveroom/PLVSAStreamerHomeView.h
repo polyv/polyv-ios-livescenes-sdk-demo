@@ -43,11 +43,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// 改变 清晰度 触发回调（模版中推流质量等级）
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeStreamQualityLevel:(NSString *)streamQualityLevel;
 
-/// 获取当前混流布局
+/// 获取当前连麦布局
 - (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView;
 
-/// 改变 混流布局 触发回调
+/// 获取当前连麦布局背景
+- (PLVMixLayoutBackgroundColor)streamerHomeViewCurrentMixLayoutBackgroundColor:(PLVSAStreamerHomeView *)homeView;
+
+/// 改变 连麦布局 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutType:(PLVMixLayoutType)type;
+
+/// 改变 连麦布局背景 触发回调
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeMixLayoutBackgroundColor:(PLVMixLayoutBackgroundColor)colorType;
 
 /// 改变 视频流画质偏好 触发回调
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeVideoQosPreference:(PLVBRTCVideoQosPreference)videoQosPreference;
@@ -105,9 +111,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// 贴图按钮点击
 - (void)streamerHomeViewDidTapStickerButton:(PLVSAStreamerHomeView *)homeView;
 
+/// 视频贴纸按钮点击
+- (void)streamerHomeViewDidTapStickerVideoButton:(PLVSAStreamerHomeView *)homeView;
+
 /// AI抠像按钮点击
 - (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView;
 
+/// 本地视频素材按钮点击
+- (void)streamerHomeViewDidTapVideoMaterialButton:(PLVSAStreamerHomeView *)homeView;
 /// 开始搜索
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didStartSearchWithKeyword:(NSString *)keyword;
 
@@ -121,7 +132,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// PLVSAStreamerHomeViewDelegate 代理
 @property (nonatomic, weak)id<PLVSAStreamerHomeViewDelegate> delegate;
 
-// 混流布局选择面板，用于更新当前混流布局类型
+// 连麦布局选择面板，用于更新当前连麦布局类型
 @property (nonatomic, strong, readonly) PLVSAMixLayoutSheet *mixLayoutSheet;
 
 - (instancetype)initWithLocalOnlineUser:(PLVLinkMicOnlineUser *)localOnlineUser

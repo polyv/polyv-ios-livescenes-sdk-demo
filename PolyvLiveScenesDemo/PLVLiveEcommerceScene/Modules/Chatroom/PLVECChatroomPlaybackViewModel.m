@@ -33,6 +33,9 @@ PLVChatroomPlaybackPresenterDelegate
 /// 评论上墙最后一条消息模型
 @property (nonatomic, strong) PLVChatModel *lastSpeakTopChatModel;
 
+/// 是否重放模式
+@property (nonatomic, assign) BOOL isReplayMode;
+
 @end
 
 @implementation PLVECChatroomPlaybackViewModel {
@@ -46,14 +49,15 @@ PLVChatroomPlaybackPresenterDelegate
 
 #pragma mark - [ Public Method ]
 
-- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId {
+- (instancetype)initWithChannelId:(NSString *)channelId sessionId:(NSString *)sessionId videoId:(NSString *)videoId isReplayMode:(BOOL)isReplayMode{
     self = [super init];
     if (self) {
+        self.isReplayMode = isReplayMode;
         self.channelId = (channelId && [channelId isKindOfClass:[NSString class]]) ? channelId : @"";
         self.sessionId = (sessionId && [sessionId isKindOfClass:[NSString class]]) ? sessionId : @"";
         self.videoId = (videoId && [videoId isKindOfClass:[NSString class]]) ? videoId : @"";
         
-        self.presenter = [[PLVChatroomPlaybackPresenter alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId];
+        self.presenter = [[PLVChatroomPlaybackPresenter alloc] initWithChannelId:self.channelId sessionId:self.sessionId videoId:self.videoId isReplayMode:self.isReplayMode];
         self.presenter.delegate = self;
         
         // 多代理
@@ -75,15 +79,24 @@ PLVChatroomPlaybackPresenterDelegate
 }
 
 - (void)playbakTimeChanged {
+    if (!self.isReplayMode)
+        return;
+    
     [self.presenter playbakTimeChanged];
 }
 
 - (void)loadMoreMessages {
-    if ([self.chatArray count] > 0) {
-        PLVChatModel *chatModel = self.chatArray[0];
-        [self.presenter loadMoreMessageBefore:chatModel.playbackTime];
-    } else {
-        [self.presenter loadMoreMessageBefore:self.currentPlaybackTime];
+    
+    if (self.isReplayMode){
+        if ([self.chatArray count] > 0) {
+            PLVChatModel *chatModel = self.chatArray[0];
+            [self.presenter loadMoreMessageBefore:chatModel.playbackTime];
+        } else {
+            [self.presenter loadMoreMessageBefore:self.currentPlaybackTime];
+        }
+    }
+    else{
+        [self.presenter loadMorePlaybackChatMessage];
     }
 }
 

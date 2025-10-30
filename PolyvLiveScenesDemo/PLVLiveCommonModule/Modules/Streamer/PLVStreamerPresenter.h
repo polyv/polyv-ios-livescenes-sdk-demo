@@ -192,8 +192,11 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// 当前 推流质量等级
 @property (nonatomic, copy, readonly) NSString *streamQualityLevel;
 
-/// 当前 混流布局模式 (值不为 1、2、3 的情况下，默认以 PLVRTCStreamerMixLayoutType_Single 作替代使用)
+/// 当前 连麦布局模式 (值不为 1、2、3 的情况下，默认以 PLVRTCStreamerMixLayoutType_Single 作替代使用)
 @property (nonatomic, assign, readonly) PLVRTCStreamerMixLayoutType mixLayoutType;
+
+/// 当前连麦布局背景
+@property (nonatomic, copy, readonly) NSString *mixLayoutBackgroundImageUrl;
 
 /// 当前 ‘本地视频预览’与‘远端观看’的镜像效果 是否一致
 ///
@@ -275,6 +278,10 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @note 单位秒，带小数，可精确至毫秒；
 ///       一次推流中，可能有多次重连，此属性为 全部重连累计时长（包括当前此刻，无论是否 ’重连中‘ 或 ’重连结束‘）；
 @property (nonatomic, assign, readonly) NSTimeInterval reconnectingTotalDuration;
+
+/// 本地多媒体素材url
+///
+- (void)setVideoMaterialURL:(NSURL *)fileUrl;
 
 
 #pragma mark - [ 方法 ]
@@ -379,6 +386,17 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param stickerImage 贴纸图片资源
 - (void)setStickerImage:(nullable UIImage *)stickerImage;
 
+/// 设置贴纸音频数据包
+///
+/// @param audioPacket 贴纸音频数据包
+- (void)setStickerAudioPacket:(nullable NSDictionary *)audioPacket;
+
+/// 设置贴纸音频与麦克风音量
+///
+/// @param stickerVolume 贴纸音频音量 (0.0~1.0)
+/// @param micVolume 麦克风音量 (0.0~1.0)
+- (void)setStickerAudioVolume:(CGFloat)stickerVolume microphoneVolume:(CGFloat)micVolume;
+
 /// 设置抠像模式  背景图资源
 /// @param mode 抠像模式
 /// @param matBgImage 抠像后填充背景
@@ -397,10 +415,13 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @note 区别于 [finishClass] 方法，该方法仅负责停止推流
 - (void)stopPushStream;
 
-/// 配置 混流布局模式
+/// 配置 连麦布局模式
 ///
-/// @param mixLayoutType 混流布局模式
+/// @param mixLayoutType 连麦布局模式
 - (void)setupMixLayoutType:(PLVRTCStreamerMixLayoutType)mixLayoutType;
+
+/// 设置混流背景图 URL（传 nil 清除背景图）
+- (void)setupMixLayoutBackgroundImageUrl:(nullable NSString *)backgroundImageUrl;
 
 #pragma mark 本地硬件管理
 /// 开启或关闭 本地用户 的麦克风
@@ -688,12 +709,17 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param currentRemotePushDuration 当前远端 已推流时长 (单位秒，带小数，可精确至毫秒；具体解释可见 [currentRemotePushDuration] 属性说明)
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter currentRemotePushDuration:(NSTimeInterval)currentRemotePushDuration;
 
-/// 更新 混流布局 失败回调
+/// 更新 连麦布局 失败回调
 ///
 /// @param presenter 推流管理器
-/// @param type 当前混流布局
+/// @param type 当前连麦布局
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type;
 
+/// 更新 连麦布局 背景图 失败回调
+///
+/// @param presenter 推流管理器
+/// @param imageUrl 当前连麦布局 背景图
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter updateMixLayoutBackgroundImageUrlDidOccurError:(NSString * _Nullable)imageUrl;
 #pragma mark 本地用户硬件事件
 /// 本地用户的 ’麦克风开关状态‘ 发生变化
 ///

@@ -18,7 +18,7 @@
 
 @property (nonatomic, weak) id<PLVSAStreamerSettingViewDelegate> delegate;
 
-// 混流布局选择面板，用于更新当前混流布局类型
+// 连麦布局选择面板，用于更新当前连麦布局类型
 @property (nonatomic, strong, readonly) PLVSAMixLayoutSheet *mixLayoutSheet;
 
 @property (nonatomic, assign, readonly) BOOL canAutorotate;
@@ -88,14 +88,18 @@
 - (void)streamerSettingViewDidChangeDeviceOrientation:(PLVSAStreamerSettingView *)streamerSettingView;
 /// 开播流比例改变
 - (void)streamerSettingViewStreamScaleButtonClickWithStreamScale:(PLVBLinkMicStreamScale)streamScale;;
-/// 混流布局切换
+/// 连麦布局切换
 - (void)streamerSettingViewMixLayoutButtonClickWithMixLayoutType:(PLVMixLayoutType)type;
+/// 连麦布局背景切换
+- (void)streamerSettingViewMixLayoutButtonClickWithBackgroundColor:(PLVMixLayoutBackgroundColor)colorType;
 /// 降噪模式切换
 - (void)streamerSettingViewTopSettingButtonClickWithNoiseCancellationLevel:(PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel;
 /// 外接设备改变
 - (void)streamerSettingViewExternalDeviceButtonClickWithExternalDeviceEnabled:(BOOL)enabled;
 /// 贴纸按钮点击
 - (void)streamerSettingViewDidClickStickerButton:(PLVSAStreamerSettingView *)streamerSettingView;
+/// 本地视频按钮点击
+- (void)streamerSettingViewDidClickStickerVideoButton:(PLVSAStreamerSettingView *)streamerSettingView;
 /// 虚拟背景按钮点击
 - (void)streamerSettingViewDidClickVirtualBackgroundButton:(PLVSAStreamerSettingView *)streamerSettingView;
 

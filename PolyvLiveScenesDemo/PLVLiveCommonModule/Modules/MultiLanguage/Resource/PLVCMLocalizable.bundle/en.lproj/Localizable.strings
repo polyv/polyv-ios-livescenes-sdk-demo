@@ -28,7 +28,31 @@
 
 "下载iCloud的图片失败，请保证网络正常，重新再试" = "Failed to download iCloud pictures, please ensure the network is normal and try again";
 
-"主讲模式" = "Speaker";
+"单人演讲" = "Individual speech";
+
+"显示第一画面" = "Display the first screen";
+
+"宫格视图" = "Palace pattern";
+
+"所有画面均分" = "All images are evenly divided";
+
+"底部悬浮" = "Bottom suspension";
+
+"主讲人突出显示" = "Highlight main speaker";
+
+"底部叠加平铺" = "Bottom stacking and tiling";
+
+"右侧列表" = "List on the right";
+
+"右侧平铺演示" = "Flat demonstration on the right side";
+
+"底部列表" = "Bottom List";
+
+"底部平铺演示" = "Bottom Flat Demonstration";
+
+"选择后对所有人生效，观众不可自行修改布局" = "After selection, it will take effect for everyone and the audience cannot modify the layout on their own";
+
+"背景设置" = "Background settings";
 
 "你只能选择一张图片" = "You can only choose one picture";
 
@@ -452,8 +476,8 @@
 "恢复直播" = "Resume live";
 "流畅优先" = "Fluency priority";
 "画质优先" = "Quality priority";
-"混流布局" = "Mix layout";
-"混流布局Btn" = "Mix\n layout";
+"连麦布局" = "Linkmic layout";
+"连麦布局Btn" = "Linkmic\n layout";
 "网络延迟：%zdms" = "Network latency: %zdms";
 "网络延迟：ms" = "Network latency: ms";
 "已授予主讲权限" = "The lecture permission has been granted";
@@ -700,4 +724,35 @@
 "AI看" = "AI Summary";
 "AI 看" = "AI Summary";
 
+/** Mix Background Colors */
+"炫彩黑" = "Black";
+"星河蓝" = "Blue";
+"神秘紫" = "Purple";
+"森林绿" = "Green";
+"落日橘" = "Orange";
+"正常黑" = "Normal black";
+
 "通知" = "Notification";
+
+/** Cast Feature */
+"投电视" = "Invest in TV";
+"正在搜索可投屏设备..." = "Searching for cast devices...";
+"已找到以下设备" = "The following devices have been found";
+"未发现可投屏设备" = "No screen casting devices found";
+"未发现到可投屏设备，请重试..." = "No screen casting devices were found, please try again";
+"未发现到可投屏设备" = "No screen casting devices found";
+"重试" = "Retry";
+"播放开始" = "Playback started";
+"播放暂停" = "Play Pause";
+"播放结束" = "Playback ended";
+"停止搜索" = "stop searching";
+"正在连接" = "Connecting";
+"正在连接..." = "Connecting ..";
+"投屏播放失败" = "Screen casting playback failed";
+"退出播放失败" = "Exit playback failed";
+"暂停失败" = "Pause failed";
+"恢复播放失败" = "Recovery playback failed";
+"设置音量失败" = "Volume setting failed";
+"网络错误或未连接局域网" = "Network error or failure to connect to LAN";
+"连接设备..." = "Connect devices ..";
+"切换设备 >" = "Switch devices>";

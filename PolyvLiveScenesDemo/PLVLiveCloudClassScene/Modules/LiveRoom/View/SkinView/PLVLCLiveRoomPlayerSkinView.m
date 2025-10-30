@@ -100,6 +100,7 @@
         
         [self refreshBulletinButtonFrame];
         [self refreshPictureInPictureButtonFrame];
+        [self refreshCastButtonFrame];
         [self refreshOnlineListButtonFrame];
         
         [self refreshTitleLabelFrameInSmallScreen];
@@ -298,6 +299,41 @@
         pictureInPictureButtonX = self.moreButton.frame.origin.x - backButtonSize.width;
     }
     self.pictureInPictureButton.frame = CGRectMake(pictureInPictureButtonX, topPadding, backButtonSize.width, backButtonSize.height);
+}
+
+- (void)refreshCastButtonFrame {
+    if (self.castButton.hidden) {
+        return;
+    }
+    
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat rightSafePadding = 0;
+    CGFloat topPadding = 16.0;
+    CGFloat intervalPadding = 0;
+
+    if (@available(iOS 11.0, *)) {
+        rightSafePadding = self.safeAreaInsets.right;
+    }
+    // iPad适配
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        rightSafePadding = 20.0;
+        topPadding = 30.0;
+        intervalPadding = 10.0;
+    }
+    
+    CGSize backButtonSize = CGSizeMake(40.0, 20.0);
+    CGFloat castButtonX = viewWidth - rightSafePadding - backButtonSize.width;
+    
+    // 投屏按钮应该在画中画按钮的左侧
+    if (self.pictureInPictureButton && !self.pictureInPictureButton.hidden) {
+        castButtonX = self.pictureInPictureButton.frame.origin.x - backButtonSize.width - intervalPadding;
+    } else if (_bulletinButton && !_bulletinButton.hidden) {
+        castButtonX = self.bulletinButton.frame.origin.x - backButtonSize.width - intervalPadding;
+    } else if (self.moreButton && !self.moreButton.hidden) {
+        castButtonX = self.moreButton.frame.origin.x - backButtonSize.width - intervalPadding;
+    }
+    
+    self.castButton.frame = CGRectMake(castButtonX, topPadding, backButtonSize.width, backButtonSize.height);
 }
 
 - (void)refreshTitleLabelFrameInSmallScreen{
@@ -704,6 +740,7 @@
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshBulletinButtonFrame];
         [self refreshPictureInPictureButtonFrame];
+        [self refreshCastButtonFrame];
         [self refreshTitleLabelFrameInSmallScreen];
         [self refreshPlayTimesLabelFrame];
         [self refreshRefreshButtonFrame];
@@ -733,6 +770,7 @@
     [super refreshMoreButtonHiddenOrRestore:hidden];
     [self refreshBulletinButtonFrame];
     [self refreshPictureInPictureButtonFrame];
+    [self refreshCastButtonFrame];
     [self refreshOnlineListButtonFrame];
 }
 

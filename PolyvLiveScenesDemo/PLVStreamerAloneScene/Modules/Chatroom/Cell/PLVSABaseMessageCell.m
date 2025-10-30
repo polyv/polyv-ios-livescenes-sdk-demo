@@ -43,7 +43,7 @@
 }
 
 - (BOOL)canBecomeFirstResponder {
-    return (self.allowCopy || self.allowReply);
+    return (self.allowCopy || self.allowReply || self.allowPinMessage || self.allowBanUser || self.allowKickUser);
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
@@ -57,6 +57,12 @@
     if (self.allowPinMessage && (action == @selector(pinMessage:))) {
         canPerform = YES;
     }
+    if (self.allowBanUser && (action == @selector(banUser:))) {
+        canPerform = YES;
+    }
+    if (self.allowKickUser && (action == @selector(kickUser:))) {
+        canPerform = YES;
+    }
     return canPerform;
 }
 
@@ -68,8 +74,11 @@
     UIMenuItem *copyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"复制") action:@selector(customCopy:)];
     UIMenuItem *replyMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"回复") action:@selector(reply:)];
     UIMenuItem *pinMsgMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"上墙") action:@selector(pinMessage:)];
+    UIMenuItem *banUserMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"禁言") action:@selector(banUser:)];
+    UIMenuItem *kickUserMenuItem = [[UIMenuItem alloc] initWithTitle:PLVLocalizedString(@"踢出") action:@selector(kickUser:)];
+    
     // 是否含有严禁词并且发送失败时
-    NSMutableArray *menuItems = [NSMutableArray arrayWithCapacity:3];
+    NSMutableArray *menuItems = [NSMutableArray arrayWithCapacity:5];
     if (self.model.isProhibitMsg && self.model.prohibitWord) {
         [menuItems addObject:copyMenuItem];
     } else {
@@ -77,6 +86,12 @@
     }
     if (self.allowPinMessage) {
         [menuItems addObject:pinMsgMenuItem];
+    }
+    if (self.allowBanUser) {
+        [menuItems addObject:banUserMenuItem];
+    }
+    if (self.allowKickUser) {
+        [menuItems addObject:kickUserMenuItem];
     }
     UIMenuController *menuController = [UIMenuController sharedMenuController];
     [menuController setMenuItems:[menuItems copy]];
@@ -103,18 +118,33 @@
     }
 }
 
+- (void)banUser:(id)sender {
+    if (self.banUserHandler) {
+        self.banUserHandler(self.model);
+    }
+}
+
+- (void)kickUser:(id)sender {
+    if (self.kickUserHandler) {
+        self.kickUserHandler(self.model);
+    }
+}
+
 #pragma mark Gesture
 
 - (void)longPressAction:(id)sender {
     if (!self.allowCopy &&
-        !self.allowReply) {
+        !self.allowReply &&
+        !self.allowPinMessage &&
+        !self.allowBanUser &&
+        !self.allowKickUser) {
         return;
     }
     [self becomeFirstResponder];
     [self setMenuItem];
     
     UIMenuController *menuController = [UIMenuController sharedMenuController];
-    CGRect rect = CGRectMake(0, 0, 105, 42);
+    CGRect rect = CGRectMake(0, 0, 165, 42); // 增加宽度以适应更多按钮
     [menuController setTargetRect:rect inView:self];
     [menuController setMenuVisible:YES animated:YES];
 }

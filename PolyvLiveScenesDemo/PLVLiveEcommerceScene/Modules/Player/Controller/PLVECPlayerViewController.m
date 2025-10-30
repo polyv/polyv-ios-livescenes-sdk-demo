@@ -733,12 +733,11 @@ PLVPlayerPresenterDelegate
 }
 
 /// 直播播放器 ‘码率可选项、当前码率、线路可选数、当前线路‘ 发生改变
-- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter codeRateOptions:(NSArray <NSString *> *)codeRateOptions currentCodeRate:(NSString *)currentCodeRate lineNum:(NSInteger)lineNum currentLineIndex:(NSInteger)currentLineIndex{
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter currentDefinitionUrl:(NSString *)currentDefinitionUrl definitionsArray:(NSArray<NSDictionary *> *)definitionsArray codeRateOptions:(NSArray<NSString *> *)codeRateOptions currentCodeRate:(NSString *)currentCodeRate lineNum:(NSInteger)lineNum currentLineIndex:(NSInteger)currentLineIndex{
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:codeRateItems:codeRate:lines:line:noDelayWatchMode:)]) {
         [self.delegate playerController:self codeRateItems:codeRateOptions codeRate:currentCodeRate lines:lineNum line:currentLineIndex noDelayWatchMode:playerPresenter.noDelayWatchMode];
     }
 }
-
 - (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter downloadProgress:(CGFloat)downloadProgress playedProgress:(CGFloat)playedProgress playedTimeString:(NSString *)playedTimeString durationTimeString:(NSString *)durationTimeString {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(updateDowloadProgress:playedProgress:duration:currentPlaybackTimeInterval:currentPlaybackTime:durationTime:)]) {
@@ -857,6 +856,12 @@ PLVPlayerPresenterDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerController:pictureInPicturePlayingStateDidChange:)]) {
         [self.delegate playerController:self pictureInPicturePlayingStateDidChange:playing];
     }
+}
+
+#pragma mark - [ Public Methods ]
+
+- (void)updateTestModeStatus:(BOOL)testModeStatus {
+    [self.playerPresenter updateTestModeStatus:testModeStatus];
 }
 
 @end

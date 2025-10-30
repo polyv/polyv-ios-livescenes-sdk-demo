@@ -67,9 +67,14 @@
         
         CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
         self.moreButton.frame = CGRectMake(viewWidth - rightPadding - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
-        self.pictureInPictureButton.frame = CGRectMake(self.moreButton.frame.origin.x - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
-        [self refreshPictureInPictureButtonFrame];
+        self.castButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame) - 44 - 5, toppadding, backButtonSize.width, backButtonSize.height + 5);
+        if (self.castButton.hidden) {
+            self.pictureInPictureButton.frame = CGRectMake(self.moreButton.frame.origin.x - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
+        } else {
+            self.pictureInPictureButton.frame = CGRectMake(self.castButton.frame.origin.x - backButtonSize.width, toppadding, backButtonSize.width, backButtonSize.height);
+        }
         
+        [self refreshPictureInPictureButtonFrame];
         
         // 底部UI
         CGFloat bottomShadowLayerHeight = 70.0;
@@ -122,6 +127,11 @@
     CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
     CGFloat moreBtnFrameX = viewWidth - rightPadding - buttonSize.width;
     CGFloat pipFrameX = self.moreButton.hidden ? moreBtnFrameX : moreBtnFrameX - buttonSize.width;
+    self.castButton.hidden = YES;
+    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
+        self.castButton.hidden = NO;
+    }
+    pipFrameX = self.castButton.hidden ? pipFrameX : self.castButton.frame.origin.x - buttonSize.width;
     self.pictureInPictureButton.frame = CGRectMake(pipFrameX, toppadding, buttonSize.width, buttonSize.height);
 }
 

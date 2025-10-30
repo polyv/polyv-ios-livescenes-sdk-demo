@@ -456,7 +456,7 @@ UITableViewDataSource
         [self addObserver];
         
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-        self.playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
+        self.playbackEnable = roomData.videoType == PLVChannelVideoType_Playback;
         if (!self.playbackEnable) {
             [[PLVLCChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         }

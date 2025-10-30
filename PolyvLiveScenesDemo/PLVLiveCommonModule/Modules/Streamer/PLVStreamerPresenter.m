@@ -95,6 +95,10 @@ PLVChannelClassManagerDelegate
     return self;
 }
 
+- (void)setVideoMaterialURL:(NSURL *)fileUrl{
+    [self.rtcStreamerManager setVideoMaterialURL:fileUrl];
+}
+
 #pragma mark - [ Public Methods ]
 #pragma mark 基础调用
 - (void)prepareLocalMicCameraPreviewCompletion:(void (^)(BOOL, BOOL))completion {
@@ -293,6 +297,14 @@ PLVChannelClassManagerDelegate
     [self.rtcStreamerManager setStickerImage:stickerImage];
 }
 
+- (void)setStickerAudioPacket:(NSDictionary *)audioPacket{
+    [self.rtcStreamerManager setStickerAudioPacket:audioPacket];
+}
+
+- (void)setStickerAudioVolume:(CGFloat)stickerVolume microphoneVolume:(CGFloat)micVolume{
+    [self.rtcStreamerManager setStickerAudioVolume:stickerVolume microphoneVolume:micVolume];
+}
+
 - (void)setAIMattingMode:(PLVBLinkMicAIMattingMode)mode image:(UIImage *)matBgImage{
     [self.rtcStreamerManager setAIMattingMode:mode image:matBgImage];
 }
@@ -319,6 +331,10 @@ PLVChannelClassManagerDelegate
 
 - (void)setupMixLayoutType:(PLVRTCStreamerMixLayoutType)mixLayoutType{
     [self.rtcStreamerManager setupMixLayoutType:mixLayoutType];
+}
+
+- (void)setupMixLayoutBackgroundImageUrl:(nullable NSString *)backgroundImageUrl {
+    [self.rtcStreamerManager setupMixLayoutBackgroundImageUrl:backgroundImageUrl];
 }
 
 #pragma mark 本地硬件管理
@@ -867,6 +883,10 @@ PLVChannelClassManagerDelegate
 
 - (PLVRTCStreamerMixLayoutType)mixLayoutType {
     return self.rtcStreamerManager.mixLayoutType;
+}
+
+- (NSString *)mixLayoutBackgroundImageUrl {
+    return self.rtcStreamerManager.mixLayoutBackgroundImageUrl;
 }
 
 - (PLVBLinkMicNoiseCancellationLevel)noiseCancellationLevel {
@@ -2621,6 +2641,14 @@ PLVChannelClassManagerDelegate
     })
 }
 
+- (void)callbackForUpdateMixLayoutBackgroundImageUrlDidOccurError:(NSString *)url {
+    plv_dispatch_main_async_safe(^{
+        if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:updateMixLayoutBackgroundImageUrlDidOccurError:)]) {
+            [self.delegate plvStreamerPresenter:self updateMixLayoutBackgroundImageUrlDidOccurError:url];
+        }
+    })
+}
+
 - (void)callbackForLocalUserMicOpenChanged{
     plv_dispatch_main_async_safe(^{
         if ([self.delegate respondsToSelector:@selector(plvStreamerPresenter:localUserMicOpenChanged:)]) {
@@ -2997,6 +3025,10 @@ PLVChannelClassManagerDelegate
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager updateMixLayoutDidOccurError:(PLVRTCStreamerMixLayoutType)type {
     [self callbackForUpdateMixLayoutDidOccurError:type];
+}
+
+- (void)plvRTCStreamerManager:(PLVRTCStreamerManager *)manager updateMixLayoutBackgroundImageUrlDidOccurError:(NSString *)url {
+    [self callbackForUpdateMixLayoutBackgroundImageUrlDidOccurError:url];
 }
 
 - (void)plvRTCStreamerManager:(PLVRTCStreamerManager * _Nonnull)manager didJoinedOfUid:(NSString *)uid{

@@ -57,6 +57,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (UIImage *)imageForChatroomResource:(NSString *)imageName;
 
++ (UIImage *)imageForCastResource:(NSString *)imageName;
+
 + (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url;
 
 + (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url placeholderImage:(nullable UIImage *)placeholder;

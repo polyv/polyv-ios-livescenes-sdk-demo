@@ -194,6 +194,8 @@
 
 "选项标题" = "option title";
 
+"投屏中不允许进行连麦" = "It is not allowed to connect wheat in the projection screen";
+
 /**  直播间  */
 "直播介绍" = "Intro";
 "边看边买" = "Buy";

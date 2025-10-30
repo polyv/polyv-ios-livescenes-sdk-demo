@@ -141,6 +141,10 @@
     }
     content = [content stringByAppendingString:@"："];
     
+    if (![PLVFdUtil checkStringUseable:content]) {
+        content = @"";
+    }
+    
     NSAttributedString *nickNameString = [[NSAttributedString alloc] initWithString:content attributes:nickNameAttDict];
     NSAttributedString *conentString = [[NSAttributedString alloc] initWithString:message.content attributes:contentAttDict];
     //云课堂小表情显示需要变大 用font 22；

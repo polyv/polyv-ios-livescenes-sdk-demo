@@ -822,7 +822,7 @@ PLVECWelfareLotteryWidgetViewDelegate
         self.giftButton.frame = self.moreButton.hidden ? self.moreButton.frame : CGRectMake(CGRectGetMinX(self.moreButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         self.shoppingCartButton.frame = self.giftButton.hidden ? self.giftButton.frame : CGRectMake(CGRectGetMinX(self.giftButton.frame)-48, CGRectGetMinY(self.moreButton.frame), buttonWidth, buttonWidth);
         // 点赞按钮
-        self.likeButtonView.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
+        self.likeButtonView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - PLVECLikeButtonViewWidth * 0.5, CGRectGetMinY(self.moreButton.frame)-PLVECLikeButtonViewHeight-5, PLVECLikeButtonViewWidth, PLVECLikeButtonViewHeight);
         
         { // 右侧悬浮挂件位置
             CGFloat originX = CGRectGetMinX(self.moreButton.frame);

@@ -167,6 +167,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 退到后台 自动开启小窗
 @property (nonatomic, assign) BOOL updaeCanAutoStartPictureInPicture;
 
+/// 更新测试模式状态
+/// @param testModeStatus 测试状态模式
+- (void)updateTestModeStatus:(BOOL)testModeStatus;
+
 /// 播放直播/回放
 - (void)play;
 

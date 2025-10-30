@@ -29,6 +29,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param model 需要上墙消息数据模型
 - (void)chatroomListView:(PLVSAChatroomListView *)listView didTapPinMessageMenuItem:(PLVChatModel *)model;
 
+/// 点击 禁言用户 的回调
+/// @param model 需要禁言的用户消息数据模型
+- (void)chatroomListView:(PLVSAChatroomListView *)listView didTapBanUserMenuItem:(PLVChatModel *)model;
+
+/// 点击 踢出用户 的回调
+/// @param model 需要踢出的用户消息数据模型
+- (void)chatroomListView:(PLVSAChatroomListView *)listView didTapKickUserMenuItem:(PLVChatModel *)model;
+
 @end
 
 /// 直播间聊天消息列表视图

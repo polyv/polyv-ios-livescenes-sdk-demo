@@ -133,6 +133,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前播放器是否播放中
 @property (nonatomic, assign, readonly) BOOL isPlaying;
 
+/// 播放器是否正在播放暖场视频
+@property (nonatomic, assign, readonly) BOOL playingWarmUpVideo;
+
 #pragma mark UI
 /// 外部传入的，负责承载播放器画面的父视图
 ///
@@ -228,6 +231,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 关闭画中画功能
 - (void)stopPictureInPicture;
+
+/// 更新测试模式状态
+/// @param testModeStatus 测试状态模式
+- (void)updateTestModeStatus:(BOOL)testModeStatus;
 
 #pragma mark 非直播相关
 /// 跳至某个时间点 (单位: 秒)
@@ -327,7 +334,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// 直播播放器 ‘码率可选项、当前码率、线路可选数、当前线路‘ 发生改变
 ///
 /// @param playerPresenter 播放器管理器
-- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter codeRateOptions:(NSArray <NSString *> *)codeRateOptions currentCodeRate:(NSString *)currentCodeRate lineNum:(NSInteger)lineNum currentLineIndex:(NSInteger)currentLineIndex;
+- (void)playerPresenter:(PLVPlayerPresenter *)playerPresenter
+   currentDefinitionUrl:(NSString *)currentDefinitionUrl
+       definitionsArray:(NSArray<NSDictionary *> *)definitionsArray
+        codeRateOptions:(NSArray <NSString *> *)codeRateOptions
+        currentCodeRate:(NSString *)currentCodeRate
+                lineNum:(NSInteger)lineNum
+       currentLineIndex:(NSInteger)currentLineIndex;
 
 /// 直播播放器 需获知外部 ‘当前是否正在连麦’
 ///

@@ -12,10 +12,15 @@
 #import "PLVStickerTextTemplateView.h"
 #import "PLVStickerTextEditorView.h"
 #import <Photos/Photos.h>
+#import <AVFoundation/AVFoundation.h>
 #import "PLVImagePickerViewController.h"
 #import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
 
+#import <Photos/Photos.h>
+#import <AVFoundation/AVFoundation.h>
+#import <objc/runtime.h>
+#import "PLVImagePickerViewController.h"
 
 @interface PLVStickerManager () <
     PLVStickerTypeSelectionViewDelegate,
@@ -29,6 +34,8 @@
 @property (nonatomic, weak) PLVStickerTextView *currentEditingTextView;
 @property (nonatomic, strong) PLVStickerTextTemplateView *currentTemplateView; // 当前显示的模版界面
 @property (nonatomic, weak) PLVStickerTextView *pendingDeleteTextView; // 待删除的文本贴纸
+
+@property (nonatomic, strong) CADisplayLink *displayLink;
 
 @end
 
@@ -45,6 +52,8 @@
     if (self) {
         _parentView = parentView;
         [self setupCanvas];
+
+        [self setupModule];
     }
     return self;
 }
@@ -57,6 +66,10 @@
     self.stickerCanvas.delegate = self;
     self.stickerCanvas.frame = self.parentView.bounds;
     self.stickerCanvas.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+}
+
+- (void)setupModule{
+    [self startDisplayLink];
 }
 
 - (PLVStickerTextView *)currentEditingTextView{
@@ -74,6 +87,11 @@
     PLVStickerTypeSelectionView *selectionView = [[PLVStickerTypeSelectionView alloc] initWithSheetHeight:240 sheetLandscapeWidth:375];
     selectionView.delegate = self;
     [selectionView showInView:self.parentView];
+}
+
+- (void)showStickerTypeForVideo{
+    //
+    [self showVideoPicker];
 }
 
 - (UIImage *)generateStickerImage {
@@ -118,6 +136,59 @@
             }
             [weakSelf.stickerCanvas showCanvasWithImages:photos];
         }
+    }];
+     
+    [imagePickerVC setImagePickerControllerDidCancelHandle:^{
+        //实现图片选择取消回调
+    }];
+    
+    [self presentImagePickerController:imagePickerVC];
+}
+
+// 显示视频选择器
+- (void)showVideoPicker{
+    // 检查是否已经有视频贴图
+    if (self.stickerCanvas.hasVideo) {
+        [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"只能添加一个视频") inView:self.parentView];
+        return;
+    }
+    
+    PLVImagePickerViewController *imagePickerVC = [[PLVImagePickerViewController alloc] initWithColumnNumber:4];
+    imagePickerVC.allowPickingOriginalPhoto = NO;
+    imagePickerVC.allowPickingVideo = YES;
+    imagePickerVC.allowPickingImage = NO;
+    imagePickerVC.allowTakePicture = NO;
+    imagePickerVC.allowTakeVideo = NO;
+    imagePickerVC.maxImagesCount = 1;
+    __weak typeof(self) weakSelf = self;
+    
+    [imagePickerVC setDidFinishPickingVideoHandle:^(UIImage *coverImage, PHAsset *asset) {
+        if (coverImage){
+            // 不使用懒加载初始化
+            if (!weakSelf.stickerCanvas){
+                weakSelf.stickerCanvas = [[PLVStickerCanvas alloc] init];
+                weakSelf.stickerCanvas.delegate = self;
+            }
+            // 确保 stickerCanvas 已添加到视图层次结构
+            if (!weakSelf.stickerCanvas.superview) {
+                [weakSelf.parentView addSubview:self.stickerCanvas];
+                weakSelf.stickerCanvas.frame = self.parentView.bounds;
+                [weakSelf.stickerCanvas layoutIfNeeded];
+            }
+            
+            // 从asset 从获取视频原始URL 地址
+            [[PLVImageManager manager] requestVideoURLWithAsset:asset success:^(NSURL *videoURL) {
+                // 主线程执行
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [weakSelf.stickerCanvas addVideoStickerWithURL:videoURL];
+                });
+            } failure:^(NSDictionary *info) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                [PLVSAUtils showToastWithMessage:@"获取视频URL失败" inView:weakSelf.parentView];
+                });
+            }];
+        }
+        
     }];
      
     [imagePickerVC setImagePickerControllerDidCancelHandle:^{
@@ -336,6 +407,18 @@
     // 保持模版界面显示，不做任何修改
 }
 
+- (void)stickerCanvasDidUpdateAudioPacket:(PLVStickerCanvas *)stickerCanvas audioPacket:(NSDictionary *)audioPacket {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerManager:didUpdateAudioPacket:)]) {
+        [self.delegate stickerManager:self didUpdateAudioPacket:audioPacket];
+    }
+}
+
+- (void)stickerCanvas:(PLVStickerCanvas *)stickerCanvas didChangeAudioVolume:(CGFloat)stickerVolume microphoneVolume:(CGFloat)micVolume {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(stickerManager:didChangeAudioVolume:microphoneVolume:)]) {
+        [self.delegate stickerManager:self didChangeAudioVolume:stickerVolume microphoneVolume:micVolume];
+    }
+}
+
 #pragma mark - Helper Methods
 
 - (void)showTextTemplateSelection {
@@ -363,6 +446,30 @@
     // 移除最后添加的贴纸（通常是最新的一个）
     if (self.currentEditingTextView){
         [self.currentEditingTextView removeFromSuperview];
+    }
+}
+
+- (void)startDisplayLink {
+    if (!_displayLink) {
+        _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(displayLinkCallback:)];
+        [_displayLink addToRunLoop:[NSRunLoop mainRunLoop] forMode:NSRunLoopCommonModes];
+        // 发送周期 每25
+        _displayLink.preferredFramesPerSecond = 20;
+    }
+}
+
+- (void)stopDisplayLink {
+    if (_displayLink) {
+        [_displayLink invalidate];
+        _displayLink = nil;
+    }
+}
+
+- (void)displayLinkCallback:(CADisplayLink *)sender {
+    // 产生图片并且回调
+    UIImage *image = [self.stickerCanvas generateImageWithTransparentBackground];
+    if (image){
+        [self.delegate stickerManager:self didGenerateImage:image];
     }
 }
 

@@ -9,6 +9,7 @@
 #import "PLVLSNoiseCancellationModeSwitchSheet.h"
 #import "PLVLSBottomSheet.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVLSUtils.h"
 
 @interface PLVLSNoiseCancellationModeSwitchButton : UIView
 
@@ -115,7 +116,7 @@
 - (UIImageView *)selectedImageView {
     if (!_selectedImageView) {
         _selectedImageView = [[UIImageView alloc] init];
-        _selectedImageView.image = [UIImage imageNamed:@"plvsa_liveroom_selected_icon"];
+        _selectedImageView.image = [PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_selected_icon"];
         _selectedImageView.hidden = YES;
     }
     return _selectedImageView;

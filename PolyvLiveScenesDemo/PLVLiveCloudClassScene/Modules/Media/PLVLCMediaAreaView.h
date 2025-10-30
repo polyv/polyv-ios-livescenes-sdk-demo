@@ -13,6 +13,8 @@
 #import "PLVLCRetryPlayView.h"
 #import "PLVLiveMarqueeView.h"
 #import "PLVLCDocumentPaintModeView.h"
+#import "PLVCastClient.h"
+
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 #define PPTPlayerViewScale (9.0 / 16.0)
@@ -75,6 +77,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 是否播放中
 @property (nonatomic, assign, readonly) BOOL isPlaying;
 
+/// 是否正在播放暖场视频
+@property (nonatomic, assign, readonly) BOOL playingWarmUpVideo;
+
 /// 当前播放器类型
 ///
 /// @note 可通过 [switchAreaViewLiveSceneTypeTo:] 方法进行切换；仅适用在视频类型为 ‘直播’ 时使用此类型值
@@ -134,6 +139,11 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 ///
 /// @note 便于外部作图层管理
 @property (nonatomic, strong, readonly) PLVLCMediaFloatView * floatView;
+
+/// 投屏模块
+///
+/// @note DLNA投屏功能模块
+@property (nonatomic, strong) PLVCastClient *castClient;
 
 /// 播放重试视图（用于直播回放场景，播放中断时显示提示视图）
 ///
@@ -227,6 +237,10 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// 显示规则列表
 - (void)showOnlineListRuleListView;
 
+/// 更新测试模式状态
+/// @param testModeStatus 测试状态模式
+- (void)updateTestModeStatus:(BOOL)testModeStatus;
+
 @end
 
 @protocol PLVLCMediaAreaViewDelegate <NSObject>
@@ -299,6 +313,9 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 /// [无延迟直播] 无延迟直播 ‘开始结束状态’ 发生改变
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveStartUpdate:(BOOL)noDelayLiveStart;
+
+/// [无延迟直播] 无延迟直播 ‘开始投屏或结束投屏’ 投屏时需要退出rtc，投屏结束后再进入rtc
+- (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveCastPlay:(BOOL)play;
 
 /// [无延迟直播] 无延迟观看模式 发生改变
 ///

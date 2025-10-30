@@ -37,6 +37,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 文本贴纸进入删除模式
 - (void)stickerCanvasTextViewDidEnterDeleteMode:(PLVStickerTextView *)textView;
 
+/// 回调音频数据包
+- (void)stickerCanvasDidUpdateAudioPacket:(PLVStickerCanvas *)stickerCanvas audioPacket:(NSDictionary *)audioPacket;
+
+/// 音频音量设置改变回调
+- (void)stickerCanvas:(PLVStickerCanvas *)stickerCanvas didChangeAudioVolume:(CGFloat)stickerVolume microphoneVolume:(CGFloat)micVolume;
+
 @end
 
 @interface PLVStickerCanvas : UIView
@@ -55,11 +61,17 @@ NS_ASSUME_NONNULL_BEGIN
 /// 已经达到文本贴图数量限制
 @property (nonatomic, readonly) BOOL  hasMaxTextCount;
 
+/// 是否已经有视频贴图
+@property (nonatomic, readonly) BOOL hasVideo;
+
 /// 展示贴图画布
 - (void)showCanvasWithImages:(NSArray<UIImage *> *)images;
 
 /// 添加文本贴图
 - (void)addTextStickerWithModel:(PLVStickerTextModel *)textModel;
+
+/// 添加视频贴图
+- (void)addVideoStickerWithURL:(NSURL *)fileURL;
 
 /// 生成带透明通道的图片，子控件不透明
 - (UIImage *)generateImageWithTransparentBackground;

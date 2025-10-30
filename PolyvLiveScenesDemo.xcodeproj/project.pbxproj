@@ -385,6 +385,28 @@
 		00FC647028518ACB00FBCB1C /* PLVChatroomPlaybackPresenter.m in Sources */ = {isa = PBXBuildFile; fileRef = 00FC646C28518ACB00FBCB1C /* PLVChatroomPlaybackPresenter.m */; };
 		00FC64732851DE4C00FBCB1C /* PLVLCChatroomPlaybackViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00FC64722851DE4C00FBCB1C /* PLVLCChatroomPlaybackViewModel.m */; };
 		00FC64742851DE4C00FBCB1C /* PLVLCChatroomPlaybackViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 00FC64722851DE4C00FBCB1C /* PLVLCChatroomPlaybackViewModel.m */; };
+		041C08CB2E0CF60700F7C26C /* PLVCastPlayControlView.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C22E0CF60700F7C26C /* PLVCastPlayControlView.m */; };
+		041C08CC2E0CF60700F7C26C /* PLVCastDeviceCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C42E0CF60700F7C26C /* PLVCastDeviceCell.m */; };
+		041C08CD2E0CF60700F7C26C /* PLVCastMirrorTipsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C62E0CF60700F7C26C /* PLVCastMirrorTipsView.m */; };
+		041C08CE2E0CF60700F7C26C /* PLVCastActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C02E0CF60700F7C26C /* PLVCastActionSheet.m */; };
+		041C08CF2E0CF60700F7C26C /* PLVCastClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C92E0CF60700F7C26C /* PLVCastClient.m */; };
+		041C08D02E0CF60700F7C26C /* PLVCastCoreBusinessManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08B42E0CF60700F7C26C /* PLVCastCoreBusinessManager.m */; };
+		041C08D12E0CF60700F7C26C /* PLVNetworkDetactor.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08BD2E0CF60700F7C26C /* PLVNetworkDetactor.m */; };
+		041C08D22E0CF60700F7C26C /* PLVCastDefinitionModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08BA2E0CF60700F7C26C /* PLVCastDefinitionModel.m */; };
+		041C08D32E0CF60700F7C26C /* PLVCastDeviceViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08B12E0CF60700F7C26C /* PLVCastDeviceViewController.m */; };
+		041C08D42E0CF60700F7C26C /* PLVCastCoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08B62E0CF60700F7C26C /* PLVCastCoreManager.m */; };
+		041C08D52E0CF60700F7C26C /* PLVCastPlayControlView.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C22E0CF60700F7C26C /* PLVCastPlayControlView.m */; };
+		041C08D62E0CF60700F7C26C /* PLVCastDeviceCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C42E0CF60700F7C26C /* PLVCastDeviceCell.m */; };
+		041C08D72E0CF60700F7C26C /* PLVCastMirrorTipsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C62E0CF60700F7C26C /* PLVCastMirrorTipsView.m */; };
+		041C08D82E0CF60700F7C26C /* PLVCastActionSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C02E0CF60700F7C26C /* PLVCastActionSheet.m */; };
+		041C08D92E0CF60700F7C26C /* PLVCastClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08C92E0CF60700F7C26C /* PLVCastClient.m */; };
+		041C08DA2E0CF60700F7C26C /* PLVCastCoreBusinessManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08B42E0CF60700F7C26C /* PLVCastCoreBusinessManager.m */; };
+		041C08DB2E0CF60700F7C26C /* PLVNetworkDetactor.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08BD2E0CF60700F7C26C /* PLVNetworkDetactor.m */; };
+		041C08DC2E0CF60700F7C26C /* PLVCastDefinitionModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08BA2E0CF60700F7C26C /* PLVCastDefinitionModel.m */; };
+		041C08DD2E0CF60700F7C26C /* PLVCastDeviceViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08B12E0CF60700F7C26C /* PLVCastDeviceViewController.m */; };
+		041C08DE2E0CF60700F7C26C /* PLVCastCoreManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 041C08B62E0CF60700F7C26C /* PLVCastCoreManager.m */; };
+		041C08E12E0D4B5E00F7C26C /* PLVCast.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 041C08E02E0D4B5E00F7C26C /* PLVCast.bundle */; };
+		041C08E22E0D4B5E00F7C26C /* PLVCast.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 041C08E02E0D4B5E00F7C26C /* PLVCast.bundle */; };
 		04258BC0267846BF009F1287 /* PLVLoginTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 04258BBF267846BF009F1287 /* PLVLoginTextField.m */; };
 		04258BC4267857B0009F1287 /* PLVLoginTextField.m in Sources */ = {isa = PBXBuildFile; fileRef = 04258BBF267846BF009F1287 /* PLVLoginTextField.m */; };
 		0425FFD4292C9FBC0004E55E /* PLVLiveMarqueeAnimationManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 0425FFCE292C9FBC0004E55E /* PLVLiveMarqueeAnimationManager.m */; };
@@ -426,6 +448,12 @@
 		04543E812D718B6400C1DAB4 /* PLVECPIPPlaysetPopView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04543E802D718B6400C1DAB4 /* PLVECPIPPlaysetPopView.m */; };
 		045715C627E31FB600FBA76A /* PLVLCRewardMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 045715C527E31FB600FBA76A /* PLVLCRewardMessageCell.m */; };
 		045715C727E31FB600FBA76A /* PLVLCRewardMessageCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 045715C527E31FB600FBA76A /* PLVLCRewardMessageCell.m */; };
+		045E944E2E4DD58F0044E449 /* PLVStickerVideoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045E944D2E4DD58F0044E449 /* PLVStickerVideoView.m */; };
+		045E944F2E4DD58F0044E449 /* PLVStickerVideoView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045E944D2E4DD58F0044E449 /* PLVStickerVideoView.m */; };
+		045E94522E4DD94E0044E449 /* PLVStickerPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 045E94512E4DD94E0044E449 /* PLVStickerPlayer.m */; };
+		045E94532E4DD94E0044E449 /* PLVStickerPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = 045E94512E4DD94E0044E449 /* PLVStickerPlayer.m */; };
+		045E94562E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045E94552E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m */; };
+		045E94572E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045E94552E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m */; };
 		045EF2482664E2AE009275C4 /* PLVSASlideRightTipsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045EF2472664E2AE009275C4 /* PLVSASlideRightTipsView.m */; };
 		045EF2492664E2AE009275C4 /* PLVSASlideRightTipsView.m in Sources */ = {isa = PBXBuildFile; fileRef = 045EF2472664E2AE009275C4 /* PLVSASlideRightTipsView.m */; };
 		0463294E2DAD12A10005CD1E /* PLVVirtualBackgroudCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 046329472DAD12A10005CD1E /* PLVVirtualBackgroudCell.m */; };
@@ -442,6 +470,8 @@
 		0463295D2DAD15420005CD1E /* PLVVirtualBackgroundUtil.m in Sources */ = {isa = PBXBuildFile; fileRef = 0463295B2DAD15420005CD1E /* PLVVirtualBackgroundUtil.m */; };
 		046329602DAD23020005CD1E /* PLVVirtualBackgroudBaseSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 0463295F2DAD23020005CD1E /* PLVVirtualBackgroudBaseSheet.m */; };
 		046329612DAD23020005CD1E /* PLVVirtualBackgroudBaseSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = 0463295F2DAD23020005CD1E /* PLVVirtualBackgroudBaseSheet.m */; };
+		04673EE52E5C4F16008C144F /* PLVStickerVideoControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 04673EE42E5C4F16008C144F /* PLVStickerVideoControl.m */; };
+		04673EE62E5C4F16008C144F /* PLVStickerVideoControl.m in Sources */ = {isa = PBXBuildFile; fileRef = 04673EE42E5C4F16008C144F /* PLVStickerVideoControl.m */; };
 		0469B6A72DE8377E0090FC79 /* PLVDevMonitorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0469B6A62DE8377E0090FC79 /* PLVDevMonitorView.m */; };
 		0469B6A82DE8377E0090FC79 /* PLVDevMonitorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0469B6A62DE8377E0090FC79 /* PLVDevMonitorView.m */; };
 		0469B6A92DE8377E0090FC79 /* PLVDevMonitorView.m in Sources */ = {isa = PBXBuildFile; fileRef = 0469B6A62DE8377E0090FC79 /* PLVDevMonitorView.m */; };
@@ -510,6 +540,8 @@
 		04B1D1D32791261E007894C5 /* PLVRewardDisplayManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B1D1AD2791261E007894C5 /* PLVRewardDisplayManager.m */; };
 		04B1D1D42791261E007894C5 /* PLVRewardDisplayManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B1D1AD2791261E007894C5 /* PLVRewardDisplayManager.m */; };
 		04B1D1D52791261E007894C5 /* PLVRewardDisplayManager.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B1D1AD2791261E007894C5 /* PLVRewardDisplayManager.m */; };
+		04B374542E5DC46F00C2987A /* PLVStickerAudioSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B374532E5DC46F00C2987A /* PLVStickerAudioSet.m */; };
+		04B374552E5DC46F00C2987A /* PLVStickerAudioSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 04B374532E5DC46F00C2987A /* PLVStickerAudioSet.m */; };
 		04BCE2F428A6308200B07F04 /* PLVBeautyViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BCE2F328A6308200B07F04 /* PLVBeautyViewModel.m */; };
 		04BCE2F528A630A300B07F04 /* PLVBeautyViewModel.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BCE2F328A6308200B07F04 /* PLVBeautyViewModel.m */; };
 		04BDBB4E269D3D1500287C97 /* PLVLCRetryPlayView.m in Sources */ = {isa = PBXBuildFile; fileRef = 04BDBB4D269D3D1500287C97 /* PLVLCRetryPlayView.m */; };
@@ -935,7 +967,6 @@
 		36E8E14D26DCD2FB00DAEE02 /* PLVAdvertView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0F226DCD2FB00DAEE02 /* PLVAdvertView.m */; };
 		36E8E14E26DCD2FB00DAEE02 /* PLVAdvertView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0F226DCD2FB00DAEE02 /* PLVAdvertView.m */; };
 		36E8E14F26DCD2FB00DAEE02 /* PLVAdvertView.m in Sources */ = {isa = PBXBuildFile; fileRef = 36E8E0F226DCD2FB00DAEE02 /* PLVAdvertView.m */; };
-		484B102CB05AD11B692E453C /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 978AA9499116D475C5773C4D /* Pods_PolyvLiveScenesDemo.framework */; };
 		4D02950F28601DE700C7FF4D /* PLVBusinessSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3631485327F15D3700FDF6D7 /* PLVBusinessSDK.framework */; };
 		4D02951228601DF500C7FF4D /* PLVBusinessSDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3631485327F15D3700FDF6D7 /* PLVBusinessSDK.framework */; };
 		4D1E74C6275DB59B008B7D3A /* PLVLCSectionViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 4D1E74C5275DB59B008B7D3A /* PLVLCSectionViewController.m */; };
@@ -1170,7 +1201,6 @@
 		67C43BC22803DD200050EDFA /* PLVLCBuyViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 67C43BC02803DD200050EDFA /* PLVLCBuyViewController.m */; };
 		67D700C52476807200429B55 /* WatchResource.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 67D700C42476807200429B55 /* WatchResource.bundle */; };
 		67D700C92476817500429B55 /* PLVECUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = 67D700C82476817500429B55 /* PLVECUtils.m */; };
-		8DFAB23C5CE66B5740DBC2BA /* Pods_PLVScreenShareExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 480697E8EEF0AE26EFFB148F /* Pods_PLVScreenShareExtension.framework */; };
 		8F119EF4280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F119EF3280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m */; };
 		8F119EF5280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F119EF3280D10A2008215FF /* PLVSABeautyFilterCollectionViewCell.m */; };
 		8F119EFC280EC0F0008215FF /* PLVSABeautyBaseViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 8F119EFB280EC0F0008215FF /* PLVSABeautyBaseViewController.m */; };
@@ -1297,13 +1327,15 @@
 		8FFAF0DB26712114000BBA2B /* PLVSACameraAndMicphoneStateView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFAF0D926712114000BBA2B /* PLVSACameraAndMicphoneStateView.m */; };
 		8FFAF0DE2671A8EF000BBA2B /* PLVSALinkMicGuideView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFAF0DD2671A8EF000BBA2B /* PLVSALinkMicGuideView.m */; };
 		8FFAF0DF2671A8EF000BBA2B /* PLVSALinkMicGuideView.m in Sources */ = {isa = PBXBuildFile; fileRef = 8FFAF0DD2671A8EF000BBA2B /* PLVSALinkMicGuideView.m */; };
-		BACF4DBD2835035A00E2CDD6 /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		BACF4DBE2835035A00E2CDD6 /* BuildFile in Sources */ = {isa = PBXBuildFile; };
-		BACF4DC52835E64100E2CDD6 /* BuildFile in Sources */ = {isa = PBXBuildFile; };
+		9673F3603342AD31B89C5A76 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4CE72DEEC047D8C8A2F325F1 /* Pods_PolyvLiveScenesDemo.framework */; };
+		BACF4DBD2835035A00E2CDD6 /* (null) in Sources */ = {isa = PBXBuildFile; };
+		BACF4DBE2835035A00E2CDD6 /* (null) in Sources */ = {isa = PBXBuildFile; };
+		BACF4DC52835E64100E2CDD6 /* (null) in Sources */ = {isa = PBXBuildFile; };
 		BF574404255D204500283C2D /* PLVECNewMessageView.m in Sources */ = {isa = PBXBuildFile; fileRef = BF574403255D204500283C2D /* PLVECNewMessageView.m */; };
 		BF7CFC6225BA636B0084C160 /* PLVCommodityDetailViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC5925BA636B0084C160 /* PLVCommodityDetailViewController.m */; };
 		BF7CFC6325BA636B0084C160 /* PLVCommodityPushView.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC5B25BA636B0084C160 /* PLVCommodityPushView.m */; };
 		BF7CFC6625BA636B0084C160 /* PLVECCommodityViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = BF7CFC6025BA636B0084C160 /* PLVECCommodityViewController.m */; };
+		E359A2B8AA99F03BCB35BCD1 /* Pods_PLVScreenShareExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A0AD858B0B023B8E28FC40D5 /* Pods_PLVScreenShareExtension.framework */; };
 		FA4F8BF9283DDF2200DE8C29 /* PLVLCDownloadBottomSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = FA4F8BF8283DDF2200DE8C29 /* PLVLCDownloadBottomSheet.m */; };
 		FA4F8BFA283DDF2200DE8C29 /* PLVLCDownloadBottomSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = FA4F8BF8283DDF2200DE8C29 /* PLVLCDownloadBottomSheet.m */; };
 		FA4F8BFD283E046200DE8C29 /* PLVLCBottomSheet.m in Sources */ = {isa = PBXBuildFile; fileRef = FA4F8BFC283E046200DE8C29 /* PLVLCBottomSheet.m */; };
@@ -1634,6 +1666,28 @@
 		00FC646C28518ACB00FBCB1C /* PLVChatroomPlaybackPresenter.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVChatroomPlaybackPresenter.m; sourceTree = "<group>"; };
 		00FC64712851DE4C00FBCB1C /* PLVLCChatroomPlaybackViewModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCChatroomPlaybackViewModel.h; sourceTree = "<group>"; };
 		00FC64722851DE4C00FBCB1C /* PLVLCChatroomPlaybackViewModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLCChatroomPlaybackViewModel.m; sourceTree = "<group>"; };
+		041C08B02E0CF60700F7C26C /* PLVCastDeviceViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastDeviceViewController.h; sourceTree = "<group>"; };
+		041C08B12E0CF60700F7C26C /* PLVCastDeviceViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastDeviceViewController.m; sourceTree = "<group>"; };
+		041C08B32E0CF60700F7C26C /* PLVCastCoreBusinessManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastCoreBusinessManager.h; sourceTree = "<group>"; };
+		041C08B42E0CF60700F7C26C /* PLVCastCoreBusinessManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastCoreBusinessManager.m; sourceTree = "<group>"; };
+		041C08B52E0CF60700F7C26C /* PLVCastCoreManager.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastCoreManager.h; sourceTree = "<group>"; };
+		041C08B62E0CF60700F7C26C /* PLVCastCoreManager.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastCoreManager.m; sourceTree = "<group>"; };
+		041C08B72E0CF60700F7C26C /* PLVCastNotificaion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastNotificaion.h; sourceTree = "<group>"; };
+		041C08B92E0CF60700F7C26C /* PLVCastDefinitionModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastDefinitionModel.h; sourceTree = "<group>"; };
+		041C08BA2E0CF60700F7C26C /* PLVCastDefinitionModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastDefinitionModel.m; sourceTree = "<group>"; };
+		041C08BC2E0CF60700F7C26C /* PLVNetworkDetactor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVNetworkDetactor.h; sourceTree = "<group>"; };
+		041C08BD2E0CF60700F7C26C /* PLVNetworkDetactor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVNetworkDetactor.m; sourceTree = "<group>"; };
+		041C08BF2E0CF60700F7C26C /* PLVCastActionSheet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastActionSheet.h; sourceTree = "<group>"; };
+		041C08C02E0CF60700F7C26C /* PLVCastActionSheet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastActionSheet.m; sourceTree = "<group>"; };
+		041C08C12E0CF60700F7C26C /* PLVCastPlayControlView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastPlayControlView.h; sourceTree = "<group>"; };
+		041C08C22E0CF60700F7C26C /* PLVCastPlayControlView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastPlayControlView.m; sourceTree = "<group>"; };
+		041C08C32E0CF60700F7C26C /* PLVCastDeviceCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastDeviceCell.h; sourceTree = "<group>"; };
+		041C08C42E0CF60700F7C26C /* PLVCastDeviceCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastDeviceCell.m; sourceTree = "<group>"; };
+		041C08C52E0CF60700F7C26C /* PLVCastMirrorTipsView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastMirrorTipsView.h; sourceTree = "<group>"; };
+		041C08C62E0CF60700F7C26C /* PLVCastMirrorTipsView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastMirrorTipsView.m; sourceTree = "<group>"; };
+		041C08C82E0CF60700F7C26C /* PLVCastClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVCastClient.h; sourceTree = "<group>"; };
+		041C08C92E0CF60700F7C26C /* PLVCastClient.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVCastClient.m; sourceTree = "<group>"; };
+		041C08E02E0D4B5E00F7C26C /* PLVCast.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVCast.bundle; sourceTree = "<group>"; };
 		04258BBE267846BF009F1287 /* PLVLoginTextField.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLoginTextField.h; sourceTree = "<group>"; };
 		04258BBF267846BF009F1287 /* PLVLoginTextField.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLoginTextField.m; sourceTree = "<group>"; };
 		0425FFCE292C9FBC0004E55E /* PLVLiveMarqueeAnimationManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLiveMarqueeAnimationManager.m; sourceTree = "<group>"; };
@@ -1678,6 +1732,12 @@
 		04543E802D718B6400C1DAB4 /* PLVECPIPPlaysetPopView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVECPIPPlaysetPopView.m; sourceTree = "<group>"; };
 		045715C427E31FB600FBA76A /* PLVLCRewardMessageCell.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVLCRewardMessageCell.h; sourceTree = "<group>"; };
 		045715C527E31FB600FBA76A /* PLVLCRewardMessageCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVLCRewardMessageCell.m; sourceTree = "<group>"; };
+		045E944C2E4DD58F0044E449 /* PLVStickerVideoView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVStickerVideoView.h; sourceTree = "<group>"; };
+		045E944D2E4DD58F0044E449 /* PLVStickerVideoView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVStickerVideoView.m; sourceTree = "<group>"; };
+		045E94502E4DD94E0044E449 /* PLVStickerPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVStickerPlayer.h; sourceTree = "<group>"; };
+		045E94512E4DD94E0044E449 /* PLVStickerPlayer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVStickerPlayer.m; sourceTree = "<group>"; };
+		045E94542E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVMediaPlayerSampleBufferDisplayView.h; sourceTree = "<group>"; };
+		045E94552E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVMediaPlayerSampleBufferDisplayView.m; sourceTree = "<group>"; };
 		045EF2462664E2AE009275C4 /* PLVSASlideRightTipsView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSASlideRightTipsView.h; sourceTree = "<group>"; };
 		045EF2472664E2AE009275C4 /* PLVSASlideRightTipsView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVSASlideRightTipsView.m; sourceTree = "<group>"; };
 		046329462DAD12A10005CD1E /* PLVVirtualBackgroudCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVVirtualBackgroudCell.h; sourceTree = "<group>"; };
@@ -1693,6 +1753,8 @@
 		0463295B2DAD15420005CD1E /* PLVVirtualBackgroundUtil.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVVirtualBackgroundUtil.m; sourceTree = "<group>"; };
 		0463295E2DAD23020005CD1E /* PLVVirtualBackgroudBaseSheet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVVirtualBackgroudBaseSheet.h; sourceTree = "<group>"; };
 		0463295F2DAD23020005CD1E /* PLVVirtualBackgroudBaseSheet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVVirtualBackgroudBaseSheet.m; sourceTree = "<group>"; };
+		04673EE32E5C4F16008C144F /* PLVStickerVideoControl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVStickerVideoControl.h; sourceTree = "<group>"; };
+		04673EE42E5C4F16008C144F /* PLVStickerVideoControl.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVStickerVideoControl.m; sourceTree = "<group>"; };
 		0469B6A52DE8377E0090FC79 /* PLVDevMonitorView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVDevMonitorView.h; sourceTree = "<group>"; };
 		0469B6A62DE8377E0090FC79 /* PLVDevMonitorView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVDevMonitorView.m; sourceTree = "<group>"; };
 		047C77D02795188100A89C65 /* PLVPopoverView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVPopoverView.m; sourceTree = "<group>"; };
@@ -1732,6 +1794,8 @@
 		04B1D1AB2791261E007894C5 /* PLVReward.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = PLVReward.bundle; sourceTree = "<group>"; };
 		04B1D1AC2791261E007894C5 /* PLVRewardDisplayTask.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = PLVRewardDisplayTask.h; sourceTree = "<group>"; };
 		04B1D1AD2791261E007894C5 /* PLVRewardDisplayManager.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = PLVRewardDisplayManager.m; sourceTree = "<group>"; };
+		04B374522E5DC46F00C2987A /* PLVStickerAudioSet.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVStickerAudioSet.h; sourceTree = "<group>"; };
+		04B374532E5DC46F00C2987A /* PLVStickerAudioSet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVStickerAudioSet.m; sourceTree = "<group>"; };
 		04BCE2F228A6308200B07F04 /* PLVBeautyViewModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVBeautyViewModel.h; sourceTree = "<group>"; };
 		04BCE2F328A6308200B07F04 /* PLVBeautyViewModel.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVBeautyViewModel.m; sourceTree = "<group>"; };
 		04BDBB4C269D3D1500287C97 /* PLVLCRetryPlayView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCRetryPlayView.h; sourceTree = "<group>"; };
@@ -2042,7 +2106,7 @@
 		3AFD93E604C59290FC339D1A /* Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemoUITests/Pods-PolyvLiveEcommerceDemoUITests.debug.xcconfig"; sourceTree = "<group>"; };
 		3CAD663FB81149230EFFFD29 /* Pods-PLVScreenShareExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PLVScreenShareExtension.release.xcconfig"; path = "Target Support Files/Pods-PLVScreenShareExtension/Pods-PLVScreenShareExtension.release.xcconfig"; sourceTree = "<group>"; };
 		430C9CF57975329ADA06E5C9 /* Pods_PolyvLiveEcommerceDemoUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveEcommerceDemoUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		480697E8EEF0AE26EFFB148F /* Pods_PLVScreenShareExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PLVScreenShareExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4CE72DEEC047D8C8A2F325F1 /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4D1E74C4275DB59B008B7D3A /* PLVLCSectionViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCSectionViewController.h; sourceTree = "<group>"; };
 		4D1E74C5275DB59B008B7D3A /* PLVLCSectionViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVLCSectionViewController.m; sourceTree = "<group>"; };
 		4D46919728869D2900043A4E /* PLVLCFileMessageCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVLCFileMessageCell.h; sourceTree = "<group>"; };
@@ -2456,8 +2520,8 @@
 		8FFAF0DC2671A8EF000BBA2B /* PLVSALinkMicGuideView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PLVSALinkMicGuideView.h; sourceTree = "<group>"; };
 		8FFAF0DD2671A8EF000BBA2B /* PLVSALinkMicGuideView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PLVSALinkMicGuideView.m; sourceTree = "<group>"; };
 		91BAD47C9228D092BBD97E25 /* Pods-business-liveScenes-PolyvLiveStreamerDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveStreamerDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveStreamerDemo/Pods-business-liveScenes-PolyvLiveStreamerDemo.debug.xcconfig"; sourceTree = "<group>"; };
-		978AA9499116D475C5773C4D /* Pods_PolyvLiveScenesDemo.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PolyvLiveScenesDemo.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		992E19E2694CF1F9EE51FC98 /* Pods-business-PLVScreenShareExtension.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-PLVScreenShareExtension.release.xcconfig"; path = "Target Support Files/Pods-business-PLVScreenShareExtension/Pods-business-PLVScreenShareExtension.release.xcconfig"; sourceTree = "<group>"; };
+		A0AD858B0B023B8E28FC40D5 /* Pods_PLVScreenShareExtension.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PLVScreenShareExtension.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A306B0E8EE71BAB0FC2F9D3F /* Pods-PolyvLiveEcommerceDemoUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PolyvLiveEcommerceDemoUITests.release.xcconfig"; path = "Target Support Files/Pods-PolyvLiveEcommerceDemoUITests/Pods-PolyvLiveEcommerceDemoUITests.release.xcconfig"; sourceTree = "<group>"; };
 		A80F0CB539F9A66B888935AA /* Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo/Pods-business-liveScenes-liveScenesDemo-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
 		A91828FB8B935C297A2CF557 /* Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig"; path = "Target Support Files/Pods-business-liveScenes-PolyvLiveScenesDemo/Pods-business-liveScenes-PolyvLiveScenesDemo.debug.xcconfig"; sourceTree = "<group>"; };
@@ -2544,7 +2608,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3660408B27B3AF6000557F90 /* ReplayKit.framework in Frameworks */,
-				8DFAB23C5CE66B5740DBC2BA /* Pods_PLVScreenShareExtension.framework in Frameworks */,
+				E359A2B8AA99F03BCB35BCD1 /* Pods_PLVScreenShareExtension.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2552,7 +2616,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				484B102CB05AD11B692E453C /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
+				9673F3603342AD31B89C5A76 /* Pods_PolyvLiveScenesDemo.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -3359,6 +3423,74 @@
 			path = View;
 			sourceTree = "<group>";
 		};
+		041C08B22E0CF60700F7C26C /* Controller */ = {
+			isa = PBXGroup;
+			children = (
+				041C08B02E0CF60700F7C26C /* PLVCastDeviceViewController.h */,
+				041C08B12E0CF60700F7C26C /* PLVCastDeviceViewController.m */,
+			);
+			path = Controller;
+			sourceTree = "<group>";
+		};
+		041C08B82E0CF60700F7C26C /* Manager */ = {
+			isa = PBXGroup;
+			children = (
+				041C08B32E0CF60700F7C26C /* PLVCastCoreBusinessManager.h */,
+				041C08B42E0CF60700F7C26C /* PLVCastCoreBusinessManager.m */,
+				041C08B52E0CF60700F7C26C /* PLVCastCoreManager.h */,
+				041C08B62E0CF60700F7C26C /* PLVCastCoreManager.m */,
+				041C08B72E0CF60700F7C26C /* PLVCastNotificaion.h */,
+			);
+			path = Manager;
+			sourceTree = "<group>";
+		};
+		041C08BB2E0CF60700F7C26C /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				041C08B92E0CF60700F7C26C /* PLVCastDefinitionModel.h */,
+				041C08BA2E0CF60700F7C26C /* PLVCastDefinitionModel.m */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		041C08BE2E0CF60700F7C26C /* Util */ = {
+			isa = PBXGroup;
+			children = (
+				041C08BC2E0CF60700F7C26C /* PLVNetworkDetactor.h */,
+				041C08BD2E0CF60700F7C26C /* PLVNetworkDetactor.m */,
+			);
+			path = Util;
+			sourceTree = "<group>";
+		};
+		041C08C72E0CF60700F7C26C /* View */ = {
+			isa = PBXGroup;
+			children = (
+				041C08BF2E0CF60700F7C26C /* PLVCastActionSheet.h */,
+				041C08C02E0CF60700F7C26C /* PLVCastActionSheet.m */,
+				041C08C12E0CF60700F7C26C /* PLVCastPlayControlView.h */,
+				041C08C22E0CF60700F7C26C /* PLVCastPlayControlView.m */,
+				041C08C32E0CF60700F7C26C /* PLVCastDeviceCell.h */,
+				041C08C42E0CF60700F7C26C /* PLVCastDeviceCell.m */,
+				041C08C52E0CF60700F7C26C /* PLVCastMirrorTipsView.h */,
+				041C08C62E0CF60700F7C26C /* PLVCastMirrorTipsView.m */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		041C08CA2E0CF60700F7C26C /* Cast */ = {
+			isa = PBXGroup;
+			children = (
+				041C08B22E0CF60700F7C26C /* Controller */,
+				041C08B82E0CF60700F7C26C /* Manager */,
+				041C08BB2E0CF60700F7C26C /* Model */,
+				041C08BE2E0CF60700F7C26C /* Util */,
+				041C08C72E0CF60700F7C26C /* View */,
+				041C08C82E0CF60700F7C26C /* PLVCastClient.h */,
+				041C08C92E0CF60700F7C26C /* PLVCastClient.m */,
+			);
+			path = Cast;
+			sourceTree = "<group>";
+		};
 		04258B9F267845E8009F1287 /* View */ = {
 			isa = PBXGroup;
 			children = (
@@ -3417,6 +3549,7 @@
 		0452D0492D87CA330021092C /* Sticker */ = {
 			isa = PBXGroup;
 			children = (
+				045E944B2E4DD5510044E449 /* Video */,
 				044E89A72E1D2B87001A65A1 /* Model */,
 				043B0ED42E1675C400D2D111 /* PLVStickerManager.h */,
 				043B0ED52E1675C400D2D111 /* PLVStickerManager.m */,
@@ -3440,6 +3573,23 @@
 				044E89A92E1E0225001A65A1 /* PLVStickerEffectText.m */,
 			);
 			path = Sticker;
+			sourceTree = "<group>";
+		};
+		045E944B2E4DD5510044E449 /* Video */ = {
+			isa = PBXGroup;
+			children = (
+				045E94542E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.h */,
+				045E94552E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m */,
+				045E944C2E4DD58F0044E449 /* PLVStickerVideoView.h */,
+				045E944D2E4DD58F0044E449 /* PLVStickerVideoView.m */,
+				045E94502E4DD94E0044E449 /* PLVStickerPlayer.h */,
+				045E94512E4DD94E0044E449 /* PLVStickerPlayer.m */,
+				04673EE32E5C4F16008C144F /* PLVStickerVideoControl.h */,
+				04673EE42E5C4F16008C144F /* PLVStickerVideoControl.m */,
+				04B374522E5DC46F00C2987A /* PLVStickerAudioSet.h */,
+				04B374532E5DC46F00C2987A /* PLVStickerAudioSet.m */,
+			);
+			path = Video;
 			sourceTree = "<group>";
 		};
 		045EF2452664E27D009275C4 /* Sheet */ = {
@@ -4490,6 +4640,7 @@
 		6306571224DCF13B00EAA430 /* Resource */ = {
 			isa = PBXGroup;
 			children = (
+				041C08E02E0D4B5E00F7C26C /* PLVCast.bundle */,
 				6306570F24DCF01B00EAA430 /* PLVLCUtils.h */,
 				6306571024DCF01B00EAA430 /* PLVLCUtils.m */,
 				36D19ECF2AA6FA9500BB51C3 /* PLVLCLocalizable.bundle */,
@@ -5170,6 +5321,7 @@
 		6766B8B224C97FB20037B438 /* Modules */ = {
 			isa = PBXGroup;
 			children = (
+				041C08CA2E0CF60700F7C26C /* Cast */,
 				FA4F8C03283E3E2A00DE8C29 /* Download */,
 				6766B8B324C97FD00037B438 /* Media */,
 				6385DC6A252C1972007FEBC7 /* LiveRoom */,
@@ -5359,8 +5511,8 @@
 				430C9CF57975329ADA06E5C9 /* Pods_PolyvLiveEcommerceDemoUITests.framework */,
 				6ED5072918A006C94EB83D86 /* Pods_business_liveScenes_liveScenesDemo_PolyvStreamerAloneDemo.framework */,
 				3660408A27B3AF6000557F90 /* ReplayKit.framework */,
-				480697E8EEF0AE26EFFB148F /* Pods_PLVScreenShareExtension.framework */,
-				978AA9499116D475C5773C4D /* Pods_PolyvLiveScenesDemo.framework */,
+				A0AD858B0B023B8E28FC40D5 /* Pods_PLVScreenShareExtension.framework */,
+				4CE72DEEC047D8C8A2F325F1 /* Pods_PolyvLiveScenesDemo.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -5826,6 +5978,7 @@
 				367259D92AA5C9F900382867 /* PLVECLocalizable.bundle in Resources */,
 				005F17E5264BBB410093E874 /* PLVMenu.bundle in Resources */,
 				00749FD5264CCE5700B7A7E3 /* plvlw_login_clear@2x.png in Resources */,
+				041C08E12E0D4B5E00F7C26C /* PLVCast.bundle in Resources */,
 				36136E562A18B6E700A4F1D1 /* PLVCLinkMic.bundle in Resources */,
 				005F17E9264BBB410093E874 /* PLVLinkMic.bundle in Resources */,
 				005F17EB264BBB410093E874 /* PLVLiveRoom.bundle in Resources */,
@@ -5935,6 +6088,7 @@
 				00572A71266E00730000784B /* PLVSAMember.bundle in Resources */,
 				00749FCC264CCE5600B7A7E3 /* plvlw_login_clear@3x.png in Resources */,
 				36D19EE32AA8182800BB51C3 /* PLVCMLocalizable.bundle in Resources */,
+				041C08E22E0D4B5E00F7C26C /* PLVCast.bundle in Resources */,
 				36D19ED62AA72F3700BB51C3 /* PLVSALocalizable.bundle in Resources */,
 				36B632AB283498D20036D32F /* PLVCommodity.bundle in Resources */,
 				6306571624DCF17500EAA430 /* PLVLinkMic.bundle in Resources */,
@@ -6000,9 +6154,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -6039,9 +6197,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-PolyvLiveScenesDemo/Pods-PolyvLiveScenesDemo-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -6123,6 +6285,16 @@
 				4D8F2BB527B643E200F5BCCC /* PLVLCSectionViewController.m in Sources */,
 				005F1770264BBB410093E874 /* PLVLCMediaCountdownTimeView.m in Sources */,
 				005F1771264BBB410093E874 /* PLVLCLandscapeImageCell.m in Sources */,
+				041C08D52E0CF60700F7C26C /* PLVCastPlayControlView.m in Sources */,
+				041C08D62E0CF60700F7C26C /* PLVCastDeviceCell.m in Sources */,
+				041C08D72E0CF60700F7C26C /* PLVCastMirrorTipsView.m in Sources */,
+				041C08D82E0CF60700F7C26C /* PLVCastActionSheet.m in Sources */,
+				041C08D92E0CF60700F7C26C /* PLVCastClient.m in Sources */,
+				041C08DA2E0CF60700F7C26C /* PLVCastCoreBusinessManager.m in Sources */,
+				041C08DB2E0CF60700F7C26C /* PLVNetworkDetactor.m in Sources */,
+				041C08DC2E0CF60700F7C26C /* PLVCastDefinitionModel.m in Sources */,
+				041C08DD2E0CF60700F7C26C /* PLVCastDeviceViewController.m in Sources */,
+				041C08DE2E0CF60700F7C26C /* PLVCastCoreManager.m in Sources */,
 				6514295C2C8AF42800B32FA6 /* PLVECOnlineListSheetCell.m in Sources */,
 				005F1772264BBB410093E874 /* PLVECUtils.m in Sources */,
 				36C8F75B294710CF00822D51 /* PLVLCBrushToolButton.m in Sources */,
@@ -6465,7 +6637,7 @@
 				3694188626A00D2B008BDC06 /* PLVSAEmojiPopupView.m in Sources */,
 				36E2417D2B3A77C9005A5279 /* PLVSABitRateTableViewCell.m in Sources */,
 				008360BA26564C28002561F3 /* PLVSAStreamerFinishView.m in Sources */,
-				BACF4DBE2835035A00E2CDD6 /* BuildFile in Sources */,
+				BACF4DBE2835035A00E2CDD6 /* (null) in Sources */,
 				8FD08EC0265E43FE007F8457 /* PLVSARepliedMsgView.m in Sources */,
 				04B1D1B32791261E007894C5 /* PLVRewardDisplayTask.m in Sources */,
 				007CD4322609823C003783D8 /* PLVLSDocumentAreaView.m in Sources */,
@@ -6506,6 +6678,7 @@
 				00572B0826736CDB0000784B /* PLVSAShadowMaskView.m in Sources */,
 				214A68122A04A3CA00F50E1C /* PLVSABadNetworkSwitchButton.m in Sources */,
 				215D05142605895600E86BEF /* PLVLSSideSheet.m in Sources */,
+				04673EE52E5C4F16008C144F /* PLVStickerVideoControl.m in Sources */,
 				65F54D532D92785600B017F9 /* PLVStickerImageView.m in Sources */,
 				8F8C670F2814DFEE003BB88D /* PLVLSBeautySheet.m in Sources */,
 				0057291F265DE0B20000784B /* PLVSALinkMicCanvasView.m in Sources */,
@@ -6623,6 +6796,7 @@
 				8FD08F2D265E7BB6007F8457 /* PLVSAMoreInfoSheet.m in Sources */,
 				6554BB172DA65A1E00AB85B8 /* PLVCommodityPushSmallCardView.m in Sources */,
 				8FD08C3E265CADD0007F8457 /* PLVSAChannelInfoSheet.m in Sources */,
+				04B374542E5DC46F00C2987A /* PLVStickerAudioSet.m in Sources */,
 				21795DD3260730D4001E3668 /* PLVLSEmojiSelectView.m in Sources */,
 				00572A8B266F97010000784B /* PLVSAMemberPopup.m in Sources */,
 				215D04502605875300E86BEF /* AppDelegate.m in Sources */,
@@ -6658,6 +6832,7 @@
 				215D052F2605897D00E86BEF /* PLVLSImageMessageCell.m in Sources */,
 				04B1D161278FF9CF007894C5 /* PLVWatermarkModel.m in Sources */,
 				007CD47A2609828F003783D8 /* PLVLSDocumentInputView.m in Sources */,
+				045E94522E4DD94E0044E449 /* PLVStickerPlayer.m in Sources */,
 				8FD08F79265F96FF007F8457 /* PLVSAQuoteMessageCell.m in Sources */,
 				8FD08F80265F9714007F8457 /* PLVSASpeakMessageCell.m in Sources */,
 				36B89A6A2BF1DFE2008A21E0 /* PLVStreamerPopoverView.m in Sources */,
@@ -6671,6 +6846,7 @@
 				655E90652DBA0BD100354317 /* PLVLiveScenesSubtitleManager.m in Sources */,
 				655E90662DBA0BD100354317 /* PLVLiveScenesSubtitleParser.m in Sources */,
 				655E90672DBA0BD100354317 /* PLVLiveScenesSubtitleItem.m in Sources */,
+				045E94562E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m in Sources */,
 				655E90682DBA0BD100354317 /* PLVLiveScenesSubtitleViewModel.m in Sources */,
 				8F7DAAEA27BA4CA70018389C /* PLVLSProhibitWordTipView.m in Sources */,
 				00511F85263AC58B008CE5E3 /* PLVDocumentConvertRequester.m in Sources */,
@@ -6697,6 +6873,7 @@
 				21795DDD26077D7A001E3668 /* PLVLSSendMessageToolView.m in Sources */,
 				04B1D1BF2791261E007894C5 /* PLVGiveRewardGoodsButton.m in Sources */,
 				8F78951A267B892B00A7C2A7 /* PLVSARewardMessageCell.m in Sources */,
+				045E944E2E4DD58F0044E449 /* PLVStickerVideoView.m in Sources */,
 				007CD4702609828A003783D8 /* PLVLSDocumentBrushColorView.m in Sources */,
 				043B0EE62E1675C400D2D111 /* PLVStickerTextModel.m in Sources */,
 				043B0EE72E1675C400D2D111 /* PLVStickerTextView.m in Sources */,
@@ -6844,6 +7021,7 @@
 				005F180E264BBBCA0093E874 /* PLVLSLinkMicAreaView.m in Sources */,
 				005F182E264BBBEA0093E874 /* PLVLSChannelInfoTopView.m in Sources */,
 				04B1D160278FF9CF007894C5 /* PLVWatermarkModel.m in Sources */,
+				045E944F2E4DD58F0044E449 /* PLVStickerVideoView.m in Sources */,
 				36E8E10E26DCD2FB00DAEE02 /* PLVDanMu.m in Sources */,
 				005B1AFC26550F9F00F77307 /* PLVSAStreamerSettingView.m in Sources */,
 				006862F225771D0C00E319EA /* PLVLCMessageCell.m in Sources */,
@@ -6904,6 +7082,7 @@
 				654066FC29F7646F0079069D /* PLVLCMediaDanmuSettingCell.m in Sources */,
 				65D307FF2CA3B98300E8F13A /* PLVLCMultiMeetingViewCell.m in Sources */,
 				00EF59A1251C985E00A65197 /* PLVLCQuizViewController.m in Sources */,
+				04673EE62E5C4F16008C144F /* PLVStickerVideoControl.m in Sources */,
 				655371F82C8EE1E500DF5760 /* PLVLCOnlineListSheet.m in Sources */,
 				63C228572546BAFD00410292 /* PLVLCTextViewController.m in Sources */,
 				00436F9D253155FB00A146A0 /* PLVLCLikeButtonView.m in Sources */,
@@ -6925,6 +7104,16 @@
 				363DF72F2A81DD19004CB880 /* PLVECChatroomAQMessageView.m in Sources */,
 				3616637B2A5BFEBB00742B8F /* PLVECLotteryWidgetView.m in Sources */,
 				8F4C845B26B0ED1D005F968B /* PLVSAStatusBarButton.m in Sources */,
+				041C08CB2E0CF60700F7C26C /* PLVCastPlayControlView.m in Sources */,
+				041C08CC2E0CF60700F7C26C /* PLVCastDeviceCell.m in Sources */,
+				041C08CD2E0CF60700F7C26C /* PLVCastMirrorTipsView.m in Sources */,
+				041C08CE2E0CF60700F7C26C /* PLVCastActionSheet.m in Sources */,
+				041C08CF2E0CF60700F7C26C /* PLVCastClient.m in Sources */,
+				041C08D02E0CF60700F7C26C /* PLVCastCoreBusinessManager.m in Sources */,
+				041C08D12E0CF60700F7C26C /* PLVNetworkDetactor.m in Sources */,
+				041C08D22E0CF60700F7C26C /* PLVCastDefinitionModel.m in Sources */,
+				041C08D32E0CF60700F7C26C /* PLVCastDeviceViewController.m in Sources */,
+				041C08D42E0CF60700F7C26C /* PLVCastCoreManager.m in Sources */,
 				2199590C2991F9CE0057CB27 /* PLVECQuoteChatCell.m in Sources */,
 				55DB27AE28091789009BEB28 /* PLVSABeautyFaceViewController.m in Sources */,
 				36941812269FE7DD008BDC06 /* PLVLSEmojiPopupView.m in Sources */,
@@ -7008,6 +7197,7 @@
 				0450466B265E21D500D801A2 /* PLVSAStreamAlertController.m in Sources */,
 				2174235F298756730054CC91 /* PLVECRedpackButtonPopupView.m in Sources */,
 				362FD735287ED54200565032 /* PLVECCardPushButtonView.m in Sources */,
+				045E94532E4DD94E0044E449 /* PLVStickerPlayer.m in Sources */,
 				8F7C0AE527B6359400C159F8 /* PLVLSRemindChatroomSheet.m in Sources */,
 				8FC4505D277069B8005AAC7C /* PLVLSProhibitWordTipView.m in Sources */,
 				00368E9C2555411300E4FE71 /* PLVLCNewMessageView.m in Sources */,
@@ -7094,6 +7284,7 @@
 				8F6FD6DF2670B2A100B351E5 /* PLVSALinkMicUserInfoSheet.m in Sources */,
 				04B1D164278FF9CF007894C5 /* PLVWatermarkView.m in Sources */,
 				4D76B25D28646AB500093B1F /* PLVSipLinkMicUser.m in Sources */,
+				045E94572E4EE1CF0044E449 /* PLVMediaPlayerSampleBufferDisplayView.m in Sources */,
 				633923BA2459877D00C0ACE9 /* main.m in Sources */,
 				005F1903264BBDA10093E874 /* PLVStreamerPresenter.m in Sources */,
 				21514B0F2A035349009A43FE /* PLVSASwitchSuccessTipsView.m in Sources */,
@@ -7127,7 +7318,7 @@
 				04543E812D718B6400C1DAB4 /* PLVECPIPPlaysetPopView.m in Sources */,
 				8F8C67022814DFEE003BB88D /* PLVLSBeautyTitleView.m in Sources */,
 				005F180A264BBBC10093E874 /* PLVLSStreamerViewController.m in Sources */,
-				BACF4DC52835E64100E2CDD6 /* BuildFile in Sources */,
+				BACF4DC52835E64100E2CDD6 /* (null) in Sources */,
 				213973DC29FB4E300052F584 /* PLVLSSignalButton.m in Sources */,
 				00F2A0462578E3AA002ED0F3 /* PLVECFloatingWindow.m in Sources */,
 				65CA2E5228AF79CC00A6FF26 /* PLVDefaultPageView.m in Sources */,
@@ -7156,7 +7347,7 @@
 				633E421E257A09490039D35D /* PLVLCLinkMicPortraitControlBar.m in Sources */,
 				633E42052579EC2F0039D35D /* PLVLCMediaBrightnessView.m in Sources */,
 				21EB3F892925C2DB00C407DE /* PLVLCLandscapeLongContentCell.m in Sources */,
-				BACF4DBD2835035A00E2CDD6 /* BuildFile in Sources */,
+				BACF4DBD2835035A00E2CDD6 /* (null) in Sources */,
 				00059B122570AB8100495223 /* PLVECChatroomViewModel.m in Sources */,
 				21D7E7A229DFF10600F6BFF1 /* PLVECLinkMicWindowsView.m in Sources */,
 				363AEC0227352B71008FEAB1 /* PLVSALinkMicWindowsSpeakerView.m in Sources */,
@@ -7199,6 +7390,7 @@
 				36AA01F8274F1F58006115F9 /* PLVSALinkMicSpeakerPlaceholderView.m in Sources */,
 				65D9F0AA2E3354EC00A9EF9C /* PLVLCLandscapeCustomIntroductionMessageCell.m in Sources */,
 				36E8E13826DCD2FB00DAEE02 /* PLVPhotoCollectionFooterView.m in Sources */,
+				04B374552E5DC46F00C2987A /* PLVStickerAudioSet.m in Sources */,
 				363472D027708FA4007BEFBA /* PLVLinkMicOnlineUser+EC.m in Sources */,
 				005F185A264BBC330093E874 /* PLVLSSpeakMessageCell.m in Sources */,
 				005F183E264BBBF70093E874 /* PLVLSStatusAreaView.m in Sources */,

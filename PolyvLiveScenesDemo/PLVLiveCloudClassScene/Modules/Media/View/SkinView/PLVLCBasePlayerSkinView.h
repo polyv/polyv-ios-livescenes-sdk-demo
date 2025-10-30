@@ -69,6 +69,10 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 @property (nonatomic, strong) UILabel * floatViewShowButtonTipsLabel;
 @property (nonatomic, strong) UIButton * floatViewShowButton;
 @property (nonatomic, strong) UIButton * fullScreenButton;
+/// 仅直播 是否显示投屏按钮
+@property (nonatomic, assign) BOOL showCastButton;
+/// 投屏按钮
+@property (nonatomic, strong) UIButton *castButton;
 @property (nonatomic, strong) UIButton * paintButton; // 画笔按钮
 @property (nonatomic, strong) UILabel * currentTimeLabel; // 仅直播回放
 @property (nonatomic, strong) UILabel * diagonalsLabel;   // 仅直播回放；斜杆符号文本框
@@ -161,6 +165,8 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 - (void)plvLCBasePlayerSkinViewFloatViewShowButtonClicked:(PLVLCBasePlayerSkinView *)skinView userWannaShowFloatView:(BOOL)wannaShow;
 
 - (void)plvLCBasePlayerSkinViewFullScreenOpenButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
+
+- (void)plvLCBasePlayerSkinViewCastButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
 - (void)plvLCBasePlayerSkinViewPaintButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 

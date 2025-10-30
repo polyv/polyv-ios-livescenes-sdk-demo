@@ -50,7 +50,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 弱网处理 按钮 触发回调
 - (void)moreInfoSheetDidTapBadNetworkButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
-/// 点击 混流布局 按钮 触发回调
+/// 点击 连麦布局 按钮 触发回调
 - (void)moreInfoSheetDidTapMixLayoutButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
 /// 点击 允许/关闭观众连麦 按钮 触发回调
@@ -67,6 +67,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 点击 贴纸按钮 触发回调
 - (void)moreInfoSheetDidTapStickerButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
+/// 点击 视频贴纸按钮 触发回调
+- (void)moreInfoSheetDidTapStickerVideoButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
 /// 点击 AI抠像按钮 触发回调
 - (void)moreInfoSheetDidTapAiMattingButton:(PLVSAMoreInfoSheet *)moreInfoSheet;

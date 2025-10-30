@@ -102,6 +102,10 @@
     return [self imageFromBundle:@"PLVChatroom" imageName:imageName];
 }
 
++ (UIImage *)imageForCastResource:(NSString *)imageName {
+    return [self imageFromBundle:@"PLVCast" imageName:imageName];
+}
+
 + (void)setImageView:(UIImageView *)imageView url:(nullable NSURL *)url {
     [self setImageView:imageView url:url placeholderImage:nil options:0 progress:nil completed:nil];
 }

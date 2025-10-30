@@ -13,6 +13,7 @@
 #import "PLVLCUtils.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVCastClient.h"
 
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -280,6 +281,11 @@ PLVLCLinkMicWindowsViewDelegate
 - (void)plvLCLinkMicControlBar:(id<PLVLCLinkMicControlBarProtocol>)bar onOffButtonClickedCurrentStatus:(PLVLCLinkMicControlBarStatus)status{
     __weak typeof(self) weakSelf = self;
     if (status == PLVLCLinkMicControlBarStatus_Open) {
+        // 投屏皮肤显示时不允许连麦
+        if ([PLVCastClient sharedClient].castControlView.isShow) {
+            [PLVLCUtils showHUDWithTitle:@"" detail:@"投屏中不允许进行连麦" view:self.superview];
+            return;
+        }
         // Bar 处于显示 ‘申请连麦’，点击表示希望申请连麦
         [self.presenter requestJoinLinkMic];
     }else if (status == PLVLCLinkMicControlBarStatus_Waiting){

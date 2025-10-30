@@ -22,6 +22,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) BOOL allowPinMessage; /// 是否允许评论上墙
 
+@property (nonatomic, assign) BOOL allowBanUser; /// 是否允许禁言用户
+
+@property (nonatomic, assign) BOOL allowKickUser; /// 是否允许踢出用户
+
 @property (nonatomic, copy) void(^ _Nullable replyHandler)(PLVChatModel *model);
 /// 违禁词手动触发显示时 触发
 @property (nonatomic, copy) void(^ _Nullable prohibitWordShowHandler)(void);
@@ -29,6 +33,10 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) void(^ _Nullable prohibitWordDismissHandler)(void);
 /// 点击 上墙按钮 触发
 @property (nonatomic, copy) void(^ _Nullable pinMessageHandler)(PLVChatModel *model);
+/// 点击 禁言按钮 触发
+@property (nonatomic, copy) void(^ _Nullable banUserHandler)(PLVChatModel *model);
+/// 点击 踢出按钮 触发
+@property (nonatomic, copy) void(^ _Nullable kickUserHandler)(PLVChatModel *model);
 
 @end
 

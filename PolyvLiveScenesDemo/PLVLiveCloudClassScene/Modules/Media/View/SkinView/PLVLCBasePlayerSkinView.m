@@ -18,6 +18,8 @@
 #import "PLVMultiLanguageManager.h"
 #import "PLVLCMediaBrightnessView.h"
 
+static NSString *const PLVLCLinkMicAreaViewLinkMicStatusDidChangeNotification = @"PLVLCLinkMicAreaViewLinkMicStatusDidChangeNotification";
+
 typedef NS_ENUM(NSInteger, PLVBasePlayerSkinViewPanType) {
     PLVBasePlayerSkinViewTypeAdjusVolume        = 1,//在屏幕左边，上下滑动调节声音
     PLVBasePlayerSkinViewTypeAdjusBrightness    = 2,//在屏幕右边，上下滑动调节亮度
@@ -55,6 +57,7 @@ UIGestureRecognizerDelegate>
         self.skinViewType = [PLVLCBasePlayerSkinView playerSkinTypeWithChannelType:roomData.channelType videoType:roomData.videoType];
         [self setupData];
         [self setupUI];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(linkMicStatusDidChangeAction:) name:PLVLCLinkMicAreaViewLinkMicStatusDidChangeNotification object:nil];
     }
     return self;
 }
@@ -123,18 +126,23 @@ UIGestureRecognizerDelegate>
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 直播场景
         if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_None) {
             self.moreButton.hidden = YES;
+            self.castButton.hidden = YES;
             self.pictureInPictureButton.hidden = YES;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = YES;
             self.floatViewShowButton.hidden = YES;
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living_CDN) {
             self.moreButton.hidden = NO;
+            self.castButton.hidden = self.showCastButton ? NO : YES;
+
             self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = NO;
             self.refreshButton.hidden = NO;
             self.floatViewShowButton.hidden = NO;
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_Living_NODelay){
             self.moreButton.hidden = NO;
+            self.castButton.hidden = self.showCastButton ? NO : YES;
+
             self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = NO;
             self.refreshButton.hidden = YES;
@@ -142,6 +150,8 @@ UIGestureRecognizerDelegate>
             self.floatViewShowButton.selected = NO; /// 无延迟场景，默认显示‘开’
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC) {
             self.moreButton.hidden = YES;
+            self.castButton.hidden = YES;
+
             self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = NO;
@@ -149,6 +159,8 @@ UIGestureRecognizerDelegate>
             self.floatViewShowButton.selected = NO;
         } else if (skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC) {
             self.moreButton.hidden = YES;
+            self.castButton.hidden = YES;
+
             self.pictureInPictureButton.hidden = NO;
             self.playButton.hidden = YES;
             self.refreshButton.hidden = YES;
@@ -251,6 +263,10 @@ UIGestureRecognizerDelegate>
     self.countdownTimeView.time = time;
 }
 
+- (void)setShowCastButton:(BOOL)showCastButton{
+    self.castButton.hidden = showCastButton ? NO: YES;
+}
+
 - (void)showFloatViewShowButtonTipsLabelAnimation:(BOOL)showTips{
     PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCBasePlayerSkinView[%@] - showFloatViewShowButtonTipsLabelAnimation failed, the method was not overridden by subclass",NSStringFromClass(self.class));
 }
@@ -348,7 +364,7 @@ UIGestureRecognizerDelegate>
         /// 顶部UI
         [controlsSuperview addSubview:self.playTimesLabel];
         [controlsSuperview addSubview:self.countdownTimeView];
-
+        [controlsSuperview addSubview:self.castButton];
         /// 底部UI
         [controlsSuperview addSubview:self.refreshButton];
         
@@ -636,6 +652,16 @@ UIGestureRecognizerDelegate>
     return _fullScreenButton;
 }
 
+- (UIButton *)castButton {
+    if (!_castButton) {
+        _castButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_castButton setImage:[self getImageWithName:@"plv_skin_cast"] forState:UIControlStateNormal];
+        [_castButton addTarget:self action:@selector(castButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _castButton.hidden = (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback ? YES : NO);
+    }
+    return _castButton;
+}
+
 - (UIButton *)paintButton{
     if (!_paintButton) {
         _paintButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -898,10 +924,22 @@ UIGestureRecognizerDelegate>
     }
 }
 
+- (void)castButtonAction:(UIButton *)button {
+    if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewCastButtonClicked:)]) {
+        [self.baseDelegate plvLCBasePlayerSkinViewCastButtonClicked:self];
+    }
+}
+
 - (void)paintButtonAction:(UIButton *)button{
     if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewPaintButtonClicked:)]) {
         [self.baseDelegate plvLCBasePlayerSkinViewPaintButtonClicked:self];
     }
+}
+
+#pragma mark Notification
+- (void)linkMicStatusDidChangeAction:(NSNotification *)notification {
+    BOOL joinLinkMic = [notification.object boolValue];
+    self.castButton.hidden = joinLinkMic ? YES : (self.showCastButton ? NO : YES);
 }
 
 #pragma mark - [ Delegate ]
