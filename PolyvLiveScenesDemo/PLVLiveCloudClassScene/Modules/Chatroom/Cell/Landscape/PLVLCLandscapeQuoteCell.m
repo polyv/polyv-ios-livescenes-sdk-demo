@@ -13,6 +13,7 @@
 #import "PLVLCUtils.h"
 #import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -200,7 +201,7 @@
     NSDictionary *contentAttDict = @{NSFontAttributeName: font,
                                      NSForegroundColorAttributeName:contentColor};
     
-    NSString *content = [NSString stringWithFormat:@"%@：", user.userName];
+    NSString *content = [NSString stringWithFormat:@"%@：", [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
     }
@@ -224,6 +225,11 @@
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
         quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
+    } else if ([PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled && [PLVFdUtil checkStringUseable:quoteUserName] && quoteUserName.length > 1) {
+        
+        NSString *firstChar = [quoteUserName substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:quoteUserName.length - 1 withString:@"*" startingAtIndex:0];
+        quoteUserName = [firstChar stringByAppendingString:stars];
     }
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];

@@ -11,6 +11,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -131,7 +132,7 @@
     NSDictionary *contentAttDict = @{NSFontAttributeName: font,
                                      NSForegroundColorAttributeName:contentColor};
     
-    NSString *content = user.userName;
+    NSString *content = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
         content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];

@@ -17,6 +17,7 @@
 // 模块
 #import "PLVChatUser.h"
 #import "PLVEmoticonManager.h"
+#import "PLVRoomDataManager.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -262,7 +263,7 @@
         return nil;
     }
     
-    NSString *content = [NSString stringWithFormat:@"%@：",user.userName];
+    NSString *content = [NSString stringWithFormat:@"%@：",[user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     NSDictionary *attributeDict = @{
                                     NSFontAttributeName: [UIFont systemFontOfSize:12.0],
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FFD16B"]
@@ -296,6 +297,17 @@
 /// 获取被引用的消息的多属性文本，格式为 “昵称：文本”
 + (NSAttributedString *)quoteContentAttributedStringWithMessage:(PLVQuoteMessage *)message {
     NSString *quoteUserName = message.quoteUserName ?: @"";
+    NSString *quoteUserId = message.quoteUserId;
+    NSString *loginUserId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
+        loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:quoteUserId]) {
+        // 自己的消息不处理
+    } else if ([PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled && [PLVFdUtil checkStringUseable:quoteUserName] && quoteUserName.length > 1) {
+        
+        NSString *firstChar = [quoteUserName substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:quoteUserName.length - 1 withString:@"*" startingAtIndex:0];
+        quoteUserName = [firstChar stringByAppendingString:stars];
+    }
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
     NSDictionary *attributeDict = @{
                                     NSFontAttributeName: [UIFont systemFontOfSize:12.0],

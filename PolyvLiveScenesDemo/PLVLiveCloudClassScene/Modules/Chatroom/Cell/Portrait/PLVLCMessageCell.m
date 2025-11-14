@@ -9,6 +9,7 @@
 #import "PLVLCMessageCell.h"
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -113,9 +114,9 @@
         return nil;
     }
     
-    NSString *content = user.userName;
+    NSString *content = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
-        content = [NSString stringWithFormat:@"%@-%@", user.actor, user.userName];
+        content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
     }
     
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&

@@ -388,7 +388,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
         model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
     } else if ([PLVECQuoteChatCell isModelValid:model]) {
-        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell contentAttributedStringWithChatModel:model]];
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell chatLabelAttributedStringWithModel:model]];
         model.cellHeightForV = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
     } else if ([PLVECLongContentChatCell isModelValid:model]) {
         model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
@@ -411,7 +411,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
             model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
             model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
         } else if ([PLVECQuoteChatCell isModelValid:model]) {
-            model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell contentAttributedStringWithChatModel:model]];
+            model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell chatLabelAttributedStringWithModel:model]];
             model.cellHeightForV = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
         } else if ([PLVECLongContentChatCell isModelValid:model]) {
             model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];
@@ -472,7 +472,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                 model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
                 model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
             } else if ([PLVECQuoteChatCell isModelValid:model]) {
-                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell contentAttributedStringWithChatModel:model]];
+                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECQuoteChatCell chatLabelAttributedStringWithModel:model]];
                 model.cellHeightForV = [PLVECQuoteChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
             } else if ([PLVECLongContentChatCell isModelValid:model]) {
                 model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECLongContentChatCell chatLabelAttributedStringWithWithModel:model]];

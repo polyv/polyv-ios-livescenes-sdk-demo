@@ -38,6 +38,8 @@
 #import "PLVPinMessagePopupView.h"
 #import "PLVSADesktopChatSettingSheet.h"
 #import "PLVStickerCanvas.h"
+#import "PLVSAAICardWidgetView.h"
+#import "PLVSAAICardView.h"
 
 // 模块
 #import "PLVChatModel.h"
@@ -61,7 +63,10 @@ PLVSALinkMicTipViewDelegate,
 PLVSAMixLayoutSheetDelegate,
 PLVSABadNetworkSwitchSheetDelegate,
 PLVSALinkMicSettingSheetDelegate,
-PLVSADesktopChatSettingSheetDelegate
+PLVSADesktopChatSettingSheetDelegate,
+PLVSAManageCommoditySheetDelegate,
+PLVSAAICardWidgetViewDelegate,
+PLVSAAICardViewDelegate
 >
 /// view hierarchy
 ///
@@ -107,6 +112,8 @@ PLVSADesktopChatSettingSheetDelegate
 @property (nonatomic, strong) UIView *networkDisconnectMaskView; // 网络断开遮罩
 @property (nonatomic, strong) UIImageView *networkDisconnectImageView; // 网络断开提示图片
 @property (nonatomic, strong) UILabel *networkDisconnectLabel; // 网络断开提示
+@property (nonatomic, strong) PLVSAAICardWidgetView *aiCardWidgetView; // AI 手卡挂件
+@property (nonatomic, strong) PLVSAAICardView *aiCardView; // AI 手卡浮窗视图
 
 /// 数据
 @property (nonatomic, weak) PLVLinkMicOnlineUser *localOnlineUser; // 本地用户模型，使用弱引用
@@ -205,6 +212,16 @@ PLVSADesktopChatSettingSheetDelegate
     self.linkMicWindowsView.fullScreenContentView.frame = self.bounds;
     self.statusbarAreaView.frame = CGRectMake(left, top, selfSize.width - left - right, 72);
     self.cameraAndMicphoneStateView.frame = CGRectMake(left, CGRectGetMaxY(self.statusbarAreaView.frame) + cameraAndMicphoneStateViewTop, selfSize.width - left - right, 36);
+    
+    CGFloat aiCardWidgetMarginTop = 16;
+    CGFloat aiCardWidgetY;
+    if (self.cameraAndMicphoneStateView.hidden) {
+        aiCardWidgetY = CGRectGetMaxY(self.statusbarAreaView.frame) + aiCardWidgetMarginTop;
+    } else {
+        aiCardWidgetY = CGRectGetMaxY(self.cameraAndMicphoneStateView.frame) + aiCardWidgetMarginTop;
+    }
+    self.aiCardWidgetView.frame = CGRectMake(left + toolbarViewMarginRight, aiCardWidgetY, self.aiCardWidgetView.widgetSize.width, self.aiCardWidgetView.widgetSize.height);
+    
     self.toolbarAreaView.frame = CGRectMake(left, selfSize.height - bottom - toolbarAreaViewHeight, selfSize.width - left - right, toolbarAreaViewHeight);
    
     CGFloat chatroomWidth = selfSize.width * chatroomWidthScale;
@@ -255,6 +272,18 @@ PLVSADesktopChatSettingSheetDelegate
     self.networkDisconnectMaskView.frame = self.bounds;
     self.networkDisconnectImageView.frame = CGRectMake((self.bounds.size.width - 56) / 2, (self.bounds.size.height - 87) / 2, 56, 56);
     self.networkDisconnectLabel.frame = CGRectMake(left, CGRectGetMaxY(self.networkDisconnectImageView.frame) + 8, self.bounds.size.width - left *2, 23);
+    
+    // AI 手卡浮窗视图布局
+    // 位置 X, Y 与 aiCardWidgetView 保持一致
+    CGFloat aiCardViewX = CGRectGetMinX(self.aiCardWidgetView.frame);
+    CGFloat aiCardViewY = CGRectGetMinY(self.aiCardWidgetView.frame);
+    // 宽度：屏幕宽度 - left - right
+    CGFloat aiCardViewWidth = self.bounds.size.width - left - right - 2 * toolbarViewMarginRight;
+    // 高度：竖屏 0.2734，横屏 0.3
+    CGFloat aiCardHeightScale = isLandscape ? 0.3 : 0.2734;
+    CGFloat aiCardViewHeight = self.bounds.size.height * aiCardHeightScale;
+    
+    self.aiCardView.frame = CGRectMake(aiCardViewX, aiCardViewY, aiCardViewWidth, aiCardViewHeight);
 }
 
 #pragma mark - [ Override ]
@@ -490,6 +519,8 @@ PLVSADesktopChatSettingSheetDelegate
     [self.homePageView addSubview:self.pinMsgPopupView];
     [self.homePageView addSubview:self.slideRightTipsView];
     [self.homePageView addSubview:self.cameraAndMicphoneStateView];
+    [self.homePageView addSubview:self.aiCardWidgetView];
+    [self.homePageView addSubview:self.aiCardView];
     [self.homePageView addSubview:self.layoutSwitchGuideView];
 }
 
@@ -803,6 +834,7 @@ PLVSADesktopChatSettingSheetDelegate
         CGFloat sheetHeight = maxWH * heightScale;
         CGFloat sheetLandscapeWidth = isPad ? (maxWH * widthScale) : deviceWidth;
         _commoditySheet = [[PLVSAManageCommoditySheet alloc] initWithSheetHeight:sheetHeight sheetLandscapeWidth:sheetLandscapeWidth];
+        _commoditySheet.delegate = self;
         [_commoditySheet setSheetCornerRadius:0.0f];
     }
     return _commoditySheet;
@@ -981,6 +1013,22 @@ PLVSADesktopChatSettingSheetDelegate
         _networkDisconnectLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _networkDisconnectLabel;
+}
+
+- (PLVSAAICardWidgetView *)aiCardWidgetView {
+    if (!_aiCardWidgetView) {
+        _aiCardWidgetView = [[PLVSAAICardWidgetView alloc] init];
+        _aiCardWidgetView.delegate = self;
+    }
+    return _aiCardWidgetView;
+}
+
+- (PLVSAAICardView *)aiCardView {
+    if (!_aiCardView) {
+        _aiCardView = [[PLVSAAICardView alloc] init];
+        _aiCardView.delegate = self;
+    }
+    return _aiCardView;
 }
 
 #pragma mark - [ Event ]
@@ -1263,6 +1311,10 @@ PLVSADesktopChatSettingSheetDelegate
     }
 }
 
+- (void)chatroomAreaView_updateCommodityModel:(PLVCommodityModel *)commodityModel {
+    [self.aiCardView updateWithCommodityModel:commodityModel];
+}
+
 #pragma mark PLVSAMemberSheetDelegate
 
 - (void)bandUsersInMemberSheet:(PLVSAMemberSheet *)memberSheet withUserId:(NSString *)userId banned:(BOOL)banned {
@@ -1355,6 +1407,16 @@ PLVSADesktopChatSettingSheetDelegate
     [memberSheet updateSearchResults:results];
 }
 
+#pragma mark PLVSAManageCommoditySheetDelegate
+
+- (NSString *)plvSAManageCommoditySheetCurrentStreamState {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentStreamState:)]) {
+        return [self.delegate streamerHomeViewCurrentStreamState:self];
+    } else {
+        return @"";
+    }
+}
+
 #pragma mark - 搜索相关方法
 
 /// 开始搜索
@@ -1388,6 +1450,18 @@ PLVSADesktopChatSettingSheetDelegate
         [self.memberSheet.searchDelegate respondsToSelector:@selector(memberSheet:didUpdateSearchResults:)]) {
         [self.memberSheet.searchDelegate memberSheet:self.memberSheet didUpdateSearchResults:results];
     }
+}
+
+#pragma mark PLVSAAICardWidgetViewDelegate
+
+- (void)aiCardWidgetViewDidClickAction:(PLVSAAICardWidgetView *)aiCardWidgetView {
+    [self.aiCardView show:YES];
+}
+
+#pragma mark PLVSAAICardViewDelegate
+
+- (void)aiCardView:(PLVSAAICardView *)aiCardView widgetStatusNeedChange:(BOOL)show {
+    self.aiCardWidgetView.hidden = !show;
 }
 
 @end

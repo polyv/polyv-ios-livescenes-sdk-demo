@@ -9,6 +9,7 @@
 #import "PLVLCLandscapeRedpackMessageCell.h"
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
@@ -137,7 +138,7 @@ static NSString *kPLVLCRedpackMessageTapKey = @"redpackTap";
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
         redpackTypeString = PLVLocalizedString(@"支付宝口令");
     }
-    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), chatModel.user.userName, redpackTypeString];
+    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), [chatModel.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId], redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
                                     NSForegroundColorAttributeName:[UIColor whiteColor],
                                     NSBaselineOffsetAttributeName:@(4.0)};

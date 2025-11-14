@@ -126,7 +126,7 @@
     }
     
     // 配置昵称文本
-    self.nickNameLabel.text = self.user.userName;
+    self.nickNameLabel.text = [self.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     self.nickNameLabel.textColor =  isLandscape ? [PLVColorUtil colorFromHexString:@"#000000" alpha:0.8] : [PLVColorUtil colorFromHexString:@"#FFFFFF"];
 
     NSString *localUserViewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;

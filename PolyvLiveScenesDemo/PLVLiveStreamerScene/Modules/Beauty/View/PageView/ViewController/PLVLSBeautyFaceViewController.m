@@ -72,7 +72,10 @@ static CGFloat kItemHeight = 61; // item高度
             [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"大眼") imageName:@"plvls_beauty_face_eye" beautyOption:PLVBBeautyOption_ReshapeDeformEye selected:YES],
             [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦脸") imageName:@"plvls_beauty_face_overall" beautyOption:PLVBBeautyOption_ReshapeDeformOverAll],
             [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"下颌") imageName:@"plvls_beauty_face_jawbone" beautyOption:PLVBBeautyOption_ReshapeDeformZoomJawbone],
-            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvls_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],nil];
+            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"亮眼") imageName:@"plvls_beauty_face_brightenEye" beautyOption:PLVBBeautyOption_ReshapeBeautyBrightenEye],
+            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"瘦鼻") imageName:@"plvls_beauty_face_nose" beautyOption:PLVBBeautyOption_ReshapeDeformNose],
+            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"嘴巴") imageName:@"plvls_beauty_face_mouth" beautyOption:PLVBBeautyOption_ReshapeDeformZoomMouth],
+            [[PLVLSBeautyCellModel alloc] initWithTitle:PLVLocalizedString(@"美牙") imageName:@"plvls_beauty_face_whitenTeeth" beautyOption:PLVBBeautyOption_ReshapeBeautyWhitenTeeth],nil];
     }
 }
 

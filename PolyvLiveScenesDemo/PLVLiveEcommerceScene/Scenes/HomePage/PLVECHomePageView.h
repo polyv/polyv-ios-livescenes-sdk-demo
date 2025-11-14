@@ -45,6 +45,12 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 打开商品详情
 - (void)homePageView:(PLVECHomePageView *)homePageView didClickCommodityDetail:(PLVCommodityModel *)commodity;
 
+/// 打开商品讲解
+- (void)homePageView:(PLVECHomePageView *)homePageView didClickCommodityExplained:(PLVCommodityModel *)commodity;
+
+/// 打开商品详情弹窗
+- (void)homePageView:(PLVECHomePageView *)homePageView didClickCommodityDetailPopup:(PLVCommodityModel *)commodity;
+
 /// 打开礼物打赏面板
 - (void)homePageViewOpenRewardView:(PLVECHomePageView *)homePageView;
 
@@ -78,6 +84,13 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 返回竖屏样式
 - (void)homePageViewWannaBackToVerticalScreen:(PLVECHomePageView *)homePageView;
 
+/// 更新回放字幕的显示状态
+/// @param originalSubtitle 当前勾选的原声字幕，nil 表示关闭
+/// @param translateSubtitle 当前勾选的翻译字幕，nil 表示关闭
+- (void)homePageView:(PLVECHomePageView *)homePageView
+updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
+            translate:(PLVPlaybackSubtitleModel * _Nullable)translateSubtitle;
+
 /// 加载打赏信息时触发
 /// @param rewardEnable 是否支持打赏
 /// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏
@@ -107,6 +120,10 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 /// 点击职位详情的回调
 /// @param data 商品详情数据
 - (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data;
+
+/// 点击商品详情的回调
+/// @param data 商品详情数据
+- (void)homePageView:(PLVECHomePageView *)homePageView didShowProductDetail:(NSDictionary *)data;
 
 /// 收到评论上墙信息的回调
 /// @param model 消息模型

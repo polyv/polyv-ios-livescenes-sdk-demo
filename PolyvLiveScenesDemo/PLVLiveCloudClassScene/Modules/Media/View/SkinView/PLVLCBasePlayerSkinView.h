@@ -74,6 +74,7 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 /// 投屏按钮
 @property (nonatomic, strong) UIButton *castButton;
 @property (nonatomic, strong) UIButton * paintButton; // 画笔按钮
+@property (nonatomic, strong) UIButton * keyMomentsButton; // 精彩看点按钮
 @property (nonatomic, strong) UILabel * currentTimeLabel; // 仅直播回放
 @property (nonatomic, strong) UILabel * diagonalsLabel;   // 仅直播回放；斜杆符号文本框
 @property (nonatomic, strong) UILabel * durationLabel;    // 仅直播回放
@@ -136,6 +137,15 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 /// 刷新播放进度控件是否显示（进度条、进度文本）
 - (void)refreshProgressControlsShow:(BOOL)show;
 
+/// 设置精彩看点按钮显示状态
+/// @param show YES:显示，NO:隐藏
+- (void)setKeyMomentsButtonShow:(BOOL)show;
+
+/// 更新精彩看点数据
+/// @param keyMoments 精彩看点数组
+/// @param duration 视频总时长
+- (void)updateKeyMoments:(NSArray *)keyMoments duration:(NSTimeInterval)duration;
+
 /// 工具方法 (与 PLVLCBasePlayerSkinView 类本身没有逻辑关联，仅业务上相关)
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(nonnull PLVLCBasePlayerSkinView *)skinView;
 
@@ -162,6 +172,10 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 
 - (void)plvLCBasePlayerSkinViewRefreshButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 
+@optional
+/// 精彩看点按钮被点击
+/// @param skinView 播放器皮肤视图
+- (void)plvLCBasePlayerSkinViewKeyMomentsButtonClicked:(PLVLCBasePlayerSkinView *)skinView;
 - (void)plvLCBasePlayerSkinViewFloatViewShowButtonClicked:(PLVLCBasePlayerSkinView *)skinView userWannaShowFloatView:(BOOL)wannaShow;
 
 - (void)plvLCBasePlayerSkinViewFullScreenOpenButtonClicked:(PLVLCBasePlayerSkinView *)skinView;

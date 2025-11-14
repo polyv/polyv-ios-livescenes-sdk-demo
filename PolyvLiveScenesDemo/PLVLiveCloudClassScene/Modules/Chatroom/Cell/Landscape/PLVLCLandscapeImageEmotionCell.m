@@ -10,6 +10,7 @@
 #import "PLVPhotoBrowser.h"
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -130,7 +131,7 @@
         return nil;
     }
     
-    NSString *content = user.userName;
+    NSString *content = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:loginUserId];
     if (user.userId && [user.userId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isKindOfClass:[NSString class]] && [loginUserId isEqualToString:user.userId]) {
         content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];

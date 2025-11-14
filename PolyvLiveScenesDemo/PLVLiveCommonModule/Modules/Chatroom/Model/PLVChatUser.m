@@ -77,6 +77,23 @@
     return (self.specialIdentity || hasActor);
 }
 
+- (NSString *)getDisplayNickname:(BOOL)hide loginUserId:(NSString *)loginUserId {
+    if (![PLVFdUtil checkStringUseable:self.userName] || !hide) {
+        return self.userName;
+    }
+    if (self.userType >= PLVRoomUserTypeGuest && self.userType <= PLVRoomUserTypeManager) { // 特殊身份不处理
+        return self.userName;
+    }
+    
+    if ([PLVFdUtil checkStringUseable:loginUserId] && [self.userId isEqualToString:loginUserId]) { // 不需要处理自己
+        return self.userName;
+    }
+    
+    NSString *firstChar = [self.userName substringToIndex:1];
+    NSString *stars = [@"" stringByPaddingToLength:self.userName.length - 1 withString:@"*" startingAtIndex:0];
+    return [firstChar stringByAppendingString:stars];
+}
+
 - (void)setWaitUser:(PLVLinkMicWaitUser *)waitUser{
     _waitUser = waitUser;
     if (self.waitUserChangedBlock) {

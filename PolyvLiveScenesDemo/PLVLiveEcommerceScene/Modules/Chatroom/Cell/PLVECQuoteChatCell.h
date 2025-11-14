@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (NSAttributedString * _Nullable)contentAttributedStringWithChatModel:(PLVChatModel *)chatModel;
 
++ (NSAttributedString * _Nullable)chatLabelAttributedStringWithModel:(PLVChatModel *)user;
+
 @end
 
 NS_ASSUME_NONNULL_END

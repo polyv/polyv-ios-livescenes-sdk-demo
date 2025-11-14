@@ -24,6 +24,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 商品库小卡片显示隐藏回调
 - (void)PLVCommodityPushSmallCardViewDidShow:(BOOL)show;
 
+/// 点击商品详情的回调
+- (void)PLVCommodityPushSmallCardViewDidClickCommodityDetailPopup:(PLVCommodityModel *)commodity;
+
+/// 点击商品讲解的回调
+- (void)PLVCommodityPushSmallCardViewDidClickExplained:(PLVCommodityModel *)commodity;
+
 @end
 
 @interface PLVCommodityPushSmallCardView : UIView

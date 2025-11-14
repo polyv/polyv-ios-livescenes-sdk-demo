@@ -708,6 +708,12 @@ UIGestureRecognizerDelegate
 }
 
 - (void)jsbridge_changePPTPosition:(BOOL)status {
+    if (self.videoType == PLVChannelVideoType_Playback) { // 新增条件判断：直播回放时，听从后台设置更新画笔数据
+        NSString *pptWatchLayout = PLV_SafeStringForDictKey([PLVRoomDataManager sharedManager].roomData.menuInfo.watchThemeModel, @"watchLayout");
+        if ([PLVFdUtil checkStringUseable:pptWatchLayout] && ![pptWatchLayout isEqualToString:@"followTeacher"]) {
+            return;
+        }
+    }
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(documentView_changePPTPositionToMain:)]) {
         [self.delegate documentView_changePPTPositionToMain:status];

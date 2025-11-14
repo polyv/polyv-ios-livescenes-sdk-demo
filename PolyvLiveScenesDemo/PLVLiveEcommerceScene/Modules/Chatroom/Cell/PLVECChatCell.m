@@ -401,7 +401,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
         return nil;
     }
     
-    NSString *content = [NSString stringWithFormat:@"%@：",user.userName];
+    NSString *content = [NSString stringWithFormat:@"%@：",[user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     NSDictionary *attributeDict = @{
                                     NSFontAttributeName: [UIFont systemFontOfSize:12.0],
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FFD16B"]
@@ -459,7 +459,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     if ([user.userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]) { // 自己的赠送记录
         NSString *giftName = PLV_SafeStringForDictKey(dataDic, @"giftName");
         giftName = [PLVFdUtil checkStringUseable:giftName] ? giftName : @"";
-        tip = [NSString stringWithFormat:PLVLocalizedString(@"%@(我) 赠送了 %@"), user.userName, giftName];
+        tip = [NSString stringWithFormat:PLVLocalizedString(@"%@(我) 赠送了 %@"), [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId], giftName];
     }
     NSMutableAttributedString *conentString = [[NSMutableAttributedString alloc] initWithString:tip attributes:contentAttDict];
     
@@ -498,7 +498,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     if (redpackMessage.type == PLVRedpackMessageTypeAliPassword) {
         redpackTypeString = PLVLocalizedString(@"支付宝口令");
     }
-    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), chatModel.user.userName, redpackTypeString];
+    NSString *contentString = [NSString stringWithFormat:PLVLocalizedString(@" %@ 发了一个%@红包，"), [chatModel.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId], redpackTypeString];
     NSDictionary *attributeDict = @{NSFontAttributeName:[UIFont systemFontOfSize:12],
                                     NSForegroundColorAttributeName:[UIColor whiteColor],
                                     NSBaselineOffsetAttributeName:@(4.0)};

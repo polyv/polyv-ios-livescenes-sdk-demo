@@ -11,6 +11,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -193,7 +194,7 @@ static CGFloat kButtonoHeight = 32.0;
         return nil;
     }
     
-    NSString *content = [NSString stringWithFormat:@"%@：",user.userName];
+    NSString *content = [NSString stringWithFormat:@"%@：",[user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     NSDictionary *attributeDict = @{
                                     NSFontAttributeName: [UIFont systemFontOfSize:12.0],
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FFD16B"]

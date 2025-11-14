@@ -379,6 +379,7 @@ UIGestureRecognizerDelegate>
         [controlsSuperview addSubview:self.durationLabel];
         [controlsSuperview addSubview:self.progressSlider];
         [controlsSuperview addSubview:self.progressView];
+        [controlsSuperview addSubview:self.keyMomentsButton];
     }
     
     [controlsSuperview bringSubviewToFront:self.backButton];
@@ -421,6 +422,14 @@ UIGestureRecognizerDelegate>
     self.durationLabel.hidden = !show;
     self.progressSlider.hidden = !show;
     self.progressView.hidden = !show;
+}
+
+- (void)setKeyMomentsButtonShow:(BOOL)show {
+    self.keyMomentsButton.hidden = !show;
+}
+
+- (void)updateKeyMoments:(NSArray *)keyMoments duration:(NSTimeInterval)duration {
+    [self.progressSlider setKeyMoments:keyMoments duration:duration];
 }
 
 + (BOOL)checkView:(UIView *)otherView canBeHandlerForTouchPoint:(CGPoint)point onSkinView:(PLVLCBasePlayerSkinView *)skinView{
@@ -671,6 +680,21 @@ UIGestureRecognizerDelegate>
         [_paintButton addTarget:self action:@selector(paintButtonAction:) forControlEvents:UIControlEventTouchUpInside];
     }
     return _paintButton;
+}
+
+- (UIButton *)keyMomentsButton {
+    if (!_keyMomentsButton && self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+        _keyMomentsButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _keyMomentsButton.hidden = YES;
+        [_keyMomentsButton setTitle:@"精彩看点" forState:UIControlStateNormal];
+        [_keyMomentsButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        _keyMomentsButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
+        _keyMomentsButton.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
+        _keyMomentsButton.layer.cornerRadius = 4.0;
+        _keyMomentsButton.layer.masksToBounds = YES;
+        [_keyMomentsButton addTarget:self action:@selector(keyMomentsButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _keyMomentsButton;
 }
 
 - (UILabel *)currentTimeLabel{
@@ -942,6 +966,12 @@ UIGestureRecognizerDelegate>
     self.castButton.hidden = joinLinkMic ? YES : (self.showCastButton ? NO : YES);
 }
 
+- (void)keyMomentsButtonAction:(UIButton *)button {
+    if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinViewKeyMomentsButtonClicked:)]) {
+        [self.baseDelegate plvLCBasePlayerSkinViewKeyMomentsButtonClicked:self];
+    }
+}
+
 #pragma mark - [ Delegate ]
 - (void)plvProgressSlider:(PLVProgressSlider *)progressSlider sliderDragEnd:(CGFloat)currentSliderProgress{
     if([self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinView:sliderDragEnd:)]){
@@ -951,6 +981,13 @@ UIGestureRecognizerDelegate>
 
 - (void)plvProgressSlider:(PLVProgressSlider *)progressSlider sliderDragingProgressChange:(CGFloat)currentSliderProgress{
     
+}
+
+- (void)plvProgressSlider:(PLVProgressSlider *)progressSlider didTapKeyMoment:(PLVKeyMomentModel *)keyMoment {
+    if([self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinView:sliderDragEnd:)]){
+        CGFloat targetProgress = keyMoment.markTime / self.duration;
+        [self.baseDelegate plvLCBasePlayerSkinView:self sliderDragEnd:targetProgress];
+    }
 }
 
 #pragma mark PLVLCDocumentToolViewDelegate

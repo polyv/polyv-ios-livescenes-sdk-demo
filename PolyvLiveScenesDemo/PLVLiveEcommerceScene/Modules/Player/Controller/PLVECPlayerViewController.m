@@ -15,6 +15,10 @@
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVProgressHUD.h>
 #import "PLVWatermarkView.h"
+#import <PLVFoundationSDK/PLVFdUtil.h>
+#import "PLVLiveScenesSubtitleView.h"
+#import <PLVFoundationSDK/PLVFWeakProxy.h>
+#import <PLVLiveScenesSDK/PLVPlaybackVideoInfoModel.h>
 
 @interface PLVECPlayerViewController ()<
 PLVPlayerPresenterDelegate
@@ -48,6 +52,12 @@ PLVPlayerPresenterDelegate
 @property (nonatomic, strong) PLVLiveMarqueeView * marqueeView; // 跑马灯 (用于显示 ‘用户昵称’，规避非法录屏)
 @property (nonatomic, strong) UILabel *memoryPlayTipLabel; // 记忆播放提示
 
+@property (nonatomic, strong) PLVLiveScenesSubtitleView *subtitleView; // 字幕视图
+@property (nonatomic, strong) NSTimer *subtitleTimer; // 字幕刷新定时器
+@property (nonatomic, strong) NSMutableDictionary<NSString *, NSString *> *subtitleCache; // 字幕缓存
+@property (nonatomic, strong) PLVPlaybackSubtitleModel *currentOriginalSubtitle; // 当前原声字幕
+@property (nonatomic, strong) PLVPlaybackSubtitleModel *currentTranslateSubtitle; // 当前翻译字幕
+
 #pragma mark 基本数据
 @property (nonatomic, assign) CGRect displayRect; // 播放器区域rect
 @property (nonatomic, assign) CGSize videoSize; // 视频源尺寸
@@ -69,11 +79,16 @@ PLVPlayerPresenterDelegate
         self.playerPresenter.delegate = self;
         self.fullScreenEnable = NO;
         [self addTapGestureRecognizer];
+        self.subtitleCache = [NSMutableDictionary dictionary];
     }
     return self;
 }
 
 - (void)dealloc {
+    if (_subtitleTimer) {
+        [_subtitleTimer invalidate];
+        _subtitleTimer = nil;
+    }
     PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s",__FUNCTION__);
 }
 
@@ -84,6 +99,7 @@ PLVPlayerPresenterDelegate
     [self.view addSubview:self.playerBackgroundView];
     [self.view addSubview:self.contentBackgroudView];
     [self contentBackgroundViewDisplaySubview:self.displayView];
+    [self.view addSubview:self.subtitleView]; // 字幕视图改为 self.view 的子视图，方便定位到进度条上方
     [self.view addSubview:self.audioAnimalView];
     [self.view addSubview:self.playButton];
     [self.view addSubview:self.fullScreenButton];
@@ -125,6 +141,26 @@ PLVPlayerPresenterDelegate
         self.contentBackgroudView.frame = self.displayRect;
     }
     
+    // 设置播放按钮位置
+    self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, CGRectGetMinY(self.playerBackgroundView.frame) +  (CGRectGetHeight(self.playerBackgroundView.frame) - 72) / 2, 74, 72);
+    
+    // 设置字幕视图位置：在进度条上方 10px
+    // PLVECPlayerContolView 高度固定为 41px，距离屏幕底部的安全区域
+    CGFloat subtitleWidth = CGRectGetWidth(self.view.bounds) - 32; // 左右各留 16px 边距
+    CGFloat subtitleX = 16;
+    CGFloat subtitleHeight = 80; // 固定高度，足够显示单行或双行字幕
+    
+    // 进度条控件高度 41px + 底部安全区域 + 字幕与进度条间距 10px
+    CGFloat bottomOffset = 41 + P_SafeAreaBottomEdgeInsets() + 10;
+    CGFloat subtitleY = CGRectGetHeight(self.view.bounds) - bottomOffset - subtitleHeight;
+    
+    // 确保字幕视图不会超出屏幕顶部
+    if (subtitleY < 0) {
+        subtitleY = 0;
+    }
+    
+    self.subtitleView.frame = CGRectMake(subtitleX, subtitleY, subtitleWidth, subtitleHeight);
+    
     self.fullScreenButton.frame = CGRectMake(boundsSize.width - 36, CGRectGetMaxY(self.contentBackgroudView.frame) + 4, 32, 32);
     if (fullScreen || (boundsSize.width == 90 && boundsSize.height == 160)) {
         [self fullScreenButtonShowInView:NO];
@@ -139,8 +175,6 @@ PLVPlayerPresenterDelegate
     
     // 设置防录屏水印位置、尺寸
     self.watermarkView.frame = self.contentBackgroudView.frame;
-    
-    self.playButton.frame = CGRectMake((CGRectGetWidth(self.view.frame) - 74) / 2, CGRectGetMinY(self.playerBackgroundView.frame) +  (CGRectGetHeight(self.playerBackgroundView.frame) - 72) / 2, 74, 72);
     
     // 设置画中画占位图
     self.pictureInPicturePlaceholderView.frame = self.contentBackgroudView.frame;
@@ -194,6 +228,9 @@ PLVPlayerPresenterDelegate
     [self.contentBackgroudView addSubview:subview];
     subview.frame = self.contentBackgroudView.bounds;
     subview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    // 字幕视图现在是 self.view 的子视图，不需要在这里处理
+    // 触发布局更新，确保字幕视图位置正确
+    [self.view setNeedsLayout];
 }
 
 - (void)removeSubview:(UIView *)superview{
@@ -304,6 +341,143 @@ PLVPlayerPresenterDelegate
             weakSelf.memoryPlayTipLabel.alpha = 0;
         });
     }];
+}
+
+#pragma mark Subtitle
+
+- (void)updateSubtitleWithOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
+                           translate:(PLVPlaybackSubtitleModel * _Nullable)translateSubtitle {
+    [self invalidateSubtitleTimer];
+    self.currentOriginalSubtitle = originalSubtitle;
+    self.currentTranslateSubtitle = translateSubtitle;
+
+    if (!originalSubtitle && !translateSubtitle) {
+        [self.subtitleView setSubtitleContent1:nil subtitleContent2:nil];
+        return;
+    }
+
+    dispatch_group_t group = dispatch_group_create();
+    __block NSString *originalContent = @"";
+    __block NSString *translateContent = @"";
+
+    if (originalSubtitle) {
+        dispatch_group_enter(group);
+        [self fetchSubtitleContentForModel:originalSubtitle completion:^(NSString * _Nullable content) {
+            originalContent = content ?: @"";
+            dispatch_group_leave(group);
+        }];
+    }
+
+    if (translateSubtitle) {
+        dispatch_group_enter(group);
+        [self fetchSubtitleContentForModel:translateSubtitle completion:^(NSString * _Nullable content) {
+            translateContent = content ?: @"";
+            dispatch_group_leave(group);
+        }];
+    }
+
+    __weak typeof(self) weakSelf = self;
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        if (!weakSelf) {
+            return;
+        }
+        if (originalSubtitle && translateSubtitle) {
+            [weakSelf.subtitleView setSubtitleContent1:originalContent subtitleContent2:translateContent];
+        } else {
+            NSString *content = originalSubtitle ? originalContent : translateContent;
+            [weakSelf.subtitleView setSubtitleContent1:content subtitleContent2:nil];
+        }
+        [weakSelf startSubtitleTimer];
+    });
+}
+
+- (void)startSubtitleTimer {
+    [self invalidateSubtitleTimer];
+    NSTimer *timer = [NSTimer timerWithTimeInterval:0.2
+                                             target:[PLVFWeakProxy proxyWithTarget:self]
+                                           selector:@selector(subtitleTimerAction)
+                                           userInfo:nil
+                                            repeats:YES];
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSRunLoopCommonModes];
+    self.subtitleTimer = timer;
+}
+
+- (void)invalidateSubtitleTimer {
+    if (self.subtitleTimer) {
+        [self.subtitleTimer invalidate];
+        self.subtitleTimer = nil;
+    }
+}
+
+- (void)subtitleTimerAction {
+    [self.subtitleView showSubtilesWithPlaytime:self.playerPresenter.currentPlaybackTime];
+}
+
+- (void)fetchSubtitleContentForModel:(PLVPlaybackSubtitleModel *)model
+                           completion:(void (^)(NSString * _Nullable content))completion {
+    if (!completion || !model) {
+        return;
+    }
+
+    PLVPlaybackVideoInfoModel *videoInfo = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+    if ([videoInfo isKindOfClass:PLVPlaybackLocalVideoInfoModel.class]) {
+        PLVPlaybackLocalVideoInfoModel *localInfo = (PLVPlaybackLocalVideoInfoModel *)videoInfo;
+        NSString *fileName = [[model.srtUrl lastPathComponent] length] > 0 ? [model.srtUrl lastPathComponent] : model.name;
+        if (![PLVFdUtil checkStringUseable:fileName]) {
+            completion(@"");
+            return;
+        }
+        NSString *subtitlePath = [localInfo.subTitleFolderPath stringByAppendingPathComponent:fileName];
+        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            NSString *content = [NSString stringWithContentsOfFile:subtitlePath encoding:NSUTF8StringEncoding error:nil];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(content ?: @"");
+            });
+        });
+    } else {
+        [self requestStringWithUrl:model.srtUrl completion:^(NSString *string) {
+            completion(string ?: @"");
+        }];
+    }
+}
+
+- (void)requestStringWithUrl:(NSString *)url completion:(void (^)(NSString *string))completion {
+    if (!completion) {
+        return;
+    }
+    if (![PLVFdUtil checkStringUseable:url]) {
+        completion(@"");
+        return;
+    }
+
+    NSString *cachedString = self.subtitleCache[url];
+    if ([PLVFdUtil checkStringUseable:cachedString]) {
+        completion(cachedString);
+        return;
+    }
+
+    NSURL *requestURL = [NSURL URLWithString:url];
+    if (!requestURL) {
+        completion(@"");
+        return;
+    }
+
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:requestURL];
+    __weak typeof(self) weakSelf = self;
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData * _Nullable data, NSURLResponse * _Nullable response, NSError * _Nullable error) {
+        NSString *string = data ? [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] : @"";
+        if (!weakSelf) {
+            return;
+        }
+        if ([PLVFdUtil checkStringUseable:string]) {
+            @synchronized (weakSelf.subtitleCache) {
+                weakSelf.subtitleCache[url] = string;
+            }
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion([PLVFdUtil checkStringUseable:string] ? string : @"");
+        });
+    }] resume];
 }
 
 #pragma mark Getter
@@ -437,6 +611,18 @@ PLVPlayerPresenterDelegate
         _memoryPlayTipLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _memoryPlayTipLabel;
+}
+
+- (PLVLiveScenesSubtitleView *)subtitleView {
+    if (!_subtitleView) {
+        _subtitleView = [[PLVLiveScenesSubtitleView alloc] initBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.6)
+                                                                    fontSize1:16.0
+                                                                   textColor1:PLV_UIColorFromRGBA(@"#FFFFFF", 1.0)
+                                                                    fontSize2:14.0
+                                                                   textColor2:PLV_UIColorFromRGBA(@"#F0F1F5", 1.0)];
+        _subtitleView.hidden = YES;
+    }
+    return _subtitleView;
 }
 
 - (PLVRoomData *)roomData {

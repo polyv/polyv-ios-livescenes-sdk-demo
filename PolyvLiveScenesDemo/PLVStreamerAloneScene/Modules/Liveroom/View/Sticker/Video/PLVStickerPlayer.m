@@ -8,12 +8,12 @@
 
 #import "PLVStickerPlayer.h"
 #import <PLVIJKPlayer/PLVIJKPlayer.h>
-#import "PLVMediaPlayerSampleBufferDisplayView.h"
+#import "PLVSAMediaPlayerSampleBufferDisplayView.h"
 
 @interface PLVStickerPlayer ()
 
 @property (nonatomic, strong) PLVIJKFFMoviePlayerController *player;
-@property (nonatomic, strong) PLVMediaPlayerSampleBufferDisplayView *sampleBufferDisplayView;
+@property (nonatomic, strong) PLVSAMediaPlayerSampleBufferDisplayView *sampleBufferDisplayView;
 @property (nonatomic, strong) NSURL *videoURL;
 @property (nonatomic, assign, readwrite) PLVStickerPlayerState state;
 @property (nonatomic, strong, readwrite) UIView *playerView;
@@ -55,7 +55,7 @@
     [options setPlayerOptionIntValue:1 forKey:@"videotoolbox"];
     [options setPlayerOptionIntValue:1 forKey:@"enable-audio-data-callback"];
 
-    self.sampleBufferDisplayView = [[PLVMediaPlayerSampleBufferDisplayView alloc] initWithFrame:CGRectZero];
+    self.sampleBufferDisplayView = [[PLVSAMediaPlayerSampleBufferDisplayView alloc] initWithFrame:CGRectZero];
     self.sampleBufferDisplayView.backgroundColor = [UIColor clearColor];
     self.sampleBufferDisplayView.contentMode = UIViewContentModeScaleAspectFit;
     self.sampleBufferDisplayView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -365,7 +365,7 @@
         return nil;
     }
     
-    // 直接调用PLVMediaPlayerSampleBufferDisplayView的snapshot方法
+    // 直接调用PLVSAMediaPlayerSampleBufferDisplayView的snapshot方法
     if ([self.sampleBufferDisplayView respondsToSelector:@selector(snapshot)]) {
         return [self.sampleBufferDisplayView snapshot];
     }

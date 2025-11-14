@@ -120,6 +120,11 @@
         [self refreshGuideChatLabelFrame];
         [self refreshBottomButtonsFrame];
         
+        // 精彩看点按钮布局 - 只在回放场景显示，位于右侧，底部工具栏上方
+        if (self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+            [self refreshKeyMomentsButtonFrame];
+        }
+        
         CGFloat timeLabelWidth = [self getLabelTextWidth:self.currentTimeLabel];
         self.currentTimeLabel.frame = CGRectMake(CGRectGetMinX(self.playButton.frame), CGRectGetMinY(self.playButton.frame) - 14 - backButtonSize.height, timeLabelWidth, backButtonSize.height);
         
@@ -748,6 +753,9 @@
         [self refreshOnlineListButtonFrame];
         [self refreshDanmuButtonFrame];
         [self refreshGuideChatLabelFrame];
+        if (self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+            [self refreshKeyMomentsButtonFrame];
+        }
     }else{
         PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCLiveRoomPlayerSkinView - skinViewLiveStatusSwitchTo failed, skin view type illegal:%ld",self.skinViewType);
     }
@@ -892,6 +900,39 @@
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLiveRoomPlayerSkinView:userWannaSendChatContent:replyModel:)]) {
         [self.delegate plvLCLiveRoomPlayerSkinView:self userWannaSendChatContent:sendContent replyModel:replyModel];
     }
+}
+
+- (void)refreshKeyMomentsButtonFrame {
+    if (!self.keyMomentsButton || self.keyMomentsButton.hidden) {
+        return;
+    }
+    
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat viewHeight = CGRectGetHeight(self.bounds);
+    
+    // 按钮尺寸
+    CGFloat buttonWidth = 80.0;  // 适合显示"精彩看点"文字
+    CGFloat buttonHeight = 32.0;
+    
+    // 右侧安全区域边距
+    CGFloat rightSafePadding = 0;
+    if (@available(iOS 11.0, *)) {
+        rightSafePadding = self.safeAreaInsets.right;
+    }
+    // iPad适配
+    if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
+        rightSafePadding = 20.0;
+    }
+    
+    // 底部工具栏高度和间距
+    CGFloat bottomToolbarHeight = 90.0;  // 与bottomShadowLayer高度一致
+    CGFloat bottomSpacing = 20.0;  // 与底部工具栏的间距
+    
+    // 计算位置：右侧，底部工具栏上方，避开右侧功能按钮区域
+    CGFloat buttonX = viewWidth - rightSafePadding - 60 - buttonWidth;  // 60为右侧按钮区域预留宽度
+    CGFloat buttonY = viewHeight - bottomToolbarHeight - bottomSpacing - buttonHeight;
+    
+    self.keyMomentsButton.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
 }
 
 @end

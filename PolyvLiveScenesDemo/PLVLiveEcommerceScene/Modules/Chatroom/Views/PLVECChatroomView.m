@@ -226,6 +226,12 @@ PLVECChatroomMessageViewDelegate
 - (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict {
     NSInteger num = [modelDict[@"goodNum"] integerValue];
     NSString *unick = modelDict[@"unick"];
+    if ([PLVFdUtil checkStringUseable:unick] && [PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled) {
+        NSString *firstChar = [unick substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:unick.length - 1 withString:@"*" startingAtIndex:0];
+        unick = [firstChar stringByAppendingString:stars];
+    }
+    
     PLVRewardGoodsModel *model = [PLVRewardGoodsModel modelWithSocketObject:modelDict];
     [self.rewardDisplayManager addGoodsShowWithModel:model goodsNum:num personName:unick];
 }
@@ -314,7 +320,7 @@ PLVECChatroomMessageViewDelegate
             for (int i = 0; i < 3; i++) {
                 PLVChatUser *user = userArray[i];
                 if (user.userName && user.userName.length > 0) {
-                    [mutableString appendFormat:@"%@、", user.userName];
+                    [mutableString appendFormat:@"%@、", [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
                 }
             }
             if (mutableString.length > 1) {
@@ -323,7 +329,7 @@ PLVECChatroomMessageViewDelegate
             }
         } else {
             PLVChatUser *user = userArray[0];
-            string = user.userName;
+            string = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
         }
     }
     

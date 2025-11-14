@@ -1,17 +1,17 @@
 //
-//  PLVMediaPlayerSampleBufferDisplayView.m
+//  PLVSAMediaPlayerSampleBufferDisplayView.m
 //  PLVLiveScenesSDK
 //
 //  Created by Sakya on 2023/3/22.
 //  Copyright © 2023 PLV. All rights reserved.
 //
 
-#import "PLVMediaPlayerSampleBufferDisplayView.h"
+#import "PLVSAMediaPlayerSampleBufferDisplayView.h"
 #import <AVFoundation/AVFoundation.h>
 
 //#import "PLVConsoleLogger.h"
 
-@interface PLVMediaPlayerSampleBufferDisplayView()
+@interface PLVSAMediaPlayerSampleBufferDisplayView()
 
 #ifndef PLV_NO_IJK_EXIST
 
@@ -32,7 +32,7 @@
 
 @end
 
-@implementation PLVMediaPlayerSampleBufferDisplayView
+@implementation PLVSAMediaPlayerSampleBufferDisplayView
 
 #ifndef PLV_NO_IJK_EXIST
 

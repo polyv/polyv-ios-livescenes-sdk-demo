@@ -19,10 +19,20 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param commodity 商品链接url
 - (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didClickCommodityModel:(PLVCommodityModel *)commodity;
 
+/// 点击商品库中商品讲解的回调
+/// @param viewController 商品库页面控制器
+/// @param commodity 商品链接url
+- (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didClickExplainedCommodityModel:(PLVCommodityModel *)commodity;
+
 /// 点击职位详情的回调
 /// @param viewController 商品库页面控制器
 /// @param data 商品详情数据
 - (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didShowJobDetail:(NSDictionary *)data;
+
+/// 点击商品详情的回调
+/// @param viewController 商品库页面控制器
+/// @param data 商品详情数据
+- (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didShowProductDetail:(NSDictionary *)data;
 
 @end
 

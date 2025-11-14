@@ -9,6 +9,7 @@
 #import "PLVLiveWatchLoginController.h"
 
 #import <PLVFoundationSDK/PLVProgressHUD.h>
+#import <AVFoundation/AVFoundation.h>
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
@@ -24,7 +25,7 @@
 #define PushOrModel 0 // 进入页面方式（1-push、0-model）
 static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_demo";
 
-@interface PLVLiveWatchLoginController ()
+@interface PLVLiveWatchLoginController () <AVCaptureMetadataOutputObjectsDelegate>
 
 @property (nonatomic, weak) IBOutlet UIScrollView *scrollView;
 @property (nonatomic, weak) IBOutlet UIImageView *logoImgView;
@@ -51,6 +52,12 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 @property (weak, nonatomic) IBOutlet UILabel *vodListSwitchLabel;
 
 @property (nonatomic, weak) UIViewController *liveViewController;
+
+// 扫码相关属性
+@property (nonatomic, strong) UIButton *qrCodeScanButton;
+@property (nonatomic, strong) AVCaptureSession *captureSession;
+@property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;
+@property (nonatomic, strong) UIView *scannerView;
 
 @end
 
@@ -119,6 +126,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 - (void)dealloc {
     [self removeNotification];
+    [self stopQRCodeScanning];
 }
 
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
@@ -154,6 +162,9 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     
     [self liveSwitch:self.btnCloundClass];
 //    [self liveSwitch:self.btnLive];
+    
+    // 创建扫码按钮
+    [self setupQRCodeScanButton];
 }
 
 - (void)setTFStyle:(UITextField *)tf {
@@ -546,6 +557,230 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 - (void)saveParamsToFile {
     [[NSUserDefaults standardUserDefaults] setObject:@[self.appIDTF.text, self.userIDTF.text, self.appSecretTF.text, self.channelIdTF.text, self.vIdTF.text] forKey:kPLVUserDefaultLoginInfoKey];
+}
+
+#pragma mark - 扫码功能
+
+/// 创建扫码按钮
+- (void)setupQRCodeScanButton {
+    self.qrCodeScanButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [self.qrCodeScanButton setTitle:@"扫码配置" forState:UIControlStateNormal];
+    [self.qrCodeScanButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    self.qrCodeScanButton.backgroundColor = [UIColor colorWithRed:0.2 green:0.5 blue:1.0 alpha:1.0];
+    self.qrCodeScanButton.layer.cornerRadius = 8.0;
+    self.qrCodeScanButton.titleLabel.font = [UIFont systemFontOfSize:16];
+    [self.qrCodeScanButton addTarget:self action:@selector(qrCodeScanButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    
+    self.qrCodeScanButton.translatesAutoresizingMaskIntoConstraints = NO;
+    [self.view addSubview:self.qrCodeScanButton];
+    
+    // 设置约束：固定在屏幕底部
+    [NSLayoutConstraint activateConstraints:@[
+        [self.qrCodeScanButton.centerXAnchor constraintEqualToAnchor:self.view.centerXAnchor],
+        [self.qrCodeScanButton.bottomAnchor constraintEqualToAnchor:self.view.safeAreaLayoutGuide.bottomAnchor constant:-20],
+        [self.qrCodeScanButton.leadingAnchor constraintEqualToAnchor:self.view.leadingAnchor constant:40],
+        [self.qrCodeScanButton.trailingAnchor constraintEqualToAnchor:self.view.trailingAnchor constant:-40],
+        [self.qrCodeScanButton.heightAnchor constraintEqualToConstant:44]
+    ]];
+}
+
+/// 扫码按钮点击事件
+- (void)qrCodeScanButtonAction:(UIButton *)sender {
+    [self checkCameraPermissionAndStartScan];
+}
+
+/// 检查相机权限并开始扫描
+- (void)checkCameraPermissionAndStartScan {
+    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+    
+    if (status == AVAuthorizationStatusAuthorized) {
+        // 已授权，直接开始扫描
+        [self startQRCodeScanning];
+    } else if (status == AVAuthorizationStatusNotDetermined) {
+        // 未请求过权限，请求权限
+        __weak typeof(self) weakSelf = self;
+        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (granted) {
+                    [weakSelf startQRCodeScanning];
+                } else {
+                    [weakSelf showHud:@"需要相机权限才能扫描二维码" detail:@"请在设置中开启相机权限"];
+                }
+            });
+        }];
+    } else if (status == AVAuthorizationStatusDenied || status == AVAuthorizationStatusRestricted) {
+        // 权限被拒绝或受限
+        [self showHud:@"相机权限未开启" detail:@"请在设置-隐私-相机中开启权限"];
+    }
+}
+
+/// 开始二维码扫描
+- (void)startQRCodeScanning {
+    // 创建扫描器视图
+    self.scannerView = [[UIView alloc] initWithFrame:self.view.bounds];
+    self.scannerView.backgroundColor = [UIColor blackColor];
+    [self.view addSubview:self.scannerView];
+    
+    // 创建 AVCaptureSession
+    self.captureSession = [[AVCaptureSession alloc] init];
+    
+    // 获取摄像头设备
+    AVCaptureDevice *captureDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
+    if (!captureDevice) {
+        [self showHud:@"无法访问摄像头" detail:nil];
+        [self.scannerView removeFromSuperview];
+        return;
+    }
+    
+    NSError *error = nil;
+    AVCaptureDeviceInput *input = [AVCaptureDeviceInput deviceInputWithDevice:captureDevice error:&error];
+    if (error || !input) {
+        [self showHud:@"摄像头初始化失败" detail:error.localizedDescription];
+        [self.scannerView removeFromSuperview];
+        return;
+    }
+    
+    [self.captureSession addInput:input];
+    
+    // 创建输出对象
+    AVCaptureMetadataOutput *output = [[AVCaptureMetadataOutput alloc] init];
+    [self.captureSession addOutput:output];
+    
+    // 设置代理并指定处理队列
+    dispatch_queue_t queue = dispatch_queue_create("com.polyv.qrCodeScanQueue", DISPATCH_QUEUE_SERIAL);
+    [output setMetadataObjectsDelegate:self queue:queue];
+    
+    // 设置元数据类型为二维码
+    output.metadataObjectTypes = @[AVMetadataObjectTypeQRCode];
+    
+    // 创建预览层
+    self.previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:self.captureSession];
+    self.previewLayer.frame = self.scannerView.bounds;
+    self.previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    [self.scannerView.layer addSublayer:self.previewLayer];
+    
+    // 添加关闭按钮
+    UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
+    [closeButton setTitle:@"取消" forState:UIControlStateNormal];
+    [closeButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    closeButton.backgroundColor = [UIColor colorWithWhite:0.0 alpha:0.5];
+    closeButton.layer.cornerRadius = 8.0;
+    closeButton.frame = CGRectMake(20, 44, 80, 40);
+    [closeButton addTarget:self action:@selector(stopQRCodeScanning) forControlEvents:UIControlEventTouchUpInside];
+    [self.scannerView addSubview:closeButton];
+    
+    // 添加扫描提示
+    UILabel *tipLabel = [[UILabel alloc] initWithFrame:CGRectMake(0, CGRectGetMaxY(closeButton.frame) + 20, self.scannerView.bounds.size.width, 60)];
+    tipLabel.text = @"将二维码放入框内\n即可自动扫描";
+    tipLabel.textColor = [UIColor whiteColor];
+    tipLabel.textAlignment = NSTextAlignmentCenter;
+    tipLabel.numberOfLines = 2;
+    tipLabel.font = [UIFont systemFontOfSize:16];
+    [self.scannerView addSubview:tipLabel];
+    
+    // 添加扫描框
+    CGFloat scanSize = 250;
+    CGFloat scanX = (self.scannerView.bounds.size.width - scanSize) / 2.0;
+    CGFloat scanY = (self.scannerView.bounds.size.height - scanSize) / 2.0;
+    UIView *scanFrame = [[UIView alloc] initWithFrame:CGRectMake(scanX, scanY, scanSize, scanSize)];
+    scanFrame.layer.borderColor = [UIColor greenColor].CGColor;
+    scanFrame.layer.borderWidth = 2.0;
+    [self.scannerView addSubview:scanFrame];
+    
+    // 启动扫描
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        [self.captureSession startRunning];
+    });
+}
+
+/// 停止二维码扫描
+- (void)stopQRCodeScanning {
+    if (self.captureSession) {
+        [self.captureSession stopRunning];
+        self.captureSession = nil;
+    }
+    
+    if (self.previewLayer) {
+        [self.previewLayer removeFromSuperlayer];
+        self.previewLayer = nil;
+    }
+    
+    if (self.scannerView) {
+        [self.scannerView removeFromSuperview];
+        self.scannerView = nil;
+    }
+}
+
+#pragma mark - AVCaptureMetadataOutputObjectsDelegate
+
+- (void)captureOutput:(AVCaptureOutput *)output didOutputMetadataObjects:(NSArray<__kindof AVMetadataObject *> *)metadataObjects fromConnection:(AVCaptureConnection *)connection {
+    if (metadataObjects.count > 0) {
+        AVMetadataMachineReadableCodeObject *metadataObject = metadataObjects.firstObject;
+        if ([metadataObject.type isEqualToString:AVMetadataObjectTypeQRCode]) {
+            NSString *qrCodeString = metadataObject.stringValue;
+            
+            // 回到主线程处理
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self stopQRCodeScanning];
+                [self parseQRCodeString:qrCodeString];
+            });
+        }
+    }
+}
+
+/// 解析二维码字符串并填充参数
+- (void)parseQRCodeString:(NSString *)qrCodeString {
+    if (!qrCodeString || qrCodeString.length == 0) {
+        [self showHud:@"二维码内容为空" detail:nil];
+        return;
+    }
+    
+    // 解析 JSON
+    NSData *jsonData = [qrCodeString dataUsingEncoding:NSUTF8StringEncoding];
+    NSError *error = nil;
+    NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:&error];
+    
+    if (error || !jsonDict) {
+        [self showHud:@"二维码格式错误" detail:@"无法解析JSON数据"];
+        return;
+    }
+    
+    // 获取 params 字典
+    NSDictionary *params = jsonDict[@"params"];
+    if (!params || ![params isKindOfClass:[NSDictionary class]]) {
+        [self showHud:@"配置格式错误" detail:@"缺少 params 字段"];
+        return;
+    }
+    
+    // 直接读取字段并填充
+    NSString *channelId = params[@"liveChannelId"];
+    NSString *userId = params[@"liveUserId"];
+    NSString *appId = params[@"liveAppId"];
+    NSString *appSecret = params[@"liveAppSecret"];
+    NSString *videoId = params[@"playbackVideoId"];
+    
+    if ([self isValidString:channelId]) {
+        self.channelIdTF.text = channelId;
+    }
+    if ([self isValidString:userId]) {
+        self.userIDTF.text = userId;
+    }
+    if ([self isValidString:appId]) {
+        self.appIDTF.text = appId;
+    }
+    if ([self isValidString:appSecret]) {
+        self.appSecretTF.text = appSecret;
+    }
+    if ([self isValidString:videoId]) {
+        self.vIdTF.text = videoId;
+    }
+    
+    [self showHud:@"配置加载成功" detail:nil];
+}
+
+/// 检查字符串是否有效
+- (BOOL)isValidString:(NSString *)string {
+    return string && [string isKindOfClass:[NSString class]] && string.length > 0;
 }
 
 @end

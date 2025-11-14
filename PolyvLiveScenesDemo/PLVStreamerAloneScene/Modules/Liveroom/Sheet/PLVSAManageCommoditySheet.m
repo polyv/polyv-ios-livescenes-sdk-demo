@@ -56,9 +56,21 @@ PLVStreamerCommodityWebViewBridgeDelegate>
 
 - (void)loadWebView {
     NSString *urlString = PLVLiveConstantsStreamerProductHTML;
+    if ([PLVRoomDataManager sharedManager].roomData.menuInfo.mobileStartClientProductV2Enabled) {
+        urlString = PLVLiveConstantsStreamerProductV2HTML;
+    }
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
-    NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH) ? @"zh_CN" : @"en";
+    NSString *language = @"en";
+    if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH ) {
+        language = @"zh_CN";
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK) {
+        language = @"zh_HK";
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeKO) {
+        language = @"ko";
+    } else if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeJA) {
+        language= @"ja";
+    }
     urlString = [urlString stringByAppendingFormat:@"?security=%d&resourceAuth=%d&secureApi=%d&lang=%@", (security ? 1 : 0), (liveConfig.enableResourceAuth ? 1 : 0), (liveConfig.enableSecureApi ? 1 : 0), language];
 
     NSURL *posterURL = [NSURL URLWithString:urlString];
@@ -68,14 +80,20 @@ PLVStreamerCommodityWebViewBridgeDelegate>
 
 - (NSDictionary *)getUserInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *currentStreamState = @"end";
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvSAManageCommoditySheetCurrentStreamState)]) {
+        currentStreamState = [self.delegate plvSAManageCommoditySheetCurrentStreamState];
+    }
     NSDictionary *userInfo = @{
         @"nick" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerName],
         @"userId" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerId],
-        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar]
+        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar],
+        @"userType" : @"teacher"
     };
     NSDictionary *channelInfo = @{
         @"channelId" : [NSString stringWithFormat:@"%@", roomData.channelId],
-        @"roomId" : [NSString stringWithFormat:@"%@", roomData.channelId]
+        @"roomId" : [NSString stringWithFormat:@"%@", roomData.channelId],
+        @"liveStatus" : [PLVFdUtil checkStringUseable:currentStreamState] ? currentStreamState : @"end"
     };
     NSDictionary *sessionDict = @{
         @"appId" : [NSString stringWithFormat:@"%@", [PLVLiveVideoConfig sharedInstance].appId],
@@ -86,6 +104,9 @@ PLVStreamerCommodityWebViewBridgeDelegate>
     NSMutableDictionary *mutableDict = [[NSMutableDictionary alloc] init];
     [mutableDict setObject:userInfo forKey:@"userInfo"];
     [mutableDict setObject:channelInfo forKey:@"channelInfo"];
+    if (roomData.menuInfo.promotionInfo) {
+        [mutableDict setObject:roomData.menuInfo.promotionInfo forKey:@"promotionInfo"];
+    }
     [mutableDict addEntriesFromDictionary:sessionDict];
     
     return mutableDict;

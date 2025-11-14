@@ -367,7 +367,11 @@ UITableViewDataSource
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArray.count) {
+    if (self.closeGiftEffects) {
+        if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward.count) {
+            return [UITableViewCell new];
+        }
+    } else if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArray.count) {
         return [UITableViewCell new];
     }
     
@@ -565,14 +569,18 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArray.count) {
+    if (self.closeGiftEffects) {
+        if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward.count) {
+            return 0.0;
+        }
+    } else if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArray.count) {
         return 0.0;
     }
     
     CGFloat cellHeight =  44.0;
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    PLVChatModel *model = [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
+   PLVChatModel *model = self.closeGiftEffects ? [[PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward objectAtIndex:indexPath.row] : [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
     if ([PLVSASpeakMessageCell isModelValid:model]) {
         if (model.cellHeightForV == 0.0) {
             model.cellHeightForV = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];

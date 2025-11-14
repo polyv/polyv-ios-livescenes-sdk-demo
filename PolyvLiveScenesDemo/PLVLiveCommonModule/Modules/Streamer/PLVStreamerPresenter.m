@@ -908,7 +908,7 @@ PLVChannelClassManagerDelegate
     self.arraySafeQueue = dispatch_queue_create("PLVStreamerPresenterArraySafeQueue", DISPATCH_QUEUE_SERIAL);
     self.requestLinkMicOnlineListSafeQueue = dispatch_queue_create("PLVStreamerPresenterRequestLinkMicOnlineListSafeQueue", DISPATCH_QUEUE_SERIAL);
     self.prerecordUserMediaStatusDict = [[NSMutableDictionary alloc] init];
-    self.localPreviewViewFillMode = PLVBRTCVideoViewFillMode_Fill;
+    self.localPreviewViewFillMode = PLV_SafeIntegerForValue([PLVRoomDataManager sharedManager].roomData.menuInfo.mixStreamRenderMode) == PLVBRTCVideoViewFillMode_Fill ? PLVBRTCVideoViewFillMode_Fill : PLVBRTCVideoViewFillMode_Fit;
 
     /// 创建 获取连麦在线用户列表 定时器
     self.linkMicTimer = [NSTimer scheduledTimerWithTimeInterval:5.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(linkMicTimerEvent:) userInfo:nil repeats:YES];
@@ -1067,6 +1067,7 @@ PLVChannelClassManagerDelegate
         _rtcStreamerManager.delegate = self;
         /// 屏幕共享设置
         [_rtcStreamerManager setupAppGroup:PLVStreamerPresenter_AppGroup rtcType:self.rtcType];
+        _rtcStreamerManager.subscribeStreamFillMode = PLV_SafeIntegerForValue([PLVRoomDataManager sharedManager].roomData.menuInfo.mixStreamRenderMode) == PLVBRTCVideoViewFillMode_Fill ? PLVBRTCVideoViewFillMode_Fill : PLVBRTCVideoViewFillMode_Fit;
     }
     return _rtcStreamerManager;
 }
@@ -1271,7 +1272,10 @@ PLVChannelClassManagerDelegate
                 mixUser.inputType = PLVRTCStreamerMixUserInputType_AudioVideo;
                 mixUser.streamType = PLVRTCStreamerMixUserStreamType_Screen;
             } else {
-                mixUser.renderMode = PLVRTCStreamerMixUserRenderMode_Fill;
+                mixUser.renderMode = PLV_SafeIntegerForValue([PLVRoomDataManager sharedManager].roomData.menuInfo.mixStreamRenderMode) == PLVBRTCVideoViewFillMode_Fill ? PLVRTCStreamerMixUserRenderMode_Fill : PLVRTCStreamerMixUserRenderMode_FitBlackBase;
+                if (onlineUser.localUser) {
+                    mixUser.renderMode = self.localPreviewViewFillMode == PLVBRTCVideoViewFillMode_Fill ? PLVRTCStreamerMixUserRenderMode_Fill : PLVRTCStreamerMixUserRenderMode_FitBlackBase;
+                }
                 mixUser.inputType = onlineUser.currentCameraOpen ? PLVRTCStreamerMixUserInputType_AudioVideo : PLVRTCStreamerMixUserInputType_Audio;
                 mixUser.streamType = PLVRTCStreamerMixUserStreamType_Camera;
             }

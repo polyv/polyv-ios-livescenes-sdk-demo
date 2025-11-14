@@ -123,8 +123,8 @@
     }
     
     // 配置昵称文本
-    self.nickNameLabel.text = self.user.userName;
     NSString *localUserViewerId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    self.nickNameLabel.text = [self.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:localUserViewerId];
     self.localUserLabel.hidden = !([PLVFdUtil checkStringUseable:localUserViewerId] && [self.user.userId isEqualToString:localUserViewerId]);
 }
 

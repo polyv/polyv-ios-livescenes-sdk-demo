@@ -10,6 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVKeyMomentModel;
 @protocol PLVProgressSliderDelegate;
 
 /// 进度滑杆视图
@@ -48,6 +49,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param playedProgress 已观看进度 (指当前正在观看的位置点；范围:0.0~1.0)
 - (void)setProgressWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress;
 
+#pragma mark 精彩看点功能
+/// 精彩看点数据
+@property (nonatomic, strong) NSArray<PLVKeyMomentModel *> *keyMoments;
+
+/// 设置精彩看点数据并更新UI
+/// @param keyMoments 精彩看点数组
+/// @param duration 视频总时长
+- (void)setKeyMoments:(NSArray<PLVKeyMomentModel *> *)keyMoments duration:(NSTimeInterval)duration;
+
 @end
 
 @protocol PLVProgressSliderDelegate <NSObject>
@@ -69,6 +79,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param progressSlider 进度滑杆视图对象本身
 /// @param currentSliderProgress 拖动结束时，当前正在观看的位置点
 - (void)plvProgressSlider:(PLVProgressSlider *)progressSlider sliderDragEnd:(CGFloat)currentSliderProgress;
+
+@optional
+/// 点击时间轴上的精彩看点标记点
+/// @param progressSlider 进度滑杆视图对象
+/// @param keyMoment 被点击的精彩看点对象
+- (void)plvProgressSlider:(PLVProgressSlider *)progressSlider didTapKeyMoment:(PLVKeyMomentModel *)keyMoment;
 
 @end
 

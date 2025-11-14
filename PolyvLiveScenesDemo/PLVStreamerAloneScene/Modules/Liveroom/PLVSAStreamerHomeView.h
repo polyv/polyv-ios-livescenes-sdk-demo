@@ -15,7 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVSAStreamerHomeView, PLVLinkMicOnlineUser, PLVLinkMicOnlineUser, PLVSALinkMicWindowsView, PLVRTCStatistics;
-@class PLVStickerCanvas, PLVMemberPresenter;
+@class PLVStickerCanvas, PLVMemberPresenter, PLVCommodityModel;
 
 @protocol PLVSAStreamerHomeViewDelegate <NSObject>
 
@@ -42,6 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 改变 清晰度 触发回调（模版中推流质量等级）
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeStreamQualityLevel:(NSString *)streamQualityLevel;
+
+/// 获取当前流状态
+- (NSString *)streamerHomeViewCurrentStreamState:(PLVSAStreamerHomeView *)homeView;
 
 /// 获取当前连麦布局
 - (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView;
@@ -237,6 +240,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// 更新搜索结果
 /// @param results 搜索结果
 - (void)updateSearchResults:(NSArray<PLVChatUser *> *)results;
+
 
 @end
 

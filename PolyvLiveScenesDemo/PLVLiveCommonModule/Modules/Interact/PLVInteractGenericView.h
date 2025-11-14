@@ -47,6 +47,16 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// @param commodity 大卡片商品详情模型
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetail:(PLVCommodityModel *)commodity;
 
+/// 点击商品库中商品详情的回调
+/// @param interactView 互动视图
+/// @param commodity 大卡片商品详情模型
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetailPopup:(PLVCommodityModel *)commodity;
+
+/// 点击商品库中商品讲解的回调
+/// @param interactView 互动视图
+/// @param commodity 大卡片商品详情模型
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityExplained:(PLVCommodityModel *)commodity;
+
 /// 收到更新福利抽奖挂件的回调
 /// @param interactView 互动视图
 /// @param dict 抽奖挂件的数据

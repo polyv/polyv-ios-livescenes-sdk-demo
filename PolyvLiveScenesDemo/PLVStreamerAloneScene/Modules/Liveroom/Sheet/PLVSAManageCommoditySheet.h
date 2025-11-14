@@ -10,7 +10,15 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol PLVSAManageCommoditySheetDelegate <NSObject>
+
+- (NSString *)plvSAManageCommoditySheetCurrentStreamState;
+
+@end
+
 @interface PLVSAManageCommoditySheet : PLVSABottomSheet
+
+@property (nonatomic, weak) id<PLVSAManageCommoditySheetDelegate> delegate;
 
 @end
 

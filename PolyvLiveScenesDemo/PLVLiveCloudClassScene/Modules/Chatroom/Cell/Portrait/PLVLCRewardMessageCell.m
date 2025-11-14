@@ -8,6 +8,7 @@
 
 #import "PLVLCRewardMessageCell.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImageDownloader.h>
@@ -56,7 +57,7 @@
     self.cellWidth = cellWidth;
     self.model = model;
     PLVRewardMessage *message = (PLVRewardMessage *)self.model.message;
-    self.textView.attributedText = [self contentAttributedStringWithMessage:message];
+    self.textView.attributedText = [self contentAttributedStringWithMessage:message user:self.model.user];
 }
 
 /// 获取图片URL
@@ -99,13 +100,13 @@
 }
 
 /// 获取消息多属性文本
-- (NSMutableAttributedString *)contentAttributedStringWithMessage:(PLVRewardMessage *)message {
+- (NSMutableAttributedString *)contentAttributedStringWithMessage:(PLVRewardMessage *)message user:(PLVChatUser *)user {
     UIFont *font = [UIFont systemFontOfSize:14.0];
     UIColor *textColor = [UIColor whiteColor];
     NSDictionary *textAttDict = @{NSFontAttributeName:font,
                                      NSForegroundColorAttributeName:textColor};
     
-    NSString *nickName = message.unick;
+    NSString *nickName = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     if (nickName.length > 8) {
         nickName = [nickName substringWithRange:NSMakeRange(0, 8)];
         nickName = [nickName stringByAppendingString:@"..."];

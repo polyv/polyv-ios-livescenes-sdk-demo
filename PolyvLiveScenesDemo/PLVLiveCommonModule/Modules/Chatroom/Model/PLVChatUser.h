@@ -71,6 +71,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (PLVChatUser *)copyUser:(PLVChatUser *)user;
 
+- (NSString *)getDisplayNickname:(BOOL)hide loginUserId:(NSString *)loginUserId;
+
 @end
 
 NS_ASSUME_NONNULL_END

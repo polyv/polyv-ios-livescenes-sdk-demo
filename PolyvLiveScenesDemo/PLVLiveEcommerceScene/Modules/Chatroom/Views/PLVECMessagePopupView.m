@@ -10,6 +10,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kMaxContainerHeightScale = 0.64; // 弹窗最大高度为屏幕高度的0.64倍
@@ -244,7 +245,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
         return nil;
     }
     
-    NSString *content = [NSString stringWithFormat:@"%@：",user.userName];
+    NSString *content = [NSString stringWithFormat:@"%@：",[user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     NSDictionary *attributeDict = @{
                                     NSFontAttributeName: [UIFont systemFontOfSize:14.0],
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FFD16B"]

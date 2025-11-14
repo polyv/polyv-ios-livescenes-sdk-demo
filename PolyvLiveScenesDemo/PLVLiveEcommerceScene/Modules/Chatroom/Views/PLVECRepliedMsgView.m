@@ -10,6 +10,7 @@
 #import "PLVChatModel.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVECRepliedMsgView ()
@@ -52,7 +53,7 @@
     if (chatModel.user.userName &&
         [chatModel.user.userName isKindOfClass:[NSString class]] &&
         chatModel.user.userName.length > 0) {
-        [muString appendFormat:@"%@：", chatModel.user.userName];
+        [muString appendFormat:@"%@：", [chatModel.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     }
     
     id message = chatModel.message;

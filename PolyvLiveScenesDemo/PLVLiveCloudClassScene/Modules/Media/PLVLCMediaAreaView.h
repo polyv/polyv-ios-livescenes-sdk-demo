@@ -241,6 +241,8 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param testModeStatus 测试状态模式
 - (void)updateTestModeStatus:(BOOL)testModeStatus;
 
+- (void)mute:(BOOL)mute;
+
 @end
 
 @protocol PLVLCMediaAreaViewDelegate <NSObject>
@@ -392,6 +394,11 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 
 #pragma mark 防录屏的回调
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView preventScreenCapturing:(BOOL)start;
+
+#pragma mark 精彩看点的回调
+/// 精彩看点按钮被点击
+/// @param mediaAreaView 媒体区域视图
+- (void)plvLCMediaAreaViewKeyMomentsButtonClicked:(PLVLCMediaAreaView *)mediaAreaView;
 
 @end
 

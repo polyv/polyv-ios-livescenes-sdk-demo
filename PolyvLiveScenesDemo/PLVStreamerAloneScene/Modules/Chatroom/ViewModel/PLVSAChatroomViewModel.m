@@ -761,6 +761,24 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+#pragma mark 商品库管理
+
+- (void)productMessageEvent:(NSDictionary *)jsonDict {
+    NSString *subEvent = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+    if (![subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
+        return;
+    }
+    NSInteger status = PLV_SafeIntegerForDictKey(jsonDict, @"status");
+    if (status == 5) { // 收到 商品信息变动 消息时进行处理
+        NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
+        NSLog(@"PLVTEST 商品信息变动:%@", content);
+        if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel_updateCommodityModel:)]) {
+            [self.delegate chatroomViewModel_updateCommodityModel:model];
+        }
+    }
+}
+
 #pragma mark 公聊数据管理
 
 - (void)publicChatManagerTimerAction {
@@ -826,6 +844,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     // 有用户登出聊天室
     if ([subEvent isEqualToString:@"LOGOUT"]) {
         [self logoutEvent:jsonDict];
+    }
+    
+    if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
+        [self productMessageEvent:jsonDict];
     }
 }
 

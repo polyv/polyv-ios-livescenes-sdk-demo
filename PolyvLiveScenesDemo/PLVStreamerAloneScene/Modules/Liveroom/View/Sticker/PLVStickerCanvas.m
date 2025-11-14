@@ -11,7 +11,7 @@
 #import "PLVStickerTextView.h"
 #import "PLVStickerVideoView.h"
 #import "PLVStickerPlayer.h"
-#import "PLVMediaPlayerSampleBufferDisplayView.h"
+#import "PLVSAMediaPlayerSampleBufferDisplayView.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
 #import "PLVSAUtils.h"
 

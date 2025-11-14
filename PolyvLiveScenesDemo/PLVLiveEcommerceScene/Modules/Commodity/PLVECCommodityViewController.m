@@ -92,7 +92,8 @@ PLVProductWebViewBridgeDelegate
     NSDictionary *userInfo = @{
         @"nick" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerName],
         @"userId" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerId],
-        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar]
+        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar],
+        @"userType" : @"viewer"
     };
     NSDictionary *channelInfo = @{
         @"channelId" : [NSString stringWithFormat:@"%@", roomData.channelId],
@@ -180,12 +181,34 @@ PLVProductWebViewBridgeDelegate
     }
 }
 
+- (void)plvProductWebViewBridge:(PLVProductWebViewBridge *)webViewBridge clickProductExplainedButtonWithJSONObject:(id)jsonObject {
+    if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
+        [self tapAction:nil];
+        
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonObject, @"data");
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:data];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvECCommodityViewController:didClickExplainedCommodityModel:)]) {
+            [self.delegate plvECCommodityViewController:self didClickExplainedCommodityModel:model];
+        }
+    }
+}
+
 - (void)plvProductWebViewBridge:(PLVProductWebViewBridge *)webViewBridge showJobDetailWithJSONObject:(id)jsonObject {
     if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
         [self tapAction:nil];
         NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonObject, @"data");
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvECCommodityViewController:didShowJobDetail:)]) {
             [self.delegate plvECCommodityViewController:self didShowJobDetail:data];
+        }
+    }
+}
+
+- (void)plvProductWebViewBridge:(PLVProductWebViewBridge *)webViewBridge showProductDetailWithJSONObject:(id)jsonObject {
+    if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
+        [self tapAction:nil];
+        NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonObject, @"data");
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvECCommodityViewController:didShowProductDetail:)]) {
+            [self.delegate plvECCommodityViewController:self didShowProductDetail:data];
         }
     }
 }

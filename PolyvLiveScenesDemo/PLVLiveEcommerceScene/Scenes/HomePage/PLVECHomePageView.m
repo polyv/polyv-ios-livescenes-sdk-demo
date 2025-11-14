@@ -15,6 +15,7 @@
 #import "PLVECCommodityViewController.h"
 #import "PLVCommodityPushSmallCardView.h"
 #import "PLVECPlaybackListViewController.h"
+#import "PLVECSubtitleConfigView.h"
 #import <PLVLiveScenesSDK/PLVSocketManager.h>
 
 // UI
@@ -44,6 +45,7 @@ static NSString *const PLVECHomePageView_Data_PictureInPictureItemTitle = @"小�
 static NSString *const PLVECHomePageView_Data_PictureInPicturePlaySetItemTitle = @"播放设置";
 static NSString *const PLVECHomePageView_Data_SwitchLanguageItemTitle = @"PLVLiveLanguageSwitchTitle";
 static NSString *const PLVECHomePageView_Data_PlaySpeedItemTitle = @"播放速度";
+static NSString *const PLVECHomePageView_Data_SubtitleItemTitle = @"回放字幕";
 static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
 
 /// SwitchView类型
@@ -71,7 +73,8 @@ PLVSocketManagerProtocol,
 PLVECChatroomViewDelegate,
 PLVECCardPushButtonViewDelegate,
 PLVECLotteryWidgetViewDelegate,
-PLVECWelfareLotteryWidgetViewDelegate
+PLVECWelfareLotteryWidgetViewDelegate,
+PLVECSubtitleConfigViewDelegate
 >
 
 #pragma mark 数据
@@ -109,6 +112,7 @@ PLVECWelfareLotteryWidgetViewDelegate
 @property (nonatomic, strong) PLVCommodityPushSmallCardView *pushView;        // 商品推送视图
 @property (nonatomic, weak) PLVECPlaybackListViewController *playbackListVC;     //回放列表视图
 @property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
+@property (nonatomic, strong) PLVECSubtitleConfigView *subtitleConfigView; // 字幕配置视图
 
 #pragma mark UI
 
@@ -652,6 +656,14 @@ PLVECWelfareLotteryWidgetViewDelegate
 
 - (void)updatePlaybackVideoInfo {
     [self.chatroomView playbackVideoInfoDidUpdated];
+
+    // 加载显示默认字幕
+    if (self.type == PLVECHomePageType_Playback) {
+        PLVPlaybackVideoInfoModel *videoInfo = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+        if (videoInfo) {
+            [self loadDefaultSubtitle:videoInfo];
+        }
+    }
 }
 
 - (void)showNetworkQualityMiddleView {
@@ -770,6 +782,66 @@ PLVECWelfareLotteryWidgetViewDelegate
         onlineCountString = [NSString stringWithFormat:@"%0.1fk", onlineCount / 1000.0];
     }
     [self.onlineListButton setTitle:[NSString stringWithFormat:PLVLocalizedString(@"%@人在线"),onlineCountString] forState:UIControlStateNormal];
+}
+
+/// 设置字幕列表数据
+/// @param subtitleList 字幕列表数据
+- (void)setupSubtitleList:(NSArray<PLVPlaybackSubtitleModel *> *)subtitleList {
+    if (self.subtitleConfigView) {
+        [self.subtitleConfigView setupWithSubtitleList:subtitleList];
+    }
+}
+
+/// 加载默认字幕（参考云课堂逻辑）
+/// @param videoInfo 回放视频信息
+- (void)loadDefaultSubtitle:(PLVPlaybackVideoInfoModel *)videoInfo {
+    if (![PLVFdUtil checkArrayUseable:videoInfo.availableSubtitleList]) {
+        // 没有可用字幕，清空当前字幕
+        [self updateSubtitleWithOriginal:nil translate:nil];
+        return;
+    }
+        
+    // 选择默认字幕（参考云课堂逻辑）
+    PLVPlaybackSubtitleModel *originalSubtitle = nil;   // 原声字幕
+    PLVPlaybackSubtitleModel *translateSubtitle = nil;  // 翻译字幕
+    
+    for (PLVPlaybackSubtitleModel *subtitle in videoInfo.availableSubtitleList) {
+        if (![PLVPlaybackSubtitleModel isSubtitleAvailable:subtitle]) {
+            continue;
+        }
+        
+        // 原生字幕
+        if (subtitle.isOriginal && !originalSubtitle) {
+            originalSubtitle = subtitle;
+        }
+        // 第一个翻译字幕
+        if (!subtitle.isOriginal && !translateSubtitle) {
+            translateSubtitle = subtitle;
+        }
+        
+        // 如果已经找到原声和翻译字幕，可以提前退出
+        if (originalSubtitle && translateSubtitle) {
+            break;
+        }
+    }
+    
+    // 默认启用原声字幕（如果有的话）
+    [self updateSubtitleWithOriginal:originalSubtitle translate:translateSubtitle];
+    
+    // 更新字幕配置视图的数据
+    [self setupSubtitleList:videoInfo.availableSubtitleList];
+}
+
+/// 更新字幕显示（通过delegate回调给外部处理）
+/// @param originalSubtitle 原声字幕
+/// @param translateSubtitle 翻译字幕
+- (void)updateSubtitleWithOriginal:(PLVPlaybackSubtitleModel *)originalSubtitle 
+                         translate:(PLVPlaybackSubtitleModel *)translateSubtitle {
+    
+    // 通过delegate回调给外部（PLVECPlayerViewController）处理
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:updateSubtitleOriginal:translate:)]) {
+        [self.delegate homePageView:self updateSubtitleOriginal:originalSubtitle translate:translateSubtitle];
+    }
 }
 
 #pragma mark - Private
@@ -919,6 +991,18 @@ PLVECWelfareLotteryWidgetViewDelegate
 
 - (void)playbackTimeChanged {
     [self.chatroomView playbackTimeChanged];
+}
+
+- (void)showSubtitleSelectionView {
+    if (!self.subtitleConfigView) {
+        self.subtitleConfigView = [[PLVECSubtitleConfigView alloc] initWithSheetHeight:190.0 sheetLandscapeWidth:375.0];
+        self.subtitleConfigView.delegate = self;
+        // 使用当前可用的字幕列表数据
+        PLVPlaybackVideoInfoModel *videoInfo = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+        [self.subtitleConfigView setupWithSubtitleList:videoInfo.availableSubtitleList];
+    }
+    
+    [self.subtitleConfigView showInView:self];
 }
 
 #pragma mark 快直播
@@ -1190,6 +1274,18 @@ PLVECWelfareLotteryWidgetViewDelegate
     }
 }
 
+- (void)PLVCommodityPushSmallCardViewDidClickCommodityDetailPopup:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:didClickCommodityDetailPopup:)]) {
+        [self.delegate homePageView:self didClickCommodityDetailPopup:commodity];
+    }
+}
+
+- (void)PLVCommodityPushSmallCardViewDidClickExplained:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:didClickCommodityExplained:)]) {
+        [self.delegate homePageView:self didClickCommodityExplained:commodity];
+    }
+}
+
 #pragma mark PLVECCommodityViewControllerDelegate
 
 - (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didClickCommodityModel:(PLVCommodityModel *)commodity {
@@ -1198,9 +1294,21 @@ PLVECWelfareLotteryWidgetViewDelegate
     }
 }
 
+- (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didClickExplainedCommodityModel:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector: @selector(homePageView:didClickCommodityExplained:)]) {
+        [self.delegate homePageView:self didClickCommodityExplained:commodity];
+    }
+}
+
 - (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didShowJobDetail:(NSDictionary *)data {
     if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:didShowJobDetail:)]) {
         [self.delegate homePageView:self didShowJobDetail:data];
+    }
+}
+
+- (void)plvECCommodityViewController:(PLVECCommodityViewController *)viewController didShowProductDetail:(NSDictionary *)data {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:didShowProductDetail:)]) {
+        [self.delegate homePageView:self didShowProductDetail:data];
     }
 }
 
@@ -1333,6 +1441,19 @@ PLVECWelfareLotteryWidgetViewDelegate
         [muArray addObject:speedItem];
     }
     
+    // 字幕选项（仅回放场景显示）
+    if (self.type == PLVECHomePageType_Playback) {
+        // 如果有字幕数据 才添加选项
+        PLVPlaybackVideoInfoModel *videoInfo = [PLVRoomDataManager sharedManager].roomData.playbackVideoInfo;
+        if (videoInfo.availableSubtitleList.count > 0) {
+        PLVECMoreViewItem *subtitleItem = [[PLVECMoreViewItem alloc] init];
+        subtitleItem.title = PLVLocalizedString(PLVECHomePageView_Data_SubtitleItemTitle);
+            subtitleItem.iconImageName = @"plvec_live_subtitle_btn";
+            subtitleItem.selectedIconImageName = @"plvec_live_subtitle_btn";
+            [muArray addObject:subtitleItem];
+        }
+    }
+    
     // 小窗播放交互设置
     if (canEnablePictureInPicture){
         PLVECMoreViewItem *itemPlaySet = [[PLVECMoreViewItem alloc] init];
@@ -1398,6 +1519,9 @@ PLVECWelfareLotteryWidgetViewDelegate
     } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_PlaySpeedItemTitle)]) {
         moreView.hidden = YES;
         [self updateSwitchView:PLVECSwitchViewType_Speed];
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_SubtitleItemTitle)]) {
+        moreView.hidden = YES;
+        [self showSubtitleSelectionView];
     } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle)]) {
         moreView.hidden = YES;
         __weak typeof(self) weakSelf = self;
@@ -1593,6 +1717,15 @@ PLVECWelfareLotteryWidgetViewDelegate
 
 - (BOOL)textViewShouldBeginEditing:(UITextView *)textView {
     return NO;
+}
+
+#pragma mark PLVECSubtitleConfigViewDelegate
+
+- (void)subtitleConfigView:(PLVECSubtitleConfigView *)configView 
+    didUpdateSubtitleOriginal:(PLVPlaybackSubtitleModel *)originalSubtitle 
+                    translate:(PLVPlaybackSubtitleModel *)translateSubtitle {
+    // 使用统一的字幕更新方法
+    [self updateSubtitleWithOriginal:originalSubtitle translate:translateSubtitle];
 }
 
 @end

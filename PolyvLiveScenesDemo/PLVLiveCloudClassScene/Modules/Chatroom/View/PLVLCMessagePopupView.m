@@ -10,6 +10,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static NSString *kChatAdminLinkTextColor = @"#0092FA";
@@ -194,9 +195,9 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
         return nil;
     }
     
-    NSString *content = user.userName;
+    NSString *content = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
-        content = [NSString stringWithFormat:@"%@-%@", user.actor, user.userName];
+        content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
     }
 
     NSString *colorHexString = [user isUserSpecial] ? @"#78A7ED" : @"#ADADC0";

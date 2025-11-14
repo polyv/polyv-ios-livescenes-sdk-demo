@@ -84,6 +84,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用于提示用户‘图片表情加载失败’
 - (void)chatroomViewModel_loadImageEmotionFailure;
 
+/// 接收商品库商品更新状态
+- (void)chatroomViewModel_updateCommodityModel:(PLVCommodityModel *)commodityModel;
+
 @end
 
 /*

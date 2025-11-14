@@ -329,17 +329,20 @@ PLVSALinkMicPreviewViewDelegate
     if (self.linkMicGuideView.hadShowedLinkMicGuide && !self.linkMicGuideView.showingLinkMicGuide) {
         return;
     }
-    
-    UICollectionViewLayoutAttributes *attributes = [self.collectionView layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForRow:1 inSection:0]];
-    CGRect cellRect = attributes.frame;
-    UIView *homeVCView = [PLVSAUtils sharedUtils].homeVC.view;
-    CGRect cellFrameInSuperview = [self.collectionView convertRect:cellRect toView:homeVCView];
-    [self.linkMicGuideView updateGuideViewWithSuperview:homeVCView focusViewFrame:cellFrameInSuperview];
-    if (!self.linkMicGuideView.superview) {
-        if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowsView:showGuideViewOnExternal:)]) {
-            [self.delegate linkMicWindowsView:self showGuideViewOnExternal:self.linkMicGuideView];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)),
+                   dispatch_get_main_queue(), ^{
+        [self.collectionView layoutIfNeeded];
+        UICollectionViewLayoutAttributes *attributes = [self.collectionView layoutAttributesForItemAtIndexPath:[NSIndexPath indexPathForRow:1 inSection:0]];
+        CGRect cellRect = attributes.frame;
+        UIView *homeVCView = [PLVSAUtils sharedUtils].homeVC.view;
+        CGRect cellFrameInSuperview = [self.collectionView convertRect:cellRect toView:homeVCView];
+        [self.linkMicGuideView updateGuideViewWithSuperview:homeVCView focusViewFrame:cellFrameInSuperview];
+        if (!self.linkMicGuideView.superview) {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowsView:showGuideViewOnExternal:)]) {
+                [self.delegate linkMicWindowsView:self showGuideViewOnExternal:self.linkMicGuideView];
+            }
         }
-    }
+    });
 }
 
 - (void)cleanSpeakerView {

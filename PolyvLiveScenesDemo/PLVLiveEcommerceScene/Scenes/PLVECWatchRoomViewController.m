@@ -13,6 +13,7 @@
 #import "PLVRoomDataManager.h"
 #import "PLVECPlayerViewController.h"
 #import "PLVCommodityDetailViewController.h"
+#import "PLVCommodityExplainedViewController.h"
 #import "PLVBaseNavigationController.h"
 #import "PLVECFloatingWindow.h"
 #import "PLVECLinkMicAreaView.h"
@@ -26,6 +27,7 @@
 #import "PLVECLiveDetailPageView.h"
 #import "PLVECWatchRoomScrollView.h"
 #import "PLVCommodityCardDetailView.h"
+#import "PLVCommodityDetailPopupView.h"
 #import "PLVECMessagePopupView.h"
 #import "PLVECOnlineListSheet.h"
 #import "PLVECOnlineListRuleSheet.h"
@@ -52,11 +54,13 @@ UIScrollViewDelegate,
 PLVECLinkMicAreaViewDelegate,
 PLVLivePictureInPictureRestoreDelegate,
 PLVCommodityDetailViewControllerDelegate,
+PLVCommodityExplainedViewControllerDelegate,
 PLVPopoverViewDelegate,
 PLVInteractGenericViewDelegate,
 PLVECMessagePopupViewDelegate,
 PLVECOnlineListSheetDelegate,
-PLVECChatroomViewModelProtocol
+PLVECChatroomViewModelProtocol,
+PLVCommodityDetailPopupViewDelegate
 >
 
 #pragma mark 数据
@@ -68,6 +72,8 @@ PLVECChatroomViewModelProtocol
 #pragma mark 模块
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
 @property (nonatomic, strong) PLVCommodityDetailViewController *commodityDetailVC; // 商品详情页控制器
+@property (nonatomic, strong) PLVCommodityDetailPopupView *commodityDetailPopupView; // 商品详情弹出页视图
+@property (nonatomic, strong) PLVCommodityExplainedViewController *commodityExplainedVC;
 @property (nonatomic, strong) PLVECLinkMicAreaView *linkMicAreaView; //连麦
 @property (nonatomic, strong) PLVPopoverView *popoverView; // 浮动区域
 
@@ -271,7 +277,9 @@ PLVECChatroomViewModelProtocol
         
         /// 互动
         [self.view addSubview:self.popoverView];
+        [self.view addSubview:self.commodityDetailPopupView]; // 商品详情弹出页
         self.popoverView.frame = self.view.bounds;
+        self.commodityDetailPopupView.frame = self.view.bounds;
         
         [self.view insertSubview:((UIView *)self.linkMicAreaView.linkMicPreView) belowSubview:self.popoverView]; /// 保证低于 互动视图
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView]; /// 保证低于 互动视图
@@ -356,6 +364,23 @@ PLVECChatroomViewModelProtocol
         
         NSURL *commodityURL = [NSURL URLWithString:commodity.formattedLink];
         [self openCommodityDetailViewControllerWithURL:commodityURL];
+    }
+}
+
+- (void)handleProductExplainedClickWithCommodityModel:(PLVCommodityModel *)commodity {
+    // 跳转商品讲解页
+    self.commodityExplainedVC = [[PLVCommodityExplainedViewController alloc] initWithProductId:[@(commodity.productId) stringValue]];
+    self.commodityExplainedVC.delegate = self;
+    if (self.navigationController) {
+        self.navigationController.navigationBarHidden = NO;
+        [self.navigationController pushViewController:self.commodityExplainedVC animated:YES];
+    } else {
+        [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
+        [PLVECFloatingWindow sharedInstance].restoreWithPresent = NO;
+        PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:self.commodityExplainedVC];
+        nav.navigationBarHidden = NO;
+        nav.modalPresentationStyle = UIModalPresentationFullScreen;
+        [self presentViewController:nav animated:YES completion:nil];
     }
 }
 
@@ -477,6 +502,14 @@ PLVECChatroomViewModelProtocol
         _onlineListRuleSheet = [[PLVECOnlineListRuleSheet alloc] init];
     }
     return _onlineListRuleSheet;
+}
+
+- (PLVCommodityDetailPopupView *)commodityDetailPopupView {
+    if (!_commodityDetailPopupView) {
+        _commodityDetailPopupView = [[PLVCommodityDetailPopupView alloc] init];
+        _commodityDetailPopupView.delegate = self;
+    }
+    return _commodityDetailPopupView;
 }
 
 #pragma mark Getter
@@ -1025,6 +1058,17 @@ PLVECChatroomViewModelProtocol
     [self handleProductClickWithCommodityModel:commodity];
 }
 
+- (void)homePageView:(PLVECHomePageView *)homePageView didClickCommodityExplained:(PLVCommodityModel *)commodity {
+    [self handleProductExplainedClickWithCommodityModel:commodity];
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView didClickCommodityDetailPopup:(PLVCommodityModel *)commodity {
+    NSString *productId = [NSString stringWithFormat:@"%ld", (long)commodity.productId];;
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
+}
+
 - (void)homePageView:(PLVECHomePageView *)homePageView switchPause:(BOOL)pause {
     /// 播放广告中点击暂停按钮跳转页面
     NSString *advertHref = [PLVRoomDataManager sharedManager].roomData.channelInfo.advertHref;
@@ -1047,6 +1091,12 @@ PLVECChatroomViewModelProtocol
 
 - (void)homePageView:(PLVECHomePageView *)homePageView switchSpeed:(CGFloat)speed {
     [self.playerVC speedRate:speed];
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView
+updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
+            translate:(PLVPlaybackSubtitleModel * _Nullable)translateSubtitle {
+    [self.playerVC updateSubtitleWithOriginal:originalSubtitle translate:translateSubtitle];
 }
 
 - (NSInteger)homePageView_getCachedPlaybackSpeedIndex:(PLVECHomePageView *)homePageView {
@@ -1135,6 +1185,12 @@ PLVECChatroomViewModelProtocol
     }
 }
 
+- (void)PLVCommodityExplainedViewControllerAfterTheBack {
+    if (![PLVECFloatingWindow sharedInstance].hidden) {
+        [[PLVECFloatingWindow sharedInstance] close]; // 关闭悬浮窗
+    }
+}
+
 - (void)homePageView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit {
     [self.popoverView setRewardViewData:payWay rewardModelArray:modelArray pointUnit:pointUnit];
 }
@@ -1165,6 +1221,14 @@ PLVECChatroomViewModelProtocol
 
 - (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data {
     [self.popoverView.interactView openJobDetailWithData:data];
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView didShowProductDetail:(NSDictionary *)data {
+    // 显示商品详情弹出页
+    NSString *productId = PLV_SafeStringForDictKey(data, @"productId");
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
 }
 
 - (void)homePageView_receiveSpeakTopMessageChatModel:(PLVChatModel *)model showPinMsgView:(BOOL)show {
@@ -1241,6 +1305,17 @@ PLVECChatroomViewModelProtocol
     [self handleProductClickWithCommodityModel:commodity];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetailPopup:(PLVCommodityModel *)commodity {
+    NSString *productId = [NSString stringWithFormat:@"%ld", (long)commodity.productId];;
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityExplained:(PLVCommodityModel *)commodity {
+    [self handleProductExplainedClickWithCommodityModel:commodity];
+}
+
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateWelfareLotteryWidget:(NSDictionary *)dict {
     [self.homePageView updateWelfareLotteryWidgetViewInfo:dict];
 }
@@ -1302,6 +1377,12 @@ PLVECChatroomViewModelProtocol
         }
         [self.popoverView.interactView checkWelfareLotteryComment:comment];
     }
+}
+
+#pragma mark PLVCommodityDetailPopupViewDelegate
+
+- (void)plvCommodityDetailPopupView:(PLVCommodityDetailPopupView *)popupView didClickProductButton:(PLVCommodityModel *)commodity {
+    [self handleProductClickWithCommodityModel:commodity];
 }
 
 @end

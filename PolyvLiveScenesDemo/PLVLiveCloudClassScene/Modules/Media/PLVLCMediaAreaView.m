@@ -475,6 +475,14 @@ PLVLCDocumentPaintModeViewDelegate
     [self.pinMsgPopupView updatePopupViewWithMessage:message];
 }
 
+- (void)mute:(BOOL)mute {
+    if (mute) {
+        [self.playerPresenter mute];
+    } else {
+        [self.playerPresenter cancelMute];
+    }
+}
+
 #pragma mark 网络质量
 - (void)showNetworkQualityMiddleView {
     if (self.networkQualityMiddleViewShowed) {
@@ -640,9 +648,17 @@ PLVLCDocumentPaintModeViewDelegate
         self.playerPresenter.delegate = self;
         [self.playerPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview];
         
+        BOOL pptToMain = NO;
+        NSString *pptWatchLayout = PLV_SafeStringForDictKey([PLVRoomDataManager sharedManager].roomData.menuInfo.watchThemeModel, @"watchLayout");
+        if ([PLVFdUtil checkStringUseable:pptWatchLayout] && ![pptWatchLayout isEqualToString:@"followTeacher"]) {
+            pptToMain = [pptWatchLayout isEqualToString:@"ppt"];
+        }
         /// PPT模块
         [self.floatView displayExternalView:self.pptView]; /// 默认状态，是‘PPT画面’位于副屏(悬浮小窗)
         [self.floatView showFloatView:YES userOperat:NO];
+        if (pptToMain != self.pptOnMainSite) {
+            [self.floatView triggerViewExchangeEvent];
+        }
         [self playPPTView];
     }
 }
@@ -1427,6 +1443,13 @@ PLVLCDocumentPaintModeViewDelegate
     [self.paintModeView enterPaintModeWithPPTView:self.pptView];
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaView:didChangeInPaintMode:)]) {
         [self.delegate plvLCMediaAreaView:self didChangeInPaintMode:YES];
+    }
+}
+
+- (void)plvLCBasePlayerSkinViewKeyMomentsButtonClicked:(PLVLCBasePlayerSkinView *)skinView {
+    // 传递精彩看点按钮点击事件给上层代理
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewKeyMomentsButtonClicked:)]) {
+        [self.delegate plvLCMediaAreaViewKeyMomentsButtonClicked:self];
     }
 }
 

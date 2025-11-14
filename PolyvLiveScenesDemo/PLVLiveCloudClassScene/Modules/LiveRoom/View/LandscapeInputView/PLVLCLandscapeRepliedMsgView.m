@@ -10,6 +10,7 @@
 #import "PLVChatModel.h"
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLandscapeRepliedMsgView ()
@@ -49,7 +50,7 @@
     _chatModel = chatModel;
     
     NSMutableString *muString = [[NSMutableString alloc] init];
-    [muString appendFormat:@"%@：", chatModel.user.userName];
+    [muString appendFormat:@"%@：", [chatModel.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     
     id message = chatModel.message;
     if ([message isKindOfClass:[PLVSpeakMessage class]] ||

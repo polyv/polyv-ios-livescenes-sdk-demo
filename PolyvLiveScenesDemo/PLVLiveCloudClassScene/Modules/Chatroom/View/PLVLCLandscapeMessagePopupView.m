@@ -10,6 +10,7 @@
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 static CGFloat kContainerWidth = 380.0;
@@ -153,7 +154,7 @@ static NSString *kFilterRegularExpression = @"((http[s]{0,1}://)?[a-zA-Z0-9\\.\\
     NSDictionary *nickNameAttDict = @{NSFontAttributeName: font,
                                       NSForegroundColorAttributeName: nickNameColor};
     // 昵称文本字符串
-    NSString *content = user.userName;
+    NSString *content = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     if (user.actor && [user.actor isKindOfClass:[NSString class]] && user.actor.length > 0) {
         content = [NSString stringWithFormat:@"%@-%@", user.actor, content];
     }

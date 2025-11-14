@@ -7,7 +7,7 @@
 //
 
 #import "PLVCommodityPushSmallCardView.h"
-#import "PLVRoomData.h"
+#import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -65,8 +65,6 @@
 
 @property (nonatomic, assign) CFTimeInterval animatStartTime;
 
-@property (nonatomic, weak) PLVRoomData *roomData;
-
 @property (nonatomic, strong) NSTimer *timer;
 
 @property (nonatomic, assign) NSInteger timing;
@@ -74,6 +72,11 @@
 @property (nonatomic, assign) CGRect initialFrame;
 
 @property (nonatomic, assign) BOOL needShow; // 是否需要显示
+
+@property (nonatomic, strong) UIView *gestureView; // 手势视图
+
+@property (nonatomic, strong) UIButton *explainStatusButton; // 讲解状态按钮
+@property (nonatomic, assign) BOOL productExplainSwitchEnabled; // 商品讲解开关（为空时使用）
 
 @end
 
@@ -83,7 +86,10 @@
     self = [super init];
     if (self) {
         self.needShow = NO;
+        // 默认开启讲解开关（可由外部根据业务调整）
+        self.productExplainSwitchEnabled = YES;
         [self setupUI];
+        [self setProductHotEffectConfig];
     }
     return self;
 }
@@ -107,11 +113,12 @@
     self.frame = initialFrame;
     [superView addSubview:self];
     __weak typeof(self) weakSelf = self;
+    self.hotSaleTipView.hidden = YES;
     [UIView animateWithDuration:0.33 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         weakSelf.alpha = 1;
         weakSelf.frame = weakSelf.initialFrame;
     } completion:^(BOOL finished) {
-        [weakSelf setProductHotEffectConfig];
+        weakSelf.hotSaleTipView.hidden = !weakSelf.productHotEffectEnabled;
         if (weakSelf.delegate && [weakSelf.delegate respondsToSelector:@selector(PLVCommodityPushSmallCardViewDidShow:)]) {
             [weakSelf.delegate PLVCommodityPushSmallCardViewDidShow:YES];
         }
@@ -175,8 +182,8 @@
 - (void)sendProductClickedEvent:(PLVCommodityModel *)model {
     if (!model) {  return; }
 
-    NSString *roomId = self.roomData.channelId;
-    NSString *nickName = self.roomData.roomUser.viewerName;
+    NSString *roomId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    NSString *nickName = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerName;
     NSMutableDictionary *jsonDict = [NSMutableDictionary dictionary];
     jsonDict[@"EVENT"] = @"PRODUCT_CLICK";
     jsonDict[@"roomId"] = [NSString stringWithFormat:@"%@", roomId];
@@ -204,8 +211,12 @@
     [self.descBackgroundView addSubview:self.coverImageView];
     [self.descBackgroundView addSubview:self.tagLabel];
     
+    // 在backgroundView上按顺序添加：descBackgroundView -> gestureView -> showIdLabel -> closeButton
+    [self.backgroundView addSubview:self.gestureView];
     [self.backgroundView addSubview:self.showIdLabel];
     [self.backgroundView addSubview:self.closeButton];
+    // 新增：讲解状态按钮
+    [self.backgroundView addSubview:self.explainStatusButton];
     
     [self addSubview:self.hotSaleTipView];
     [self.hotSaleTipView.layer addSublayer:self.tipShadowLayer];
@@ -242,6 +253,9 @@
     
     self.closeButton.frame = CGRectMake(width - 18, showIdLabelOriginY, 18, 18);
     
+    // 设置手势视图的frame，覆盖整个backgroundView区域
+    self.gestureView.frame = self.backgroundView.bounds;
+    
     self.coverImageView.frame = CGRectMake(2, 2, 100, 100);
     self.descImageView.frame = CGRectMake(width - 62, descBackgroundViewHeight - 84, 62, 62);
     
@@ -257,12 +271,14 @@
         CGFloat nameLabelOriginY = self.tagLabel.hidden ? 8 : CGRectGetMaxY(self.tagLabel.frame);
         self.nameLabel.frame = CGRectMake(4, nameLabelOriginY, 96, 18);
     }
+
+    // 更新讲解状态按钮布局与样式（与 showIdLabel 互斥，位置和高度一致，宽度自适应文案）
+    [self updateExplainStatusButtonAppearanceAndLayout];
 }
 
 - (void)setProductHotEffectConfig {
     // 是否开启产品热卖特效
-    PLVLiveVideoChannelMenuInfo *menuInfo = self.roomData.menuInfo;
-    self.hotSaleTipView.hidden = !self.productHotEffectEnabled;
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
     if (self.productHotEffectEnabled) {
         _normalProductTips = PLV_SafeStringForDictKey(menuInfo.productHotEffectTips, @"normalProductTips");
         _financeProductTips = PLV_SafeStringForDictKey(menuInfo.productHotEffectTips, @"financeProductTips");
@@ -336,6 +352,53 @@
     UIFont *numFont = [UIFont systemFontOfSize:(animated ? 16 : 14) weight:500];
     [attributedString addAttributes:@{NSFontAttributeName:numFont,NSForegroundColorAttributeName:[UIColor whiteColor]} range:NSMakeRange(titleString.length + 1, numString.length)];
     self.tipTitleLabel.attributedText = attributedString;
+}
+
+- (void)updateExplainStatusButtonTitleAndVisibility {
+    if (!self.model) {
+        self.explainStatusButton.hidden = YES;
+        self.showIdLabel.hidden = NO;
+        return;
+    }
+    NSString *status = self.model.explainStatus;
+    NSString *title = nil;
+    if ([PLVFdUtil checkStringUseable:status]) {
+        if ([status isEqualToString:@"explained"]) {
+            title = PLVLocalizedString(@"看讲解");
+        } else if ([status isEqualToString:@"explaining"]) {
+            title = PLVLocalizedString(@"讲解中");
+        }
+    }
+    if (![PLVFdUtil checkStringUseable:title]) {
+        // status 为空，根据讲解开关判断
+        title = self.productExplainSwitchEnabled ? PLVLocalizedString(@"待讲解") : PLVLocalizedString(@"未开启");
+    }
+    [self.explainStatusButton setTitle:title forState:UIControlStateNormal];
+    self.explainStatusButton.hidden = NO;
+    // 互斥：显示按钮时隐藏商品序号
+    self.showIdLabel.hidden = !self.explainStatusButton.hidden ? YES : NO;
+}
+
+- (void)updateExplainStatusButtonAppearanceAndLayout {
+    CGFloat originY = self.coverImageView.hidden ? 4 : 2; // 与 showIdLabel 一致
+    // 字体与高度
+    self.explainStatusButton.titleLabel.font = [UIFont fontWithName:@"D-DIN-PRO" size:12] ?: [UIFont systemFontOfSize:12];
+    [self.explainStatusButton sizeToFit];
+    CGFloat textWidth = CGRectGetWidth(self.explainStatusButton.bounds);
+    CGFloat buttonWidth = textWidth + 8; // 与 showIdLabel 一致留白
+    self.explainStatusButton.frame = CGRectMake(2, originY, buttonWidth, 19);
+    // 背景与圆角：有图半透明黑底+2px 圆角；无图透明背景
+    BOOL hasImage = !self.coverImageView.hidden;
+    if (hasImage) {
+        self.explainStatusButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#000000" alpha:0.4];
+        self.explainStatusButton.layer.cornerRadius = 2.0;
+        [self.explainStatusButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF"] forState:UIControlStateNormal];
+    } else {
+        self.explainStatusButton.backgroundColor = [UIColor clearColor];
+        self.explainStatusButton.layer.cornerRadius = 0;
+        [self.explainStatusButton setTitleColor:[PLVColorUtil colorFromHexString:@"#3D3D3D"] forState:UIControlStateNormal];
+    }
+    self.explainStatusButton.layer.masksToBounds = YES;
 }
 
 - (void)destroy {
@@ -491,8 +554,34 @@
     return _tipShadowLayer;
 }
 
+- (UIButton *)explainStatusButton {
+    if (!_explainStatusButton) {
+        _explainStatusButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_explainStatusButton setTitleColor:[PLVColorUtil colorFromHexString:@"#FFFFFF"] forState:UIControlStateNormal];
+        _explainStatusButton.contentEdgeInsets = UIEdgeInsetsMake(0, 4, 0, 4);
+        [_explainStatusButton addTarget:self action:@selector(explainStatusButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _explainStatusButton.hidden = YES;
+    }
+    return _explainStatusButton;
+}
+
 - (BOOL)productHotEffectEnabled {
-    return self.roomData.menuInfo.productHotEffectEnabled;
+    return  [PLVRoomDataManager sharedManager].roomData.menuInfo.productHotEffectEnabled;
+}
+
+- (UIView *)gestureView {
+    if (!_gestureView) {
+        _gestureView = [[UIView alloc] init];
+        _gestureView.backgroundColor = [UIColor clearColor];
+        _gestureView.userInteractionEnabled = YES;
+        
+        // 添加单击手势
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(gestureViewTapped:)];
+        tapGesture.numberOfTapsRequired = 1;
+        tapGesture.numberOfTouchesRequired = 1;
+        [_gestureView addGestureRecognizer:tapGesture];
+    }
+    return _gestureView;
 }
 
 - (void)setModel:(PLVCommodityModel *)model {
@@ -506,7 +595,6 @@
     self.unincreaseTimes = 0;
     self.clickProductId = model.productId;
     self.productDescLabel.text = model.productDesc;
-    self.hotSaleTipView.hidden = YES;
 
     // 实际价格显示逻辑
     NSString *realPriceStr;
@@ -616,6 +704,9 @@
     self.jumpTextButton.enabled = [self canEnableProductClickButton];
     self.jumpTextButton.backgroundColor = [self canEnableProductClickButton] ? [PLVColorUtil colorFromHexString:@"#FF5252"] : [PLVColorUtil colorFromHexString:@"#FAA9AA"];
     
+    // 更新讲解状态按钮标题与显示
+    [self updateExplainStatusButtonTitleAndVisibility];
+    
     // 更新热度标签
     [self setTipTitleLabelContent:self.clickTimes animated:NO];
     plv_dispatch_main_async_safe(^{
@@ -664,6 +755,43 @@
         }
     }
     [self reportSmallCardClickTrackEvent];
+}
+
+- (void)gestureViewTapped:(UITapGestureRecognizer *)gesture {
+    // 获取点击位置（相对于backgroundView）
+    CGPoint tapPoint = [gesture locationInView:self.backgroundView];
+    
+    // 将点击位置转换为相对于descBackgroundView的坐标
+    CGPoint descTapPoint = [self.backgroundView convertPoint:tapPoint toView:self.descBackgroundView];
+    
+    // 检查是否点击在购买按钮区域
+    if (CGRectContainsPoint(self.jumpTextButton.frame, descTapPoint) ||  [PLVRoomDataManager sharedManager].roomData.menuInfo.outLinkProductRedirectEnabled) {
+        // 触发购买按钮点击
+        [self jumpButtonAction];
+        return;
+    }
+    
+    if ([self.model.productType isEqualToString:@"position"]) {
+        NSDictionary *data = [self.model plv_modelToJSONObject];
+        if ([PLVFdUtil checkDictionaryUseable:data]) {
+            if (self.delegate && [self.delegate respondsToSelector:@selector(PLVCommodityPushSmallCardViewDidShowJobDetail:)]) {
+                [self.delegate PLVCommodityPushSmallCardViewDidShowJobDetail:data];
+            }
+        }
+    } else {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(PLVCommodityPushSmallCardViewDidClickCommodityDetailPopup:)]) {
+            [self.delegate PLVCommodityPushSmallCardViewDidClickCommodityDetailPopup:self.model];
+        }
+    }
+}
+
+- (void)explainStatusButtonAction {
+    if (![PLVFdUtil checkStringUseable:self.model.explainStatus] || ![self.model.explainStatus isEqualToString:@"explained"]) {
+        return;
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(PLVCommodityPushSmallCardViewDidClickExplained:)]) {
+        [self.delegate PLVCommodityPushSmallCardViewDidClickExplained:self.model];
+    }
 }
 
 - (void)timerTick:(NSTimer *)timer {

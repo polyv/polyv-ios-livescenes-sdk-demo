@@ -198,7 +198,7 @@
         return nil;
     }
     
-    NSString *content = [NSString stringWithFormat:@"%@：",user.userName];
+    NSString *content = [NSString stringWithFormat:@"%@：",[user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId]];
     NSDictionary *attributeDict = @{
                                     NSFontAttributeName: [UIFont systemFontOfSize:12.0],
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#FFD16B"]

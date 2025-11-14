@@ -86,6 +86,11 @@
         
         self.fullScreenButton.frame = CGRectMake(CGRectGetMinX(self.moreButton.frame), CGRectGetMinY(self.playButton.frame), backButtonSize.width, commonHeight);
         self.paintButton.frame = CGRectMake(CGRectGetMaxX(self.fullScreenButton.frame) - backButtonSize.width - 8, CGRectGetMinY(self.fullScreenButton.frame) - 8 - backButtonSize.height, backButtonSize.width, backButtonSize.height);
+        
+        // 精彩看点按钮布局 - 只在回放场景显示，位于右侧，底部工具栏上方
+        if (self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+            [self refreshKeyMomentsButtonFrame];
+        }
                 
         [self refreshFloatViewShowButtonFrame];
         
@@ -195,6 +200,9 @@
     _skinViewLiveStatus = skinViewLiveStatus;
     
     [self refreshPictureInPictureButtonFrame];
+    if (self.skinViewType >= PLVLCBasePlayerSkinViewType_AlonePlayback) {
+        [self refreshKeyMomentsButtonFrame];
+    }
         
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshRefreshButtonFrame];
@@ -231,6 +239,32 @@
 
 - (void)refreshPaintButtonShow:(BOOL)show {
     self.paintButton.hidden = !show;
+}
+
+- (void)refreshKeyMomentsButtonFrame {
+    if (!self.keyMomentsButton || self.keyMomentsButton.hidden) {
+        return;
+    }
+    
+    CGFloat viewWidth = CGRectGetWidth(self.bounds);
+    CGFloat viewHeight = CGRectGetHeight(self.bounds);
+    
+    // 按钮尺寸
+    CGFloat buttonWidth = 80.0;  // 适合显示"精彩看点"文字
+    CGFloat buttonHeight = 32.0;
+    
+    // 右侧边距
+    CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 16.0 : 12.0;
+    
+    // 底部工具栏高度和间距
+    CGFloat bottomToolbarHeight = 70.0;  // 与bottomShadowLayer高度一致
+    CGFloat bottomSpacing = 16.0;  // 与底部工具栏的间距
+    
+    // 计算位置：右侧，底部工具栏上方
+    CGFloat buttonX = viewWidth - rightPadding - buttonWidth;
+    CGFloat buttonY = viewHeight - bottomToolbarHeight - bottomSpacing - buttonHeight;
+    
+    self.keyMomentsButton.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
 }
 
 @end

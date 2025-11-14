@@ -408,6 +408,13 @@ PLVSAChatroomListViewDelegate
     [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"图片表情资源加载失败")];
 }
 
+- (void)chatroomViewModel_updateCommodityModel:(PLVCommodityModel *)commodityModel {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomAreaView_updateCommodityModel:)]) {
+        [self.delegate chatroomAreaView_updateCommodityModel:commodityModel];
+    }
+}
+
 #pragma mark PLVSAChatroomListViewDelegate
 
 - (void)chatroomListViewDidScrollTableViewUp:(PLVSAChatroomListView *)listView {

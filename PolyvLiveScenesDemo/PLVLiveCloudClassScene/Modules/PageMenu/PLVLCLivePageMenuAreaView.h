@@ -107,10 +107,20 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param commodity 商品详情模型
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductCommodityModel:(PLVCommodityModel *)commodity;
 
+/// 点击商品库中的商品讲解的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param commodity 商品详情模型
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductExplainedCommodityModel:(PLVCommodityModel *)commodity;
+
 /// 点击职位详情的回调
 /// @param pageMenuAreaView 菜单视图
 /// @param data 商品详情数据
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowJobDetail:(NSDictionary *)data;
+
+/// 点击商品详情的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param data 商品详情数据
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowProductDetail:(NSDictionary *)data;
 
 /// 关闭商品库视图的回调
 /// @param pageMenuAreaView 菜单视图

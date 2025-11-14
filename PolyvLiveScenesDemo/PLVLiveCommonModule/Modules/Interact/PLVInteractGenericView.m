@@ -160,6 +160,7 @@ PLVInteractWebViewBridgeDelegate>
     }
 }
 
+
 - (void)openWelfareLottery {
     [self.webViewBridge callWebViewEvent:@{@"event" : @"SHOW_WELFARE_LOTTERY"}];
 }
@@ -479,6 +480,28 @@ PLVInteractWebViewBridgeDelegate>
         }
     }
 }
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge bigCardClickProductDetailWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    NSDictionary *data = PLV_SafeDictionaryForDictKey(dict, @"data");
+    if ([PLVFdUtil checkDictionaryUseable:data]) {
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:data];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:clickBigCardCommodityDetailPopup:)]) {
+            [self.delegate plvInteractGenericView:self clickBigCardCommodityDetailPopup:model];
+        }
+    }
+}
+
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge bigCardClickProductExplainedButtonWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    NSDictionary *data = PLV_SafeDictionaryForDictKey(dict, @"data");
+    if ([PLVFdUtil checkDictionaryUseable:data]) {
+        PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:data];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:clickBigCardCommodityExplained:)]) {
+            [self.delegate plvInteractGenericView:self clickBigCardCommodityExplained:model];
+        }
+    }
+}
+
 
 - (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge welfareLotteryEntranceDataChangeWithJSONObject:(id)jsonObject {
     NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];

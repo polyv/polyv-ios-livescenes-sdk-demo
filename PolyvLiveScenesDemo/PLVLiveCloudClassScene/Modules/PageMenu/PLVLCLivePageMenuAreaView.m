@@ -482,9 +482,21 @@ PLVRoomDataManagerProtocol
     }
 }
 
+- (void)plvLCClickProductExplainedInViewController:(PLVLCBuyViewController *)viewController commodityModel:(PLVCommodityModel *)commodity {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:clickProductExplainedCommodityModel:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self clickProductExplainedCommodityModel:commodity];
+    }
+}
+
 - (void)plvLCBuyViewController:(PLVLCBuyViewController *)viewController didShowJobDetail:(NSDictionary *)data {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:didShowJobDetail:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self didShowJobDetail:data];
+    }
+}
+
+- (void)plvLCBuyViewController:(PLVLCBuyViewController *)viewController didShowProductDetail:(NSDictionary *)data {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:didShowProductDetail:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self didShowProductDetail:data];
     }
 }
 

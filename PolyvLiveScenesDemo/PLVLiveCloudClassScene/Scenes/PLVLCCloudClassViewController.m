@@ -30,6 +30,7 @@
 #import "PLVBaseNavigationController.h"
 #import "PLVCommodityDetailViewController.h"
 #import "PLVCommodityCardDetailView.h"
+#import "PLVCommodityExplainedViewController.h"
 #import "PLVLCDownloadListViewController.h"
 #import "PLVLCMessagePopupView.h"
 #import "PLVLCLandscapeMessagePopupView.h"
@@ -37,10 +38,14 @@
 #import "PLVSecureView.h"
 #import "PLVLCOnlineListSheet.h"
 #import "PLVLCMediaPipSet.h"
+#import "PLVCommodityDetailPopupView.h"
 
 // 工具
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVKeyMomentsListView.h"
+#import <PLVLiveScenesSDK/PLVLiveVideoAPI.h>
+
 
 @interface PLVLCCloudClassViewController ()<
 PLVSocketManagerProtocol,
@@ -52,13 +57,16 @@ PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
 PLVCommodityPushSmallCardViewDelegate,
 PLVCommodityDetailViewControllerDelegate,
+PLVCommodityExplainedViewControllerDelegate,
 PLVPopoverViewDelegate,
 PLVInteractGenericViewDelegate,
 PLVLCChatroomPlaybackDelegate,
 PLVLCChatLandscapeViewDelegate,
 PLVLCMessagePopupViewDelegate,
 PLVLCLandscapeMessagePopupViewDelegate,
-PLVLCOnlineListSheetDelegate
+PLVLCOnlineListSheetDelegate,
+PLVCommodityDetailPopupViewDelegate,
+PLVKeyMomentsListViewDelegate
 >
 
 #pragma mark 数据
@@ -69,6 +77,7 @@ PLVLCOnlineListSheetDelegate
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
 @property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
+@property (nonatomic, strong) NSArray<PLVKeyMomentModel *> *keyMoments;   // 精彩看点数据
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentLandscape;    // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
@@ -116,11 +125,14 @@ PLVLCOnlineListSheetDelegate
 @property (nonatomic, strong) UIView *rewardSvgaView;                   // 礼物打赏动画父视图 （仅在横屏下有效）
 @property (nonatomic, strong) PLVCommodityPushSmallCardView *pushView;           // 商品推送视图
 @property (nonatomic, strong) PLVCommodityCardDetailView *cardDetailView;           // 卡片推送加载视图
+@property (nonatomic, strong) PLVCommodityDetailPopupView *commodityDetailPopupView; // 商品详情弹出页视图
 
 @property (nonatomic, strong) PLVLCChatLandscapeView *chatLandscapeView;     // 横屏聊天区
 @property (nonatomic, strong) PLVLCLiveRoomPlayerSkinView * liveRoomSkinView;// 横屏频道皮肤
 @property (nonatomic, strong) PLVLCOnlineListSheet *onlineListSheet;
 @property (nonatomic, strong) PLVLCMediaPipSet *pipPopSet;  // 小窗播放交互控制
+
+@property (nonatomic, strong) PLVKeyMomentsListView *keyMomentsListView;  // 精彩看点列表视图
 
 @property (nonatomic, assign) BOOL inBackground;
 @property (nonatomic, assign) BOOL enableSysScreenShot;
@@ -276,6 +288,9 @@ PLVLCOnlineListSheetDelegate
                 [weakSelf.mediaAreaView changeFileId:deleteFileId];
             }
         }];
+        
+        // 设置精彩看点功能
+        [self setupKeyMomentsFeature];
     }
 }
 
@@ -308,6 +323,7 @@ PLVLCOnlineListSheetDelegate
     [[PLVLCDownloadViewModel sharedViewModel] clear];
 }
 
+
 - (void)setupUI {
     self.view.backgroundColor = PLV_UIColorFromRGB(@"#0E141E");
     self.fullScreenDifferent = YES; //初始化默认值为YES。用于[updateUI]方法中，需要判断该字段的UI更新默认都执行一次
@@ -327,9 +343,10 @@ PLVLCOnlineListSheetDelegate
         [self.view addSubview:self.chatLandscapeView];// 横屏聊天区
         [self.view addSubview:self.liveRoomSkinView]; // 横屏频道皮肤
         [self.view addSubview:self.popoverView];      // 浮动区域
-
+        [self.view addSubview:self.commodityDetailPopupView]; // 商品详情弹出页
         /// 配置
         self.popoverView.frame = self.view.bounds;
+        self.commodityDetailPopupView.frame = self.view.bounds;
         
         self.liveRoomSkinView.frame = self.view.bounds;
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -349,9 +366,11 @@ PLVLCOnlineListSheetDelegate
         [self.view addSubview:self.chatLandscapeView];// 横屏聊天区
         [self.view addSubview:self.liveRoomSkinView]; // 横屏频道皮肤
         [self.view addSubview:self.popoverView];      // 浮动区域
+        [self.view addSubview:self.commodityDetailPopupView]; // 商品详情弹出页
 
         /// 配置
         self.popoverView.frame = self.view.bounds;
+        self.commodityDetailPopupView.frame = self.view.bounds;
         self.liveRoomSkinView.frame = self.view.bounds;
         self.liveRoomSkinView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         
@@ -602,6 +621,121 @@ PLVLCOnlineListSheetDelegate
     }
 }
 
+/// 跳转至商品讲解页
+- (void)jumpToCommodityExplainedViewController:(PLVCommodityModel *)commodity {
+    if (self.videoType == PLVChannelVideoType_Live) { /// 仅直播场景
+        [self.mediaAreaView mute:YES];
+        PLVCommodityExplainedViewController *commodityExplainedVC = [[PLVCommodityExplainedViewController alloc] initWithProductId:[@(commodity.productId) stringValue]];
+        commodityExplainedVC.delegate = self;
+        if (self.navigationController) {
+            self.navigationController.navigationBarHidden = NO;
+            [self.navigationController pushViewController:commodityExplainedVC animated:YES];
+        } else {
+            [PLVLivePictureInPictureRestoreManager sharedInstance].restoreWithPresent = NO;
+            PLVBaseNavigationController *nav = [[PLVBaseNavigationController alloc] initWithRootViewController:commodityExplainedVC];
+            nav.navigationBarHidden = NO;
+            nav.modalPresentationStyle = UIModalPresentationFullScreen;
+            [self presentViewController:nav animated:YES completion:nil];
+        }
+    }
+}
+
+#pragma mark - 精彩看点功能
+
+- (void)setupKeyMomentsFeature {
+    // 创建精彩看点列表视图
+    self.keyMomentsListView = [[PLVKeyMomentsListView alloc] init];
+    self.keyMomentsListView.delegate = self;
+    
+    // 加载精彩看点数据
+    [self loadKeyMomentsData];
+}
+
+- (void)loadKeyMomentsData {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType != PLVChannelVideoType_Playback) {
+        // 非回放场景，清除精彩看点数据
+        self.keyMoments = nil;
+        [self updateKeyMomentsUI];
+        return;
+    }
+    
+    NSString *channelId = roomData.channelId;
+    NSString *videoId = roomData.playbackVideoInfo.videoId;
+    
+    if (![PLVFdUtil checkStringUseable:channelId] || ![PLVFdUtil checkStringUseable:videoId]) {
+        PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer, @"Key moments: Invalid channelId or videoId");
+        // 参数无效时，清除精彩看点数据
+        self.keyMoments = nil;
+        [self updateKeyMomentsUI];
+        return;
+    }
+    
+    // 切换视频时，先清除旧的精彩看点数据，避免显示上一个视频的标记点
+    self.keyMoments = nil;
+    [self updateKeyMomentsUI];
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestKeyMomentsWithChannelId:channelId
+                                            videoId:videoId
+                                         completion:^(NSArray<PLVKeyMomentModel *> *keyMoments, NSError *error) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (error) {
+                PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer, @"Failed to load key moments: %@", error.localizedDescription);
+                // 请求失败时，确保清除精彩看点数据
+                weakSelf.keyMoments = nil;
+                [weakSelf updateKeyMomentsUI];
+                return;
+            }
+            
+            weakSelf.keyMoments = keyMoments;
+            [weakSelf updateKeyMomentsUI];
+            
+            PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer, @"Loaded %lu key moments", (unsigned long)keyMoments.count);
+        });
+    }];
+}
+
+- (void)updateKeyMomentsUI {
+    if (!self.keyMoments || self.keyMoments.count == 0) {
+        // 没有精彩看点数据，隐藏相关UI并清除进度条上的标记点
+        [self.mediaAreaView.skinView setKeyMomentsButtonShow:NO];
+        [self.liveRoomSkinView setKeyMomentsButtonShow:NO];
+        
+        // 清除进度条上的标记点（传入空数组）
+        NSTimeInterval duration = self.mediaAreaView.currentPlayTime > 0 ? self.mediaAreaView.currentPlayTime : 3600;
+        [self.mediaAreaView.skinView updateKeyMoments:@[] duration:duration];
+        [self.liveRoomSkinView updateKeyMoments:@[] duration:duration];
+        
+        // 清除列表视图数据
+        self.keyMomentsListView.keyMoments = @[];
+        return;
+    }
+    
+    // 有精彩看点数据，显示精彩看点按钮
+    [self.mediaAreaView.skinView setKeyMomentsButtonShow:YES];
+    [self.liveRoomSkinView setKeyMomentsButtonShow:YES];
+    
+    // 更新进度条上的时间轴标记
+    NSTimeInterval duration = self.mediaAreaView.currentPlayTime > 0 ? self.mediaAreaView.currentPlayTime : 3600; // 默认时长或获取实际时长
+    [self.mediaAreaView.skinView updateKeyMoments:self.keyMoments duration:duration];
+    [self.liveRoomSkinView updateKeyMoments:self.keyMoments duration:duration];
+    
+    // 更新列表视图数据
+    self.keyMomentsListView.keyMoments = self.keyMoments;
+}
+
+- (void)showKeyMomentsList {
+    if (!self.keyMomentsListView.superview) {
+        // 将列表视图添加到合适的父视图上
+        [self.view addSubview:self.keyMomentsListView];
+        self.keyMomentsListView.frame = self.view.bounds;
+    }
+    
+    [self.keyMomentsListView show];
+}
+
+
 #pragma mark Getter
 - (PLVLCMediaAreaView *)mediaAreaView{
     if (!_mediaAreaView) {
@@ -731,6 +865,14 @@ PLVLCOnlineListSheetDelegate
     }
     
     return _pipPopSet;
+}
+
+- (PLVCommodityDetailPopupView *)commodityDetailPopupView {
+    if (!_commodityDetailPopupView) {
+        _commodityDetailPopupView = [[PLVCommodityDetailPopupView alloc] init];
+        _commodityDetailPopupView.delegate = self;
+    }
+    return _commodityDetailPopupView;
 }
 
 - (PLVChannelType)channelType{
@@ -1068,6 +1210,11 @@ PLVLCOnlineListSheetDelegate
         NSInteger num = [modelDict[@"goodNum"] integerValue];
         NSString *unick = modelDict[@"unick"];
         PLVRewardGoodsModel *model = [PLVRewardGoodsModel modelWithSocketObject:modelDict];
+        if ([PLVFdUtil checkStringUseable:unick] && [PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled) {
+            NSString *firstChar = [unick substringToIndex:1];
+            NSString *stars = [@"" stringByPaddingToLength:unick.length - 1 withString:@"*" startingAtIndex:0];
+            unick = [firstChar stringByAppendingString:stars];
+        }
         [self.rewardDisplayManager addGoodsShowWithModel:model goodsNum:num personName:unick];
     }
 }
@@ -1331,6 +1478,16 @@ PLVLCOnlineListSheetDelegate
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView progressUpdateWithCachedProgress:(CGFloat)cachedProgress playedProgress:(CGFloat)playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:(NSString *)currentTimeString durationString:(NSString *)durationString{
     [self.playbackViewModel updateDuration:durationTime];
     [self.liveRoomSkinView setProgressWithCachedProgress:cachedProgress playedProgress:playedProgress durationTime:(NSTimeInterval)durationTime currentTimeString:currentTimeString durationString:durationString];
+    
+    // 更新精彩看点显示（当获得了视频时长信息时）
+    static NSTimeInterval lastDuration = 0;
+    if (durationTime > 0 && durationTime != lastDuration) {
+        lastDuration = durationTime;
+        if (self.keyMoments && self.keyMoments.count > 0) {
+            [self.mediaAreaView.skinView updateKeyMoments:self.keyMoments duration:durationTime];
+            [self.liveRoomSkinView updateKeyMoments:self.keyMoments duration:durationTime];
+        }
+    }
 }
 
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView noDelayLiveCastPlay:(BOOL)play {
@@ -1437,6 +1594,9 @@ PLVLCOnlineListSheetDelegate
     } else {
         [self.menuAreaView updateAISummaryVideoInfoWithVideoId:videoInfo.videoId];
     }
+    
+    // 视频信息更新时，重新加载精彩看点数据
+    [self loadKeyMomentsData];
 }
 
 - (void)plvLCMediaAreaViewWannaStartPictureInPicture:(PLVLCMediaAreaView *)mediaAreaView {
@@ -1453,6 +1613,11 @@ PLVLCOnlineListSheetDelegate
             [weakSelf dismissViewControllerAnimated:YES completion:nil];
         }
     };
+}
+
+// 精彩看点按钮
+- (void)plvLCMediaAreaViewKeyMomentsButtonClicked:(PLVLCMediaAreaView *)mediaAreaView {
+    [self showKeyMomentsList];
 }
 
 #pragma mark PLVLCLiveRoomPlayerSkinViewDelegate
@@ -1669,8 +1834,20 @@ PLVLCOnlineListSheetDelegate
     [self PLVCommodityPushSmallCardViewDidClickCommodityDetail:commodity];
 }
 
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView clickProductExplainedCommodityModel:(PLVCommodityModel *)commodity {
+    [self jumpToCommodityExplainedViewController:commodity];
+}
+
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowJobDetail:(NSDictionary *)data {
     [self.popoverView.interactView openJobDetailWithData:data];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowProductDetail:(NSDictionary *)data {
+    // 显示商品详情弹出页
+    NSString *productId = PLV_SafeStringForDictKey(data, @"productId");
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
 }
 
 - (void)plvLCLivePageMenuAreaViewCloseProductView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
@@ -1762,9 +1939,27 @@ PLVLCOnlineListSheetDelegate
     [self.popoverView.interactView openJobDetailWithData:data];
 }
 
+- (void)PLVCommodityPushSmallCardViewDidClickCommodityDetailPopup:(PLVCommodityModel *)commodity {
+    NSString *productId = [NSString stringWithFormat:@"%ld", (long)commodity.productId];;
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
+}
+
+- (void)PLVCommodityPushSmallCardViewDidClickExplained:(PLVCommodityModel *)commodity {
+    [self jumpToCommodityExplainedViewController:commodity];
+}
+
 #pragma mark  PLVCommodityDetailViewControllerDelegate
 
 - (void)plvCommodityDetailViewControllerAfterTheBack {
+    [self.mediaAreaView stopPictureInPicture];
+}
+
+#pragma mark  PLVCommodityExplainedViewControllerDelegate
+
+- (void)plvCommodityExplainedViewControllerAfterTheBack {
+    [self.mediaAreaView mute:NO];
     [self.mediaAreaView stopPictureInPicture];
 }
 
@@ -1885,6 +2080,18 @@ PLVLCOnlineListSheetDelegate
     [self PLVCommodityPushSmallCardViewDidClickCommodityDetail:commodity];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityDetailPopup:(PLVCommodityModel *)commodity {
+    // 显示商品详情弹出页
+    if (commodity && commodity.productId > 0) {
+        NSString *productId = [NSString stringWithFormat:@"%ld", (long)commodity.productId];
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView clickBigCardCommodityExplained:(PLVCommodityModel *)commodity {
+    [self jumpToCommodityExplainedViewController:commodity];
+}
+
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateWelfareLotteryWidget:(NSDictionary *)dict {
     [self.menuAreaView.chatVctrl updateWelfareLotteryWidgetInfo:dict];
 }
@@ -1945,6 +2152,30 @@ PLVLCOnlineListSheetDelegate
 
 - (void)plvLCOnlineListSheetNeedUpdateOnlineList:(PLVLCOnlineListSheet *)sheet {
     [[PLVLCChatroomViewModel sharedViewModel] updateOnlineList];
+}
+
+#pragma mark PLVCommodityDetailPopupViewDelegate
+
+- (void)plvCommodityDetailPopupView:(PLVCommodityDetailPopupView *)popupView didClickProductButton:(PLVCommodityModel *)commodity {
+    [self PLVCommodityPushSmallCardViewDidClickCommodityDetail:commodity];
+    
+}
+#pragma mark PLVKeyMomentsListViewDelegate
+
+- (void)keyMomentsListView:(PLVKeyMomentsListView *)listView didSelectKeyMoment:(PLVKeyMomentModel *)keyMoment {
+    // 用户点击列表中的精彩看点，跳转到对应时间点
+    [self.mediaAreaView seekLivePlaybackToTime:keyMoment.markTime];
+    
+    PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer, @"跳转到精彩看点: %@ (%.2f秒)", keyMoment.title, keyMoment.markTime);
+    
+    // 显示提示信息
+    NSString *message = [NSString stringWithFormat:@"跳转到: %@", keyMoment.title];
+    [PLVLiveToast showToastWithMessage:message inView:self.view afterDelay:2.0];
+}
+
+- (void)keyMomentsListViewWillDismiss:(PLVKeyMomentsListView *)listView {
+    // 列表即将关闭
+    PLV_LOG_DEBUG(PLVConsoleLogModuleTypePlayer, @"精彩看点列表关闭");
 }
 
 @end

@@ -500,7 +500,6 @@ UIDocumentPickerDelegate
     self.streamerPresenter = [[PLVStreamerPresenter alloc] init];
     self.streamerPresenter.delegate = self;
     self.streamerPresenter.preRenderContainer = self.linkMicAreaView;
-    self.streamerPresenter.localPreviewViewFillMode = PLVBRTCVideoViewFillMode_Fit;
     
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     
@@ -1689,6 +1688,29 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 
 - (NSString *)streamerHomeViewCurrentStreamQualityLevel:(PLVSAStreamerHomeView *)homeView {
     return self.streamerPresenter.streamQualityLevel;
+}
+
+- (NSString *)streamerHomeViewCurrentStreamState:(PLVSAStreamerHomeView *)homeView {
+    if (self.viewerType == PLVRoomUserTypeTeacher) {
+        return @"live";
+    }
+    
+    NSString *streamState = @"end";
+    switch (self.streamerPresenter.currentStreamState) {
+        case PLVChannelLiveStreamState_Live:
+            streamState = @"live";
+            break;
+        case PLVChannelLiveStreamState_Stop:
+            streamState = @"stop";
+            break;
+        case PLVChannelLiveStreamState_End:
+        case PLVChannelLiveStreamState_Unknown:
+            break;
+            
+        default:
+            break;
+    }
+    return streamState;
 }
 
 - (PLVMixLayoutType)streamerHomeViewCurrentMixLayoutType:(PLVSAStreamerHomeView *)homeView {

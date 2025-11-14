@@ -638,6 +638,7 @@ PLVLinkMicManagerDelegate
         [self cameraSwitch:self.cameraDefaultFront];
     }
     _linkMicManager.linkMicOnAudio = (self.linkMicMediaType == PLVChannelLinkMicMediaType_Audio);
+    _linkMicManager.subscribeStreamFillMode = PLV_SafeIntegerForValue([PLVRoomDataManager sharedManager].roomData.menuInfo.mixStreamRenderMode) == PLVBRTCVideoViewFillMode_Fill ? PLVBRTCVideoViewFillMode_Fill : PLVBRTCVideoViewFillMode_Fit;
 
     return _linkMicManager;
 }
@@ -974,6 +975,11 @@ PLVLinkMicManagerDelegate
                     if (user.localUser) {
                         weakSelf.currentLocalLinkMicUser = user;
                         
+                        PLVBRTCVideoViewCanvasModel * model = [[PLVBRTCVideoViewCanvasModel alloc]init];
+                        model.userRTCId = user.linkMicUserId;
+                        model.renderCanvasView = user.rtcView;
+                        model.rtcVideoVideoFillMode = PLV_SafeIntegerForValue([PLVRoomDataManager sharedManager].roomData.menuInfo.mixStreamRenderMode) == PLVBRTCVideoViewFillMode_Fill ? PLVBRTCVideoViewFillMode_Fill : PLVBRTCVideoViewFillMode_Fit;
+                        [weakSelf.linkMicManager setupLocalPreviewWithCanvasModel:model];
                         /// 根据‘全员静音’得出最终的麦克风开关状态
                         BOOL finalMicOpen = self.roomAllMicMute ? NO : weakSelf.micDefaultOpen;
                         

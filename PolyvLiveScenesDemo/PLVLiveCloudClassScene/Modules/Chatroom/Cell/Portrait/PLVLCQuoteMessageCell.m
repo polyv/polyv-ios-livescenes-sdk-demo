@@ -13,6 +13,7 @@
 #import "PLVLCUtils.h"
 #import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
 
@@ -232,6 +233,11 @@
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isEqualToString:quoteUserId]) {
         content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
+    } else if ([PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled && [PLVFdUtil checkStringUseable:content] && content.length > 1) {
+        
+        NSString *firstChar = [content substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:content.length - 1 withString:@"*" startingAtIndex:0];
+        content = [firstChar stringByAppendingString:stars];
     }
     
     NSDictionary *attributeDict = @{

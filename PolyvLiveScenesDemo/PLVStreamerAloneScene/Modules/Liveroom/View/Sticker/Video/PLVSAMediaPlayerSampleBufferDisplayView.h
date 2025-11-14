@@ -1,5 +1,5 @@
 //
-//  PLVMediaPlayerSampleBufferDisplayView.h
+//  PLVSAMediaPlayerSampleBufferDisplayView.h
 //  PLVLiveScenesSDK
 //
 //  Created by Sakya on 2023/3/22.
@@ -25,22 +25,22 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol PLVMediaPlayerSampleBufferDisplayViewDelegate ;
+@protocol PLVSAMediaPlayerSampleBufferDisplayViewDelegate ;
 
-@interface PLVMediaPlayerSampleBufferDisplayView : PLVIJKSDLGLThirdView
+@interface PLVSAMediaPlayerSampleBufferDisplayView : PLVIJKSDLGLThirdView
 
 @property (nonatomic, strong) AVSampleBufferDisplayLayer *sampleBufferDisplayLayer;
-@property (nonatomic, weak) id<PLVMediaPlayerSampleBufferDisplayViewDelegate> delegate;
+@property (nonatomic, weak) id<PLVSAMediaPlayerSampleBufferDisplayViewDelegate> delegate;
 @property (nonatomic, assign) BOOL enablePIPInBackground;
 
 - (id) initWithFrame:(CGRect)frame;
 
 @end
 
-@protocol PLVMediaPlayerSampleBufferDisplayViewDelegate <NSObject>
+@protocol PLVSAMediaPlayerSampleBufferDisplayViewDelegate <NSObject>
 
 /// 首帧渲染回调
-- (void)sampleBufferDisplayViewFirstFrameRendered:(PLVMediaPlayerSampleBufferDisplayView *) displayView;
+- (void)sampleBufferDisplayViewFirstFrameRendered:(PLVSAMediaPlayerSampleBufferDisplayView *) displayView;
 
 @end
 
