@@ -9,7 +9,7 @@ target 'PolyvLiveScenesDemo' do
   use_frameworks!
 
   # 保利威 多场景 SDK
-  pod 'PLVLiveScenesSDK', '1.17.0.3'
+  pod 'PLVLiveScenesSDK', '1.17.0.4'
 
   # 保利威 手机开播场景 需依赖的库
   pod 'PLVBytedEffectSDK', '4.4.2'
@@ -28,4 +28,16 @@ target 'PLVScreenShareExtension' do
   use_frameworks!
   pod 'PLVBusinessSDK', '1.17.0.1', :subspecs => ['AbstractBSH','ReplayKitExt']
   pod 'PLVFoundationSDK', '1.17.0.1'
+end
+
+post_install do |installer|
+  installer.generated_projects.each do |project|
+    project.targets.each do |target|
+        target.build_configurations.each do |config|
+            config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '12.0'
+            # 支持模拟器
+            config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "arm64"
+         end
+    end
+  end
 end
