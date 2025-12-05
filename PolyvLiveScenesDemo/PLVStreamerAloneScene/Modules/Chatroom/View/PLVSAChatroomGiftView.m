@@ -11,6 +11,10 @@
 // 工具
 #import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
+#if __has_include(<SDWebImage/SDAnimatedImageView.h>)
+    #import <SDWebImage/SDAnimatedImageView.h>
+    #define SDWebImageSDK5
+#endif
 
 @interface PLVSAChatroomGiftView ()
 
@@ -18,7 +22,11 @@
 @property (nonatomic, strong) UIImageView *backgroundImgView;
 @property (nonatomic, strong) UILabel *nameLabel;
 @property (nonatomic, strong) UILabel *messageLable;
+#ifdef SDWebImageSDK5
+@property (nonatomic, strong) SDAnimatedImageView *giftImgView;
+#else
 @property (nonatomic, strong) UIImageView *giftImgView;
+#endif
 @property (nonatomic, strong) UILabel *numLabel;
 
 // 数据
@@ -129,6 +137,15 @@
     return _backgroundImgView;
 }
 
+#ifdef SDWebImageSDK5
+- (SDAnimatedImageView *)giftImgView {
+    if (!_giftImgView) {
+        _giftImgView = [[SDAnimatedImageView alloc] init];
+        _giftImgView.contentMode = UIViewContentModeScaleAspectFit;
+    }
+    return _giftImgView;
+}
+#else
 - (UIImageView *)giftImgView {
     if (!_giftImgView) {
         _giftImgView = [[UIImageView alloc] init];
@@ -136,6 +153,7 @@
     }
     return _giftImgView;
 }
+#endif
 
 - (UILabel *)nameLabel {
     if (!_nameLabel) {

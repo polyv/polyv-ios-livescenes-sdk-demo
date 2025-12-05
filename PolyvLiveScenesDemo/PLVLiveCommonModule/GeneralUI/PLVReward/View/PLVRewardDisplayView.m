@@ -10,6 +10,10 @@
 #import "PLVMultiLanguageManager.h"
 #import <SDWebImage/UIImageView+WebCache.h>
 #import <SDWebImage/SDWebImageDownloader.h>
+#if __has_include(<SDWebImage/SDAnimatedImageView.h>)
+    #import <SDWebImage/SDAnimatedImageView.h>
+    #define SDWebImageSDK5
+#endif
 
 @interface PLVRewardDisplayView ()
 
@@ -18,7 +22,11 @@
 @property (nonatomic, strong) CAGradientLayer * gradientBgLayer;
 @property (nonatomic, strong) UILabel * nameLabel;
 @property (nonatomic, strong) UILabel * prizeNameLabel;
+#ifdef SDWebImageSDK5
+@property (nonatomic, strong) SDAnimatedImageView * prizeImageView;
+#else
 @property (nonatomic, strong) UIImageView * prizeImageView;
+#endif
 @property (nonatomic, strong) UIView * animationBgView;
 @property (nonatomic, strong) PLVStrokeBorderLabel * xSymbolLabel;
 @property (nonatomic, strong) PLVStrokeBorderLabel * numLabel;
@@ -125,6 +133,15 @@
     return _prizeNameLabel;
 }
 
+#ifdef SDWebImageSDK5
+- (SDAnimatedImageView *)prizeImageView{
+    if (!_prizeImageView) {
+        _prizeImageView = [[SDAnimatedImageView alloc]init];
+        
+    }
+    return _prizeImageView;
+}
+#else
 - (UIImageView *)prizeImageView{
     if (!_prizeImageView) {
         _prizeImageView = [[UIImageView alloc]init];
@@ -132,6 +149,7 @@
     }
     return _prizeImageView;
 }
+#endif
 
 - (UIView *)animationBgView{
     if (!_animationBgView) {

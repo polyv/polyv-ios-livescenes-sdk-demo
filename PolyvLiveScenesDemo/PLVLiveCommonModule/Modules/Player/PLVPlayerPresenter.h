@@ -247,9 +247,19 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param vid 回放视频id
 - (void)changeVid:(NSString *)vid;
 
+/// 切换回放视频
+/// @param vid 回放视频id
+/// @param forceClear 是否强制清理
+- (void)changeVid:(NSString *)vid forceClear:(BOOL)forceClear;
+
 /// 切换暂存视频
 /// @param fileId 暂存视频fileId
 - (void)changeFileId:(NSString *)fileId;
+
+/// 切换暂存视频
+/// @param fileId 暂存视频fileId
+/// @param forceClear 是否强制清理
+- (void)changeFileId:(NSString *)fileId forceClear:(BOOL)forceClear;
 
 #pragma mark 播放速度记忆功能
 /// 获取支持的播放速度数组

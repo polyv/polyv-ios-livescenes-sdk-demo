@@ -32,11 +32,16 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidTapExternalDeviceButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheet:(PLVLSMoreInfoSheet *)moreInfoSheet didChangeScreenShareOpen:(BOOL)screenShareOpen;
+
 @end
 
 @interface PLVLSMoreInfoSheet : PLVLSSideSheet
 
 @property (nonatomic, weak) id<PLVLSMoreInfoSheetDelegate> delegate;
+
+- (void)changeScreenShareButtonSelectedState:(BOOL)selectedState;
+- (void)startClass:(BOOL)start;
 
 @end
 

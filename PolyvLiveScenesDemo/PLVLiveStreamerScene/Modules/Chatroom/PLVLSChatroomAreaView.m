@@ -119,14 +119,25 @@ PLVLSChatroomViewModelProtocol
 #pragma mark - [ Override ]
 
 - (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
-    // 1.判断当前控件能否接收事件
-    if (self.userInteractionEnabled == NO || self.hidden == YES || self.alpha <= 0.01) {return nil;}
-    // 2. 判断点在不在当前控件
-    if ([self pointInside:point withEvent:event] == NO) {return nil;}
+    if (self.userInteractionEnabled == NO || self.hidden == YES || self.alpha <= 0.01 || [self pointInside:point withEvent:event] == NO) {
+        return nil;
+    }
     
-    // 3.从后往前遍历自己的子控件
-    NSInteger subViewCoutn = self.subviews.count;
-    for (NSInteger i = subViewCoutn - 1; i >= 0; i--) {
+    // 检查触摸点是否落在屏幕共享按钮区域（在 documentAreaView 中），如果是则返回 nil 让事件穿透
+    CGPoint pointInSuperview = [self convertPoint:point toView:self.superview];
+    for (UIView *subview in self.superview.subviews) {
+        if ([subview isKindOfClass:NSClassFromString(@"PLVLSDocumentAreaView")]) {
+            CGPoint pointInDocumentView = [self.superview convertPoint:pointInSuperview toView:subview];
+            UIView *hitView = [subview hitTest:pointInDocumentView withEvent:event];
+            // 如果 documentAreaView 的 hitTest 返回了一个按钮，说明点击的是屏幕共享按钮，返回 nil 让事件穿透
+            if ([hitView isKindOfClass:[UIButton class]]) {
+                return nil;
+            }
+        }
+    }
+    
+    // 从后往前遍历自己的子控件
+    for (NSInteger i = self.subviews.count - 1; i >= 0; i--) {
         UIView *childView = self.subviews[i];
         CGPoint childP = [self convertPoint:point toView:childView];
         UIView *fitView = [childView hitTest:childP withEvent:event];

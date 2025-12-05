@@ -210,6 +210,11 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 /// @param fileId 暂存视频fileId
 - (void)changeFileId:(NSString *)fileId;
 
+/// 切换暂存视频
+/// @param fileId 暂存视频fileId
+/// @param forceClear 是否强制清除
+- (void)changeFileId:(NSString *)fileId forceClear:(BOOL)forceClear;
+
 /// 指定数据 进行播放器切换
 ///
 /// @note PLVLCMediaAreaView 对象创建时，内部同时创建播放器。此时”频道号、直播回放Id"默认以 PLVRoomDataManager 中的配置为准；

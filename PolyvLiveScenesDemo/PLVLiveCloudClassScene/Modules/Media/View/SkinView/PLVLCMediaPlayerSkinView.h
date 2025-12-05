@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 此类是 PLVLCBasePlayerSkinView 的子类，更多API详见 PLVLCBasePlayerSkinView.h
 
+/// 动态更新投屏按钮状态
+- (void)setShowCastButton:(BOOL)showCastButton;
+
 @end
 
 NS_ASSUME_NONNULL_END

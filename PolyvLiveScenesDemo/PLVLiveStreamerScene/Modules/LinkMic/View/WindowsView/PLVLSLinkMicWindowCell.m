@@ -12,6 +12,7 @@
 #import "PLVMultiLanguageManager.h"
 #import "PLVLinkMicOnlineUser+LS.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 ///数据
 #import "PLVRoomDataManager.h"
@@ -43,6 +44,11 @@
 @property (nonatomic, strong) UIImageView *timerIcon; // 计时器图标
 @property (nonatomic, strong) UILabel *linkMicDuration; // 连麦时长
 @property (nonatomic, assign) BOOL linkMicDurationShow;
+@property (nonatomic, strong) UIImageView *screenSharingImageView; // 屏幕共享时 背景图
+@property (nonatomic, strong) UILabel *screenSharingLabel; // 屏幕共享时 文本框
+@property (nonatomic, strong) UIButton *screenSharingStopButton; // 屏幕共享停止按钮
+@property (nonatomic, strong) UIButton *screenSharingEndTextButton; // 空间不足时，"结束"文字按钮
+@property (nonatomic, assign) BOOL isShowingExternalContent; // 是否正在显示外部内容视图（如PPT）
 
 @end
 
@@ -97,6 +103,97 @@
     CGFloat timerIconOriginX = self.speakerAuthImageView.isHidden ? 4 : CGRectGetMaxX(self.speakerAuthImageView.frame) + 4;
     self.timerIcon.frame = CGRectMake(timerIconOriginX, 4, 12, 12);
     self.linkMicDuration.frame = CGRectMake(CGRectGetMaxX(self.timerIcon.frame) + 3, 4, cellWidth - CGRectGetMaxX(self.timerIcon.frame) + 3, 12);
+    
+    BOOL shouldShowScreenShareUI = self.userModel && self.userModel.localUser && self.userModel.currentScreenShareOpen && !self.isShowingExternalContent;
+    
+    if (shouldShowScreenShareUI) {
+        CGFloat iconHeight = 44.0;
+        CGFloat iconToLabelSpacing = 4.0;
+        CGFloat labelHeight = 18.0;
+        CGFloat labelToButtonSpacing = 12.0;
+        CGFloat buttonHeight = 32.0;
+        CGFloat requiredTotalHeight = iconHeight + iconToLabelSpacing + labelHeight + labelToButtonSpacing + buttonHeight;
+        
+        BOOL hasEnoughSpace = (cellHeight - 40) >= requiredTotalHeight;
+        
+        if (hasEnoughSpace) {
+            CGFloat contentStartY = (cellHeight - requiredTotalHeight) / 2;
+            self.screenSharingImageView.frame = CGRectMake((cellWidth - iconHeight)/2, contentStartY, iconHeight, iconHeight);
+            self.screenSharingImageView.hidden = NO;
+            
+            self.screenSharingLabel.attributedText = nil;
+            self.screenSharingLabel.text = PLVLocalizedString(@"您正在共享屏幕");
+            self.screenSharingLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
+            self.screenSharingLabel.textAlignment = NSTextAlignmentCenter;
+            
+            CGFloat sharingLabelWidth = [self.screenSharingLabel sizeThatFits:CGSizeMake(MAXFLOAT, labelHeight)].width;
+            self.screenSharingLabel.frame = CGRectMake((cellWidth - sharingLabelWidth)/2, CGRectGetMaxY(self.screenSharingImageView.frame) + iconToLabelSpacing, sharingLabelWidth, labelHeight);
+            self.screenSharingLabel.hidden = NO;
+            self.screenSharingEndTextButton.hidden = YES;
+            
+            NSString *stopButtonTitle = [self.screenSharingStopButton titleForState:UIControlStateNormal] ?: PLVLocalizedString(@"结束共享");
+            UIFont *stopButtonFont = self.screenSharingStopButton.titleLabel.font ?: [UIFont fontWithName:@"PingFang SC" size:14];
+            CGFloat stopButtonTextWidth = [stopButtonTitle sizeWithAttributes:@{NSFontAttributeName: stopButtonFont}].width;
+            CGFloat stopButtonWidth = stopButtonTextWidth + 44;
+            self.screenSharingStopButton.frame = CGRectMake((cellWidth - stopButtonWidth)/2, CGRectGetMaxY(self.screenSharingLabel.frame) + labelToButtonSpacing, stopButtonWidth, buttonHeight);
+            self.screenSharingStopButton.hidden = NO;
+        } else {
+            // 空间不足：只显示文字label（居中显示），并在文字后显示"结束"按钮
+            NSString *sharingText = PLVLocalizedString(@"您正在共享屏幕");
+            NSString *endText = PLVLocalizedString(@"结束");
+            NSString *fullText = [NSString stringWithFormat:@"%@ %@", sharingText, endText];
+            
+            NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:fullText];
+            NSRange fullRange = NSMakeRange(0, fullText.length);
+            [attributedText addAttribute:NSForegroundColorAttributeName value:[PLVColorUtil colorFromHexString:@"#F0F1F5"] range:fullRange];
+            [attributedText addAttribute:NSFontAttributeName value:[UIFont fontWithName:@"PingFang SC" size:12] range:fullRange];
+            
+            NSRange endTextRange = [fullText rangeOfString:endText];
+            if (endTextRange.location != NSNotFound) {
+                [attributedText addAttribute:NSForegroundColorAttributeName value:[PLVColorUtil colorFromHexString:@"#FF5053"] range:endTextRange];
+            }
+            
+            self.screenSharingLabel.attributedText = attributedText;
+            self.screenSharingLabel.textAlignment = NSTextAlignmentCenter;
+            
+            CGFloat sharingLabelWidth = [self.screenSharingLabel sizeThatFits:CGSizeMake(MAXFLOAT, labelHeight)].width;
+            CGFloat sharingLabelX = (cellWidth - sharingLabelWidth) / 2;
+            CGFloat sharingLabelY = (cellHeight - labelHeight) / 2;
+            self.screenSharingLabel.frame = CGRectMake(sharingLabelX, sharingLabelY, sharingLabelWidth, labelHeight);
+            self.screenSharingLabel.hidden = NO;
+            
+            if (endTextRange.location != NSNotFound) {
+                NSRange sharingTextRange = NSMakeRange(0, endTextRange.location);
+                NSString *sharingPart = [fullText substringWithRange:sharingTextRange];
+                CGFloat sharingTextWidth = [sharingPart sizeWithAttributes:@{NSFontAttributeName: [UIFont fontWithName:@"PingFang SC" size:12]}].width;
+                
+                CGFloat endButtonWidth = [endText sizeWithAttributes:@{NSFontAttributeName: [UIFont fontWithName:@"PingFang SC" size:12]}].width + 4; // 增加一些点击区域
+                CGFloat endButtonX = sharingLabelX + sharingTextWidth;
+                CGFloat endButtonHeight = labelHeight;
+                
+                self.screenSharingEndTextButton.frame = CGRectMake(endButtonX, sharingLabelY, endButtonWidth, endButtonHeight);
+                self.screenSharingEndTextButton.hidden = NO;
+            } else {
+                self.screenSharingEndTextButton.hidden = YES;
+            }
+            
+            self.screenSharingImageView.frame = CGRectZero;
+            self.screenSharingImageView.hidden = YES;
+            self.screenSharingStopButton.frame = CGRectZero;
+            self.screenSharingStopButton.hidden = YES;
+        }
+    } else {
+        self.screenSharingImageView.frame = CGRectZero;
+        self.screenSharingImageView.hidden = YES;
+        self.screenSharingLabel.frame = CGRectZero;
+        self.screenSharingLabel.hidden = YES;
+        self.screenSharingStopButton.frame = CGRectZero;
+        self.screenSharingStopButton.hidden = YES;
+        self.screenSharingEndTextButton.frame = CGRectZero;
+        self.screenSharingEndTextButton.hidden = YES;
+    }
+    
+    [self bringScreenShareUIToFront];
 }
 
 
@@ -168,6 +265,17 @@
         self.linkMicStatusLabel.hidden = YES;
     }
     
+    // 屏幕共享事件的响应、更新
+    // 初始状态下不是外部内容视图
+    self.isShowingExternalContent = NO;
+    
+    [self updateScreenShareViewWithOnlineUser:userModel];
+    [userModel addScreenShareOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        if ([onlineUser.linkMicUserId isEqualToString:weakSelf.userModel.linkMicUserId]) {
+            [weakSelf updateScreenShareViewWithOnlineUser:onlineUser];
+        }
+    } blockKey:self];
+    
     [self setNeedsLayout];
 }
 
@@ -179,6 +287,10 @@
     [self.contentView sendSubviewToBack:self.contentBackgroudView];
     // contentBackgroudView 承载 rtcCanvasView
     [self contentBackgroudViewAddView:rtcCanvasView];
+    self.isShowingExternalContent = NO;
+    [self bringScreenShareUIToFront];
+    [self updateScreenShareViewIfNeeded];
+    [self setNeedsLayout];
 }
 
 /// 切换至 显示外部内容视图
@@ -187,6 +299,12 @@
     [self.contentView bringSubviewToFront:self.contentBackgroudView];
     // contentBackgroudView 承载外部未知具体类型的视图
     [self contentBackgroudViewAddView:externalContentView];
+    self.isShowingExternalContent = YES;
+    self.screenSharingImageView.hidden = YES;
+    self.screenSharingLabel.hidden = YES;
+    self.screenSharingStopButton.hidden = YES;
+    self.screenSharingEndTextButton.hidden = YES;
+    [self bringScreenShareUIToFront];
 }
 
 - (void)updateLinkMicDuration:(BOOL)show {
@@ -239,6 +357,96 @@
     }
 }
 
+- (void)updateScreenShareViewWithOnlineUser:(PLVLinkMicOnlineUser *)onlineUser {
+    BOOL localUserScreenShareOpen = onlineUser.localUser ? onlineUser.currentScreenShareOpen : NO;
+    if (self.isShowingExternalContent) {
+        self.screenSharingImageView.hidden = YES;
+        self.screenSharingLabel.hidden = YES;
+        self.screenSharingStopButton.hidden = YES;
+        self.screenSharingEndTextButton.hidden = YES;
+        [onlineUser.canvasView rtcViewShow:!localUserScreenShareOpen && onlineUser.currentCameraShouldShow];
+        onlineUser.canvasView.placeholderImageView.hidden = localUserScreenShareOpen;
+        [self setNeedsLayout];
+        return;
+    }
+    
+    CGFloat cellHeight = CGRectGetHeight(self.bounds);
+    CGFloat requiredTotalHeight = 44.0 + 4.0 + 18.0 + 12.0 + 32.0; // 图标+间距+文字+间距+按钮
+    BOOL hasEnoughSpace = (cellHeight - 40.0) >= requiredTotalHeight;
+    
+    if (!localUserScreenShareOpen) {
+        self.screenSharingImageView.hidden = YES;
+        self.screenSharingLabel.hidden = YES;
+        self.screenSharingStopButton.hidden = YES;
+        self.screenSharingEndTextButton.hidden = YES;
+    }
+    
+    [onlineUser.canvasView rtcViewShow:!localUserScreenShareOpen && onlineUser.currentCameraShouldShow];
+    onlineUser.canvasView.placeholderImageView.hidden = localUserScreenShareOpen;
+    
+    [self bringScreenShareUIToFront];
+    [self setNeedsLayout];
+}
+
+/// 确保屏幕共享UI显示在最上层
+- (void)bringScreenShareUIToFront {
+    [self.contentView bringSubviewToFront:self.screenSharingEndTextButton];
+    [self.contentView bringSubviewToFront:self.screenSharingStopButton];
+    [self.contentView bringSubviewToFront:self.screenSharingLabel];
+    [self.contentView bringSubviewToFront:self.screenSharingImageView];
+}
+
+/// 根据当前屏幕共享状态更新显示（如果userModel存在）
+- (void)updateScreenShareViewIfNeeded {
+    if (self.userModel) {
+        [self updateScreenShareViewWithOnlineUser:self.userModel];
+    }
+}
+
+- (void)screenSharingStopButtonAction {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(linkMicWindowCellDidClickStopScreenSharing:)]) {
+        [self.delegate linkMicWindowCellDidClickStopScreenSharing:self];
+    }
+}
+
+#pragma mark - [ Override ]
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    if (!self.userInteractionEnabled || self.hidden || self.alpha <= 0.01 || ![self pointInside:point withEvent:event]) {
+        return nil;
+    }
+    
+    // 优先检查屏幕共享按钮区域，确保按钮即使被遮挡也能响应触摸
+    CGPoint pointInContentView = [self convertPoint:point toView:self.contentView];
+    
+    // 检查结束共享按钮
+    if (!self.screenSharingStopButton.hidden && self.screenSharingStopButton.userInteractionEnabled) {
+        CGPoint buttonPoint = [self.contentView convertPoint:pointInContentView toView:self.screenSharingStopButton];
+        if ([self.screenSharingStopButton pointInside:buttonPoint withEvent:event]) {
+            return self.screenSharingStopButton;
+        }
+    }
+    
+    // 检查结束文字按钮（空间不足时显示）
+    if (!self.screenSharingEndTextButton.hidden && self.screenSharingEndTextButton.userInteractionEnabled) {
+        CGPoint buttonPoint = [self.contentView convertPoint:pointInContentView toView:self.screenSharingEndTextButton];
+        if ([self.screenSharingEndTextButton pointInside:buttonPoint withEvent:event]) {
+            return self.screenSharingEndTextButton;
+        }
+    }
+    
+    UIView *hitView = [super hitTest:point withEvent:event];
+    if (hitView == self.contentBackgroudView || [hitView isDescendantOfView:self.contentBackgroudView]) {
+        for (UIView *superview = self.superview; superview; superview = superview.superview) {
+            if ([superview isKindOfClass:NSClassFromString(@"PLVLSDocumentAreaView")]) {
+                return nil;
+            }
+        }
+    }
+    
+    return hitView;
+}
+
 #pragma mark UI
 - (void)setupUI{
     // 添加 视图
@@ -250,6 +458,10 @@
     [self.contentView addSubview:self.nicknameLabel];
     [self.contentView addSubview:self.linkMicStatusLabel];
     [self.contentView addSubview:self.speakerAuthImageView];
+    [self.contentView addSubview:self.screenSharingImageView];
+    [self.contentView addSubview:self.screenSharingLabel];
+    [self.contentView addSubview:self.screenSharingStopButton];
+    [self.contentView addSubview:self.screenSharingEndTextButton];
 }
 
 #pragma mark Getter
@@ -341,6 +553,56 @@
         _linkMicDuration.hidden = YES;
     }
     return _linkMicDuration;
+}
+
+- (UIImageView *)screenSharingImageView {
+    if (!_screenSharingImageView) {
+        _screenSharingImageView = [[UIImageView alloc] init];
+        _screenSharingImageView.image = [PLVLSUtils imageForLinkMicResource:@"plvls_linkmic_window_screensharing_icon"];
+        _screenSharingImageView.hidden = YES;
+    }
+    return _screenSharingImageView;
+}
+
+- (UILabel *)screenSharingLabel {
+    if (!_screenSharingLabel) {
+        _screenSharingLabel = [[UILabel alloc] init];
+        _screenSharingLabel.text = PLVLocalizedString(@"您正在共享屏幕");
+        _screenSharingLabel.font = [UIFont fontWithName:@"PingFang SC" size:12];
+        _screenSharingLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
+        _screenSharingLabel.textAlignment = NSTextAlignmentCenter;
+        _screenSharingLabel.hidden = YES;
+    }
+    return _screenSharingLabel;
+}
+
+- (UIButton *)screenSharingStopButton {
+    if (!_screenSharingStopButton) {
+        _screenSharingStopButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _screenSharingStopButton.backgroundColor = [PLVColorUtil colorFromHexString:@"#FF5053"];
+        [_screenSharingStopButton setTitle:PLVLocalizedString(@"结束共享") forState:UIControlStateNormal];
+        [_screenSharingStopButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        _screenSharingStopButton.titleLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
+        _screenSharingStopButton.layer.cornerRadius = 16;
+        _screenSharingStopButton.clipsToBounds = YES;
+        _screenSharingStopButton.userInteractionEnabled = YES;
+        _screenSharingStopButton.enabled = YES;
+        [_screenSharingStopButton addTarget:self action:@selector(screenSharingStopButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _screenSharingStopButton.hidden = YES;
+    }
+    return _screenSharingStopButton;
+}
+
+- (UIButton *)screenSharingEndTextButton {
+    if (!_screenSharingEndTextButton) {
+        _screenSharingEndTextButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _screenSharingEndTextButton.backgroundColor = [UIColor clearColor];
+        _screenSharingEndTextButton.userInteractionEnabled = YES;
+        _screenSharingEndTextButton.enabled = YES;
+        [_screenSharingEndTextButton addTarget:self action:@selector(screenSharingStopButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _screenSharingEndTextButton.hidden = YES;
+    }
+    return _screenSharingEndTextButton;
 }
 
 @end

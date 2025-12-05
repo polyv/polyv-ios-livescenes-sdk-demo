@@ -151,11 +151,60 @@ UIGestureRecognizerDelegate
     }
 }
 
+#pragma mark - [ Override ]
+
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
+    if (!self.userInteractionEnabled || self.hidden || self.alpha <= 0.01 || ![self pointInside:point withEvent:event]) {
+        return nil;
+    }
+    
+    // 优先检查是否有子视图需要响应触摸（如工具条、画笔等）
+    for (NSInteger i = self.subviews.count - 1; i >= 0; i--) {
+        UIView *childView = self.subviews[i];
+        if (childView == self.contentBackgroundView) {
+            continue; // 跳过 contentBackgroundView，单独处理
+        }
+        CGPoint childPoint = [self convertPoint:point toView:childView];
+        UIView *hitView = [childView hitTest:childPoint withEvent:event];
+        if (hitView) {
+            return hitView;
+        }
+    }
+    
+    if (!self.contentBackgroundView) {
+        return nil;
+    }
+    
+    CGPoint contentPoint = [self convertPoint:point toView:self.contentBackgroundView];
+    UIView *hitView = [self.contentBackgroundView hitTest:contentPoint withEvent:event];
+    if (!hitView) {
+        return nil;
+    }
+    
+    // 如果 hitView 是按钮且在连麦 cell 中，返回按钮（屏幕共享按钮）
+    if ([hitView isKindOfClass:[UIButton class]]) {
+        for (UIView *parentView = hitView.superview; parentView; parentView = parentView.superview) {
+            if ([parentView isKindOfClass:NSClassFromString(@"PLVLSLinkMicWindowCell")]) {
+                return hitView;
+            }
+        }
+        return nil;
+    }
+    
+    // 如果 hitView 是连麦 cell，但点击的不是按钮区域，返回 nil 让事件穿透到下层
+    if ([hitView isKindOfClass:NSClassFromString(@"PLVLSLinkMicWindowCell")]) {
+        return nil;
+    }
+    
+    return hitView;
+}
+
 #pragma mark - Getter
 
 - (UIView *)contentBackgroundView {
     if (!_contentBackgroundView) {
         _contentBackgroundView = [[UIView alloc] init];
+        _contentBackgroundView.userInteractionEnabled = YES;
     }
     return _contentBackgroundView;
 }

@@ -23,13 +23,21 @@
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#if __has_include(<SDWebImage/SDAnimatedImageView.h>)
+    #import <SDWebImage/SDAnimatedImageView.h>
+    #define SDWebImageSDK5
+#endif
 
 static NSString *kRedpackMessageTapKey = @"redpackTap";
 
 @interface PLVECChatCell ()
 
 /// UI
+#ifdef SDWebImageSDK5
+@property (nonatomic, strong) SDAnimatedImageView *chatImageView;
+#else
 @property (nonatomic, strong) UIImageView *chatImageView;
+#endif
 @property (nonatomic, strong) PLVPhotoBrowser *photoBrowser;
 @property (nonatomic, strong) UIImageView *fileImageView;
 @property (nonatomic, strong) UIView *tapGestureView;
@@ -583,6 +591,23 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
 
 #pragma mark Getter
 
+#ifdef SDWebImageSDK5
+- (SDAnimatedImageView *)chatImageView {
+    if (!_chatImageView) {
+        _chatImageView = [[SDAnimatedImageView alloc] init];
+        _chatImageView.layer.masksToBounds = YES;
+        _chatImageView.layer.cornerRadius = 4.0;
+        _chatImageView.userInteractionEnabled = YES;
+        _chatImageView.contentMode = UIViewContentModeScaleAspectFill;
+        _chatImageView.hidden = YES;
+        
+        self.photoBrowser = [[PLVPhotoBrowser alloc] init];
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(chatImageViewTapAction)];
+        [_chatImageView addGestureRecognizer:tapGesture];
+    }
+    return _chatImageView;
+}
+#else
 - (UIImageView *)chatImageView {
     if (!_chatImageView) {
         _chatImageView = [[UIImageView alloc] init];
@@ -598,6 +623,7 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     }
     return _chatImageView;
 }
+#endif
 
 - (UIImageView *)fileImageView {
     if (!_fileImageView) {

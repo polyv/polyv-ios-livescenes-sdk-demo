@@ -130,13 +130,22 @@
     CGSize buttonSize = CGSizeMake(40.0, 40.0);
     CGFloat viewWidth = CGRectGetWidth(self.bounds);
     CGFloat rightPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 10.0 : 2.0;
+    CGFloat buttonInterval = 5.0; // 按钮之间的间距
     CGFloat moreBtnFrameX = viewWidth - rightPadding - buttonSize.width;
-    CGFloat pipFrameX = self.moreButton.hidden ? moreBtnFrameX : moreBtnFrameX - buttonSize.width;
-    self.castButton.hidden = YES;
-    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
-        self.castButton.hidden = NO;
+    CGFloat pipFrameX;
+    
+    // 计算画中画按钮位置：从右到左依次是 moreButton -> castButton -> pictureInPictureButton
+    if (!self.castButton.hidden && self.castButton.frame.size.width > 0) {
+        // 如果投屏按钮显示，画中画按钮应该在投屏按钮左侧，保持间距
+        pipFrameX = self.castButton.frame.origin.x - buttonSize.width - buttonInterval;
+    } else if (!self.moreButton.hidden) {
+        // 如果投屏按钮隐藏，画中画按钮应该在更多按钮左侧，保持间距
+        pipFrameX = self.moreButton.frame.origin.x - buttonSize.width - buttonInterval;
+    } else {
+        // 如果更多按钮也隐藏，画中画按钮在最右侧
+        pipFrameX = moreBtnFrameX;
     }
-    pipFrameX = self.castButton.hidden ? pipFrameX : self.castButton.frame.origin.x - buttonSize.width;
+    
     self.pictureInPictureButton.frame = CGRectMake(pipFrameX, toppadding, buttonSize.width, buttonSize.height);
 }
 
@@ -265,6 +274,11 @@
     CGFloat buttonY = viewHeight - bottomToolbarHeight - bottomSpacing - buttonHeight;
     
     self.keyMomentsButton.frame = CGRectMake(buttonX, buttonY, buttonWidth, buttonHeight);
+}
+
+- (void)setShowCastButton:(BOOL)showCastButton{
+    self.castButton.hidden = showCastButton ? NO: YES;
+    [self refreshPictureInPictureButtonFrame];
 }
 
 @end

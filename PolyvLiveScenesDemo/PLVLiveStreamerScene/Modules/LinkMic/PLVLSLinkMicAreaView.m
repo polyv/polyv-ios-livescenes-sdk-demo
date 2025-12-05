@@ -145,4 +145,10 @@
     }
 }
 
+- (void)plvLSLinkMicWindowsViewDidClickStopScreenSharing:(PLVLSLinkMicWindowsView *)windowsView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicAreaViewDidClickStopScreenSharing:)]) {
+        [self.delegate plvLSLinkMicAreaViewDidClickStopScreenSharing:self];
+    }
+}
+
 @end

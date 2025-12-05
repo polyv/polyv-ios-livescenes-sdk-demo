@@ -137,17 +137,22 @@
     }
     
     if ([url.absoluteString containsString:@".gif"]) {
-        [[SDWebImageDownloader sharedDownloader]downloadImageWithURL:url options:SDWebImageDownloaderUseNSURLCache progress:progressBlock completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
-            if (finished) {
-                UIImage *imageData = [UIImage imageWithData:data];
-                [imageView setImage:imageData];
-            } else {
-                imageView.image = placeholder;
-            }
-            if (completedBlock) {
-                completedBlock(image, error, SDImageCacheTypeNone, nil);
-            }
-        }];
+        Class animatedImageViewClass = NSClassFromString(@"SDAnimatedImageView");
+        if (animatedImageViewClass && [imageView isKindOfClass:animatedImageViewClass]) {
+            [imageView sd_setImageWithURL:url placeholderImage:placeholder options:options progress:progressBlock completed:completedBlock];
+        } else {
+            [[SDWebImageDownloader sharedDownloader]downloadImageWithURL:url options:SDWebImageDownloaderUseNSURLCache progress:progressBlock completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, BOOL finished) {
+                if (finished) {
+                    UIImage *imageData = [UIImage imageWithData:data];
+                    [imageView setImage:imageData];
+                } else {
+                    imageView.image = placeholder;
+                }
+                if (completedBlock) {
+                    completedBlock(image, error, SDImageCacheTypeNone, nil);
+                }
+            }];
+        }
     } else {
         [imageView sd_setImageWithURL:url placeholderImage:placeholder options:options progress:progressBlock completed:completedBlock];
     }

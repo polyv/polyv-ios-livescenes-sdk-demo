@@ -44,26 +44,20 @@ NSString *const PLVPhotoBrowserDidShowImageOnScreenNotification = @"PLVPhotoBrow
     [self.backgroundView setAlpha:0];
     [window addSubview:self.backgroundView];
     
+    Class animatedCls = NSClassFromString(@"SDAnimatedImageView");
+    BOOL isAnimatedView = (animatedCls && [imageView isKindOfClass:animatedCls]);
+
     self.originFrame = [imageView convertRect:imageView.bounds toView:window];
-    UIImageView *largeImageView = [[UIImageView alloc] initWithFrame:self.originFrame];
+    UIImageView *largeImageView = nil;
+    if (isAnimatedView) {
+        largeImageView = ((UIImageView *)[[animatedCls alloc] initWithFrame:self.originFrame]);
+    } else {
+        largeImageView = [[UIImageView alloc] initWithFrame:self.originFrame];
+    }
     [largeImageView setImage:imageView.image];
     [largeImageView setTag:10];
     [self.backgroundView addSubview:largeImageView];
-    
-//    UIButton *downloadBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-//    [downloadBtn setImage:[self getImageWithImageName:@"plv_btn_download"] forState:UIControlStateNormal];
-//    [downloadBtn addTarget:self action:@selector(downloadButtonBeClicked) forControlEvents:UIControlEventTouchUpInside];
-//    [self.backgroundView addSubview:downloadBtn];
-//    [downloadBtn mas_makeConstraints:^(MASConstraintMaker *make) {
-//        make.size.mas_equalTo(CGSizeMake(40, 40));
-//        make.right.equalTo(self.backgroundView.mas_right).offset(-15.0);
-//        if (@available(iOS 11.0, *)) {
-//            make.bottom.equalTo(self.backgroundView.mas_safeAreaLayoutGuideBottom).offset(-15.0);
-//        } else {
-//            make.bottom.equalTo(self.backgroundView.mas_bottom).offset(-15.0);
-//        }
-//    }];
-    
+
     BOOL landscape = SCREEN_WIDTH > SCREEN_HEIGHT;
     CGSize imageSize = imageView.image.size;
     CGFloat newWidth = landscape ? self.windowHeight * imageSize.width / imageSize.height : self.windowWidth;

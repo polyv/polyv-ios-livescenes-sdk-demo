@@ -11,6 +11,8 @@
 // 工具类
 #import "PLVLSUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVBroadcastNotificationsManager.h"
+#import "PLVBroadcastExtensionLauncher.h"
 
 // UI
 #import "PLVLSChannelInfoSheet.h"
@@ -51,6 +53,7 @@
 static NSString *const kPLVLSSettingMixLayoutKey = @"kPLVLSSettingMixLayoutKey";
 static NSString *const KPLVLSNoiseCancellationLevelKey = @"KPLVLSNoiseCancellationLevelKey";
 static NSString *const KPLVLSExternalDeviceEnabledKey = @"KPLVLSExternalDeviceEnabledKey";
+static NSString *const PLVLSBroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
 
 @interface PLVLSStreamerViewController ()<
 PLVSocketManagerProtocol,
@@ -117,6 +120,8 @@ PLVVirtualBackgroudSheetDelegate
 @property (nonatomic, assign) PLVChannelLinkMicMediaType linkMicMediaTypeCache; // 缓存上课前的连麦类型，
 @property (nonatomic, assign) PLVBLinkMicNoiseCancellationLevel noiseCancellationLevel; // 当前频道降噪等级
 @property (nonatomic, assign) BOOL externalDeviceEnabled; // 当前频道外接设备是否开启
+@property (nonatomic, assign) BOOL localUserScreenShareOpen; // 本地用户是否开启了屏幕共享
+@property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
 
 @end
 
@@ -157,6 +162,7 @@ PLVVirtualBackgroudSheetDelegate
     
     [self setupUI];
     [self setupModule];
+    [self setupNotification];
     [self preapareStartClass];
     if ([PLVRoomDataManager sharedManager].roomData .linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
         self.linkMicUpdateTipsView.hidden = NO;
@@ -313,6 +319,20 @@ PLVVirtualBackgroudSheetDelegate
     [self.streamerPresenter enableExternalDevice:externalDeviceEnabled];
     self.externalDeviceEnabled = self.streamerPresenter.localExternalDeviceEnabled;
     [self saveSelectedExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
+}
+
+- (void)setupNotification {
+    self.broadcastNotification = [[PLVBroadcastNotificationsManager alloc] init];
+    __weak typeof(self) weakSelf = self;
+    [self.broadcastNotification listenForMessageWithIdentifier:PLVLSBroadcastStartedNotification listener:^{
+        if (@available(iOS 11.0, *)) {
+            if (weakSelf.viewerType == PLVRoomUserTypeTeacher || 
+                weakSelf.streamerPresenter.localOnlineUser.isRealMainSpeaker) {
+                [weakSelf.streamerPresenter openLocalUserScreenShare:YES];
+                [weakSelf.moreInfoSheet changeScreenShareButtonSelectedState:YES];
+            }
+        }
+    }];
 }
 
 - (void)getEdgeInset {
@@ -776,6 +796,7 @@ PLVVirtualBackgroudSheetDelegate
     [self.documentAreaView startClass:startClassInfoDict];
     [self.memberSheet startClass:YES];
     [self.chatroomAreaView startClass:YES];
+    [self.moreInfoSheet startClass:YES];
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     __weak typeof(self) weakSelf = self;
     if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
@@ -792,6 +813,12 @@ PLVVirtualBackgroudSheetDelegate
 }
 
 - (void)finishClass {
+    if (@available(iOS 11.0, *)) {
+        if (self.localUserScreenShareOpen) {
+            [self.streamerPresenter openLocalUserScreenShare:NO];
+        }
+    }
+    
     [self.statusAreaView startPushButtonEnable:YES];
     [self.statusAreaView startClass:NO];
     [self.streamerPresenter finishClass];
@@ -799,6 +826,7 @@ PLVVirtualBackgroudSheetDelegate
     [self.memberSheet startClass:NO];
     [self.memberSheet enableAudioVideoLinkMic:NO];
     [self.chatroomAreaView startClass:NO];
+    [self.moreInfoSheet startClass:NO];
     
     if (self.viewerType == PLVSocketUserTypeGuest) { // 嘉宾登录 下课后重置为未非全屏
         self.fullscreen = NO;
@@ -1474,7 +1502,20 @@ PLVVirtualBackgroudSheetDelegate
     [PLVLSUtils showToastWithMessage:(currentCameraShouldShow ? PLVLocalizedString(@"已开启摄像头") : PLVLocalizedString(@"已关闭摄像头")) inView:self.view];
 }
 
-/// 本地用户的 ’摄像头前后置状态值‘ 发生变化
+/// 本地用户的 '屏幕共享开关状态' 发生变化
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserScreenShareOpenChanged:(BOOL)currentScreenShareOpen {
+    self.localUserScreenShareOpen = currentScreenShareOpen;
+    if (self.streamerPresenter.localOnlineUser.isRealMainSpeaker ||
+        self.streamerPresenter.localOnlineUser.userType == PLVSocketUserTypeTeacher) {
+        NSString *message = currentScreenShareOpen ? 
+            PLVLocalizedString(@"其他人现在可以看到你的屏幕") : 
+            PLVLocalizedString(@"共享已结束");
+        [PLVLSUtils showToastWithMessage:message inView:self.view];
+    }
+    [self.moreInfoSheet changeScreenShareButtonSelectedState:currentScreenShareOpen];
+}
+
+/// 本地用户的 '摄像头前后置状态值' 发生变化
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter localUserCameraFrontChanged:(BOOL)currentCameraFront{
     if (self.isOnlyAudio) return;
     [self.chatroomAreaView cameraSwitchButtonFront:currentCameraFront];
@@ -1580,6 +1621,19 @@ PLVVirtualBackgroudSheetDelegate
 }
 
 - (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView showFirstSiteWindowCellOnExternal:(UIView *)windowCell {
+    // 确保 cell 的 delegate 被设置，以便屏幕共享按钮可以正常响应
+    if ([windowCell isKindOfClass:NSClassFromString(@"PLVLSLinkMicWindowCell")]) {
+        PLVLSLinkMicWindowCell *cell = (PLVLSLinkMicWindowCell *)windowCell;
+        // 通过 KVC 获取 windowsView，然后设置为 cell 的 delegate
+        @try {
+            PLVLSLinkMicWindowsView *windowsView = [linkMicAreaView valueForKey:@"windowsView"];
+            if (windowsView) {
+                cell.delegate = windowsView;
+            }
+        } @catch (NSException *exception) {
+            // 忽略异常
+        }
+    }
     [self.documentAreaView displayExternalView:windowCell];
 }
 
@@ -1593,6 +1647,16 @@ PLVVirtualBackgroudSheetDelegate
 
 - (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
     [self.streamerPresenter requestLocalUserInviteLinkMicTTLCallback:callback];
+}
+
+- (void)plvLSLinkMicAreaViewDidClickStopScreenSharing:(PLVLSLinkMicAreaView *)linkMicAreaView {
+    __weak typeof(self) weakSelf = self;
+    [PLVLSUtils showAlertWithMessage:PLVLocalizedString(@"确定结束屏幕共享吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"结束") confirmActionBlock:^{
+        if (@available(iOS 11.0, *)) {
+            [weakSelf.streamerPresenter openLocalUserScreenShare:NO];
+        }
+    }];
+
 }
 
 #pragma mark PLVLSBeautySheetDelegate
@@ -1657,6 +1721,35 @@ PLVVirtualBackgroudSheetDelegate
 
 - (void)moreInfoSheetDidTapExternalDeviceButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
     [self.externalDeviceSwitchSheet showInView:self.view currentExternalDeviceEnabled:self.externalDeviceEnabled];
+}
+
+- (void)moreInfoSheet:(PLVLSMoreInfoSheet *)moreInfoSheet didChangeScreenShareOpen:(BOOL)screenShareOpen {
+    if (self.viewerType != PLVRoomUserTypeTeacher &&
+        !self.streamerPresenter.localOnlineUser.isRealMainSpeaker) {
+        [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"屏幕共享需讲师授权") inView:self.view];
+        [self.moreInfoSheet changeScreenShareButtonSelectedState:NO];
+        return;
+    }
+    
+    if (@available(iOS 11.0, *)) {
+        if (screenShareOpen) {
+            [self.moreInfoSheet changeScreenShareButtonSelectedState:NO];
+            if (@available(iOS 12.0, *)) {
+                [[PLVBroadcastExtensionLauncher sharedInstance] launch];
+            } else {
+                NSString *message = PLVLocalizedString(@"请到控制中心，长按录制按钮，选择 POLYV屏幕共享 打开录制");
+                [PLVLSUtils showAlertWithMessage:message cancelActionTitle:nil cancelActionBlock:nil 
+                    confirmActionTitle:PLVLocalizedString(@"我知道了") confirmActionBlock:nil];
+            }
+        } else {
+            [self.streamerPresenter openLocalUserScreenShare:screenShareOpen];
+        }
+    } else {
+        if (screenShareOpen) {
+            [PLVLSUtils showToastWithMessage:PLVLocalizedString(@"屏幕共享功能需要iOS11以上系统支持") inView:self.view];
+            [self.moreInfoSheet changeScreenShareButtonSelectedState:!screenShareOpen];
+        }
+    }
 }
 
 /// AI 抠像设置面板弹出

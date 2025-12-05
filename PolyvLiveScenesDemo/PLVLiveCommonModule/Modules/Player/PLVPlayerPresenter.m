@@ -514,16 +514,24 @@ PLVDefaultPageViewDelegate
 }
 
 - (void)changeVid:(NSString *)vid {
+    [self changeVid:vid forceClear:NO];
+}
+
+- (void)changeVid:(NSString *)vid forceClear:(BOOL)forceClear {
     if ([PLVFdUtil checkStringUseable:vid] && ![self.vodId isEqualToString:vid]) {
         self.currentLivePlaybackChangingVid = YES;
         [self.livePlaybackPlayer pause];
-        [self.livePlaybackPlayer changeLivePlaybackVodId:vid];
+        [self.livePlaybackPlayer changeLivePlaybackVodId:vid forceClear:forceClear];
         [self resumePlay];
     }
 }
 
 - (void)changeFileId:(NSString *)fileId {
-    [self.livePlaybackPlayer changeLivePlaybackFileId:fileId];
+    [self changeFileId:fileId forceClear:NO];
+}
+
+- (void)changeFileId:(NSString *)fileId forceClear:(BOOL)forceClear {
+    [self.livePlaybackPlayer changeLivePlaybackFileId:fileId forceClear:forceClear];
     [self resumePlay];
 }
 

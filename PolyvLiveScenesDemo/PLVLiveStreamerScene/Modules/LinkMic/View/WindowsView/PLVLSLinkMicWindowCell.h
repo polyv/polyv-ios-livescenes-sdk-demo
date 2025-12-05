@@ -12,7 +12,11 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@protocol PLVLSLinkMicWindowCellDelegate;
+
 @interface PLVLSLinkMicWindowCell : UICollectionViewCell
+
+@property (nonatomic, weak) id<PLVLSLinkMicWindowCellDelegate> delegate;
 
 #pragma mark 方法
 - (void)setModel:(PLVLinkMicOnlineUser *)userModel;
@@ -27,6 +31,15 @@ NS_ASSUME_NONNULL_BEGIN
 ///
 /// @param show 表示是否显示连麦时长
 - (void)updateLinkMicDuration:(BOOL)show;
+
+@end
+
+@protocol PLVLSLinkMicWindowCellDelegate <NSObject>
+
+@optional
+/// 本地用户点击停止屏幕共享按钮
+/// @param cell 连麦窗口Cell
+- (void)linkMicWindowCellDidClickStopScreenSharing:(PLVLSLinkMicWindowCell *)cell;
 
 @end
 

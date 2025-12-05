@@ -17,7 +17,8 @@
 @interface PLVLSLinkMicWindowsView ()<
 UICollectionViewDataSource,
 UICollectionViewDelegate,
-PLVLSLinkMicPreviewViewDelegate
+PLVLSLinkMicPreviewViewDelegate,
+PLVLSLinkMicWindowCellDelegate
 >
 
 #pragma mark 数据
@@ -404,6 +405,7 @@ PLVLSLinkMicPreviewViewDelegate
     }
     
     PLVLSLinkMicWindowCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"PLVLSLinkMicWindowCellID" forIndexPath:indexPath];
+    cell.delegate = self;
     [cell setModel:linkMicUserModel];
     
     // 在 [selModel:showingExternalCell:] 调用完毕后，再次将所需视图，加载在对应Cell上
@@ -461,6 +463,13 @@ PLVLSLinkMicPreviewViewDelegate
 - (void)plvLSLinkMicPreviewView:(PLVLSLinkMicPreviewView *)linkMicPreView inviteLinkMicTTL:(void (^)(NSInteger ttl))callback {
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsView:inviteLinkMicTTL:)]) {
         [self.delegate plvLSLinkMicWindowsView:self inviteLinkMicTTL:callback];
+    }
+}
+
+#pragma mark PLVLSLinkMicWindowCellDelegate
+- (void)linkMicWindowCellDidClickStopScreenSharing:(PLVLSLinkMicWindowCell *)cell {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLSLinkMicWindowsViewDidClickStopScreenSharing:)]) {
+        [self.delegate plvLSLinkMicWindowsViewDidClickStopScreenSharing:self];
     }
 }
 

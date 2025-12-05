@@ -18,6 +18,7 @@
 
 @property (nonatomic, strong) UILabel *sheetTitleLabel; // 弹层顶部标题
 @property (nonatomic, strong) UIView *titleSplitLine; // 标题底部分割线
+@property (nonatomic, strong) UIScrollView *buttonScrollView; // 按钮滚动视图
 @property (nonatomic, strong) UILabel *baseTitleLabel; // 基础功能标题
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜按钮
 @property (nonatomic, strong) UIButton *resolutionButton; // 清晰度按钮
@@ -26,6 +27,7 @@
 @property (nonatomic, strong) UIButton *noiseCancellationModeButton; // 声音音质按钮
 @property (nonatomic, strong) UIButton *externalDeviceButton; // 外接设备按钮
 @property (nonatomic, strong) UIButton *shareButton; // 分享按钮
+@property (nonatomic, strong) UIButton *screenShareButton; // 屏幕共享按钮
 @property (nonatomic, strong) UIButton *badNetworkButton; //  弱网处理按钮
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
 @property (nonatomic, strong) UIButton *signInButton; //  签到按钮
@@ -48,37 +50,42 @@
     if (self) {
         [self.contentView addSubview:self.sheetTitleLabel];
         [self.contentView addSubview:self.titleSplitLine];
-        [self.contentView addSubview:self.baseTitleLabel];
+        [self.contentView addSubview:self.buttonScrollView];
+        [self.buttonScrollView addSubview:self.baseTitleLabel];
         NSMutableArray *muButtonArray = [NSMutableArray array];
         if ([PLVRoomDataManager sharedManager].roomData.canUseBeauty) {
-            [self.contentView addSubview:self.beautyButton];
+            [self.buttonScrollView addSubview:self.beautyButton];
             [muButtonArray addObject:self.beautyButton];
         }
-        [self.contentView addSubview:self.resolutionButton];
+        [self.buttonScrollView addSubview:self.resolutionButton];
         [muButtonArray addObject:self.resolutionButton];
         if ([self canShareLiveroom]) {
-            [self.contentView addSubview:self.shareButton];
+            [self.buttonScrollView addSubview:self.shareButton];
             [muButtonArray addObject:self.shareButton];
         }
-        [self.contentView addSubview:self.badNetworkButton];
+        if (@available(iOS 11.0, *)) {
+            [self.buttonScrollView addSubview:self.screenShareButton];
+            [muButtonArray addObject:self.screenShareButton];
+        }
+        [self.buttonScrollView addSubview:self.badNetworkButton];
         [muButtonArray addObject:self.badNetworkButton];
         if ([self showMixLayoutButton]) {
-            [self.contentView addSubview:self.mixLayoutButton];
+            [self.buttonScrollView addSubview:self.mixLayoutButton];
             [muButtonArray addObject:self.mixLayoutButton];
         }
         if ([PLVRoomDataManager sharedManager].roomData.mattingEnabled) {
-            [self.contentView addSubview:self.aiMattingButton];
+            [self.buttonScrollView addSubview:self.aiMattingButton];
             [muButtonArray addObject:self.aiMattingButton];
         }
-        [self.contentView addSubview:self.noiseCancellationModeButton];
+        [self.buttonScrollView addSubview:self.noiseCancellationModeButton];
         [muButtonArray addObject:self.noiseCancellationModeButton];
-        [self.contentView addSubview:self.externalDeviceButton];
+        [self.buttonScrollView addSubview:self.externalDeviceButton];
         [muButtonArray addObject:self.externalDeviceButton];
         
         NSMutableArray *interactMuButtonArray = [NSMutableArray array];
-        [self.contentView addSubview:self.interactiveTitleLabel];
+        [self.buttonScrollView addSubview:self.interactiveTitleLabel];
         if ([self showSignInButton]) {
-            [self.contentView addSubview:self.signInButton];
+            [self.buttonScrollView addSubview:self.signInButton];
             [interactMuButtonArray addObject:self.signInButton];
         }
         self.interactiveTitleLabel.hidden = [interactMuButtonArray count] == 0;
@@ -109,8 +116,16 @@
     self.sheetTitleLabel.frame = CGRectMake(originX, sheetTitleLabelTop, self.sheetWidth - originX * 2, 22);
     self.titleSplitLine.frame = CGRectMake(originX, titleSplitLineTop, self.sheetWidth - originX * 2, 1);
     
+    self.buttonSplitLine.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight - 1, self.sheetWidth - originX * 2, 1);
+    self.logoutButtonLabel.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
+    self.logoutButton.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
+    
+    CGFloat scrollViewTop = CGRectGetMaxY(self.titleSplitLine.frame);
+    CGFloat scrollViewHeight = CGRectGetMinY(self.buttonSplitLine.frame) - scrollViewTop;
+    self.buttonScrollView.frame = CGRectMake(0, scrollViewTop, self.sheetWidth, scrollViewHeight);
+    
     CGFloat buttonOriginX = originX;
-    CGFloat buttonOriginY = CGRectGetMaxY(self.titleSplitLine.frame) + 18;
+    CGFloat buttonOriginY = 18;
     CGFloat buttonWidth = 48.0;
     CGFloat buttonHeight = 53.0;
     int placeNum = isPad ? 5 : 4;
@@ -131,23 +146,27 @@
     }
     
     buttonOriginY += buttonHeight + buttonYPadding;
-    self.interactiveTitleLabel.frame = CGRectMake(originX, buttonOriginY, 80, 20);
-    buttonOriginY = CGRectGetMaxY(self.interactiveTitleLabel.frame) + buttonYPadding;
-    buttonOriginX = originX;
-    for (int i = 0; i < self.interactArray.count ; i++) {
-        UIButton *button = self.interactArray[i];
-        if (i % placeNum == 0 && i != 0) { // 换行
-            buttonOriginX = originX;
-            buttonOriginY += buttonHeight + buttonYPadding;
+    if (!self.interactiveTitleLabel.hidden) {
+        self.interactiveTitleLabel.frame = CGRectMake(originX, buttonOriginY, 80, 20);
+        buttonOriginY = CGRectGetMaxY(self.interactiveTitleLabel.frame) + buttonYPadding;
+        buttonOriginX = originX;
+        for (int i = 0; i < self.interactArray.count ; i++) {
+            UIButton *button = self.interactArray[i];
+            if (i % placeNum == 0 && i != 0) { // 换行
+                buttonOriginX = originX;
+                buttonOriginY += buttonHeight + buttonYPadding;
+            }
+            button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
+            [self setButtonInsets:button];
+            buttonOriginX += buttonWidth + buttonPadding;
         }
-        button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonHeight);
-        [self setButtonInsets:button];
-        buttonOriginX += buttonWidth + buttonPadding;
+        buttonOriginY += buttonHeight;
+    } else {
+        self.interactiveTitleLabel.frame = CGRectMake(originX, buttonOriginY, 80, 20);
     }
     
-    self.buttonSplitLine.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight - 1, self.sheetWidth - originX * 2, 1);
-    self.logoutButtonLabel.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
-    self.logoutButton.frame = CGRectMake(originX, self.bounds.size.height - logoutButtonHeight, self.sheetWidth - originX * 2, logoutButtonHeight);
+    CGFloat contentHeight = buttonOriginY + 18;
+    self.buttonScrollView.contentSize = CGSizeMake(self.sheetWidth, contentHeight);
 }
 
 #pragma mark - Override
@@ -206,6 +225,16 @@
         _titleSplitLine.backgroundColor = [UIColor colorWithRed:0xf0/255.0 green:0xf1/255.0 blue:0xf5/255.0 alpha:0.1];
     }
     return _titleSplitLine;
+}
+
+- (UIScrollView *)buttonScrollView {
+    if (!_buttonScrollView) {
+        _buttonScrollView = [[UIScrollView alloc] init];
+        _buttonScrollView.showsVerticalScrollIndicator = YES;
+        _buttonScrollView.showsHorizontalScrollIndicator = NO;
+        _buttonScrollView.alwaysBounceVertical = YES;
+    }
+    return _buttonScrollView;
 }
 
 - (UIButton *)beautyButton {
@@ -270,6 +299,17 @@
         [_externalDeviceButton addTarget:self action:@selector(externalDeviceButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _externalDeviceButton;
+}
+
+- (UIButton *)screenShareButton {
+    if (!_screenShareButton) {
+        _screenShareButton = [self buttonWithTitle:PLVLocalizedString(@"屏幕共享") NormalImageString:@"plvls_liveroom_btn_screenshare_open" selectedImageString:@"plvls_liveroom_btn_screenshare_close"];
+        [_screenShareButton setImage:[PLVLSUtils imageForLiveroomResource:@"plvls_liveroom_btn_screenshare_disabled"] forState:UIControlStateDisabled];
+        [_screenShareButton setTitle:PLVLocalizedString(@"结束共享") forState:UIControlStateSelected];
+        [_screenShareButton addTarget:self action:@selector(screenShareButtonAction) forControlEvents:UIControlEventTouchUpInside];
+        _screenShareButton.enabled = NO;
+    }
+    return _screenShareButton;
 }
 
 - (UILabel *)interactiveTitleLabel {
@@ -455,6 +495,23 @@
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapExternalDeviceButton:)]) {
         [self.delegate moreInfoSheetDidTapExternalDeviceButton:self];
     }
+}
+
+- (void)screenShareButtonAction {
+    [self changeScreenShareButtonSelectedState:!self.screenShareButton.isSelected];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheet:didChangeScreenShareOpen:)]) {
+        [self.delegate moreInfoSheet:self didChangeScreenShareOpen:self.screenShareButton.isSelected];
+    }
+}
+
+- (void)changeScreenShareButtonSelectedState:(BOOL)selectedState {
+    self.screenShareButton.selected = selectedState;
+}
+
+- (void)startClass:(BOOL)start {
+    self.screenShareButton.enabled = start;
+    [self changeScreenShareButtonSelectedState:NO];
 }
 
 @end

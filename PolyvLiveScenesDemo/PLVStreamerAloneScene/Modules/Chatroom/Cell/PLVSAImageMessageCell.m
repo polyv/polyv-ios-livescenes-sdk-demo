@@ -23,6 +23,10 @@
 // SDK
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
+#if __has_include(<SDWebImage/SDAnimatedImageView.h>)
+    #import <SDWebImage/SDAnimatedImageView.h>
+    #define SDWebImageSDK5
+#endif
 
 @interface PLVSAImageMessageCell ()
 
@@ -34,7 +38,11 @@
 
 // UI
 @property (nonatomic, strong) UILabel *nickLabel; // 发出消息用户昵称
+#ifdef SDWebImageSDK5
+@property (nonatomic, strong) SDAnimatedImageView *chatImageView; // 聊天消息图片
+#else
 @property (nonatomic, strong) UIImageView *chatImageView; // 聊天消息图片
+#endif
 @property (nonatomic, strong) UIView *bubbleView; // 背景气泡
 @property (nonatomic, strong) PLVPhotoBrowser *photoBrowser; // 消息图片Browser
 
@@ -317,6 +325,21 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     return _nickLabel;
 }
 
+#ifdef SDWebImageSDK5
+- (SDAnimatedImageView *)chatImageView {
+    if (!_chatImageView) {
+        _chatImageView = [[SDAnimatedImageView alloc] init];
+        _chatImageView.layer.masksToBounds = YES;
+        _chatImageView.layer.cornerRadius = 4.0;
+        _chatImageView.userInteractionEnabled = YES;
+        _chatImageView.contentMode = UIViewContentModeScaleAspectFill;
+        
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapImageViewAction)];
+        [_chatImageView addGestureRecognizer:tapGesture];
+    }
+    return _chatImageView;
+}
+#else
 - (UIImageView *)chatImageView {
     if (!_chatImageView) {
         _chatImageView = [[UIImageView alloc] init];
@@ -330,6 +353,7 @@ static  NSString *KEYPATH_MSGSTATE = @"sendState";
     }
     return _chatImageView;
 }
+#endif
 
 - (UIImageView *)prohibitImageView {
     if (!_prohibitImageView) {

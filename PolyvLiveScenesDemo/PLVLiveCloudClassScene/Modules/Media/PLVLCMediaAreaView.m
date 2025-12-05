@@ -437,6 +437,10 @@ PLVLCDocumentPaintModeViewDelegate
     [self.playerPresenter changeFileId:fileId];
 }
 
+- (void)changeFileId:(NSString *)fileId forceClear:(BOOL)forceClear {
+    [self.playerPresenter changeFileId:fileId forceClear:forceClear];
+}
+
 - (void)changePlayertoChannelId:(NSString * _Nonnull)channelId vodId:(NSString * _Nullable)vodId vodList:(BOOL)vodList recordFile:(PLVLiveRecordFileModel * _Nullable)recordFile recordEnable:(BOOL)recordEnable {
     if (![PLVFdUtil checkStringUseable:channelId]) {
         PLV_LOG_ERROR(PLVConsoleLogModuleTypePlayer,@"PLVLCMediaAreaView - changePlayerToChannel:vodId: failed, channelId:%@",channelId);

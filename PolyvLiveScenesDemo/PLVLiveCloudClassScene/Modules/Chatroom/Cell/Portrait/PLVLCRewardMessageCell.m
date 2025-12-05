@@ -10,9 +10,13 @@
 #import "PLVMultiLanguageManager.h"
 #import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
+#import <PLVFoundationSDK/PLVColorUtil.h>
 #import <SDWebImage/UIImageView+WebCache.h>
-#import <SDWebImage/SDWebImageDownloader.h>
-#import "PLVChatTextView.h"
+#if __has_include(<SDWebImage/SDAnimatedImageView.h>)
+    #import <SDWebImage/SDAnimatedImageView.h>
+    #define SDWebImageSDK5
+#endif
+#import "PLVLCUtils.h"
 
 @interface PLVLCRewardMessageCell()
 
@@ -22,7 +26,14 @@
 #pragma mark UI
 @property (nonatomic, assign) CGFloat cellWidth;
 
-@property (nonatomic, strong) PLVChatTextView *textView;
+@property (nonatomic, strong) UILabel *nickNameLabel;
+@property (nonatomic, strong) UILabel *suffixLabel; /// "赠送"文本
+#ifdef SDWebImageSDK5
+@property (nonatomic, strong) SDAnimatedImageView *giftImageView;
+#else
+@property (nonatomic, strong) UIImageView *giftImageView;
+#endif
+@property (nonatomic, strong) UILabel *numLabel;
 
 @end
 
@@ -39,10 +50,63 @@
 }
 
 - (void)layoutSubviews {
-    CGFloat maxTextViewWidth = 240.0;
-    CGSize textViewSize = [self.textView sizeThatFits:CGSizeMake(maxTextViewWidth, 48)];
-    CGFloat x = (self.cellWidth - textViewSize.width) / 2;
-    self.textView.frame = CGRectMake(x, 0, textViewSize.width, textViewSize.height);
+    [super layoutSubviews];
+    
+    if (self.cellWidth == 0) {
+        return;
+    }
+    
+    // 布局：昵称label - "赠送"label - 礼物图片 - 数量label
+    CGFloat spacing = 4.0;
+    CGFloat giftImageSize = 40.0;
+    CGFloat maxContentWidth = 240.0;
+    CGFloat cellHeight = 56.0; // 与 cellHeightWithModel 保持一致
+    
+    // 计算"赠送"label宽度（固定显示）
+    CGSize suffixSize = [self.suffixLabel sizeThatFits:CGSizeMake(MAXFLOAT, 20)];
+    CGFloat suffixWidth = suffixSize.width;
+    
+    // 计算数量宽度（如果隐藏则为0）
+    CGFloat numWidth = 0;
+    if (!self.numLabel.hidden) {
+        CGSize numSize = [self.numLabel sizeThatFits:CGSizeMake(MAXFLOAT, 20)];
+        numWidth = numSize.width;
+    }
+    
+    // 计算昵称可用宽度（总宽度 - "赠送" - 礼物图片 - 数量 - 间距）
+    CGFloat availableWidthForNickName = maxContentWidth - suffixWidth - spacing - giftImageSize - spacing;
+    if (numWidth > 0) {
+        availableWidthForNickName -= spacing + numWidth;
+    }
+    
+    // 设置昵称label的固定宽度，让其自动截断
+    // 昵称label会使用 lineBreakMode 自动截断，宽度就是可用宽度
+    CGFloat nickNameWidth = availableWidthForNickName;
+    
+    // 计算总宽度
+    CGFloat totalWidth = nickNameWidth + spacing + suffixWidth + spacing + giftImageSize;
+    if (numWidth > 0) {
+        totalWidth += spacing + numWidth;
+    }
+    totalWidth = MIN(totalWidth, maxContentWidth);
+    
+    // 居中布局
+    CGFloat startX = (self.cellWidth - totalWidth) / 2;
+    CGFloat centerY = cellHeight / 2; // 垂直居中
+    
+    // 昵称label（垂直居中对齐）
+    self.nickNameLabel.frame = CGRectMake(startX, centerY - 10, nickNameWidth, 20);
+    
+    // "赠送"label（紧跟在昵称后面）
+    self.suffixLabel.frame = CGRectMake(CGRectGetMaxX(self.nickNameLabel.frame) + spacing, centerY - 10, suffixWidth, 20);
+    
+    // 礼物图片（垂直居中）
+    self.giftImageView.frame = CGRectMake(CGRectGetMaxX(self.suffixLabel.frame) + spacing, centerY - giftImageSize / 2, giftImageSize, giftImageSize);
+    
+    // 数量label（垂直居中对齐，如果显示的话）
+    if (!self.numLabel.hidden && numWidth > 0) {
+        self.numLabel.frame = CGRectMake(CGRectGetMaxX(self.giftImageView.frame) + spacing, centerY - 10, numWidth, 20);
+    }
 }
 
 
@@ -57,7 +121,33 @@
     self.cellWidth = cellWidth;
     self.model = model;
     PLVRewardMessage *message = (PLVRewardMessage *)self.model.message;
-    self.textView.attributedText = [self contentAttributedStringWithMessage:message user:self.model.user];
+    
+    NSString *nickName = [self.model.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
+    
+    self.nickNameLabel.text = nickName;
+    self.nickNameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+    
+    self.suffixLabel.text = PLVLocalizedString(@"赠送");
+    
+    if (message.goodNum.intValue > 1) {
+        self.numLabel.text = [NSString stringWithFormat:@"x%@", message.goodNum];
+        self.numLabel.hidden = NO;
+    } else {
+        self.numLabel.text = @"";
+        self.numLabel.hidden = YES;
+    }
+    
+    NSURL *imageURL = [PLVLCRewardMessageCell imageURLWithMessage:message];
+    if (imageURL) {
+        self.giftImageView.hidden = NO;
+        UIImage *placeHolderImage = [PLVColorUtil createImageWithColor:[PLVColorUtil colorFromHexString:@"#777786"]];
+        [PLVLCUtils setImageView:self.giftImageView url:imageURL placeholderImage:placeHolderImage options:SDWebImageRetryFailed];
+    } else if (message.image) {
+        self.giftImageView.hidden = NO;
+        [self.giftImageView setImage:message.image];
+    } else {
+        self.giftImageView.hidden = YES;
+    }
 }
 
 /// 获取图片URL
@@ -96,60 +186,65 @@
 
 - (void)initUI {
     self.backgroundColor = [UIColor clearColor];
-    [self.contentView addSubview:self.textView];
+    [self.contentView addSubview:self.nickNameLabel];
+    [self.contentView addSubview:self.suffixLabel];
+    [self.contentView addSubview:self.giftImageView];
+    [self.contentView addSubview:self.numLabel];
 }
-
-/// 获取消息多属性文本
-- (NSMutableAttributedString *)contentAttributedStringWithMessage:(PLVRewardMessage *)message user:(PLVChatUser *)user {
-    UIFont *font = [UIFont systemFontOfSize:14.0];
-    UIColor *textColor = [UIColor whiteColor];
-    NSDictionary *textAttDict = @{NSFontAttributeName:font,
-                                     NSForegroundColorAttributeName:textColor};
-    
-    NSString *nickName = [user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
-    if (nickName.length > 8) {
-        nickName = [nickName substringWithRange:NSMakeRange(0, 8)];
-        nickName = [nickName stringByAppendingString:@"..."];
-    }
-    
-    NSAttributedString *nickNameString = [[NSAttributedString alloc] initWithString:[NSString stringWithFormat:PLVLocalizedString(@"%@赠送"),nickName]attributes:textAttDict];
-    
-    NSString *rewardNum = @"";
-    if (message.goodNum.intValue > 1) {
-        rewardNum = [NSString stringWithFormat:@"x%@", message.goodNum];
-    }
-    NSAttributedString *numString = [[NSAttributedString alloc] initWithString:rewardNum attributes:textAttDict];
-    
-    NSTextAttachment *attachment = [[NSTextAttachment alloc]init];
-    attachment.bounds = CGRectMake(0, -14, 40, 40);
-    NSAttributedString *imageAttributeString = [NSAttributedString attributedStringWithAttachment:attachment];
-    if (!message.image) {
-        [[SDWebImageDownloader sharedDownloader] downloadImageWithURL:[PLVLCRewardMessageCell imageURLWithMessage:message] options:SDWebImageDownloaderUseNSURLCache progress:nil completed:^(UIImage *image, NSData *data, NSError *error, BOOL finished) {
-            attachment.image = message.image = image;
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self.textView.layoutManager invalidateDisplayForCharacterRange:NSMakeRange(0, imageAttributeString.length)];
-            });
-        }];
-    } else {
-        attachment.image = message.image;
-    }
-
-    NSMutableAttributedString *contentString = [[NSMutableAttributedString alloc] init];
-    [contentString appendAttributedString:nickNameString];
-    [contentString appendAttributedString:imageAttributeString];
-    [contentString appendAttributedString:numString];
-            
-    return contentString;
-}
-
 
 #pragma mark  [ getter ]
 
-- (PLVChatTextView *)textView {
-    if (!_textView) {
-        _textView = [[PLVChatTextView alloc]init];
+- (UILabel *)nickNameLabel {
+    if (!_nickNameLabel) {
+        _nickNameLabel = [[UILabel alloc] init];
+        _nickNameLabel.font = [UIFont systemFontOfSize:14.0];
+        _nickNameLabel.textColor = [UIColor whiteColor];
+        _nickNameLabel.textAlignment = NSTextAlignmentLeft;
+        _nickNameLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+        _nickNameLabel.numberOfLines = 1;
     }
-    return _textView;
+    return _nickNameLabel;
+}
+
+- (UILabel *)suffixLabel {
+    if (!_suffixLabel) {
+        _suffixLabel = [[UILabel alloc] init];
+        _suffixLabel.font = [UIFont systemFontOfSize:14.0];
+        _suffixLabel.textColor = [UIColor whiteColor];
+        _suffixLabel.textAlignment = NSTextAlignmentLeft;
+    }
+    return _suffixLabel;
+}
+
+#ifdef SDWebImageSDK5
+- (SDAnimatedImageView *)giftImageView {
+    if (!_giftImageView) {
+        _giftImageView = [[SDAnimatedImageView alloc] init];
+        _giftImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _giftImageView.hidden = YES;
+    }
+    return _giftImageView;
+}
+#else
+- (UIImageView *)giftImageView {
+    if (!_giftImageView) {
+        _giftImageView = [[UIImageView alloc] init];
+        _giftImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _giftImageView.hidden = YES;
+    }
+    return _giftImageView;
+}
+#endif
+
+- (UILabel *)numLabel {
+    if (!_numLabel) {
+        _numLabel = [[UILabel alloc] init];
+        _numLabel.font = [UIFont systemFontOfSize:14.0];
+        _numLabel.textColor = [UIColor whiteColor];
+        _numLabel.textAlignment = NSTextAlignmentLeft;
+        _numLabel.hidden = YES;
+    }
+    return _numLabel;
 }
 
 @end

@@ -285,7 +285,7 @@ PLVKeyMomentsListViewDelegate
             if ([model isKindOfClass:[PLVPlaybackLocalVideoInfoModel class]] &&
                 [model.fileId isEqualToString:deleteFileId]) {
                 // 当删除的视频 是当前正在播放的视频的时候，刷新播放器
-                [weakSelf.mediaAreaView changeFileId:deleteFileId];
+                [weakSelf.mediaAreaView changeFileId:deleteFileId forceClear:YES];
             }
         }];
         
@@ -504,6 +504,9 @@ PLVKeyMomentsListViewDelegate
         [self.popoverView setNeedsLayout];
     }
     
+    // 横竖屏切换时，更新投屏按钮显示状态
+    [self updateCastButtonShowStatus];
+    
     self.fullScreenDifferent = NO;
 }
 
@@ -583,13 +586,14 @@ PLVKeyMomentsListViewDelegate
 
 /// 更新投屏按钮显示状态（根据直播状态和连麦状态）
 - (void)updateCastButtonShowStatus {
-    // 只有在授权成功、直播中且未连麦时才显示投屏按钮
+    // 只有在后台开启投屏功能、授权成功、直播中(延迟直播)且未连麦时才显示投屏按钮
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    BOOL isLiving = (roomData.liveState == PLVChannelLiveStreamState_Live) || 
-                    self.mediaAreaView.noDelayLiveWatching;
-    BOOL canShowCast = [PLVCastClient isAuthorizeSuccess] && 
-                       isLiving && 
-                       !self.linkMicAreaView.inLinkMic;
+    BOOL isLiving = (roomData.liveState == PLVChannelLiveStreamState_Live) &&
+                    !self.mediaAreaView.noDelayWatchMode;
+    BOOL canShowCast = roomData.menuInfo.projectionScreenEnabled &&  // 后台投屏功能开关
+                       [PLVCastClient isAuthorizeSuccess] &&          // 投屏授权成功
+                       isLiving &&                                    // 直播中(延迟直播)
+                       !self.linkMicAreaView.inLinkMic;               // 未连麦
     
     self.mediaAreaView.skinView.showCastButton = canShowCast;
     self.liveRoomSkinView.showCastButton = canShowCast;
@@ -967,6 +971,8 @@ PLVKeyMomentsListViewDelegate
     [self.mediaAreaView refreshUIInfo];
     [self refreshLiveRoomPlayerSkinViewUIInfo];
     [self startCountdownTimer];
+    // 菜单信息变化时（包括projectionScreenEnabled变化），更新投屏按钮显示状态
+    [self updateCastButtonShowStatus];
 }
 
 /// 观看数 watchCount 更新

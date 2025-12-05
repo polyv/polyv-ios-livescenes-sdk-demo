@@ -212,6 +212,7 @@ static CGFloat kBeautyFilterOptionDefaultIntensity = 0.5;
         [_beautyOptionDefaultDict setObject:@(0.20) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_ReshapeDeformZoomJawbone]];
         [_beautyOptionDefaultDict setObject:@(0.35) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_ReshapeBeautyWhitenTeeth]];
         [_beautyOptionDefaultDict setObject:@(0.35) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_ReshapeBeautyBrightenEye]];
+        [_beautyOptionDefaultDict setObject:@(0.0) forKey:[NSString stringWithFormat:@"%zd", PLVBBeautyOption_ReshapeBeautyLipRed]];
     }
     return _beautyOptionDefaultDict;
 }

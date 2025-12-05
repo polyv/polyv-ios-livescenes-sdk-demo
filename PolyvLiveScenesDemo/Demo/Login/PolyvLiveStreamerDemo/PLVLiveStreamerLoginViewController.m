@@ -463,7 +463,7 @@ UITextViewDelegate>
             PLVAlertViewController *alert = [PLVAlertViewController alertControllerWithTitle:@"麦克风权限被禁止" message:@"请在“设置-隐私-麦克风”中允许POLYV开播访问您的麦克风" cancelActionTitle:@"取消" cancelHandler:nil confirmActionTitle:@"前往设置" confirmHandler:^{
                 NSURL *url = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                 if ([[UIApplication sharedApplication] canOpenURL:url]) {
-                    [[UIApplication sharedApplication] openURL:url];
+                    [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
                 }
             }];
             [weakSelf presentViewController:alert animated:NO completion:nil];
