@@ -12,6 +12,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol PLVECLinkMicWindowsViewDelegate;
+@class PLVECSeparateLinkMicView;
 
 @interface PLVECLinkMicWindowsView : UIView
 
@@ -20,6 +21,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 连麦第一画面Canvas视图
 @property (nonatomic, weak, readonly) UIView *firstSiteCanvasView;
+
+/// 悬浮的连麦小窗（1v1场景使用）
+@property (nonatomic, strong, readonly) PLVECSeparateLinkMicView *separateLinkMicView;
+
+/// 是否启用1v1悬浮窗布局（默认设置为NO，设置为NO时使用传统布局；设置为YES时当1v1连麦时自动显示悬浮窗）
+@property (nonatomic, assign) BOOL enableSeparateLinkMicLayout;
 
 /// 刷新连麦窗口
 - (void)reloadLinkMicUserWindows;

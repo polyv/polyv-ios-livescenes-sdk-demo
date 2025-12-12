@@ -30,6 +30,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///       YES-回放场景显示在线人数
 @property (nonatomic,assign) BOOL playTimesLabelUseNewStrategy_playback;
 
+/// 是否启用1v1悬浮窗布局（默认设置为NO，设置为NO时使用传统布局；设置为YES时当1v1连麦时自动显示悬浮窗）
+@property (nonatomic, assign) BOOL enableSeparateLinkMicLayout;
+
 /// 退出并清理当前直播控制器
 - (void)exitCleanCurrentLiveController;
 

@@ -278,9 +278,11 @@ PLVCommodityDetailPopupViewDelegate
         /// 互动
         [self.view addSubview:self.popoverView];
         [self.view addSubview:self.commodityDetailPopupView]; // 商品详情弹出页
+        [self.view addSubview:self.linkMicAreaView.separateLinkMicView]; // 1v1悬浮窗
         self.popoverView.frame = self.view.bounds;
         self.commodityDetailPopupView.frame = self.view.bounds;
         
+        [self.view insertSubview:self.linkMicAreaView.separateLinkMicView belowSubview:self.popoverView]; /// 保证低于 互动视图
         [self.view insertSubview:((UIView *)self.linkMicAreaView.linkMicPreView) belowSubview:self.popoverView]; /// 保证低于 互动视图
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView]; /// 保证低于 互动视图
         
@@ -517,6 +519,14 @@ PLVCommodityDetailPopupViewDelegate
     _fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
     self.playerVC.fullScreenButtonShowOnIpad = fullScreenButtonShowOnIpad;
     self.homePageView.backButtonShowOnIpad = fullScreenButtonShowOnIpad;
+}
+
+- (BOOL)enableSeparateLinkMicLayout {
+    return self.linkMicAreaView.enableSeparateLinkMicLayout;
+}
+
+- (void)setEnableSeparateLinkMicLayout:(BOOL)enableSeparateLinkMicLayout {
+    self.linkMicAreaView.enableSeparateLinkMicLayout = enableSeparateLinkMicLayout;
 }
 
 #pragma mark - [ Event ]

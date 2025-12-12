@@ -8,6 +8,7 @@
 
 #import "PLVECLinkMicAreaView.h"
 #import "PLVECLinkMicWindowsView.h"
+#import "PLVECSeparateLinkMicView.h"
 #import "PLVLinkMicPresenter.h"
 #import "PLVLinkMicOnlineUser+EC.h"
 #import "PLVECLinkMicControlBar.h"
@@ -102,6 +103,18 @@ PLVECLinkMicWindowsViewDelegate
 
 - (UIView *)firstSiteCanvasView {
     return self.windowsView.firstSiteCanvasView;
+}
+
+- (PLVECSeparateLinkMicView *)separateLinkMicView {
+    return self.windowsView.separateLinkMicView;
+}
+
+- (BOOL)enableSeparateLinkMicLayout {
+    return self.windowsView.enableSeparateLinkMicLayout;
+}
+
+- (void)setEnableSeparateLinkMicLayout:(BOOL)enableSeparateLinkMicLayout {
+    self.windowsView.enableSeparateLinkMicLayout = enableSeparateLinkMicLayout;
 }
 
 #pragma mark - [ Private Methods ]
