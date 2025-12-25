@@ -72,15 +72,13 @@ static CGFloat kPLVSAAICardViewTitleBarHeight = 30.0;
         return;
     }
     
-    if ([PLVFdUtil checkStringUseable:commodityModel.explainStatus] && [commodityModel.explainStatus isEqualToString:@"explaining"] && [PLVFdUtil checkStringUseable:commodityModel.aiCard] && [PLVRoomDataManager sharedManager].roomData.menuInfo.productAiCardEnabled) {
+    if ([PLVFdUtil checkStringUseable:commodityModel.explainStatus] && [commodityModel.explainStatus isEqualToString:@"explaining"] && [PLVRoomDataManager sharedManager].roomData.menuInfo.productAiCardEnabled) {
         self.commodityModel = commodityModel;
         NSString *productId = [NSString stringWithFormat:@"%ld", (long)commodityModel.productId];
         [self showWithProductId:productId];
-        [self notifyWidgetStatusNeedChange:NO];
     } else if (self.commodityModel && (self.commodityModel.productId == commodityModel.productId)) {
         self.commodityModel = nil;
         [self hide:NO];
-        [self notifyWidgetStatusNeedChange:NO];
     } else {
         // 忽略其他商品变动消息
     }
@@ -95,11 +93,12 @@ static CGFloat kPLVSAAICardViewTitleBarHeight = 30.0;
         return;
     }
     
-    [self notifyWidgetStatusNeedChange:NO];
-    
+    // 如果已经在显示，直接返回
     if (self.isShowing) {
         return;
     }
+    
+    [self notifyWidgetStatusNeedChange:NO];
     
     if (animated) {
         self.hidden = NO;
@@ -141,9 +140,7 @@ static CGFloat kPLVSAAICardViewTitleBarHeight = 30.0;
         self.isShowing = NO;
         self.contentView.transform = CGAffineTransformIdentity;
         self.contentView.alpha = 1.0;
-        if (notifyWidgetStatus) {
-            [self notifyWidgetStatusNeedChange:YES];
-        }
+        [self notifyWidgetStatusNeedChange:notifyWidgetStatus];
     };
     
     if (animated) {

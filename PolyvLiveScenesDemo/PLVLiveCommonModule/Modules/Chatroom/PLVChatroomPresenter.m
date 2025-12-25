@@ -1526,6 +1526,7 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.msgId = msgId;
         message.content = content;
+        message.quoteUserId = PLV_SafeStringForDictKey(quote, @"userId");
         message.quoteUserName = PLV_SafeStringForDictKey(quote, @"nick");
         message.time = time;
         message.overLen = overLen;

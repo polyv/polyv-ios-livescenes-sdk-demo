@@ -16,10 +16,11 @@
 #import "PLVRoomDataManager.h"
 #import <PLVLiveScenesSDK/PLVQuoteMessage.h>
 #import <PLVFoundationSDK/PLVColorUtil.h>
+#import <PLVFoundationSDK/PLVImageUtil.h>
 
 @interface PLVLCQuoteMessageCell ()
 
-@property (nonatomic, strong) UILabel *quoteNickLabel; /// 被引用的用户昵称
+@property (nonatomic, strong) UIView *blueVerticalLine; /// 被引用消息为自己消息时的蓝色竖线
 @property (nonatomic, strong) UILabel *quoteContentLabel; /// 被引用的消息文本（如果为图片消息，label不可见）
 @property (nonatomic, strong) UIImageView *quoteImageView; /// 被引用的消息图片（如果为文本消息，imageView不可见）
 @property (nonatomic, strong) UIView *line; /// 引用消息与回复消息分割线
@@ -41,8 +42,8 @@
         self.allowReply = YES;
         
         [self.contentView addSubview:self.bubbleView];
-        [self.contentView addSubview:self.quoteNickLabel];
         [self.contentView addSubview:self.quoteContentLabel];
+        [self.contentView addSubview:self.blueVerticalLine];
         [self.contentView addSubview:self.quoteImageView];
         [self.contentView addSubview:self.line];
         [self.contentView addSubview:self.textView];
@@ -67,26 +68,22 @@
     CGFloat maxContentWidth = self.cellWidth - originX - xPadding - bubbleXPadding * 2;
     
     originX += bubbleXPadding;
-    originY += 8; //被引用消息的用户昵称文本与bubble的内部上间距为8
-    NSAttributedString *quoteNickAttributeString = self.quoteNickLabel.attributedText;
-    CGSize quoteNickSize = [quoteNickAttributeString boundingRectWithSize:CGSizeMake(maxContentWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-    self.quoteNickLabel.frame = CGRectMake(originX, originY, quoteNickSize.width, 18);
-    originY += 18 + 5; //被引用消息的用户昵称文本与被引用消息文本/图片的间距为5
+    originY += 8; // 被引用消息与bubble的内部上间距为8
     
-    if (!self.quoteContentLabel.hidden) { // 被引用消息文本最多显示2行，故最大高度为44
-        NSAttributedString *quoteContentLabelString = self.quoteContentLabel.attributedText;
-        CGSize quoteContentLabelSize = [quoteContentLabelString boundingRectWithSize:CGSizeMake(maxContentWidth, 44) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-        self.quoteContentLabel.frame = CGRectMake(originX, originY, quoteContentLabelSize.width, quoteContentLabelSize.height);
-        originY += quoteContentLabelSize.height;
-    }
+    CGSize quoteContentLabelSize = [self.quoteContentLabel sizeThatFits:CGSizeMake(maxContentWidth, MAXFLOAT)];
+    self.quoteContentLabel.frame = CGRectMake(originX, originY, quoteContentLabelSize.width, quoteContentLabelSize.height);
     
-    if (!self.quoteImageView.hidden) {
+    [self layoutBlueVerticalLineWithOriginX:originX];
+    
+    originY += ceil(quoteContentLabelSize.height) + 4;
+    
+    if (!self.quoteImageView.hidden) { //  被引用消息图片
         CGSize quoteImageViewSize = [PLVLCQuoteMessageCell calculateImageViewSizeWithMessage:self.model.message];
         self.quoteImageView.frame = CGRectMake(originX, originY, quoteImageViewSize.width, quoteImageViewSize.height);
-        originY += quoteImageViewSize.height;
+        originY += quoteImageViewSize.height + 4;
     }
     
-    originY += bubbleXPadding;
+    originY += bubbleXPadding - 4;
     self.line.frame = CGRectMake(originX, originY, 0, 1); // 最后再设置分割线宽度
     
     originY += 1; // textView文本与textView的内部已有上下间距8，所以此处无需再增加间隔
@@ -108,9 +105,7 @@
     self.bubbleView.layer.mask = maskLayer;
 }
 
-/// 设置完数据模型之后，找到quoteNickLabel、quoteContentLabel、quoteImageView与textView的最大宽度
 - (CGFloat)actualMaxContentWidth {
-    CGFloat quoteNickWidth = self.quoteNickLabel.frame.size.width;
     CGFloat quoteContentWidth = 0;
     if (!self.quoteContentLabel.hidden) {
         quoteContentWidth = self.quoteContentLabel.frame.size.width;
@@ -120,7 +115,7 @@
         quoteImageWidth = self.quoteImageView.frame.size.width;
     }
     CGFloat textViewContentWidth = self.textView.frame.size.width;
-    return MAX(quoteNickWidth, MAX(quoteContentWidth, MAX(quoteImageWidth, textViewContentWidth)));
+    return MAX(quoteContentWidth, MAX(quoteImageWidth, textViewContentWidth));
 }
 
 #pragma mark - Getter
@@ -133,11 +128,15 @@
     return _bubbleView;
 }
 
-- (UILabel *)quoteNickLabel {
-    if (!_quoteNickLabel) {
-        _quoteNickLabel = [[UILabel alloc] init];
+- (UIView *)blueVerticalLine {
+    if (!_blueVerticalLine) {
+        _blueVerticalLine = [[UIView alloc] init];
+        _blueVerticalLine.backgroundColor = [PLVColorUtil colorFromHexString:@"#3F76FC"];
+        _blueVerticalLine.layer.cornerRadius = 1.0;
+        _blueVerticalLine.layer.masksToBounds = YES;
+        _blueVerticalLine.hidden = YES;
     }
-    return _quoteNickLabel;
+    return _blueVerticalLine;
 }
 
 - (UILabel *)quoteContentLabel {
@@ -186,13 +185,13 @@
     
     PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
     
-    NSAttributedString *quoteNickLabelString = [PLVLCQuoteMessageCell quoteNickAttributedStringWithMessage:message
-                                                                                               loginUserId:self.loginUserId];
-    if (quoteNickLabelString) {
-        self.quoteNickLabel.attributedText = quoteNickLabelString;
-    }
+    // 判断被引用消息是否为自己的消息
+    NSString *quoteUserId = message.quoteUserId;
+    BOOL isMyQuoteMessage = quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
+                            self.loginUserId && [self.loginUserId isKindOfClass:[NSString class]] &&
+                            [self.loginUserId isEqualToString:quoteUserId];
     
-    NSAttributedString *quoteContentLabelString = [PLVLCQuoteMessageCell quoteContentAttributedStringWithMessage:message];
+    NSAttributedString *quoteContentLabelString = [PLVLCQuoteMessageCell quoteContentAttributedStringWithMessage:message loginUserId:self.loginUserId isMyMessage:isMyQuoteMessage];
     self.quoteContentLabel.hidden = !quoteContentLabelString;
     if (quoteContentLabelString) {
         self.quoteContentLabel.attributedText = quoteContentLabelString;
@@ -219,49 +218,86 @@
     }
 }
 
-#pragma mark UI - ViewModel
+#pragma mark UI - Blue Line Layout
 
-/// 获取被引用的消息用户昵称的多属性文本
-+ (NSAttributedString *)quoteNickAttributedStringWithMessage:(PLVQuoteMessage *)message loginUserId:(NSString *)loginUserId {
-    NSString *quoteUserName = message.quoteUserName;
-    if (!quoteUserName || ![quoteUserName isKindOfClass:[NSString class]] || quoteUserName.length == 0) {
-        return nil;
+- (void)layoutBlueVerticalLineWithOriginX:(CGFloat)originX {
+    PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)self.model.message;
+    NSString *quoteUserId = quoteMessage.quoteUserId;
+    NSString *loginUserId = self.loginUserId;
+    BOOL isMyQuoteMessage = quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
+                            loginUserId && [loginUserId isKindOfClass:[NSString class]] &&
+                            [loginUserId isEqualToString:quoteUserId];
+    
+    if (!isMyQuoteMessage || self.quoteContentLabel.hidden) {
+        self.blueVerticalLine.hidden = YES;
+        return;
     }
     
-    NSString *content = quoteUserName;
+    UIFont *font = [UIFont systemFontOfSize:12.0];
+    CGFloat firstLineCenterY = CGRectGetMinY(self.quoteContentLabel.frame) + font.lineHeight / 2.0;
+    CGFloat blueLineHeight = 10.0;
+    CGFloat blueLineWidth = 2.0;
+    CGFloat blueY = firstLineCenterY - blueLineHeight / 2.0;
+    
+    self.blueVerticalLine.frame = CGRectMake(originX, blueY, blueLineWidth, blueLineHeight);
+    self.blueVerticalLine.hidden = NO;
+}
+
+#pragma mark UI - ViewModel
+
+/// 获取被引用的消息的多属性文本，格式为 "昵称：文本"
++ (NSAttributedString *)quoteContentAttributedStringWithMessage:(PLVQuoteMessage *)message loginUserId:(NSString *)loginUserId isMyMessage:(BOOL)isMyMessage {
+    NSString *quoteUserName = message.quoteUserName ?: @"";
     NSString *quoteUserId = message.quoteUserId;
     if (quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
         loginUserId && [loginUserId isEqualToString:quoteUserId]) {
-        content = [content stringByAppendingString:PLVLocalizedString(@"（我）")];
-    } else if ([PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled && [PLVFdUtil checkStringUseable:content] && content.length > 1) {
+        quoteUserName = [quoteUserName stringByAppendingString:PLVLocalizedString(@"（我）")];
+    } else if ([PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled && [PLVFdUtil checkStringUseable:quoteUserName] && quoteUserName.length > 1) {
         
-        NSString *firstChar = [content substringToIndex:1];
-        NSString *stars = [@"" stringByPaddingToLength:content.length - 1 withString:@"*" startingAtIndex:0];
-        content = [firstChar stringByAppendingString:stars];
+        NSString *firstChar = [quoteUserName substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:quoteUserName.length - 1 withString:@"*" startingAtIndex:0];
+        quoteUserName = [firstChar stringByAppendingString:stars];
     }
     
-    NSDictionary *attributeDict = @{
-                                    NSFontAttributeName: [UIFont systemFontOfSize:16.0],
-                                    NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#777786"]
-    };
-    NSAttributedString *string = [[NSAttributedString alloc] initWithString:content attributes:attributeDict];
-    return string;
-}
-
-/// 获取被引用的消息的多属性文本
-+ (NSAttributedString *)quoteContentAttributedStringWithMessage:(PLVQuoteMessage *)message {
-    NSString *content = message.quoteContent;
-    if (!content || ![content isKindOfClass:[NSString class]] || content.length == 0) {
-        return nil;
+    UIColor *nickNameColor;
+    if (isMyMessage) {
+        nickNameColor = [PLVColorUtil colorFromHexString:@"#3F76FC" alpha:0.6];
+    } else {
+        nickNameColor = [PLVColorUtil colorFromHexString:@"#777786"];
     }
     
-    NSDictionary *attributeDict = @{
-                                    NSFontAttributeName: [UIFont systemFontOfSize:16.0],
-                                    NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#777786"]
-    };
-    NSAttributedString *attributedString = [[NSAttributedString alloc] initWithString:content attributes:attributeDict];
-    //云课堂小表情显示需要变大 用font 22；
-    NSMutableAttributedString *emojiAttributedString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:attributedString font:[UIFont systemFontOfSize:22.0]];
+    if (!isMyMessage && [PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled && [PLVFdUtil checkStringUseable:quoteUserName] && quoteUserName.length > 1) {
+        NSString *firstChar = [quoteUserName substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:quoteUserName.length - 1 withString:@"*" startingAtIndex:0];
+        quoteUserName = [firstChar stringByAppendingString:stars];
+    }
+    
+    NSString *quoteContent = message.quoteContent ?: @"";
+    NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, quoteContent];
+    
+    NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] initWithString:content];
+    
+    UIFont *font = [UIFont systemFontOfSize:12.0];
+    [attributedString addAttribute:NSFontAttributeName value:font range:NSMakeRange(0, content.length)];
+    [attributedString addAttribute:NSForegroundColorAttributeName value:[PLVColorUtil colorFromHexString:@"#777786"] range:NSMakeRange(0, content.length)];
+    
+    NSString *nickNamePart = [NSString stringWithFormat:@"%@：", quoteUserName];
+    if (content.length >= nickNamePart.length) {
+        [attributedString addAttribute:NSForegroundColorAttributeName value:nickNameColor range:NSMakeRange(0, nickNamePart.length)];
+    }
+    
+    NSMutableAttributedString *emojiAttributedString = [[PLVEmoticonManager sharedManager] converEmoticonTextToEmotionFormatText:[attributedString copy] font:[UIFont systemFontOfSize:12.0]];
+    
+    if (isMyMessage) {
+        CGFloat blueLineWidth = 2.0;
+        CGFloat spacing = 4.0;
+        CGFloat indent = blueLineWidth + spacing;
+        NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+        paragraphStyle.firstLineHeadIndent = indent;
+        paragraphStyle.headIndent = indent;
+        [emojiAttributedString addAttribute:NSParagraphStyleAttributeName value:paragraphStyle range:NSMakeRange(0, emojiAttributedString.length)];
+    }
+    
     return [emojiAttributedString copy];
 }
 
@@ -301,37 +337,60 @@
     }
     
     CGFloat originX = 64.0; // 64 为气泡初始x值
-    CGFloat originY = 28.0; // 64 为气泡初始y值
+    CGFloat originY = 28.0; // 28 为气泡初始y值（bubbleOriginY）
     CGFloat xPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0; // 头像左间距，气泡右间距
     CGFloat bubbleXPadding = 12;//textView与bubble的内部左右间距均为12
-    CGFloat maxTextViewWidth = cellWidth - originX - xPadding - bubbleXPadding * 2;
+    CGFloat maxContentWidth = cellWidth - originX - xPadding - bubbleXPadding * 2;
     
-    CGFloat quoteNickHeight = 18; // quoteNickHeight为被引用消息用户昵称文本高度
+    PLVQuoteMessage *quoteMessage = (PLVQuoteMessage *)model.message;
+    NSString *quoteUserId = quoteMessage.quoteUserId;
+    NSString *loginUserId = [PLVRoomDataManager sharedManager].roomData.roomUser.viewerId;
+    BOOL isMyQuoteMessage = quoteUserId && [quoteUserId isKindOfClass:[NSString class]] &&
+                            loginUserId && [loginUserId isKindOfClass:[NSString class]] &&
+                            [loginUserId isEqualToString:quoteUserId];
+    originY += 8;
     
-    CGFloat quoteContentHeight = 0; // quoteContentHeight为被引用消息文本或图片高度
-    NSAttributedString *quoteContentLabelString = [PLVLCQuoteMessageCell quoteContentAttributedStringWithMessage:model.message];
-    NSURL *quoteImageURL = [PLVLCQuoteMessageCell quoteImageURLWithMessage:model.message];
+    NSAttributedString *quoteContentLabelString = [PLVLCQuoteMessageCell quoteContentAttributedStringWithMessage:model.message loginUserId:loginUserId isMyMessage:isMyQuoteMessage];
     if (quoteContentLabelString) {
-        CGSize quoteContentSize = [quoteContentLabelString boundingRectWithSize:CGSizeMake(maxTextViewWidth, 44) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-        quoteContentHeight = quoteContentSize.height;
-    } else if (quoteImageURL) {
-        CGSize quoteImageViewSize = [PLVLCQuoteMessageCell calculateImageViewSizeWithMessage:model.message];
-        quoteContentHeight = quoteImageViewSize.height;
+        UILabel *tempQuoteContentLabel = [[UILabel alloc] init];
+        tempQuoteContentLabel.attributedText = quoteContentLabelString;
+        tempQuoteContentLabel.numberOfLines = 0;
+        CGSize quoteContentLabelSize = [tempQuoteContentLabel sizeThatFits:CGSizeMake(maxContentWidth, MAXFLOAT)];
+        
+        CGFloat quoteTextHeight = quoteContentLabelSize.height + 4; // 文本高度 + 间距
+        originY += quoteTextHeight;
     }
     
+    CGFloat quoteImageHeight = 0;
+    NSURL *quoteImageURL = [PLVLCQuoteMessageCell quoteImageURLWithMessage:model.message];
+    if (quoteImageURL) {
+        CGSize quoteImageViewSize = [PLVLCQuoteMessageCell calculateImageViewSizeWithMessage:model.message];
+        quoteImageHeight = quoteImageViewSize.height + 4; // 图片高度 + 间距
+        originY += quoteImageHeight;
+    }
+    
+    originY += bubbleXPadding - 4;
+    
+    originY += 1;
+    
+
     NSMutableAttributedString *contentLabelString;
-    if (model.attributeString) { // 如果在 model 中已经存在计算好的 消息多属性文本 ，那么 就直接使用；
+    if (model.attributeString) {
         contentLabelString = model.attributeString;
     } else {
         contentLabelString = [PLVLCQuoteMessageCell contentAttributedStringWithMessage:model.message];
         model.attributeString = contentLabelString;
     }
 
-    CGSize contentLabelSize = [[contentLabelString copy] boundingRectWithSize:CGSizeMake(maxTextViewWidth, MAXFLOAT) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading context:nil].size;
-    CGFloat textViewHeight = 8 + contentLabelSize.height + 8; // textView文本与textView的内部有上下间距8
+    PLVChatTextView *tempTextView = [[PLVChatTextView alloc] init];
+    [tempTextView setContent:contentLabelString showUrl:[model.user isUserSpecial]];
+    CGSize textViewSize = [tempTextView sizeThatFits:CGSizeMake(maxContentWidth, MAXFLOAT)];
+    originY += textViewSize.height;
+    
+    CGFloat bubbleHeight = originY - 28.0;
     
     // 16为气泡底部外间距
-    return originY + bubbleXPadding + quoteNickHeight + 5 + quoteContentHeight + bubbleXPadding + textViewHeight + 16;
+    return 28.0 + bubbleHeight + 16;
 }
 
 /// 计算被引用消息图片尺寸

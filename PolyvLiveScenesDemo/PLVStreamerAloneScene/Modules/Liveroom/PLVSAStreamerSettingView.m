@@ -218,7 +218,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
     [self.buttonView addSubview:self.stickerVideoButton];
     [muButtonArray addObject:self.stickerVideoButton];
     
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+    if (self.showPlaybackSetting) {
         [self.buttonView addSubview:self.playbackSettingButton];
         [muButtonArray addObject:self.playbackSettingButton];
     }
@@ -456,7 +456,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 }
 
 - (void)initPlaybackEnabled {
-    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType != PLVRoomUserTypeTeacher) {
         return;
     }
     NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
@@ -798,6 +798,11 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (BOOL)showOrientation {
     return [PLVRoomDataManager sharedManager].roomData.showOrientationButtonEnabled;
+}
+
+- (BOOL)showPlaybackSetting {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    return roomData.roomUser.viewerType == PLVRoomUserTypeTeacher && roomData.appStartLiveBroadcastReplay;
 }
 
 - (NSString *)defaultQualityLevel {

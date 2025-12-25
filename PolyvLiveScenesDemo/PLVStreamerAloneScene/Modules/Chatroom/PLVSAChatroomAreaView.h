@@ -22,7 +22,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView alertLongContentMessage:(PLVChatModel *)model;
 
 /// 商品库更新
-- (void)chatroomAreaView_updateCommodityModel:(PLVCommodityModel *)commodityModel;
+- (void)chatroomAreaView_updateAICardWithCommodityModel:(PLVCommodityModel *)commodityModel;
 
 @end
 

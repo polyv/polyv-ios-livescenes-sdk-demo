@@ -1311,7 +1311,7 @@ PLVSAAICardViewDelegate
     }
 }
 
-- (void)chatroomAreaView_updateCommodityModel:(PLVCommodityModel *)commodityModel {
+- (void)chatroomAreaView_updateAICardWithCommodityModel:(PLVCommodityModel *)commodityModel {
     [self.aiCardView updateWithCommodityModel:commodityModel];
 }
 

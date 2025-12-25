@@ -263,6 +263,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutBackgroundColor) {
 @property (nonatomic, assign) BOOL appStartGiftDonateEnabled;
 // 开播端是否显示礼物特效开关
 @property (nonatomic, assign) BOOL appStartGiftEffectEnabled;
+// 开播端是否显示直播回放开关
+@property (nonatomic, assign) BOOL appStartLiveBroadcastReplay;
 
 #pragma mark SIP独有属性
 /// 支持SIP模式

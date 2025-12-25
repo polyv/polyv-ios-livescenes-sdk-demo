@@ -82,12 +82,14 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         [self addSubview:self.whiteboardButton];
         [self addSubview:self.documentButton];
         [self addSubview:self.linkmicButton];
-        [self addSubview:self.memberButton];
+        if ([PLVRoomDataManager sharedManager].roomData.appStartMemberListEnabled) {
+            [self addSubview:self.memberButton];
+            [self.memberButton addSubview:self.memberRedDot];
+        }
         [self addSubview:self.settingButton];
         [self addSubview:self.startPushButton];
         [self addSubview:self.stopPushButton];
         
-        [self.memberButton addSubview:self.memberRedDot];
         self.linkMicBtnLastTimeInterval = 0.0;
     }
     return self;
@@ -155,7 +157,8 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
     
     self.memberButton.hidden = YES;
     self.memberRedDot.hidden = YES;
-    if (controlsInDemand & PLVLSStatusBarControls_MemberButton) {
+    if ((controlsInDemand & PLVLSStatusBarControls_MemberButton) && 
+        self.memberButton.superview == self) {
         originX -= 44;
         self.memberButton.hidden = NO;
         self.memberRedDot.hidden = !self.hasNewMemberState;
@@ -496,7 +499,13 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
 - (PLVLSLinkMicApplyTipsView *)linkMicApplyView {
     if (!_linkMicApplyView) {
         _linkMicApplyView = [[PLVLSLinkMicApplyTipsView alloc] init];
-        CGFloat centerX = self.memberButton.center.x;// 作为连麦选择弹层中心位置
+        CGFloat centerX = 0;
+        if (self.memberButton.superview == self) {
+            centerX = self.memberButton.center.x;// 作为连麦选择弹层中心位置
+        } else {
+            // 如果成员按钮不存在，使用设置按钮的位置作为参考
+            centerX = self.settingButton.center.x;
+        }
         CGFloat originY = self.frame.origin.y + self.frame.size.height - 4.0;
         // iPad需要减去头部状态栏的安全距离
         if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad) {
@@ -714,9 +723,11 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
         [self.linkMicApplyView dismiss];
     }
     
-    self.memberButton.selected = YES;
-    self.hasNewMemberState = NO;
-    self.memberRedDot.hidden = YES;
+    if (self.memberButton.superview == self) {
+        self.memberButton.selected = YES;
+        self.hasNewMemberState = NO;
+        self.memberRedDot.hidden = YES;
+    }
     if (self.delegate) {
         [self.delegate statusAreaView_didTapMemberButton];
     }
@@ -807,7 +818,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
 
 - (void)hasNewMember {
     self.hasNewMemberState = YES;
-    if (!self.memberButton.hidden) {
+    if (self.memberButton.superview == self && !self.memberButton.hidden) {
         self.memberRedDot.hidden = NO;
     }
 }
@@ -815,7 +826,7 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
 - (void)receivedNewJoinLinkMicRequest{
     if ([self canManagerLinkMic]) {
         [self.linkMicApplyView showAtView:self];
-        if (!self.memberButton.selected) {
+        if (self.memberButton.superview == self && !self.memberButton.selected) {
             [self hasNewMember];
         }
     }
@@ -861,7 +872,9 @@ typedef NS_ENUM(NSUInteger, PLVLSStatusLinkMicButtonStatus) {
 }
 
 - (void)changeMemberButtonSelectedState:(BOOL)selected {
-    self.memberButton.selected = selected;
+    if (self.memberButton.superview == self) {
+        self.memberButton.selected = selected;
+    }
 }
 
 - (void)changeLinkmicButtonSelectedState:(BOOL)selected {

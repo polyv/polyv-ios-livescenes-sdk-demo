@@ -58,8 +58,10 @@
 
         [self addSubview:self.channelInfoButton];
         [self addSubview:self.timeButton];
-        [self addSubview:self.memberButton];
-        [self addSubview:self.memberBadgeView];
+        if ([PLVRoomDataManager sharedManager].roomData.appStartMemberListEnabled) {
+            [self addSubview:self.memberButton];
+            [self addSubview:self.memberBadgeView];
+        }
         [self addSubview:self.signalButton];
         [self addSubview:self.teacherNameButton];
     }

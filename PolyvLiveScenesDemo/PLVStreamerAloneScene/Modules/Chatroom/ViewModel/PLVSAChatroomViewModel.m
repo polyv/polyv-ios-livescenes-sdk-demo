@@ -769,12 +769,11 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         return;
     }
     NSInteger status = PLV_SafeIntegerForDictKey(jsonDict, @"status");
-    if (status == 5) { // 收到 商品信息变动 消息时进行处理
+    if (status == 15) { // 收到 商品AI手卡信息变动 消息时进行处理
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
-        NSLog(@"PLVTEST 商品信息变动:%@", content);
-        if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel_updateCommodityModel:)]) {
-            [self.delegate chatroomViewModel_updateCommodityModel:model];
+        if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomViewModel_updateAICardWithCommodityModel:)]) {
+            [self.delegate chatroomViewModel_updateAICardWithCommodityModel:model];
         }
     }
 }

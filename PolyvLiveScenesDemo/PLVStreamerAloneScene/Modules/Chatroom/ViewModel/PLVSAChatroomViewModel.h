@@ -85,7 +85,7 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)chatroomViewModel_loadImageEmotionFailure;
 
 /// 接收商品库商品更新状态
-- (void)chatroomViewModel_updateCommodityModel:(PLVCommodityModel *)commodityModel;
+- (void)chatroomViewModel_updateAICardWithCommodityModel:(PLVCommodityModel *)commodityModel;
 
 @end
 

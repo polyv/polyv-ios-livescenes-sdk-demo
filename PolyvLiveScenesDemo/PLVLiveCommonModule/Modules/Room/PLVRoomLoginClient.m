@@ -361,10 +361,14 @@
         NSDictionary *appStartConfig = PLV_SafeDictionaryForDictKey(data, @"appStartConfig");
         if ([PLVFdUtil checkDictionaryUseable:appStartConfig]) {
             roomData.appStartMemberListEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartMemberListEnabled");
+            if (!roomData.appStartMemberListEnabled) {
+                roomData.interactNumLimit = 0;
+            }
             roomData.appStartMultiplexingLayoutEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartMultiplexingLayoutEnabled");
             roomData.appStartCheckinEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartCheckinEnabled");
             roomData.appStartGiftDonateEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartGiftDonateEnabled");
             roomData.appStartGiftEffectEnabled = PLV_SafeBoolForDictKey(appStartConfig, @"appStartGiftEffectEnabled");
+            roomData.appStartLiveBroadcastReplay = PLV_SafeBoolForDictKey(appStartConfig, @"appStartLiveBroadcastReplay");
         }
         
         // 初始化直播间用户数据

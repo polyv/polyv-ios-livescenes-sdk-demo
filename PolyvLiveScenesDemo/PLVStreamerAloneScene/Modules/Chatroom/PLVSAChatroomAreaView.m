@@ -408,10 +408,10 @@ PLVSAChatroomListViewDelegate
     [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"图片表情资源加载失败")];
 }
 
-- (void)chatroomViewModel_updateCommodityModel:(PLVCommodityModel *)commodityModel {
+- (void)chatroomViewModel_updateAICardWithCommodityModel:(PLVCommodityModel *)commodityModel {
     if (self.delegate &&
-        [self.delegate respondsToSelector:@selector(chatroomAreaView_updateCommodityModel:)]) {
-        [self.delegate chatroomAreaView_updateCommodityModel:commodityModel];
+        [self.delegate respondsToSelector:@selector(chatroomAreaView_updateAICardWithCommodityModel:)]) {
+        [self.delegate chatroomAreaView_updateAICardWithCommodityModel:commodityModel];
     }
 }
 

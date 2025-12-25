@@ -1004,7 +1004,7 @@ PLVCommodityDetailPopupViewDelegate
     } else {
         [self.playerVC reload];
     }
-    self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
+//    self.playerVC.view.alpha = inRTCRoom ? 0 : 1;
     self.playerVC.displayView.alpha = inRTCRoom ? 0 : 1;
     self.linkMicAreaView.alpha = inRTCRoom ? 1 : 0;
     
