@@ -78,7 +78,7 @@ static CGFloat kPLVSAAICardViewTitleBarHeight = 30.0;
         [self showWithProductId:productId];
     } else if (self.commodityModel && (self.commodityModel.productId == commodityModel.productId)) {
         self.commodityModel = nil;
-        [self hide:NO];
+        [self hide:NO notifyWidgetStatus:NO];
     } else {
         // 忽略其他商品变动消息
     }
@@ -132,6 +132,7 @@ static CGFloat kPLVSAAICardViewTitleBarHeight = 30.0;
     }
     
     if (!self.isShowing) {
+        [self notifyWidgetStatusNeedChange:notifyWidgetStatus];
         return;
     }
     

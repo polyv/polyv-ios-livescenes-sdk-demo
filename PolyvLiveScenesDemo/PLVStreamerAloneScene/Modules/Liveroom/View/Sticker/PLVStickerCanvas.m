@@ -91,6 +91,15 @@ PLVStickerVideoViewDelegate
     }
     
     self.isFullScreen = curFullScreen;
+    
+    // 更新所有文字贴图的可移动区域，确保与 contentView 的 bounds 同步
+    for (UIView *subView in self.contentView.subviews){
+        if ([subView isKindOfClass:[PLVStickerTextView class]]){
+            PLVStickerTextView *textView = (PLVStickerTextView *)subView;
+            [textView setNeedsLayout];
+            [textView layoutIfNeeded];
+        }
+    }
 }
 
 - (void)revertLayout{
@@ -122,6 +131,9 @@ PLVStickerVideoViewDelegate
             NSInteger startX = (self.contentView.bounds.size.width - textView.frame.size.width)/2;
             NSInteger startY = (self.contentView.bounds.size.height - textView.frame.size.height)/2 - 80;
             textView.frame = CGRectMake(startX, startY, textView.frame.size.width, textView.frame.size.height);
+            // 强制更新可移动区域，确保使用新的 contentView.bounds
+            [textView setNeedsLayout];
+            [textView layoutIfNeeded];
         }
     }
     
