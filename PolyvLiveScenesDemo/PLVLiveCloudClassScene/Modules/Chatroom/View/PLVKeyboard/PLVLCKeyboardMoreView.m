@@ -114,8 +114,14 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - imageWidth, - imageWidth- kCellImageLabelMargin / 2.0f, 0)];
         [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(3.5, (kCellButtonWidth - imageWidth)/2, self.moreBtn.titleLabel.intrinsicContentSize.height + kCellImageLabelMargin, (kCellButtonWidth - imageWidth)/2)];
     } else {
-        [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - self.moreBtn.imageView.frame.size.width - 12, - self.moreBtn.imageView.frame.size.height - kCellImageLabelMargin / 2.0f, - 12)];
-        [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(- self.moreBtn.titleLabel.intrinsicContentSize.height - kCellImageLabelMargin / 2.0f, 0, 0, - self.moreBtn.titleLabel.intrinsicContentSize.width)];
+
+        CGFloat imageWidth = self.moreBtn.imageView.frame.size.width > 0 ? self.moreBtn.imageView.frame.size.width : 0;
+        CGFloat imageHeight = self.moreBtn.imageView.frame.size.height > 0 ? self.moreBtn.imageView.frame.size.height : 0;
+        CGFloat titleHeight = self.moreBtn.titleLabel.intrinsicContentSize.height;
+        CGFloat horizontalInset = (kCellButtonWidth - imageWidth) / 2.0f;
+        
+        [self.moreBtn setTitleEdgeInsets:UIEdgeInsetsMake(0, - imageWidth - 12, - imageHeight - kCellImageLabelMargin / 2.0f, - 12)];
+        [self.moreBtn setImageEdgeInsets:UIEdgeInsetsMake(- titleHeight - kCellImageLabelMargin / 2.0f, horizontalInset, 0, horizontalInset)];
     }
 }
 

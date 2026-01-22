@@ -22,6 +22,8 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class PLVLiveSubtitleModel;
+
 /// 媒体区域 直播场景类型
 ///
 /// @note 观看直播的过程中，也存在“拥有不同交互的多种直播观看场景”；
@@ -247,6 +249,10 @@ typedef NS_ENUM(NSUInteger, PLVLCMediaAreaViewLiveSceneType) {
 - (void)updateTestModeStatus:(BOOL)testModeStatus;
 
 - (void)mute:(BOOL)mute;
+
+/// 更新实时字幕（直播场景）
+/// @param subtitle 实时字幕数据
+- (void)updateRealTimeSubtitle:(PLVLiveSubtitleModel * _Nullable)subtitle;
 
 @end
 

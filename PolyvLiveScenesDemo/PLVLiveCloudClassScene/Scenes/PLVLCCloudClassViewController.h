@@ -37,6 +37,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 退出并清理当前直播控制器
 - (void)exitCleanCurrentLiveController;
+/// 退出并清理当前直播控制器，完成后再执行回调
+- (void)exitCleanCurrentLiveControllerWithCompletion:( void(^ _Nullable )(void))completion;
 
 @end
 

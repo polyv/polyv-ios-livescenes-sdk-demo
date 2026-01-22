@@ -17,6 +17,7 @@
 #import "PLVPinMessagePopupView.h"
 #import "PLVLCOnlineListRuleSheet.h"
 #import "PLVLiveScenesSubtitleView.h"
+#import "PLVLCRealTimeSubtitleView.h"
 
 // 模块
 #import "PLVDocumentView.h"
@@ -39,6 +40,8 @@ static NSString *const PLVLCMediaAreaView_Data_RouteOptionTitle = @"线路";
 static NSString *const PLVLCMediaAreaView_Data_LiveDelayOptionTitle = @"延迟";
 static NSString *const PLVLCMediaAreaView_Data_SpeedOptionTitle = @"倍速";
 static NSString *const PLVLCMediaAreaView_Data_subtitleOptionTitle  = @"回放字幕";
+static NSString *const PLVLCMediaAreaView_Data_RealTimeSubtitleOptionTitle  = @"实时字幕";
+
 static NSInteger const PLVLCMediaAreaView_Data_TryPlayPPTViewMaxNum = 5;
 static NSString * const kUserDefaultDanmuSpeed = @"UserDefaultDanmuSpeed";
 static NSString *const PLVLCMediaSwitchNormalDelayAttributeName = @"switchnormaldelay";
@@ -83,8 +86,11 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, assign) UIView *pictureInPictureOriginView;   // 画中画视图的起始视图，这个视图必须是激活状态的，否则无法开启画中画。
 @property (nonatomic, strong) PLVLCDownloadBottomSheet *downloadSheet;
 @property (nonatomic, strong) PLVLCOnlineListRuleSheet *onlineListRuleSheet;
-@property (nonatomic, strong) PLVLiveScenesSubtitleView *subtitleView; // 字幕组件
+@property (nonatomic, strong) PLVLiveScenesSubtitleView *subtitleView; // 回放字幕组件
 @property (nonatomic, strong) NSTimer *subtitleTimer; // 字幕定时器
+@property (nonatomic, strong) PLVLCRealTimeSubtitleView *realTimeSubtitleView; // 实时字幕视图（直播）
+@property (nonatomic, assign) BOOL realTimeSubtitleEnabled; // 实时字幕是否启用（频道配置）
+@property (nonatomic, assign) BOOL showRealTimeSubtitle; // 是否显示实时字幕（用户控制）
 
 #pragma mark 数据
 @property (nonatomic, readonly) PLVRoomData *roomData;  // 只读，当前直播间数据
@@ -271,6 +277,7 @@ PLVLCDocumentPaintModeViewDelegate
 
     self.watermarkView.frame = self.contentBackgroudView.frame;
     self.subtitleView.frame = self.contentBackgroudView.frame;
+    self.realTimeSubtitleView.frame = self.contentBackgroudView.frame;
     self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 66);
 }
 
@@ -605,7 +612,9 @@ PLVLCDocumentPaintModeViewDelegate
     
     [self contentBackgroundViewDisplaySubview:self.canvasView]; // 无直播时的默认状态，是‘播放器画面’位于主屏
 
-    [self addSubview:self.subtitleView];
+    [self addSubview:self.subtitleView]; // 回放字幕
+    
+    [self addSubview:self.realTimeSubtitleView]; // 实时字幕（直播）- 和回放字幕同层级
     
     [self addSubview:self.danmuView];
     
@@ -637,13 +646,16 @@ PLVLCDocumentPaintModeViewDelegate
         self.playerPresenter.delegate = self;
         [self.playerPresenter setupPlayerWithDisplayView:self.canvasView.playerSuperview];
          
-        /// PPT模块
+        /// PPT模块      
         [self.floatView displayExternalView:self.pptView]; /// 无直播时的默认状态，是‘PPT画面’位于副屏(悬浮小窗)
         /// 投屏模块
         if ([PLVCastClient isAuthorizeSuccess]) {
             self.castClient = [PLVCastClient sharedClient];
             self.castClient.delegate = self;
-        }
+        }  
+        
+        /// 实时字幕模块
+        [self setupRealTimeSubtitle];
         
     }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 直播回放 模块
@@ -800,12 +812,20 @@ PLVLCDocumentPaintModeViewDelegate
         routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_RouteOptionTitle) optionItemsArray:routeArray selectedIndex:self.playerPresenter.currentLineIndex];
     }
     
+    PLVLCMediaMoreModel *realTimeSubtitleModel = nil;
+    if (self.videoType == PLVChannelVideoType_Live && self.realTimeSubtitleEnabled) {
+        realTimeSubtitleModel = [PLVLCMediaMoreModel modelWithCustomTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_RealTimeSubtitleOptionTitle)
+                                                               dictionary:@{@"type": @"RealTimeSubtitle"}];
+        realTimeSubtitleModel.selectedIndex = self.showRealTimeSubtitle ? 1 : 0;
+    }
+    
     // 整合数据
     NSMutableArray * modelArray = [[NSMutableArray alloc] init];
     if (modeModel) { [modelArray addObject:modeModel]; }
     if (qualityModel) { [modelArray addObject:qualityModel]; }
     if (routeModel) { [modelArray addObject:routeModel]; }
     if (liveDelayModel) { [modelArray addObject:liveDelayModel]; }
+    if (realTimeSubtitleModel) { [modelArray addObject:realTimeSubtitleModel]; }
 
     // 更新 moreView
     [self.moreView refreshTableViewWithDataArray:modelArray];
@@ -1256,6 +1276,14 @@ PLVLCDocumentPaintModeViewDelegate
     return _subtitleView;
 }
 
+- (PLVLCRealTimeSubtitleView *)realTimeSubtitleView {
+    if (!_realTimeSubtitleView) {
+        _realTimeSubtitleView = [[PLVLCRealTimeSubtitleView alloc] init];
+        _realTimeSubtitleView.hidden = YES; // 默认隐藏
+    }
+    return _realTimeSubtitleView;
+}
+
 - (BOOL)inLinkMic{
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewGetInLinkMic:)]) {
         return [self.delegate plvLCMediaAreaViewGetInLinkMic:self];
@@ -1596,8 +1624,14 @@ PLVLCDocumentPaintModeViewDelegate
         // 用户点击了“下载”按钮
         [self.downloadSheet updatePlaybackInfoWithData:[PLVRoomDataManager sharedManager].roomData];
         [self.downloadSheet showInView:self.superview];
+    } else if ([model.optionTitle isEqualToString:PLVLocalizedString(PLVLCMediaAreaView_Data_RealTimeSubtitleOptionTitle)]) {
+        // 用户点击了"实时字幕"开关
+        BOOL newStatus = (model.selectedIndex == 1); // Switch开关: 0=未选中, 1=选中
+        [self toggleRealTimeSubtitle:newStatus];
+        [moreView refreshTableView];
     }
 }
+
 
 - (void)plvLCMediaMoreView:(PLVLCMediaMoreView *)moreView didUpdateSubtitleState:(PLVPlaybackSubtitleModel *)originalSubtitle translateSubtitle:(PLVPlaybackSubtitleModel *)translateSubtitle {
     if (self.subtitleTimer) {
@@ -2164,6 +2198,53 @@ PLVLCDocumentPaintModeViewDelegate
 
 - (void)updateTestModeStatus:(BOOL)testModeStatus {
     [self.playerPresenter updateTestModeStatus:testModeStatus];
+}
+
+
+#pragma mark - 实时字幕相关方法
+
+- (void)setupRealTimeSubtitle {
+    // 获取频道实时字幕配置
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    PLVLiveRealTimeSubtitleConfig *subtitleConfig = roomData.menuInfo.realTimeSubtitleConfig;
+    
+    // 判断是否启用实时字幕
+    self.realTimeSubtitleEnabled = subtitleConfig.realTimeSubtitleEnabled;
+    
+    if (self.realTimeSubtitleEnabled) {
+        // 从本地读取用户上次的设置，默认为YES
+        self.showRealTimeSubtitle = [[NSUserDefaults standardUserDefaults] objectForKey:@"PLVLCShowRealTimeSubtitle"] 
+            ? [[NSUserDefaults standardUserDefaults] boolForKey:@"PLVLCShowRealTimeSubtitle"]
+            : YES;
+        self.realTimeSubtitleView.hidden = !self.showRealTimeSubtitle;
+    }
+}
+
+- (void)toggleRealTimeSubtitle:(BOOL)show {
+    self.showRealTimeSubtitle = show;
+    self.realTimeSubtitleView.hidden = !show;
+    
+    // 保存设置到本地
+    [[NSUserDefaults standardUserDefaults] setBool:show forKey:@"PLVLCShowRealTimeSubtitle"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)updateRealTimeSubtitle:(PLVLiveSubtitleModel *)subtitle {
+    // 只在直播场景且启用实时字幕时更新
+    if (self.videoType == PLVChannelVideoType_Live && self.realTimeSubtitleEnabled) {
+        // 确保字幕视图已添加到界面
+        if (!self.realTimeSubtitleView.superview) {
+            [self addSubview:self.realTimeSubtitleView];
+            self.realTimeSubtitleView.frame = self.contentBackgroudView.frame;
+        }
+        
+        // 根据用户设置控制显示
+        if (self.showRealTimeSubtitle) {
+            [self.realTimeSubtitleView updateRealTimeSubtitle:subtitle];
+        } else {
+            self.realTimeSubtitleView.hidden = YES;
+        }
+    }
 }
 
 @end

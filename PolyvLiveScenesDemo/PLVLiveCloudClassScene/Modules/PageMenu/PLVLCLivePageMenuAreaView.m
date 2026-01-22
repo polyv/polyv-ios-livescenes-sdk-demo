@@ -19,6 +19,7 @@
 #import "PLVLCNoNetworkDescViewController.h"
 #import "PLVLCOnlineListViewController.h"
 #import "PLVLCAISummaryViewController.h"
+#import "PLVLCRealTimeSubtitleViewController.h"
 #import "PLVRoomDataManager.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
@@ -61,6 +62,7 @@ PLVLCSectionViewControllerDelegate,
 PLVLCChatViewControllerDelegate,
 PLVLCOnlineListViewControllerDelegate,
 PLVLCAISummaryViewControllerDelegate,
+PLVLCRealTimeSubtitleViewControllerDelegate,
 PLVRoomDataManagerProtocol
 >
 
@@ -86,6 +88,8 @@ PLVRoomDataManagerProtocol
 @property (nonatomic, strong) PLVLCOnlineListViewController *onlineListVctrl;
 /// AI看功能页
 @property (nonatomic, strong) PLVLCAISummaryViewController *aiSummaryVctrl;
+/// 实时字幕页
+@property (nonatomic, strong) PLVLCRealTimeSubtitleViewController *subtitleVctrl;
 
 @property (nonatomic, weak) UIViewController *liveRoom;
 
@@ -305,6 +309,12 @@ PLVRoomDataManagerProtocol
     }
 }
 
+- (void)updateRealTimeSubtitles:(NSArray *)subtitles {
+    if (self.subtitleVctrl) {
+        [self.subtitleVctrl updateSubtitles:subtitles];
+    }
+}
+
 #pragma mark - Private Method
 
 - (void)updateChannelMenuInfo {
@@ -349,6 +359,9 @@ PLVRoomDataManagerProtocol
             [titleArray addObject:PLVLocalizedString(@"成员")];
             [ctrlArray addObject:vctrl];
         }
+        
+        // 添加实时字幕Tab（仅在直播时显示）
+        [self addRealTimeSubtitleTabIfNeeded:titleArray controllers:ctrlArray];
     }
     
     if ([PLVRoomDataManager sharedManager].roomData.menuInfo.multiMeetingEnabled) {
@@ -414,6 +427,50 @@ PLVRoomDataManagerProtocol
     }
     
     return nil;
+}
+
+/// 添加实时字幕Tab（如果频道支持）
+- (void)addRealTimeSubtitleTabIfNeeded:(NSMutableArray *)titleArray controllers:(NSMutableArray *)ctrlArray {
+    // 只在直播时显示
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.videoType != PLVChannelVideoType_Live) {
+        return;
+    }
+    
+    // 检查频道是否支持字幕（从 menuInfo.realTimeSubtitleConfig 中获取）
+    PLVLiveVideoChannelMenuInfo *menuInfo = roomData.menuInfo;
+    if (!menuInfo || !menuInfo.realTimeSubtitleConfig) {
+        return;
+    }
+    
+    PLVLiveRealTimeSubtitleConfig *subtitleConfig = menuInfo.realTimeSubtitleConfig;
+    // 检查实时字幕功能是否开启
+    if (!subtitleConfig.realTimeSubtitleEnabled) {
+        return;
+    }
+    
+    // 如果已经有字幕控制器，不再重复添加
+    if (self.subtitleVctrl && [ctrlArray containsObject:self.subtitleVctrl]) {
+        return;
+    }
+    
+    // 创建字幕控制器
+    NSString *channelId = roomData.channelId ?: @"";
+    NSString *viewerId = roomData.roomUser.viewerId ?: @"";
+    
+    // 从配置中获取原文语言和可用翻译语言列表
+    NSString *originLanguage = subtitleConfig.subtitleSourceLanguage;
+    NSArray<NSString *> *availableLanguages = subtitleConfig.subtitleTranslationEnabled? subtitleConfig.subtitleTranslationLanguages: @[];
+    NSString *translateLanguage = subtitleConfig.subtitleTranslationEnabled? subtitleConfig.subtitleTranslationLanguage: @"origin";
+    self.subtitleVctrl = [[PLVLCRealTimeSubtitleViewController alloc] initWithChannelId:channelId
+                                                                               viewerId:viewerId
+                                                                         originLanguage:originLanguage
+                                                                      translateLanguage:translateLanguage
+                                                                     availableLanguages:availableLanguages];
+    self.subtitleVctrl.delegate = self;
+    
+    [titleArray addObject:PLVLocalizedString(@"实时字幕")];
+    [ctrlArray addObject:self.subtitleVctrl];
 }
 
 - (void)displaySubview:(UIView *)subview toSuperview:(UIView *)superview {
@@ -562,6 +619,17 @@ PLVRoomDataManagerProtocol
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaViewNeedUpdateOnlineList:)]) {
         [self.delegate plvLCLivePageMenuAreaViewNeedUpdateOnlineList:self];
+    }
+}
+
+#pragma mark - PLVLCRealTimeSubtitleViewControllerDelegate
+
+- (void)realTimeSubtitleViewController:(PLVLCRealTimeSubtitleViewController *)viewController
+                 didSetTranslateLanguage:(NSString *)language {
+    // 通知外部修改翻译语言
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:didSetSubtitleTranslateLanguage:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self didSetSubtitleTranslateLanguage:language];
     }
 }
 

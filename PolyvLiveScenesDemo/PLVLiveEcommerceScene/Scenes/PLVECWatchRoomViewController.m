@@ -33,6 +33,8 @@
 #import "PLVECOnlineListRuleSheet.h"
 #import "PLVLiveToast.h"
 #import "PLVSecureView.h"
+#import "PLVECRealTimeSubtitleManager.h"
+#import "PLVLiveRealTimeSubtitleHandler.h"
 // 工具
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
@@ -60,7 +62,8 @@ PLVInteractGenericViewDelegate,
 PLVECMessagePopupViewDelegate,
 PLVECOnlineListSheetDelegate,
 PLVECChatroomViewModelProtocol,
-PLVCommodityDetailPopupViewDelegate
+PLVCommodityDetailPopupViewDelegate,
+PLVECRealTimeSubtitleManagerDelegate
 >
 
 #pragma mark 数据
@@ -85,6 +88,7 @@ PLVCommodityDetailPopupViewDelegate
 @property (nonatomic, strong) PLVCommodityCardDetailView *cardDetailView;           // 卡片推送加载视图
 @property (nonatomic, strong) PLVECOnlineListSheet *onlineListSheet; // 在线列表
 @property (nonatomic, strong) PLVECOnlineListRuleSheet *onlineListRuleSheet; // 在线列表规则
+@property (nonatomic, strong) PLVECRealTimeSubtitleManager *realTimeSubtitleManager; // 实时字幕管理器
 
 @end
 
@@ -117,12 +121,14 @@ PLVCommodityDetailPopupViewDelegate
 }
 
 - (void)dealloc{
+    [self exitCleanCurrentLiveController];
     [self removeObserver];
     PLV_LOG_INFO(PLVConsoleLogModuleTypeVerbose,@"%s",__FUNCTION__);
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
     [self setupUI];
     [self setupData];
     
@@ -164,6 +170,9 @@ PLVCommodityDetailPopupViewDelegate
     CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? self.scrollView.bounds.size.width - P_SafeAreaRightEdgeInsets() : self.scrollView.bounds.size.width;
 
     self.playerVC.view.frame = CGRectMake(self.scrollView.bounds.origin.x, self.scrollView.bounds.origin.y, playerVCWidth, self.scrollView.bounds.size.height);// 重新布局
+    
+    // 布局实时字幕视图
+    [self layoutRealTimeSubtitleView];
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -232,6 +241,10 @@ PLVCommodityDetailPopupViewDelegate
 #pragma mark - [ Public Method ]
 
 - (void)exitCleanCurrentLiveController {
+    [self exitCleanCurrentLiveControllerWithCompletion:nil];
+}
+
+- (void)exitCleanCurrentLiveControllerWithCompletion:(void(^)(void))completion {
     if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
         [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
@@ -241,13 +254,23 @@ PLVCommodityDetailPopupViewDelegate
     [[PLVSocketManager sharedManager] logout];
     [self.homePageView destroy];
 
+    void(^cleanupAndCallback)(void) = ^{
+        [PLVECFloatingWindow sharedInstance].delegate = nil;
+        if (completion) {
+            completion();
+        }
+    };
+
     if (self.navigationController) {
         [self.navigationController popViewControllerAnimated:YES];
+        // popViewControllerAnimated 没有 completion 回调
+        // 等待转场动画完成，确保旧的 viewController 已经销毁和释放（dealloc 已执行）
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            cleanupAndCallback();
+        });
     } else {
-        [self dismissViewControllerAnimated:YES completion:nil];
+        [self dismissViewControllerAnimated:YES completion:cleanupAndCallback];
     }
-    
-    [PLVECFloatingWindow sharedInstance].delegate = nil;
 }
 
 #pragma mark - [ Private Methods ]
@@ -287,6 +310,9 @@ PLVCommodityDetailPopupViewDelegate
         [self.view insertSubview:((UIView *)self.linkMicAreaView.currentControlBar) belowSubview:self.popoverView]; /// 保证低于 互动视图
         
         if (roomData.menuInfo) { [self roomDataManager_didMenuInfoChanged:roomData.menuInfo]; }
+        
+        // 实时字幕视图已由管理器在 setupInView 中添加
+        [self setupRealTimeSubtitleView];
         
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 创建添加视图
@@ -674,6 +700,9 @@ PLVCommodityDetailPopupViewDelegate
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
 //    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"登录成功") detail:@"" view:self.view];
+    
+    // 注册实时字幕事件监听
+    [[PLVSocketManager sharedManager] addObserveSocketEvent:@"subtitles"];
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
@@ -742,6 +771,29 @@ PLVCommodityDetailPopupViewDelegate
     if (![jsonDict isKindOfClass:[NSDictionary class]]) {
         return;
     }
+    
+    // ========== 实时字幕消息处理 ==========
+    if ([event isEqualToString:@"subtitles"]) {
+        // 处理实时字幕消息（由管理器处理）
+        if (self.realTimeSubtitleManager) {
+            // 从 jsonDict 中提取 EVENT 字段作为 subEvent
+            // 消息格式: {"EVENT":"ADD", "index":3, "text":"...", ...}
+            NSString *eventType = jsonDict[@"EVENT"];
+            if (!eventType || eventType.length == 0) {
+                // 如果没有 EVENT 字段，尝试使用 subEvent 参数
+                eventType = subEvent;
+            }
+            
+            if (eventType && eventType.length > 0) {
+                // 处理字幕消息
+                // eventType 可能是: "ADD", "TRANSLATE", "ENABLE"
+                // jsonDict 是消息的字典数据
+                [self.realTimeSubtitleManager handleSubtitleSocketMessage:eventType message:jsonDict];
+            }
+        }
+        return; // 处理完字幕消息后直接返回，不继续处理其他逻辑
+    }
+    // ========== 实时字幕消息处理结束 ==========
     
     if ([event isEqualToString:@"speak"]) {
         if ([subEvent isEqualToString:@"TO_TOP"] || [subEvent isEqualToString:@"CANCEL_TOP"]) {
@@ -1116,6 +1168,13 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
     return 2; // 播放器未初始化时返回默认1.0x的索引
 }
 
+- (void)homePageViewDidClickRealTimeSubtitle:(PLVECHomePageView *)homePageView {
+    // 显示设置界面（由管理器处理）
+    if (self.realTimeSubtitleManager) {
+        [self.realTimeSubtitleManager showConfigView];
+    }
+}
+
 - (void)homePageView:(PLVECHomePageView *)homePageView switchToNoDelayWatchMode:(BOOL)noDelayWatchMode {
     if ([PLVRoomDataManager sharedManager].roomData.menuInfo.watchNoDelay) {
         [self.linkMicAreaView startWatchNoDelay:noDelayWatchMode];
@@ -1393,6 +1452,64 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 
 - (void)plvCommodityDetailPopupView:(PLVCommodityDetailPopupView *)popupView didClickProductButton:(PLVCommodityModel *)commodity {
     [self handleProductClickWithCommodityModel:commodity];
+}
+
+#pragma mark - RealTimeSubtitle
+
+- (void)setupRealTimeSubtitleView {
+    // 只在直播场景创建字幕管理器
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    BOOL enableSubtitle = roomData.menuInfo.realTimeSubtitleConfig.realTimeSubtitleEnabled;
+    if (roomData.videoType != PLVChannelVideoType_Live || !enableSubtitle) {
+        NSLog(@"实时字幕：非直播场景或实时字幕未开启，不创建字幕管理器");
+        return;
+    }
+    
+    // 创建字幕管理器
+    if (!self.realTimeSubtitleManager) {
+        self.realTimeSubtitleManager = [[PLVECRealTimeSubtitleManager alloc] init];
+        self.realTimeSubtitleManager.delegate = self;
+        
+        // 获取可用语言列表（从 menuInfo 中获取）
+        NSArray<NSString *> *availableLanguages = nil;
+        if (roomData.menuInfo && roomData.menuInfo.realTimeSubtitleConfig
+            && roomData.menuInfo.realTimeSubtitleConfig.subtitleTranslationEnabled) {
+            availableLanguages = roomData.menuInfo.realTimeSubtitleConfig.subtitleTranslationLanguages;
+        }
+        
+        // 初始化数据
+        NSString *viewerId = roomData.roomUser.viewerId ?: @"";
+        NSString *channelId = roomData.channelId ?: @"";
+        
+        // 在父视图中设置字幕功能
+        [self.realTimeSubtitleManager setupInView:self.view
+                                         channelId:channelId
+                                          viewerId:viewerId
+                                availableLanguages:availableLanguages];
+        
+        NSLog(@"实时字幕：字幕管理器已创建");
+    }
+}
+
+- (void)layoutRealTimeSubtitleView {
+    // 更新字幕视图布局（由管理器处理）
+    if (self.realTimeSubtitleManager) {
+        [self.realTimeSubtitleManager updateSubtitleViewLayout];
+    }
+}
+
+#pragma mark - PLVECRealTimeSubtitleManagerDelegate
+
+- (void)realTimeSubtitleManager:(PLVECRealTimeSubtitleManager *)manager 
+         didSetTranslateLanguage:(NSString *)language {
+    // 如果需要额外的处理，可以在这里添加
+    // 管理器内部已经处理了设置翻译语言的逻辑
+}
+
+- (void)realTimeSubtitleManagerDidClose:(PLVECRealTimeSubtitleManager *)manager {
+    // 用户关闭字幕
+    NSLog(@"实时字幕已关闭");
+    // 管理器内部已经处理了保存设置的逻辑
 }
 
 @end

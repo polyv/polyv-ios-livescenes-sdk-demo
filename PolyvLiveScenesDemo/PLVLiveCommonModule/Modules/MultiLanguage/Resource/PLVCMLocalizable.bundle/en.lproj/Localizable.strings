@@ -702,6 +702,9 @@
 "Spanish" = "Spanish";
 "Khmer" = "Khmer";
 "Tamil" = "Tamil";
+"实时字幕" = "Live subtitle";
+"字幕语言" = "Subtitle language";
+"双语字幕" = "Bilingual subtitles";
 "回放字幕" = "Playback Subtitle";
 "翻译字幕" = "Translation Subtitle";
 "原生字幕" = "Native Subtitle";

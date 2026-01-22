@@ -91,6 +91,9 @@ typedef NS_ENUM(NSUInteger, PLVECHomePageType) {
 updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
             translate:(PLVPlaybackSubtitleModel * _Nullable)translateSubtitle;
 
+/// 点击实时字幕按钮（直播模式）
+- (void)homePageViewDidClickRealTimeSubtitle:(PLVECHomePageView *)homePageView;
+
 /// 加载打赏信息时触发
 /// @param rewardEnable 是否支持打赏
 /// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏

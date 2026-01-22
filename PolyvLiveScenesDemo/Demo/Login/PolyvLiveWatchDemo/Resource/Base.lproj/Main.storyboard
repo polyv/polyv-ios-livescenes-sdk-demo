@@ -209,8 +209,28 @@
                                                     <action selector="loginButtonClickAction:" destination="Qpr-3F-BGy" eventType="touchUpInside" id="Zbd-5i-fNo"/>
                                                 </connections>
                                             </button>
-                                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="d7V-MP-SkI">
+                                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Fll-Ch-Cfg">
                                                 <rect key="frame" x="147" y="533" width="120" height="35"/>
+                                                <color key="backgroundColor" red="0.12941176469999999" green="0.58823529409999997" blue="0.95294117649999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                <constraints>
+                                                    <constraint firstAttribute="height" constant="35" id="Fll-Ht-Cfg"/>
+                                                    <constraint firstAttribute="width" constant="120" id="Fll-Wd-Cfg"/>
+                                                </constraints>
+                                                <color key="tintColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                <state key="normal" title="跟随频道配置">
+                                                    <color key="titleColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                </state>
+                                                <userDefinedRuntimeAttributes>
+                                                    <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
+                                                        <integer key="value" value="5"/>
+                                                    </userDefinedRuntimeAttribute>
+                                                </userDefinedRuntimeAttributes>
+                                                <connections>
+                                                    <action selector="liveSwitch:" destination="Qpr-3F-BGy" eventType="touchUpInside" id="Fll-Ch-Act"/>
+                                                </connections>
+                                            </button>
+                                            <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="d7V-MP-SkI">
+                                                <rect key="frame" x="147" y="587" width="120" height="35"/>
                                                 <color key="backgroundColor" red="0.12941176469999999" green="0.58823529409999997" blue="0.95294117649999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="35" id="NRz-G4-aHq"/>
@@ -227,7 +247,7 @@
                                                 </userDefinedRuntimeAttributes>
                                             </button>
                                             <button opaque="NO" contentMode="scaleToFill" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="DUG-WS-h72">
-                                                <rect key="frame" x="147" y="587" width="120" height="35"/>
+                                                <rect key="frame" x="147" y="641" width="120" height="35"/>
                                                 <color key="backgroundColor" red="0.12941176469999999" green="0.58823529409999997" blue="0.95294117649999999" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="35" id="SRm-5c-Elh"/>
@@ -277,6 +297,7 @@
                                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <constraints>
                                             <constraint firstItem="GGH-lc-kaL" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" id="1ZT-ve-RGi"/>
+                                            <constraint firstItem="Fll-Ch-Cfg" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" id="Fll-Cx-Cfg"/>
                                             <constraint firstItem="d7V-MP-SkI" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" id="34r-Bx-ZPZ"/>
                                             <constraint firstItem="tsJ-eq-Ju7" firstAttribute="top" secondItem="br8-fM-YrR" secondAttribute="top" constant="355" id="4Ea-A0-Yfi"/>
                                             <constraint firstItem="bNm-2F-B9h" firstAttribute="top" secondItem="br8-fM-YrR" secondAttribute="top" constant="123" id="5HP-sM-Xkr"/>
@@ -307,7 +328,8 @@
                                             <constraint firstItem="CdR-QO-0x5" firstAttribute="leading" secondItem="br8-fM-YrR" secondAttribute="leading" constant="16" id="iGR-QW-XJF"/>
                                             <constraint firstItem="r2V-SM-gAK" firstAttribute="top" secondItem="Qg5-f0-iO5" secondAttribute="bottom" constant="44" id="izV-L4-mEm"/>
                                             <constraint firstItem="Dg2-5S-4sA" firstAttribute="top" secondItem="N3E-Vg-Zaq" secondAttribute="bottom" constant="20" id="jvu-yw-wHR"/>
-                                            <constraint firstItem="d7V-MP-SkI" firstAttribute="top" secondItem="E8K-RN-qnj" secondAttribute="top" id="kDr-rb-ufw"/>
+                                            <constraint firstItem="Fll-Ch-Cfg" firstAttribute="top" secondItem="E8K-RN-qnj" secondAttribute="top" id="Fll-Tp-Cfg"/>
+                                            <constraint firstItem="d7V-MP-SkI" firstAttribute="top" secondItem="Fll-Ch-Cfg" secondAttribute="bottom" constant="19" id="d7V-Tp-SkI"/>
                                             <constraint firstItem="Wke-gG-7wN" firstAttribute="top" secondItem="br8-fM-YrR" secondAttribute="top" constant="355" id="kS0-yw-i42"/>
                                             <constraint firstItem="1s7-Bj-WAc" firstAttribute="centerX" secondItem="br8-fM-YrR" secondAttribute="centerX" id="kpP-m3-a2C"/>
                                             <constraint firstItem="E8K-RN-qnj" firstAttribute="top" secondItem="Dg2-5S-4sA" secondAttribute="bottom" constant="19" id="kro-5H-Zdk"/>
@@ -351,6 +373,7 @@
                         <outlet property="appSecretTF" destination="Wke-gG-7wN" id="dl6-1b-CUf"/>
                         <outlet property="backButton" destination="CdR-QO-0x5" id="vxe-B1-M4j"/>
                         <outlet property="btnCloundClass" destination="d7V-MP-SkI" id="SAg-wu-evF"/>
+                        <outlet property="btnFollowChannel" destination="Fll-Ch-Cfg" id="Fll-Ch-Out"/>
                         <outlet property="btnLive" destination="DUG-WS-h72" id="yTm-eJ-NcL"/>
                         <outlet property="channelIdTF" destination="Nsa-Mh-god" id="Bhr-AN-vsa"/>
                         <outlet property="liveBtn" destination="r2V-SM-gAK" id="q5J-CP-ybr"/>

@@ -143,6 +143,12 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
         return;
     }
     
+    // 如果已存在presenter，先清理旧的
+    if (self.presenter) {
+        [[PLVSocketManager sharedManager] removeDelegate:self];
+        [self.presenter destroy];
+        self.presenter = nil;
+    }
     // 初始化信号量
     _publicChatArrayLock = dispatch_semaphore_create(1);
     _privateChatArrayLock = dispatch_semaphore_create(1);

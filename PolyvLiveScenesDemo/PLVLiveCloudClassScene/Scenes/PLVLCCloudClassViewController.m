@@ -45,6 +45,8 @@
 #import "PLVMultiLanguageManager.h"
 #import "PLVKeyMomentsListView.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoAPI.h>
+#import "PLVLiveRealTimeSubtitleHandler.h"
+#import "PLVLiveSubtitleTranslation.h"
 
 
 @interface PLVLCCloudClassViewController ()<
@@ -66,7 +68,8 @@ PLVLCMessagePopupViewDelegate,
 PLVLCLandscapeMessagePopupViewDelegate,
 PLVLCOnlineListSheetDelegate,
 PLVCommodityDetailPopupViewDelegate,
-PLVKeyMomentsListViewDelegate
+PLVKeyMomentsListViewDelegate,
+PLVLiveRealTimeSubtitleHandlerDelegate
 >
 
 #pragma mark 数据
@@ -78,6 +81,7 @@ PLVKeyMomentsListViewDelegate
 @property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
 @property (nonatomic, strong) NSArray<PLVKeyMomentModel *> *keyMoments;   // 精彩看点数据
+@property (nonatomic, strong) PLVLiveRealTimeSubtitleHandler *subtitleHandler; // 实时字幕处理器
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentLandscape;    // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
@@ -147,6 +151,7 @@ PLVKeyMomentsListViewDelegate
 #pragma mark - [ Life Period ]
 - (void)dealloc {
     PLV_LOG_INFO(PLVConsoleLogModuleTypePlayer,@"%s",__FUNCTION__);
+    [self exitCurrentController];
     [_countdownTimer invalidate];
     _countdownTimer = nil;
 }
@@ -236,6 +241,10 @@ PLVKeyMomentsListViewDelegate
 #pragma mark - [ Public Method ]
 
 - (void)exitCleanCurrentLiveController {
+    [self exitCleanCurrentLiveControllerWithCompletion:nil];
+}
+
+- (void)exitCleanCurrentLiveControllerWithCompletion:(void(^)(void))completion {
     if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
         [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
         [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
@@ -243,7 +252,7 @@ PLVKeyMomentsListViewDelegate
     [self.linkMicAreaView leaveLinkMicOnlyEmit];
     // 清理投屏相关资源，移除音量监听
     [[PLVCastClient sharedClient] leave];
-    [self exitCurrentController];
+    [self exitCurrentControllerWithCompletion:completion];
 }
 
 #pragma mark - [ Private Methods ]
@@ -269,7 +278,9 @@ PLVKeyMomentsListViewDelegate
                                                  selector:@selector(exitCurrentController)
                                                      name:PLVCastClientLeaveLiveCtrlNotification
                                                    object:nil];
-
+        
+        // 初始化实时字幕处理器
+        [self setupRealTimeSubtitleHandler];
         
     } else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         __weak typeof(self) weakSelf = self;
@@ -520,6 +531,10 @@ PLVKeyMomentsListViewDelegate
 }
 
 - (void)exitCurrentController {
+    [self exitCurrentControllerWithCompletion:nil];
+}
+
+- (void)exitCurrentControllerWithCompletion:(void(^)(void))completion {
     [self.menuAreaView leaveLiveRoom];
     [PLVRoomLoginClient logout];
     [[PLVSocketManager sharedManager] logout];
@@ -528,14 +543,24 @@ PLVKeyMomentsListViewDelegate
     // 清理投屏相关资源，移除音量监听
     [[PLVCastClient sharedClient] leave];
 
+    void(^cleanupAndCallback)(void) = ^{
+        [[PLVLCChatroomViewModel sharedViewModel] clear];
+        [[PLVLCDownloadViewModel sharedViewModel] clear];
+        if (completion) {
+            completion();
+        }
+    };
+
     if (self.navigationController) {
         [self.navigationController popViewControllerAnimated:YES];
+        // popViewControllerAnimated 没有 completion 回调
+        // 等待转场动画完成，确保旧的 viewController 已经销毁和释放（dealloc 已执行）
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            cleanupAndCallback();
+        });
     } else {
-        [self dismissViewControllerAnimated:YES completion:nil];
+        [self dismissViewControllerAnimated:YES completion:cleanupAndCallback];
     }
-    
-    [[PLVLCChatroomViewModel sharedViewModel] clear];
-    [[PLVLCDownloadViewModel sharedViewModel] clear];
 }
 
 - (void)startCountdownTimer {
@@ -1081,6 +1106,32 @@ PLVKeyMomentsListViewDelegate
                                   json:(NSString *)jsonString
                             jsonObject:(id)object {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    
+    // ========== 实时字幕消息处理 ==========
+    if ([event isEqualToString:@"subtitles"] && self.videoType == PLVChannelVideoType_Live) {
+        // 处理实时字幕消息
+        if (self.subtitleHandler) {
+            NSDictionary *jsonDict = (NSDictionary *)object;
+            if ([jsonDict isKindOfClass:[NSDictionary class]]) {
+                // 从 jsonDict 中提取 EVENT 字段作为事件类型
+                // 消息格式: {"EVENT":"ADD", "index":3, "text":"...", ...}
+                NSString *eventType = jsonDict[@"EVENT"];
+                if (!eventType || eventType.length == 0) {
+                    // 如果没有 EVENT 字段，尝试使用 subEvent 参数
+                    eventType = subEvent;
+                }
+                
+                if (eventType && eventType.length > 0) {
+                    // 处理字幕消息
+                    // eventType 可能是: "ADD", "TRANSLATE", "ENABLE"
+                    [self.subtitleHandler handleSubtitleSocketMessage:eventType message:jsonDict];
+                }
+            }
+        }
+        return; // 处理完字幕消息后直接返回
+    }
+    // ========== 实时字幕消息处理结束 ==========
+    
     if ([event isEqualToString:@"product"]) {
         if ([subEvent isEqualToString:@"PRODUCT_CLICK_TIMES"]) {
             NSDictionary *jsonDict = (NSDictionary *)object;
@@ -1911,6 +1962,47 @@ PLVKeyMomentsListViewDelegate
         } else {
             [self.menuAreaView updateAISummaryVideoInfoWithVideoId:videoInfo.videoId];
         }
+    }
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didSetSubtitleTranslateLanguage:(NSString *)language {
+    // 通知字幕处理器修改翻译语言
+    if (self.subtitleHandler) {
+        [self.subtitleHandler setTranslateLanguage:language];
+    }
+}
+
+#pragma mark - RealTime Subtitle Handler Setup
+
+/// 初始化实时字幕处理器
+- (void)setupRealTimeSubtitleHandler {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSString *channelId = roomData.channelId ?: @"";
+    NSString *viewerId = roomData.roomUser.viewerId ?: @"";
+    
+    if (!channelId.length || !viewerId.length) {
+        return;
+    }
+    
+    self.subtitleHandler = [[PLVLiveRealTimeSubtitleHandler alloc] init];
+    self.subtitleHandler.delegate = self;
+    [self.subtitleHandler initDataWithChannelId:channelId viewerId:viewerId];
+}
+
+#pragma mark - PLVLiveRealTimeSubtitleHandlerDelegate
+
+- (void)subtitleHandler:(PLVLiveRealTimeSubtitleHandler *)handler didUpdateRealTimeSubtitle:(PLVLiveSubtitleModel *)subtitle {
+    // 单条字幕更新（播放器字幕使用）
+    // 将字幕数据传递给播放器区域显示
+    if (self.mediaAreaView) {
+        [self.mediaAreaView updateRealTimeSubtitle:subtitle];
+    }
+}
+
+- (void)subtitleHandler:(PLVLiveRealTimeSubtitleHandler *)handler didUpdateAllSubtitles:(NSArray<PLVLiveSubtitleTranslation *> *)subtitles {
+    // 字幕列表更新，更新到菜单区域
+    if (self.menuAreaView) {
+        [self.menuAreaView updateRealTimeSubtitles:subtitles];
     }
 }
 

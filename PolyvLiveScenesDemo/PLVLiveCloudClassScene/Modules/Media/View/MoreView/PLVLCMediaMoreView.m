@@ -10,11 +10,12 @@
 
 #import "PLVLCMediaMoreCell.h"
 #import "PLVLCSubtitleSettingCell.h"
+#import "PLVLCMediaRealTimeSubtitleCell.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <PLVLiveScenesSDK/PLVConsoleLogger.h>
 
-@interface PLVLCMediaMoreView () <UITableViewDataSource, UITableViewDelegate, PLVLCMediaMoreCellDelegate, PLVLCSubtitleSettingCellDelegate>
+@interface PLVLCMediaMoreView () <UITableViewDataSource, UITableViewDelegate, PLVLCMediaMoreCellDelegate, PLVLCSubtitleSettingCellDelegate, PLVLCMediaRealTimeSubtitleCellDelegate>
 
 #pragma mark 状态
 @property (nonatomic, assign) BOOL moreViewShow;
@@ -118,7 +119,6 @@
             for (int i = 0; i < originalArray.count; i ++) {
                 PLVLCMediaMoreModel * originalModel = originalArray[i];
                 if ([updateModel matchOtherMoreModel:originalModel]) {
-                    // 若 选项系列总标题 相同，则认为同一系列，则用新的替换旧的
                     [self.dataArray replaceObjectAtIndex:i withObject:updateModel];
                     foundMatchModel = YES;
                     break;
@@ -126,7 +126,6 @@
             }
 
             if (!foundMatchModel) {
-                // 若最终都未发现此选项系列，则新增此选项系列
                 [self.dataArray addObject:updateModel];
             }
         }
@@ -264,7 +263,18 @@
         NSInteger currentRow = [PLVFdUtil checkArrayUseable:self.switchesDataArray] ? (indexPath.row - 1) : indexPath.row;
         if (currentRow < self.optionsDataArray.count) {
             model = self.optionsDataArray[currentRow];
-            if ([model.optionTitle isEqualToString:PLVLocalizedString(@"回放字幕")]) {
+            if ([model.optionTitle isEqualToString:PLVLocalizedString(@"实时字幕")]) {
+                // 实时字幕开关 Cell
+                static NSString *realTimeSubtitleCellId = @"PLVLCMediaRealTimeSubtitleCellId";
+                PLVLCMediaRealTimeSubtitleCell *subtitleSwitchCell = [tableView dequeueReusableCellWithIdentifier:realTimeSubtitleCellId];
+                if (!subtitleSwitchCell) {
+                    subtitleSwitchCell = [[PLVLCMediaRealTimeSubtitleCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:realTimeSubtitleCellId];
+                    subtitleSwitchCell.selectionStyle = UITableViewCellSelectionStyleNone;
+                    subtitleSwitchCell.delegate = self;
+                }
+                [subtitleSwitchCell setupWithModel:model];
+                cell = subtitleSwitchCell;
+            } else if ([model.optionTitle isEqualToString:PLVLocalizedString(@"回放字幕")]) {
                 // 创建字幕设置 Cell
                 PLVLCSubtitleSettingCell *subtitleCell = [tableView dequeueReusableCellWithIdentifier:subtitleCellId];
                 if (!subtitleCell) {
@@ -331,6 +341,14 @@
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaMoreView:didUpdateSubtitleState:translateSubtitle:)]) {
         [self.delegate plvLCMediaMoreView:self didUpdateSubtitleState:originalSubtitle translateSubtitle:translateSubtitle];
     }
+}
+
+#pragma mark PLVLCMediaRealTimeSubtitleCellDelegate
+- (void)plvLCMediaRealTimeSubtitleCell:(PLVLCMediaRealTimeSubtitleCell *)cell didToggle:(BOOL)on model:(PLVLCMediaMoreModel *)model {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaMoreView:optionItemSelected:)]) {
+        [self.delegate plvLCMediaMoreView:self optionItemSelected:model];
+    }
+    [self switchShowStatusWithAnimationAfterDelay:0.1];
 }
 
 #pragma mark - [ Event ]

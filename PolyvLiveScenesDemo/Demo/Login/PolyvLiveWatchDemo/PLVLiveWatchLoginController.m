@@ -9,6 +9,7 @@
 #import "PLVLiveWatchLoginController.h"
 
 #import <PLVFoundationSDK/PLVProgressHUD.h>
+#import <PLVFoundationSDK/PLVFdUtil.h>
 #import <AVFoundation/AVFoundation.h>
 #import "PLVRoomLoginClient.h"
 #import "PLVRoomDataManager.h"
@@ -46,6 +47,7 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 @property (nonatomic, weak) IBOutlet UIButton *btnCloundClass;
 @property (nonatomic, weak) IBOutlet UIButton *btnLive;
+@property (nonatomic, weak) IBOutlet UIButton *btnFollowChannel;
 @property (nonatomic, weak) IBOutlet UIButton *backButton;
 
 @property (weak, nonatomic) IBOutlet UISwitch *vodListSwitch;
@@ -81,11 +83,17 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     [PLVMultiLanguageManager sharedManager].languageUpdateCallback = ^{
         if (weakSelf.liveViewController) {
             if ([weakSelf.liveViewController isKindOfClass:PLVLCCloudClassViewController.class]) {
-                [(PLVLCCloudClassViewController *)weakSelf.liveViewController exitCleanCurrentLiveController];
-                [weakSelf loginRequest];
+                PLVLCCloudClassViewController *oldViewController = (PLVLCCloudClassViewController *)weakSelf.liveViewController;
+                weakSelf.liveViewController = nil;
+                [oldViewController exitCleanCurrentLiveControllerWithCompletion:^{
+                    [weakSelf loginRequest];
+                }];
             } else if ([weakSelf.liveViewController isKindOfClass:PLVECWatchRoomViewController.class]) {
-                [(PLVECWatchRoomViewController *)weakSelf.liveViewController exitCleanCurrentLiveController];
-                [weakSelf loginRequest];
+                PLVECWatchRoomViewController *oldViewController = (PLVECWatchRoomViewController *)weakSelf.liveViewController;
+                weakSelf.liveViewController = nil;
+                [oldViewController exitCleanCurrentLiveControllerWithCompletion:^{
+                    [weakSelf loginRequest];
+                }];
             }
         }
     };
@@ -160,7 +168,10 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     self.btnLive.layer.cornerRadius = self.btnLive.bounds.size.height * 0.5;
     [self.btnLive addTarget:self action:@selector(liveSwitch:) forControlEvents:UIControlEventTouchUpInside];
     
-    [self liveSwitch:self.btnCloundClass];
+    self.btnFollowChannel.layer.cornerRadius = self.btnFollowChannel.bounds.size.height * 0.5;
+    [self.btnFollowChannel addTarget:self action:@selector(liveSwitch:) forControlEvents:UIControlEventTouchUpInside];
+    
+    [self liveSwitch:self.btnFollowChannel];
 //    [self liveSwitch:self.btnLive];
     
     // 创建扫码按钮
@@ -195,32 +206,88 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 - (void)switchScenes:(BOOL)flag {
     self.liveSelectView.hidden = flag;
     
-    // --------- btnCloundClass约束调整 start -------------
-    // 移除btnCloundClass约束
-    for (NSLayoutConstraint *constraint in self.btnCloundClass.superview.constraints) {
-        if (constraint.firstItem == self.btnCloundClass
+    // 确定对齐方式：回放时左对齐，直播时居中对齐
+    NSLayoutAttribute attribute = flag ? NSLayoutAttributeLeading : NSLayoutAttributeCenterX;
+    
+    // --------- btnFollowChannel约束调整 start -------------
+    // 移除btnFollowChannel的所有相关约束
+    NSMutableArray *followChannelConstraintsToRemove = [NSMutableArray array];
+    for (NSLayoutConstraint *constraint in self.btnFollowChannel.superview.constraints) {
+        if (constraint.firstItem == self.btnFollowChannel
             && (constraint.firstAttribute == NSLayoutAttributeCenterX || constraint.firstAttribute == NSLayoutAttributeLeading)) {
-            [self.btnCloundClass.superview removeConstraint:constraint];
-            break;
+            [followChannelConstraintsToRemove addObject:constraint];
         }
     }
+    for (NSLayoutConstraint *constraint in followChannelConstraintsToRemove) {
+        [self.btnFollowChannel.superview removeConstraint:constraint];
+    }
 
-    // 添加btnCloundClass约束
-    NSLayoutAttribute attribute = flag ? NSLayoutAttributeLeading : NSLayoutAttributeCenterX;
-    NSLayoutConstraint *constraint = [NSLayoutConstraint constraintWithItem:self.btnCloundClass
+    // 添加btnFollowChannel约束
+    NSLayoutConstraint *followChannelConstraint = [NSLayoutConstraint constraintWithItem:self.btnFollowChannel
                                                                   attribute:attribute
                                                                   relatedBy:NSLayoutRelationEqual
                                                                      toItem:self.loginBtn
                                                                   attribute:attribute
                                                                  multiplier:1.0
                                                                    constant:0];
-    [self.btnCloundClass.superview addConstraint:constraint];
+    [self.btnFollowChannel.superview addConstraint:followChannelConstraint];
+    // --------- btnFollowChannel约束调整 end -------------
+    
+    // --------- btnCloundClass约束调整 start -------------
+    // 移除btnCloundClass的所有相关约束
+    NSMutableArray *cloudClassConstraintsToRemove = [NSMutableArray array];
+    for (NSLayoutConstraint *constraint in self.btnCloundClass.superview.constraints) {
+        if (constraint.firstItem == self.btnCloundClass
+            && (constraint.firstAttribute == NSLayoutAttributeCenterX || constraint.firstAttribute == NSLayoutAttributeLeading)) {
+            [cloudClassConstraintsToRemove addObject:constraint];
+        }
+    }
+    for (NSLayoutConstraint *constraint in cloudClassConstraintsToRemove) {
+        [self.btnCloundClass.superview removeConstraint:constraint];
+    }
+
+    // 添加btnCloundClass约束
+    NSLayoutConstraint *cloudClassConstraint = [NSLayoutConstraint constraintWithItem:self.btnCloundClass
+                                                                  attribute:attribute
+                                                                  relatedBy:NSLayoutRelationEqual
+                                                                     toItem:self.loginBtn
+                                                                  attribute:attribute
+                                                                 multiplier:1.0
+                                                                   constant:0];
+    [self.btnCloundClass.superview addConstraint:cloudClassConstraint];
     // --------- btnCloundClass约束调整 end -------------
+    
+    // --------- btnLive约束调整 start -------------
+    // 移除btnLive的所有相关约束（包括与btnCloundClass的leading约束）
+    NSMutableArray *liveConstraintsToRemove = [NSMutableArray array];
+    for (NSLayoutConstraint *constraint in self.btnLive.superview.constraints) {
+        if (constraint.firstItem == self.btnLive
+            && (constraint.firstAttribute == NSLayoutAttributeLeading || constraint.firstAttribute == NSLayoutAttributeCenterX)) {
+            [liveConstraintsToRemove addObject:constraint];
+        }
+    }
+    for (NSLayoutConstraint *constraint in liveConstraintsToRemove) {
+        [self.btnLive.superview removeConstraint:constraint];
+    }
+
+    // 添加btnLive约束
+    NSLayoutConstraint *liveConstraint = [NSLayoutConstraint constraintWithItem:self.btnLive
+                                                                  attribute:attribute
+                                                                  relatedBy:NSLayoutRelationEqual
+                                                                     toItem:self.loginBtn
+                                                                  attribute:attribute
+                                                                 multiplier:1.0
+                                                                   constant:0];
+    [self.btnLive.superview addConstraint:liveConstraint];
+    // --------- btnLive约束调整 end -------------
     
     self.vodSelectView.hidden = !flag;
     self.vidLineView.hidden = self.vIdTF.hidden = !flag;
     self.vodListSwitch.hidden = !flag;
     self.vodListSwitchLabel.hidden = !flag;
+    
+    // 立即更新布局，使约束生效
+    [self.view layoutIfNeeded];
 }
 
 #pragma mark - Notification
@@ -270,18 +337,36 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
 
 - (void)liveSwitch:(UIButton *)button
 {
-    if (button == self.btnCloundClass) {
+    if (button == self.btnFollowChannel) {
+        // 跟随频道配置选中
+        self.btnFollowChannel.enabled = NO;
+        self.btnFollowChannel.alpha = 1.0;
+        
+        self.btnCloundClass.enabled = YES;
+        self.btnCloundClass.alpha = 0.4;
+        
+        self.btnLive.enabled = YES;
+        self.btnLive.alpha = 0.4;
+    } else if (button == self.btnCloundClass) {
+        // 云课堂场景选中
         self.btnCloundClass.enabled = NO;
         self.btnCloundClass.alpha = 1.0;
+        
+        self.btnFollowChannel.enabled = YES;
+        self.btnFollowChannel.alpha = 0.4;
         
         self.btnLive.enabled = YES;
         self.btnLive.alpha = 0.4;
     } else if (button == self.btnLive) {
-        self.btnCloundClass.enabled = YES;
-        self.btnCloundClass.alpha = 0.4;
-        
+        // 直播带货场景选中
         self.btnLive.enabled = NO;
         self.btnLive.alpha = 1.0;
+        
+        self.btnFollowChannel.enabled = YES;
+        self.btnFollowChannel.alpha = 0.4;
+        
+        self.btnCloundClass.enabled = YES;
+        self.btnCloundClass.alpha = 0.4;
     }
 }
 
@@ -304,6 +389,11 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
     BOOL paramValid = [self initParams:!self.liveSelectView.hidden];
     if (!paramValid) {
         [self showHud:@"参数不能为空！" detail:nil];
+        return;
+    }
+    
+    if (self.btnFollowChannel.alpha == 1.0f) { // 跟随频道配置
+        [self loginFollowChannelConfig];
         return;
     }
     
@@ -506,6 +596,133 @@ static NSString *kPLVUserDefaultLoginInfoKey = @"kPLVUserDefaultLoginInfoKey_dem
         [hud hideAnimated:YES];
         [weakSelf showHud:errorMessage detail:nil];
     }];
+}
+
+- (BOOL)shouldJumpToLCWithChannelMenuInfo:(PLVLiveVideoChannelMenuInfo *)channelMenuInfo
+                              channelType:(PLVChannelType)channelType {
+    NSDictionary *watchThemeModel = channelMenuInfo.watchThemeModel;
+    NSString *aloneWatchLayout = nil;
+    if ([PLVFdUtil checkDictionaryUseable:watchThemeModel]) {
+        aloneWatchLayout = PLV_SafeStringForDictKey(watchThemeModel, @"aloneWatchLayout");
+    }
+    
+    if (![PLVFdUtil checkStringUseable:aloneWatchLayout] || [aloneWatchLayout isEqualToString:@"normal"]) {
+        return YES;
+    } else if ([aloneWatchLayout isEqualToString:@"portrait"]) {
+        if (channelType == PLVChannelTypePPT) {
+            return YES;
+        } else if (channelType == PLVChannelTypeAlone) {
+            return NO;
+        } else {
+            return YES;
+        }
+    } else {
+        return YES;
+    }
+}
+
+/// 跟随频道配置登录
+- (void)loginFollowChannelConfig {
+    // 如果当前正在开启系统画中画
+    if ([PLVLivePictureInPictureManager sharedInstance].pictureInPictureActive) {
+        [PLVLivePictureInPictureManager sharedInstance].restoreDelegate = nil;
+        [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+        [[PLVLivePictureInPictureManager sharedInstance] stopPictureInPicture];
+    }
+    
+    PLVProgressHUD *hud = [PLVProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
+    [hud.label setText:@"登录中..."];
+    
+    __weak typeof(self) weakSelf = self;
+    
+    void(^loginSuccessBlock)(void) = ^() {
+        [hud hideAnimated:YES];
+        [weakSelf saveParamsToFile];
+        
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        PLVLiveVideoChannelMenuInfo *channelMenuInfo = roomData.menuInfo;
+        
+        if (!channelMenuInfo) {
+            [weakSelf showHud:@"获取频道详情失败" detail:nil];
+            return;
+        }
+        
+        BOOL shouldJumpToLC = [weakSelf shouldJumpToLCWithChannelMenuInfo:channelMenuInfo channelType:roomData.channelType];
+        
+        if (shouldJumpToLC) {
+            PLVLCCloudClassViewController *cloudClassVC = [[PLVLCCloudClassViewController alloc] init];
+            if (PushOrModel) {
+                [weakSelf.navigationController pushViewController:cloudClassVC animated:YES];
+            } else {
+                cloudClassVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                [weakSelf presentViewController:cloudClassVC animated:YES completion:nil];
+            }
+            weakSelf.liveViewController = cloudClassVC;
+        } else {
+            PLVECWatchRoomViewController *watchLiveVC = [[PLVECWatchRoomViewController alloc] init];
+            watchLiveVC.fullScreenButtonShowOnIpad = YES;
+            if (PushOrModel) {
+                [weakSelf.navigationController pushViewController:watchLiveVC animated:YES];
+            } else {
+                watchLiveVC.modalPresentationStyle = UIModalPresentationFullScreen;
+                [weakSelf presentViewController:watchLiveVC animated:YES completion:nil];
+            }
+            weakSelf.liveViewController = watchLiveVC;
+        }
+        
+        PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
+        [PLVBugReporter setUserIdentifier:roomUser.viewerId];
+    };
+    
+    void(^loginFailureBlock)(NSString *errorMessage) = ^(NSString *errorMessage) {
+        [hud hideAnimated:YES];
+        [weakSelf showHud:errorMessage detail:nil];
+    };
+    
+
+    if (self.liveSelectView.hidden) { // 回放
+        [PLVRoomLoginClient loginPlaybackRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone
+                                                   channelId:self.channelIdTF.text
+                                                     vodList:self.vodListSwitch.isOn
+                                                         vid:self.vIdTF.text
+                                                      userId:self.userIDTF.text
+                                                       appId:self.appIDTF.text
+                                                   appSecret:self.appSecretTF.text
+                                                    roomUser:^(PLVRoomUser * _Nonnull roomUser) {
+            // 可在此处配置自定义的登录用户ID、昵称、头像，不配则均使用默认值
+            //        roomUser.viewerId = @"用户ID";
+            //        roomUser.viewerName = @"用户昵称";
+            //        roomUser.viewerAvatar = @"用户头像";
+        } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
+            if (loginSuccessBlock) {
+                loginSuccessBlock();
+            }
+        } failure:^(NSString * _Nonnull errorMessage) {
+            if (loginFailureBlock) {
+                loginFailureBlock(errorMessage);
+            }
+        }];
+    } else { // 直播
+        [PLVRoomLoginClient loginLiveRoomWithChannelType:PLVChannelTypePPT | PLVChannelTypeAlone
+                                               channelId:self.channelIdTF.text
+                                                  userId:self.userIDTF.text
+                                                   appId:self.appIDTF.text
+                                               appSecret:self.appSecretTF.text
+                                                roomUser:^(PLVRoomUser * _Nonnull roomUser) {
+            // 可在此处配置自定义的登录用户ID、昵称、头像，不配则均使用默认值
+            //        roomUser.viewerId = @"用户ID";
+            //        roomUser.viewerName = @"用户昵称";
+            //        roomUser.viewerAvatar = @"用户头像";
+        } completion:^(PLVViewLogCustomParam * _Nonnull customParam) {
+            if (loginSuccessBlock) {
+                loginSuccessBlock();
+            }
+        } failure:^(NSString * _Nonnull errorMessage) {
+            if (loginFailureBlock) {
+                loginFailureBlock(errorMessage);
+            }
+        }];
+    }
 }
 
 /// 直播带货场景-直播回放

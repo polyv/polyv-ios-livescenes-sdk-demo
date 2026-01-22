@@ -6,7 +6,7 @@
 "CdR-QO-0x5.normalTitle" = "Button";
 
 /* Class = "UIButton"; normalTitle = "直播带货场景"; ObjectID = "DUG-WS-h72"; */
-"DUG-WS-h72.normalTitle" = "直播带货场景";
+"DUG-WS-h72.normalTitle" = "Live Commerce Scene";
 
 /* Class = "UIButton"; normalTitle = "登录"; ObjectID = "Dg2-5S-4sA"; */
 "Dg2-5S-4sA.normalTitle" = "登录";
@@ -26,8 +26,11 @@
 /* Class = "UILabel"; text = "POLYV云课堂"; ObjectID = "bNm-2F-B9h"; */
 "bNm-2F-B9h.text" = "POLYV云课堂";
 
+/* Class = "UIButton"; normalTitle = "跟随频道配置"; ObjectID = "Fll-Ch-Cfg"; */
+"Fll-Ch-Cfg.normalTitle" = "Follow Channel Config";
+
 /* Class = "UIButton"; normalTitle = "云课堂场景"; ObjectID = "d7V-MP-SkI"; */
-"d7V-MP-SkI.normalTitle" = "云课堂场景";
+"d7V-MP-SkI.normalTitle" = "Cloud Class Scene";
 
 /* Class = "UITextField"; placeholder = "App ID"; ObjectID = "jDV-Zg-QiY"; */
 "jDV-Zg-QiY.placeholder" = "App ID";

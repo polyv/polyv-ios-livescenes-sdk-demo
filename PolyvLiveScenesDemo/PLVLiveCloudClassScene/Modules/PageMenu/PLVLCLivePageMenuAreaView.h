@@ -89,6 +89,10 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// 更新AI看Tab的暂存/素材库视频信息
 - (void)updateAISummaryVideoInfoWithFileId:(NSString *)fileId;
 
+/// 更新实时字幕列表（外部调用）
+/// @param subtitles 字幕翻译数组
+- (void)updateRealTimeSubtitles:(NSArray *)subtitles;
+
 @end
 
 @protocol PLVLCLivePageMenuAreaViewDelegate <NSObject>
@@ -168,6 +172,11 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// AI看需要主动传递视频信息
 /// @param pageMenuAreaView 菜单视图
 - (void)plvLCLivePageMenuAreaViewShouldSetupVideo:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
+
+/// 设置字幕翻译语言
+/// @param pageMenuAreaView 菜单视图
+/// @param language 翻译语言代码
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didSetSubtitleTranslateLanguage:(NSString *)language;
 
 @end
 NS_ASSUME_NONNULL_END

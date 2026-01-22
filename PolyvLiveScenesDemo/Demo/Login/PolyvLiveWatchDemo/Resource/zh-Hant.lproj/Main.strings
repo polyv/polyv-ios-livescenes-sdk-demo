@@ -26,6 +26,9 @@
 /* Class = "UILabel"; text = "POLYV云课堂"; ObjectID = "bNm-2F-B9h"; */
 "bNm-2F-B9h.text" = "POLYV雲課堂";
 
+/* Class = "UIButton"; normalTitle = "跟随频道配置"; ObjectID = "Fll-Ch-Cfg"; */
+"Fll-Ch-Cfg.normalTitle" = "跟隨頻道配置";
+
 /* Class = "UIButton"; normalTitle = "云课堂场景"; ObjectID = "d7V-MP-SkI"; */
 "d7V-MP-SkI.normalTitle" = "雲課堂場景";
 

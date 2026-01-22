@@ -46,6 +46,7 @@ static NSString *const PLVECHomePageView_Data_PictureInPicturePlaySetItemTitle =
 static NSString *const PLVECHomePageView_Data_SwitchLanguageItemTitle = @"PLVLiveLanguageSwitchTitle";
 static NSString *const PLVECHomePageView_Data_PlaySpeedItemTitle = @"播放速度";
 static NSString *const PLVECHomePageView_Data_SubtitleItemTitle = @"回放字幕";
+static NSString *const PLVECHomePageView_Data_RealTimeSubtitleItemTitle = @"实时字幕";
 static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
 
 /// SwitchView类型
@@ -1426,6 +1427,16 @@ PLVECSubtitleConfigViewDelegate
             item5.iconImageName = @"plv_pictureInPictureSwitch_btn";
             [muArray addObject:item5];
         }
+        
+        // 实时字幕选项（仅直播模式且后台开启了实时字幕功能时显示）
+        PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+        if (menuInfo.realTimeSubtitleConfig && menuInfo.realTimeSubtitleConfig.realTimeSubtitleEnabled) {
+            PLVECMoreViewItem *realTimeSubtitleItem = [[PLVECMoreViewItem alloc] init];
+            realTimeSubtitleItem.title = PLVLocalizedString(PLVECHomePageView_Data_RealTimeSubtitleItemTitle);
+            realTimeSubtitleItem.iconImageName = @"plvec_live_subtitle_btn";
+            realTimeSubtitleItem.selectedIconImageName = @"plvec_live_subtitle_btn";
+            [muArray addObject:realTimeSubtitleItem];
+        }
     } else if (canEnablePictureInPicture && self.type == PLVECHomePageType_Playback ) {
         PLVECMoreViewItem *item5 = [[PLVECMoreViewItem alloc] init];
         item5.title = PLVLocalizedString(PLVECHomePageView_Data_PictureInPictureItemTitle);
@@ -1522,6 +1533,12 @@ PLVECSubtitleConfigViewDelegate
     } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_SubtitleItemTitle)]) {
         moreView.hidden = YES;
         [self showSubtitleSelectionView];
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_RealTimeSubtitleItemTitle)]) {
+        moreView.hidden = YES;
+        // 通知代理显示实时字幕
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewDidClickRealTimeSubtitle:)]) {
+            [self.delegate homePageViewDidClickRealTimeSubtitle:self];
+        }
     } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle)]) {
         moreView.hidden = YES;
         __weak typeof(self) weakSelf = self;
