@@ -1068,6 +1068,11 @@ PLVChannelClassManagerDelegate
         /// 屏幕共享设置
         [_rtcStreamerManager setupAppGroup:PLVStreamerPresenter_AppGroup rtcType:self.rtcType];
         _rtcStreamerManager.subscribeStreamFillMode = PLV_SafeIntegerForValue([PLVRoomDataManager sharedManager].roomData.menuInfo.mixStreamRenderMode) == PLVBRTCVideoViewFillMode_Fill ? PLVBRTCVideoViewFillMode_Fill : PLVBRTCVideoViewFillMode_Fit;
+        
+        PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+        if (roomData && roomData.menuInfo) {
+            _rtcStreamerManager.skipMixActionRequest = !roomData.menuInfo.isRecord && roomData.menuInfo.isSmallClass;
+        }
     }
     return _rtcStreamerManager;
 }

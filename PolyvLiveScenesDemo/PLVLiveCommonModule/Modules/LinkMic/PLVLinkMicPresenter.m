@@ -686,6 +686,21 @@ PLVLinkMicManagerDelegate
             [weakSelf callbackForOperationInProgress:NO];
             if (updateResult) {
                 [weakSelf callbackForOperationInProgress:YES];
+                
+                // 无延迟直播场景：观众只订阅流，不发布自己的流
+                // 但如果已经处于连麦流程中（举手、被邀请等），则由 JOIN_RESPONSE 处理逻辑控制
+                BOOL isInLinkMicProcess = (weakSelf.linkMicStatus == PLVLinkMicStatus_Waiting ||
+                                          weakSelf.linkMicStatus == PLVLinkMicStatus_Inviting ||
+                                          weakSelf.linkMicStatus == PLVLinkMicStatus_ResponseWaiting ||
+                                          weakSelf.linkMicStatus == PLVLinkMicStatus_Joining ||
+                                          weakSelf.linkMicStatus == PLVLinkMicStatus_Joined);
+                
+                if (weakSelf.watchingNoDelay && !isInLinkMicProcess) {
+                    weakSelf.linkMicManager.viewer = YES;
+                    weakSelf.linkMicManager.viewerAllow = NO;
+                    [weakSelf.linkMicManager switchClientRoleTo:PLVBLinkMicRoleAudience];
+                }
+                
                 int res = [weakSelf.linkMicManager joinRtcChannelWithChannelId:weakSelf.channelId userLinkMicId:weakSelf.linkMicUserId];
                 if(res != 0){
                     [weakSelf changeRoomJoinStatusAndCallback:PLVLinkMicPresenterRoomJoinStatus_NotJoin];
@@ -1522,6 +1537,10 @@ PLVLinkMicManagerDelegate
             if ((self.linkMicStatus == PLVLinkMicStatus_Waiting || self.linkMicStatus == PLVLinkMicStatus_ResponseWaiting) && !needAnswer) { /// 讲师同意学生连麦 或 学生接受连麦邀请
                 if (self.rtcRoomJoinStatus == PLVLinkMicPresenterRoomJoinStatus_NotJoin) { /// 未加入RTC频道
                     [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Joining];
+                    
+                    // 普通连麦场景：观众被允许上麦，可以发布自己的流
+                    self.linkMicManager.viewer = YES;
+                    self.linkMicManager.viewerAllow = YES;
 
                     __weak typeof(self) weakSelf = self;
                     [self joinRTCChannel:^(int resultCode) {
@@ -1536,6 +1555,20 @@ PLVLinkMicManagerDelegate
                     }];
                 }else if (self.rtcRoomJoinStatus == PLVLinkMicPresenterRoomJoinStatus_Joined){ /// 已加入RTC频道
                     [self changeLinkMicStatusAndCallback:PLVLinkMicStatus_Joining];
+                    
+                    // 普通连麦场景：观众被允许上麦，可以发布自己的流
+                    // 注意：已加入RTC频道的情况下，需要动态切换角色并开启音视频采集
+                    self.linkMicManager.viewer = YES;
+                    self.linkMicManager.viewerAllow = YES;
+                    
+                    // 切换为主播角色，允许推流
+                    [self.linkMicManager switchClientRoleTo:PLVBLinkMicRoleBroadcaster];
+                    
+                    // 开启音视频采集
+                    if (!self.linkMicManager.linkMicOnAudio) {
+                        [self.linkMicManager openLocalUserCamera:self.cameraDefaultOpen];
+                    }
+                    [self.linkMicManager openLocalUserMic:self.micDefaultOpen];
 
                     [PLVLiveVideoAPI requestViewerIdLinkMicIdRelate:[NSString stringWithFormat:@"%@",self.channelId] viewerId:self.userId linkMicId:self.linkMicUserId completion:nil failure:^(NSError * _Nonnull error) {
                         PLV_LOG_DEBUG(PLVConsoleLogModuleTypeLinkMic, @"PLVLinkMicPresenter - id relate failed %@",error);

@@ -74,10 +74,12 @@
     self.optionTitleLabel.frame = CGRectMake(titleLabelLeft, CGRectGetMaxY(self.sheetTitleLabel.frame) + titleLabelLeft, contentViewWidth - titleLabelLeft - right, 17);
     UIFont *buttonFont = [UIFont fontWithName:@"PingFangSC-Medium" size:14];
     CGSize audioTypeButtonSize = [self.audioTypeButton.titleLabel.text boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, 17) options:NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName:buttonFont} context:nil].size;
-    CGFloat buttonPadding = 8;
-    self.audioTypeButton.frame = CGRectMake(titleLabelLeft, CGRectGetMaxY(self.optionTitleLabel.frame) + 12, audioTypeButtonSize.width + buttonPadding, 17);
     CGSize videoTypeButtonSize = [self.videoTypeButton.titleLabel.text boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, 17) options:NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName:buttonFont} context:nil].size;
-    self.videoTypeButton.frame = CGRectMake(CGRectGetMaxX(self.audioTypeButton.frame) + titleLabelLeft * 2, CGRectGetMinY(self.audioTypeButton.frame), videoTypeButtonSize.width + buttonPadding, 17);
+    CGFloat buttonPadding = 8;
+    CGFloat audioWidth = ceil(audioTypeButtonSize.width) + buttonPadding;
+    CGFloat videoWidth = ceil(videoTypeButtonSize.width) + buttonPadding;
+    self.audioTypeButton.frame = CGRectMake(titleLabelLeft, CGRectGetMaxY(self.optionTitleLabel.frame) + 12, audioWidth, 17);
+    self.videoTypeButton.frame = CGRectMake(CGRectGetMaxX(self.audioTypeButton.frame) + titleLabelLeft * 2, CGRectGetMinY(self.audioTypeButton.frame), videoWidth, 17);
     if (self.selectedTag == 0) {
         self.selectedView.frame = CGRectMake(CGRectGetMidX(self.audioTypeButton.frame) - 2, CGRectGetMaxY(self.audioTypeButton.frame) + 3, 4, 4);
     } else {

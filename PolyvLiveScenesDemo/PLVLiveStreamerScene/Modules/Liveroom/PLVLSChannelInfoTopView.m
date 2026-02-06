@@ -62,8 +62,12 @@
     CGFloat originX = 0.0;
     self.titleIcon.frame = CGRectMake(originX, 16 + 2, 16, 16);
     self.dateIcon.frame = CGRectMake(originX, CGRectGetMaxY(self.titleIcon.frame) + 16, 16, 16);
-    self.sipIcon.frame = CGRectMake(originX, CGRectGetMaxY(self.dateIcon.frame) + 16, 16, 16);
-    self.detailIcon.frame = CGRectMake(originX, CGRectGetMaxY(self.sipIcon.frame) + 16, 16, 16);
+    
+    CGFloat sipIconY = CGRectGetMaxY(self.dateIcon.frame) + 16;
+    self.sipIcon.frame = CGRectMake(originX, sipIconY, 16, 16);
+    
+    CGFloat detailIconY = self.sipLabel.hidden ? (CGRectGetMaxY(self.dateIcon.frame) + 16) : (CGRectGetMaxY(self.sipIcon.frame) + 16);
+    self.detailIcon.frame = CGRectMake(originX, detailIconY, 16, 16);
     
     originX += 24.0;
     self.titleLabel.frame = CGRectMake(originX, 16, self.bounds.size.width - originX - 8, 20);
@@ -76,6 +80,11 @@
     self.channelIdLabel.frame = CGRectMake(CGRectGetMaxX(self.dateLabel.frame) + 24, self.dateLabel.frame.origin.y, 150, 20);
     self.channelIdIcon.frame = CGRectMake(CGRectGetMinX(self.channelIdLabel.frame) - 16 - 8, self.dateIcon.frame.origin.y, 16, 16);
     self.sipCopyButton.frame = CGRectMake(CGRectGetMaxX(self.sipLabel.frame) + 8, CGRectGetMinY(self.sipIcon.frame), 28, 17);
+}
+
+- (CGFloat)preferredContentHeight {
+    [self layoutIfNeeded];
+    return CGRectGetMaxY(self.detailLabel.frame);
 }
 
 #pragma mark - Getter
@@ -203,12 +212,12 @@
     BOOL hideSip = [sipNumberString isEqualToString:@""] || [sipNumberString isEqualToString:PLVLocalizedString(@"暂无")];
     self.sipLabel.hidden = hideSip;
     self.sipCopyButton.hidden = hideSip;
+    self.sipIcon.hidden = hideSip;
     
     self.sipLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"入会号码 %@"), sipNumberString];
     self.sipPasswordString = sipPasswordString;
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self updateUI];
-    });
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
 }
 
 #pragma mark - [ Event ]

@@ -13,6 +13,7 @@
 #import "PLVSABitRateSheet.h"
 #import "PLVSANoiseCancellationModeSwitchSheet.h"
 #import "PLVSAExternalDeviceSwitchSheet.h"
+#import "PLVImagePickerViewController.h"
 
 #define TEXT_MAX_LENGTH 150
 
@@ -82,6 +83,14 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, strong) UILabel *limitLable;
 /// 频道名称输入框
 @property (nonatomic, strong) UITextView *channelNameTextView;
+/// 封面和标题容器视图
+@property (nonatomic, strong) UIView *coverAndTitleContainerView;
+/// 封面容器视图（包含封面图和按钮）
+@property (nonatomic, strong) UIView *coverContainerView;
+/// 封面预览图
+@property (nonatomic, strong) UIImageView *coverImageView;
+/// 修改封面按钮
+@property (nonatomic, strong) UIButton *modifyCoverButton;
 /// 清晰度选择面板
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet;
 /// 连麦布局选择面板
@@ -125,6 +134,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
         [self setupUI];
         [self addObserver];
         [self initChannelName];
+        [self initCoverImage];
         /// 根据需要选择默认清晰度
         [self initBitRate:[PLVRoomDataManager sharedManager].roomData.defaultResolution];
         // 初始化设备方向为 竖屏
@@ -174,7 +184,11 @@ PLVSAExternalDeviceSwitchSheetDelegate
     [self.customMaskView addSubview:self.limitLable];
     [self.customMaskView addSubview:self.channelNameTextView];
     
-    [self.configView addSubview:self.channelNameLabel];
+    [self.configView addSubview:self.coverAndTitleContainerView];
+    [self.coverAndTitleContainerView addSubview:self.coverContainerView];
+    [self.coverContainerView addSubview:self.coverImageView];
+    [self.coverContainerView addSubview:self.modifyCoverButton];
+    [self.coverAndTitleContainerView addSubview:self.channelNameLabel];
     
     [self.configView addSubview:self.lineView];
     [self.configView addSubview:self.buttonView];
@@ -247,7 +261,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
         sideMargin = sideSpacing + originX;
     }
     
-    /// 标题文本高度适应
+    /// 标题文本高度适应（临时计算，实际布局时会在容器内重新计算）
     self.channelNameLabelHeight = [self.channelNameLabel sizeThatFits:CGSizeMake(configViewWidth - sideMargin * 2, MAXFLOAT)].height;
     
     self.backButton.frame = CGRectMake(originX + 24, backButtonTop, 36, 36);
@@ -260,15 +274,70 @@ PLVSAExternalDeviceSwitchSheetDelegate
     self.startButton.frame = CGRectMake(startX, self.bounds.size.height - startButtonBottom - 50, startButtonWidth, 50);
     self.gradientLayer.frame = self.startButton.bounds;
     
-    /// 频道名称 (手机端横屏状态时，最多显示两行文本)
-    CGFloat textHeight = self.channelNameLabelHeight > 48 ? 51 : self.channelNameLabelHeight;
-    self.channelNameLabel.frame = CGRectMake(sideMargin, CGRectGetMaxY(self.backButton.frame) + 20, configViewWidth - sideMargin * 2 ,textHeight);
+    /// 封面和标题容器
+    CGFloat coverImageWidth = 88;
+    CGFloat coverImageHeight = 50;
+    CGFloat coverImageLeft = 10;
+    CGFloat coverImageTop = 10;
     
-    /// 分割线
-    self.lineView.frame = CGRectMake(CGRectGetMinX(self.channelNameLabel.frame), CGRectGetMaxY(self.channelNameLabel.frame) + 13, CGRectGetWidth(self.channelNameLabel.frame), 2);
+    CGFloat labelLeftSpacing = 12;
+    CGFloat labelRightSpacing = 10;
     
-    /// 底部按钮
-    self.buttonView.frame = CGRectMake(sideMargin, CGRectGetMaxY(self.lineView.frame), configViewWidth - sideMargin * 2, CGRectGetMinY(self.startButton.frame) - CGRectGetMaxY(self.lineView.frame) - 8);
+    CGFloat minContainerWidth = 264;
+    
+    CGFloat maxWidthSideMargin;
+    if (isLandscape) {
+        maxWidthSideMargin = 96;
+    } else {
+        maxWidthSideMargin = 10;
+    }
+    
+    CGFloat maxContainerWidth = configViewWidth - maxWidthSideMargin * 2;
+    
+    CGFloat maxAvailableLabelWidth = maxContainerWidth - coverImageLeft - coverImageWidth - labelLeftSpacing - labelRightSpacing;
+    maxAvailableLabelWidth = MAX(maxAvailableLabelWidth, 100);
+    
+    CGFloat textHeight = [self.channelNameLabel sizeThatFits:CGSizeMake(maxAvailableLabelWidth, MAXFLOAT)].height;
+    CGSize textSize = [self.channelNameLabel sizeThatFits:CGSizeMake(maxAvailableLabelWidth, textHeight)];
+    CGFloat labelWidth = textSize.width;
+    
+    CGFloat containerWidth = coverImageLeft + coverImageWidth + labelLeftSpacing + labelWidth + labelRightSpacing;
+    containerWidth = MAX(minContainerWidth, MIN(containerWidth, maxContainerWidth));
+    
+    CGFloat containerLeftMargin = (configViewWidth - containerWidth) / 2;
+    if (containerWidth >= maxContainerWidth) {
+        containerLeftMargin = maxWidthSideMargin;
+    } else {
+        containerLeftMargin = MAX(containerLeftMargin, 0);
+        if (containerLeftMargin + containerWidth > configViewWidth) {
+            containerLeftMargin = configViewWidth - containerWidth;
+        }
+    }
+    
+    CGFloat containerHeight = coverImageTop + coverImageHeight + 10;
+    CGFloat containerTop = CGRectGetMaxY(self.backButton.frame) + 20;
+    self.coverAndTitleContainerView.frame = CGRectMake(containerLeftMargin, containerTop, containerWidth, containerHeight);
+    
+    self.coverContainerView.frame = CGRectMake(coverImageLeft, coverImageTop, coverImageWidth, coverImageHeight);
+    
+    self.coverImageView.frame = self.coverContainerView.bounds;
+    
+    CGFloat modifyButtonHeight = 18;
+    self.modifyCoverButton.frame = CGRectMake(0, coverImageHeight - modifyButtonHeight, coverImageWidth, modifyButtonHeight);
+    
+    CGFloat labelLeft = coverImageLeft + coverImageWidth + labelLeftSpacing;
+    CGFloat actualLabelWidth = containerWidth - labelLeft - labelRightSpacing;
+    textHeight = [self.channelNameLabel sizeThatFits:CGSizeMake(actualLabelWidth, MAXFLOAT)].height;
+    textHeight = MIN(textHeight, containerHeight);
+    
+    CGFloat labelTop = (containerHeight - textHeight) / 2.0;
+    self.channelNameLabel.frame = CGRectMake(labelLeft, labelTop, actualLabelWidth, textHeight);
+    self.channelNameLabel.textAlignment = NSTextAlignmentLeft;
+    
+    self.lineView.hidden = YES;
+    
+    CGFloat buttonViewTop = CGRectGetMaxY(self.coverAndTitleContainerView.frame) + 13;
+    self.buttonView.frame = CGRectMake(sideMargin, buttonViewTop, configViewWidth - sideMargin * 2, CGRectGetMinY(self.startButton.frame) - buttonViewTop - 8);
     NSInteger configButtonCount = isLandscape || isPad ? 8 : 5;
     CGSize buttonSize = CGSizeMake(32, 58);
     self.streamScaleButton.hidden = !self.showStreamScale;
@@ -303,6 +372,86 @@ PLVSAExternalDeviceSwitchSheetDelegate
     }
 }
 
+- (void)updateCoverAndTitleContainerLayout {
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat originX = [PLVSAUtils sharedUtils].areaInsets.left;
+    CGFloat originY = [PLVSAUtils sharedUtils].areaInsets.top;
+    BOOL isLandscape = [PLVSAUtils sharedUtils].isLandscape;
+    
+    CGFloat backButtonTop = originY + 9;
+    CGFloat configViewWidth = self.bounds.size.width;
+    CGFloat sideSpacing = 48;
+    CGFloat sideMargin = sideSpacing + originX;
+    
+    if (isPad) {
+        backButtonTop = originY + 20;
+        sideSpacing = 64;
+        sideMargin = sideSpacing + originX;
+    }
+    
+    CGFloat coverImageWidth = 88;
+    CGFloat coverImageHeight = 50;
+    CGFloat coverImageLeft = 10;
+    CGFloat coverImageTop = 10;
+    
+    CGFloat labelLeftSpacing = 12;
+    CGFloat labelRightSpacing = 10;
+    
+    CGFloat minContainerWidth = 264;
+    
+    CGFloat maxWidthSideMargin;
+    if (isLandscape) {
+        maxWidthSideMargin = 96;
+    } else {
+        maxWidthSideMargin = 10;
+    }
+    
+    CGFloat maxContainerWidth = configViewWidth - maxWidthSideMargin * 2;
+    
+    CGFloat maxAvailableLabelWidth = maxContainerWidth - coverImageLeft - coverImageWidth - labelLeftSpacing - labelRightSpacing;
+    maxAvailableLabelWidth = MAX(maxAvailableLabelWidth, 100);
+    
+    CGFloat textHeight = [self.channelNameLabel sizeThatFits:CGSizeMake(maxAvailableLabelWidth, MAXFLOAT)].height;
+    CGSize textSize = [self.channelNameLabel sizeThatFits:CGSizeMake(maxAvailableLabelWidth, textHeight)];
+    CGFloat labelWidth = textSize.width;
+    
+    CGFloat containerWidth = coverImageLeft + coverImageWidth + labelLeftSpacing + labelWidth + labelRightSpacing;
+    containerWidth = MAX(minContainerWidth, MIN(containerWidth, maxContainerWidth));
+    
+    CGFloat containerLeftMargin = (configViewWidth - containerWidth) / 2;
+    if (containerWidth >= maxContainerWidth) {
+        containerLeftMargin = maxWidthSideMargin;
+    } else {
+        containerLeftMargin = MAX(containerLeftMargin, 0);
+        if (containerLeftMargin + containerWidth > configViewWidth) {
+            containerLeftMargin = configViewWidth - containerWidth;
+        }
+    }
+    
+    CGFloat containerHeight = coverImageTop + coverImageHeight + 10;
+    CGFloat containerTop = CGRectGetMaxY(self.backButton.frame) + 20;
+    self.coverAndTitleContainerView.frame = CGRectMake(containerLeftMargin, containerTop, containerWidth, containerHeight);
+    
+    self.coverContainerView.frame = CGRectMake(coverImageLeft, coverImageTop, coverImageWidth, coverImageHeight);
+    
+    self.coverImageView.frame = self.coverContainerView.bounds;
+    
+    CGFloat modifyButtonHeight = 18;
+    self.modifyCoverButton.frame = CGRectMake(0, coverImageHeight - modifyButtonHeight, coverImageWidth, modifyButtonHeight);
+    
+    CGFloat labelLeft = coverImageLeft + coverImageWidth + labelLeftSpacing;
+    CGFloat actualLabelWidth = containerWidth - labelLeft - labelRightSpacing;
+    textHeight = [self.channelNameLabel sizeThatFits:CGSizeMake(actualLabelWidth, MAXFLOAT)].height;
+    textHeight = MIN(textHeight, containerHeight);
+    
+    CGFloat labelTop = (containerHeight - textHeight) / 2.0;
+    self.channelNameLabel.frame = CGRectMake(labelLeft, labelTop, actualLabelWidth, textHeight);
+    self.channelNameLabel.textAlignment = NSTextAlignmentLeft;
+    
+    CGFloat buttonViewTop = CGRectGetMaxY(self.coverAndTitleContainerView.frame) + 13;
+    self.buttonView.frame = CGRectMake(sideMargin, buttonViewTop, configViewWidth - sideMargin * 2, CGRectGetMinY(self.startButton.frame) - buttonViewTop - 8);
+}
+
 /// 初始化默认清晰度
 - (void)initBitRate:(PLVResolutionType)resolutionType {
     PLVResolutionType maxResolution = [PLVRoomDataManager sharedManager].roomData.maxResolution;
@@ -315,6 +464,17 @@ PLVSAExternalDeviceSwitchSheetDelegate
     NSString *channelName = [PLVRoomDataManager sharedManager].roomData.channelName;
     self.channelNameLabel.text = channelName;
     self.channelNameTextView.text = channelName;
+}
+
+/// 初始化封面图片
+- (void)initCoverImage {
+    NSString *splashImg = [PLVRoomDataManager sharedManager].roomData.menuInfo.splashImg;
+    if (splashImg && splashImg.length > 0) {
+        NSURL *imageURL = [NSURL URLWithString:splashImg];
+        if (imageURL) {
+            [PLVSAUtils setImageView:self.coverImageView url:imageURL placeholderImage:nil];
+        }
+    }
 }
 
 /// 收起输入框
@@ -695,6 +855,54 @@ PLVSAExternalDeviceSwitchSheetDelegate
     return _lineView;
 }
 
+- (UIView *)coverAndTitleContainerView {
+    if (!_coverAndTitleContainerView) {
+        _coverAndTitleContainerView = [[UIView alloc] init];
+        _coverAndTitleContainerView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.2);
+        _coverAndTitleContainerView.layer.cornerRadius = 8;
+        _coverAndTitleContainerView.layer.masksToBounds = YES;
+    }
+    return _coverAndTitleContainerView;
+}
+
+- (UIView *)coverContainerView {
+    if (!_coverContainerView) {
+        _coverContainerView = [[UIView alloc] init];
+        _coverContainerView.layer.cornerRadius = 8;
+        _coverContainerView.clipsToBounds = YES;
+    }
+    return _coverContainerView;
+}
+
+- (UIImageView *)coverImageView {
+    if (!_coverImageView) {
+        _coverImageView = [[UIImageView alloc] init];
+        _coverImageView.contentMode = UIViewContentModeScaleAspectFill;
+        _coverImageView.clipsToBounds = YES;
+        _coverImageView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.3);
+        // 设置默认占位图或颜色
+        _coverImageView.image = nil;
+        // 添加点击手势，点击封面图也弹出照片选择
+        _coverImageView.userInteractionEnabled = YES;
+        UITapGestureRecognizer *tapGesture = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(modifyCoverButtonAction:)];
+        [_coverImageView addGestureRecognizer:tapGesture];
+    }
+    return _coverImageView;
+}
+
+- (UIButton *)modifyCoverButton {
+    if (!_modifyCoverButton) {
+        _modifyCoverButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _modifyCoverButton.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.6);
+        [_modifyCoverButton setTitle:PLVLocalizedString(@"修改封面") forState:UIControlStateNormal];
+        [_modifyCoverButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        _modifyCoverButton.titleLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:10];
+        // 按钮没有圆角，由父容器的 maskToBounds 控制
+        [_modifyCoverButton addTarget:self action:@selector(modifyCoverButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _modifyCoverButton;
+}
+
 
 - (UIView *)buttonView {
     if (!_buttonView) {
@@ -936,6 +1144,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
     }
 }
 
+- (void)modifyCoverButtonAction:(id)sender {
+    if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        [self showCoverImagePicker];
+    }
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark <UITextViewDelegate>
@@ -970,13 +1184,20 @@ PLVSAExternalDeviceSwitchSheetDelegate
     CGRect rect = self.channelNameTextView.frame;
     CGFloat offsetHeight = textViewHeight - rect.size.height;
     self.channelNameTextView.frame = CGRectMake(rect.origin.x, rect.origin.y - offsetHeight, rect.size.width, textViewHeight);
+    
+    // 更新封面标题容器的布局（根据新的标题文本宽度）
+    [self updateCoverAndTitleContainerLayout];
 }
 
 - (void)textViewDidEndEditing:(UITextView *)textView {
+    // 修改标题
     NSString *channelName = textView.text;
     if (channelName.length && ![[PLVRoomDataManager sharedManager].roomData.channelName isEqualToString:channelName]) {
         [PLVLiveVideoAPI updateChannelName:channelName channelId:[PLVRoomDataManager sharedManager].roomData.channelId completion:^{
             [PLVRoomDataManager sharedManager].roomData.channelName = channelName;
+            
+            // 更新封面标题容器的布局（标题修改成功后）
+            [self updateCoverAndTitleContainerLayout];
             
             [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"直播标题修改成功")];
         } failure:^(NSError *error) {
@@ -1127,6 +1348,149 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 - (void)externalDeviceSwitchSheetViewDismiss {
     [self.externalDeviceSwitchSheet dismiss];
+}
+
+#pragma mark - Cover Image Methods
+
+- (void)showCoverImagePicker {
+    PLVImagePickerViewController *imagePickerVC = [[PLVImagePickerViewController alloc] initWithColumnNumber:4];
+    imagePickerVC.allowPickingOriginalPhoto = YES;
+    imagePickerVC.allowPickingVideo = NO;
+    imagePickerVC.allowTakePicture = NO;
+    imagePickerVC.allowTakeVideo = NO;
+    imagePickerVC.maxImagesCount = 1;
+    imagePickerVC.showSelectBtn = NO;
+    imagePickerVC.allowCrop = YES;
+    imagePickerVC.scaleAspectFillCrop = YES;
+
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+
+    CGFloat cropWidth = screenWidth;
+    CGFloat cropHeight = cropWidth * 9.0 / 16.0;
+    if (cropHeight > screenHeight) {
+        cropHeight = screenHeight;
+        cropWidth = cropHeight * 16.0 / 9.0;
+    }
+    CGFloat cropX = (screenWidth - cropWidth) / 2.0;
+    CGFloat cropY = (screenHeight - cropHeight) / 2.0;
+    CGRect cropRect = CGRectMake(cropX, cropY, cropWidth, cropHeight);
+    imagePickerVC.cropRect = cropRect;
+    
+    __weak typeof(self) weakSelf = self;
+    
+    [imagePickerVC setDidFinishPickingPhotosHandle:^(NSArray<UIImage *> *photos, NSArray *assets, BOOL isSelectOriginalPhoto) {
+        if (photos.count > 0) {
+            UIImage *selectedImage = photos.firstObject;
+            [weakSelf uploadAndUpdateCoverImage:selectedImage];
+        }
+    }];
+    
+    [imagePickerVC setImagePickerControllerDidCancelHandle:^{
+        // 取消选择
+    }];
+    
+    UIViewController *topVC = [UIApplication sharedApplication].keyWindow.rootViewController;
+    while (topVC.presentedViewController) {
+        topVC = topVC.presentedViewController;
+    }
+    [topVC presentViewController:imagePickerVC animated:YES completion:nil];
+}
+
+- (void)uploadAndUpdateCoverImage:(UIImage *)image {
+    if (!image) {
+        return;
+    }
+    
+    // 保存原始封面 URL，用于失败时还原
+    NSString *originalSplashImg = [PLVRoomDataManager sharedManager].roomData.menuInfo.splashImg;
+    
+    // 先更新本地预览
+    self.coverImageView.image = image;
+    
+    // 显示上传进度提示
+    [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"正在上传封面...")];
+    
+    // 将图片转换为 NSData
+    NSData *imageData = UIImageJPEGRepresentation(image, 0.8);
+    if (!imageData) {
+        // 图片处理失败，还原到原始封面
+        [self restoreCoverImageWithSplashImg:originalSplashImg];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"图片处理失败")];
+        return;
+    }
+    
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    NSString *imageName = [NSString stringWithFormat:@"cover_%@_%ld.jpg", channelId, (long)[[NSDate date] timeIntervalSince1970]];
+    
+    __weak typeof(self) weakSelf = self;
+    
+    // 上传图片
+    [PLVLiveVideoAPI uploadImageData:imageData
+                            imageName:imageName
+                             channelId:channelId
+                              progress:^(float progress) {
+        // 上传进度
+    } success:^(NSDictionary *tokenDict, NSString *key, NSString *imageName) {
+        // 上传成功，更新封面
+        NSString *host = PLV_SafeStringForDictKey(tokenDict, @"host") ?: @"";
+        NSString *imageUrl = [NSString stringWithFormat:@"https://%@/%@", host, (key ?: @"")];
+        [weakSelf updateChannelCoverWithImageUrl:imageUrl originalSplashImg:originalSplashImg];
+    } fail:^(NSError *error) {
+        // 上传失败，还原到原始封面
+        [weakSelf restoreCoverImageWithSplashImg:originalSplashImg];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"封面上传失败，请重试")];
+    }];
+}
+
+- (void)updateChannelCoverWithImageUrl:(NSString *)imageUrl originalSplashImg:(NSString *)originalSplashImg {
+    if (!imageUrl || imageUrl.length == 0) {
+        // URL无效，还原到原始封面
+        [self restoreCoverImageWithSplashImg:originalSplashImg];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"封面URL无效")];
+        return;
+    }
+    
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    NSString *channelName = [PLVRoomDataManager sharedManager].roomData.channelName;
+    
+    __weak typeof(self) weakSelf = self;
+    // 调用 API 更新封面
+    [PLVLiveVideoAPI updateChannelCoverWithSplashImg:imageUrl
+                                            channelId:channelId
+                                          channelName:channelName
+                                           completion:^{
+        // 更新成功
+        dispatch_async(dispatch_get_main_queue(), ^{
+            // 加载封面图片
+            if (imageUrl && imageUrl.length > 0) {
+                NSURL *imageURL = [NSURL URLWithString:imageUrl];
+                if (imageURL) {
+                    [PLVSAUtils setImageView:weakSelf.coverImageView url:imageURL placeholderImage:nil];
+                }
+            }
+            [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"封面设置成功")];
+        });
+    } failure:^(NSError *error) {
+        // 更新失败，还原到原始封面
+        [weakSelf restoreCoverImageWithSplashImg:originalSplashImg];
+        [PLVSAUtils showToastInHomeVCWithMessage:PLVLocalizedString(@"封面设置失败，请重试")];
+    }];
+}
+
+- (void)restoreCoverImageWithSplashImg:(NSString *)splashImg {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (splashImg && splashImg.length > 0) {
+            NSURL *imageURL = [NSURL URLWithString:splashImg];
+            if (imageURL) {
+                [PLVSAUtils setImageView:self.coverImageView url:imageURL placeholderImage:nil];
+            } else {
+                self.coverImageView.image = nil;
+            }
+        } else {
+            self.coverImageView.image = nil;
+        }
+    });
 }
 
 @end

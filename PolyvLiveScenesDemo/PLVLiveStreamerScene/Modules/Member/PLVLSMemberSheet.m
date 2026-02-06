@@ -112,7 +112,13 @@ PLVLiveSearchBarDelegate
     if (self.bounds.size.width <= 667) {  // iphone小屏适配
         buttonWidth = 66.0 - (self.bounds.size.width/667);
     }
-    CGFloat buttonOriginX = self.sheetWidth - PLVLSUtils.safeSidePad - buttonWidth * 2 - buttonMargin;
+    // 安全侧边距兜底：若取值过小（如部分刘海屏横屏返回 0/极小），强制使用 44pt
+    CGFloat safeSidePad = PLVLSUtils.safeSidePad;
+    if (safeSidePad <= 16) {
+        safeSidePad = 44;
+    }
+    
+    CGFloat buttonOriginX = self.sheetWidth - safeSidePad - buttonWidth * 2 - buttonMargin;
     if ([PLVRoomDataManager sharedManager].roomData.linkmicNewStrategyEnabled &&  [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
         buttonOriginX = buttonOriginX - buttonWidth - buttonMargin;
     }
@@ -120,7 +126,7 @@ PLVLiveSearchBarDelegate
     self.leaveMicButton.frame = CGRectMake(buttonOriginX, buttonTop, buttonWidth, 28);
     self.muteButton.frame = CGRectMake(buttonOriginX + buttonWidth + buttonMargin, buttonTop, buttonWidth, 28);
     self.linkMicSettingButton.frame = CGRectMake(buttonOriginX + buttonWidth * 2 + buttonMargin * 2, buttonTop, buttonWidth, 28);
-    self.titleLine.frame = CGRectMake(16, titleLineTop, self.sheetWidth - 16 - PLVLSUtils.safeSidePad, 1);
+    self.titleLine.frame = CGRectMake(16, titleLineTop, self.sheetWidth - 16 - safeSidePad, 1);
     
     // 搜索容器视图
     CGFloat searchContainerY = CGRectGetMaxY(self.titleLine.frame);

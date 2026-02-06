@@ -760,3 +760,11 @@
 "连接设备..." = "Connect devices ..";
 "切换设备 >" = "Switch devices>";
 "AI手卡" = "AI Card";
+
+"修改封面" = "Change cover";
+"正在上传封面..." = "Uploading cover...";
+"图片处理失败" = "Image processing failed";
+"封面上传失败，请重试" = "Cover upload failed, please try again";
+"封面URL无效" = "Invalid cover URL";
+"封面设置成功" = "Cover set successfully";
+"封面设置失败，请重试" = "Failed to set cover, please try again";

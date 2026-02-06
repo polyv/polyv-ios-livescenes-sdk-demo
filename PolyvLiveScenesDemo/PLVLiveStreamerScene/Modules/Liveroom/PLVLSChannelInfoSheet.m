@@ -32,6 +32,7 @@ WKNavigationDelegate
 /// 数据
 @property (nonatomic, copy) NSString *content; // 直播简介文本
 @property (nonatomic, copy) NSMutableArray *imageArray;
+@property (nonatomic, assign) CGFloat topViewContentHeight;
 
 @end
 
@@ -76,7 +77,8 @@ WKNavigationDelegate
     
     CGFloat webViewOriginY = CGRectGetMaxY(self.splitLine.frame);
     self.webView.frame = CGRectMake(sidePad, webViewOriginY, self.bounds.size.width - sidePad * 2, self.sheetHight - webViewOriginY);
-    self.topView.frame = CGRectMake(topViewLeftPadding, 0, topViewWidth, kTopViewHeight);
+    CGFloat topH = (self.topViewContentHeight > 0) ? self.topViewContentHeight : kTopViewHeight;
+    self.topView.frame = CGRectMake(topViewLeftPadding, 0, topViewWidth, topH);
 }
 
 #pragma mark - Getter
@@ -157,6 +159,9 @@ WKNavigationDelegate
     }
     
     [self.topView setTitle:titleString date:dateString channelId:roomData.channelId sipNumber:sipNumber sipPassword:sipPassword];
+    self.topView.frame = CGRectMake(0, 0, kTopViewWidth, kTopViewHeight);
+    CGFloat preferredH = [self.topView preferredContentHeight];
+    self.topViewContentHeight = (preferredH > 0) ? preferredH : kTopViewHeight;
     
     NSArray<PLVLiveVideoChannelMenu*> *channelMenus = menuInfo.channelMenus;
     if (!menuInfo.channelMenus || ![menuInfo.channelMenus isKindOfClass:[NSArray class]] ||
@@ -190,11 +195,12 @@ WKNavigationDelegate
         self.content = [content stringByReplacingOccurrencesOfString:@"src=\"//" withString:@"src=\"https://"];
     }
     
-    NSString *htmlContent = [NSString stringWithFormat:@"<html>\n<body style=\" position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d; color:%@;\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script><div style=\"height:%fpx; width:%fpx;\"> </div>%@</body></html>", leftPadding, rightPadding, verticalPadding, verticalPadding, fontSize, fontColor,kTopViewHeight,kTopViewWidth,self.content]; // 图片自适应设备宽，设置字体大小、边距;在webview顶部插入空白view
+    CGFloat baseHeight = (self.topViewContentHeight > 0) ? self.topViewContentHeight : kTopViewHeight;
+    CGFloat placeholderHeight = MAX(0, baseHeight - 8.0);
+    NSString *htmlContent = [NSString stringWithFormat:@"<html>\n<body style=\" position:absolute;left:%dpx;right:%dpx;top:%dpx;bottom:%dpx;font-size:%d; color:%@;\"><script type='text/javascript'>window.onload = function(){\nvar $img = document.getElementsByTagName('img');\nfor(var p in  $img){\n $img[p].style.width = '100%%';\n$img[p].style.height ='auto'\n}\n}</script><div style=\"height:%fpx; width:%fpx;\"> </div>%@</body></html>", leftPadding, rightPadding, verticalPadding, verticalPadding, fontSize, fontColor, placeholderHeight, kTopViewWidth, self.content]; // 图片自适应设备宽，设置字体大小、边距;在webview顶部插入空白view
     
     [self.webView loadHTMLString:htmlContent baseURL:[NSURL URLWithString:@""]];
 }
-
 
 #pragma mark - Privat
 

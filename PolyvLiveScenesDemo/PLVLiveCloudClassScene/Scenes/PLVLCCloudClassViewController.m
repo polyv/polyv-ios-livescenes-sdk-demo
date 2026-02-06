@@ -633,6 +633,70 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     self.rewardSvgaView.hidden = !enable;
 }
 
+/// 构建带参数的URL
+- (NSString *)buildURLWithParams:(NSString *)baseURL {
+    if (![PLVFdUtil checkStringUseable:baseURL]) {
+        return baseURL;
+    }
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (!roomData) {
+        return baseURL;
+    }
+    
+    NSMutableDictionary *params = [NSMutableDictionary dictionary];
+    
+    NSString *userId = roomData.roomUser.viewerId;
+    if ([PLVFdUtil checkStringUseable:userId]) {
+        params[@"userId"] = userId;
+    }
+    
+    NSString *nickname = roomData.roomUser.viewerName;
+    if ([PLVFdUtil checkStringUseable:nickname]) {
+        params[@"nickname"] = nickname;
+    }
+    
+    NSString *channelId = roomData.channelId;
+    if ([PLVFdUtil checkStringUseable:channelId]) {
+        params[@"channelId"] = channelId;
+    }
+    
+    NSString *sessionId = roomData.sessionId;
+    if ([PLVFdUtil checkStringUseable:sessionId]) {
+        params[@"sessionId"] = sessionId;
+    }
+    
+    NSString *param4 = roomData.customParam.liveParam4;
+    if ([PLVFdUtil checkStringUseable:param4]) {
+        params[@"param4"] = param4;
+    }
+    
+    NSString *param5 = roomData.customParam.liveParam5;
+    if ([PLVFdUtil checkStringUseable:param5]) {
+        params[@"param5"] = param5;
+    }
+    
+    if (params.count == 0) {
+        return baseURL;
+    }
+    
+    NSMutableString *paramString = [NSMutableString string];
+    NSArray *keys = params.allKeys;
+    for (NSInteger i = 0; i < keys.count; i++) {
+        NSString *key = keys[i];
+        NSString *value = params[key];
+        NSString *encodedValue = [PLVFdUtil URLEncodedString:value];
+        if (i == 0) {
+            [paramString appendFormat:@"%@=%@", key, encodedValue];
+        } else {
+            [paramString appendFormat:@"&%@=%@", key, encodedValue];
+        }
+    }
+    
+    NSString *separator = [baseURL containsString:@"?"] ? @"&" : @"?";
+    return [NSString stringWithFormat:@"%@%@%@", baseURL, separator, paramString];
+}
+
 /// 跳转至商品详情页
 - (void)jumpToCommodityDetailViewController {
     PLVCommodityDetailViewController *commodityDetailVC = [[PLVCommodityDetailViewController alloc] initWithCommodityURL:self.commodityURL];
@@ -2016,7 +2080,8 @@ PLVLiveRealTimeSubtitleHandlerDelegate
             return;
         }
         
-        self.commodityURL = [NSURL URLWithString:commodity.formattedLink];
+        NSString *urlStringWithParams = [self buildURLWithParams:commodity.formattedLink];
+        self.commodityURL = [NSURL URLWithString:urlStringWithParams];
         if (self.videoType == PLVChannelVideoType_Live) { /// 直播场景需要开启画中画播放
             if (self.mediaAreaView.channelInLive &&
                 !self.linkMicAreaView.inLinkMic &&
@@ -2158,7 +2223,9 @@ PLVLiveRealTimeSubtitleHandlerDelegate
             [self.cardDetailView showOnView:self.view frame:CGRectMake(0, CGRectGetMinY(self.menuAreaView.frame) +  48, self.menuAreaView.bounds.size.width, self.menuAreaView.bounds.size.height - 48)];
         }
     } else {
-        self.commodityURL = url;
+        NSString *urlString = url.absoluteString;
+        NSString *urlStringWithParams = [self buildURLWithParams:urlString];
+        self.commodityURL = [NSURL URLWithString:urlStringWithParams];
         [self jumpToCommodityDetailViewController];
     }
 }
