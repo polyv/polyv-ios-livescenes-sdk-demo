@@ -183,8 +183,17 @@ PLVLCKeyboardMoreViewDelegate
         _moreboard.sendImageEnable = self.enableSendImage;
         _moreboard.hiddenBulletin = self.hiddenBulletin;
         _moreboard.enablePipSet = self.enablePipSet;
+        _moreboard.myRewardsEnabled = self.myRewardsEnabled;
     }
     return _moreboard;
+}
+
+- (void)setMyRewardsEnabled:(BOOL)myRewardsEnabled {
+    if (_myRewardsEnabled == myRewardsEnabled) {
+        return;
+    }
+    _myRewardsEnabled = myRewardsEnabled;
+    self.moreboard.myRewardsEnabled = myRewardsEnabled;
 }
 
 - (UIView *)gestureView {

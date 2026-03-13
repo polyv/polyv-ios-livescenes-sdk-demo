@@ -551,6 +551,7 @@ PLVECRealTimeSubtitleManagerDelegate
         _popoverView = [[PLVPopoverView alloc] initWithLiveType:PLVPopoverViewLiveTypeEC liveRoom:videoType == PLVChannelVideoType_Live];
         _popoverView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
         _popoverView.interactView.delegate = self;
+        _popoverView.latestInteractView.delegate = self;
         if (videoType == PLVChannelVideoType_Live) {
             _popoverView.delegate = self;
         }
@@ -698,6 +699,7 @@ PLVECRealTimeSubtitleManagerDelegate
 
 - (void)roomDataManager_didChannelInfoChanged:(PLVChannelInfoModel *)channelInfo {
     [self.popoverView.interactView updateUserInfo];
+    [self.popoverView.latestInteractView updateUserInfo];
 }
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
@@ -1343,6 +1345,7 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 - (void)homePageView_openInteractApp:(PLVECHomePageView *)homePageView eventName:(NSString *)eventName {
     if ([PLVFdUtil checkStringUseable:eventName]) {
         [self.popoverView.interactView openInteractAppWithEventName:eventName];
+        [self.popoverView.latestInteractView openInteractAppWithEventName:eventName];
     }
 }
 
@@ -1353,6 +1356,7 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 
 - (void)homePageView:(PLVECHomePageView *)homePageView emitInteractEvent:(NSString *)event {
     [self.popoverView.interactView openInteractAppWithEventName:event];
+    [self.popoverView.latestInteractView openInteractAppWithEventName:event];
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data {

@@ -83,6 +83,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     // 初始化聊天室Presenter并设置delegate
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10];
     self.presenter.delegate = self;
+    self.presenter.autoSendReliableCallback = YES;
     [self.presenter login];
 
     // 监听socket消息

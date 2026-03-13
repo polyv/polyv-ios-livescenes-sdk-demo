@@ -884,6 +884,7 @@ PLVLiveRealTimeSubtitleHandlerDelegate
             _popoverView.delegate = self;
         }
         _popoverView.interactView.delegate = self;
+        _popoverView.latestInteractView.delegate = self;
     }
     return _popoverView;
 }
@@ -1035,7 +1036,9 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 
 - (void)notificationForOpenInteractApp:(NSNotification *)notif {
     if ([PLVFdUtil checkStringUseable:notif.object]) {
-        [self.popoverView.interactView openInteractAppWithEventName:notif.object];
+        NSString *eventName = (NSString *)notif.object;
+        [self.popoverView.interactView openInteractAppWithEventName:eventName];
+        [self.popoverView.latestInteractView openInteractAppWithEventName:eventName];
     }
 }
 
@@ -1054,6 +1057,7 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     self.liveRoomSkinView.danmuButtonShow = !roomData.channelInfo.closeDanmuEnable;
     [self.menuAreaView updateLiveUserInfo];
     [self.popoverView.interactView updateUserInfo];
+    [self.popoverView.latestInteractView updateUserInfo];
 }
 
 - (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {

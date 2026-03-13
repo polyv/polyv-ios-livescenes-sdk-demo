@@ -48,6 +48,7 @@ static NSString *const PLVECHomePageView_Data_PlaySpeedItemTitle = @"播放速�
 static NSString *const PLVECHomePageView_Data_SubtitleItemTitle = @"回放字幕";
 static NSString *const PLVECHomePageView_Data_RealTimeSubtitleItemTitle = @"实时字幕";
 static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
+static NSString *const PLVECHomePageView_Data_MyRewardItemTitle = @"我的奖励";
 
 /// SwitchView类型
 typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
@@ -1465,6 +1466,15 @@ PLVECSubtitleConfigViewDelegate
         }
     }
     
+    // 根据后台 myRewardsEnabled 字段添加我的奖励按钮
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    if (menuInfo.myRewardsEnabled) {
+        PLVECMoreViewItem *myRewardItem = [[PLVECMoreViewItem alloc] init];
+        myRewardItem.title = PLVLocalizedString(PLVECHomePageView_Data_MyRewardItemTitle);
+        myRewardItem.iconImageName = @"plvec_live_myreward_btn";
+        [muArray addObject:myRewardItem];
+    }
+    
     // 小窗播放交互设置
     if (canEnablePictureInPicture){
         PLVECMoreViewItem *itemPlaySet = [[PLVECMoreViewItem alloc] init];
@@ -1577,6 +1587,12 @@ PLVECSubtitleConfigViewDelegate
         self.pipPopView.hidden = NO;
         self.pipPopView.exitRoomState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenExitLiveRoom;
         self.pipPopView.enterBackState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenEnterBackground;
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_MyRewardItemTitle)]) {
+        // 我的奖励 - 弹出抽奖记录
+        moreView.hidden = YES;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_openInteractApp:eventName:)]) {
+            [self.delegate homePageView_openInteractApp:self eventName:@"SHOW_LOTTERY_RECORD_POPUP"];
+        }
     }
     else {
         __block NSString *eventName;

@@ -200,6 +200,7 @@ UIPageViewControllerDelegate
         _moreboard.sendImageEnable = NO;
         _moreboard.onlyTeacherEnable = NO;
     }
+    _moreboard.myRewardsEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.myRewardsEnabled;
     return _moreboard;
 }
 

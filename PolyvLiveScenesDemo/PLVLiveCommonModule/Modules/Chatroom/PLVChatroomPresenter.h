@@ -119,6 +119,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 图片表情数组
 @property (nonatomic, strong, readonly) NSArray *imageEmotionArray;
 
+/// 是否自动发送可靠消息回执（仅讲师端开播场景会开启，默认 NO）
+@property (nonatomic, assign) BOOL autoSendReliableCallback;
+
 /// 初始化方法
 /// @param count 每次调用接口获取的聊天消息条数，不得小于1
 - (instancetype)initWithLoadingHistoryCount:(NSUInteger)count;

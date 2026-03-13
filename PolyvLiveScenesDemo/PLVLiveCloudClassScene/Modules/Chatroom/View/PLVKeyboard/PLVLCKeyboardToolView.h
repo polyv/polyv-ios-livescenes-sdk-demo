@@ -85,6 +85,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否支持小窗播放设置
 @property (nonatomic, assign) BOOL enablePipSet;
 
+/// 我的奖励按钮是否显示，根据后台 myRewardsEnabled 字段控制
+@property (nonatomic, assign) BOOL myRewardsEnabled;
+
 /// 面板状态
 @property (nonatomic, assign, readonly) PLVLCKeyboardToolState toolState;
 

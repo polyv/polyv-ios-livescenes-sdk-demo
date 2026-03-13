@@ -27,6 +27,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     PLVLCKeyboardMoreButtonTypeOpenCamera,
     PLVLCKeyboardMoreButtonTypeOpenBulletin,
     PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay,
+    PLVLCKeyboardMoreButtonTypeMyReward,
     PLVLCKeyboardMoreButtonTypeSwitchLanguage,
     PLVLCKeyboardMoreButtonTypePipSet
 };
@@ -93,6 +94,12 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             [self.moreBtn setTitle:PLVLocalizedString(@"屏蔽特效") forState:UIControlStateNormal];
             [self.moreBtn setTitle:PLVLocalizedString(@"展示特效") forState:UIControlStateSelected];
             break;
+        case PLVLCKeyboardMoreButtonTypeMyReward:
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_my_reward_btn"] forState:UIControlStateNormal];
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_my_reward_btn"] forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"我的奖励") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"我的奖励") forState:UIControlStateSelected];
+            break;
         case PLVLCKeyboardMoreButtonTypeSwitchLanguage:
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_languageswitch_btn"] forState:UIControlStateNormal];
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_languageswitch_btn"] forState:UIControlStateSelected];
@@ -149,7 +156,6 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         _hideRewardDisplaySwitch = YES;
         _onlyTeacherEnable = YES;
         _enablePipSet = YES;
-        
         self.backgroundColor = [UIColor colorWithRed:0x2b/255.0 green:0x2c/255.0 blue:0x35/255.0 alpha:1.0];
         
         self.flowLayout = [[UICollectionViewFlowLayout alloc] init];
@@ -194,7 +200,6 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             }
         }
     }
-    
     _dynamicDataArray = showDataArray;
     [self.collectionView reloadData];
 }
@@ -243,6 +248,14 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     [self.collectionView reloadData];
 }
 
+- (void)setMyRewardsEnabled:(BOOL)myRewardsEnabled {
+    if (_myRewardsEnabled == myRewardsEnabled) {
+        return;
+    }
+    _myRewardsEnabled = myRewardsEnabled;
+    [self.collectionView reloadData];
+}
+
 - (NSInteger)getNativeAddButtonCount {
     if (self.disableInteraction) {
         if (self.enablePipSet){
@@ -256,7 +269,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     buttonCount += (self.sendImageEnable ? 2 : 0);
     buttonCount += (!self.hiddenBulletin ? 1 : 0);
     buttonCount += (!self.hideRewardDisplaySwitch ? 1 : 0);
-    buttonCount += 1;
+    buttonCount += (self.myRewardsEnabled ? 1 : 0) + 1; // “我的奖励” + 语言切换
     if (self.enablePipSet){
         buttonCount += 1; // for pip set
     }
@@ -360,6 +373,11 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
                 }
             }
         }];
+    } else if (type == PLVLCKeyboardMoreButtonTypeMyReward) {
+        // “我的奖励”走互动应用事件链路
+        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_openInteractApp:eventName:)]) {
+            [self.delegate keyboardMoreView_openInteractApp:self eventName:@"SHOW_LOTTERY_RECORD_POPUP"];
+        }
     } else if (type == PLVLCKeyboardMoreButtonTypePipSet) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_PipSet:)]) {
             [self.delegate keyboardMoreView_PipSet:self];
@@ -395,63 +413,134 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         }
     }
     
-    NSInteger overlayIndex = (!self.hiddenBulletin ? 1 : 0) + (!self.hideRewardDisplaySwitch ? 1 : 0);
     if (self.onlyTeacherEnable) {
         if (index == 0) {
             return PLVLCKeyboardMoreButtonTypeOnlyTeacher;
         }
         if (self.sendImageEnable) {
-            if (index == 1) {
+            NSInteger base = 1;
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeOpenAlbum;
-            } else if (index == 2) {
+            }
+            base++;
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeOpenCamera;
-            } else if (index == 3 && !self.hiddenBulletin) {
-                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-            } else if (index == 4 && !self.hideRewardDisplaySwitch) {
-                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
-            } else if (index == (3 + overlayIndex)) {
+            }
+            base++;
+            if (!self.hiddenBulletin) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+                }
+                base++;
+            }
+            if (!self.hideRewardDisplaySwitch) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+                }
+                base++;
+            }
+            if (self.myRewardsEnabled) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeMyReward;
+                }
+                base++;
+            }
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
             }
-            else if (index == (4 + overlayIndex)) {
+            base++;
+            if (self.enablePipSet && index == base) {
                 return PLVLCKeyboardMoreButtonTypePipSet;
             }
         } else {
-            if (index == 1 && !self.hiddenBulletin) {
-                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-            } else if (index == 2 && !self.hideRewardDisplaySwitch) {
-                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
-            } else if (index == (1 + overlayIndex)) {
+            NSInteger base = 1;
+            if (!self.hiddenBulletin) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+                }
+                base++;
+            }
+            if (!self.hideRewardDisplaySwitch) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+                }
+                base++;
+            }
+            if (self.myRewardsEnabled) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeMyReward;
+                }
+                base++;
+            }
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
             }
-            else if (index == (2 + overlayIndex)) {
+            base++;
+            if (self.enablePipSet && index == base) {
                 return PLVLCKeyboardMoreButtonTypePipSet;
             }
         }
     } else {
         if (self.sendImageEnable) {
-            if (index == 0) {
+            NSInteger base = 0;
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeOpenAlbum;
-            } else if (index == 1) {
+            }
+            base++;
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeOpenCamera;
-            } else if (index == 2 && !self.hiddenBulletin) {
-                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-            } else if (index == 3 && !self.hideRewardDisplaySwitch) {
-                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
-            } else if (index == (2 + overlayIndex)) {
+            }
+            base++;
+            if (!self.hiddenBulletin) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+                }
+                base++;
+            }
+            if (!self.hideRewardDisplaySwitch) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+                }
+                base++;
+            }
+            if (self.myRewardsEnabled) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeMyReward;
+                }
+                base++;
+            }
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
             }
-            else if (index == (3 + overlayIndex)) {
+            base++;
+            if (self.enablePipSet && index == base) {
                 return PLVLCKeyboardMoreButtonTypePipSet;
             }
         } else {
-            if (index == 0 && !self.hiddenBulletin) {
-                return PLVLCKeyboardMoreButtonTypeOpenBulletin;
-            } else if (index == 1 && !self.hideRewardDisplaySwitch) {
-                return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
-            } else if (index == (0 + overlayIndex)) {
+            NSInteger base = 0;
+            if (!self.hiddenBulletin) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeOpenBulletin;
+                }
+                base++;
+            }
+            if (!self.hideRewardDisplaySwitch) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay;
+                }
+                base++;
+            }
+            if (self.myRewardsEnabled) {
+                if (index == base) {
+                    return PLVLCKeyboardMoreButtonTypeMyReward;
+                }
+                base++;
+            }
+            if (index == base) {
                 return PLVLCKeyboardMoreButtonTypeSwitchLanguage;
             }
-            else if (index == (1 + overlayIndex)) {
+            base++;
+            if (self.enablePipSet && index == base) {
                 return PLVLCKeyboardMoreButtonTypePipSet;
             }
         }
@@ -468,6 +557,7 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         NSString *buttonTitle = PLV_SafeStringForDictKey(dict, @"title");
         [button setTitle:buttonTitle forState:UIControlStateNormal];
         [button setTitle:buttonTitle forState:UIControlStateSelected];
+        
         if ([PLVFdUtil checkStringUseable:imageURLString]) {
             NSURL *imageURL = [NSURL URLWithString:imageURLString];
             [button sd_setImageWithURL:imageURL forState:UIControlStateSelected];

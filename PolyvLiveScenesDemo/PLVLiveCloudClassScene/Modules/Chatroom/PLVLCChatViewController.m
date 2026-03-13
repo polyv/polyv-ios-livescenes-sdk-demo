@@ -263,6 +263,8 @@ UITableViewDataSource
         _keyboardToolView.delegate = self;
         _keyboardToolView.hiddenBulletin = ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback);
         _keyboardToolView.enablePipSet = [PLVRoomDataManager sharedManager].roomData.canSupportPictureInPicure;
+        PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+        _keyboardToolView.myRewardsEnabled = menuInfo ? menuInfo.myRewardsEnabled : NO;
         if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
             [_keyboardToolView changePlaceholderText:PLVLocalizedString(@"聊天室暂时关闭")];
         }

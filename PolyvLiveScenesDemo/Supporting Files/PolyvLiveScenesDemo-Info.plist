@@ -17,7 +17,7 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.31.0</string>
+	<string>1.32.0</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
@@ -31,6 +31,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>请允许我们访问您的摄像头，以便您使用连麦、拍照功能</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>为了发现并投屏到您的智能电视或设备，需要访问本地网络</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>请允许我们访问您的麦克风，以便您使用连麦功能</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

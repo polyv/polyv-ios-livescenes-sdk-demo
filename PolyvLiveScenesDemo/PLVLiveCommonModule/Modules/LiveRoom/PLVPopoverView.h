@@ -9,6 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "PLVGiveRewardView.h"
 #import "PLVInteractGenericView.h"
+#import "PLVInteractLatestGenericView.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 NS_ASSUME_NONNULL_BEGIN
@@ -33,6 +34,9 @@ typedef NS_ENUM(NSUInteger, PLVPopoverViewLiveType) {
 
 /// 互动视图
 @property (nonatomic, strong, readonly) PLVInteractGenericView *interactView;
+
+/// 最新互动视图（叠加在 `interactView` 之上）
+@property (nonatomic, strong, readonly) PLVInteractLatestGenericView *latestInteractView;
 
 @property (nonatomic, weak) id<PLVPopoverViewDelegate> delegate;
 

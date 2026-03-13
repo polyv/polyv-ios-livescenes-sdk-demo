@@ -62,6 +62,9 @@
 /// 支持小窗播放设置 YES
 @property (nonatomic, assign) BOOL enablePipSet;
 
+/// 我的奖励按钮是否显示，默认 NO；根据后台 myRewardsEnabled 字段控制，YES 显示 NO 隐藏
+@property (nonatomic, assign) BOOL myRewardsEnabled;
+
 /// 切换聊天室关闭状态
 - (void)changeCloseRoomStatus:(BOOL)closeRoom;
 

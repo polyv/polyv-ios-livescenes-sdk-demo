@@ -16,6 +16,8 @@
 @property (nonatomic, strong) PLVGiveRewardView *rewardView;
 /// 互动视图
 @property (nonatomic, strong) PLVInteractGenericView *interactView;
+/// 最新互动视图
+@property (nonatomic, strong) PLVInteractLatestGenericView *latestInteractView;
 
 #pragma mark 数据
 /// 直播场景
@@ -45,12 +47,14 @@
 
 - (void)setupUI {
     [self addSubview:self.interactView];
+    [self addSubview:self.latestInteractView]; // 叠加在原互动视图之上
 }
 
 #pragma mark - layout
 - (void)layoutSubviews {
     [super layoutSubviews];
     self.interactView.frame = self.bounds;
+    self.latestInteractView.frame = self.bounds;
 }
 
 #pragma mark - [ Public Method ]
@@ -151,6 +155,15 @@
         [_interactView loadOnlineInteract];
     }
     return _interactView;
+}
+
+- (PLVInteractLatestGenericView *)latestInteractView {
+    if (!_latestInteractView) {
+        _latestInteractView = [[PLVInteractLatestGenericView alloc] initWithLiveType:self.interactLiveType liveRoom:self.isLiveRoom];
+        _latestInteractView.autoresizingMask = UIViewAutoresizingFlexibleHeight | UIViewAutoresizingFlexibleWidth;
+        [_latestInteractView loadOnlineInteract];
+    }
+    return _latestInteractView;
 }
 
 - (PLVRewardViewType)rewardType {

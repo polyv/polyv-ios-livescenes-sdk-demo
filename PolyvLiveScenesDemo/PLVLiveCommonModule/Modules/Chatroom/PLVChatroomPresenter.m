@@ -1522,6 +1522,14 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     NSString *source = PLV_SafeStringForDictKey(data, @"source");
     NSString *msgSource = PLV_SafeStringForDictKey(data, @"msgSource");
     BOOL overLen = PLV_SafeBoolForDictKey(data, @"overLen");
+    
+    if (self.autoSendReliableCallback && [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
+        NSString *reliableMsgId = PLV_SafeStringForDictKey(data, PLVSocketIOChatRoom_SPEAK_reliableMsgId);
+        if ([PLVFdUtil checkStringUseable:reliableMsgId]) {
+            [[PLVChatroomManager sharedManager] sendReliableCallbackWithMsgId:reliableMsgId];
+        }
+    }
+    
     if (quote) {
         PLVQuoteMessage *message = [[PLVQuoteMessage alloc] init];
         message.msgId = msgId;
