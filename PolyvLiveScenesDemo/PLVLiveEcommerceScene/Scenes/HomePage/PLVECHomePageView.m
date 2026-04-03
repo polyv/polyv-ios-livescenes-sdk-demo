@@ -100,6 +100,7 @@ PLVECSubtitleConfigViewDelegate
 @property (nonatomic, assign) BOOL networkQualityMiddleViewShowed;     // 网络不佳提示视图是否显示过
 @property (nonatomic, assign) BOOL networkQualityPoorViewShowed;       // 网络糟糕提示视图是否显示过
 @property (nonatomic, copy) NSString *questionnaireEventName;          // 互动问卷事件
+@property (nonatomic, copy) NSString *triviaCardEventName;             // 答题卡事件，使用 GET_TEST_QUESTION_CONTENT
 /// 回放特有属性
 @property (nonatomic, assign) NSTimeInterval duration;                 // 回放视频时长
 @property (nonatomic, assign) NSUInteger curSpeedIndex;                // 回放视频当前播放速率
@@ -131,6 +132,7 @@ PLVECSubtitleConfigViewDelegate
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
 @property (nonatomic, strong) UIButton *playbackListButton;            // 回放列表按钮
 @property (nonatomic, strong) UIButton *questionnaireButton;          // 互动问卷入口
+@property (nonatomic, strong) UIButton *triviaCardButton;             // 答题卡入口
 @property (nonatomic, strong) UIButton *backButton;                  // 横屏返回按钮
 @property (nonatomic, strong) UILabel *networkQualityMiddleLable;      // 网络不佳提示视图
 @property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
@@ -186,6 +188,7 @@ PLVECSubtitleConfigViewDelegate
         [self addSubview:self.likeButtonView];
         [self addSubview:self.giftButton];
         [self addSubview:self.questionnaireButton];
+        [self addSubview:self.triviaCardButton];
         if ([PLVRoomDataManager sharedManager].roomData.menuInfo.portraitOnlineListEnabled) {
             [self addSubview:self.onlineListButton];
         }
@@ -341,6 +344,26 @@ PLVECSubtitleConfigViewDelegate
         _questionnaireButton.hidden = YES;
     }
     return _questionnaireButton;
+}
+
+- (UIButton *)triviaCardButton {
+    if (!_triviaCardButton) {
+        _triviaCardButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        [_triviaCardButton setTitle:PLVLocalizedString(@"答题卡") forState:UIControlStateNormal];
+        _triviaCardButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
+        [_triviaCardButton setBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.16)];
+        [_triviaCardButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+        _triviaCardButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_triviaCardButton setImage:[PLVECUtils imageForWatchResource:@"plvec_iarentrance_trivia"] forState:UIControlStateNormal];
+        [_triviaCardButton addTarget:self action:@selector(triviaCardButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _triviaCardButton.contentHorizontalAlignment = UIControlContentHorizontalAlignmentCenter;
+        [_triviaCardButton setTitleEdgeInsets:UIEdgeInsetsMake(0, 4, 0, 0)];
+        [_triviaCardButton setImageEdgeInsets:UIEdgeInsetsMake(0, 0, 0, 4)];
+        _triviaCardButton.layer.masksToBounds = YES;
+        _triviaCardButton.layer.cornerRadius = 12;
+        _triviaCardButton.hidden = YES;
+    }
+    return _triviaCardButton;
 }
 
 - (UIButton *)backButton {
@@ -713,19 +736,57 @@ PLVECSubtitleConfigViewDelegate
 }
 
 - (void)updateIarEntranceButtonDataArray:(NSArray *)dataArray {
+    BOOL oldQuestionnaireHidden = self.questionnaireButton.hidden;
+    BOOL oldTriviaCardHidden = self.triviaCardButton.hidden;
+    
     if (![PLVFdUtil checkArrayUseable:dataArray]) {
         self.questionnaireButton.hidden = YES;
+        self.triviaCardButton.hidden = YES;
+        self.questionnaireEventName = nil;
+        self.triviaCardEventName = nil;
+        if (oldQuestionnaireHidden != self.questionnaireButton.hidden ||
+            oldTriviaCardHidden != self.triviaCardButton.hidden) {
+            [self updateUIFrame];
+        }
+        return;
     }
+    
+    // 默认隐藏，若入口数据中存在对应配置再按 isShow 控制显示
+    BOOL questionnaireHidden = YES;
+    BOOL triviaCardHidden = YES;
+    NSString *questionnaireEventName = nil;
+    NSString *triviaCardEventName = nil;
+    
     for (NSInteger index = 0; index < dataArray.count; index++) {
         NSDictionary *dict = dataArray[index];
         if ([PLVFdUtil checkDictionaryUseable:dict]) {
             BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
             NSString *title = PLV_SafeStringForDictKey(dict, @"title");
             if ([PLVFdUtil checkStringUseable:title] && [title isEqualToString:PLVLocalizedString(@"问卷")]) {
-                self.questionnaireEventName = PLV_SafeStringForDictKey(dict, @"event");
-                self.questionnaireButton.hidden = !isShow;
+                questionnaireEventName = PLV_SafeStringForDictKey(dict, @"event");
+                questionnaireHidden = !isShow;
+            } else if ([PLVFdUtil checkStringUseable:title] && [title isEqualToString:PLVLocalizedString(@"答题卡")]) {
+                triviaCardEventName = PLV_SafeStringForDictKey(dict, @"event");
+                triviaCardHidden = !isShow;
             }
         }
+    }
+    
+    self.questionnaireEventName = questionnaireEventName;
+    self.triviaCardEventName = triviaCardEventName;
+    self.questionnaireButton.hidden = questionnaireHidden;
+    self.triviaCardButton.hidden = triviaCardHidden;
+    
+    if (!self.questionnaireButton.hidden) {
+        [self bringSubviewToFront:self.questionnaireButton];
+    }
+    if (!self.triviaCardButton.hidden) {
+        [self bringSubviewToFront:self.triviaCardButton];
+    }
+    
+    if (oldQuestionnaireHidden != self.questionnaireButton.hidden ||
+        oldTriviaCardHidden != self.triviaCardButton.hidden) {
+        [self updateUIFrame];
     }
 }
 
@@ -936,7 +997,10 @@ PLVECSubtitleConfigViewDelegate
             }
         }
         CGFloat questionnaireButtonOriginY = bulletinView ? CGRectGetMaxY(bulletinView.frame) + 10 : CGRectGetMaxY(self.liveRoomInfoView.frame) + 15;
-        self.questionnaireButton.frame =  CGRectMake(15, questionnaireButtonOriginY, 68, 28);
+        self.questionnaireButton.frame = CGRectMake(15, questionnaireButtonOriginY, 68, 28);
+        // 答题卡按钮：问卷显示时在其右侧，否则在左侧
+        CGFloat triviaCardX = self.questionnaireButton.hidden ? 15 : (15 + 68 + 8);
+        self.triviaCardButton.frame = CGRectMake(triviaCardX, questionnaireButtonOriginY, 68, 28);
         CGFloat padding = 12.0;
         self.pushView.frame = CGRectMake((CGRectGetWidth(self.frame) - padding - 104), CGRectGetMinY(self.shoppingCartButton.frame) - 204 - padding, 104, 204);
     } else if (self.type == PLVECHomePageType_Playback) {
@@ -1063,6 +1127,14 @@ PLVECSubtitleConfigViewDelegate
     }
 }
 
+- (void)triviaCardButtonAction:(id)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView_openInteractApp:eventName:)]) {
+        NSString *eventName = self.triviaCardEventName ?: PLVSocketInteraction_onTriviaCard_questionContent;
+        [self.delegate homePageView_openInteractApp:self eventName:eventName];
+    }
+}
+
+
 - (void)backButtonAction:(id)sender {
     if (self.delegate && [self.delegate respondsToSelector:@selector(homePageViewWannaBackToVerticalScreen:)]) {
         [self.delegate homePageViewWannaBackToVerticalScreen:self];
@@ -1103,7 +1175,7 @@ PLVECSubtitleConfigViewDelegate
         [self likesEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
         [self productMessageEvent:jsonDict];
-    }
+    } 
 }
 
 - (void)socketMananger_didReceiveEvent:(NSString *)event

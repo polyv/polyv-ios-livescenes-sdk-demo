@@ -14,6 +14,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVStickerManager;
+@class PLVMobileTemplateLayerModel;
 
 @protocol PLVStickerManagerDelegate <NSObject>
 
@@ -55,8 +56,21 @@ NS_ASSUME_NONNULL_BEGIN
 /// 生成贴图图像
 - (UIImage *)generateStickerImage;
 
+/// 以指定位置添加图片贴图
+- (void)addImageSticker:(UIImage *)image frame:(CGRect)frame;
+
+/// 以指定位置添加文字贴图
+- (void)addTextStickerWithText:(NSString *)text frame:(CGRect)frame;
+
 /// 清除所有贴图
 - (void)clearAllStickers;
+
+/// 下载网络图片
+- (void)fetchImageWithURLString:(NSString *)urlString completion:(void (^)(UIImage * _Nullable image))completion;
+
+/// 应用模板中的贴图层（文字/图片），完成后回调合成后的贴图图像
+- (void)applyTemplateStickerLayers:(NSArray<PLVMobileTemplateLayerModel *> *)layers
+                         completion:(void(^)(UIImage * _Nullable stickerImage))completion;
 
 @end
 

@@ -30,6 +30,7 @@
 #import "PLVStickerManager.h"
 #import "PLVSAScreenSharePipCustomView.h"
 #import "PLVVirtualBackgroudSheet.h"
+#import "PLVSALiveTemplateSheet.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -130,6 +131,7 @@ UIDocumentPickerDelegate
 @property (nonatomic, assign) CGRect stickerCanvasFrame; // 判断canvas 布局发生变化
 @property (nonatomic, strong) PLVStickerManager *stickerManager; // 贴图管理器
 @property (nonatomic, strong) PLVVirtualBackgroudSheet *aiMattingSheet; // AI抠像组件
+@property (nonatomic, strong) PLVSALiveTemplateSheet *liveTemplateSheet; // 开播模板弹层
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
 @property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
 
@@ -144,6 +146,7 @@ UIDocumentPickerDelegate
 @property (nonatomic, assign) BOOL otherUserFullScreen; // 非本地用户开启了全屏
 @property (nonatomic, assign, readonly) PLVBLinkMicStreamScale streamScale; // 当前直播流比例
 @property (nonatomic, assign) BOOL isInBackground; // 是否位于后台
+@property (nonatomic, strong) NSArray<PLVMobileTemplateModel *> *mobileTemplateList; // 模板列表缓存
 
 @end
 
@@ -465,6 +468,20 @@ UIDocumentPickerDelegate
     return _shareLiveSheet;
 }
 
+- (PLVSALiveTemplateSheet *)liveTemplateSheet {
+    if (!_liveTemplateSheet) {
+        _liveTemplateSheet = [[PLVSALiveTemplateSheet alloc] init];
+        __weak typeof(self) weakSelf = self;
+        _liveTemplateSheet.retryHandler = ^{
+            [weakSelf requestPublishedMobileTemplates];
+        };
+        _liveTemplateSheet.applyHandler = ^(PLVMobileTemplateModel * _Nonnull model) {
+            [weakSelf applyLiveTemplate:model];
+        };
+    }
+    return _liveTemplateSheet;
+}
+
 - (UIPinchGestureRecognizer *)pinchGesture {
     if (!_pinchGesture) {
         _pinchGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchGesture:)];
@@ -645,6 +662,90 @@ UIDocumentPickerDelegate
     if (self.stickerCanvas){
         [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
     }
+}
+
+#pragma mark Live Template
+
+- (void)showLiveTemplateSheet {
+    [self.liveTemplateSheet showInView:self.view];
+    [self.liveTemplateSheet showLoading];
+    [self requestPublishedMobileTemplates];
+}
+
+- (void)requestPublishedMobileTemplates {
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestPublishedMobileTemplatesWithCompletion:^(NSArray<PLVMobileTemplateModel *> * _Nonnull templateList) {
+        weakSelf.mobileTemplateList = templateList;
+        [weakSelf.liveTemplateSheet updateTemplateList:weakSelf.mobileTemplateList];
+    } failure:^(NSError * _Nonnull error) {
+        [weakSelf.liveTemplateSheet showError:error.localizedDescription];
+    }];
+}
+
+- (void)ensureTemplateCanvasAttachedIfNeed {
+    if (!self.stickerManager) {
+        self.stickerManager = [[PLVStickerManager alloc] initWithParentView:self.view];
+        self.stickerManager.delegate = self;
+    }
+    if (!self.stickerCanvas) {
+        self.stickerCanvas = self.stickerManager.stickerCanvas;
+    }
+    if (!self.stickerCanvas.superview) {
+        if (self.viewState == PLVSAStreamerViewStateSteaming && self.homeView) {
+            [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
+        } else if (self.settingView) {
+            [self.view insertSubview:self.stickerCanvas belowSubview:self.settingView];
+        } else {
+            [self.view addSubview:self.stickerCanvas];
+        }
+    }
+}
+
+- (void)applyTemplateBackground:(PLVMobileTemplateModel *)templateModel completion:(void(^)(void))completion {
+    if (![PLVFdUtil checkStringUseable:templateModel.backgroundType]) {
+        [self.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeNone image:nil];
+        if (completion) {
+            completion();
+        }
+        return;
+    }
+
+    if (![PLVFdUtil checkStringUseable:templateModel.backgroundUrl]) {
+        if (completion) {
+            completion();
+        }
+        return;
+    }
+
+    __weak typeof(self) weakSelf = self;
+    [self.stickerManager fetchImageWithURLString:templateModel.backgroundUrl completion:^(UIImage *image) {
+        if (image) {
+            [weakSelf.streamerPresenter setAIMattingMode:PLVBLinkMicAIMattingModeCustomImage image:image];
+        }
+        if (completion) {
+            completion();
+        }
+    }];
+}
+
+- (void)applyLiveTemplate:(PLVMobileTemplateModel *)templateModel {
+    if (!templateModel) {
+        return;
+    }
+    [self.liveTemplateSheet dismiss];
+    [self ensureTemplateCanvasAttachedIfNeed];
+    [self.stickerCanvas setNeedsLayout];
+    [self.stickerCanvas layoutIfNeeded];
+
+    [self.streamerPresenter setStickerImage:nil];
+
+    __weak typeof(self) weakSelf = self;
+    [self applyTemplateBackground:templateModel completion:^{
+        [weakSelf.stickerManager applyTemplateStickerLayers:templateModel.layers completion:^(UIImage * _Nullable stickerImage) {
+            [weakSelf.streamerPresenter setStickerImage:stickerImage];
+            [PLVSAUtils showToastWithMessage:PLVLocalizedString(@"模板应用成功") inView:weakSelf.view];
+        }];
+    }];
 }
 
 #pragma mark Start Class
@@ -1576,6 +1677,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self showAIMattingSheet];
 }
 
+- (void)streamerSettingViewDidClickLiveTemplateButton:(PLVSAStreamerSettingView *)streamerSettingView {
+    [self showLiveTemplateSheet];
+}
+
 /// AI 抠像设置面板弹出
 - (void)showAIMattingSheet{
     if (self.streamerPresenter.currentCameraOpen) {
@@ -1878,6 +1983,10 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 /// 虚拟背景按钮点击
 - (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView {
     [self showAIMattingSheet];
+}
+
+- (void)streamerHomeViewDidTapLiveTemplateButton:(PLVSAStreamerHomeView *)homeView {
+    [self showLiveTemplateSheet];
 }
 
 /// 开始搜索

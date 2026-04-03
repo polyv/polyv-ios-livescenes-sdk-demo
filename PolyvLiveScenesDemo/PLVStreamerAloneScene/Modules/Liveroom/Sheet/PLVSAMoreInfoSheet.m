@@ -37,6 +37,7 @@
 @property (nonatomic, strong) UIButton *stickerButton; // 贴纸
 @property (nonatomic, strong) UIButton *stickerVideoButton; // 视频类型贴纸
 @property (nonatomic, strong) UIButton *aiMattingButton; // AI抠像
+@property (nonatomic, strong) UIButton *liveTemplateButton; // 开播模板
 @property (nonatomic, strong) UIButton *allowRaiseHandButton; // 开启/关闭观众连麦
 @property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
 @property (nonatomic, strong) UIButton *removeAllAudiencesButton; // 观众下麦
@@ -247,6 +248,9 @@
         [buttonSuperView addSubview:self.aiMattingButton];
         [muButtonArray addObject:self.aiMattingButton];
     }
+    
+    [buttonSuperView addSubview:self.liveTemplateButton];
+    [muButtonArray addObject:self.liveTemplateButton];
     
     self.buttonArray = [muButtonArray copy];
     
@@ -656,6 +660,21 @@
         [_aiMattingButton addTarget:self action:@selector(aiMattingButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _aiMattingButton;
+}
+
+- (UIButton *)liveTemplateButton {
+    if (!_liveTemplateButton) {
+        _liveTemplateButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _liveTemplateButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _liveTemplateButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _liveTemplateButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _liveTemplateButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_liveTemplateButton setTitle:PLVLocalizedString(@"开播模板") forState:UIControlStateNormal];
+        _liveTemplateButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_liveTemplateButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_live_template"] forState:UIControlStateNormal];
+        [_liveTemplateButton addTarget:self action:@selector(liveTemplateButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _liveTemplateButton;
 }
 
 - (UIScrollView *)scrollView {
@@ -1131,6 +1150,13 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapAiMattingButton:)]) {
         [self.delegate moreInfoSheetDidTapAiMattingButton:self];
+    }
+}
+
+- (void)liveTemplateButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLiveTemplateButton:)]) {
+        [self.delegate moreInfoSheetDidTapLiveTemplateButton:self];
     }
 }
 

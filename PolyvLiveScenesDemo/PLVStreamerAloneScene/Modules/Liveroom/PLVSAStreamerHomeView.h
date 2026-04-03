@@ -120,6 +120,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// AI抠像按钮点击
 - (void)streamerHomeViewDidTapAiMattingButton:(PLVSAStreamerHomeView *)homeView;
 
+/// 开播模板按钮点击
+- (void)streamerHomeViewDidTapLiveTemplateButton:(PLVSAStreamerHomeView *)homeView;
+
 /// 本地视频素材按钮点击
 - (void)streamerHomeViewDidTapVideoMaterialButton:(PLVSAStreamerHomeView *)homeView;
 /// 开始搜索

@@ -168,8 +168,20 @@ PLVECRealTimeSubtitleManagerDelegate
     self.popoverView.frame = self.view.bounds;
     
     CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? self.scrollView.bounds.size.width - P_SafeAreaRightEdgeInsets() : self.scrollView.bounds.size.width;
-
-    self.playerVC.view.frame = CGRectMake(self.scrollView.bounds.origin.x, self.scrollView.bounds.origin.y, playerVCWidth, self.scrollView.bounds.size.height);// 重新布局
+    CGFloat offsetX = self.scrollView.contentOffset.x;
+    if (self.playerVC) {
+        self.playerVC.view.frame = CGRectMake(offsetX, self.scrollView.bounds.origin.y, playerVCWidth, self.scrollView.bounds.size.height);// 重新布局
+    }
+    
+    // 连麦层须与 scrollView 最终 bounds 同步。viewWillAppear 早于首次 layout，在 systemScreenShotProtect（PLVSecureView）下 scrollView 宽度常为 0，若只在 viewWillAppear 设 frame 会导致连麦画面区域宽高为 0。
+    if (self.playerVC && CGRectGetWidth(self.scrollView.bounds) > 0 && CGRectGetHeight(self.scrollView.bounds) > 0) {
+        self.linkMicAreaView.frame = self.playerVC.view.frame;
+        CGSize marqueeViewSize = CGSizeMake(self.scrollView.bounds.size.width, self.scrollView.bounds.size.width / 16 * 9);
+        self.playerVC.marqueeView.frame = CGRectMake(offsetX, (self.scrollView.bounds.size.height - marqueeViewSize.height) / 2.0, marqueeViewSize.width, marqueeViewSize.height);
+        [self.scrollView insertSubview:self.playerVC.view atIndex:0];
+        [self.scrollView insertSubview:self.linkMicAreaView atIndex:1];
+        [self.scrollView insertSubview:self.playerVC.marqueeView aboveSubview:self.linkMicAreaView];
+    }
     
     // 布局实时字幕视图
     [self layoutRealTimeSubtitleView];
@@ -178,20 +190,7 @@ PLVECRealTimeSubtitleManagerDelegate
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
-    CGPoint boundsPoint = self.scrollView.bounds.origin;
-    CGSize boundsSize = self.scrollView.bounds.size;
-    CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? boundsSize.width - P_SafeAreaRightEdgeInsets() : boundsSize.width;
-
-    self.playerVC.view.frame = CGRectMake(boundsPoint.x, boundsPoint.y, playerVCWidth, boundsSize.height);// 重新布局
-    self.linkMicAreaView.frame = self.scrollView.bounds;
-    
-    CGSize marqueeViewSize = CGSizeMake(boundsSize.width, boundsSize.width / 16 * 9);
-    self.playerVC.marqueeView.frame = CGRectMake(self.scrollView.contentOffset.x, (boundsSize.height - marqueeViewSize.height) / 2.0, marqueeViewSize.width, marqueeViewSize.height);
-    
-    [self.scrollView insertSubview:self.playerVC.view atIndex:0];
-    [self.scrollView insertSubview:self.linkMicAreaView atIndex:1];
-    [self.scrollView insertSubview:self.playerVC.marqueeView aboveSubview:self.linkMicAreaView];
-    
+    // 播放器 / 连麦 / 跑马灯 与 insertSubview 已在 viewWillLayoutSubviews 中按有效 scrollView.bounds 处理，避免 secure 根视图下 viewWillAppear 时宽度为 0。
     [self.playerVC cancelMute];
     if (self.linkMicAreaView.inLinkMic) {
         [self.linkMicAreaView reloadLinkMicUserWindows];

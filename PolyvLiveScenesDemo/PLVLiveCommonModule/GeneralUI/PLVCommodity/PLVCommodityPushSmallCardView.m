@@ -307,6 +307,10 @@
         return NO;
     }
     
+    if (self.model.soldOut) {
+        return NO;
+    }
+    
     if ([self.model.buyType isEqualToString:@"inner"]) {
         // 检查直接购买的条件
         return YES;

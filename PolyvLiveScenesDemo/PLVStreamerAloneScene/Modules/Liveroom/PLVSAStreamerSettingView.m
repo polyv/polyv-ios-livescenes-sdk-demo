@@ -69,6 +69,8 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, strong) UIButton *stickerVideoButton;
 /// 虚拟背景按钮
 @property (nonatomic, strong) UIButton *virtualBackgroundButton;
+/// 开播模板按钮
+@property (nonatomic, strong) UIButton *liveTemplateButton;
 /// 降噪模式
 @property (nonatomic, strong) UIButton *noiseCancellationModeButton;
 /// 外接设备
@@ -206,6 +208,9 @@ PLVSAExternalDeviceSwitchSheetDelegate
         [self.buttonView addSubview:self.virtualBackgroundButton];
         [muButtonArray addObject:self.virtualBackgroundButton];
     }
+    
+    [self.buttonView addSubview:self.liveTemplateButton];
+    [muButtonArray addObject:self.liveTemplateButton];
     
     [self.buttonView addSubview:self.mirrorButton];
     [self.buttonView addSubview:self.bitRateButton];
@@ -776,6 +781,15 @@ PLVSAExternalDeviceSwitchSheetDelegate
     return _virtualBackgroundButton;
 }
 
+- (UIButton *)liveTemplateButton {
+    if (!_liveTemplateButton) {
+        _liveTemplateButton = [self buttonWithTitle:PLVLocalizedString(@"开播模板") NormalImageString:@"plvsa_liveroom_btn_live_template" selectedImageString:@"plvsa_liveroom_btn_live_template"];
+        [_liveTemplateButton addTarget:self action:@selector(liveTemplateButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _liveTemplateButton.titleEdgeInsets = UIEdgeInsetsMake(_liveTemplateButton.imageView.frame.size.height + 4, - 67, 0, -38);
+    }
+    return _liveTemplateButton;
+}
+
 - (UIButton *)noiseCancellationModeButton {
     if (!_noiseCancellationModeButton) {
         _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"声音音质Btn") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
@@ -1141,6 +1155,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
 - (void)virtualBackgroundButtonAction:(UIButton *)sender {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickVirtualBackgroundButton:)]) {
         [self.delegate streamerSettingViewDidClickVirtualBackgroundButton:self];
+    }
+}
+
+- (void)liveTemplateButtonAction:(UIButton *)sender {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerSettingViewDidClickLiveTemplateButton:)]) {
+        [self.delegate streamerSettingViewDidClickLiveTemplateButton:self];
     }
 }
 

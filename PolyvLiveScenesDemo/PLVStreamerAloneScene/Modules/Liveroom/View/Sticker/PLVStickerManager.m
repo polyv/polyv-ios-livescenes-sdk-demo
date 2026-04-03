@@ -8,6 +8,7 @@
 
 #import "PLVStickerManager.h"
 #import "PLVStickerCanvas.h"
+#import "PLVStickerImageView.h"
 #import "PLVStickerTextView.h"
 #import "PLVStickerTextTemplateView.h"
 #import "PLVStickerTextEditorView.h"
@@ -16,11 +17,13 @@
 #import "PLVImagePickerViewController.h"
 #import "PLVSAUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import <PLVFoundationSDK/PLVFdUtil.h>
 
 #import <Photos/Photos.h>
 #import <AVFoundation/AVFoundation.h>
 #import <objc/runtime.h>
 #import "PLVImagePickerViewController.h"
+#import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
 @interface PLVStickerManager () <
     PLVStickerTypeSelectionViewDelegate,
@@ -34,6 +37,7 @@
 @property (nonatomic, weak) PLVStickerTextView *currentEditingTextView;
 @property (nonatomic, strong) PLVStickerTextTemplateView *currentTemplateView; // 当前显示的模版界面
 @property (nonatomic, weak) PLVStickerTextView *pendingDeleteTextView; // 待删除的文本贴纸
+@property (nonatomic, assign) BOOL applyingTemplateStickerLayers; // 模板应用中，屏蔽文本编辑弹层
 
 @property (nonatomic, strong) CADisplayLink *displayLink;
 
@@ -98,14 +102,174 @@
     return [self.stickerCanvas generateImageWithTransparentBackground];
 }
 
+- (void)addImageSticker:(UIImage *)image frame:(CGRect)frame {
+    if (!image) {
+        return;
+    }
+
+    [self ensureStickerCanvasAttached];
+    [self.stickerCanvas showCanvasWithImages:@[image]];
+
+    for (NSInteger i = self.stickerCanvas.contentView.subviews.count - 1; i >= 0; i--) {
+        UIView *subView = self.stickerCanvas.contentView.subviews[i];
+        if ([subView isKindOfClass:[PLVStickerImageView class]]) {
+            subView.frame = frame;
+            break;
+        }
+    }
+}
+
+- (void)addTextStickerWithText:(NSString *)text frame:(CGRect)frame {
+    [self addTextStickerWithText:text templateId:nil frame:frame];
+}
+
+- (void)addTextStickerWithText:(NSString *)text templateId:(NSString *)templateId frame:(CGRect)frame {
+    if (text.length == 0) {
+        return;
+    }
+
+    [self ensureStickerCanvasAttached];
+
+    PLVStickerTextTemplateType templateType = [self templateTypeForTemplateId:templateId];
+    PLVStickerTextModel *textModel = [PLVStickerTextModel defaultTextModelWithText:text templateType:templateType];
+    textModel.defaultSize = frame.size;
+    [self.stickerCanvas addTextStickerWithModel:textModel];
+
+    for (NSInteger i = self.stickerCanvas.contentView.subviews.count - 1; i >= 0; i--) {
+        UIView *subView = self.stickerCanvas.contentView.subviews[i];
+        if ([subView isKindOfClass:[PLVStickerTextView class]]) {
+            PLVStickerTextView *textView = (PLVStickerTextView *)subView;
+            textView.frame = frame;
+            textView.enableEdit = NO;
+            textView.editState = PLVStickerTextEditStateNormal;
+            textView.isNewlyAdded = NO;
+            break;
+        }
+    }
+}
+
 - (void)clearAllStickers {
     // 移除所有子视图
     for (UIView *subview in self.stickerCanvas.contentView.subviews) {
         [subview removeFromSuperview];
     }
+    // 同步重置计数，避免后续添加贴图被数量限制阻断
+    [self.stickerCanvas setValue:@(0) forKey:@"curImageCount"];
+    [self.stickerCanvas setValue:@(0) forKey:@"curTextCount"];
+}
+
+- (void)applyTemplateStickerLayers:(NSArray<PLVMobileTemplateLayerModel *> *)layers
+                         completion:(void(^)(UIImage * _Nullable stickerImage))completion {
+    if (self.currentTemplateView) {
+        [self.currentTemplateView hideWithCompletion:nil];
+        self.currentTemplateView = nil;
+    }
+    self.pendingDeleteTextView = nil;
+
+    // 切换模板时，先清理旧模板元素（包含旧文本贴图）
+    [self clearAllStickers];
+
+    if (![PLVFdUtil checkArrayUseable:layers]) {
+        if (completion) {
+            completion([self generateStickerImage]);
+        }
+        return;
+    }
+
+    [self ensureStickerCanvasAttached];
+    [self.stickerCanvas setNeedsLayout];
+    [self.stickerCanvas layoutIfNeeded];
+    self.applyingTemplateStickerLayers = YES;
+
+    dispatch_group_t group = dispatch_group_create();
+    __weak typeof(self) weakSelf = self;
+    for (PLVMobileTemplateLayerModel *layer in layers) {
+        if ([layer.type isEqualToString:@"text_template"]) {
+            if ([PLVFdUtil checkStringUseable:layer.mainText]) {
+                [self addTextStickerWithText:layer.mainText templateId:layer.templateId frame:[self templateLayerFrameWithLayer:layer]];
+            }
+        } else if ([layer.type isEqualToString:@"image"] && [PLVFdUtil checkStringUseable:layer.src]) {
+            dispatch_group_enter(group);
+            [self fetchImageWithURLString:layer.src completion:^(UIImage *image) {
+                if (image) {
+                    [weakSelf addImageSticker:image frame:[weakSelf templateLayerFrameWithLayer:layer]];
+                }
+                dispatch_group_leave(group);
+            }];
+        }
+    }
+
+    dispatch_group_notify(group, dispatch_get_main_queue(), ^{
+        weakSelf.applyingTemplateStickerLayers = NO;
+        if (completion) {
+            completion([weakSelf generateStickerImage]);
+        }
+    });
 }
 
 #pragma mark - Private Methods
+
+- (void)ensureStickerCanvasAttached {
+    if (!self.stickerCanvas) {
+        [self setupCanvas];
+    }
+
+    if (!self.stickerCanvas.superview) {
+        [self.parentView addSubview:self.stickerCanvas];
+        self.stickerCanvas.frame = self.parentView.bounds;
+        [self.stickerCanvas layoutIfNeeded];
+    }
+}
+
+- (CGRect)templateLayerFrameWithLayer:(PLVMobileTemplateLayerModel *)layer {
+    CGRect contentBounds = self.stickerCanvas.contentView.bounds;
+    if (CGRectIsEmpty(contentBounds)) {
+        contentBounds = self.stickerCanvas.bounds;
+    }
+    CGFloat x = MAX(0, layer.x) * CGRectGetWidth(contentBounds);
+    CGFloat y = MAX(0, layer.y) * CGRectGetHeight(contentBounds);
+    CGFloat width = MAX(0.05, layer.width) * CGRectGetWidth(contentBounds);
+    CGFloat height = MAX(0.05, layer.height) * CGRectGetHeight(contentBounds);
+    return CGRectMake(x, y, width, height);
+}
+
+- (PLVStickerTextTemplateType)templateTypeForTemplateId:(NSString *)templateId {
+    if (![PLVFdUtil checkStringUseable:templateId]) {
+        return PLVStickerTextTemplateType0;
+    }
+
+    // Open API text_template.template_id 约定范围为 1~8，对应本地枚举 0~7
+    NSInteger oneBasedValue = templateId.integerValue;
+    if (oneBasedValue >= 1 && oneBasedValue <= 8) {
+        return (PLVStickerTextTemplateType)(oneBasedValue - 1);
+    }
+
+    return PLVStickerTextTemplateType0;
+}
+
+- (BOOL)isValidTemplateTypeValue:(NSInteger)value {
+    return value >= PLVStickerTextTemplateType0 && value <= PLVStickerTextTemplateType7;
+}
+
+- (void)fetchImageWithURLString:(NSString *)urlString completion:(void (^)(UIImage *image))completion {
+    if (![PLVFdUtil checkStringUseable:urlString]) {
+        if (completion) {
+            completion(nil);
+        }
+        return;
+    }
+
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+        NSURL *url = [NSURL URLWithString:urlString];
+        NSData *data = [NSData dataWithContentsOfURL:url];
+        UIImage *image = data ? [UIImage imageWithData:data] : nil;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (completion) {
+                completion(image);
+            }
+        });
+    });
+}
 
 // 显示图片选择器
 - (void)showImagePicker {
@@ -366,6 +530,16 @@
 
 
 - (void)stickerCanvasTextEditStateChanged:(PLVStickerCanvas *)stickerCanvas textView:(PLVStickerTextView *)textView {
+    // 模板应用时，文本贴图仅作为静态元素存在，不触发模板编辑弹层
+    if (self.applyingTemplateStickerLayers) {
+        textView.enableEdit = NO;
+        textView.isNewlyAdded = NO;
+        if (textView.editState != PLVStickerTextEditStateNormal) {
+            textView.editState = PLVStickerTextEditStateNormal;
+        }
+        return;
+    }
+
    // 显示模版视图
     if (textView.editState >= PLVStickerTextEditStateActionVisible){
         // 父视图中不存在

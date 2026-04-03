@@ -35,6 +35,9 @@ PLVStickerImageViewDelegate
 - (void)layoutSubviews {
     [super layoutSubviews];
     
+    // Keep inner image/border in sync when outer frame changes (e.g. template apply).
+    self.contentView.frame = self.bounds;
+    [self updateShapeLayerPath];
     [self updateMoveableRect];
     [self updateDoneButtonPosition];
 }
@@ -76,20 +79,27 @@ PLVStickerImageViewDelegate
 
 - (void)initShapeLayer {
     self.shapeLayer = [CAShapeLayer layer];
-    CGRect shapeRect = self.contentView.frame;
+    CGRect shapeRect = self.contentView.bounds;
     self.shapeLayer.bounds = shapeRect;
-    self.shapeLayer.position = CGPointMake(self.contentView.frame.size.width / 2, self.contentView.frame.size.height / 2);
+    self.shapeLayer.position = CGPointMake(CGRectGetMidX(shapeRect), CGRectGetMidY(shapeRect));
     self.shapeLayer.fillColor = [UIColor clearColor].CGColor;
     self.shapeLayer.strokeColor = [UIColor whiteColor].CGColor;
     self.shapeLayer.lineWidth = 2.0;
     self.shapeLayer.lineJoin = kCALineJoinRound;
     self.shapeLayer.allowsEdgeAntialiasing = YES;
 //    self.shapeLayer.lineDashPattern = @[@5, @3];
-    
-    CGMutablePathRef path = CGPathCreateMutable();
-    CGPathAddRect(path, NULL, shapeRect);
-    self.shapeLayer.path = path;
-    CGPathRelease(path);
+    [self updateShapeLayerPath];
+}
+
+- (void)updateShapeLayerPath {
+    if (!self.shapeLayer) {
+        return;
+    }
+
+    CGRect shapeRect = self.contentView.bounds;
+    self.shapeLayer.bounds = shapeRect;
+    self.shapeLayer.position = CGPointMake(CGRectGetMidX(shapeRect), CGRectGetMidY(shapeRect));
+    self.shapeLayer.path = [UIBezierPath bezierPathWithRect:shapeRect].CGPath;
 }
 
 - (void)setupConfig {
@@ -329,10 +339,6 @@ PLVStickerImageViewDelegate
         // 确保 doneButton 在最上层
         [self.superview bringSubviewToFront:self.doneButton];
     }
-    NSLog(@"-- updateDoneButtonPosition: stickerBounds:%@, center:%@, transform:%@ --", 
-          NSStringFromCGRect(self.bounds), 
-          NSStringFromCGPoint(self.center),
-          NSStringFromCGAffineTransform(self.transform));
 }
 
 // Done按钮点击处理

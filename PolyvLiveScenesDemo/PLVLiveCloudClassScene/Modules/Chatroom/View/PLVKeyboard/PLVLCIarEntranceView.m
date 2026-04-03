@@ -100,7 +100,9 @@ static CGFloat kCellLabelPadding = 4.0;
         if ([PLVFdUtil checkDictionaryUseable:dict]) {
             BOOL isShow = PLV_SafeBoolForDictKey(dict, @"isShow");
             NSString *title = PLV_SafeStringForDictKey(dict, @"title");
-            if (isShow && [PLVFdUtil checkStringUseable:title] && [title isEqualToString:PLVLocalizedString(@"问卷")]) {
+            BOOL isQuestionnaire = [PLVFdUtil checkStringUseable:title] && [title isEqualToString:PLVLocalizedString(@"问卷")];
+            BOOL isTriviaCard = [PLVFdUtil checkStringUseable:title] && [title isEqualToString:PLVLocalizedString(@"答题卡")];
+            if (isShow && (isQuestionnaire || isTriviaCard)) {
                 [showDataArray addObject:dict];
             }
         }
@@ -152,7 +154,10 @@ static CGFloat kCellLabelPadding = 4.0;
         return;
     } else if ([buttonTitle isEqualToString:PLVLocalizedString(@"问卷")]) {
         [button setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_iarentrance_questionnaire"] forState:UIControlStateNormal];
-        [button setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_iarentrance_questionnaire"] forState:UIControlStateNormal];
+        [button setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_iarentrance_questionnaire"] forState:UIControlStateSelected];
+    } else if ([buttonTitle isEqualToString:PLVLocalizedString(@"答题卡")]) {
+        [button setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_iarentrance_trivia"] forState:UIControlStateNormal];
+        [button setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_iarentrance_trivia"] forState:UIControlStateSelected];
     }
 }
 

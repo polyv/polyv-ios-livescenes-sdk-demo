@@ -106,6 +106,8 @@
 
 "开播比例" = "Ratio";
 
+"开播模板" = "Live Template";
+
 "当前已有主讲人，确定后将替换为新的主讲人" = "There is currently a speaker and will be replaced by a new speaker once confirmed";
 
 "您正在共享屏幕" = "You are sharing your screen";

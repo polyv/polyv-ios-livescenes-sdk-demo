@@ -1238,6 +1238,12 @@ PLVSAAICardViewDelegate
     }
 }
 
+- (void)moreInfoSheetDidTapLiveTemplateButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLiveTemplateButton:)]) {
+        [self.delegate streamerHomeViewDidTapLiveTemplateButton:self];
+    }
+}
+
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects {
     self.chatroomAreaView.closeGiftEffects = closeGiftEffects;
 }

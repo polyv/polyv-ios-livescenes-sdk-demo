@@ -103,6 +103,9 @@
 /// 虚拟背景按钮点击
 - (void)streamerSettingViewDidClickVirtualBackgroundButton:(PLVSAStreamerSettingView *)streamerSettingView;
 
+/// 开播模板按钮点击
+- (void)streamerSettingViewDidClickLiveTemplateButton:(PLVSAStreamerSettingView *)streamerSettingView;
+
 @end
 
 
