@@ -20,6 +20,7 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupButton) {
     PLVSAMemberPopupButtonCamera = 0,
     PLVSAMemberPopupButtonMicrophone,
     PLVSAMemberPopupButtonAuthSpeaker,
+    PLVSAMemberPopupButtonAuthFirstSite,
     PLVSAMemberPopupButtonKick,
     PLVSAMemberPopupButtonBanned
 };
@@ -114,6 +115,13 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     if (self.chatUser.userType == PLVRoomUserTypeGuest) {
         [muArray addObject:@(PLVSAMemberPopupButtonAuthSpeaker)];
     }
+    BOOL showAuthFirstSiteButton = linkMicing &&
+    [self hasManageFirstSiteAuth] &&
+    [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType == PLVChannelLinkMicMediaType_Video &&
+    (self.chatUser.userType == PLVRoomUserTypeGuest || self.chatUser.userType == PLVRoomUserTypeStudent || self.chatUser.userType == PLVRoomUserTypeSlice);
+    if (showAuthFirstSiteButton) {
+        [muArray addObject:@(PLVSAMemberPopupButtonAuthFirstSite)];
+    }
     
     if (!specialType) {
         [muArray addObjectsFromArray:@[@(PLVSAMemberPopupButtonKick), @(PLVSAMemberPopupButtonBanned)]];
@@ -125,6 +133,11 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
     NSDictionary *attributes = @{NSFontAttributeName: [UIFont systemFontOfSize:16.0]}; // 文本属性
     if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonAuthSpeaker)]) {
         NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonAuthSpeaker];
+        CGSize textSize = [text sizeWithAttributes:attributes];
+        width = MAX(textSize.width + 90, width);
+    }
+    if ([self.buttonTypeArray containsObject:@(PLVSAMemberPopupButtonAuthFirstSite)]) {
+        NSString *text = [self labelTextWithType:PLVSAMemberPopupButtonAuthFirstSite];
         CGSize textSize = [text sizeWithAttributes:attributes];
         width = MAX(textSize.width + 90, width);
     }
@@ -242,6 +255,9 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
         case PLVSAMemberPopupButtonAuthSpeaker:
             button.selected = self.chatUser.onlineUser.isRealMainSpeaker;
             break;
+        case PLVSAMemberPopupButtonAuthFirstSite:
+            button.selected = self.chatUser.onlineUser.currentFirstSite;
+            break;
         case PLVSAMemberPopupButtonBanned:
             button.selected = self.chatUser.banned;
             break;
@@ -271,6 +287,9 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
         } break;
         case PLVSAMemberPopupButtonAuthSpeaker: {
             imageName = @"plvsa_member_popup_speaker_icon";
+        } break;
+        case PLVSAMemberPopupButtonAuthFirstSite: {
+            return [self firstSiteIconImage];
         } break;
         case PLVSAMemberPopupButtonKick: {
             imageName = @"plvsa_member_popup_kick_icon";
@@ -305,6 +324,9 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
                 buttonTitle = PLVLocalizedString(@"授予主讲权限");
             }
         } break;
+        case PLVSAMemberPopupButtonAuthFirstSite: {
+            buttonTitle = self.chatUser.onlineUser.currentFirstSite ? PLVLocalizedString(@"取消主画面") : PLVLocalizedString(@"设为主画面");
+        } break;
         case PLVSAMemberPopupButtonKick: {
             buttonTitle = PLVLocalizedString(@"踢出");
         } break;
@@ -315,6 +337,19 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
             break;
     }
     return buttonTitle;
+}
+
+- (BOOL)hasManageFirstSiteAuth {
+    return [PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher;
+}
+
+- (UIImage *)firstSiteIconImage {
+    NSString *imageName = self.chatUser.onlineUser.currentFirstSite ? @"plvsa_member_first_site_auth_btn" : @"plvsa_member_first_site_default_btn";
+    UIImage *image = [PLVSAUtils imageForMemberResource:imageName];
+    if (!image) {
+        image = [PLVSAUtils imageForMemberResource:@"plvsa_member_popup_speaker_icon"];
+    }
+    return image;
 }
 
 + (UIBezierPath *)aboveBezierPathWithSize:(CGSize)size {
@@ -431,6 +466,11 @@ typedef NS_ENUM(NSInteger, PLVSAMemberPopupDirection) {
         case PLVSAMemberPopupButtonAuthSpeaker: {
             if (self.authUserBlock) {
                 self.authUserBlock(self.chatUser, !button.selected);
+            }
+        } break;
+        case PLVSAMemberPopupButtonAuthFirstSite: {
+            if (self.authFirstSiteBlock) {
+                self.authFirstSiteBlock(self.chatUser, !button.selected);
             }
         } break;
         case PLVSAMemberPopupButtonKick: {

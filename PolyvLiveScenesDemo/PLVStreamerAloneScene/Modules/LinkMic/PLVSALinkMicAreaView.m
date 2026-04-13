@@ -219,6 +219,9 @@ PLVSALinkMicWindowsViewDelegate
     [linkMicUserSheet setAuthSpeakerButtonClickBlock:^(PLVLinkMicOnlineUser * _Nonnull user, BOOL auth) {
         [weakSelf authUserSpeakerWithUser:user auth:auth];
     }];
+    [linkMicUserSheet setAuthFirstSiteButtonClickBlock:^(PLVLinkMicOnlineUser * _Nonnull user, BOOL auth) {
+        [user wantAuthUserFirstSite:auth];
+    }];
     [linkMicUserSheet showInView:[PLVSAUtils sharedUtils].homeVC.view];
     
     // 触发回调

@@ -369,6 +369,13 @@ PLVLiveSearchBarDelegate
     }
 }
 
+- (void)authUserFirstSiteWithUser:(PLVChatUser *)user auth:(BOOL)auth {
+    if (!user.onlineUser) {
+        return;
+    }
+    [user.onlineUser wantAuthUserFirstSite:auth];
+}
+
 #pragma mark - [ Delegate ]
 
 #pragma mark UITableViewDataSource
@@ -427,6 +434,9 @@ PLVLiveSearchBarDelegate
     };
     popup.authUserBlock = ^(PLVChatUser * _Nonnull user, BOOL auth) {
         [weakSelf authUserSpeakerWithUser:user auth:auth];
+    };
+    popup.authFirstSiteBlock = ^(PLVChatUser * _Nonnull user, BOOL auth) {
+        [weakSelf authUserFirstSiteWithUser:user auth:auth];
     };
     popup.didDismissBlock = ^{
         weakSelf.showingPopup = NO;

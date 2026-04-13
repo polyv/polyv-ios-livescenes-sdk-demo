@@ -35,6 +35,7 @@
 @property (nonatomic, strong) UIButton *cameraButton; // 摄像头按钮
 @property (nonatomic, strong) UIButton *micphoneButton; // 麦克风按钮
 @property (nonatomic, strong) UIButton *authSpeakerButton; // 授权主讲按钮
+@property (nonatomic, strong) UIButton *authFirstSiteButton; // 设为主画面按钮
 @property (nonatomic, strong) UIButton *fullScreenButton; // 全屏按钮
 @property (nonatomic, strong) UIButton *stopLinkMicButton; // 下麦按钮
 
@@ -60,6 +61,7 @@
         [self.contentView addSubview:self.cameraButton];
         [self.contentView addSubview:self.micphoneButton];
         [self.contentView addSubview:self.authSpeakerButton];
+        [self.contentView addSubview:self.authFirstSiteButton];
         [self.contentView addSubview:self.fullScreenButton];
         [self.contentView addSubview:self.stopLinkMicButton];
     }
@@ -119,6 +121,10 @@
     self.cameraButton.hidden = !showCameraButton;
     self.micphoneButton.hidden = !isTeacher;
     self.authSpeakerButton.hidden = !(self.hasManageSpeakerAuth && user.userType == PLVRoomUserTypeGuest);
+    BOOL showFirstSiteButton = [self hasManageFirstSiteAuth] &&
+        mediaType == PLVChannelLinkMicMediaType_Video &&
+        (user.userType == PLVRoomUserTypeGuest || user.userType == PLVRoomUserTypeStudent || user.userType == PLVRoomUserTypeSlice);
+    self.authFirstSiteButton.hidden = !showFirstSiteButton;
     BOOL isGuestManualJoinLinkMic = [PLVRoomDataManager sharedManager].roomData.channelGuestManualJoinLinkMic;
     BOOL hiddenLinkMicButton = specialType || !isTeacher;
     if (isGuestManualJoinLinkMic) {
@@ -258,6 +264,22 @@
         [_authSpeakerButton addTarget:self action:@selector(authSpeakerButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _authSpeakerButton;
+}
+
+- (UIButton *)authFirstSiteButton {
+    if (!_authFirstSiteButton) {
+        _authFirstSiteButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _authFirstSiteButton.titleLabel.font = [UIFont systemFontOfSize:14];
+        _authFirstSiteButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _authFirstSiteButton.titleLabel.numberOfLines = 0;
+        _authFirstSiteButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_authFirstSiteButton setTitle:PLVLocalizedString(@"设为主画面") forState:UIControlStateNormal];
+        [_authFirstSiteButton setTitle:PLVLocalizedString(@"取消主画面") forState:UIControlStateSelected];
+        [_authFirstSiteButton setImage:[self firstSiteImage:NO] forState:UIControlStateNormal];
+        [_authFirstSiteButton setImage:[self firstSiteImage:YES] forState:UIControlStateSelected];
+        [_authFirstSiteButton addTarget:self action:@selector(authFirstSiteButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _authFirstSiteButton;
 }
 
 - (UIButton *)fullScreenButton {
@@ -405,12 +427,27 @@
     return NO;
 }
 
+// 是否有管理主画面的权限
+- (BOOL)hasManageFirstSiteAuth {
+    return self.viewerType == PLVRoomUserTypeTeacher;
+}
+
+- (UIImage *)firstSiteImage:(BOOL)selected {
+    NSString *imageName = selected ? @"plvsa_member_first_site_auth_btn" : @"plvsa_member_first_site_default_btn";
+    UIImage *image = [PLVSAUtils imageForMemberResource:imageName];
+    if (!image) {
+        image = [PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_authspeaker"];
+    }
+    return image;
+}
+
 #pragma mark Data
 
 - (void)refreshButtonState {
     self.cameraButton.selected = self.user.currentCameraOpen;
     self.micphoneButton.selected = self.user.currentMicOpen;
     self.authSpeakerButton.selected = self.user.isRealMainSpeaker;
+    self.authFirstSiteButton.selected = self.user.currentFirstSite;
 }
 
 - (void)addUserInfoChangedBlock:(PLVLinkMicOnlineUser *)user{
@@ -432,6 +469,12 @@
     [user addCurrentSpeakerAuthChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
         plv_dispatch_main_async_safe(^{
             weakSelf.authSpeakerButton.selected = onlineUser.isRealMainSpeaker;
+        })
+    } blockKey:self];
+    
+    [user addCurrentFirstSiteChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+        plv_dispatch_main_async_safe(^{
+            weakSelf.authFirstSiteButton.selected = onlineUser.currentFirstSite;
         })
     } blockKey:self];
     
@@ -468,6 +511,9 @@
         if (!self.authSpeakerButton.isHidden) {
             [buttonArray addObject:self.authSpeakerButton];
         }
+        if (!self.authFirstSiteButton.isHidden) {
+            [buttonArray addObject:self.authFirstSiteButton];
+        }
         [buttonArray addObject:self.fullScreenButton];
         if (!self.stopLinkMicButton.isHidden) {
             [buttonArray addObject:self.stopLinkMicButton];
@@ -499,6 +545,15 @@
     }
     
     self.authSpeakerButtonClickBlock ? self.authSpeakerButtonClickBlock(self.user, !self.authSpeakerButton.selected) : nil;    
+}
+
+- (void)authFirstSiteButtonAction {
+    self.authFirstSiteButton.userInteractionEnabled = NO;
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        self.authFirstSiteButton.userInteractionEnabled = YES;
+    });
+    
+    self.authFirstSiteButtonClickBlock ? self.authFirstSiteButtonClickBlock(self.user, !self.authFirstSiteButton.selected) : nil;
 }
 
 - (void)fullScreenButtonAction {

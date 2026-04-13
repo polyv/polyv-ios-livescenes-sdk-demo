@@ -18,6 +18,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, copy) void(^bandUserBlock)(NSString *userId, NSString *userName, BOOL banned);
 @property (nonatomic, copy) void(^kickUserBlock)(NSString *userId, NSString *userName);
 @property (nonatomic, copy) void(^authUserBlock)(PLVChatUser *user, BOOL auth);
+@property (nonatomic, copy) void(^authFirstSiteBlock)(PLVChatUser *user, BOOL auth);
 
 - (instancetype)initWithChatUser:(PLVChatUser *)chatUser centerYPoint:(CGFloat)centerY;
 

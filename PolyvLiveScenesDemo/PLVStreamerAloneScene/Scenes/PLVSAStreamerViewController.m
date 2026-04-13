@@ -1263,6 +1263,13 @@ linkMicOnlineUserListRefresh:(NSArray <PLVLinkMicOnlineUser *>*)onlineUserArray 
     [onlineUser updateUserIsGuestTransferPermission:NO];
 }
 
+/// '主画面权限' 发生变化
+- (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter
+           linkMicOnlineUser:(PLVLinkMicOnlineUser *)onlineUser
+               authFirstSite:(BOOL)authFirstSite {
+    [self.linkMicAreaView updateFirstSiteCanvasViewWithUserId:onlineUser.linkMicUserId toFirstSite:onlineUser.currentFirstSite];
+}
+
 - (void)plvStreamerPresenter:(PLVStreamerPresenter *)presenter wantForceCloseOnlineUserLinkMic:(PLVLinkMicOnlineUser *)onlineUser lastFailed:(BOOL)lastFailed {
     if (!lastFailed) {
         [PLVSAUtils showAlertWithTitle:@"" Message:[NSString stringWithFormat:PLVLocalizedString(@"【%@】因网络不稳定，导致下麦失败，可采用强制下麦，用户会自动重新进入房间、也可再次发起正常下麦"), onlineUser.nickname] cancelActionTitle:PLVLocalizedString(@"正常下麦") cancelActionBlock:^{
