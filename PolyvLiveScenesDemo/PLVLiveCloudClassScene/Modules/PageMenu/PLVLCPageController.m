@@ -271,6 +271,27 @@ UIPageViewControllerDelegate
     });
 }
 
+- (void)selectPageAtIndex:(NSUInteger)index {
+    if (index == NSNotFound || index >= self.controllers.count) {
+        return;
+    }
+    if (index == self.selectedIndex) {
+        return;
+    }
+
+    if (self.selectedIndex != NSNotFound && self.selectedIndex < self.controllers.count) {
+        [self deselectAtIndex:self.selectedIndex];
+    }
+    [self selecteAtIndex:index];
+
+    NSIndexPath *indexPath = [NSIndexPath indexPathForItem:index inSection:0];
+    [self.titleCollectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
+
+    UIViewController *willShowVC = self.controllers[index];
+    [self notifyViewControllerWillAppear:willShowVC];
+    [self.pageController setViewControllers:@[willShowVC] direction:0 animated:NO completion:nil];
+}
+
 #pragma mark - UICollectionView Layout
 
 -(CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {

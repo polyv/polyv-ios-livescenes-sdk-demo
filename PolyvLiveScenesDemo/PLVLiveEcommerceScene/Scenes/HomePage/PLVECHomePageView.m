@@ -49,6 +49,7 @@ static NSString *const PLVECHomePageView_Data_SubtitleItemTitle = @"回放字幕
 static NSString *const PLVECHomePageView_Data_RealTimeSubtitleItemTitle = @"实时字幕";
 static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
 static NSString *const PLVECHomePageView_Data_MyRewardItemTitle = @"我的奖励";
+static NSString *const PLVECRefreshProductListEvent = @"REFRESH_PRODUCT_LIST";
 
 /// SwitchView类型
 typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
@@ -1175,7 +1176,7 @@ PLVECSubtitleConfigViewDelegate
         [self likesEvent:jsonDict];
     } else if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
         [self productMessageEvent:jsonDict];
-    } 
+    }
 }
 
 - (void)socketMananger_didReceiveEvent:(NSString *)event
@@ -1187,7 +1188,13 @@ PLVECSubtitleConfigViewDelegate
         return;
     }
     
-    if ([event isEqualToString:@"newsPush"]) {
+    if ([event isEqualToString:@"product"] &&
+        [subEvent isEqualToString:PLVECRefreshProductListEvent]) {
+        // 收到reshProductList , 需要更新已经显示的小卡片商品信息
+        // 如果当前未显示小卡片 不用更新商品秒杀活动详情
+        [self refreshSmallCardByProductId:[self currentShowingSmallCardProductId]];
+    }
+    else if ([event isEqualToString:@"newsPush"]) {
         [self newsPushEvent:jsonDict];
     } else if ([event isEqualToString:@"product"]) {
         if ([subEvent isEqualToString:@"PRODUCT_CLICK_TIMES"]) {
@@ -1197,6 +1204,52 @@ PLVECSubtitleConfigViewDelegate
             }
         }
     }
+}
+
+- (BOOL)isRefreshProductListEvent:(NSString *)event subEvent:(NSString *)subEvent jsonDict:(NSDictionary *)jsonDict {
+    if ([event isEqualToString:@"product"] &&
+        [subEvent isEqualToString:PLVECRefreshProductListEvent]) {
+        return YES;
+    }
+    
+    NSString *eventType = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+    return [eventType isEqualToString:PLVECRefreshProductListEvent];
+}
+
+- (NSUInteger)currentShowingSmallCardProductId {
+    BOOL smallCardShowing = (self.pushView.superview && self.pushView.alpha == 1);
+    if (!smallCardShowing || !self.pushView.model) {
+        return 0;
+    }
+    return self.pushView.model.productId;
+}
+
+- (void)refreshSmallCardByProductId:(NSUInteger)productId {
+    // 当前未展示小卡片时，不需要更新秒杀活动详情
+    BOOL smallCardShowing = (self.pushView.superview && self.pushView.alpha == 1);
+    if (!smallCardShowing || !self.pushView.model || self.pushView.model.productId != productId || productId == 0) {
+        return;
+    }
+    
+    NSUInteger channelId = (NSUInteger)[PLVRoomDataManager sharedManager].roomData.channelId.integerValue;
+    if (channelId == 0) {
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI loadCommodityDetail:channelId productId:productId completion:^(PLVCommodityModel * _Nullable commodity) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+            return;
+        }
+        if (!commodity || commodity.status != 1) {
+            [strongSelf.pushView hide];
+            return;
+        }
+        [strongSelf.pushView setModel:commodity];
+    } failure:^(NSError * _Nonnull error) {
+        
+    }];
 }
 
 - (void)bulletinEvent:(NSDictionary *)jsonDict {
@@ -1281,7 +1334,8 @@ PLVECSubtitleConfigViewDelegate
     } else if (status == 5) { // 收到 商品信息变动 消息时进行处理
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
-        if (model.productId && self.pushView.model.productId && self.pushView.model.productId == model.productId) {            [self.pushView setModel:model];
+        if (model.productId && self.pushView.model.productId && self.pushView.model.productId == model.productId) {
+            [self.pushView setModel:model];
         }
     }
 }
@@ -1447,6 +1501,46 @@ PLVECSubtitleConfigViewDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(homePageView_receiveSpeakTopMessageChatModel:showPinMsgView:)]) {
         [self.delegate homePageView_receiveSpeakTopMessageChatModel:model showPinMsgView:show];
+    }
+}
+
+- (void)chatroomView_didTapConversionMessage:(NSDictionary *)payload {
+    if (![PLVFdUtil checkDictionaryUseable:payload]) {
+        return;
+    }
+    
+    NSString *type = [PLV_SafeStringForDictKey(payload, @"type") lowercaseString];
+    NSString *rawType = [PLV_SafeStringForDictKey(payload, @"rawType") lowercaseString];
+    BOOL positionType = [type isEqualToString:@"position"] || [rawType containsString:@"position"] || [rawType containsString:@"job"];
+    BOOL financeType = [type isEqualToString:@"finance"] || [rawType containsString:@"finance"];
+    NSString *productId = PLV_SafeStringForDictKey(payload, @"productId");
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        return;
+    }
+    
+    NSMutableDictionary *detailData = [payload mutableCopy];
+    detailData[@"productId"] = productId;
+    NSString *positionName = PLV_SafeStringForDictKey(payload, @"positionName");
+    if ([PLVFdUtil checkStringUseable:positionName]) {
+        detailData[@"name"] = positionName;
+    }
+    
+    if (positionType) {
+        // 职位详情兼容字段（不同H5版本读取字段名可能不同）
+        detailData[@"positionId"] = productId;
+        detailData[@"id"] = productId;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:didShowJobDetail:)]) {
+            [self.delegate homePageView:self didShowJobDetail:[detailData copy]];
+        }
+    } else if (financeType) {
+        // 金融类型不打开详情，直接拉起商品列表
+        [self shoppingCardButtonAction:self.shoppingCartButton];
+    } else {
+        detailData[@"id"] = productId;
+        detailData[@"productType"] = type;
+        if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:didShowProductDetail:)]) {
+            [self.delegate homePageView:self didShowProductDetail:[detailData copy]];
+        }
     }
 }
 

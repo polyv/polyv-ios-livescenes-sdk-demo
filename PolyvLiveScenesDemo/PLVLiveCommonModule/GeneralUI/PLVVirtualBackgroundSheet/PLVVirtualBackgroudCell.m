@@ -65,15 +65,23 @@
     }
 }
 
+- (void)setSelected:(BOOL)selected {
+    [super setSelected:selected];
+    [self applySelectionStyle:selected];
+}
+
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
     [super setSelected:selected];
-    
-    if (selected){
+    [self applySelectionStyle:selected];
+}
+
+- (void)applySelectionStyle:(BOOL)selected {
+    if (selected) {
         self.imageView.layer.borderWidth = 2;
         self.imageView.layer.borderColor = [PLVColorUtil colorFromHexString:@"#0382FF"].CGColor;
-    }
-    else{
+    } else {
         self.imageView.layer.borderWidth = 0;
+        self.imageView.layer.borderColor = nil;
     }
 }
 

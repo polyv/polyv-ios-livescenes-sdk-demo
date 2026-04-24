@@ -339,6 +339,20 @@ PLVECChatroomMessageViewDelegate
     }
 }
 
+- (void)chatroomManager_signInSuccessWithNickname:(NSString *)nickname {
+    if (![PLVFdUtil checkStringUseable:nickname]) {
+        return;
+    }
+    NSString *displayName = nickname;
+    if ([PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled) {
+        NSString *firstChar = [nickname substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:nickname.length - 1 withString:@"*" startingAtIndex:0];
+        displayName = [firstChar stringByAppendingString:stars];
+    }
+    NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"%@ 签到成功"), displayName];
+    [self showWelcomeWithMessage:message];
+}
+
 - (void)showWelcomeWithMessage:(NSString *)welcomeMessage {
     if (!self.welcomView.hidden) {
         [self shutdownWelcomView];
@@ -426,6 +440,13 @@ PLVECChatroomMessageViewDelegate
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(chatroomView_alertLongContentMessage:)]) {
         [self.delegate chatroomView_alertLongContentMessage:model];
+    }
+}
+
+- (void)chatroomMessageView:(PLVECChatroomMessageView *)messageView didTapConversionMessage:(NSDictionary *)payload {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomView_didTapConversionMessage:)]) {
+        [self.delegate chatroomView_didTapConversionMessage:payload];
     }
 }
 

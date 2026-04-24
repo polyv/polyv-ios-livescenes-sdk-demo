@@ -523,7 +523,8 @@
         _allowRaiseHandButton.titleLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5" alpha:0.6];
         _allowRaiseHandButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
         _allowRaiseHandButton.titleLabel.textAlignment = NSTextAlignmentCenter;
-        NSString *normalTitle = PLVLocalizedString(@"申请连麦Btn");
+        BOOL isSmallClass = [PLVRoomDataManager sharedManager].roomData.menuInfo.isSmallClass;
+        NSString *normalTitle = isSmallClass ? PLVLocalizedString(@"观众主动上麦Btn") : PLVLocalizedString(@"申请连麦Btn");
         [_allowRaiseHandButton setTitle:normalTitle forState:UIControlStateNormal];
         [_allowRaiseHandButton setTitle:normalTitle forState:UIControlStateSelected];
         _allowRaiseHandButton.imageView.contentMode = UIViewContentModeScaleAspectFit;

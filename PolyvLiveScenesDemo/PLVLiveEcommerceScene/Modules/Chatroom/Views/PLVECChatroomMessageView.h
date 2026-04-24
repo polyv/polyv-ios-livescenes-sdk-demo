@@ -35,6 +35,10 @@ typedef NS_ENUM(NSInteger, PLVECChatroomMessageViewType) {
 /// @param model 需要展示完整文本的长文本消息数据模型
 - (void)chatroomMessageView:(PLVECChatroomMessageView *)messageView alertLongContentMessage:(PLVChatModel *)model;
 
+/// 点击购买/投递转化消息时执行
+/// @param payload 转化消息原始数据
+- (void)chatroomMessageView:(PLVECChatroomMessageView *)messageView didTapConversionMessage:(NSDictionary *)payload;
+
 @end
 /*
  直播带货场景，聊天室消息容器

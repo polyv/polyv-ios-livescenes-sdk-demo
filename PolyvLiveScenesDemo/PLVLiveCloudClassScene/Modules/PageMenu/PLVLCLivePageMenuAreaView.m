@@ -265,6 +265,17 @@ PLVRoomDataManagerProtocol
     [self.productVctrl rollbackProductPageContentView];
 }
 
+- (void)openCommodityMenuPage {
+    if (!self.productVctrl) {
+        return;
+    }
+    NSUInteger index = [self.pageController.controllers indexOfObject:self.productVctrl];
+    if (index == NSNotFound) {
+        return;
+    }
+    [self.pageController selectPageAtIndex:index];
+}
+
 - (void)leaveLiveRoom {
     if (self.chatVctrl) {
         [self.chatVctrl leaveLiveRoom];
@@ -603,6 +614,13 @@ PLVRoomDataManagerProtocol
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:welfareLotteryWidgetShowStatusChanged:)]) {
         [self.delegate plvLCLivePageMenuAreaView:self welfareLotteryWidgetShowStatusChanged:show];
+    }
+}
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC didTapConversionMessage:(NSDictionary *)payload {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:didTapConversionMessage:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self didTapConversionMessage:payload];
     }
 }
 

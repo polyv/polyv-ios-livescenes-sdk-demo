@@ -76,6 +76,8 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 
 - (void)rollbackProductPageContentView;
 
+- (void)openCommodityMenuPage;
+
 - (void)leaveLiveRoom;
 
 /// 更新章节菜单Tab
@@ -168,6 +170,9 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 /// @param show 当前的显示状态
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView welfareLotteryWidgetShowStatusChanged:(BOOL)show;
+
+/// 点击购买转化特效消息
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didTapConversionMessage:(NSDictionary *)payload;
 
 /// AI看需要主动传递视频信息
 /// @param pageMenuAreaView 菜单视图

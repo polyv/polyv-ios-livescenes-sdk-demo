@@ -77,6 +77,11 @@
 
 @property (nonatomic, strong) UIButton *explainStatusButton; // 讲解状态按钮
 @property (nonatomic, assign) BOOL productExplainSwitchEnabled; // 商品讲解开关（为空时使用）
+@property (nonatomic, strong) UIView *seckillBannerView; // 秒杀横条
+@property (nonatomic, strong) UIImageView *seckillIconImageView; // 秒杀图标
+@property (nonatomic, strong) UILabel *seckillCountdownLabel; // 秒杀倒计时
+@property (nonatomic, strong) NSTimer *seckillCountdownTimer; // 秒杀倒计时 timer
+@property (nonatomic, assign) long long currentSeckillEndTime; // 当前秒杀结束时间（ms）
 
 @end
 
@@ -86,8 +91,6 @@
     self = [super init];
     if (self) {
         self.needShow = NO;
-        // 默认开启讲解开关（可由外部根据业务调整）
-        self.productExplainSwitchEnabled = YES;
         [self setupUI];
         [self setProductHotEffectConfig];
     }
@@ -210,6 +213,9 @@
     [self.descBackgroundView addSubview:self.jumpTextButton];
     [self.descBackgroundView addSubview:self.coverImageView];
     [self.descBackgroundView addSubview:self.tagLabel];
+    [self.coverImageView addSubview:self.seckillBannerView];
+    [self.seckillBannerView addSubview:self.seckillIconImageView];
+    [self.seckillBannerView addSubview:self.seckillCountdownLabel];
     
     // 在backgroundView上按顺序添加：descBackgroundView -> gestureView -> showIdLabel -> closeButton
     [self.backgroundView addSubview:self.gestureView];
@@ -257,6 +263,9 @@
     self.gestureView.frame = self.backgroundView.bounds;
     
     self.coverImageView.frame = CGRectMake(2, 2, 100, 100);
+    self.seckillBannerView.frame = CGRectMake(0, 76, 100, 24);
+    self.seckillIconImageView.frame = CGRectMake(4, 5, 22, 12);
+    self.seckillCountdownLabel.frame = CGRectMake(CGRectGetMaxX(self.seckillIconImageView.frame) + 4, 0, 100 - CGRectGetMaxX(self.seckillIconImageView.frame) - 6, 24);
     self.descImageView.frame = CGRectMake(width - 62, descBackgroundViewHeight - 84, 62, 62);
     
     self.jumpTextButton.frame = CGRectMake(4, descBackgroundViewHeight - 28, width - 8, 24);
@@ -289,6 +298,7 @@
 - (void)hide {
     if (self.alpha == 0) { return; }
     __weak typeof(self) weakSelf = self;
+    [self stopSeckillCountdown];
     self.hotSaleTipView.hidden = YES;
     [UIView animateWithDuration:0.33 delay:0 options:UIViewAnimationOptionCurveEaseInOut animations:^{
         weakSelf.alpha = 0;
@@ -358,6 +368,102 @@
     self.tipTitleLabel.attributedText = attributedString;
 }
 
+- (void)updateSeckillBannerWithModel:(PLVCommodityModel *)model {
+    long long nowMs = [self currentServerAlignedTimestampMilliseconds];
+    PLVCommoditySeckillActivity *activity = [model currentSeckillActivityWithCurrentTimeMilliseconds:nowMs];
+    BOOL seckillInProgress = ([model currentSeckillStateWithCurrentTimeMilliseconds:nowMs] == PLVCommoditySeckillStateInProgress && activity != nil);
+    if (!seckillInProgress || self.coverImageView.hidden) {
+        [self stopSeckillCountdown];
+        self.seckillBannerView.hidden = YES;
+        return;
+    }
+    
+    self.currentSeckillEndTime = activity.endTime;
+    self.seckillBannerView.hidden = NO;
+    [self updateSeckillCountdownLabel];
+    [self startSeckillCountdown];
+}
+
+- (void)startSeckillCountdown {
+    if (self.seckillCountdownTimer) {
+        [self.seckillCountdownTimer setFireDate:NSDate.distantPast];
+        return;
+    }
+    
+    self.seckillCountdownTimer = [NSTimer scheduledTimerWithTimeInterval:1.0 target:[PLVFWeakProxy proxyWithTarget:self] selector:@selector(seckillCountdownTimerTick) userInfo:nil repeats:YES];
+    [[NSRunLoop currentRunLoop] addTimer:self.seckillCountdownTimer forMode:NSRunLoopCommonModes];
+}
+
+- (void)stopSeckillCountdown {
+    self.currentSeckillEndTime = 0;
+    if (self.seckillCountdownTimer) {
+        [self.seckillCountdownTimer invalidate];
+        self.seckillCountdownTimer = nil;
+    }
+}
+
+- (void)seckillCountdownTimerTick {
+    if (!self.model) {
+        [self stopSeckillCountdown];
+        return;
+    }
+    
+    long long now = [self currentServerAlignedTimestampMilliseconds];
+    if (self.currentSeckillEndTime <= now) {
+        // 秒杀结束后恢复普通商品展示
+        [self stopSeckillCountdown];
+        [self setModel:self.model];
+        return;
+    }
+    
+    [self updateSeckillCountdownLabel];
+}
+
+- (void)updateSeckillCountdownLabel {
+    long long now = [self currentServerAlignedTimestampMilliseconds];
+    long long remainMs = MAX(self.currentSeckillEndTime - now, 0);
+    NSInteger remainSeconds = (NSInteger)(remainMs / 1000);
+    
+    NSInteger days = remainSeconds / (24 * 3600);
+    NSInteger hours = (remainSeconds % (24 * 3600)) / 3600;
+    NSInteger minutes = (remainSeconds % 3600) / 60;
+    NSInteger seconds = remainSeconds % 60;
+    NSString *countdownText = nil;
+    if (days > 0) {
+        countdownText = [NSString stringWithFormat:@"%ld天%02ld:%02ld:%02ld", (long)days, (long)hours, (long)minutes, (long)seconds];
+    } else {
+        NSInteger totalHours = remainSeconds / 3600;
+        countdownText = [NSString stringWithFormat:@"%02ld:%02ld:%02ld", (long)totalHours, (long)minutes, (long)seconds];
+    }
+    self.seckillCountdownLabel.text = countdownText;
+}
+
+- (NSAttributedString *)seckillPriceAttributedTextWithSeckillPrice:(NSString *)seckillPrice originalPrice:(NSString *)originalPrice {
+    NSString *priceText = [NSString stringWithFormat:@"¥%@", seckillPrice ?: @""];
+    NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:priceText attributes:@{
+        NSFontAttributeName : [UIFont fontWithName:@"PingFangSC-Medium" size:14] ?: [UIFont boldSystemFontOfSize:14],
+        NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#FF5252"]
+    }];
+    
+    if ([PLVFdUtil checkStringUseable:originalPrice] && ![originalPrice isEqualToString:@"0"]) {
+        NSString *originText = [NSString stringWithFormat:@" ¥%@", originalPrice];
+        NSAttributedString *originAttr = [[NSAttributedString alloc] initWithString:originText attributes:@{
+            NSFontAttributeName : [UIFont fontWithName:@"PingFangSC-Regular" size:12] ?: [UIFont systemFontOfSize:12],
+            NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#999999"],
+            NSStrikethroughStyleAttributeName : @(NSUnderlineStyleSingle),
+            NSStrikethroughColorAttributeName : [PLVColorUtil colorFromHexString:@"#999999"]
+        }];
+        [attributedText appendAttributedString:originAttr];
+    }
+    return attributedText;
+}
+
+- (long long)currentServerAlignedTimestampMilliseconds {
+    long long localNow = (long long)llround([[NSDate date] timeIntervalSince1970] * 1000);
+    long long offset = [PLVRoomDataManager sharedManager].roomData.serverTimeOffsetMs;
+    return localNow + offset;
+}
+
 - (void)updateExplainStatusButtonTitleAndVisibility {
     if (!self.model) {
         self.explainStatusButton.hidden = YES;
@@ -374,8 +480,13 @@
         }
     }
     if (![PLVFdUtil checkStringUseable:title]) {
-        // status 为空，根据讲解开关判断
-        title = self.productExplainSwitchEnabled ? PLVLocalizedString(@"待讲解") : PLVLocalizedString(@"未开启");
+        // status 为空时，开关关闭则回退显示商品序号
+        if (!self.productExplainSwitchEnabled) {
+            self.explainStatusButton.hidden = YES;
+            self.showIdLabel.hidden = NO;
+            return;
+        }
+        title = PLVLocalizedString(@"待讲解");
     }
     [self.explainStatusButton setTitle:title forState:UIControlStateNormal];
     self.explainStatusButton.hidden = NO;
@@ -410,6 +521,7 @@
         [self.timer invalidate];
         self.timer = nil;
     }
+    [self stopSeckillCountdown];
     
     if (_displayLink) {
         [self.displayLink invalidate];
@@ -547,6 +659,38 @@
     return _tipTitleLabel;
 }
 
+- (UIView *)seckillBannerView {
+    if (!_seckillBannerView) {
+        _seckillBannerView = [[UIView alloc] init];
+        _seckillBannerView.backgroundColor = [PLVColorUtil colorFromHexString:@"#FF4B4B"];
+        _seckillBannerView.hidden = YES;
+    }
+    return _seckillBannerView;
+}
+
+- (UIImageView *)seckillIconImageView {
+    if (!_seckillIconImageView) {
+        _seckillIconImageView = [[UIImageView alloc] init];
+        _seckillIconImageView.contentMode = UIViewContentModeScaleAspectFit;
+        _seckillIconImageView.image = [self imageForCommodityResource:@"plv_commodity_seckill_icon"];
+    }
+    return _seckillIconImageView;
+}
+
+- (UILabel *)seckillCountdownLabel {
+    if (!_seckillCountdownLabel) {
+        _seckillCountdownLabel = [[UILabel alloc] init];
+        _seckillCountdownLabel.font = [UIFont boldSystemFontOfSize:11];
+        _seckillCountdownLabel.textColor = [PLVColorUtil colorFromHexString:@"#FFFFFF"];
+        _seckillCountdownLabel.textAlignment = NSTextAlignmentLeft;
+        _seckillCountdownLabel.adjustsFontSizeToFitWidth = YES;
+        _seckillCountdownLabel.minimumScaleFactor = 0.6;
+        _seckillCountdownLabel.numberOfLines = 1;
+        _seckillCountdownLabel.lineBreakMode = NSLineBreakByClipping;
+    }
+    return _seckillCountdownLabel;
+}
+
 - (CAGradientLayer *)tipShadowLayer{
     if (!_tipShadowLayer) {
         _tipShadowLayer = [CAGradientLayer layer];
@@ -571,6 +715,11 @@
 
 - (BOOL)productHotEffectEnabled {
     return  [PLVRoomDataManager sharedManager].roomData.menuInfo.productHotEffectEnabled;
+}
+
+- (BOOL)productExplainSwitchEnabled {
+    // 商品讲解入口开关以后台配置为准，避免本地默认值导致错误展示“待讲解”
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.productExplainEnabled;
 }
 
 - (UIView *)gestureView {
@@ -598,7 +747,10 @@
     self.clickTimes = 0;
     self.unincreaseTimes = 0;
     self.clickProductId = model.productId;
+    [self stopSeckillCountdown];
+    self.seckillBannerView.hidden = YES;
     self.productDescLabel.text = model.productDesc;
+    BOOL seckillInProgress = NO;
 
     // 实际价格显示逻辑
     NSString *realPriceStr;
@@ -619,7 +771,11 @@
         self.currentProductTips = self.jobProductTips;
         self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_delivering_icon"];
     } else { // 普通产品
-        realPriceStr = [NSString stringWithFormat:@"¥ %@", model.realPrice];
+        long long nowMs = [self currentServerAlignedTimestampMilliseconds];
+        PLVCommoditySeckillActivity *seckillActivity = [model currentSeckillActivityWithCurrentTimeMilliseconds:nowMs];
+        seckillInProgress = ([model currentSeckillStateWithCurrentTimeMilliseconds:nowMs] == PLVCommoditySeckillStateInProgress && seckillActivity != nil);
+        NSString *displayPrice = seckillInProgress ? seckillActivity.seckillPrice : model.realPrice;
+        realPriceStr = [NSString stringWithFormat:@"¥ %@", displayPrice];
         if (!model.openPriceEnable) {
             // 使用富文本显示 "¥ ?? 待开价"
             NSMutableAttributedString *priceAttributedText = [[NSMutableAttributedString alloc] init];
@@ -645,17 +801,21 @@
             [priceAttributedText appendAttributedString:waitPriceAttr];
             
             self.productDescLabel.attributedText = priceAttributedText;
-        } else if ([model.priceType isEqualToString:@"CUSTOM"]) {
+        } else if ([model.priceType isEqualToString:@"CUSTOM"] && !seckillInProgress) {
             realPriceStr = model.customPrice;
             self.productDescLabel.text = realPriceStr;
-        } else if ([model.realPrice isEqualToString:@"0"]) {
+        } else if (!seckillInProgress && [model.realPrice isEqualToString:@"0"]) {
             realPriceStr = PLVLocalizedString(@"免费");
         }
         
         self.currentProductTips = self.normalProductTips;
         if (model.openPriceEnable) {
-            self.productDescLabel.attributedText = nil; // 清除之前的富文本设置，使用普通text
-            self.productDescLabel.text = realPriceStr;
+            if (seckillInProgress) {
+                self.productDescLabel.attributedText = [self seckillPriceAttributedTextWithSeckillPrice:displayPrice originalPrice:model.price];
+            } else {
+                self.productDescLabel.attributedText = nil; // 清除之前的富文本设置，使用普通text
+                self.productDescLabel.text = realPriceStr;
+            }
         }
         
         self.tipImageView.image = [self imageForCommodityResource:@"plv_commodity_hotsale_icon"];
@@ -674,10 +834,11 @@
     
     self.nameLabel.text = model.name;
     self.showIdLabel.text = [NSString stringWithFormat:@"%ld",model.showId];
+    self.showIdLabel.backgroundColor = self.coverImageView.hidden ? [UIColor clearColor] : [PLVColorUtil colorFromHexString:@"#000000" alpha:0.6];
     
     self.tagLabel.hidden = YES;
     NSArray *featureArray = self.model.featureArray;
-    if ([PLVFdUtil checkArrayUseable:featureArray]) {
+    if (!seckillInProgress && [PLVFdUtil checkArrayUseable:featureArray]) {
         NSString *feature = featureArray[0];
         if ([PLVFdUtil checkStringUseable:feature]) {
             self.tagLabel.hidden = NO;
@@ -685,13 +846,11 @@
         }
         
         if (self.coverImageView.hidden) {
-            self.showIdLabel.backgroundColor = [UIColor clearColor];
             self.tagLabel.backgroundColor = [UIColor clearColor];
             self.tagLabel.textColor = [PLVColorUtil colorFromHexString:@"#FF5252"];
             self.tagLabel.layer.borderColor = [PLVColorUtil colorFromHexString:@"#FF5252" alpha:0.6].CGColor;
             self.tagLabel.layer.borderWidth = 0.5;
         } else {
-            self.showIdLabel.backgroundColor = [PLVColorUtil colorFromHexString:@"#000000" alpha:0.6];
             self.tagLabel.backgroundColor = [PLVColorUtil colorFromHexString:@"#FF5252"];
             self.tagLabel.textColor = [PLVColorUtil colorFromHexString:@"#FFFFFF"];
             self.tagLabel.layer.borderColor = [PLVColorUtil colorFromHexString:@"#FF5252" alpha:0.6].CGColor;
@@ -707,6 +866,7 @@
     
     self.jumpTextButton.enabled = [self canEnableProductClickButton];
     self.jumpTextButton.backgroundColor = [self canEnableProductClickButton] ? [PLVColorUtil colorFromHexString:@"#FF5252"] : [PLVColorUtil colorFromHexString:@"#FAA9AA"];
+    [self updateSeckillBannerWithModel:model];
     
     // 更新讲解状态按钮标题与显示
     [self updateExplainStatusButtonTitleAndVisibility];

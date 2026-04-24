@@ -97,6 +97,7 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
         
         // 初始化续播配置
         _playbackResumeConfig = [PLVPlaybackResumeConfig defaultConfig];
+        _serverTimeOffsetMs = 0;
     }
     return self;
 }
@@ -190,6 +191,8 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
     __weak typeof(self)weakSelf = self;
     [PLVLiveVideoAPI getChannelMenuInfos:self.channelId completion:^(PLVLiveVideoChannelMenuInfo *channelMenuInfo) {
         loading = NO;
+        long long serverTimestampMs = [PLVLiveVideoAPI latestChannelDetailServerTimestampMsForChannelId:weakSelf.channelId];
+        [weakSelf updateServerTimeOffsetWithServerTimestampMs:serverTimestampMs];
         [weakSelf updateMenuInfo:channelMenuInfo];
         if (completion) { completion(channelMenuInfo); }
     } failure:^(NSError *error) {
@@ -441,6 +444,17 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
         apiChannelType = PLVChannelTypeAlone;
     }
     self.channelType = apiChannelType;
+}
+
+/// 根据服务端时间戳刷新本地偏移
+- (void)updateServerTimeOffsetWithServerTimestampMs:(long long)serverTimestampMs {
+    if (serverTimestampMs <= 0) {
+        // 降级：服务端时间缺失时回退为本地时间基准
+        self.serverTimeOffsetMs = 0;
+        return;
+    }
+    long long localTimestampMs = [PLVFdUtil curTimeInterval];
+    self.serverTimeOffsetMs = serverTimestampMs - localTimestampMs;
 }
 
 - (NSString *)getSafeString:(NSString *)name{

@@ -14,6 +14,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)showWelcomeWithNickName:(NSString *)nickName;
 
+- (void)showWelcomeWithMessage:(NSString *)message;
+
 @end
 
 NS_ASSUME_NONNULL_END

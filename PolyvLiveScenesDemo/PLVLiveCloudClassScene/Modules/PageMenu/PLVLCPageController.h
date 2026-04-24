@@ -17,6 +17,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)setTitles:(NSArray<NSString *> *)titles controllers:(NSArray<UIViewController *> *)controllers;
 
+- (void)selectPageAtIndex:(NSUInteger)index;
+
 - (void)scrollEnable:(BOOL)enable;
 
 @end

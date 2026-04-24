@@ -21,6 +21,7 @@
 #import "PLVLCRewardMessageCell.h"
 #import "PLVLCFileMessageCell.h"
 #import "PLVLCCustomIntroductionMessageCell.h"
+#import "PLVLCProductConversionEffectCell.h"
 #import "PLVAlbumNavigationController.h"
 #import "PLVGiveRewardPresenter.h"
 #import "PLVRewardGoodsModel.h"
@@ -235,7 +236,7 @@ UITableViewDataSource
         _tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStylePlain];
         _tableView.delegate = self;
         _tableView.dataSource = self;
-        _tableView.allowsSelection = NO;
+        _tableView.allowsSelection = YES;
         _tableView.showsHorizontalScrollIndicator = NO;
         _tableView.backgroundColor = [UIColor clearColor];
         _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
@@ -795,6 +796,23 @@ UITableViewDataSource
     }
 }
 
+- (void)chatroomManager_signInSuccessWithNickname:(NSString *)nickname {
+    if (![PLVFdUtil checkStringUseable:nickname]) {
+        return;
+    }
+
+    NSString *displayName = nickname;
+    if ([PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled) {
+        NSString *firstChar = [nickname substringToIndex:1];
+        NSString *stars = [@"" stringByPaddingToLength:nickname.length - 1 withString:@"*" startingAtIndex:0];
+        displayName = [firstChar stringByAppendingString:stars];
+    }
+
+    NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"%@ 签到成功"), displayName];
+    [self arrangeTopMarqueeViewFrame];
+    [self.welcomeView showWelcomeWithMessage:message];
+}
+
 - (void)chatroomManager_managerMessage:(NSString * )content {
     [self.notifyMarqueeView showNotifyhMessage:content];
     [self arrangeTopMarqueeViewFrame];
@@ -919,7 +937,20 @@ UITableViewDataSource
     BOOL quoteReplyEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.quoteReplyEnabled;
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
-    if ([PLVLCSpeakMessageCell isModelValid:model]) {
+    if ([PLVLCProductConversionEffectCell isModelValid:model]) {
+        static NSString *conversionCellIdentify = @"PLVLCProductConversionEffectCell";
+        PLVLCProductConversionEffectCell *cell = (PLVLCProductConversionEffectCell *)[tableView dequeueReusableCellWithIdentifier:conversionCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCProductConversionEffectCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:conversionCellIdentify];
+        }
+        CGFloat commonPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0;
+        CGFloat conversionLeftInset = commonPadding; // 与头像起点对齐（非气泡起点）
+        [cell updateWithModel:model
+                    cellWidth:self.tableView.frame.size.width
+                    leftInset:conversionLeftInset
+                   rightInset:commonPadding];
+        return cell;
+    } else if ([PLVLCSpeakMessageCell isModelValid:model]) {
         static NSString *speakMessageCellIdentify = @"PLVLCSpeakMessageCell";
         PLVLCSpeakMessageCell *cell = (PLVLCSpeakMessageCell *)[tableView dequeueReusableCellWithIdentifier:speakMessageCellIdentify];
         if (!cell) {
@@ -1038,6 +1069,23 @@ UITableViewDataSource
 
 #pragma mark - UITableView Delegate
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:NO];
+    if (indexPath.row >= [self dataCount]) {
+        return;
+    }
+
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
+    NSDictionary *payload = [[PLVLCChatroomViewModel sharedViewModel] conversionPayloadWithChatModel:model];
+    if (![PLVFdUtil checkDictionaryUseable:payload]) {
+        return;
+    }
+
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:didTapConversionMessage:)]) {
+        [self.delegate plvLCChatViewController:self didTapConversionMessage:payload];
+    }
+}
+
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.row >= [self dataCount]) {
         return 0;
@@ -1050,7 +1098,15 @@ UITableViewDataSource
     CGFloat fileMessageCellWidth = self.likeButtonView.hidden ? self.tableView.frame.size.width : self.tableView.frame.size.width - PLVLCLikeButtonViewWidth / 2.0 - centerPadding - 8;// 气泡保证不遮挡点赞按钮（有点赞按钮时）
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
-    if ([PLVLCSpeakMessageCell isModelValid:model]) {
+    if ([PLVLCProductConversionEffectCell isModelValid:model]) {
+        CGFloat commonPadding = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 20.0 : 16.0;
+        CGFloat conversionLeftInset = commonPadding; // 与头像起点对齐（非气泡起点）
+        model.cellHeightForV = [PLVLCProductConversionEffectCell cellHeightWithModel:model
+                                                                            cellWidth:self.tableView.frame.size.width
+                                                                            leftInset:conversionLeftInset
+                                                                           rightInset:commonPadding];
+        cellHeight = model.cellHeightForV;
+    } else if ([PLVLCSpeakMessageCell isModelValid:model]) {
         if (model.cellHeightForV == 0.0) {
             model.cellHeightForV = [PLVLCSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
         }

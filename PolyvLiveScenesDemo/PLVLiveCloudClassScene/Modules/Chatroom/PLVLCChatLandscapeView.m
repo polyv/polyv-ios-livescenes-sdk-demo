@@ -19,10 +19,12 @@
 #import "PLVLCLandscapeQuoteCell.h"
 #import "PLVLCLandscapeFileCell.h"
 #import "PLVLCLandscapeCustomIntroductionMessageCell.h"
+#import "PLVLCProductConversionEffectCell.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import "PLVLiveToast.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVColorUtil.h>
+#import <PLVFoundationSDK/PLVFoundationSDK.h>
 #import <MJRefresh/MJRefresh.h>
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 
@@ -137,7 +139,7 @@ UITableViewDataSource
         _tableView.delegate = self;
         _tableView.dataSource = self;
         _tableView.scrollEnabled = NO;
-        _tableView.allowsSelection = NO;
+        _tableView.allowsSelection = YES;
         _tableView.showsVerticalScrollIndicator = NO;
         _tableView.showsHorizontalScrollIndicator = NO;
         _tableView.backgroundColor = [UIColor clearColor];
@@ -520,7 +522,15 @@ UITableViewDataSource
     BOOL quoteReplyEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.quoteReplyEnabled;
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     
-    if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
+    if ([PLVLCProductConversionEffectCell isModelValid:model]) {
+        static NSString *conversionCellIdentify = @"PLVLCProductConversionEffectCellLandscape";
+        PLVLCProductConversionEffectCell *cell = (PLVLCProductConversionEffectCell *)[tableView dequeueReusableCellWithIdentifier:conversionCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCProductConversionEffectCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:conversionCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        return cell;
+    } else if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
         static NSString *speakMessageCellIdentify = @"PLVLCLandscapeSpeakCell";
         PLVLCLandscapeSpeakCell *cell = (PLVLCLandscapeSpeakCell *)[tableView dequeueReusableCellWithIdentifier:speakMessageCellIdentify];
         if (!cell) {
@@ -625,6 +635,22 @@ UITableViewDataSource
 
 #pragma mark - UITableView Delegate
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:NO];
+    if (indexPath.row >= [self dataCount]) {
+        return;
+    }
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
+    NSDictionary *payload = [[PLVLCChatroomViewModel sharedViewModel] conversionPayloadWithChatModel:model];
+    if (![PLVFdUtil checkDictionaryUseable:payload]) {
+        return;
+    }
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatLandscapeView:didTapConversionMessage:)]) {
+        [self.delegate chatLandscapeView:self didTapConversionMessage:payload];
+    }
+}
+
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     if (indexPath.row >= [self dataCount]) {
         return 0;
@@ -634,7 +660,12 @@ UITableViewDataSource
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
+    if ([PLVLCProductConversionEffectCell isModelValid:model]) {
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCProductConversionEffectCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
+    } else if ([PLVLCLandscapeSpeakCell isModelValid:model]) {
         if (model.cellHeightForH == 0.0) {
             model.cellHeightForH = [PLVLCLandscapeSpeakCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         }

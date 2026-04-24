@@ -401,6 +401,16 @@ typedef NS_ENUM(NSInteger, PLVStreamerPresenterErrorCode) {
 /// @param mode 抠像模式
 /// @param matBgImage 抠像后填充背景
 - (void)setAIMattingMode:(PLVBLinkMicAIMattingMode)mode image:(nullable UIImage *)matBgImage;
+/// 设置绿幕抠像开关
+- (void)setAIMattingGreenScreenEnabled:(BOOL)enabled;
+/// 设置绿幕幕布颜色
+- (void)setAIMattingKeyColorWithR:(float)keyColorR g:(float)keyColorG b:(float)keyColorB;
+/// 设置绿幕相似度
+- (void)setAIMattingSimilarity:(float)similarity;
+/// 设置绿幕边缘平滑度
+- (void)setAIMattingSmoothness:(float)smoothness;
+/// 设置绿幕溢色抑制
+- (void)setAIMattingSpill:(float)spill;
 
 #pragma mark CDN流管理
 /// 开始推流

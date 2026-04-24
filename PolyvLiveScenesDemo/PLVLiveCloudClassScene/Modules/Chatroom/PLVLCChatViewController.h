@@ -41,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 福利抽奖挂件显示状态改变的的回调
 - (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC welfareLotteryWidgetShowStatusChanged:(BOOL)show;
 
+/// 点击购买转化特效消息
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC didTapConversionMessage:(NSDictionary *)payload;
+
 @end
 
 extern NSString *PLVLCChatroomOpenBulletinNotification;

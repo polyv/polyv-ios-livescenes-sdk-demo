@@ -53,6 +53,7 @@
 static NSString *const kPLVLSSettingMixLayoutKey = @"kPLVLSSettingMixLayoutKey";
 static NSString *const KPLVLSNoiseCancellationLevelKey = @"KPLVLSNoiseCancellationLevelKey";
 static NSString *const KPLVLSExternalDeviceEnabledKey = @"KPLVLSExternalDeviceEnabledKey";
+static NSString *const KPLVLSAudienceRaiseHandStateKey = @"KPLVAudienceRaiseHandStateKey";
 static NSString *const PLVLSBroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
 
 @interface PLVLSStreamerViewController ()<
@@ -109,6 +110,7 @@ PLVVirtualBackgroudSheetDelegate
 @property (nonatomic, strong) UIView *networkDisconnectMaskView; // 网络断开遮罩
 @property (nonatomic, strong) UIImageView *networkDisconnectImageView; // 网络断开提示图片
 @property (nonatomic, strong) UILabel *networkDisconnectLabel; // 网络断开提示
+@property (nonatomic, weak) UIView *currentSamplingPreviewView; // 当前取色采样源（跟随主画面切换）
 
 #pragma mark 数据
 @property (nonatomic, assign, readonly) PLVRoomUserType viewerType;
@@ -163,6 +165,7 @@ PLVVirtualBackgroudSheetDelegate
     [self setupUI];
     [self setupModule];
     [self setupNotification];
+    [self syncSmallClassAllowRaiseHandStateOnInit];
     [self preapareStartClass];
     if ([PLVRoomDataManager sharedManager].roomData .linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && [PLVRoomDataManager sharedManager].roomData.interactNumLimit > 0) {
         self.linkMicUpdateTipsView.hidden = NO;
@@ -276,6 +279,7 @@ PLVVirtualBackgroudSheetDelegate
     if (roomData.menuInfo) {
         [self roomDataManager_didMenuInfoChanged:roomData.menuInfo];
     }
+    self.currentSamplingPreviewView = self.linkMicAreaView;
 }
 
 - (void)setupModule{
@@ -982,6 +986,7 @@ PLVVirtualBackgroudSheetDelegate
     
     if (!self.streamerPresenter.pushStreamStarted) {
         self.allowRaiseHand = start;
+        [self saveSmallClassAllowRaiseHandState:start];
         [self.statusAreaView changeLinkmicButtonSelectedState:start];
         return;
     }
@@ -995,8 +1000,9 @@ PLVVirtualBackgroudSheetDelegate
         return;
     }
     
-    NSString * suceessTitle = start ? PLVLocalizedString(@"已开启观众连麦") : PLVLocalizedString(@"已关闭观众连麦");
-    NSString * failTitle = start ? PLVLocalizedString(@"开启观众连麦失败，请稍后再试") : PLVLocalizedString(@"关闭观众连麦失败，请稍后再试");
+    BOOL isSmallClass = [self isSmallClassScene];
+    NSString * suceessTitle = start ? (isSmallClass ? PLVLocalizedString(@"已开启观众主动上麦") : PLVLocalizedString(@"已开启观众连麦")) : (isSmallClass ? PLVLocalizedString(@"已关闭观众主动上麦") : PLVLocalizedString(@"已关闭观众连麦"));
+    NSString * failTitle = start ? (isSmallClass ? PLVLocalizedString(@"开启观众主动上麦失败，请稍后再试") : PLVLocalizedString(@"开启观众连麦失败，请稍后再试")) : (isSmallClass ? PLVLocalizedString(@"关闭观众主动上麦失败，请稍后再试") : PLVLocalizedString(@"关闭观众连麦失败，请稍后再试"));
     __weak typeof(self) weakSelf = self;
     
     [self.streamerPresenter allowRaiseHand:start emitCompleteBlock:^(BOOL emitSuccess) {
@@ -1006,11 +1012,62 @@ PLVVirtualBackgroudSheetDelegate
                 [PLVLSUtils showToastWithMessage:suceessTitle inView:weakSelf.view];
                 [weakSelf.statusAreaView changeLinkmicButtonSelectedState:start];
                 weakSelf.allowRaiseHand = start;
+                [weakSelf saveSmallClassAllowRaiseHandState:start];
             }else{
                 [PLVLSUtils showToastWithMessage:failTitle inView:weakSelf.view];
             }
         })
     }];
+}
+
+- (BOOL)isSmallClassScene {
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.isSmallClass;
+}
+
+- (void)syncSmallClassAllowRaiseHandStateOnInit {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    BOOL supportNewStrategy = roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0;
+    if (!supportNewStrategy || ![self isSmallClassScene]) {
+        return;
+    }
+    self.allowRaiseHand = [self getSmallClassAllowRaiseHandState];
+    [self.statusAreaView changeLinkmicButtonSelectedState:self.allowRaiseHand];
+}
+
+- (void)saveSmallClassAllowRaiseHandState:(BOOL)allowRaiseHand {
+    if (![self isSmallClassScene]) {
+        return;
+    }
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    if (![PLVFdUtil checkStringUseable:channelId]) {
+        return;
+    }
+    NSMutableDictionary *stateDict = [[[NSUserDefaults standardUserDefaults] objectForKey:KPLVLSAudienceRaiseHandStateKey] mutableCopy];
+    if (![PLVFdUtil checkDictionaryUseable:stateDict]) {
+        stateDict = [[NSMutableDictionary alloc] init];
+    }
+    stateDict[channelId] = @(allowRaiseHand);
+    [[NSUserDefaults standardUserDefaults] setObject:stateDict forKey:KPLVLSAudienceRaiseHandStateKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (BOOL)getSmallClassAllowRaiseHandState {
+    if (![self isSmallClassScene]) {
+        return NO;
+    }
+    NSString *channelId = [PLVRoomDataManager sharedManager].roomData.channelId;
+    if (![PLVFdUtil checkStringUseable:channelId]) {
+        return NO;
+    }
+    NSDictionary *stateDict = [[NSUserDefaults standardUserDefaults] objectForKey:KPLVLSAudienceRaiseHandStateKey];
+    if (![PLVFdUtil checkDictionaryUseable:stateDict]) {
+        return NO;
+    }
+    id stateValue = stateDict[channelId];
+    if ([stateValue isKindOfClass:[NSNumber class]]) {
+        return [stateValue boolValue];
+    }
+    return NO;
 }
 
 - (PLVLSStatusBarControls)statusAreaView_selectControlsInDemand{
@@ -1156,6 +1213,7 @@ PLVVirtualBackgroudSheetDelegate
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView pptView:(UIView *)pptView changePPTPositionToMain:(BOOL)pptToMain syncRemoteUser:(BOOL)needSync {
     if (pptToMain) {
         [self.linkMicAreaView rollbackFirstSiteWindowCellAndExternalView];
+        self.currentSamplingPreviewView = self.linkMicAreaView;
     } else {
         [self.linkMicAreaView firstSiteWindowCellExchangeWithExternal:pptView];
     }
@@ -1635,10 +1693,12 @@ PLVVirtualBackgroudSheetDelegate
         }
     }
     [self.documentAreaView displayExternalView:windowCell];
+    self.currentSamplingPreviewView = windowCell;
 }
 
 - (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView rollbackExternalView:(UIView *)externalView {
     [self.documentAreaView displayExternalView:externalView];
+    self.currentSamplingPreviewView = self.linkMicAreaView;
 }
 
 - (void)plvLSLinkMicAreaView:(PLVLSLinkMicAreaView *)linkMicAreaView acceptLinkMicInvitation:(BOOL)accept timeoutCancel:(BOOL)timeoutCancel {
@@ -1892,6 +1952,63 @@ PLVVirtualBackgroudSheetDelegate
         default:
             break;
     }
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeGreenScreenEnabled:(BOOL)enabled {
+    [self.streamerPresenter setAIMattingGreenScreenEnabled:enabled];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeKeyColorWithR:(float)keyColorR g:(float)keyColorG b:(float)keyColorB {
+    [self.streamerPresenter setAIMattingKeyColorWithR:keyColorR g:keyColorG b:keyColorB];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeSimilarity:(float)similarity {
+    [self.streamerPresenter setAIMattingSimilarity:similarity];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeSmoothness:(float)smoothness {
+    [self.streamerPresenter setAIMattingSmoothness:smoothness];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeSpill:(float)spill {
+    [self.streamerPresenter setAIMattingSpill:spill];
+}
+
+- (CGRect)previewSamplingFrameInVirtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet {
+    UIView *samplingView = [self samplingPreviewSourceView];
+    if (!samplingView || !samplingView.superview) {
+        return CGRectZero;
+    }
+    return [samplingView convertRect:samplingView.bounds toView:self.view];
+}
+
+- (UIImage *)previewSamplingSnapshotInVirtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet {
+    UIView *samplingView = [self samplingPreviewSourceView];
+    if (!samplingView || samplingView.hidden || samplingView.bounds.size.width < 1 || samplingView.bounds.size.height < 1) {
+        return nil;
+    }
+    UIGraphicsBeginImageContextWithOptions(samplingView.bounds.size, NO, 0);
+    BOOL success = [samplingView drawViewHierarchyInRect:samplingView.bounds afterScreenUpdates:YES];
+    if (!success) {
+        CGContextRef context = UIGraphicsGetCurrentContext();
+        [samplingView.layer renderInContext:context];
+    }
+    UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return snapshot;
+}
+
+- (UIView *)samplingPreviewSourceView {
+    UIView *samplingView = self.currentSamplingPreviewView;
+    if (samplingView && samplingView.superview && !samplingView.hidden &&
+        samplingView.bounds.size.width >= 1 && samplingView.bounds.size.height >= 1) {
+        return samplingView;
+    }
+    if (self.linkMicAreaView && self.linkMicAreaView.superview && !self.linkMicAreaView.hidden &&
+        self.linkMicAreaView.bounds.size.width >= 1 && self.linkMicAreaView.bounds.size.height >= 1) {
+        return self.linkMicAreaView;
+    }
+    return nil;
 }
 
 @end

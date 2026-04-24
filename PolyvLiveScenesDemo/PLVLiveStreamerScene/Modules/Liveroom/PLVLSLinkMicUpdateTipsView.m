@@ -11,6 +11,7 @@
 // 工具
 #import "PLVLSUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 
 // 框架
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
@@ -103,7 +104,8 @@
         _tipLabel = [[UILabel alloc] init];
         _tipLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12];
         _tipLabel.textColor = [PLVColorUtil colorFromHexString:@"#999999"];
-        _tipLabel.text = PLVLocalizedString(@"点击此功能按钮可开启观众连麦");
+        BOOL isSmallClass = [PLVRoomDataManager sharedManager].roomData.menuInfo.isSmallClass;
+        _tipLabel.text = isSmallClass ? PLVLocalizedString(@"点击此功能按钮可开启观众主动上麦") : PLVLocalizedString(@"点击此功能按钮可开启观众连麦");
         _tipLabel.textAlignment = NSTextAlignmentCenter;
     }
     return _tipLabel;

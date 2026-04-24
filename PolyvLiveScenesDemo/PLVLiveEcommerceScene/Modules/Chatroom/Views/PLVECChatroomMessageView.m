@@ -11,6 +11,7 @@
 #import "PLVECChatroomPlaybackViewModel.h"
 #import "PLVECChatroomAQMessageView.h"
 #import "PLVECChatCell.h"
+#import "PLVECProductConversionEffectCell.h"
 #import "PLVECQuoteChatCell.h"
 #import "PLVECLongContentChatCell.h"
 #import "PLVECCustomIntroductionMessageCell.h"
@@ -341,7 +342,7 @@ PLVECChatroomPlaybackViewModelDelegate
 - (UITableView *)createTableView {
     UITableView *tableView = [[UITableView alloc] init];
     tableView.backgroundColor = [UIColor clearColor];
-    tableView.allowsSelection =  NO;
+    tableView.allowsSelection = YES;
     tableView.showsVerticalScrollIndicator = NO;
     tableView.showsHorizontalScrollIndicator = NO;
     tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
@@ -383,7 +384,18 @@ PLVECChatroomPlaybackViewModelDelegate
     BOOL quoteReplyEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.quoteReplyEnabled && !self.playbackEnable;
     
     __weak typeof(self) weakSelf = self;
-    if ([PLVECChatCell isModelValid:model]) {
+    if ([PLVECProductConversionEffectCell isModelValid:model]) {
+        static NSString *conversionCellIdentify = @"conversionCellIdentify";
+        PLVECProductConversionEffectCell *cell = (PLVECProductConversionEffectCell *)[tableView dequeueReusableCellWithIdentifier:conversionCellIdentify];
+        if (!cell) {
+            cell = [[PLVECProductConversionEffectCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:conversionCellIdentify];
+        }
+        [cell updateWithModel:model
+                    cellWidth:self.tableView.frame.size.width
+                    leftInset:0
+                   rightInset:0];
+        return cell;
+    } else if ([PLVECChatCell isModelValid:model]) {
         static NSString *normalCellIdentify = @"normalCellIdentify";
         PLVECChatCell *cell = (PLVECChatCell *)[tableView dequeueReusableCellWithIdentifier:normalCellIdentify];
         if (!cell) {
@@ -455,7 +467,15 @@ PLVECChatroomPlaybackViewModelDelegate
     
     PLVChatModel *model = [self modelAtIndexPath:indexPath];
     CGFloat cellHeight = 0;
-    if ([PLVECChatCell isModelValid:model]) {
+    if ([PLVECProductConversionEffectCell isModelValid:model]) {
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVECProductConversionEffectCell cellHeightWithModel:model
+                                                                                cellWidth:self.tableView.frame.size.width
+                                                                                leftInset:0
+                                                                               rightInset:0];
+        }
+        cellHeight = model.cellHeightForV;
+    } else if ([PLVECChatCell isModelValid:model]) {
         if (model.cellHeightForV == 0.0) {
             model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
         }
@@ -493,6 +513,21 @@ PLVECChatroomPlaybackViewModelDelegate
 - (void)didTapReplyMenuItemWithModel:(PLVChatModel *)model {
     if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomMessageView:replyChatModel:)]) {
         [self.delegate chatroomMessageView:self replyChatModel:model];
+    }
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:NO];
+    if (indexPath.row >= self.dataCount) {
+        return;
+    }
+    PLVChatModel *model = [self modelAtIndexPath:indexPath];
+    NSDictionary *payload = [[PLVECChatroomViewModel sharedViewModel] conversionPayloadWithChatModel:model];
+    if (![PLVFdUtil checkDictionaryUseable:payload]) {
+        return;
+    }
+    if (self.delegate && [self.delegate respondsToSelector:@selector(chatroomMessageView:didTapConversionMessage:)]) {
+        [self.delegate chatroomMessageView:self didTapConversionMessage:payload];
     }
 }
 

@@ -493,8 +493,9 @@
         self.jumpTextButton.hidden = NO;
         self.jobDetailButton.hidden = NO;
     } else { // 普通产品
-        realPriceStr = [NSString stringWithFormat:@"¥ %@", model.realPrice];
-        if ([model.realPrice isEqualToString:@"0"]) {
+        NSString *displayPrice = [PLVFdUtil checkStringUseable:model.flashSalePrice] ? model.flashSalePrice : model.realPrice;
+        realPriceStr = [NSString stringWithFormat:@"¥ %@", displayPrice];
+        if (![PLVFdUtil checkStringUseable:model.flashSalePrice] && [model.realPrice isEqualToString:@"0"]) {
             realPriceStr = PLVLocalizedString(@"免费");
         }
         self.currentProductTips = self.normalProductTips;

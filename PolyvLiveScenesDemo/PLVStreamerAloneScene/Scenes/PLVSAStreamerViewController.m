@@ -52,6 +52,7 @@ static NSString *const PLVSABroadcastStartedNotification = @"PLVLiveBroadcastSta
 static NSString *const kPLVSASettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 static NSString *const KPLVSANoiseCancellationLevelKey = @"KPLVSANoiseCancellationLevelKey";
 static NSString *const KPLVSAExternalDeviceEnabledKey = @"KPLVSAExternalDeviceEnabledKey";
+static NSString *const KPLVSAAudienceRaiseHandStateKey = @"KPLVAudienceRaiseHandStateKey";
 
 /// PLVSAStreamerViewController 所处的四种状态，不同状态下，展示不同的页面
 typedef NS_ENUM(NSInteger, PLVSAStreamerViewState) {
@@ -147,6 +148,7 @@ UIDocumentPickerDelegate
 @property (nonatomic, assign, readonly) PLVBLinkMicStreamScale streamScale; // 当前直播流比例
 @property (nonatomic, assign) BOOL isInBackground; // 是否位于后台
 @property (nonatomic, strong) NSArray<PLVMobileTemplateModel *> *mobileTemplateList; // 模板列表缓存
+@property (nonatomic, assign) BOOL allowRaiseHand; // 小班课观众主动上麦开关状态
 
 @end
 
@@ -180,6 +182,7 @@ UIDocumentPickerDelegate
     
     [self setupUI];
     [self setupModule];
+    [self syncSmallClassAllowRaiseHandStateOnInit];
     [self setupNotification];
     [self preapareStartClass];
     [self clearDatedChannelStreamInfo];
@@ -662,6 +665,9 @@ UIDocumentPickerDelegate
     if (self.stickerCanvas){
         [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
     }
+    if ([self isSmallClassScene]) {
+        [self.homeView changeAllowRaiseHandButtonSelectedState:self.allowRaiseHand];
+    }
 }
 
 #pragma mark Live Template
@@ -853,7 +859,8 @@ UIDocumentPickerDelegate
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
         __weak typeof(self) weakSelf = self;
-        [self.streamerPresenter changeLinkMicMediaType:self.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video allowRaiseHand:self.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+        BOOL allowRaiseHand = [self isSmallClassScene] ? self.allowRaiseHand : self.streamerPresenter.channelLinkMicOpen;
+        [self.streamerPresenter changeLinkMicMediaType:self.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video allowRaiseHand:allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
             [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
         }];
     }
@@ -1923,8 +1930,9 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         return;
     }
     
-    NSString * successTitle = allowRaiseHand ? PLVLocalizedString(@"已开启观众连麦") : PLVLocalizedString(@"已关闭观众连麦");
-    NSString * failTitle = allowRaiseHand ? PLVLocalizedString(@"开启观众连麦失败，请稍后再试") : PLVLocalizedString(@"关闭观众连麦失败，请稍后再试");
+    BOOL isSmallClass = [self isSmallClassScene];
+    NSString * successTitle = allowRaiseHand ? (isSmallClass ? PLVLocalizedString(@"已开启观众主动上麦") : PLVLocalizedString(@"已开启观众连麦")) : (isSmallClass ? PLVLocalizedString(@"已关闭观众主动上麦") : PLVLocalizedString(@"已关闭观众连麦"));
+    NSString * failTitle = allowRaiseHand ? (isSmallClass ? PLVLocalizedString(@"开启观众主动上麦失败，请稍后再试") : PLVLocalizedString(@"开启观众连麦失败，请稍后再试")) : (isSmallClass ? PLVLocalizedString(@"关闭观众主动上麦失败，请稍后再试") : PLVLocalizedString(@"关闭观众连麦失败，请稍后再试"));
     __weak typeof(self) weakSelf = self;
     
     [self.streamerPresenter allowRaiseHand:allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
@@ -1933,11 +1941,54 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
                 [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
                 [PLVSAUtils showToastInHomeVCWithMessage:successTitle];
                 [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:allowRaiseHand];
+                weakSelf.allowRaiseHand = allowRaiseHand;
+                [weakSelf saveSmallClassAllowRaiseHandState:allowRaiseHand];
             }else{
                 [PLVSAUtils showToastInHomeVCWithMessage:failTitle];
             }
         })
     }];
+}
+
+- (BOOL)isSmallClassScene {
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.isSmallClass;
+}
+
+- (void)syncSmallClassAllowRaiseHandStateOnInit {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    BOOL supportNewStrategy = roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0;
+    if (!supportNewStrategy || ![self isSmallClassScene]) {
+        return;
+    }
+    self.allowRaiseHand = [self getSmallClassAllowRaiseHandState];
+}
+
+- (void)saveSmallClassAllowRaiseHandState:(BOOL)allowRaiseHand {
+    if (![self isSmallClassScene] || ![PLVFdUtil checkStringUseable:self.channelId]) {
+        return;
+    }
+    NSMutableDictionary *stateDict = [[[NSUserDefaults standardUserDefaults] objectForKey:KPLVSAAudienceRaiseHandStateKey] mutableCopy];
+    if (![PLVFdUtil checkDictionaryUseable:stateDict]) {
+        stateDict = [[NSMutableDictionary alloc] init];
+    }
+    stateDict[self.channelId] = @(allowRaiseHand);
+    [[NSUserDefaults standardUserDefaults] setObject:stateDict forKey:KPLVSAAudienceRaiseHandStateKey];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (BOOL)getSmallClassAllowRaiseHandState {
+    if (![self isSmallClassScene] || ![PLVFdUtil checkStringUseable:self.channelId]) {
+        return NO;
+    }
+    NSDictionary *stateDict = [[NSUserDefaults standardUserDefaults] objectForKey:KPLVSAAudienceRaiseHandStateKey];
+    if (![PLVFdUtil checkDictionaryUseable:stateDict]) {
+        return NO;
+    }
+    id stateValue = stateDict[self.channelId];
+    if ([stateValue isKindOfClass:[NSNumber class]]) {
+        return [stateValue boolValue];
+    }
+    return NO;
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView wannaChangeLinkMicType:(BOOL)linkMicOnAudio {
@@ -2112,6 +2163,53 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         default:
             break;
     }
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeGreenScreenEnabled:(BOOL)enabled {
+    [self.streamerPresenter setAIMattingGreenScreenEnabled:enabled];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeKeyColorWithR:(float)keyColorR g:(float)keyColorG b:(float)keyColorB {
+    [self.streamerPresenter setAIMattingKeyColorWithR:keyColorR g:keyColorG b:keyColorB];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeSimilarity:(float)similarity {
+    [self.streamerPresenter setAIMattingSimilarity:similarity];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeSmoothness:(float)smoothness {
+    [self.streamerPresenter setAIMattingSmoothness:smoothness];
+}
+
+- (void)virtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet didChangeSpill:(float)spill {
+    [self.streamerPresenter setAIMattingSpill:spill];
+}
+
+- (CGRect)previewSamplingFrameInVirtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet {
+    UIView *samplingView = [self samplingPreviewSourceView];
+    if (!samplingView || !samplingView.superview) {
+        return CGRectZero;
+    }
+    return [samplingView.superview convertRect:samplingView.frame toView:self.view];
+}
+
+- (UIImage *)previewSamplingSnapshotInVirtualBackgroudSheet:(PLVVirtualBackgroudSheet *)sheet {
+    UIView *samplingView = [self samplingPreviewSourceView];
+    if (!samplingView || samplingView.hidden || samplingView.bounds.size.width < 1 || samplingView.bounds.size.height < 1) {
+        return nil;
+    }
+    UIGraphicsBeginImageContextWithOptions(samplingView.bounds.size, YES, 1.0);
+    [samplingView drawViewHierarchyInRect:samplingView.bounds afterScreenUpdates:NO];
+    UIImage *snapshot = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    return snapshot;
+}
+
+- (UIView *)samplingPreviewSourceView {
+    if (self.viewState == PLVSAStreamerViewStateSteaming && self.homeView.superview) {
+        return self.homeView;
+    }
+    return self.linkMicAreaView;
 }
 
 #pragma mark - Video File Picker
@@ -2347,4 +2445,3 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 }
 
 @end
-

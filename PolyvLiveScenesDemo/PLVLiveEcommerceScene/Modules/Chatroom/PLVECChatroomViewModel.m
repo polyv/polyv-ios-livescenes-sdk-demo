@@ -10,12 +10,14 @@
 #import "PLVRoomDataManager.h"
 #import "PLVGiveRewardPresenter.h"
 #import "PLVECChatCell.h"
+#import "PLVECProductConversionEffectCell.h"
 #import "PLVECQuoteChatCell.h"
 #import "PLVECLongContentChatCell.h"
 #import "PLVECCustomIntroductionMessageCell.h"
 #import "PLVMultiLanguageManager.h"
 
 static NSInteger kPLVECMaxPublicChatMessageCount = 500;
+static NSString * const kPLVECConversionPayloadKey = @"plv_ec_conversion_payload";
 
 @interface PLVECChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -382,16 +384,30 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+- (BOOL)productConventMessageEffectEnable {
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.productConventMessageEffectEnable;
+}
+
+- (BOOL)shouldFilterEffectMessageModel:(PLVChatModel *)model {
+    return (![self productConventMessageEffectEnable] && [PLVECProductConversionEffectCell isModelValid:model]);
+}
+
 /// 本地发送公聊消息时
 - (void)addPublicChatModel:(PLVChatModel *)model {
     if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return;
+    }
+    if ([self shouldFilterEffectMessageModel:model]) {
         return;
     }
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     
     // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    if ([PLVECChatCell isModelValid:model]) {
+    if ([PLVECProductConversionEffectCell isModelValid:model]) {
+        model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECProductConversionEffectCell conversionAttributedStringWithModel:model]];
+        model.cellHeightForV = [PLVECProductConversionEffectCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+    } else if ([PLVECChatCell isModelValid:model]) {
         model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
         model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
     } else if ([PLVECQuoteChatCell isModelValid:model]) {
@@ -412,9 +428,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)addPublicChatModels:(NSArray <PLVChatModel *> *)modelArray {
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
+        if ([self shouldFilterEffectMessageModel:model]) {
+            continue;
+        }
         // 由于 cell显示需要的 消息多属性文本 计算比较耗时，所以，在 子线程 中提前计算出来；
         PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-        if ([PLVECChatCell isModelValid:model]) {
+        if ([PLVECProductConversionEffectCell isModelValid:model]) {
+            model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECProductConversionEffectCell conversionAttributedStringWithModel:model]];
+            model.cellHeightForV = [PLVECProductConversionEffectCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+        } else if ([PLVECChatCell isModelValid:model]) {
             model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
             model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
         } else if ([PLVECQuoteChatCell isModelValid:model]) {
@@ -474,8 +496,14 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)insertChatModels:(NSArray <PLVChatModel *> *)modelArray noMore:(BOOL)noMore {
     dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
     for (PLVChatModel *model in modelArray) {
+        if ([self shouldFilterEffectMessageModel:model]) {
+            continue;
+        }
         if ([model isKindOfClass:[PLVChatModel class]]) {
-            if ([PLVECChatCell isModelValid:model]) {
+            if ([PLVECProductConversionEffectCell isModelValid:model]) {
+                model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECProductConversionEffectCell conversionAttributedStringWithModel:model]];
+                model.cellHeightForV = [PLVECProductConversionEffectCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
+            } else if ([PLVECChatCell isModelValid:model]) {
                 model.attributeString = [[NSMutableAttributedString alloc] initWithAttributedString:[PLVECChatCell chatLabelAttributedStringWithModel:model]];
                 model.cellHeightForV = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableViewWidth];
             } else if ([PLVECQuoteChatCell isModelValid:model]) {
@@ -596,6 +624,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 - (void)notifyListenerRewardSuccess:(NSDictionary *)modelDict {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_rewardSuccess:modelDict];
+    });
+}
+
+- (void)notifyListenerSignInSuccessWithNickname:(NSString *)nickname {
+    if (![PLVFdUtil checkStringUseable:nickname]) {
+        return;
+    }
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_signInSuccessWithNickname:nickname];
     });
 }
 
@@ -787,6 +824,106 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return chatModel;
 }
 
+#pragma mark 生成 转化 消息模型
+
+- (NSString *)conversionTargetIdWithData:(NSDictionary *)data {
+    id targetIdObj = data[@"productId"];
+    if (!targetIdObj || [targetIdObj isKindOfClass:[NSNull class]]) {
+        targetIdObj = data[@"positionId"];
+    }
+    if ([targetIdObj isKindOfClass:[NSNumber class]]) {
+        return [(NSNumber *)targetIdObj stringValue];
+    }
+    if ([targetIdObj isKindOfClass:[NSString class]]) {
+        NSString *targetId = (NSString *)targetIdObj;
+        return [PLVFdUtil checkStringUseable:targetId] ? targetId : nil;
+    }
+    return nil;
+}
+
+- (PLVChatModel *)conversionChatModelWithData:(NSDictionary *)data {
+    NSString *nickName = PLV_SafeStringForDictKey(data, @"nickName");
+    NSString *targetName = PLV_SafeStringForDictKey(data, @"positionName");
+    if (![PLVFdUtil checkStringUseable:targetName]) {
+        targetName = PLV_SafeStringForDictKey(data, @"productName");
+    }
+    if (![PLVFdUtil checkStringUseable:targetName]) {
+        targetName = PLV_SafeStringForDictKey(data, @"name");
+    }
+    NSString *rawType = [PLV_SafeStringForDictKey(data, @"type") lowercaseString];
+    NSString *targetId = [self conversionTargetIdWithData:data];
+    if (![PLVFdUtil checkStringUseable:nickName] || ![PLVFdUtil checkStringUseable:rawType]) {
+        return nil;
+    }
+    
+    BOOL isPositionType = [rawType containsString:@"position"] || [rawType containsString:@"job"];
+    BOOL isFinanceType = [rawType containsString:@"finance"];
+    BOOL isNormalType = [rawType isEqualToString:@"normal"] || [rawType isEqualToString:@"nornal"] || (!isPositionType && !isFinanceType);
+    NSString *content = nil;
+    if (isPositionType) {
+        content = [PLVFdUtil checkStringUseable:targetName] ? [NSString stringWithFormat:PLVLocalizedString(@"正在投递 %@"), targetName] : PLVLocalizedString(@"正在投递职位");
+    } else if (isFinanceType) {
+        content = [PLVFdUtil checkStringUseable:targetName] ? [NSString stringWithFormat:PLVLocalizedString(@"正在选购 %@"), targetName] : PLVLocalizedString(@"正在选购商品");
+    } else {
+        // normal / nornal and unknown values fallback to purchase text
+        content = [PLVFdUtil checkStringUseable:targetName] ? [NSString stringWithFormat:PLVLocalizedString(@"正在购买 %@"), targetName] : PLVLocalizedString(@"正在购买商品");
+    }
+    
+    PLVSpeakMessage *speakMessage = [[PLVSpeakMessage alloc] init];
+    speakMessage.content = content;
+    
+    PLVChatUser *chatUser = [[PLVChatUser alloc] init];
+    chatUser.userName = nickName;
+    chatUser.userId = [NSString stringWithFormat:@"conversion_%@", nickName];
+    
+    NSMutableDictionary *conversionPayload = [[NSMutableDictionary alloc] init];
+    if (isPositionType) {
+        conversionPayload[@"type"] = @"position";
+    } else if (isFinanceType) {
+        conversionPayload[@"type"] = @"finance";
+    } else if (isNormalType) {
+        conversionPayload[@"type"] = @"normal";
+    } else {
+        conversionPayload[@"type"] = rawType;
+    }
+    conversionPayload[@"rawType"] = rawType;
+    if ([PLVFdUtil checkStringUseable:targetName]) {
+        conversionPayload[@"positionName"] = targetName;
+    }
+    if ([PLVFdUtil checkStringUseable:nickName]) {
+        conversionPayload[@"nickName"] = nickName;
+    }
+    if ([PLVFdUtil checkStringUseable:targetId]) {
+        conversionPayload[@"productId"] = targetId;
+    }
+    conversionPayload[kPLVECConversionPayloadKey] = @(YES);
+    
+    PLVChatModel *chatModel = [[PLVChatModel alloc] init];
+    chatModel.user = chatUser;
+    chatModel.message = speakMessage;
+    chatModel.contentLength = PLVChatMsgContentLength_0To500;
+    chatModel.replyMessage = [conversionPayload copy];
+    return chatModel;
+}
+
+- (void)productClickEventWithSubEvent:(NSString *)subEvent jsonDict:(NSDictionary *)jsonDict {
+    if (![self productConventMessageEffectEnable]) {
+        return;
+    }
+    NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
+    NSDictionary *payloadData = [PLVFdUtil checkDictionaryUseable:data] ? data : jsonDict;
+    NSString *eventType = PLV_SafeStringForDictKey(payloadData, @"EVENT");
+    eventType = [PLVFdUtil checkStringUseable:eventType] ? eventType : subEvent;
+    if (![eventType isEqualToString:@"PRODUCT_CLICK"]) {
+        return;
+    }
+    PLVChatModel *chatModel = [self conversionChatModelWithData:payloadData];
+    if (!chatModel) {
+        return;
+    }
+    [self addPublicChatModels:@[chatModel]];
+}
+
 #pragma mark 处理 礼物 消息
 
 - (void)giftMessageEvent:(NSDictionary *)jsonDict {
@@ -817,6 +954,16 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     if ([event isEqualToString:@"customMessage"] &&
         [subEvent isEqualToString:@"GiftMessage"]) { // 礼物消息
         [self giftMessageEvent:jsonDict];
+    } else if ([event isEqualToString:@"product"]) {
+        [self productClickEventWithSubEvent:subEvent jsonDict:jsonDict];
+    } else if ([subEvent isEqualToString:@"SIGN_IN_TIMES"] ||
+               [event isEqualToString:@"SIGN_IN_TIMES"] ||
+               [PLV_SafeStringForDictKey(jsonDict, @"EVENT") isEqualToString:@"SIGN_IN_TIMES"]) {
+        NSString *nickname = PLV_SafeStringForDictKey(jsonDict, @"nick");
+        if (![PLVFdUtil checkStringUseable:nickname]) {
+            nickname = PLV_SafeStringForDictKey(jsonDict, @"nickName");
+        }
+        [self notifyListenerSignInSuccessWithNickname:nickname];
     }
 }
 
@@ -832,6 +979,13 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     } else if ([subEvent isEqualToString:@"REWARD"]) {
         NSDictionary *contentDict = jsonDict[@"content"];
         [self notifyListenerRewardSuccess:contentDict];
+    } else if ([subEvent isEqualToString:@"SIGN_IN_TIMES"] ||
+               [PLV_SafeStringForDictKey(jsonDict, @"EVENT") isEqualToString:@"SIGN_IN_TIMES"]) {
+        NSString *nickname = PLV_SafeStringForDictKey(jsonDict, @"nick");
+        if (![PLVFdUtil checkStringUseable:nickname]) {
+            nickname = PLV_SafeStringForDictKey(jsonDict, @"nickName");
+        }
+        [self notifyListenerSignInSuccessWithNickname:nickname];
     }
 }
 
@@ -911,6 +1065,24 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     
     BOOL isLoginUser = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     return isLoginUser;
+}
+
+- (BOOL)isConversionChatModel:(PLVChatModel *)model {
+    NSDictionary *payload = [self conversionPayloadWithChatModel:model];
+    return [PLVFdUtil checkDictionaryUseable:payload];
+}
+
+- (NSDictionary *)conversionPayloadWithChatModel:(PLVChatModel *)model {
+    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return nil;
+    }
+    id payload = model.replyMessage;
+    if (![payload isKindOfClass:[NSDictionary class]]) {
+        return nil;
+    }
+    NSDictionary *payloadDict = (NSDictionary *)payload;
+    BOOL isConversion = PLV_SafeBoolForDictKey(payloadDict, kPLVECConversionPayloadKey);
+    return isConversion ? payloadDict : nil;
 }
 
 @end

@@ -196,6 +196,9 @@ static NSString *kRedpackMessageTapKey = @"redpackTap";
     self.chatLabel.numberOfLines = !fileImage ? 0 : 3;
     self.chatLabel.lineBreakMode = !fileImage ? NSLineBreakByTruncatingTail : NSLineBreakByTruncatingMiddle;
     
+    self.bubbleView.backgroundColor = [PLVColorUtil colorFromHexString:@"#333333" alpha:0.66];
+    self.bubbleView.layer.cornerRadius = 10.0;
+    
     // 设置 "昵称：文本（如果有的话）"
     NSMutableAttributedString *chatLabelString;
     if (model.attributeString) {

@@ -48,6 +48,8 @@
 #import "PLVLiveRealTimeSubtitleHandler.h"
 #import "PLVLiveSubtitleTranslation.h"
 
+static NSString *const PLVLCRefreshProductListEvent = @"REFRESH_PRODUCT_LIST";
+
 
 @interface PLVLCCloudClassViewController ()<
 PLVSocketManagerProtocol,
@@ -1145,6 +1147,8 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         plv_dispatch_main_async_safe(^{
             [self productMessageEvent:jsonDict];
         })
+    } else if ([subEvent isEqualToString:PLVLCRefreshProductListEvent]) {
+        [self refreshSmallCardByProductId:[self currentShowingSmallCardProductId]];
     } else if ([subEvent isEqualToString:@"onSliceID"]) {
         NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
         if ([PLVFdUtil checkDictionaryUseable:data]) {
@@ -1199,10 +1203,14 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         return; // 处理完字幕消息后直接返回
     }
     // ========== 实时字幕消息处理结束 ==========
+
+    NSDictionary *jsonDict = (NSDictionary *)object;
+    if ([self isRefreshProductListEvent:event subEvent:subEvent jsonDict:jsonDict]) {
+        [self refreshSmallCardByProductId:[self currentShowingSmallCardProductId]];
+    }
     
     if ([event isEqualToString:@"product"]) {
         if ([subEvent isEqualToString:@"PRODUCT_CLICK_TIMES"]) {
-            NSDictionary *jsonDict = (NSDictionary *)object;
             if ([PLVFdUtil checkDictionaryUseable:jsonDict]) {
                 [self.pushView updateProductClickTimes:jsonDict];
             }
@@ -1265,6 +1273,50 @@ PLVLiveRealTimeSubtitleHandlerDelegate
             }
         });
     }
+}
+
+- (BOOL)isRefreshProductListEvent:(NSString *)event subEvent:(NSString *)subEvent jsonDict:(NSDictionary *)jsonDict {
+    if ([event isEqualToString:PLVLCRefreshProductListEvent] ||
+        [subEvent isEqualToString:PLVLCRefreshProductListEvent]) {
+        return YES;
+    }
+    
+    NSString *eventType = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+    return [eventType isEqualToString:PLVLCRefreshProductListEvent];
+}
+
+- (NSUInteger)currentShowingSmallCardProductId {
+    BOOL smallCardShowing = (self.pushView.superview && self.pushView.alpha == 1);
+    if (!smallCardShowing || !self.pushView.model) {
+        return 0;
+    }
+    return self.pushView.model.productId;
+}
+
+- (void)refreshSmallCardByProductId:(NSUInteger)productId {
+    // 当前未展示小卡片时，不需要更新秒杀活动详情
+    BOOL smallCardShowing = (self.pushView.superview && self.pushView.alpha == 1);
+    if (!smallCardShowing || !self.pushView.model || self.pushView.model.productId != productId || productId == 0) {
+        return;
+    }
+    
+    NSUInteger channelId = (NSUInteger)[PLVRoomDataManager sharedManager].roomData.channelId.integerValue;
+    if (channelId == 0) {
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI loadCommodityDetail:channelId productId:productId completion:^(PLVCommodityModel * _Nullable commodity) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
+        if (!strongSelf) {
+            return;
+        }
+        if (!commodity || commodity.status != 1) {
+            [strongSelf.pushView hide];
+            return;
+        }
+        [strongSelf.pushView setModel:commodity];
+    } failure:nil];
 }
 
 #pragma mark socket 数据解析
@@ -1975,6 +2027,43 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     }
 }
 
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didTapConversionMessage:(NSDictionary *)payload {
+    if (![PLVFdUtil checkDictionaryUseable:payload]) {
+        return;
+    }
+
+    NSString *type = [PLV_SafeStringForDictKey(payload, @"type") lowercaseString];
+    NSString *rawType = [PLV_SafeStringForDictKey(payload, @"rawType") lowercaseString];
+    BOOL positionType = [type isEqualToString:@"position"] || [rawType containsString:@"position"] || [rawType containsString:@"job"];
+    BOOL financeType = [type isEqualToString:@"finance"] || [rawType containsString:@"finance"];
+    NSString *productId = PLV_SafeStringForDictKey(payload, @"productId");
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        return;
+    }
+
+    NSMutableDictionary *detailData = [payload mutableCopy];
+    detailData[@"productId"] = productId;
+    NSString *positionName = PLV_SafeStringForDictKey(payload, @"positionName");
+    if ([PLVFdUtil checkStringUseable:positionName]) {
+        detailData[@"name"] = positionName;
+    }
+
+    if (positionType) {
+        detailData[@"positionId"] = productId;
+        detailData[@"id"] = productId;
+        [self.popoverView.interactView openJobDetailWithData:[detailData copy]];
+    } else if (financeType) {
+        if (self.currentLandscape) {
+            [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:YES];
+            [self.menuAreaView displayProductPageToExternalView:self.view];
+        } else {
+            [self.menuAreaView openCommodityMenuPage];
+        }
+    } else {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
+}
+
 - (void)plvLCLivePageMenuAreaViewCloseProductView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView {
     if (self.currentLandscape) {
         [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:!self.liveRoomSkinView.needShowSkin];
@@ -2297,6 +2386,10 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 
 - (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView didTapReplyMessage:(PLVChatModel *)model {
     [self.liveRoomSkinView didTapReplyChatModel:model];
+}
+
+- (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView didTapConversionMessage:(NSDictionary *)payload {
+    [self plvLCLivePageMenuAreaView:self.menuAreaView didTapConversionMessage:payload];
 }
 
 #pragma mark PLVLCMessagePopupViewDelegate

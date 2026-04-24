@@ -309,6 +309,26 @@ PLVChannelClassManagerDelegate
     [self.rtcStreamerManager setAIMattingMode:mode image:matBgImage];
 }
 
+- (void)setAIMattingGreenScreenEnabled:(BOOL)enabled {
+    [self.rtcStreamerManager setAIMattingGreenScreenEnabled:enabled];
+}
+
+- (void)setAIMattingKeyColorWithR:(float)keyColorR g:(float)keyColorG b:(float)keyColorB {
+    [self.rtcStreamerManager setAIMattingKeyColorWithR:keyColorR g:keyColorG b:keyColorB];
+}
+
+- (void)setAIMattingSimilarity:(float)similarity {
+    [self.rtcStreamerManager setAIMattingSimilarity:similarity];
+}
+
+- (void)setAIMattingSmoothness:(float)smoothness {
+    [self.rtcStreamerManager setAIMattingSmoothness:smoothness];
+}
+
+- (void)setAIMattingSpill:(float)spill {
+    [self.rtcStreamerManager setAIMattingSpill:spill];
+}
+
 #pragma mark CDN流管理
 - (int)startPushStream{
     if (self.micCameraGranted) {

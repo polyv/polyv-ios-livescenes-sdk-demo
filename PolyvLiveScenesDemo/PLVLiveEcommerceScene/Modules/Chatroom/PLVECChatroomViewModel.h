@@ -78,6 +78,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 打赏成功时触发
 - (void)chatroomManager_rewardSuccess:(NSDictionary *)modelDict;
 
+/// 其他成员签到成功时触发
+/// @param nickname 签到成员昵称
+- (void)chatroomManager_signInSuccessWithNickname:(NSString *)nickname;
+
 /// 加载打赏信息时触发
 /// @param rewardEnable 是否支持打赏
 /// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏
@@ -215,6 +219,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 插入一条评论抽奖消息
 - (void)welfareLotteryCommentSuccess:(NSString *)comment;
+
+/// 是否为购买/投递转化消息
+- (BOOL)isConversionChatModel:(PLVChatModel *)model;
+
+/// 获取购买/投递转化消息的 payload（若非转化消息返回nil）
+- (NSDictionary * _Nullable)conversionPayloadWithChatModel:(PLVChatModel *)model;
 
 /// 增加PLVECChatroomViewModelProtocol协议的监听者
 /// @param delegate 待增加的监听者

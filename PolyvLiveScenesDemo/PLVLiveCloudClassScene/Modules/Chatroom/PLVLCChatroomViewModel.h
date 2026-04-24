@@ -139,6 +139,15 @@ NS_ASSUME_NONNULL_BEGIN
 /// 用户列表
 - (void)chatroomManager_didUpdateOnlineList:(NSArray<PLVChatUser *> *)list total:(NSInteger)total;
 
+/// 判断是否是购买转化特效消息
+- (BOOL)isConversionChatModel:(PLVChatModel *)model;
+
+/// 读取购买转化特效消息携带的原始数据
+- (NSDictionary * _Nullable)conversionPayloadWithChatModel:(PLVChatModel *)model;
+
+/// 收到签到成功事件，用于显示顶部横幅
+- (void)chatroomManager_signInSuccessWithNickname:(NSString *)nickname;
+
 @end
 
 /*
@@ -238,6 +247,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 更新观看页在线列表
 - (void)updateOnlineList;
+
+/// 判断是否是购买转化特效消息
+- (BOOL)isConversionChatModel:(PLVChatModel *)model;
+
+/// 读取购买转化特效消息携带的原始数据
+- (NSDictionary * _Nullable)conversionPayloadWithChatModel:(PLVChatModel *)model;
 
 /// 插入一条评论抽奖消息
 - (void)welfareLotteryCommentSuccess:(NSString *)comment;

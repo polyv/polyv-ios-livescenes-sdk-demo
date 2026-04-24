@@ -22,6 +22,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击了上传按钮
 - (void)virtualBackgroudCollectionViewDidClickUploadButton:(PLVVirtualBackgroudCollectionView *)collectionView;
 
+/// 列表内容发生变化（用于父视图刷新布局）
+- (void)virtualBackgroudCollectionViewDidUpdateContent:(PLVVirtualBackgroudCollectionView *)collectionView;
+
 @end
 
 @interface PLVVirtualBackgroudCollectionView : UIView
@@ -38,6 +41,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 添加上传的背景图片
 /// @param image 上传的图片
 - (void)addUploadedImage:(UIImage *)image;
+
+/// 计算在给定宽度下列表需要的完整内容高度
+- (CGFloat)preferredContentHeightForWidth:(CGFloat)width;
 
 
 @end

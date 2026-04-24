@@ -35,6 +35,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param model 被引用回复的消息模型
 - (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView didTapReplyMessage:(PLVChatModel *)model;
 
+/// 点击购买转化特效消息
+- (void)chatLandscapeView:(PLVLCChatLandscapeView *)chatView didTapConversionMessage:(NSDictionary *)payload;
+
 @end
 
 NS_ASSUME_NONNULL_END

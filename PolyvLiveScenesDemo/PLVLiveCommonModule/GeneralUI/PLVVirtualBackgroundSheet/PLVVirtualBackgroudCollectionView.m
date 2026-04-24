@@ -14,6 +14,9 @@
 
 static NSString * const kPLVVirtualBackgroudCellID = @"PLVVirtualBackgroudCell";
 static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
+static CGFloat const kPLVVirtualBackgroudCellWidth = 58.0;
+static CGFloat const kPLVVirtualBackgroudCellHeight = 75.0;
+static UIEdgeInsets const kPLVVirtualBackgroudSectionInsets = {10.0, 0.0, 10.0, 0.0};
 
 @interface PLVVirtualBackgroudCollectionView () <UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout, PLVVirtualBackgroudCellDelegate>
 
@@ -47,8 +50,9 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    // 更新collectionView布局
     self.collectionView.frame = self.bounds;
+    // 确保初始选中状态在 collectionView 有正确 frame 后生效
+    [self.collectionView selectItemAtIndexPath:self.selIndex animated:NO scrollPosition:UICollectionViewScrollPositionNone];
 }
 
 #pragma mark - [ Public Method ]
@@ -69,6 +73,7 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
     }
     
     [self.collectionView reloadData];
+    [self notifyContentUpdated];
 }
 
 - (void)addUploadedImage:(UIImage *)image {
@@ -81,11 +86,22 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
         [self.dataArray addObject:model];
         
         [self.collectionView reloadData];
+        [self notifyContentUpdated];
         
 //        // 自动滚动到新添加的项
 //        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:self.dataArray.count - 1 inSection:0];
 //        [self.collectionView scrollToItemAtIndexPath:indexPath atScrollPosition:UICollectionViewScrollPositionCenteredHorizontally animated:YES];
     }
+}
+
+- (CGFloat)preferredContentHeightForWidth:(CGFloat)width {
+    if (width <= 0) {
+        return 0;
+    }
+    NSInteger columns = MAX(1, (NSInteger)floor((width + kPLVVirtualBackgroudCellPadding) / (kPLVVirtualBackgroudCellWidth + kPLVVirtualBackgroudCellPadding)));
+    NSInteger section0Rows = [self rowCountForItemCount:self.dataArray.count columns:columns];
+    NSInteger section1Rows = [self rowCountForItemCount:self.presetData.count columns:columns];
+    return [self sectionHeightForRows:section0Rows] + [self sectionHeightForRows:section1Rows];
 }
 
 -(NSInteger)customImgCoutn{
@@ -118,6 +134,9 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
     blurModel.type = PLVVirtualBackgroudCellBlur;
     blurModel.title = PLVLocalizedString(@"背景模糊");
     [self.dataArray addObject:blurModel];
+    
+    // 重置选中回第一项（无）
+    self.selIndex = [NSIndexPath indexPathForRow:0 inSection:0];
 }
 
 - (void)initPresetData{
@@ -191,10 +210,6 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
             PLVVirtualBackgroudModel *model = self.dataArray[indexPath.item];
             [cell configCellWithModel:model];
             cell.delegate = self;
-            
-            // 设置选中状态
-            BOOL isSeleted = (indexPath.row == self.selIndex.row) && (indexPath.section == self.selIndex.section);
-            [cell setSelected:isSeleted animated:NO];
         }
     }
     else if (1 == indexPath.section){
@@ -202,10 +217,6 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
             PLVVirtualBackgroudModel *model = self.presetData[indexPath.item];
             [cell configCellWithModel:model];
             cell.delegate = self;
-            
-            // 设置选中状态
-            BOOL isSeleted = (indexPath.row == self.selIndex.row) && (indexPath.section == self.selIndex.section);
-            [cell setSelected:isSeleted animated:NO];
         }
     }
     
@@ -216,12 +227,8 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
 #pragma mark - [ UICollectionViewDelegate ]
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath {
-    // 重置选中状态
-    PLVVirtualBackgroudCell *oldCell = (PLVVirtualBackgroudCell *)[collectionView cellForItemAtIndexPath: self.selIndex];
-    [oldCell setSelected:NO animated:YES];
-    
-    PLVVirtualBackgroudCell *newCell = (PLVVirtualBackgroudCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    [newCell setSelected:YES animated:YES];
+    [collectionView deselectItemAtIndexPath:self.selIndex animated:YES];
+    [collectionView selectItemAtIndexPath:indexPath animated:YES scrollPosition:UICollectionViewScrollPositionNone];
         
     if (0 == indexPath.section){
         if (indexPath.row < self.dataArray.count) {
@@ -257,15 +264,11 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
 #pragma mark - [ UICollectionViewDelegateFlowLayout ]
 
 - (CGSize)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout sizeForItemAtIndexPath:(NSIndexPath *)indexPath {
-    // 计算cell尺寸，根据屏幕宽度动态调整
-    CGFloat cellHeight = 75.0;
-    CGFloat cellWidth = 58;
-    
-    return CGSizeMake(cellWidth, cellHeight);
+    return CGSizeMake(kPLVVirtualBackgroudCellWidth, kPLVVirtualBackgroudCellHeight);
 }
 
 - (UIEdgeInsets)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout insetForSectionAtIndex:(NSInteger)section {
-    return UIEdgeInsetsMake(10, 0, 10, 0);
+    return kPLVVirtualBackgroudSectionInsets;
 }
 
 - (CGFloat)collectionView:(UICollectionView *)collectionView layout:(UICollectionViewLayout *)collectionViewLayout minimumLineSpacingForSectionAtIndex:(NSInteger)section {
@@ -298,11 +301,13 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
                     [self.delegate virtualBackgroudCollectionView:self data:model];
                 }
                 [self.collectionView reloadData];
+                [self notifyContentUpdated];
             }
             else{
                 // 刷新列表
                 [self.dataArray removeObjectAtIndex:indexPath.row];
                 [self.collectionView reloadData];
+                [self notifyContentUpdated];
             }
         }
     }];
@@ -326,6 +331,27 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
     return vc;
 }
 
+- (NSInteger)rowCountForItemCount:(NSInteger)itemCount columns:(NSInteger)columns {
+    if (itemCount <= 0 || columns <= 0) {
+        return 0;
+    }
+    return (itemCount + columns - 1) / columns;
+}
+
+- (CGFloat)sectionHeightForRows:(NSInteger)rows {
+    if (rows <= 0) {
+        return 0;
+    }
+    return kPLVVirtualBackgroudSectionInsets.top + kPLVVirtualBackgroudSectionInsets.bottom +
+           rows * kPLVVirtualBackgroudCellHeight + (rows - 1) * kPLVVirtualBackgroudCellPadding;
+}
+
+- (void)notifyContentUpdated {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(virtualBackgroudCollectionViewDidUpdateContent:)]) {
+        [self.delegate virtualBackgroudCollectionViewDidUpdateContent:self];
+    }
+}
+
 #pragma mark - [ Getter ]
 
 - (UICollectionView *)collectionView {
@@ -337,6 +363,7 @@ static CGFloat const kPLVVirtualBackgroudCellPadding = 5.0;
         _collectionView.backgroundColor = [UIColor clearColor];
         _collectionView.showsHorizontalScrollIndicator = NO;
         _collectionView.showsVerticalScrollIndicator = NO;
+        _collectionView.scrollEnabled = NO;
         _collectionView.delegate = self;
         _collectionView.dataSource = self;
         

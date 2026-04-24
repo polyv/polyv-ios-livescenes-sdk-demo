@@ -369,6 +369,14 @@
 "背景模糊" = "Background Blur";
 "确认要删除该背景图片吗？" = "Are you sure you want to delete this background image?";
 "本地图片" = "Local Pictures";
+"专业绿幕" = "Pro Chroma Key";
+"幕布颜色" = "Screen Color";
+"取色" = "Pick Color";
+"高级调节（非专业请勿修改）" = "Advanced Tuning (For professionals only)";
+"恢复推荐" = "Reset to Default";
+"抠像范围" = "Similarity";
+"边缘柔化" = "Smoothness";
+"去环境光" = "Spill Suppression";
 
 /**  连麦  */
 "尚未开通，请联系管理员" = "Not activated yet, please contact the administrator";
@@ -376,6 +384,7 @@
 "请求中..." = "Requesting";
 "申请连麦" = "Apply for a call";
 "申请连麦Btn" = "Voice call";
+"观众主动上麦Btn" = "Audience self-join";
 "申请视频连麦" = "Apply video call";
 "申请音频连麦" = "Apply audio call";
 "邀请你视频连麦" = "Inviting video call";
@@ -447,6 +456,10 @@
 "已关闭观众连麦" = "Viewer voice chat disabled";
 "开启观众连麦失败，请稍后再试" = "Viewer voice chat enabled failed, try on later";
 "关闭观众连麦失败，请稍后再试" = "Viewer voice chat disabled failed, try on later";
+"已开启观众主动上麦" = "Audience self-join enabled";
+"已关闭观众主动上麦" = "Audience self-join disabled";
+"开启观众主动上麦失败，请稍后再试" = "Failed to enable audience self-join, please try again later";
+"关闭观众主动上麦失败，请稍后再试" = "Failed to disable audience self-join, please try again later";
 "当前有用户在连麦，无法切换连麦方式，若要切换，需将麦上用户全部下麦，确认切换连麦方式吗？" = "Can not switch voice chat type because viewers are connecting. To continue, all connected viewers will be hanged up. Confirm to switch type?";
 "切换并下麦所有用户" = "Switch and hang up viewers";
 "开启观众连麦" = "Allow voice chat";
@@ -455,6 +468,7 @@
 "关闭观众连麦" = "Forbid voice\nchat";
 "“连麦”功能更新啦" = "New Voice Chat available";
 "点击此功能按钮可开启观众连麦" = "Click here to allow viewer requesting voice chat";
+"点击此功能按钮可开启观众主动上麦" = "Tap this button to enable audience self-join";
 "当前网络信号弱，开启失败，请检查网络！" = "Weak network signal, activation failed. Check your connection!";
 
 /**  推流  */

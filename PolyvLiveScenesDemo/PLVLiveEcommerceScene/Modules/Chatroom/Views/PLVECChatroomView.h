@@ -50,6 +50,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param show 是否需要显示评论上墙视图
 - (void)chatroomView_receiveSpeakTopMessageChatModel:(PLVChatModel *)model showPinMsgView:(BOOL)show;
 
+/// 点击购买/投递转化消息时触发
+/// @param payload 转化消息原始数据
+- (void)chatroomView_didTapConversionMessage:(NSDictionary *)payload;
+
 @end
 
 /// 聊天室视图
