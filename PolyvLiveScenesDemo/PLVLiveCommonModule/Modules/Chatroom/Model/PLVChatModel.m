@@ -49,6 +49,9 @@
     } else if ([messageObject isKindOfClass:[PLVQuoteMessage class]]) {
         PLVQuoteMessage *message = (PLVQuoteMessage *)messageObject;
         content = message.content;
+    } else if ([messageObject isKindOfClass:[PLVMessageEffectMessage class]]) {
+        PLVMessageEffectMessage *message = (PLVMessageEffectMessage *)messageObject;
+        content = message.content;
     }
     return content;
 }

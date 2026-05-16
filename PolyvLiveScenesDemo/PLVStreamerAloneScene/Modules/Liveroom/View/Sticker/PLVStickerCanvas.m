@@ -60,28 +60,48 @@ PLVStickerVideoViewDelegate
     [self updateUI];
 }
 
-- (void)updateUI{
-    // 需要和rtc摄像头采集的图像分辨率比例一致 默认9：16
-    BOOL curFullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    if (curFullScreen){
-        CGFloat height = self.bounds.size.height;
-        CGFloat width = height * 16/ 9;
-        CGFloat x = (self.bounds.size.width - width)/2;
-        CGFloat y = 0;
-        self.contentView.frame = CGRectMake(x, y, width, height);
+- (void)setContentViewAspectFill:(BOOL)contentViewAspectFill {
+    if (_contentViewAspectFill == contentViewAspectFill) {
+        return;
     }
-    else{
-        CGFloat width = self.bounds.size.width;
-        CGFloat height = width * 16/ 9;
+    _contentViewAspectFill = contentViewAspectFill;
+    [self setNeedsLayout];
+}
 
-        if (height > self.bounds.size.height){
-            height = self.bounds.size.height;
-            width = height * 9/ 16;
+- (void)updateUI{
+    // 需要和 RTC 摄像头采集的图像分辨率比例一致，且和预览 Fill/Fit 模式保持一致
+    BOOL curFullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    CGFloat targetAspectRatio = curFullScreen ? (16.0 / 9.0) : (9.0 / 16.0);
+    CGFloat boundsWidth = CGRectGetWidth(self.bounds);
+    CGFloat boundsHeight = CGRectGetHeight(self.bounds);
+    if (boundsWidth > 0 && boundsHeight > 0 && targetAspectRatio > 0) {
+        CGFloat containerAspectRatio = boundsWidth / boundsHeight;
+        CGFloat width = 0;
+        CGFloat height = 0;
+        
+        if (self.contentViewAspectFill) {
+            // aspectFill: 短边贴合，超出部分裁剪
+            if (containerAspectRatio > targetAspectRatio) {
+                width = boundsWidth;
+                height = width / targetAspectRatio;
+            } else {
+                height = boundsHeight;
+                width = height * targetAspectRatio;
+            }
+        } else {
+            // aspectFit: 长边贴合，保留完整画面
+            if (containerAspectRatio > targetAspectRatio) {
+                height = boundsHeight;
+                width = height * targetAspectRatio;
+            } else {
+                width = boundsWidth;
+                height = width / targetAspectRatio;
+            }
         }
-
-        CGFloat x = (self.bounds.size.width - width)/2;
-        CGFloat y = (self.bounds.size.height - height)/2;
-        self.contentView.frame = CGRectMake(x, y, width, height);;
+        
+        CGFloat x = (boundsWidth - width) / 2.0;
+        CGFloat y = (boundsHeight - height) / 2.0;
+        self.contentView.frame = CGRectMake(x, y, width, height);
     }
     self.cusMskView.frame = self.bounds;
     // 横竖屏智适应

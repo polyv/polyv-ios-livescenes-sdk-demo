@@ -693,6 +693,7 @@ UIDocumentPickerDelegate
         self.stickerManager = [[PLVStickerManager alloc] initWithParentView:self.view];
         self.stickerManager.delegate = self;
     }
+    [self syncStickerManagerLayoutMode];
     if (!self.stickerCanvas) {
         self.stickerCanvas = self.stickerManager.stickerCanvas;
     }
@@ -1670,6 +1671,7 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         self.stickerManager = [[PLVStickerManager alloc] initWithParentView:self.view];
         self.stickerManager.delegate = self;
     }
+    [self syncStickerManagerLayoutMode];
     [self.stickerManager showStickerTypeSelection];
 }
 
@@ -1684,7 +1686,13 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
         self.stickerManager = [[PLVStickerManager alloc] initWithParentView:self.view];
         self.stickerManager.delegate = self;
     }
+    [self syncStickerManagerLayoutMode];
     [self.stickerManager showStickerTypeForVideo];
+}
+
+- (void)syncStickerManagerLayoutMode {
+    BOOL fillMode = (self.streamerPresenter.localPreviewViewFillMode == PLVBRTCVideoViewFillMode_Fill);
+    self.stickerManager.contentViewAspectFill = fillMode;
 }
 
 - (void)streamerSettingViewDidClickVirtualBackgroundButton:(PLVSAStreamerSettingView *)streamerSettingView {

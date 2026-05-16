@@ -762,7 +762,8 @@ UITableViewDataSource
 }
 
 - (void)chatroomManager_loginUsers:(NSArray <PLVChatUser *> * _Nullable )userArray {
-    if ([PLVRoomDataManager sharedManager].roomData.welcomeShowDisable) {
+    PLVLiveVideoChannelMessageEffect *effect = [PLVRoomDataManager sharedManager].roomData.menuInfo.effect;
+    if (!effect.visitEffectEnabled) {
         return;
     }
     
@@ -792,12 +793,23 @@ UITableViewDataSource
     
     if (string.length > 0) {
         [self arrangeTopMarqueeViewFrame];
-        [self.welcomeView showWelcomeWithNickName:string];
+        [self.welcomeView showWelcomeWithMessage:[self welcomeMessageWithNickName:string]];
     }
+}
+
+- (NSString *)welcomeMessageWithNickName:(NSString *)nickName {
+    PLVLiveVideoChannelMessageEffect *effect = [PLVRoomDataManager sharedManager].roomData.menuInfo.effect;
+    PLVMessageEffectMessage *message = [PLVMessageEffectMessage messageWithEventName:@"LOGIN" data:@{@"nickName" : nickName ?: @""}];
+    return [message contentWithTemplate:effect.joinVisitEffectTip];
 }
 
 - (void)chatroomManager_signInSuccessWithNickname:(NSString *)nickname {
     if (![PLVFdUtil checkStringUseable:nickname]) {
+        return;
+    }
+    
+    PLVLiveVideoChannelMessageEffect *effect = [PLVRoomDataManager sharedManager].roomData.menuInfo.effect;
+    if (!effect.interactionEffectEnabled) {
         return;
     }
 
@@ -808,9 +820,31 @@ UITableViewDataSource
         displayName = [firstChar stringByAppendingString:stars];
     }
 
-    NSString *message = [NSString stringWithFormat:PLVLocalizedString(@"%@ 签到成功"), displayName];
+    displayName = [self messageEffectDisplayNickName:displayName];
+    NSString *message = [self checkinMessageWithNickName:displayName];
     [self arrangeTopMarqueeViewFrame];
     [self.welcomeView showWelcomeWithMessage:message];
+}
+
+- (NSString *)checkinMessageWithNickName:(NSString *)nickName {
+    PLVLiveVideoChannelMessageEffect *effect = [PLVRoomDataManager sharedManager].roomData.menuInfo.effect;
+    PLVMessageEffectMessage *message = [PLVMessageEffectMessage messageWithEventName:@"CHECKIN" data:@{@"nickName" : nickName ?: @""}];
+    return [message contentWithTemplate:effect.checkinInteractionEffectTip];
+}
+
+- (void)chatroomManager_productClickEffectMessage:(NSString *)message {
+    if (![PLVFdUtil checkStringUseable:message]) {
+        return;
+    }
+    [self arrangeTopMarqueeViewFrame];
+    [self.welcomeView showWelcomeWithMessage:message];
+}
+
+- (NSString *)messageEffectDisplayNickName:(NSString *)nickName {
+    if (nickName.length > 5) {
+        return [[nickName substringToIndex:5] stringByAppendingString:@"..."];
+    }
+    return nickName;
 }
 
 - (void)chatroomManager_managerMessage:(NSString * )content {

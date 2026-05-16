@@ -68,6 +68,7 @@
     // 创建贴图画布
     self.stickerCanvas = [[PLVStickerCanvas alloc] initWithFrame:self.parentView.bounds];
     self.stickerCanvas.delegate = self;
+    self.stickerCanvas.contentViewAspectFill = self.contentViewAspectFill;
     self.stickerCanvas.frame = self.parentView.bounds;
     self.stickerCanvas.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 }
@@ -78,6 +79,11 @@
 
 - (PLVStickerTextView *)currentEditingTextView{
     return self.stickerCanvas.currentEditingTextView;
+}
+
+- (void)setContentViewAspectFill:(BOOL)contentViewAspectFill {
+    _contentViewAspectFill = contentViewAspectFill;
+    self.stickerCanvas.contentViewAspectFill = contentViewAspectFill;
 }
 
 #pragma mark - Public Methods

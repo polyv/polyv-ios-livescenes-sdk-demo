@@ -78,6 +78,7 @@
         [message isKindOfClass:[PLVQuoteMessage class]] ||
         [message isKindOfClass:[PLVImageMessage class]] ||
         [message isKindOfClass:[PLVImageEmotionMessage class]] ||
+        [message isKindOfClass:[PLVMessageEffectMessage class]] ||
         [message isKindOfClass:[PLVCustomMessage class]] ||
         [message isKindOfClass:[PLVFileMessage class]] ||
         [message isKindOfClass:[PLVRedpackMessage class]] ||

@@ -148,6 +148,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 收到签到成功事件，用于显示顶部横幅
 - (void)chatroomManager_signInSuccessWithNickname:(NSString *)nickname;
 
+/// 收到商品点击转化特效消息时触发，用于显示顶部欢迎横幅
+/// @param message 商品点击转化特效文案
+- (void)chatroomManager_productClickEffectMessage:(NSString *)message;
+
 @end
 
 /*

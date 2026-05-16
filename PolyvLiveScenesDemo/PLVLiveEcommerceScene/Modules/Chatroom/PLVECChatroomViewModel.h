@@ -82,6 +82,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param nickname 签到成员昵称
 - (void)chatroomManager_signInSuccessWithNickname:(NSString *)nickname;
 
+/// 收到商品点击转化特效消息时触发，用于显示顶部欢迎横幅
+/// @param message 商品点击转化特效文案
+- (void)chatroomManager_productClickEffectMessage:(NSString *)message;
+
 /// 加载打赏信息时触发
 /// @param rewardEnable 是否支持打赏
 /// @param payWay 打赏方式，CASH为现金打赏，POINT为积分打赏

@@ -1,11 +1,9 @@
 #import "PLVECProductConversionEffectCell.h"
 #import "PLVRoomDataManager.h"
-#import "PLVMultiLanguageManager.h"
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 
-static NSString * const kPLVECConversionPayloadKey = @"plv_ec_conversion_payload";
 static CGFloat const kPLVECConversionInnerHorizontalPadding = 8.0; // 与普通电商消息文本起点对齐
 static CGFloat const kPLVECConversionInnerVerticalPadding = 4.0;
 static CGFloat const kPLVECConversionLabelMinHeight = 19.0;
@@ -30,14 +28,11 @@ static CGFloat const kPLVECConversionBottomPadding = 4.0;
     if (![PLVECChatBaseCell isModelValid:model]) {
         return NO;
     }
-    if (![model.message isKindOfClass:[PLVSpeakMessage class]]) {
+    if (![model.message isKindOfClass:[PLVMessageEffectMessage class]]) {
         return NO;
     }
-    if (![model.replyMessage isKindOfClass:[NSDictionary class]]) {
-        return NO;
-    }
-    NSDictionary *payload = (NSDictionary *)model.replyMessage;
-    return PLV_SafeBoolForDictKey(payload, kPLVECConversionPayloadKey);
+    PLVMessageEffectMessage *message = (PLVMessageEffectMessage *)model.message;
+    return [message isProductClickEffectMessage];
 }
 
 - (void)updateWithModel:(PLVChatModel *)model cellWidth:(CGFloat)cellWidth {
@@ -118,35 +113,13 @@ static CGFloat const kPLVECConversionBottomPadding = 4.0;
 }
 
 + (NSDictionary *)conversionMessagePartsWithModel:(PLVChatModel *)model {
-    NSDictionary *payload = (NSDictionary *)model.replyMessage;
-    NSString *type = [PLV_SafeStringForDictKey(payload, @"type") lowercaseString];
-    BOOL positionType = [type isEqualToString:@"position"];
-    BOOL financeType = [type isEqualToString:@"finance"];
-    BOOL purchaseType = !positionType;
-
-    NSString *nickName = [model.user getDisplayNickname:[PLVRoomDataManager sharedManager].roomData.menuInfo.hideViewerNicknameEnabled loginUserId:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
-    if (![PLVFdUtil checkStringUseable:nickName]) {
-        nickName = PLV_SafeStringForDictKey(payload, @"nickName");
-    }
-
-    NSString *content = @"";
-    if ([model.message isKindOfClass:[PLVSpeakMessage class]]) {
-        content = ((PLVSpeakMessage *)model.message).content;
-    }
-    if (![PLVFdUtil checkStringUseable:content]) {
-        if (positionType) {
-            content = PLVLocalizedString(@"正在投递职位");
-        } else if (financeType) {
-            content = PLVLocalizedString(@"正在选购商品");
-        } else {
-            content = PLVLocalizedString(@"正在购买商品");
-        }
-    }
+    PLVMessageEffectMessage *message = (PLVMessageEffectMessage *)model.message;
+    NSString *content = message.content;
 
     return @{
-        @"nickName": nickName ?: @"",
+        @"nickName": message.displayNickName ?: @"",
         @"content": content ?: @"",
-        @"showArrow": @(purchaseType)
+        @"showArrow": @YES
     };
 }
 
@@ -155,7 +128,7 @@ static CGFloat const kPLVECConversionBottomPadding = 4.0;
                                                      showArrow:(BOOL)showArrow {
     NSDictionary *nameAttributes = @{
         NSFontAttributeName:[UIFont systemFontOfSize:12.0 weight:UIFontWeightMedium],
-        NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#8E97AA"]
+        NSForegroundColorAttributeName:[UIColor colorWithWhite:1.0 alpha:0.55]
     };
     NSDictionary *contentAttributes = @{
         NSFontAttributeName:[UIFont systemFontOfSize:13.0 weight:UIFontWeightSemibold],
@@ -167,62 +140,24 @@ static CGFloat const kPLVECConversionBottomPadding = 4.0;
     };
 
     NSMutableAttributedString *string = [[NSMutableAttributedString alloc] init];
-    if ([PLVFdUtil checkStringUseable:nickName]) {
-        [string appendAttributedString:[[NSAttributedString alloc] initWithString:nickName attributes:nameAttributes]];
-        [string appendAttributedString:[[NSAttributedString alloc] initWithString:@"  " attributes:contentAttributes]];
-    }
     [string appendAttributedString:[[NSAttributedString alloc] initWithString:content ?: @"" attributes:contentAttributes]];
+    if ([PLVFdUtil checkStringUseable:nickName] && [content hasPrefix:nickName]) {
+        [string addAttributes:nameAttributes range:NSMakeRange(0, nickName.length)];
+    }
     if (showArrow) {
         [string appendAttributedString:[[NSAttributedString alloc] initWithString:@"  ›" attributes:arrowAttributes]];
     }
     return [string copy];
 }
 
-+ (NSString *)nicknamePrefix:(NSString *)nickName maxLength:(NSUInteger)maxLength {
-    if (![PLVFdUtil checkStringUseable:nickName] || maxLength == 0) {
-        return @"";
-    }
-    NSRange range = [nickName rangeOfComposedCharacterSequencesForRange:NSMakeRange(0, MIN(maxLength, nickName.length))];
-    return [nickName substringWithRange:range];
-}
-
-+ (CGFloat)textWidthForAttributedString:(NSAttributedString *)string {
-    CGSize size = [string boundingRectWithSize:CGSizeMake(CGFLOAT_MAX, CGFLOAT_MAX)
-                                       options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading
-                                       context:nil].size;
-    return ceil(size.width);
-}
-
 + (NSAttributedString *)conversionAttributedStringWithModel:(PLVChatModel *)model maxLabelWidth:(CGFloat)maxLabelWidth {
+    (void)maxLabelWidth;
     NSDictionary *parts = [self conversionMessagePartsWithModel:model];
     NSString *nickName = parts[@"nickName"];
     NSString *content = parts[@"content"];
     BOOL showArrow = [parts[@"showArrow"] boolValue];
 
-    NSAttributedString *full = [self conversionAttributedStringWithNickName:nickName content:content showArrow:showArrow];
-    if (maxLabelWidth <= 0 || [self textWidthForAttributedString:full] <= maxLabelWidth) {
-        return full;
-    }
-
-    NSAttributedString *withoutName = [self conversionAttributedStringWithNickName:nil content:content showArrow:showArrow];
-    if (![PLVFdUtil checkStringUseable:nickName]) {
-        return withoutName;
-    }
-
-    NSUInteger maxPreviewLength = MIN((NSUInteger)4, nickName.length);
-    for (NSUInteger length = maxPreviewLength; length >= 1; length--) {
-        NSString *prefix = [self nicknamePrefix:nickName maxLength:length];
-        NSString *displayName = (prefix.length < nickName.length) ? [prefix stringByAppendingString:@"…"] : prefix;
-        NSAttributedString *candidate = [self conversionAttributedStringWithNickName:displayName content:content showArrow:showArrow];
-        if ([self textWidthForAttributedString:candidate] <= maxLabelWidth) {
-            return candidate;
-        }
-        if (length == 1) {
-            break;
-        }
-    }
-
-    return withoutName;
+    return [self conversionAttributedStringWithNickName:nickName content:content showArrow:showArrow];
 }
 
 + (NSAttributedString *)conversionAttributedStringWithModel:(PLVChatModel *)model {

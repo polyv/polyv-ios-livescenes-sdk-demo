@@ -53,6 +53,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, strong) PLVStickerTextView *currentEditingTextView;
 
 @property (nonatomic, assign) BOOL enableEdit;
+/// contentView 布局模式：NO=Fit，YES=Fill
+@property (nonatomic, assign) BOOL contentViewAspectFill;
 
 @property (nonatomic, readonly) NSInteger curImageCount;
 

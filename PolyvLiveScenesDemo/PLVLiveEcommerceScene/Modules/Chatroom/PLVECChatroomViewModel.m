@@ -17,7 +17,6 @@
 #import "PLVMultiLanguageManager.h"
 
 static NSInteger kPLVECMaxPublicChatMessageCount = 500;
-static NSString * const kPLVECConversionPayloadKey = @"plv_ec_conversion_payload";
 
 @interface PLVECChatroomViewModel ()<
 PLVSocketManagerProtocol, // socket协议
@@ -45,6 +44,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 @property (nonatomic, strong) NSMutableArray <PLVChatUser *> *loginUserArray;
 /// 当前时间段内是否发生当前用户的登录事件
 @property (nonatomic, assign) BOOL isMyselfLogin;
+/// 商品点击消息聚合计时器，间隔2秒触发一次
+@property (nonatomic, strong) NSTimer *productClickTimer;
+/// 暂未展示的商品点击消息数组
+@property (nonatomic, strong) NSMutableArray <PLVChatModel *> *productClickMessageArray;
 /// 礼物打赏开关
 @property (nonatomic, assign) BOOL enableReward;
 /// 是否打开【只看讲师】开关
@@ -73,6 +76,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_semaphore_t _publicChatArrayLock;
     dispatch_semaphore_t _privateChatArrayLock;
     dispatch_semaphore_t _loginArrayLock;
+    dispatch_semaphore_t _productClickArrayLock;
     
     /// PLVSocketManager回调的执行队列
     dispatch_queue_t socketDelegateQueue;
@@ -81,6 +85,9 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     dispatch_queue_t multicastQueue;
     PLVMulticastDelegate<PLVECChatroomViewModelProtocol> *multicastDelegate;
 }
+
+static const NSInteger PLVECProductClickDisplayLimitPerTick = 5;
+static const NSUInteger PLVECProductClickNicknameMaxLength = 5;
 
 #pragma mark - 生命周期
 
@@ -116,6 +123,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     _publicChatArrayLock = dispatch_semaphore_create(1);
     _privateChatArrayLock = dispatch_semaphore_create(1);
     _loginArrayLock = dispatch_semaphore_create(1);
+    _productClickArrayLock = dispatch_semaphore_create(1);
     
     // 初始化消息数组，预设初始容量
     self.publicChatArray = [NSMutableArray arrayWithCapacity:500];
@@ -152,6 +160,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
                                                      userInfo:nil
                                                       repeats:YES];
     self.loginUserArray = [[NSMutableArray alloc] initWithCapacity:10];
+    // 初始化商品点击消息聚合计时器，商品点击消息数组
+    if ([self productMessageEffectEnabled]) {
+        self.productClickTimer = [NSTimer scheduledTimerWithTimeInterval:2
+                                                                  target:self
+                                                                selector:@selector(productClickTimerAction)
+                                                                userInfo:nil
+                                                                 repeats:YES];
+        self.productClickMessageArray = [[NSMutableArray alloc] initWithCapacity:10];
+    }
     
     // 初始化公聊数据管理计时器
     self.publicChatManagerTimer = [NSTimer scheduledTimerWithTimeInterval:6
@@ -172,6 +189,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
     [self.loginTimer invalidate];
     self.loginTimer = nil;
+    [self removeAllProductClickMessages];
+    
+    [self.productClickTimer invalidate];
+    self.productClickTimer = nil;
     [self removeAllPublicChatModels];
     
     self.onlyTeacher = NO;
@@ -384,12 +405,13 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
-- (BOOL)productConventMessageEffectEnable {
-    return [PLVRoomDataManager sharedManager].roomData.menuInfo.productConventMessageEffectEnable;
+- (BOOL)productMessageEffectEnabled {
+    PLVLiveVideoChannelMenuInfo *menuInfo = [PLVRoomDataManager sharedManager].roomData.menuInfo;
+    return menuInfo.effect.productEffectEnabled;
 }
 
 - (BOOL)shouldFilterEffectMessageModel:(PLVChatModel *)model {
-    return (![self productConventMessageEffectEnable] && [PLVECProductConversionEffectCell isModelValid:model]);
+    return (![self productMessageEffectEnabled] && [PLVECProductConversionEffectCell isModelValid:model]);
 }
 
 /// 本地发送公聊消息时
@@ -636,6 +658,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     });
 }
 
+- (void)notifyListenerProductClickEffectMessage:(NSString *)message {
+    if (![PLVFdUtil checkStringUseable:message]) {
+        return;
+    }
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_productClickEffectMessage:message];
+    });
+}
+
 - (void)notifyListenerDidLoginRestrict {
     dispatch_async(multicastQueue, ^{
         [self->multicastDelegate chatroomManager_didLoginRestrict];
@@ -804,6 +835,56 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+#pragma mark - 定时展示商品点击消息
+
+- (void)cacheProductClickMessage:(PLVChatModel *)chatModel {
+    if (!chatModel ||
+        !self.productClickTimer ||
+        !self.productClickTimer.valid) {
+        return;
+    }
+    
+    dispatch_semaphore_wait(_productClickArrayLock, DISPATCH_TIME_FOREVER);
+    [self.productClickMessageArray addObject:chatModel];
+    dispatch_semaphore_signal(_productClickArrayLock);
+}
+
+- (void)productClickTimerAction {
+    if (self.productClickMessageArray.count == 0) {
+        return;
+    }
+    
+    dispatch_semaphore_wait(_productClickArrayLock, DISPATCH_TIME_FOREVER);
+    NSArray *messageArray = [self.productClickMessageArray copy];
+    [self.productClickMessageArray removeAllObjects];
+    dispatch_semaphore_signal(_productClickArrayLock);
+    
+    if (messageArray.count <= PLVECProductClickDisplayLimitPerTick) {
+        [self addPublicChatModels:messageArray];
+        return;
+    }
+    
+    NSRange displayRange = NSMakeRange(0, PLVECProductClickDisplayLimitPerTick);
+    NSArray *topMessages = [messageArray subarrayWithRange:displayRange];
+    [self addPublicChatModels:topMessages];
+    
+    NSArray *overflowMessages = [messageArray subarrayWithRange:NSMakeRange(PLVECProductClickDisplayLimitPerTick, messageArray.count - PLVECProductClickDisplayLimitPerTick)];
+    PLVChatModel *summaryModel = [self buildOverflowSummaryChatModelWithMessages:overflowMessages];
+    if (summaryModel) {
+        [self addPublicChatModels:@[summaryModel]];
+    }
+}
+
+- (void)removeAllProductClickMessages {
+    if (!_productClickArrayLock) {
+        return;
+    }
+    
+    dispatch_semaphore_wait(_productClickArrayLock, DISPATCH_TIME_FOREVER);
+    [self.productClickMessageArray removeAllObjects];
+    dispatch_semaphore_signal(_productClickArrayLock);
+}
+
 #pragma mark 生成 礼物 消息模型
 
 - (PLVChatModel *)giftChatModeWithData:(NSDictionary *)data tip:(NSString *)tip user:(PLVChatUser *)user {
@@ -826,102 +907,213 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 
 #pragma mark 生成 转化 消息模型
 
-- (NSString *)conversionTargetIdWithData:(NSDictionary *)data {
-    id targetIdObj = data[@"productId"];
-    if (!targetIdObj || [targetIdObj isKindOfClass:[NSNull class]]) {
-        targetIdObj = data[@"positionId"];
+- (NSString *)conversionEffectTemplateWithMessageType:(PLVMessageEffectMessageType)messageType {
+    PLVLiveVideoChannelMessageEffect *effect = [PLVRoomDataManager sharedManager].roomData.menuInfo.effect;
+    if (messageType == PLVMessageEffectMessageTypeClickJobProduct) {
+        return effect.clickJobProductEffectTip;
+    } else if (messageType == PLVMessageEffectMessageTypeClickFinancialProduct) {
+        return effect.clickFinancialProductEffectTip;
+    } else {
+        return effect.clickOrdinaryProductEffectTip;
     }
-    if ([targetIdObj isKindOfClass:[NSNumber class]]) {
-        return [(NSNumber *)targetIdObj stringValue];
-    }
-    if ([targetIdObj isKindOfClass:[NSString class]]) {
-        NSString *targetId = (NSString *)targetIdObj;
-        return [PLVFdUtil checkStringUseable:targetId] ? targetId : nil;
-    }
-    return nil;
 }
 
-- (PLVChatModel *)conversionChatModelWithData:(NSDictionary *)data {
-    NSString *nickName = PLV_SafeStringForDictKey(data, @"nickName");
-    NSString *targetName = PLV_SafeStringForDictKey(data, @"positionName");
-    if (![PLVFdUtil checkStringUseable:targetName]) {
-        targetName = PLV_SafeStringForDictKey(data, @"productName");
-    }
-    if (![PLVFdUtil checkStringUseable:targetName]) {
-        targetName = PLV_SafeStringForDictKey(data, @"name");
-    }
-    NSString *rawType = [PLV_SafeStringForDictKey(data, @"type") lowercaseString];
-    NSString *targetId = [self conversionTargetIdWithData:data];
-    if (![PLVFdUtil checkStringUseable:nickName] || ![PLVFdUtil checkStringUseable:rawType]) {
+/// 生成单条商品点击转化聊天模型。
+/// 原始 socket data 中只包含用户原始昵称，这里先解析出 PLVMessageEffectMessage，
+/// 再按“单条消息昵称规则”生成 displayNickName，最后统一组装 PLVChatModel。
+/// 单条规则：昵称超过 5 个可见字符时展示为“前5个字符... ”，否则原样展示。
+/// @param data PRODUCT_CLICK 事件数据，支持扁平结构或 payloadData。
+/// @param eventName 事件名，预期为 PRODUCT_CLICK。
+- (PLVChatModel *)productClickChatModelWithData:(NSDictionary *)data eventName:(NSString *)eventName {
+    PLVMessageEffectMessage *effectMessage = [PLVMessageEffectMessage messageWithEventName:eventName data:data];
+    NSString *displayNickName = [self displayNicknameForProductClickMessage:effectMessage.nickName];
+    return [self chatModelWithProductClickEffectMessage:effectMessage displayNickName:displayNickName];
+}
+
+/// 生成合并商品点击转化聊天模型。
+/// 只在 buildOverflowSummaryChatModelWithMessages: 中调用；
+/// 合并逻辑已经把多个原始昵称处理成“xxx 等N人”，这里不再计算单条昵称截断。
+/// @param payload 合并消息 payload，来源于原始商品点击消息并替换 nickName 为合并展示昵称。
+/// @param displayNickName 已按合并规则处理好的展示昵称，例如“张三、李... 等6人 ”。
+- (PLVChatModel *)productClickSummaryChatModelWithPayload:(NSDictionary *)payload displayNickName:(NSString *)displayNickName {
+    PLVMessageEffectMessage *effectMessage = [PLVMessageEffectMessage messageWithEventName:@"PRODUCT_CLICK" data:payload];
+    return [self chatModelWithProductClickEffectMessage:effectMessage displayNickName:displayNickName];
+}
+
+/// 统一生成商品点击转化聊天模型。
+/// 单条消息和合并消息都会先生成 PLVMessageEffectMessage，再进入这里组装 PLVChatModel，
+/// 避免同一份 data/eventName 为了“计算展示昵称”和“构建消息模型”重复解析。
+/// @param effectMessage 商品点击特效消息模型，内部保留原始昵称，用于后续 payload/点击逻辑。
+/// @param displayNickName 用于模板展示的昵称，可能是截断后的单条昵称，也可能是“xxx 等N人”的合并昵称。
+- (PLVChatModel *)chatModelWithProductClickEffectMessage:(PLVMessageEffectMessage *)effectMessage displayNickName:(NSString *)displayNickName {
+    if (!effectMessage || ![effectMessage isProductClickEffectMessage]) {
         return nil;
     }
     
-    BOOL isPositionType = [rawType containsString:@"position"] || [rawType containsString:@"job"];
-    BOOL isFinanceType = [rawType containsString:@"finance"];
-    BOOL isNormalType = [rawType isEqualToString:@"normal"] || [rawType isEqualToString:@"nornal"] || (!isPositionType && !isFinanceType);
-    NSString *content = nil;
-    if (isPositionType) {
-        content = [PLVFdUtil checkStringUseable:targetName] ? [NSString stringWithFormat:PLVLocalizedString(@"正在投递 %@"), targetName] : PLVLocalizedString(@"正在投递职位");
-    } else if (isFinanceType) {
-        content = [PLVFdUtil checkStringUseable:targetName] ? [NSString stringWithFormat:PLVLocalizedString(@"正在选购 %@"), targetName] : PLVLocalizedString(@"正在选购商品");
-    } else {
-        // normal / nornal and unknown values fallback to purchase text
-        content = [PLVFdUtil checkStringUseable:targetName] ? [NSString stringWithFormat:PLVLocalizedString(@"正在购买 %@"), targetName] : PLVLocalizedString(@"正在购买商品");
-    }
-    
-    PLVSpeakMessage *speakMessage = [[PLVSpeakMessage alloc] init];
-    speakMessage.content = content;
+    NSString *template = [self conversionEffectTemplateWithMessageType:effectMessage.type];
+    // contentWithTemplate: 只读取 effectMessage.nickName 做模板替换；
+    // 这里临时替换为展示昵称，生成 content 后立即恢复原始昵称，避免影响点击 payload。
+    NSString *originNickName = effectMessage.nickName;
+    effectMessage.displayNickName = displayNickName;
+    effectMessage.nickName = displayNickName;
+    effectMessage.content = [effectMessage contentWithTemplate:template];
+    effectMessage.nickName = originNickName;
     
     PLVChatUser *chatUser = [[PLVChatUser alloc] init];
-    chatUser.userName = nickName;
-    chatUser.userId = [NSString stringWithFormat:@"conversion_%@", nickName];
-    
-    NSMutableDictionary *conversionPayload = [[NSMutableDictionary alloc] init];
-    if (isPositionType) {
-        conversionPayload[@"type"] = @"position";
-    } else if (isFinanceType) {
-        conversionPayload[@"type"] = @"finance";
-    } else if (isNormalType) {
-        conversionPayload[@"type"] = @"normal";
-    } else {
-        conversionPayload[@"type"] = rawType;
-    }
-    conversionPayload[@"rawType"] = rawType;
-    if ([PLVFdUtil checkStringUseable:targetName]) {
-        conversionPayload[@"positionName"] = targetName;
-    }
-    if ([PLVFdUtil checkStringUseable:nickName]) {
-        conversionPayload[@"nickName"] = nickName;
-    }
-    if ([PLVFdUtil checkStringUseable:targetId]) {
-        conversionPayload[@"productId"] = targetId;
-    }
-    conversionPayload[kPLVECConversionPayloadKey] = @(YES);
+    chatUser.userName = effectMessage.nickName;
+    chatUser.userId = [NSString stringWithFormat:@"conversion_%@", effectMessage.nickName];
     
     PLVChatModel *chatModel = [[PLVChatModel alloc] init];
     chatModel.user = chatUser;
-    chatModel.message = speakMessage;
+    chatModel.message = effectMessage;
     chatModel.contentLength = PLVChatMsgContentLength_0To500;
-    chatModel.replyMessage = [conversionPayload copy];
     return chatModel;
 }
 
 - (void)productClickEventWithSubEvent:(NSString *)subEvent jsonDict:(NSDictionary *)jsonDict {
-    if (![self productConventMessageEffectEnable]) {
+    if (![self productMessageEffectEnabled]) {
         return;
     }
     NSDictionary *data = PLV_SafeDictionaryForDictKey(jsonDict, @"data");
     NSDictionary *payloadData = [PLVFdUtil checkDictionaryUseable:data] ? data : jsonDict;
-    NSString *eventType = PLV_SafeStringForDictKey(payloadData, @"EVENT");
+    NSString *eventType = PLV_SafeStringForDictKey(jsonDict, @"EVENT");
+    if (![PLVFdUtil checkStringUseable:eventType]) {
+        eventType = PLV_SafeStringForDictKey(payloadData, @"EVENT");
+    }
     eventType = [PLVFdUtil checkStringUseable:eventType] ? eventType : subEvent;
-    if (![eventType isEqualToString:@"PRODUCT_CLICK"]) {
+    if (![[eventType uppercaseString] isEqualToString:@"PRODUCT_CLICK"]) {
         return;
     }
-    PLVChatModel *chatModel = [self conversionChatModelWithData:payloadData];
+    PLVChatModel *chatModel = [self productClickChatModelWithData:payloadData eventName:eventType];
     if (!chatModel) {
         return;
     }
-    [self addPublicChatModels:@[chatModel]];
+    NSString *effectMessage = [self productClickEffectMessageWithChatModel:chatModel];
+    [self notifyListenerProductClickEffectMessage:effectMessage];
+    [self cacheProductClickMessage:chatModel];
+}
+
+- (NSString *)productClickEffectMessageWithChatModel:(PLVChatModel *)chatModel {
+    if (![chatModel.message isKindOfClass:[PLVMessageEffectMessage class]]) {
+        return nil;
+    }
+    PLVMessageEffectMessage *effectMessage = (PLVMessageEffectMessage *)chatModel.message;
+    return [PLVFdUtil checkStringUseable:effectMessage.content] ? effectMessage.content : nil;
+}
+
+/// 安全获取商品点击昵称的前缀。
+/// 不直接使用 substringToIndex:，是因为 NSString.length 按 UTF-16 计数，
+/// emoji、组合音标等“用户看到的一个字符”可能由多个 code unit 组成，直接截取可能截坏。
+/// @param string 原始昵称或合并后的昵称串。
+/// @param maxLength 最多保留的用户可见字符数。
+/// @param didTruncate 输出参数；YES 表示原字符串超过 maxLength，调用方需要拼接省略号。
+/// @return 未超长时返回原字符串；超长时返回前 maxLength 个组合字符。
+- (NSString *)productClickNicknamePrefixForString:(NSString *)string
+                                        maxLength:(NSUInteger)maxLength
+                                     didTruncate:(BOOL *)didTruncate {
+    if (didTruncate) {
+        *didTruncate = NO;
+    }
+    if (![PLVFdUtil checkStringUseable:string] || maxLength == 0) {
+        return string;
+    }
+    
+    // 按组合字符截取，避免 emoji 或组合字符被 substringToIndex: 从中间截断。
+    __block NSUInteger characterCount = 0;
+    __block NSRange prefixRange = NSMakeRange(0, 0);
+    __block BOOL truncated = NO;
+    [string enumerateSubstringsInRange:NSMakeRange(0, string.length)
+                               options:NSStringEnumerationByComposedCharacterSequences
+                            usingBlock:^(NSString * _Nullable substring, NSRange substringRange, NSRange enclosingRange, BOOL * _Nonnull stop) {
+        if (characterCount < maxLength) {
+            prefixRange.length = NSMaxRange(substringRange);
+            characterCount++;
+        } else {
+            truncated = YES;
+            *stop = YES;
+        }
+    }];
+    
+    if (didTruncate) {
+        *didTruncate = truncated;
+    }
+    return truncated ? [string substringWithRange:prefixRange] : string;
+}
+
+/// 单条商品点击消息的昵称展示规则：
+/// - 昵称不超过 5 个可见字符：原样展示；
+/// - 昵称超过 5 个可见字符：展示“前5个字符 + ... + 空格”，例如“张三李四王... ”。
+- (NSString *)displayNicknameForProductClickMessage:(NSString *)nickName {
+    if (![PLVFdUtil checkStringUseable:nickName]) {
+        return nickName;
+    }
+    
+    BOOL truncated = NO;
+    NSString *prefix = [self productClickNicknamePrefixForString:nickName
+                                                       maxLength:PLVECProductClickNicknameMaxLength
+                                                    didTruncate:&truncated];
+    if (truncated) {
+        return [prefix stringByAppendingString:@"... "];
+    }
+    return nickName;
+}
+
+/// 合并商品点击消息的昵称展示规则：
+/// - mergedNames 是多个原始昵称用“、”拼接后的结果；
+/// - 合并昵称不超过 5 个可见字符：展示“合并昵称 等N人 ”；
+/// - 合并昵称超过 5 个可见字符：展示“前5个字符... 等N人 ”。
+- (NSString *)displayNicknameForMergedProductClickMessages:(NSString *)mergedNames count:(NSUInteger)count {
+    if (![PLVFdUtil checkStringUseable:mergedNames]) {
+        mergedNames = PLVLocalizedString(@"观众");
+    }
+    
+    BOOL truncated = NO;
+    NSString *prefix = [self productClickNicknamePrefixForString:mergedNames
+                                                       maxLength:PLVECProductClickNicknameMaxLength
+                                                    didTruncate:&truncated];
+    NSString *displayName = truncated ? [prefix stringByAppendingString:@"..."] : prefix;
+    return [NSString stringWithFormat:@"%@ 等%lu人 ", displayName, (unsigned long)count];
+}
+
+/// 生成溢出商品点击消息的合并昵称文案。
+/// 注意这里先合并“原始昵称”，再统一截断；不要先截断每个用户昵称，避免出现双重截断。
+- (NSString *)mergedNicknameTextForOverflowMessages:(NSArray<PLVChatModel *> *)overflowMessages {
+    if (![PLVFdUtil checkArrayUseable:overflowMessages]) {
+        return nil;
+    }
+    
+    NSMutableArray<NSString *> *nameArray = [[NSMutableArray alloc] init];
+    for (PLVChatModel *model in overflowMessages) {
+        if (![model.message isKindOfClass:[PLVMessageEffectMessage class]]) {
+            continue;
+        }
+        PLVMessageEffectMessage *message = (PLVMessageEffectMessage *)model.message;
+        if ([PLVFdUtil checkStringUseable:message.nickName]) {
+            [nameArray addObject:message.nickName];
+        }
+    }
+    
+    NSString *mergedNames = [nameArray componentsJoinedByString:@"、"];
+    return [self displayNicknameForMergedProductClickMessages:mergedNames count:overflowMessages.count];
+}
+
+- (PLVChatModel *)buildOverflowSummaryChatModelWithMessages:(NSArray<PLVChatModel *> *)overflowMessages {
+    if (![PLVFdUtil checkArrayUseable:overflowMessages]) {
+        return nil;
+    }
+    
+    PLVChatModel *baseModel = overflowMessages.firstObject;
+    NSDictionary *payload = [self conversionPayloadWithChatModel:baseModel];
+    if (![PLVFdUtil checkDictionaryUseable:payload]) {
+        return nil;
+    }
+    
+    NSMutableDictionary *summaryPayload = [payload mutableCopy];
+    NSString *mergedNameText = [self mergedNicknameTextForOverflowMessages:overflowMessages];
+    if ([PLVFdUtil checkStringUseable:mergedNameText]) {
+        summaryPayload[@"nickName"] = mergedNameText;
+    }
+    return [self productClickSummaryChatModelWithPayload:[summaryPayload copy] displayNickName:mergedNameText];
 }
 
 #pragma mark 处理 礼物 消息
@@ -979,6 +1171,10 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     } else if ([subEvent isEqualToString:@"REWARD"]) {
         NSDictionary *contentDict = jsonDict[@"content"];
         [self notifyListenerRewardSuccess:contentDict];
+    } else if ([subEvent isEqualToString:@"product"] ||
+               [[subEvent uppercaseString] isEqualToString:@"PRODUCT_CLICK"] ||
+               [[PLV_SafeStringForDictKey(jsonDict, @"EVENT") uppercaseString] isEqualToString:@"PRODUCT_CLICK"]) {
+        [self productClickEventWithSubEvent:subEvent jsonDict:jsonDict];
     } else if ([subEvent isEqualToString:@"SIGN_IN_TIMES"] ||
                [PLV_SafeStringForDictKey(jsonDict, @"EVENT") isEqualToString:@"SIGN_IN_TIMES"]) {
         NSString *nickname = PLV_SafeStringForDictKey(jsonDict, @"nick");
@@ -1068,21 +1264,43 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
 }
 
 - (BOOL)isConversionChatModel:(PLVChatModel *)model {
-    NSDictionary *payload = [self conversionPayloadWithChatModel:model];
-    return [PLVFdUtil checkDictionaryUseable:payload];
+    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
+        return NO;
+    }
+    if (![model.message isKindOfClass:[PLVMessageEffectMessage class]]) {
+        return NO;
+    }
+    PLVMessageEffectMessage *message = (PLVMessageEffectMessage *)model.message;
+    return [message isProductClickEffectMessage];
 }
 
 - (NSDictionary *)conversionPayloadWithChatModel:(PLVChatModel *)model {
-    if (!model || ![model isKindOfClass:[PLVChatModel class]]) {
+    if (![self isConversionChatModel:model]) {
         return nil;
     }
-    id payload = model.replyMessage;
-    if (![payload isKindOfClass:[NSDictionary class]]) {
-        return nil;
+    
+    PLVMessageEffectMessage *message = (PLVMessageEffectMessage *)model.message;
+    NSMutableDictionary *payload = [[NSMutableDictionary alloc] init];
+    if (message.type == PLVMessageEffectMessageTypeClickJobProduct) {
+        payload[@"type"] = @"position";
+    } else if (message.type == PLVMessageEffectMessageTypeClickFinancialProduct) {
+        payload[@"type"] = @"finance";
+    } else {
+        payload[@"type"] = @"normal";
     }
-    NSDictionary *payloadDict = (NSDictionary *)payload;
-    BOOL isConversion = PLV_SafeBoolForDictKey(payloadDict, kPLVECConversionPayloadKey);
-    return isConversion ? payloadDict : nil;
+    if ([PLVFdUtil checkStringUseable:message.rawType]) {
+        payload[@"rawType"] = message.rawType;
+    }
+    if ([PLVFdUtil checkStringUseable:message.productName]) {
+        payload[@"positionName"] = message.productName;
+    }
+    if ([PLVFdUtil checkStringUseable:message.nickName]) {
+        payload[@"nickName"] = message.nickName;
+    }
+    if ([PLVFdUtil checkStringUseable:message.productId]) {
+        payload[@"productId"] = message.productId;
+    }
+    return [payload copy];
 }
 
 @end

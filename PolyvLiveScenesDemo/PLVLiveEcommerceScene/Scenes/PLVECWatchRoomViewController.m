@@ -166,6 +166,8 @@ PLVECRealTimeSubtitleManagerDelegate
     self.liveDetailPageView.frame = CGRectMake(0, 0, CGRectGetWidth(scrollViewFrame), CGRectGetHeight(scrollViewFrame));
     self.scrollView.contentOffset = CGPointMake(CGRectGetWidth(scrollViewFrame), 0);
     self.popoverView.frame = self.view.bounds;
+    // 商品详情弹窗为全屏覆盖层，需在每轮布局后同步容器尺寸，避免横竖屏切换时错位
+    self.commodityDetailPopupView.frame = self.view.bounds;
     
     CGFloat playerVCWidth = [PLVECUtils sharedUtils].isLandscape ? self.scrollView.bounds.size.width - P_SafeAreaRightEdgeInsets() : self.scrollView.bounds.size.width;
     CGFloat offsetX = self.scrollView.contentOffset.x;
@@ -191,6 +193,7 @@ PLVECRealTimeSubtitleManagerDelegate
     [super viewWillAppear:animated];
     [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleLightContent;
     // 播放器 / 连麦 / 跑马灯 与 insertSubview 已在 viewWillLayoutSubviews 中按有效 scrollView.bounds 处理，避免 secure 根视图下 viewWillAppear 时宽度为 0。
+    [self relayoutPlayerViewIfNeeded];
     [self.playerVC cancelMute];
     if (self.linkMicAreaView.inLinkMic) {
         [self.linkMicAreaView reloadLinkMicUserWindows];
@@ -379,6 +382,15 @@ PLVECRealTimeSubtitleManagerDelegate
         
         [PLVECFloatingWindow sharedInstance].delegate = nil;
     }
+}
+
+- (void)relayoutPlayerViewIfNeeded {
+    if (!self.playerVC || !self.scrollView.superview) {
+        return;
+    }
+    
+    [self.view setNeedsLayout];
+    [self.view layoutIfNeeded];
 }
 
 - (void)handleProductClickWithCommodityModel:(PLVCommodityModel *)commodity {
@@ -933,6 +945,9 @@ PLVECRealTimeSubtitleManagerDelegate
 - (void)floatingWindow_closeWindowAndBack:(BOOL)back {
     if (!back) {
         [self.playerVC mute];
+    } else {
+        [self relayoutPlayerViewIfNeeded];
+        [self.playerVC cancelMute];
     }
 }
 
@@ -1320,12 +1335,16 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
     if (![PLVECFloatingWindow sharedInstance].hidden) {
         [[PLVECFloatingWindow sharedInstance] close]; // 关闭悬浮窗
     }
+    [self relayoutPlayerViewIfNeeded];
+    [self.playerVC cancelMute];
 }
 
 - (void)PLVCommodityExplainedViewControllerAfterTheBack {
     if (![PLVECFloatingWindow sharedInstance].hidden) {
         [[PLVECFloatingWindow sharedInstance] close]; // 关闭悬浮窗
     }
+    [self relayoutPlayerViewIfNeeded];
+    [self.playerVC cancelMute];
 }
 
 - (void)homePageView_loadRewardEnable:(BOOL)rewardEnable payWay:(NSString * _Nullable)payWay rewardModelArray:(NSArray *_Nullable)modelArray pointUnit:(NSString * _Nullable)pointUnit {
@@ -1359,7 +1378,16 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView didShowJobDetail:(NSDictionary *)data {
-    [self.popoverView.interactView openJobDetailWithData:data];
+    NSString *productId = PLV_SafeStringForDictKey(data, @"productId");
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        productId = PLV_SafeStringForDictKey(data, @"positionId");
+    }
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        productId = PLV_SafeStringForDictKey(data, @"id");
+    }
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
 }
 
 - (void)homePageView:(PLVECHomePageView *)homePageView didShowProductDetail:(NSDictionary *)data {

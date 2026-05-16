@@ -377,6 +377,7 @@
             teacherNickname = nickName;
         }
         NSString *avatar = PLV_SafeStringForDictKey(data, @"teacherAvatar");
+        avatar = [self adaptAvatarURLString:avatar];
         NSString *actor = PLV_SafeStringForDictKey(data, @"teacherActor");
         NSString *role = PLV_SafeStringForDictKey(data, @"role");
         
@@ -593,6 +594,23 @@
 }
 
 #pragma mark - [ Private Method ]
+
++ (NSString *)adaptAvatarURLString:(NSString *)avatarURLString {
+    if (![PLVFdUtil checkStringUseable:avatarURLString]) {
+        return avatarURLString;
+    }
+    
+    if ([avatarURLString hasPrefix:@"//"]) {
+        return [@"https:" stringByAppendingString:avatarURLString];
+    }
+    
+    NSURLComponents *components = [NSURLComponents componentsWithString:avatarURLString];
+    if (components.scheme.length == 0) {
+        return [@"https://" stringByAppendingString:avatarURLString];
+    }
+    
+    return avatarURLString;
+}
 
 + (void)playbackLoginWithChannelType:(PLVChannelType)channelType
                           channelId:(NSString *)channelId

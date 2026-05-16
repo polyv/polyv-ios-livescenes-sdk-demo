@@ -35,6 +35,9 @@
     
     // 设置商品ID
     _productId = [productId copy];
+    if (self.superview) {
+        self.frame = self.superview.bounds;
+    }
     
     self.hidden = NO;
     // 开始加载商品详情
@@ -57,6 +60,7 @@
     self = [super initWithFrame:frame];
     if (self) {
         self.backgroundColor = [UIColor clearColor];
+        self.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     }
     return self;
 }
@@ -64,6 +68,13 @@
 - (void)layoutSubviews {
     [super layoutSubviews];
     self.webView.frame = self.bounds;
+}
+
+- (void)didMoveToSuperview {
+    [super didMoveToSuperview];
+    if (self.superview) {
+        self.frame = self.superview.bounds;
+    }
 }
 
 #pragma mark - [ Private Method ]

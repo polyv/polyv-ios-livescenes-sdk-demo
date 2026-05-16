@@ -520,6 +520,9 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     // 横竖屏切换时，更新投屏按钮显示状态
     [self updateCastButtonShowStatus];
     
+    // 商品详情弹窗为全屏覆盖层，需在本轮布局收敛后同步容器尺寸，避免横竖屏切换时错位
+    self.commodityDetailPopupView.frame = self.view.bounds;
+    
     self.fullScreenDifferent = NO;
 }
 
@@ -2016,7 +2019,16 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 }
 
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowJobDetail:(NSDictionary *)data {
-    [self.popoverView.interactView openJobDetailWithData:data];
+    NSString *productId = PLV_SafeStringForDictKey(data, @"productId");
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        productId = PLV_SafeStringForDictKey(data, @"positionId");
+    }
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        productId = PLV_SafeStringForDictKey(data, @"id");
+    }
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
 }
 
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView didShowProductDetail:(NSDictionary *)data {
@@ -2051,7 +2063,7 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     if (positionType) {
         detailData[@"positionId"] = productId;
         detailData[@"id"] = productId;
-        [self.popoverView.interactView openJobDetailWithData:[detailData copy]];
+        [self.commodityDetailPopupView showWithProductId:productId];
     } else if (financeType) {
         if (self.currentLandscape) {
             [self.liveRoomSkinView hiddenLiveRoomPlayerSkinView:YES];
@@ -2192,7 +2204,16 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 }
 
 - (void)PLVCommodityPushSmallCardViewDidShowJobDetail:(NSDictionary *)data {
-    [self.popoverView.interactView openJobDetailWithData:data];
+    NSString *productId = PLV_SafeStringForDictKey(data, @"productId");
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        productId = PLV_SafeStringForDictKey(data, @"positionId");
+    }
+    if (![PLVFdUtil checkStringUseable:productId]) {
+        productId = PLV_SafeStringForDictKey(data, @"id");
+    }
+    if ([PLVFdUtil checkStringUseable:productId]) {
+        [self.commodityDetailPopupView showWithProductId:productId];
+    }
 }
 
 - (void)PLVCommodityPushSmallCardViewDidClickCommodityDetailPopup:(PLVCommodityModel *)commodity {

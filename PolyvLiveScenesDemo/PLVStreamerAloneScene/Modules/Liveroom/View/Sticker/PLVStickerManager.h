@@ -41,6 +41,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, weak) id<PLVStickerManagerDelegate> delegate;
 
 @property (nonatomic, strong, readonly) PLVStickerCanvas *stickerCanvas;
+/// 贴图画布 contentView 布局模式：NO=Fit，YES=Fill
+@property (nonatomic, assign) BOOL contentViewAspectFill;
 
 
 /// 初始化方法
