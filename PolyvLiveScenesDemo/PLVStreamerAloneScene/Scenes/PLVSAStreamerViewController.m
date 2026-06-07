@@ -31,6 +31,7 @@
 #import "PLVSAScreenSharePipCustomView.h"
 #import "PLVVirtualBackgroudSheet.h"
 #import "PLVSALiveTemplateSheet.h"
+#import "PLVCheckVoiceWarningView.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -134,6 +135,7 @@ UIDocumentPickerDelegate
 @property (nonatomic, strong) PLVVirtualBackgroudSheet *aiMattingSheet; // AI抠像组件
 @property (nonatomic, strong) PLVSALiveTemplateSheet *liveTemplateSheet; // 开播模板弹层
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
+@property (nonatomic, strong) PLVCheckVoiceWarningView *checkVoiceWarningView; // 音频审核提醒
 @property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
 
 #pragma mark 数据
@@ -201,6 +203,8 @@ UIDocumentPickerDelegate
     _countDownView.frame = self.view.bounds;
     _homeView.frame = self.view.bounds;
     _finishView.frame = self.view.bounds;
+    self.checkVoiceWarningView.frame = self.view.bounds;
+    [self.checkVoiceWarningView updateLayoutForParentView];
     
     if (self.stickerCanvas){
         CGRect newFrame = self.stickerCanvas.frame;
@@ -493,6 +497,13 @@ UIDocumentPickerDelegate
     return _pinchGesture;
 }
 
+- (PLVCheckVoiceWarningView *)checkVoiceWarningView {
+    if (!_checkVoiceWarningView) {
+        _checkVoiceWarningView = [[PLVCheckVoiceWarningView alloc] init];
+    }
+    return _checkVoiceWarningView;
+}
+
 - (PLVBLinkMicStreamScale)streamScale {
     return [PLVRoomDataManager sharedManager].roomData.streamScale;
 }
@@ -508,6 +519,7 @@ UIDocumentPickerDelegate
     [self.view addSubview:self.shadowMaskView];
     [self.view addSubview:self.settingView];
     [self.view addGestureRecognizer:self.pinchGesture];
+    [self.view addSubview:self.checkVoiceWarningView];
 }
 
 - (void)setupModule {
@@ -639,11 +651,13 @@ UIDocumentPickerDelegate
     if (self.viewState == PLVSAStreamerViewStateBeginSteam) {
         // 直播准备
         [self.view addSubview:self.countDownView];
+        [self.view bringSubviewToFront:self.checkVoiceWarningView];
         [self.countDownView startCountDown];
     } else if (self.viewState == PLVSAStreamerViewStateSteaming) {
         // 直播中
         [self setupHomeView];
         [self.view addSubview:self.homeView];
+        [self.view bringSubviewToFront:self.checkVoiceWarningView];
         // 更新连麦列表
         self.linkMicAreaView.userInteractionEnabled = YES;
         [self.linkMicAreaView reloadLinkMicUserWindows];
@@ -651,6 +665,7 @@ UIDocumentPickerDelegate
         // 直播结束
         [self.linkMicAreaView clear];
         [self.view addSubview:self.finishView];
+        [self.view bringSubviewToFront:self.checkVoiceWarningView];
     }
 }
 
@@ -1749,6 +1764,16 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
             [weakSelf finishClass];
         }
     }];
+}
+
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels {
+    if (self.viewState != PLVSAStreamerViewStateSteaming ||
+        ![PLVFdUtil checkArrayUseable:warningModels]) {
+        return;
+    }
+
+    [self.view bringSubviewToFront:self.checkVoiceWarningView];
+    [self.checkVoiceWarningView receiveWarningModels:warningModels];
 }
 
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didChangeCameraOpen:(BOOL)cameraOpen{

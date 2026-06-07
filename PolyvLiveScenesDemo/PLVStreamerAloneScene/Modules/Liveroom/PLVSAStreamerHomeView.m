@@ -1321,6 +1321,13 @@ PLVSAAICardViewDelegate
     [self.aiCardView updateWithCommodityModel:commodityModel];
 }
 
+- (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView didReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeView:didReceiveCheckVoiceWarnings:)]) {
+        [self.delegate streamerHomeView:self didReceiveCheckVoiceWarnings:warningModels];
+    }
+}
+
 #pragma mark PLVSAMemberSheetDelegate
 
 - (void)bandUsersInMemberSheet:(PLVSAMemberSheet *)memberSheet withUserId:(NSString *)userId banned:(BOOL)banned {

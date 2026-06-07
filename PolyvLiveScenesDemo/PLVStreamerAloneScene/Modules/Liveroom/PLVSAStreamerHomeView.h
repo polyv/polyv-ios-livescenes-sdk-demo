@@ -15,7 +15,7 @@
 NS_ASSUME_NONNULL_BEGIN
 
 @class PLVSAStreamerHomeView, PLVLinkMicOnlineUser, PLVLinkMicOnlineUser, PLVSALinkMicWindowsView, PLVRTCStatistics;
-@class PLVStickerCanvas, PLVMemberPresenter, PLVCommodityModel;
+@class PLVStickerCanvas, PLVMemberPresenter, PLVCommodityModel, PLVCheckVoiceWarningModel;
 
 @protocol PLVSAStreamerHomeViewDelegate <NSObject>
 
@@ -130,6 +130,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 取消搜索
 - (void)streamerHomeViewDidCancelSearch:(PLVSAStreamerHomeView *)homeView;
+
+/// 音频审核风险提醒
+- (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels;
 
 @end
 

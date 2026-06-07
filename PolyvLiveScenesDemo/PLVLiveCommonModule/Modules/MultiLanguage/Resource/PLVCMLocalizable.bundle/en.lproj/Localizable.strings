@@ -783,3 +783,17 @@
 "封面URL无效" = "Invalid cover URL";
 "封面设置成功" = "Cover set successfully";
 "封面设置失败，请重试" = "Failed to set cover, please try again";
+
+/** Audio review */
+"检测到%@内容" = "%@ content detected";
+"高风险" = "High risk";
+"中风险" = "Medium risk";
+"低风险" = "Low risk";
+"查看本次提醒（%@）" = "View current alerts (%@)";
+"风险提醒（未读 %@ 条）" = "Risk alerts (%@ unread)";
+"查看 %@ 条新提醒" = "View %@ new alerts";
+"风险类型" = "Risk type";
+"风险等级" = "Risk level";
+"自定义敏感词" = "Custom sensitive words";
+"未读" = "Unread";
+"向下滑动查看更多" = "Swipe down to view more";

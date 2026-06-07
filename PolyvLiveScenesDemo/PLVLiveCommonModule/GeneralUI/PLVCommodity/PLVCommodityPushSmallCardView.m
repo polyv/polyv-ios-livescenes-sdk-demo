@@ -25,6 +25,8 @@
 
 @property (nonatomic, strong) UILabel *productDescLabel; // 商品描述
 
+@property (nonatomic, strong) UILabel *originalPriceLabel; // 划线价
+
 @property (nonatomic, strong) UIImageView * coverImageView; // 商品封面
 
 @property (nonatomic, strong) UILabel *showIdLabel; // 商品序号
@@ -82,8 +84,22 @@
 @property (nonatomic, strong) UILabel *seckillCountdownLabel; // 秒杀倒计时
 @property (nonatomic, strong) NSTimer *seckillCountdownTimer; // 秒杀倒计时 timer
 @property (nonatomic, assign) long long currentSeckillEndTime; // 当前秒杀结束时间（ms）
+@property (nonatomic, assign) CGFloat normalContentTopSpace; // 原始卡片顶部预留空间
+@property (nonatomic, assign) BOOL originalPriceOnNewLine; // 划线价是否换行
 
 @end
+
+static const CGFloat PLVCommodityPushCardImageHeight = 100.0;
+static const CGFloat PLVCommodityPushCardContentWidth = 96.0;
+static const CGFloat PLVCommodityPushCardHorizontalPadding = 4.0;
+static const CGFloat PLVCommodityPushCardTextHeight = 18.0;
+static const CGFloat PLVCommodityPushCardOriginalPriceHeight = 16.0;
+static const CGFloat PLVCommodityPushCardButtonHeight = 24.0;
+static const CGFloat PLVCommodityPushCardImageLayoutHeight = 172.0;
+static const CGFloat PLVCommodityPushCardNoImageLayoutHeight = 122.0;
+static const CGFloat PLVCommodityPushCardMultilineLayoutHeight = 195.0;
+static const CGFloat PLVCommodityPushCardNoImageDescHeight = 98.0;
+static const CGFloat PLVCommodityPushCardNoImageMultilineDescHeight = 115.0;
 
 @implementation PLVCommodityPushSmallCardView
 
@@ -111,7 +127,13 @@
     }
     
     [self removeFromSuperview];
+    CGFloat preferredHeight = [self preferredContentHeightWithBaseHeight:CGRectGetHeight(initialFrame)];
+    if (preferredHeight > CGRectGetHeight(initialFrame)) {
+        initialFrame.origin.y -= preferredHeight - CGRectGetHeight(initialFrame);
+        initialFrame.size.height = preferredHeight;
+    }
     self.initialFrame = initialFrame;
+    self.normalContentTopSpace = MAX(CGRectGetHeight(initialFrame) - [self preferredBackgroundViewHeight], 0);
     initialFrame = CGRectMake(superView.frame.size.width, initialFrame.origin.y, initialFrame.size.width, initialFrame.size.height);
     self.frame = initialFrame;
     [superView addSubview:self];
@@ -209,6 +231,7 @@
     [self.descBackgroundView addSubview:self.descImageView];
     [self.descBackgroundView addSubview:self.nameLabel];
     [self.descBackgroundView addSubview:self.productDescLabel];
+    [self.descBackgroundView addSubview:self.originalPriceLabel];
 
     [self.descBackgroundView addSubview:self.jumpTextButton];
     [self.descBackgroundView addSubview:self.coverImageView];
@@ -236,8 +259,11 @@
     BOOL hasImage = !self.coverImageView.hidden;
     CGFloat width = self.frame.size.width;
     CGFloat height = self.frame.size.height;
-    CGFloat backgroundViewHeight = hasImage ? 172 : 122;
-    CGFloat descBackgroundViewHeight = hasImage ? 172 : 98;
+    CGFloat backgroundViewHeight = [self preferredBackgroundViewHeight];
+    CGFloat descBackgroundViewHeight = hasImage ? PLVCommodityPushCardImageLayoutHeight : PLVCommodityPushCardNoImageDescHeight;
+    if ([self shouldUseMultilinePriceLayout]) {
+        descBackgroundViewHeight = hasImage ? backgroundViewHeight : PLVCommodityPushCardNoImageMultilineDescHeight;
+    }
     
     self.backgroundView.frame = CGRectMake(0, height - backgroundViewHeight, width, backgroundViewHeight);
     self.descBackgroundView.frame = CGRectMake(0, backgroundViewHeight - descBackgroundViewHeight, width, descBackgroundViewHeight);
@@ -262,27 +288,90 @@
     // 设置手势视图的frame，覆盖整个backgroundView区域
     self.gestureView.frame = self.backgroundView.bounds;
     
-    self.coverImageView.frame = CGRectMake(2, 2, 100, 100);
-    self.seckillBannerView.frame = CGRectMake(0, 76, 100, 24);
+    self.coverImageView.frame = CGRectMake(2, 2, PLVCommodityPushCardImageHeight, PLVCommodityPushCardImageHeight);
+    self.seckillBannerView.frame = CGRectMake(0, 76, PLVCommodityPushCardImageHeight, PLVCommodityPushCardButtonHeight);
     self.seckillIconImageView.frame = CGRectMake(4, 5, 22, 12);
-    self.seckillCountdownLabel.frame = CGRectMake(CGRectGetMaxX(self.seckillIconImageView.frame) + 4, 0, 100 - CGRectGetMaxX(self.seckillIconImageView.frame) - 6, 24);
+    self.seckillCountdownLabel.frame = CGRectMake(CGRectGetMaxX(self.seckillIconImageView.frame) + 4, 0, PLVCommodityPushCardImageHeight - CGRectGetMaxX(self.seckillIconImageView.frame) - 6, PLVCommodityPushCardButtonHeight);
     self.descImageView.frame = CGRectMake(width - 62, descBackgroundViewHeight - 84, 62, 62);
     
-    self.jumpTextButton.frame = CGRectMake(4, descBackgroundViewHeight - 28, width - 8, 24);
-    self.productDescLabel.frame = CGRectMake(4, CGRectGetMinY(self.jumpTextButton.frame) - 22, 96, 18);
+    [self layoutPriceAreaWithWidth:width descBackgroundViewHeight:descBackgroundViewHeight];
     CGFloat tagLabelWidth = [self.tagLabel sizeThatFits:CGSizeMake(MAXFLOAT, 16)].width + 8;
-    tagLabelWidth = MIN(tagLabelWidth, 96);
+    tagLabelWidth = MIN(tagLabelWidth, PLVCommodityPushCardContentWidth);
     if (hasImage) {
-        self.nameLabel.frame = CGRectMake(4, CGRectGetMinY(self.productDescLabel.frame) - 18, 96, 18);
+        CGFloat nameLabelOriginY = self.seckillBannerView.hidden ? CGRectGetMinY(self.productDescLabel.frame) - PLVCommodityPushCardTextHeight : CGRectGetMaxY(self.coverImageView.frame) + 2;
+        self.nameLabel.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, nameLabelOriginY, PLVCommodityPushCardContentWidth, PLVCommodityPushCardTextHeight);
         self.tagLabel.frame = CGRectMake(4, CGRectGetMinY(self.nameLabel.frame) - 22, tagLabelWidth, 16);
     } else {
         self.tagLabel.frame = CGRectMake(4, 8, tagLabelWidth, 16);
         CGFloat nameLabelOriginY = self.tagLabel.hidden ? 8 : CGRectGetMaxY(self.tagLabel.frame);
-        self.nameLabel.frame = CGRectMake(4, nameLabelOriginY, 96, 18);
+        self.nameLabel.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, nameLabelOriginY, PLVCommodityPushCardContentWidth, PLVCommodityPushCardTextHeight);
     }
 
     // 更新讲解状态按钮布局与样式（与 showIdLabel 互斥，位置和高度一致，宽度自适应文案）
     [self updateExplainStatusButtonAppearanceAndLayout];
+}
+
+- (CGFloat)preferredBackgroundViewHeight {
+    if (self.coverImageView.hidden) {
+        return [self shouldUseMultilinePriceLayout] ? PLVCommodityPushCardNoImageLayoutHeight + PLVCommodityPushCardNoImageMultilineDescHeight - PLVCommodityPushCardNoImageDescHeight : PLVCommodityPushCardNoImageLayoutHeight;
+    }
+
+    if ([self shouldUseMultilinePriceLayout]) {
+        return PLVCommodityPushCardMultilineLayoutHeight;
+    }
+    return PLVCommodityPushCardImageLayoutHeight;
+}
+
+- (CGFloat)preferredContentHeightWithBaseHeight:(CGFloat)baseHeight {
+    CGFloat defaultCardHeight = self.coverImageView.hidden ? PLVCommodityPushCardNoImageLayoutHeight : PLVCommodityPushCardImageLayoutHeight;
+    CGFloat contentTopSpace = self.normalContentTopSpace > 0 ? self.normalContentTopSpace : MAX(baseHeight - defaultCardHeight, 0);
+    return contentTopSpace + [self preferredBackgroundViewHeight];
+}
+
+- (BOOL)shouldUseMultilinePriceLayout {
+    return !self.originalPriceLabel.hidden && self.originalPriceOnNewLine;
+}
+
+- (void)layoutPriceAreaWithWidth:(CGFloat)width descBackgroundViewHeight:(CGFloat)descBackgroundViewHeight {
+    self.jumpTextButton.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, descBackgroundViewHeight - 28, width - PLVCommodityPushCardHorizontalPadding * 2, PLVCommodityPushCardButtonHeight);
+    if ([self shouldUseMultilinePriceLayout]) {
+        [self layoutMultilinePriceAreaWithWidth:width];
+    } else if (!self.originalPriceLabel.hidden) {
+        [self layoutInlinePriceAreaWithWidth:width];
+    } else {
+        [self layoutNormalPriceArea];
+    }
+}
+
+- (void)layoutMultilinePriceAreaWithWidth:(CGFloat)width {
+    CGFloat priceOriginY = 0;
+    if (self.coverImageView.hidden) {
+        priceOriginY = CGRectGetMinY(self.jumpTextButton.frame) - PLVCommodityPushCardTextHeight - PLVCommodityPushCardOriginalPriceHeight - 9;
+    } else {
+        CGFloat nameLabelOriginY = CGRectGetMaxY(self.coverImageView.frame) + 2;
+        priceOriginY = nameLabelOriginY + PLVCommodityPushCardTextHeight + 2;
+    }
+    self.productDescLabel.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, priceOriginY, PLVCommodityPushCardContentWidth, PLVCommodityPushCardTextHeight);
+    UIView *buttonTopReferenceView = self.productDescLabel;
+    if (!self.originalPriceLabel.hidden) {
+        self.originalPriceLabel.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, CGRectGetMaxY(self.productDescLabel.frame) + 1, PLVCommodityPushCardContentWidth, PLVCommodityPushCardOriginalPriceHeight);
+        buttonTopReferenceView = self.originalPriceLabel;
+    } else {
+        self.originalPriceLabel.frame = CGRectZero;
+    }
+    self.jumpTextButton.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, CGRectGetMaxY(buttonTopReferenceView.frame) + 8, width - PLVCommodityPushCardHorizontalPadding * 2, PLVCommodityPushCardButtonHeight);
+}
+
+- (void)layoutInlinePriceAreaWithWidth:(CGFloat)width {
+    CGFloat priceWidth = MIN(ceil([self.productDescLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, PLVCommodityPushCardTextHeight)].width), PLVCommodityPushCardContentWidth);
+    CGFloat originY = CGRectGetMinY(self.jumpTextButton.frame) - PLVCommodityPushCardTextHeight - 4;
+    self.productDescLabel.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, originY, priceWidth, PLVCommodityPushCardTextHeight);
+    self.originalPriceLabel.frame = CGRectMake(CGRectGetMaxX(self.productDescLabel.frame) + 4, originY + 1, width - CGRectGetMaxX(self.productDescLabel.frame) - PLVCommodityPushCardHorizontalPadding * 2, PLVCommodityPushCardOriginalPriceHeight);
+}
+
+- (void)layoutNormalPriceArea {
+    self.originalPriceLabel.frame = CGRectZero;
+    self.productDescLabel.frame = CGRectMake(PLVCommodityPushCardHorizontalPadding, CGRectGetMinY(self.jumpTextButton.frame) - PLVCommodityPushCardTextHeight - 4, PLVCommodityPushCardContentWidth, PLVCommodityPushCardTextHeight);
 }
 
 - (void)setProductHotEffectConfig {
@@ -438,24 +527,96 @@
     self.seckillCountdownLabel.text = countdownText;
 }
 
-- (NSAttributedString *)seckillPriceAttributedTextWithSeckillPrice:(NSString *)seckillPrice originalPrice:(NSString *)originalPrice {
-    NSString *priceText = [NSString stringWithFormat:@"¥%@", seckillPrice ?: @""];
-    NSMutableAttributedString *attributedText = [[NSMutableAttributedString alloc] initWithString:priceText attributes:@{
-        NSFontAttributeName : [UIFont fontWithName:@"PingFangSC-Medium" size:14] ?: [UIFont boldSystemFontOfSize:14],
-        NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#FF5252"]
-    }];
-    
-    if ([PLVFdUtil checkStringUseable:originalPrice] && ![originalPrice isEqualToString:@"0"]) {
-        NSString *originText = [NSString stringWithFormat:@" ¥%@", originalPrice];
-        NSAttributedString *originAttr = [[NSAttributedString alloc] initWithString:originText attributes:@{
-            NSFontAttributeName : [UIFont fontWithName:@"PingFangSC-Regular" size:12] ?: [UIFont systemFontOfSize:12],
-            NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#999999"],
-            NSStrikethroughStyleAttributeName : @(NSUnderlineStyleSingle),
-            NSStrikethroughColorAttributeName : [PLVColorUtil colorFromHexString:@"#999999"]
-        }];
-        [attributedText appendAttributedString:originAttr];
+- (NSString *)seckillOriginalPriceTextWithModel:(PLVCommodityModel *)model {
+    if ([PLVFdUtil checkStringUseable:model.customPrice]) {
+        return model.customPrice;
     }
-    return attributedText;
+
+    return [self originalPriceTextWithPrice:model.price amountFormat:@"¥%@"];
+}
+
+- (NSString *)normalOriginalPriceTextWithModel:(PLVCommodityModel *)model {
+    if ([model.originalPriceType.uppercaseString isEqualToString:@"CUSTOM"] &&
+        [PLVFdUtil checkStringUseable:model.customOriginalPrice]) {
+        return model.customOriginalPrice;
+    }
+
+    return [self originalPriceTextWithPrice:model.price amountFormat:@"¥ %@"];
+}
+
+- (NSString *)originalPriceTextWithPrice:(NSString *)price amountFormat:(NSString *)amountFormat {
+    if (![PLVFdUtil checkStringUseable:price]) {
+        return nil;
+    }
+
+    NSString *trimmedPrice = [price stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+    if (![PLVFdUtil checkStringUseable:trimmedPrice]) {
+        return nil;
+    }
+
+    NSScanner *scanner = [NSScanner scannerWithString:trimmedPrice];
+    double amount = 0;
+    BOOL isAmount = [scanner scanDouble:&amount] && scanner.isAtEnd;
+    if (!isAmount) {
+        return trimmedPrice;
+    }
+
+    return amount == 0 ? nil : [NSString stringWithFormat:amountFormat, trimmedPrice];
+}
+
+- (NSAttributedString *)originalPriceAttributedText:(NSString *)originalPriceText {
+    if (![PLVFdUtil checkStringUseable:originalPriceText] || [originalPriceText isEqualToString:@"0"]) {
+        return nil;
+    }
+
+    return [[NSAttributedString alloc] initWithString:originalPriceText attributes:@{
+        NSFontAttributeName : [UIFont fontWithName:@"PingFangSC-Regular" size:12] ?: [UIFont systemFontOfSize:12],
+        NSForegroundColorAttributeName : [PLVColorUtil colorFromHexString:@"#999999"],
+        NSStrikethroughStyleAttributeName : @(NSUnderlineStyleSingle),
+        NSStrikethroughColorAttributeName : [PLVColorUtil colorFromHexString:@"#999999"]
+    }];
+}
+
+- (BOOL)originalPriceNeedsNewLineWithPriceText:(NSString *)priceText priceFont:(UIFont *)priceFont originalPriceText:(NSString *)originalPriceText {
+    if (![PLVFdUtil checkStringUseable:originalPriceText] || [originalPriceText isEqualToString:@"0"]) {
+        return NO;
+    }
+
+    UIFont *originalPriceFont = [UIFont fontWithName:@"PingFangSC-Regular" size:12] ?: [UIFont systemFontOfSize:12];
+    CGFloat priceTextWidth = [priceText ?: @"" sizeWithAttributes:@{NSFontAttributeName : priceFont}].width;
+    CGFloat originalPriceWidth = [originalPriceText sizeWithAttributes:@{NSFontAttributeName : originalPriceFont}].width;
+    return ceil(priceTextWidth + 4 + originalPriceWidth) > PLVCommodityPushCardContentWidth;
+}
+
+- (void)resetPriceLabels {
+    self.originalPriceLabel.hidden = YES;
+    self.originalPriceLabel.attributedText = nil;
+    self.originalPriceOnNewLine = NO;
+    self.productDescLabel.numberOfLines = 1;
+    self.productDescLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+    self.productDescLabel.adjustsFontSizeToFitWidth = YES;
+    self.productDescLabel.minimumScaleFactor = 0.7;
+    self.productDescLabel.font = [UIFont fontWithName:@"PingFangSC-Regular" size:12] ?: [UIFont systemFontOfSize:12];
+    self.productDescLabel.attributedText = nil;
+}
+
+- (void)applyPriceText:(NSString *)priceText priceFont:(UIFont *)priceFont originalPriceText:(NSString *)originalPriceText {
+    [self resetPriceLabels];
+    self.productDescLabel.font = priceFont;
+    self.productDescLabel.text = priceText;
+    self.originalPriceLabel.attributedText = [self originalPriceAttributedText:originalPriceText];
+    self.originalPriceLabel.hidden = (self.originalPriceLabel.attributedText.length == 0);
+    self.originalPriceOnNewLine = !self.originalPriceLabel.hidden && [self originalPriceNeedsNewLineWithPriceText:priceText priceFont:priceFont originalPriceText:originalPriceText];
+}
+
+- (void)applyNormalPriceText:(NSString *)priceText originalPriceText:(NSString *)originalPriceText {
+    UIFont *priceFont = [UIFont fontWithName:@"PingFangSC-Regular" size:12] ?: [UIFont systemFontOfSize:12];
+    [self applyPriceText:priceText priceFont:priceFont originalPriceText:originalPriceText];
+}
+
+- (void)applySeckillPriceText:(NSString *)displayPriceText originalPriceText:(NSString *)originalPriceText {
+    UIFont *priceFont = [UIFont fontWithName:@"PingFangSC-Medium" size:14] ?: [UIFont boldSystemFontOfSize:14];
+    [self applyPriceText:displayPriceText priceFont:priceFont originalPriceText:originalPriceText];
 }
 
 - (long long)currentServerAlignedTimestampMilliseconds {
@@ -580,6 +741,18 @@
         _productDescLabel.numberOfLines = 1;
     }
     return _productDescLabel;
+}
+
+- (UILabel *)originalPriceLabel {
+    if (!_originalPriceLabel) {
+        _originalPriceLabel = [[UILabel alloc] init];
+        _originalPriceLabel.hidden = YES;
+        _originalPriceLabel.lineBreakMode = NSLineBreakByTruncatingTail;
+        _originalPriceLabel.numberOfLines = 1;
+        _originalPriceLabel.adjustsFontSizeToFitWidth = YES;
+        _originalPriceLabel.minimumScaleFactor = 0.8;
+    }
+    return _originalPriceLabel;
 }
 
 - (UIImageView *)coverImageView {
@@ -749,6 +922,7 @@
     self.clickProductId = model.productId;
     [self stopSeckillCountdown];
     self.seckillBannerView.hidden = YES;
+    [self resetPriceLabels];
     self.productDescLabel.text = model.productDesc;
     BOOL seckillInProgress = NO;
 
@@ -811,10 +985,12 @@
         self.currentProductTips = self.normalProductTips;
         if (model.openPriceEnable) {
             if (seckillInProgress) {
-                self.productDescLabel.attributedText = [self seckillPriceAttributedTextWithSeckillPrice:displayPrice originalPrice:model.price];
+                NSString *displayPriceText = [seckillActivity displaySeckillPriceText];
+                NSString *originalPriceText = [self seckillOriginalPriceTextWithModel:model];
+                [self applySeckillPriceText:displayPriceText originalPriceText:originalPriceText];
             } else {
-                self.productDescLabel.attributedText = nil; // 清除之前的富文本设置，使用普通text
-                self.productDescLabel.text = realPriceStr;
+                NSString *originalPriceText = [self normalOriginalPriceTextWithModel:model];
+                [self applyNormalPriceText:realPriceStr originalPriceText:originalPriceText];
             }
         }
         
@@ -870,6 +1046,16 @@
     
     // 更新讲解状态按钮标题与显示
     [self updateExplainStatusButtonTitleAndVisibility];
+    if (self.superview) {
+        CGFloat preferredHeight = [self preferredContentHeightWithBaseHeight:CGRectGetHeight(self.frame)];
+        if (preferredHeight != CGRectGetHeight(self.frame)) {
+            CGRect frame = self.frame;
+            frame.origin.y -= preferredHeight - CGRectGetHeight(frame);
+            frame.size.height = preferredHeight;
+            self.frame = frame;
+            self.initialFrame = frame;
+        }
+    }
     
     // 更新热度标签
     [self setTipTitleLabelContent:self.clickTimes animated:NO];

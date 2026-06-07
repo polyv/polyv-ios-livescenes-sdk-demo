@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import "PLVChatroomPresenter.h"
+#import "PLVCheckVoiceWarningModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 @class PLVSAChatroomViewModel;
@@ -83,6 +84,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 获取图片表情资源列表失败
 /// 用于提示用户‘图片表情加载失败’
 - (void)chatroomViewModel_loadImageEmotionFailure;
+
+/// 返回socket接收到的音频审核风险提醒
+/// 用于展示开播端音频审核轻提示与详情
+- (void)chatroomViewModel:(PLVSAChatroomViewModel *)viewModel didReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels;
 
 /// 接收商品库商品更新状态
 - (void)chatroomViewModel_updateAICardWithCommodityModel:(PLVCommodityModel *)commodityModel;

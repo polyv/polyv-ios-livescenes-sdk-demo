@@ -36,6 +36,7 @@
 #import "PLVLSExternalDeviceSwitchSheet.h"
 #import "PLVStreamerPopoverView.h"
 #import "PLVVirtualBackgroudSheet.h"
+#import "PLVCheckVoiceWarningView.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -75,7 +76,8 @@ PLVLSMixLayoutSheetDelegate,
 PLVLSLinkMicSettingSheetDelegate,
 PLVLSNoiseCancellationModeSwitchSheetDelegate,
 PLVLSExternalDeviceSwitchSheetDelegate,
-PLVVirtualBackgroudSheetDelegate
+PLVVirtualBackgroudSheetDelegate,
+PLVLSChatroomViewModelProtocol
 >
 
 #pragma mark 功能
@@ -107,6 +109,7 @@ PLVVirtualBackgroudSheetDelegate
 @property (nonatomic, strong) PLVLSExternalDeviceSwitchSheet *externalDeviceSwitchSheet; // 外接设备弹层
 @property (nonatomic, strong) PLVLSLinkMicUpdateTipsView *linkMicUpdateTipsView;
 @property (nonatomic, strong) PLVStreamerPopoverView *popoverView; // 浮动区域
+@property (nonatomic, strong) PLVCheckVoiceWarningView *checkVoiceWarningView; // 音频审核提醒
 @property (nonatomic, strong) UIView *networkDisconnectMaskView; // 网络断开遮罩
 @property (nonatomic, strong) UIImageView *networkDisconnectImageView; // 网络断开提示图片
 @property (nonatomic, strong) UILabel *networkDisconnectLabel; // 网络断开提示
@@ -141,6 +144,7 @@ PLVVirtualBackgroudSheetDelegate
         
         // 启动聊天室管理器
         [[PLVLSChatroomViewModel sharedViewModel] setup];
+        [[PLVLSChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         
         // 开启提醒消息，请求提醒消息历史记录
         if ([PLVRoomDataManager sharedManager].roomData.menuInfo.remindEnabled) {
@@ -253,6 +257,8 @@ PLVVirtualBackgroudSheetDelegate
     self.networkDisconnectMaskView.frame = self.view.bounds;
     self.networkDisconnectImageView.frame = CGRectMake((self.view.bounds.size.width - 56) / 2, (self.view.bounds.size.height - 87) / 2, 56, 56);
     self.networkDisconnectLabel.frame = CGRectMake(PLVLSUtils.safeSidePad, CGRectGetMaxY(self.networkDisconnectImageView.frame) + 8, self.view.bounds.size.width - PLVLSUtils.safeSidePad *2, 23);
+    self.checkVoiceWarningView.frame = self.view.bounds;
+    [self.checkVoiceWarningView updateLayoutForParentView];
 }
 
 #pragma mark - Initialize
@@ -269,6 +275,7 @@ PLVVirtualBackgroudSheetDelegate
     [self.networkDisconnectMaskView addSubview:self.networkDisconnectLabel];
     [self.view addSubview:self.linkMicUpdateTipsView];
      [self.view addSubview:self.popoverView];
+    [self.view addSubview:self.checkVoiceWarningView];
 
     // 初始化
     [self.settingSheet initView]; /// 仅用于初始化
@@ -569,6 +576,13 @@ PLVVirtualBackgroudSheetDelegate
     return _popoverView;
 }
 
+- (PLVCheckVoiceWarningView *)checkVoiceWarningView {
+    if (!_checkVoiceWarningView) {
+        _checkVoiceWarningView = [[PLVCheckVoiceWarningView alloc] init];
+    }
+    return _checkVoiceWarningView;
+}
+
 - (UIView *)networkDisconnectMaskView {
     if (!_networkDisconnectMaskView) {
         _networkDisconnectMaskView = [[UIView alloc] init];
@@ -612,6 +626,7 @@ PLVVirtualBackgroudSheetDelegate
     }
     
     [PLVRoomLoginClient logout];
+    [[PLVLSChatroomViewModel sharedViewModel] removeDelegate:self];
     [[PLVLSChatroomViewModel sharedViewModel] clear];
     [[PLVDocumentUploadClient sharedClient] stopAllUpload]; // 停止一切上传任务
     [[PLVDocumentConvertManager sharedManager] clear]; // 清空文档转码轮询队列
@@ -626,6 +641,17 @@ PLVVirtualBackgroudSheetDelegate
     [self.chatroomAreaView logout];
     
     [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+#pragma mark - PLVLSChatroomViewModelProtocol
+
+- (void)chatroomViewModel_didReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels {
+    if (![PLVFdUtil checkArrayUseable:warningModels]) {
+        return;
+    }
+
+    [self.view bringSubviewToFront:self.checkVoiceWarningView];
+    [self.checkVoiceWarningView receiveWarningModels:warningModels];
 }
 
 /// 保存当前选择的连麦布局到本地

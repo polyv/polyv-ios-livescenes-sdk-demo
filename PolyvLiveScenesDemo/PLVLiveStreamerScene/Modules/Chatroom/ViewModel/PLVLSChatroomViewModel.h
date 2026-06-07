@@ -8,6 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import "PLVChatroomPresenter.h"
+#import "PLVCheckVoiceWarningModel.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -70,6 +71,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 返回socket接收到的提醒消息
 /// 用于刷新列表、显示新提醒消息提示
 - (void)chatroomViewModel_didReceiveRemindMessages;
+
+/// 返回socket接收到的音频审核风险提醒
+/// 用于展示开播端音频审核轻提示与详情
+- (void)chatroomViewModel_didReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels;
 
 @end
 

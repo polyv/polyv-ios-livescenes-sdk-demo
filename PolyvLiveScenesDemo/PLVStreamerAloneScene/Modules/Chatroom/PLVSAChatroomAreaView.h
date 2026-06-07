@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 
 NS_ASSUME_NONNULL_BEGIN
-@class PLVSAChatroomAreaView, PLVChatModel, PLVCommodityModel;
+@class PLVSAChatroomAreaView, PLVChatModel, PLVCommodityModel, PLVCheckVoiceWarningModel;
 @protocol PLVSAChatroomAreaViewDelegate <NSObject>
 
 /// 显示清屏手势提示视图
@@ -23,6 +23,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 商品库更新
 - (void)chatroomAreaView_updateAICardWithCommodityModel:(PLVCommodityModel *)commodityModel;
+
+/// 音频审核风险提醒
+- (void)chatroomAreaView:(PLVSAChatroomAreaView *)chatroomAreaView didReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels;
 
 @end
 

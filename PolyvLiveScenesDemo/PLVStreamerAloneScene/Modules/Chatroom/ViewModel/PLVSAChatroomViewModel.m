@@ -14,6 +14,7 @@
 #import "PLVSAImageEmotionMessageCell.h"
 #import "PLVSALongContentMessageCell.h"
 #import "PLVSARewardMessageCell.h"
+#import "PLVCheckVoiceWarningModel.h"
 
 static NSInteger kPLVSAMaxPublicChatMessageCount = 500;
 
@@ -92,6 +93,7 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     self.presenter = [[PLVChatroomPresenter alloc] initWithLoadingHistoryCount:10];
     self.presenter.delegate = self;
     self.presenter.autoSendReliableCallback = YES;
+    [PLVCheckVoiceWarningModel ensureSocketListeningEventRegistered];
     [self.presenter login];
     
     // 监听socket消息
@@ -637,6 +639,15 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     }
 }
 
+- (void)notifyListenerDidReceiveCheckVoiceWarnings:(NSArray<PLVCheckVoiceWarningModel *> *)warningModels {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomViewModel:didReceiveCheckVoiceWarnings:)]) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.delegate chatroomViewModel:self didReceiveCheckVoiceWarnings:warningModels];
+        });
+    }
+}
+
 #pragma mark 定时上报登录用户
 
 /// 有用户登录
@@ -821,6 +832,22 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     return isLoginUser;
 }
 
+- (id)jsonObjectWithObject:(id)object jsonString:(NSString *)jsonString {
+    if ([object isKindOfClass:[NSDictionary class]]) {
+        return object;
+    }
+    if (![jsonString isKindOfClass:[NSString class]] || jsonString.length == 0) {
+        return nil;
+    }
+
+    NSData *jsonData = [jsonString dataUsingEncoding:NSUTF8StringEncoding];
+    if (!jsonData) {
+        return nil;
+    }
+
+    return [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:nil];
+}
+
 #pragma mark - Delegate
 
 #pragma mark - PLVSocketManager Protocol
@@ -848,6 +875,27 @@ PLVChatroomPresenterProtocol // common层聊天室Presenter协议
     
     if ([subEvent isEqualToString:@"PRODUCT_MESSAGE"]) {
         [self productMessageEvent:jsonDict];
+    }
+}
+
+- (void)socketMananger_didReceiveEvent:(NSString *)event
+                              subEvent:(NSString *)subEvent
+                                  json:(NSString *)jsonString
+                            jsonObject:(id)object {
+    id jsonObject = [self jsonObjectWithObject:object jsonString:jsonString];
+    NSString *resolvedSubEvent = subEvent;
+    if (![PLVFdUtil checkStringUseable:resolvedSubEvent] &&
+        [jsonObject isKindOfClass:[NSDictionary class]]) {
+        resolvedSubEvent = PLV_SafeStringForDictKey((NSDictionary *)jsonObject, @"EVENT");
+    }
+
+    if (![PLVCheckVoiceWarningModel isCheckVoiceEvent:event subEvent:resolvedSubEvent]) {
+        return;
+    }
+
+    NSArray<PLVCheckVoiceWarningModel *> *warningModels = [PLVCheckVoiceWarningModel modelsWithSocketObject:jsonObject timestamp:[[NSDate date] timeIntervalSince1970]];
+    if ([PLVFdUtil checkArrayUseable:warningModels]) {
+        [self notifyListenerDidReceiveCheckVoiceWarnings:warningModels];
     }
 }
 
