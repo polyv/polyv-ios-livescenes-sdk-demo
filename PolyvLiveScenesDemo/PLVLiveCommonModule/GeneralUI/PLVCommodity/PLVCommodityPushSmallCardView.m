@@ -528,11 +528,12 @@ static const CGFloat PLVCommodityPushCardNoImageMultilineDescHeight = 115.0;
 }
 
 - (NSString *)seckillOriginalPriceTextWithModel:(PLVCommodityModel *)model {
-    if ([PLVFdUtil checkStringUseable:model.customPrice]) {
+    if ([model.priceType.uppercaseString isEqualToString:@"CUSTOM"] &&
+        [PLVFdUtil checkStringUseable:model.customPrice]) {
         return model.customPrice;
     }
 
-    return [self originalPriceTextWithPrice:model.price amountFormat:@"¥%@"];
+    return [self originalPriceTextWithPrice:model.realPrice amountFormat:@"¥%@"];
 }
 
 - (NSString *)normalOriginalPriceTextWithModel:(PLVCommodityModel *)model {
@@ -541,7 +542,7 @@ static const CGFloat PLVCommodityPushCardNoImageMultilineDescHeight = 115.0;
         return model.customOriginalPrice;
     }
 
-    return [self originalPriceTextWithPrice:model.price amountFormat:@"¥ %@"];
+    return [self originalPriceTextWithPrice:model.price amountFormat:@"¥%@"];
 }
 
 - (NSString *)originalPriceTextWithPrice:(NSString *)price amountFormat:(NSString *)amountFormat {
@@ -949,7 +950,7 @@ static const CGFloat PLVCommodityPushCardNoImageMultilineDescHeight = 115.0;
         PLVCommoditySeckillActivity *seckillActivity = [model currentSeckillActivityWithCurrentTimeMilliseconds:nowMs];
         seckillInProgress = ([model currentSeckillStateWithCurrentTimeMilliseconds:nowMs] == PLVCommoditySeckillStateInProgress && seckillActivity != nil);
         NSString *displayPrice = seckillInProgress ? seckillActivity.seckillPrice : model.realPrice;
-        realPriceStr = [NSString stringWithFormat:@"¥ %@", displayPrice];
+        realPriceStr = [NSString stringWithFormat:@"¥%@", displayPrice];
         if (!model.openPriceEnable) {
             // 使用富文本显示 "¥ ?? 待开价"
             NSMutableAttributedString *priceAttributedText = [[NSMutableAttributedString alloc] init];

@@ -98,6 +98,7 @@
     } else {
         [self stopCountdownTimer];
         self.countdownInterval = 0;
+        self.titleLabel.text = PLVLocalizedString(@"已开奖");
     }
 }
 
