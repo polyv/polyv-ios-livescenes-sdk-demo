@@ -12,6 +12,7 @@
 #import "PLVLCCardPushButtonView.h"
 #import "PLVLCLotteryWidgetView.h"
 #import "PLVLCWelfareLotteryWidgetView.h"
+#import "PLVLCLuckyBagWidgetView.h"
 
 @class PLVChatModel;
 
@@ -37,6 +38,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 /// 点击福利抽奖挂件的回调
 - (void)plvLCChatViewControllerWannaShowWelfareLottery:(PLVLCChatViewController *)chatVC;
+
+/// 点击福袋挂件的回调
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC wannaShowLuckyBagWithActivityId:(NSString * _Nullable)activityId;
+
+/// 福袋挂件显示状态改变的的回调
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC luckyBagWidgetShowStatusChanged:(BOOL)show;
 
 /// 福利抽奖挂件显示状态改变的的回调
 - (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC welfareLotteryWidgetShowStatusChanged:(BOOL)show;
@@ -77,6 +84,9 @@ extern NSString *PLVLCChatroomOpenPipSetNotification;
 /// 福利抽奖挂件视图
 @property (nonatomic, strong) PLVLCWelfareLotteryWidgetView *welfareLotteryWidgetView;
 
+/// 福袋挂件视图
+@property (nonatomic, strong) PLVLCLuckyBagWidgetView *luckyBagWidgetView;
+
 /// 初始化方法
 - (instancetype)initWithLiveRoom:(UIViewController *)liveRoom;
 
@@ -101,6 +111,10 @@ extern NSString *PLVLCChatroomOpenPipSetNotification;
 /// 更新福利抽奖插件信息
 /// @param dict 福利抽奖插件数据
 - (void)updateWelfareLotteryWidgetInfo:(NSDictionary *)dict;
+
+/// 更新福袋插件信息
+/// @param dict 福袋插件数据
+- (void)updateLuckyBagWidgetInfo:(NSDictionary *)dict;
 
 - (CGFloat)getKeyboardToolViewHeight;
 

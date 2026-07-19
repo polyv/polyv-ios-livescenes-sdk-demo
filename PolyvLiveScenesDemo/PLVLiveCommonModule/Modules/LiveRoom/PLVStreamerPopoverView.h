@@ -16,6 +16,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 互动视图
 @property (nonatomic, strong, readonly) PLVStreamerInteractGenericView *interactView;
 
+/// 福袋互动视图
+@property (nonatomic, strong, readonly) PLVStreamerInteractGenericView *luckyBagInteractView;
+
 @end
 
 NS_ASSUME_NONNULL_END

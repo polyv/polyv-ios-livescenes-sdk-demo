@@ -87,6 +87,23 @@ PLVInteractWebViewBridgeDelegate>
     }
 }
 
+- (void)openLuckyBagWithActivityId:(NSString *)activityId {
+    NSMutableDictionary *eventData = [@{@"event" : @"SHOW_LUCKY_BAG"} mutableCopy];
+    if ([PLVFdUtil checkStringUseable:activityId]) {
+        eventData[@"data"] = @{@"activityId" : activityId};
+    }
+    [self.webViewBridge callWebViewEvent:eventData];
+}
+
+- (void)checkLuckyBagComment:(NSString *)comment {
+    if ([PLVFdUtil checkStringUseable:comment]) {
+        NSDictionary *eventData = @{
+            @"event" : @"CHECK_LUCKY_BAG_COMMENT",
+            @"data" : @{@"comment" : comment}};
+        [self.webViewBridge callWebViewEvent:eventData];
+    }
+}
+
 #pragma mark - [ Private Method ]
 
 - (void)setupData {
@@ -156,7 +173,8 @@ PLVInteractWebViewBridgeDelegate>
     NSDictionary *userInfo = @{
         @"nick" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerName],
         @"userId" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerId],
-        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar]
+        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar],
+        @"userType" : @"viewer"
     };
     NSDictionary *channelInfo = @{
         @"channelId" : [NSString stringWithFormat:@"%@", roomData.channelId],
@@ -285,5 +303,36 @@ PLVInteractWebViewBridgeDelegate>
     return [self getUserInfo];
 }
 
-@end
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge luckyBagEntranceDataChangeWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:updateLuckyBagWidget:)]) {
+        [self.delegate plvInteractGenericView:(PLVInteractGenericView *)self updateLuckyBagWidget:dict];
+    }
+}
 
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge luckyBagCommentSuccessWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:luckyBagCommentSuccess:)]) {
+        [self.delegate plvInteractGenericView:(PLVInteractGenericView *)self luckyBagCommentSuccess:dict];
+    }
+}
+
+- (NSDictionary *)dictionaryFromJSONObject:(id)jsonObject {
+    if (!jsonObject) {
+        return nil;
+    }
+
+    if ([PLVFdUtil checkDictionaryUseable:jsonObject]) {
+        return (NSDictionary *)jsonObject;
+    }
+
+    if ([PLVFdUtil checkStringUseable:jsonObject]){
+        NSData *jsonData = [jsonObject dataUsingEncoding:NSUTF8StringEncoding];
+        NSDictionary *dataDict = [NSJSONSerialization JSONObjectWithData:jsonData options:NSJSONReadingAllowFragments error:nil];
+        return dataDict;
+    }
+
+    return nil;
+}
+
+@end

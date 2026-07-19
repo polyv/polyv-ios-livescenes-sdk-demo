@@ -30,6 +30,7 @@
 #import "PLVECPIPPlaysetPopView.h"
 #import "PLVECLotteryWidgetView.h"
 #import "PLVECWelfareLotteryWidgetView.h"
+#import "PLVECLuckyBagWidgetView.h"
 
 // 工具
 #import "PLVECUtils.h"
@@ -77,6 +78,7 @@ PLVECChatroomViewDelegate,
 PLVECCardPushButtonViewDelegate,
 PLVECLotteryWidgetViewDelegate,
 PLVECWelfareLotteryWidgetViewDelegate,
+PLVECLuckyBagWidgetViewDelegate,
 PLVECSubtitleConfigViewDelegate
 >
 
@@ -128,6 +130,7 @@ PLVECSubtitleConfigViewDelegate
 @property (nonatomic, strong) PLVECPlayerContolView *playerContolView; // 视频播放控制视图
 @property (nonatomic, strong) PLVECLotteryWidgetView *lotteryWidgetView; // 抽奖挂件视图
 @property (nonatomic, strong) PLVECWelfareLotteryWidgetView *welfareLotteryWidgetView; // 福利抽奖挂件
+@property (nonatomic, strong) PLVECLuckyBagWidgetView *luckyBagWidgetView; // 福袋挂件
 @property (nonatomic, strong) UIButton *moreButton;                    // 更多按钮
 @property (nonatomic, strong) UIButton *giftButton;                    // 送礼按钮
 @property (nonatomic, strong) UIButton *shoppingCartButton;            // 购物车按钮
@@ -209,6 +212,7 @@ PLVECSubtitleConfigViewDelegate
     [self addSubview:self.cardPushButtonView];
     [self addSubview:self.lotteryWidgetView];
     [self addSubview:self.welfareLotteryWidgetView];
+    [self addSubview:self.luckyBagWidgetView];
     [self addSubview:self.moreButton];
     [self addSubview:self.shoppingCartButton];
     [self addSubview:self.backButton];
@@ -286,6 +290,14 @@ PLVECSubtitleConfigViewDelegate
         _welfareLotteryWidgetView.delegate = self;
     }
     return _welfareLotteryWidgetView;
+}
+
+- (PLVECLuckyBagWidgetView *)luckyBagWidgetView {
+    if (!_luckyBagWidgetView) {
+        _luckyBagWidgetView = [[PLVECLuckyBagWidgetView alloc] init];
+        _luckyBagWidgetView.delegate = self;
+    }
+    return _luckyBagWidgetView;
 }
 
 - (UIButton *)moreButton {
@@ -583,6 +595,10 @@ PLVECSubtitleConfigViewDelegate
                      completed:nil];
 }
 
+- (void)updateRoomInfoHidden:(BOOL)hidden {
+    [self.liveRoomInfoView setPageViewHidden:hidden];
+}
+
 - (void)updateRoomInfoCount:(NSUInteger)roomInfoCount {
     self.liveRoomInfoView.pageViewLB.text = [NSString stringWithFormat:@"%lu",(unsigned long)roomInfoCount];
 }
@@ -816,6 +832,15 @@ PLVECSubtitleConfigViewDelegate
     [self updateLikeViewAnimationLeftShift];
 }
 
+- (void)updateLuckyBagWidgetViewInfo:(NSDictionary *)dict {
+    if ([PLVFdUtil checkDictionaryUseable:dict]) {
+        [self.luckyBagWidgetView updateLuckyBagWidgetInfo:dict];
+    } else {
+        [self.luckyBagWidgetView hideWidgetView];
+    }
+    [self updateLikeViewAnimationLeftShift];
+}
+
 
 - (void)reportProductClickedEvent:(PLVCommodityModel *)commodity {
     [self.pushView sendProductClickedEvent:commodity];
@@ -972,6 +997,11 @@ PLVECSubtitleConfigViewDelegate
                 originY -= (8 + self.welfareLotteryWidgetView.widgetSize.height);
                 self.welfareLotteryWidgetView.frame = CGRectMake(originX, originY, self.welfareLotteryWidgetView.widgetSize.width, self.welfareLotteryWidgetView.widgetSize.height);
             }
+            // 福袋挂件
+            if (!self.luckyBagWidgetView.hidden) {
+                originY -= (8 + self.luckyBagWidgetView.widgetSize.height);
+                self.luckyBagWidgetView.frame = CGRectMake(originX, originY, self.luckyBagWidgetView.widgetSize.width, self.luckyBagWidgetView.widgetSize.height);
+            }
             
             // 抽奖挂件
             if (!self.lotteryWidgetView.hidden) {
@@ -1019,6 +1049,11 @@ PLVECSubtitleConfigViewDelegate
             widgetOriginY -= (self.welfareLotteryWidgetView.widgetSize.height + 8);
             self.welfareLotteryWidgetView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - self.welfareLotteryWidgetView.widgetSize.width/2, widgetOriginY, self.welfareLotteryWidgetView.widgetSize.width, self.welfareLotteryWidgetView.widgetSize.height);
         }
+        // 福袋挂件
+        if (!self.luckyBagWidgetView.hidden) {
+            widgetOriginY -= (self.luckyBagWidgetView.widgetSize.height + 8);
+            self.luckyBagWidgetView.frame = CGRectMake(CGRectGetMidX(self.moreButton.frame) - self.luckyBagWidgetView.widgetSize.width/2, widgetOriginY, self.luckyBagWidgetView.widgetSize.width, self.luckyBagWidgetView.widgetSize.height);
+        }
         // 抽奖挂件
         if (!self.lotteryWidgetView.hidden) {
             widgetOriginY -= (self.lotteryWidgetView.widgetSize.height + 8);
@@ -1053,7 +1088,7 @@ PLVECSubtitleConfigViewDelegate
 }
 
 - (void)updateLikeViewAnimationLeftShift {
-    self.likeButtonView.animationLeftShift = !self.cardPushButtonView.hidden || !self.redpackButtonView.hidden || !self.lotteryWidgetView.hidden || !self.welfareLotteryWidgetView.hidden;
+    self.likeButtonView.animationLeftShift = !self.cardPushButtonView.hidden || !self.redpackButtonView.hidden || !self.lotteryWidgetView.hidden || !self.welfareLotteryWidgetView.hidden || !self.luckyBagWidgetView.hidden;
 }
 
 - (void)playbackTimeChanged {
@@ -1869,6 +1904,7 @@ PLVECSubtitleConfigViewDelegate
 - (void)cardPushButtonViewPopupViewDidShow:(PLVECCardPushButtonView *)pushButtonView {
     [self.lotteryWidgetView hidePopupView];
     [self.welfareLotteryWidgetView hidePopupView];
+    [self.luckyBagWidgetView hidePopupView];
 }
 
 #pragma mark PLVECLotteryWidgetViewDelegate
@@ -1884,6 +1920,8 @@ PLVECSubtitleConfigViewDelegate
 
 - (void)lotteryWidgetViewPopupViewDidShow:(PLVECLotteryWidgetView *)lotteryWidgetView {
     [self.cardPushButtonView hidePopupView];
+    [self.welfareLotteryWidgetView hidePopupView];
+    [self.luckyBagWidgetView hidePopupView];
 }
 
 #pragma mark PLVECWelfareLotteryWidgetViewDelegate
@@ -1903,6 +1941,27 @@ PLVECSubtitleConfigViewDelegate
 
 - (void)welfareLotteryWidgetViewPopupViewDidShow:(PLVECWelfareLotteryWidgetView *)welfareLotteryWidgetView {
     [self.cardPushButtonView hidePopupView];
+    [self.luckyBagWidgetView hidePopupView];
+}
+
+#pragma mark PLVECLuckyBagWidgetViewDelegate
+
+- (void)luckyBagWidgetViewDidClickAction:(PLVECLuckyBagWidgetView *)luckyBagWidgetView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:wannaShowLuckyBagWithActivityId:)]) {
+        [self.delegate homePageView:self wannaShowLuckyBagWithActivityId:luckyBagWidgetView.activityId];
+    }
+}
+
+- (void)luckyBagWidgetView:(PLVECLuckyBagWidgetView *)luckyBagWidgetView showStatusChanged:(BOOL)show {
+    [self updateUIFrame];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(homePageView:luckyBagWidgetShowStatusChanged:)]) {
+        [self.delegate homePageView:self luckyBagWidgetShowStatusChanged:show];
+    }
+}
+
+- (void)luckyBagWidgetViewPopupViewDidShow:(PLVECLuckyBagWidgetView *)luckyBagWidgetView {
+    [self.cardPushButtonView hidePopupView];
+    [self.welfareLotteryWidgetView hidePopupView];
 }
 
 #pragma mark UITextViewDelegate

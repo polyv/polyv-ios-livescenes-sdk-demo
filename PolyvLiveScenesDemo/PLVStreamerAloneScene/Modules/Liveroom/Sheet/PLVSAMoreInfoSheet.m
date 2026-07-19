@@ -30,6 +30,7 @@
 @property (nonatomic, strong) UIButton *flashButton; // 闪光灯
 @property (nonatomic, strong) UIButton *cameraBitRateButton; // 摄像头清晰度
 @property (nonatomic, strong) UIButton *closeRoomButton; // 全体禁言
+@property (nonatomic, strong) UIButton *bannedUserButton; // 封禁用户
 @property (nonatomic, strong) UIButton *beautyButton; // 美颜
 @property (nonatomic, strong) UIButton *shareButton; // 分享
 @property (nonatomic, strong) UIButton *badNetworkButton; // 弱网处理
@@ -44,6 +45,7 @@
 @property (nonatomic, strong) NSArray *buttonArray;
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
 @property (nonatomic, strong) UIButton *signInButton; // 签到
+@property (nonatomic, strong) UIButton *luckyBagButton; // 福袋
 @property (nonatomic, strong) UIButton *giftRewardButton; // 礼物打赏
 @property (nonatomic, strong) UIButton *giftEffectsButton; // 礼物特效
 @property (nonatomic, strong) NSArray *interactiveButtonArray; // 互动
@@ -72,8 +74,10 @@
         [self getGiftRewardSettings];
         
         BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-        if (!isPad && [self.buttonArray count] > 10) { // 超过两行
-            self.sheetHight += (28 + 12 + 14 + 16);
+        if (!isPad) {
+            NSInteger rowCount = ([self.buttonArray count] + 4) / 5;
+            NSInteger extraRowCount = MAX(0, rowCount - 2);
+            self.sheetHight += extraRowCount * (28 + 12 + 14 + 16);
         }
         // 互动入口的高度
         self.sheetHight += 28.0 + 12.0 + 14 + 16;
@@ -217,6 +221,10 @@
     if ([PLVSAMoreInfoSheet canManagerCloseRoom]) {
         [buttonSuperView addSubview:self.closeRoomButton];
         [muButtonArray addObject:self.closeRoomButton];
+
+        // 封禁用户
+        [buttonSuperView addSubview:self.bannedUserButton];
+        [muButtonArray addObject:self.bannedUserButton];
     }
     
     // 分享
@@ -260,6 +268,10 @@
         [buttonSuperView addSubview:self.signInButton];
         [muInteractiveButtonArray addObject:self.signInButton];
     }
+
+    [buttonSuperView addSubview:self.luckyBagButton];
+    [muInteractiveButtonArray addObject:self.luckyBagButton];
+
     if ([PLVSAMoreInfoSheet showGiftRewardButton]) {
         [buttonSuperView addSubview:self.giftRewardButton];
         [muInteractiveButtonArray addObject:self.giftRewardButton];
@@ -458,6 +470,22 @@
     return _closeRoomButton;
 }
 
+- (UIButton *)bannedUserButton {
+    if (!_bannedUserButton) {
+        _bannedUserButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _bannedUserButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _bannedUserButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _bannedUserButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _bannedUserButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_bannedUserButton setTitle:PLVLocalizedString(@"封禁用户") forState:UIControlStateNormal];
+        _bannedUserButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_bannedUserButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_kick_banned_users_btn"] forState:UIControlStateNormal];
+        [_bannedUserButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_kick_banned_users_btn"] forState:UIControlStateSelected];
+        [_bannedUserButton addTarget:self action:@selector(bannedUserButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _bannedUserButton;
+}
+
 - (UIButton *)beautyButton {
     if (!_beautyButton) {
         _beautyButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -588,6 +616,20 @@
         [_signInButton addTarget:self action:@selector(signInButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _signInButton;
+}
+
+- (UIButton *)luckyBagButton {
+    if (!_luckyBagButton) {
+        _luckyBagButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _luckyBagButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _luckyBagButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_luckyBagButton setTitle:PLVLocalizedString(@"福袋") forState:UIControlStateNormal];
+        _luckyBagButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_luckyBagButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_lucky_bag_btn"] forState:UIControlStateNormal];
+        [_luckyBagButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_lucky_bag_btn"] forState:UIControlStateSelected];
+        [_luckyBagButton addTarget:self action:@selector(luckyBagButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _luckyBagButton;
 }
 
 - (UIButton *)giftRewardButton {
@@ -1040,6 +1082,14 @@
     }
 }
 
+- (void)bannedUserButtonAction {
+    [self dismiss];
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapBannedUserButton:)]) {
+        [self.delegate moreInfoSheetDidTapBannedUserButton:self];
+    }
+}
+
 - (void)beautyButtonAction {
     [self dismiss];
     if (self.delegate &&
@@ -1106,6 +1156,13 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapSignInButton:)]) {
         [self.delegate moreInfoSheetDidTapSignInButton:self];
+    }
+}
+
+- (void)luckyBagButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLuckyBagButton:)]) {
+        [self.delegate moreInfoSheetDidTapLuckyBagButton:self];
     }
 }
 

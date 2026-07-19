@@ -1382,6 +1382,12 @@ static const NSUInteger PLVLCProductClickNicknameMaxLength = 5;
     });
 }
 
+- (void)notifyDelegatesUpdateLuckyBagWidgetInfo:(NSDictionary *)dict {
+    dispatch_async(multicastQueue, ^{
+        [self->multicastDelegate chatroomManager_updateLuckyBagWidgetInfo:dict];
+    });
+}
+
 #pragma mark - PLVSocketManager Protocol
 
 - (void)socketMananger_didReceiveMessage:(NSString *)subEvent
@@ -1439,7 +1445,6 @@ static const NSUInteger PLVLCProductClickNicknameMaxLength = 5;
         [self notifyDelegatesSignInSuccessWithNickname:nickname];
     }
 }
-
 
 #pragma mark - PLVChatroomPresenterProtocol
 

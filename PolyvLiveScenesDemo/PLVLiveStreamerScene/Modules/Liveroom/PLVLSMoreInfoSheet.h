@@ -22,9 +22,13 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidBadNetworkButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheetDidTapBannedUserButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
 - (void)moreInfoSheetDidTapMixLayoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
 - (void)moreInfoSheetDidTapSignInButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
+- (void)moreInfoSheetDidTapLuckyBagButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
 - (void)moreInfoSheetDidTapAIMattingButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 

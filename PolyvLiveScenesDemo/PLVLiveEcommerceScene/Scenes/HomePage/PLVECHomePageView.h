@@ -138,6 +138,13 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 /// 点击福利抽奖挂件的回调
 - (void)homePageViewWannaShowWelfareLottery:(PLVECHomePageView *)homePageView;
 
+/// 点击福袋挂件的回调
+- (void)homePageView:(PLVECHomePageView *)homePageView wannaShowLuckyBagWithActivityId:(NSString * _Nullable)activityId;
+
+/// 福袋挂件显示状态改变的的回调
+/// @param show 当前的显示状态
+- (void)homePageView:(PLVECHomePageView *)homePageView luckyBagWidgetShowStatusChanged:(BOOL)show;
+
 /// 福利抽奖挂件显示状态改变的的回调
 /// @param show 当前的显示状态
 - (void)homePageView:(PLVECHomePageView *)homePageView welfareLotteryWidgetShowStatusChanged:(BOOL)show;
@@ -166,6 +173,8 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 - (void)showMoreView;
 
 - (void)updateChannelInfo:(NSString *)publisher coverImage:(NSString *)coverImage;
+
+- (void)updateRoomInfoHidden:(BOOL)hidden;
 
 - (void)updateRoomInfoCount:(NSUInteger)roomInfoCount;
 
@@ -222,6 +231,10 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 /// 更新福利抽奖插件信息
 /// @param dict 福利抽奖插件数据
 - (void)updateWelfareLotteryWidgetViewInfo:(NSDictionary *)dict;
+
+/// 更新福袋插件信息
+/// @param dict 福袋插件数据
+- (void)updateLuckyBagWidgetViewInfo:(NSDictionary *)dict;
 
 /// 统计上报商品点击事件
 /// @param commodity 商品详情

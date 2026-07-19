@@ -24,6 +24,7 @@ PLVStreamerInteractWebViewBridgeDelegate
 
 /// 数据
 @property (nonatomic, strong) PLVStreamerInteractWebViewBridge *webViewBridge;
+@property (nonatomic, copy) NSString *webViewURLString;
 @property (nonatomic, assign) BOOL webviewLoadFinish; //webview 是否已加载完成
 @property (nonatomic, assign) BOOL webviewLoadFaid; //webview 是否加载失败
 
@@ -38,7 +39,12 @@ PLVStreamerInteractWebViewBridgeDelegate
 }
 
 - (instancetype)init {
+    return [self initWithWebViewURLString:PLVLiveConstantsStreamerInteractWebViewURL];
+}
+
+- (instancetype)initWithWebViewURLString:(NSString *)webViewURLString {
     if (self = [super init]) {
+        self.webViewURLString = [PLVFdUtil checkStringUseable:webViewURLString] ? webViewURLString : PLVLiveConstantsStreamerInteractWebViewURL;
         [self setupData];
         [self setupUI];
     }
@@ -50,7 +56,7 @@ PLVStreamerInteractWebViewBridgeDelegate
 - (void)loadInteractWebView {
     [self.webView stopLoading];
     
-    NSString *urlString = PLVLiveConstantsStreamerInteractWebViewURL;
+    NSString *urlString = [PLVFdUtil checkStringUseable:self.webViewURLString] ? self.webViewURLString : PLVLiveConstantsStreamerInteractWebViewURL;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
     BOOL security = liveConfig.enableSha256 || liveConfig.enableSignatureNonce || liveConfig.enableResponseEncrypt || liveConfig.enableRequestEncrypt;
     NSString *language = ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK) ? @"zh_CN" : @"en";
@@ -105,7 +111,11 @@ PLVStreamerInteractWebViewBridgeDelegate
 
 - (NSDictionary *)getUserInfo {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
-    return [roomData nativeAppUserParamsWithExtraParam:nil];
+    NSDictionary *extraParam = @{
+        @"userType" : @"teacher",
+        @"webVersion" : @"0.6.0"
+    };
+    return [roomData nativeAppUserParamsWithExtraParam:extraParam];
 }
 
 #pragma mark - Download File

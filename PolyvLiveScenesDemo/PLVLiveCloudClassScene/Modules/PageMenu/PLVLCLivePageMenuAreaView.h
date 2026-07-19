@@ -166,6 +166,15 @@ PLVLCLivePageMenuType PLVLCMenuTypeWithMenuTypeString(NSString *menuString);
 /// @param pageMenuAreaView 菜单视图
 - (void)plvLCLivePageMenuAreaViewWannaShowWelfareLottery:(PLVLCLivePageMenuAreaView *)pageMenuAreaView;
 
+/// 点击福袋挂件的回调
+/// @param pageMenuAreaView 菜单视图
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView wannaShowLuckyBagWithActivityId:(NSString * _Nullable)activityId;
+
+/// 福袋挂件显示状态改变的的回调
+/// @param pageMenuAreaView 菜单视图
+/// @param show 当前的显示状态
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView luckyBagWidgetShowStatusChanged:(BOOL)show;
+
 /// 福利抽奖挂件显示状态改变的的回调
 /// @param pageMenuAreaView 菜单视图
 /// @param show 当前的显示状态

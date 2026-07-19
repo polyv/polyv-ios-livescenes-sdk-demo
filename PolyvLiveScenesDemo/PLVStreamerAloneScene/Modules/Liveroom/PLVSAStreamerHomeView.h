@@ -97,6 +97,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 分享 按钮触发回调
 - (void)streamerHomeViewDidTapShareButton:(PLVSAStreamerHomeView *)homeView;
 
+/// 点击 封禁用户 按钮触发回调
+- (void)streamerHomeViewDidTapBannedUserButton:(PLVSAStreamerHomeView *)homeView;
+
 /// 点击 开启/关闭连麦设置按钮 按钮触发回调
 - (void)streamerHomeViewDidAllowRaiseHandButton:(PLVSAStreamerHomeView *)homeView wannaChangeAllowRaiseHand:(BOOL)allowRaiseHand;
 

@@ -165,10 +165,27 @@ PLVInteractWebViewBridgeDelegate>
     [self.webViewBridge callWebViewEvent:@{@"event" : @"SHOW_WELFARE_LOTTERY"}];
 }
 
+- (void)openLuckyBagWithActivityId:(NSString *)activityId {
+    NSMutableDictionary *eventData = [@{@"event" : @"SHOW_LUCKY_BAG"} mutableCopy];
+    if ([PLVFdUtil checkStringUseable:activityId]) {
+        eventData[@"data"] = @{@"activityId" : activityId};
+    }
+    [self.webViewBridge callWebViewEvent:eventData];
+}
+
 - (void)checkWelfareLotteryComment:(NSString *)comment {
     if ([PLVFdUtil checkStringUseable:comment]) {
         NSDictionary *eventData = @{
             @"event" : @"CHECK_WELFARE_LOTTERY_COMMENT",
+            @"data" : @{@"comment" : comment}};
+        [self.webViewBridge callWebViewEvent:eventData];
+    }
+}
+
+- (void)checkLuckyBagComment:(NSString *)comment {
+    if ([PLVFdUtil checkStringUseable:comment]) {
+        NSDictionary *eventData = @{
+            @"event" : @"CHECK_LUCKY_BAG_COMMENT",
             @"data" : @{@"comment" : comment}};
         [self.webViewBridge callWebViewEvent:eventData];
     }
@@ -293,7 +310,8 @@ PLVInteractWebViewBridgeDelegate>
     NSDictionary *userInfo = @{
         @"nick" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerName],
         @"userId" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerId],
-        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar]
+        @"pic" : [NSString stringWithFormat:@"%@", roomData.roomUser.viewerAvatar],
+        @"userType" : @"viewer"
     };
     NSDictionary *channelInfo = @{
         @"channelId" : [NSString stringWithFormat:@"%@", roomData.channelId],
@@ -510,10 +528,24 @@ PLVInteractWebViewBridgeDelegate>
     }
 }
 
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge luckyBagEntranceDataChangeWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:updateLuckyBagWidget:)]) {
+        [self.delegate plvInteractGenericView:self updateLuckyBagWidget:dict];
+    }
+}
+
 - (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge welfareLotteryCommentSuccessWithJSONObject:(id)jsonObject {
     NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
     if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:welfareLotteryCommentSuccess:)]) {
         [self.delegate plvInteractGenericView:self welfareLotteryCommentSuccess:dict];
+    }
+}
+
+- (void)plvInteractWebViewBridge:(PLVInteractWebViewBridge *)webViewBridge luckyBagCommentSuccessWithJSONObject:(id)jsonObject {
+    NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvInteractGenericView:luckyBagCommentSuccess:)]) {
+        [self.delegate plvInteractGenericView:self luckyBagCommentSuccess:dict];
     }
 }
 

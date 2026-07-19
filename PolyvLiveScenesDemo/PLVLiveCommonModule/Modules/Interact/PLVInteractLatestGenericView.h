@@ -43,7 +43,13 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param eventName 事件名称，由 JS 约定
 - (void)openInteractAppWithEventName:(NSString *)eventName;
 
+/// 打开福袋窗口
+/// @param activityId 福袋活动 ID
+- (void)openLuckyBagWithActivityId:(NSString * _Nullable)activityId;
+
+/// 检查发表的评论是否满足福袋评论任务
+- (void)checkLuckyBagComment:(NSString *)comment;
+
 @end
 
 NS_ASSUME_NONNULL_END
-

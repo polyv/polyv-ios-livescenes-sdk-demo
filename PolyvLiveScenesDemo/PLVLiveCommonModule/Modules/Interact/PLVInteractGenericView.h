@@ -62,10 +62,20 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// @param dict 抽奖挂件的数据
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateWelfareLotteryWidget:(NSDictionary *)dict;
 
+/// 收到更新福袋挂件的回调
+/// @param interactView 互动视图
+/// @param dict 福袋挂件的数据
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLuckyBagWidget:(NSDictionary *)dict;
+
 /// 收到条件抽奖评论成功的回调
 /// @param interactView 互动视图
 /// @param dict 福利抽奖挂件评论
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView welfareLotteryCommentSuccess:(NSDictionary *)dict;
+
+/// 收到福袋评论成功的回调
+/// @param interactView 互动视图
+/// @param dict 福袋评论
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView luckyBagCommentSuccess:(NSDictionary *)dict;
 
 /// 强制签到：未在规定时间内签到回调  需要退出直播间
 /// @param interactView 互动视图
@@ -137,9 +147,16 @@ typedef NS_ENUM(NSUInteger, PLVInteractGenericViewLiveType) {
 /// 打开条件抽奖窗口
 - (void)openWelfareLottery;
 
+/// 打开福袋窗口
+/// @param activityId 福袋活动 ID
+- (void)openLuckyBagWithActivityId:(NSString * _Nullable)activityId;
+
 /// 检查发表的评论是否满足评论抽奖
 -
 (void)checkWelfareLotteryComment:(NSString *)comment;
+
+/// 检查发表的评论是否满足福袋评论任务
+- (void)checkLuckyBagComment:(NSString *)comment;
 
 @end
 

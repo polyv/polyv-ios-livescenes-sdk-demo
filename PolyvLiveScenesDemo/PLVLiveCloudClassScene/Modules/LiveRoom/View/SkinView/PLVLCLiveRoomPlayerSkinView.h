@@ -63,6 +63,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)displayWelfareLotteryWidgetView:(UIView *)welfareLotteryWidgetView;
 
+- (void)displayLuckyBagWidgetView:(UIView *)luckyBagWidgetView;
+
 /// 是否显示打开商品库的按钮
 /// @param show YES 显示 NO 不显示
 - (void)showCommodityButton:(BOOL)show;
@@ -96,6 +98,10 @@ NS_ASSUME_NONNULL_BEGIN
 /// 是否显示福利抽奖挂件视图
 /// @param show YES 显示 NO 不显示
 - (void)showWelfareLotteryWidgetView:(BOOL)show;
+
+/// 是否显示福袋挂件视图
+/// @param show YES 显示 NO 不显示
+- (void)showLuckyBagWidgetView:(BOOL)show;
 
 @end
 

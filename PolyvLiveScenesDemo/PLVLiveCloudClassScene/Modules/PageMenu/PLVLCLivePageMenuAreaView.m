@@ -610,6 +610,20 @@ PLVRoomDataManagerProtocol
     }
 }
 
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC wannaShowLuckyBagWithActivityId:(NSString *)activityId {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:wannaShowLuckyBagWithActivityId:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self wannaShowLuckyBagWithActivityId:activityId];
+    }
+}
+
+- (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC luckyBagWidgetShowStatusChanged:(BOOL)show {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:luckyBagWidgetShowStatusChanged:)]) {
+        [self.delegate plvLCLivePageMenuAreaView:self luckyBagWidgetShowStatusChanged:show];
+    }
+}
+
 - (void)plvLCChatViewController:(PLVLCChatViewController *)chatVC welfareLotteryWidgetShowStatusChanged:(BOOL)show {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(plvLCLivePageMenuAreaView:welfareLotteryWidgetShowStatusChanged:)]) {

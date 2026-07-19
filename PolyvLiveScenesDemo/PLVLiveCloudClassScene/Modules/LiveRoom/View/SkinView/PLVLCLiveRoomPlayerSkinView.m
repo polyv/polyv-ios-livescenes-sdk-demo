@@ -34,6 +34,7 @@
 @property (nonatomic, strong) PLVLCLiveRoomLandscapeInputView * landscapeInputView;
 @property (nonatomic, strong) UIButton *onlineListButton;
 @property (nonatomic, strong) UIView * welfareLotteryWidgetView;
+@property (nonatomic, strong) UIView * luckyBagWidgetView;
 
 @end
 
@@ -208,6 +209,16 @@
     }
 }
 
+- (void)displayLuckyBagWidgetView:(UIView *)luckyBagWidgetView {
+    if (luckyBagWidgetView && [luckyBagWidgetView isKindOfClass:UIView.class]) {
+        [self.luckyBagWidgetView addSubview:luckyBagWidgetView];
+        luckyBagWidgetView.frame = self.luckyBagWidgetView.bounds;
+        luckyBagWidgetView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }else{
+        NSLog(@"PLVLCLiveRoomPlayerSkinView - displayLuckyBagWidgetView failed, view illegal %@", luckyBagWidgetView);
+    }
+}
+
 - (void)showCommodityButton:(BOOL)show {
     self.commodityButton.hidden = !show;
     [self refreshBottomButtonsFrame];
@@ -251,6 +262,11 @@
 
 - (void)showWelfareLotteryWidgetView:(BOOL)show {
     self.welfareLotteryWidgetView.hidden = !show;
+    [self refreshBottomButtonsFrame];
+}
+
+- (void)showLuckyBagWidgetView:(BOOL)show {
+    self.luckyBagWidgetView.hidden = !show;
     [self refreshBottomButtonsFrame];
 }
 
@@ -349,7 +365,7 @@
     CGFloat titleLabelWidth = CGRectGetMinX(self.moreButton.frame) - CGRectGetMaxX(self.backButton.frame);
 
     if (isPad) {
-        // iPad小分屏适配（横屏1:2），标题宽度调整，观看次数隐藏
+        // iPad小分屏适配（横屏1:2），标题宽度调整，人数区域隐藏
         Boolean isSmallScreen = CGRectGetWidth(self.bounds) <= PLVScreenWidth / 3 ? YES : NO;
         if (isSmallScreen) {
             self.playTimesLabel.hidden = YES;
@@ -360,7 +376,7 @@
             titleLabelWidth = MIN(titleLabelWidth, titleLabelFitSize.width);
             self.titleLabel.frame = CGRectMake(CGRectGetMaxX(self.backButton.frame), topPadding, titleLabelWidth, backButtonSize.height);
         } else {
-            self.playTimesLabel.hidden = NO;
+            self.playTimesLabel.hidden = ![PLVRoomDataManager sharedManager].roomData.menuInfo.pvShowEnabled;
 
             CGFloat playTimesLabelMaxWidth = 100;
             if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
@@ -487,6 +503,11 @@
     
     if (!self.welfareLotteryWidgetView.isHidden) {
         self.welfareLotteryWidgetView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
+        buttonOriginX -= (buttonPadding + buttonWidth);
+    }
+
+    if (!self.luckyBagWidgetView.isHidden) {
+        self.luckyBagWidgetView.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonWidth, buttonWidth);
         buttonOriginX -= (buttonPadding + buttonWidth);
     }
     
@@ -634,6 +655,14 @@
     return _welfareLotteryWidgetView;
 }
 
+- (UIView *)luckyBagWidgetView {
+    if (!_luckyBagWidgetView) {
+        _luckyBagWidgetView = [[UIView alloc] init];
+        _luckyBagWidgetView.hidden = YES;
+    }
+    return _luckyBagWidgetView;
+}
+
 - (UIButton *)rewardButton {
     if (!_rewardButton) {
         _rewardButton = [[UIButton alloc]init];
@@ -710,6 +739,7 @@
     [self addSubview:self.cardPushBackgroudView];
     [self addSubview:self.lotteryWidgetView];
     [self addSubview:self.welfareLotteryWidgetView];
+    [self addSubview:self.luckyBagWidgetView];
     [self addSubview:self.commodityButton];
     [self addSubview:self.linkMicFullscreenButton];
     [self addSubview:self.landscapeInputView];

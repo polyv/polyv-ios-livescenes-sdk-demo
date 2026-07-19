@@ -58,6 +58,7 @@ PLVLCChatroomViewModelProtocol,
 PLVRoomDataManagerProtocol,
 PLVLCChatroomPlaybackViewModelDelegate,
 PLVLCWelfareLotteryWidgetViewDelegate,
+PLVLCLuckyBagWidgetViewDelegate,
 UINavigationControllerDelegate,
 UIImagePickerControllerDelegate,
 UITableViewDelegate,
@@ -115,6 +116,7 @@ UITableViewDataSource
         [self.view addSubview:self.receiveNewMessageView];
         [self.view addSubview:self.notifyView];
         [self.view addSubview:self.lotteryWidgetView];
+        [self.view addSubview:self.luckyBagWidgetView];
     }
 }
 
@@ -208,6 +210,12 @@ UITableViewDataSource
         originX = self.view.bounds.size.width - centerPadding - self.welfareLotteryWidgetView.widgetSize.width / 2.0;
         originY -= (buttonYPadding + self.welfareLotteryWidgetView.widgetSize.height);
         self.welfareLotteryWidgetView.frame = CGRectMake(originX, originY, self.welfareLotteryWidgetView.widgetSize.width, self.welfareLotteryWidgetView.widgetSize.height);
+    }
+    
+    if (!self.luckyBagWidgetView.hidden && self.luckyBagWidgetView.superview == self.view) {
+        originX = self.view.bounds.size.width - centerPadding - self.luckyBagWidgetView.widgetSize.width / 2.0;
+        originY -= (buttonYPadding + self.luckyBagWidgetView.widgetSize.height);
+        self.luckyBagWidgetView.frame = CGRectMake(originX, originY, self.luckyBagWidgetView.widgetSize.width, self.luckyBagWidgetView.widgetSize.height);
     }
     
     if (!self.lotteryWidgetView.hidden && self.lotteryWidgetView.superview == self.view) {
@@ -353,6 +361,14 @@ UITableViewDataSource
     return _welfareLotteryWidgetView;
 }
 
+- (PLVLCLuckyBagWidgetView *)luckyBagWidgetView {
+    if (!_luckyBagWidgetView) {
+        _luckyBagWidgetView = [[PLVLCLuckyBagWidgetView alloc] init];
+        _luckyBagWidgetView.delegate = self;
+    }
+    return _luckyBagWidgetView;
+}
+
 - (BOOL)enableReward {
     return self.keyboardToolView.enableReward;
 }
@@ -473,6 +489,7 @@ UITableViewDataSource
     [self.view insertSubview:self.cardPushButtonView belowSubview:self.receiveNewMessageView];
     [self.view insertSubview:self.lotteryWidgetView belowSubview:self.receiveNewMessageView];
     [self.view insertSubview:self.welfareLotteryWidgetView belowSubview:self.receiveNewMessageView];
+    [self.view insertSubview:self.luckyBagWidgetView belowSubview:self.receiveNewMessageView];
     
     [self refreshFloatingButtonViewFrame];
 }
@@ -507,6 +524,14 @@ UITableViewDataSource
         [self.welfareLotteryWidgetView updateWelfareLotteryWidgetInfo:dict];
     } else {
         [self.welfareLotteryWidgetView hideWidgetView];
+    }
+}
+
+- (void)updateLuckyBagWidgetInfo:(NSDictionary *)dict {
+    if ([PLVFdUtil checkDictionaryUseable:dict]) {
+        [self.luckyBagWidgetView updateLuckyBagWidgetInfo:dict];
+    } else {
+        [self.luckyBagWidgetView hideWidgetView];
     }
 }
 
@@ -838,6 +863,10 @@ UITableViewDataSource
     }
     [self arrangeTopMarqueeViewFrame];
     [self.welcomeView showWelcomeWithMessage:message];
+}
+
+- (void)chatroomManager_updateLuckyBagWidgetInfo:(NSDictionary *)dict {
+    [self updateLuckyBagWidgetInfo:dict];
 }
 
 - (NSString *)messageEffectDisplayNickName:(NSString *)nickName {
@@ -1337,6 +1366,8 @@ UITableViewDataSource
 
 - (void)cardPushButtonViewPopupViewDidShow:(PLVLCCardPushButtonView *)pushButtonView {
     [self.lotteryWidgetView hidePopupView];
+    [self.welfareLotteryWidgetView hidePopupView];
+    [self.luckyBagWidgetView hidePopupView];
 }
 
 #pragma mark - PLVLCLotteryWidgetViewDelegate
@@ -1356,6 +1387,8 @@ UITableViewDataSource
 
 - (void)lotteryWidgetViewPopupViewDidShow:(PLVLCLotteryWidgetView *)lotteryWidgetView {
     [self.cardPushButtonView hidePopupView];
+    [self.welfareLotteryWidgetView hidePopupView];
+    [self.luckyBagWidgetView hidePopupView];
 }
 
 #pragma mark - PLVLCWelfareLotteryWidgetViewDelegate
@@ -1373,8 +1406,29 @@ UITableViewDataSource
     }
 }
 
-- (void)welfareLotteryWidgetViewPopupViewDidShow:(PLVLCLotteryWidgetView *)lotteryWidgetView {
+- (void)welfareLotteryWidgetViewPopupViewDidShow:(PLVLCWelfareLotteryWidgetView *)lotteryWidgetView {
     [self.cardPushButtonView hidePopupView];
+    [self.luckyBagWidgetView hidePopupView];
+}
+
+#pragma mark - PLVLCLuckyBagWidgetViewDelegate
+
+- (void)luckyBagWidgetViewDidClickAction:(PLVLCLuckyBagWidgetView *)luckyBagWidgetView {
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:wannaShowLuckyBagWithActivityId:)]) {
+        [self.delegate plvLCChatViewController:self wannaShowLuckyBagWithActivityId:luckyBagWidgetView.activityId];
+    }
+}
+
+- (void)luckyBagWidgetView:(PLVLCLuckyBagWidgetView *)luckyBagWidgetView showStatusChanged:(BOOL)show {
+    [self refreshFloatingButtonViewFrame];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCChatViewController:luckyBagWidgetShowStatusChanged:)]) {
+        [self.delegate plvLCChatViewController:self luckyBagWidgetShowStatusChanged:show];
+    }
+}
+
+- (void)luckyBagWidgetViewPopupViewDidShow:(PLVLCLuckyBagWidgetView *)luckyBagWidgetView {
+    [self.cardPushButtonView hidePopupView];
+    [self.welfareLotteryWidgetView hidePopupView];
 }
 
 #pragma mark - UIImagePickerControllerDelegate

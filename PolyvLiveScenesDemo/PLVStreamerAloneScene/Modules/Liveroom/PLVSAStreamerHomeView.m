@@ -1184,6 +1184,13 @@ PLVSAAICardViewDelegate
     }
 }
 
+- (void)moreInfoSheetDidTapBannedUserButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapBannedUserButton:)]) {
+        [self.delegate streamerHomeViewDidTapBannedUserButton:self];
+    }
+}
+
 - (void)moreInfoSheetDidTapBadNetworkButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewCurrentVideoQosPreference:)]) {
@@ -1215,6 +1222,10 @@ PLVSAAICardViewDelegate
 
 - (void)moreInfoSheetDidTapSignInButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
     [self.popoverView.interactView openInteractViewWithEventName:@"SHOW_SIGN"];
+}
+
+- (void)moreInfoSheetDidTapLuckyBagButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_LUCKY_BAG"];
 }
 
 /// 点击 贴纸按钮 触发回调

@@ -40,6 +40,16 @@
     self.publisherLB.frame = CGRectMake(CGRectGetMaxX(self.coverImageView.frame)+4, 4, CGRectGetWidth(bounds)-CGRectGetMaxX(self.coverImageView.frame)-8, 14);
     self.watchImageView.frame = CGRectMake(CGRectGetMinX(self.publisherLB.frame), CGRectGetMaxY(self.publisherLB.frame)+2, 12, 12);
     self.pageViewLB.frame = CGRectMake(CGRectGetMaxX(self.watchImageView.frame)+2, CGRectGetMinY(self.watchImageView.frame), CGRectGetWidth(bounds)-CGRectGetMaxX(self.watchImageView.frame)-6, 10);
+
+    if (self.pageViewLB.hidden) {
+        self.publisherLB.frame = CGRectMake(CGRectGetMaxX(self.coverImageView.frame)+4, 0, CGRectGetWidth(bounds)-CGRectGetMaxX(self.coverImageView.frame)-8, CGRectGetHeight(bounds));
+    }
+}
+
+- (void)setPageViewHidden:(BOOL)hidden {
+    self.watchImageView.hidden = hidden;
+    self.pageViewLB.hidden = hidden;
+    [self setNeedsLayout];
 }
 
 - (UIImageView *)coverImageView {

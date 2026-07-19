@@ -134,11 +134,15 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
 }
 
 - (NSDictionary *)nativeAppUserParamsWithExtraParam:(NSDictionary * _Nullable)extraParam {
-    NSDictionary *userInfo = @{
+    NSMutableDictionary *userInfo = [@{
         @"nick" : [NSString stringWithFormat:@"%@", self.roomUser.viewerName],
         @"userId" : [NSString stringWithFormat:@"%@", self.roomUser.viewerId],
         @"pic" : [NSString stringWithFormat:@"%@", self.roomUser.viewerAvatar]
-    };
+    } mutableCopy];
+    NSString *userType = PLV_SafeStringForDictKey(extraParam, @"userType");
+    if ([PLVFdUtil checkStringUseable:userType]) {
+        [userInfo setObject:userType forKey:@"userType"];
+    }
     NSDictionary *channelInfo = @{
         @"channelId" : [NSString stringWithFormat:@"%@", self.channelId],
         @"roomId" : [NSString stringWithFormat:@"%@", self.channelId]

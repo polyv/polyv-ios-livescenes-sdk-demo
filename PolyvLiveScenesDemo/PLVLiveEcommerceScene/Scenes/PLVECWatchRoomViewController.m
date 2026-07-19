@@ -71,6 +71,7 @@ PLVECRealTimeSubtitleManagerDelegate
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
 @property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
+@property (nonatomic, assign) BOOL luckyBagWidgetShowed;
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVECPlayerViewController * playerVC; // 播放控制器
@@ -714,9 +715,12 @@ PLVECRealTimeSubtitleManagerDelegate
 }
 
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
+    BOOL pvShowEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.pvShowEnabled;
+    [self.homePageView updateRoomInfoHidden:!pvShowEnabled];
+    
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if ((videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live) ||
-        (videoType == PLVChannelVideoType_Playback && self.playTimesLabelUseNewStrategy_playback)) {
+    if (pvShowEnabled && ((videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live) ||
+        (videoType == PLVChannelVideoType_Playback && self.playTimesLabelUseNewStrategy_playback))) {
         [self.homePageView updateRoomInfoCount:onlineCount];
     }
     [self.homePageView updateOnlineListButton:onlineCount];
@@ -749,13 +753,17 @@ PLVECRealTimeSubtitleManagerDelegate
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
         [self.homePageView updateLikeCount:roomData.likeCount];
-        if (!self.playTimesLabelUseNewStrategy_live) {
-            [self.homePageView updateRoomInfoCount:roomData.menuInfo.pageView.integerValue];
+        [self.homePageView updateRoomInfoHidden:!roomData.menuInfo.pvShowEnabled];
+        if (roomData.menuInfo.pvShowEnabled) {
+            NSUInteger roomInfoCount = self.playTimesLabelUseNewStrategy_live ? roomData.onlineCount : roomData.menuInfo.pageView.integerValue;
+            [self.homePageView updateRoomInfoCount:roomInfoCount];
         }
     } else if (roomData.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
-        if (!self.playTimesLabelUseNewStrategy_playback) {
-            [self.homePageView updateRoomInfoCount:roomData.menuInfo.pageView.integerValue];
+        [self.homePageView updateRoomInfoHidden:!roomData.menuInfo.pvShowEnabled];
+        if (roomData.menuInfo.pvShowEnabled) {
+            NSUInteger roomInfoCount = self.playTimesLabelUseNewStrategy_playback ? roomData.onlineCount : roomData.menuInfo.pageView.integerValue;
+            [self.homePageView updateRoomInfoCount:roomInfoCount];
         }
     }
 }
@@ -765,9 +773,12 @@ PLVECRealTimeSubtitleManagerDelegate
 }
 
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount {
+    BOOL pvShowEnabled = [PLVRoomDataManager sharedManager].roomData.menuInfo.pvShowEnabled;
+    [self.homePageView updateRoomInfoHidden:!pvShowEnabled];
+    
     PLVChannelVideoType videoType = [PLVRoomDataManager sharedManager].roomData.videoType;
-    if ((videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live) ||
-        (videoType == PLVChannelVideoType_Playback && !self.playTimesLabelUseNewStrategy_playback)) {
+    if (pvShowEnabled && ((videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live) ||
+        (videoType == PLVChannelVideoType_Playback && !self.playTimesLabelUseNewStrategy_playback))) {
         [self.homePageView updateRoomInfoCount:watchCount];
     }
 }
@@ -780,6 +791,7 @@ PLVECRealTimeSubtitleManagerDelegate
 
 - (void)socketMananger_didLoginSuccess:(NSString *)ackString {
 //    [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"登录成功") detail:@"" view:self.view];
+    [self.popoverView.latestInteractView updateUserInfo];
     
     // 注册实时字幕事件监听
     [[PLVSocketManager sharedManager] addObserveSocketEvent:@"subtitles"];
@@ -1410,6 +1422,14 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
     [self.popoverView.interactView openWelfareLottery];
 }
 
+- (void)homePageView:(PLVECHomePageView *)homePageView wannaShowLuckyBagWithActivityId:(NSString *)activityId {
+    [self.popoverView.latestInteractView openLuckyBagWithActivityId:activityId];
+}
+
+- (void)homePageView:(PLVECHomePageView *)homePageView luckyBagWidgetShowStatusChanged:(BOOL)show {
+    self.luckyBagWidgetShowed = show;
+}
+
 - (void)homePageView:(PLVECHomePageView *)homePageView welfareLotteryWidgetShowStatusChanged:(BOOL)show {
     self.welfareLotteryWidgetShowed = show;
 }
@@ -1487,7 +1507,19 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
     [self.homePageView updateWelfareLotteryWidgetViewInfo:dict];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLuckyBagWidget:(NSDictionary *)dict {
+    self.luckyBagWidgetShowed = PLV_SafeBoolForDictKey(dict, @"hasPendant");
+    [self.homePageView updateLuckyBagWidgetViewInfo:dict];
+}
+
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView welfareLotteryCommentSuccess:(NSDictionary *)dict {
+    NSString *comment = PLV_SafeStringForDictKey(dict, @"comment");
+    if ([PLVFdUtil checkStringUseable:comment]) {
+        [[PLVECChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];
+    }
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView luckyBagCommentSuccess:(NSDictionary *)dict {
     NSString *comment = PLV_SafeStringForDictKey(dict, @"comment");
     if ([PLVFdUtil checkStringUseable:comment]) {
         [[PLVECChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];
@@ -1530,7 +1562,7 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 }
 
 - (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
-    if (!self.welfareLotteryWidgetShowed ||!model || ![model isKindOfClass:[PLVChatModel class]]) {
+    if ((!self.welfareLotteryWidgetShowed && !self.luckyBagWidgetShowed) || !model || ![model isKindOfClass:[PLVChatModel class]]) {
         return;
     }
     
@@ -1542,7 +1574,12 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
         if (![PLVFdUtil checkStringUseable:comment]) {
             return;
         }
-        [self.popoverView.interactView checkWelfareLotteryComment:comment];
+        if (self.welfareLotteryWidgetShowed) {
+            [self.popoverView.interactView checkWelfareLotteryComment:comment];
+        }
+        if (self.luckyBagWidgetShowed) {
+            [self.popoverView.latestInteractView checkLuckyBagComment:comment];
+        }
     }
 }
 

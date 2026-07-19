@@ -74,6 +74,12 @@
 
 "确定踢出" = "Confirm kick out";
 
+"已被踢出的用户" = "Kicked users";
+
+"已被禁言的用户" = "Muted users";
+
+"取消踢出" = "Cancel kick";
+
 "管理员私聊" = "Admin private chat";
 
 "被授权后才可以使用课件功能" = "You can use the PPT only after being authorized";

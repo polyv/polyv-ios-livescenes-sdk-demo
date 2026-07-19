@@ -29,8 +29,10 @@
 @property (nonatomic, strong) UIButton *shareButton; // 分享按钮
 @property (nonatomic, strong) UIButton *screenShareButton; // 屏幕共享按钮
 @property (nonatomic, strong) UIButton *badNetworkButton; //  弱网处理按钮
+@property (nonatomic, strong) UIButton *bannedUserButton; // 封禁用户按钮
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
 @property (nonatomic, strong) UIButton *signInButton; //  签到按钮
+@property (nonatomic, strong) UIButton *luckyBagButton; //  福袋按钮
 @property (nonatomic, strong) UIView *buttonSplitLine; // 退出登录按钮顶部分割线
 @property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登录按钮背后的文本
 @property (nonatomic, strong) UIButton *logoutButton; // 退出登录按钮
@@ -69,6 +71,8 @@
         }
         [self.buttonScrollView addSubview:self.badNetworkButton];
         [muButtonArray addObject:self.badNetworkButton];
+        [self.buttonScrollView addSubview:self.bannedUserButton];
+        [muButtonArray addObject:self.bannedUserButton];
         if ([self showMixLayoutButton]) {
             [self.buttonScrollView addSubview:self.mixLayoutButton];
             [muButtonArray addObject:self.mixLayoutButton];
@@ -88,6 +92,8 @@
             [self.buttonScrollView addSubview:self.signInButton];
             [interactMuButtonArray addObject:self.signInButton];
         }
+        [self.buttonScrollView addSubview:self.luckyBagButton];
+        [interactMuButtonArray addObject:self.luckyBagButton];
         self.interactiveTitleLabel.hidden = [interactMuButtonArray count] == 0;
         [self.contentView addSubview:self.buttonSplitLine];
         [self.contentView addSubview:self.logoutButtonLabel];
@@ -269,6 +275,14 @@
     return _badNetworkButton;
 }
 
+- (UIButton *)bannedUserButton {
+    if (!_bannedUserButton) {
+        _bannedUserButton = [self buttonWithTitle:PLVLocalizedString(@"封禁用户") NormalImageString:@"plvls_liveroom_kick_banned_users_btn" selectedImageString:@"plvls_liveroom_kick_banned_users_btn"];
+        [_bannedUserButton addTarget:self action:@selector(bannedUserButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _bannedUserButton;
+}
+
 - (UIButton *)mixLayoutButton {
     if (!_mixLayoutButton) {
         _mixLayoutButton = [self buttonWithTitle:PLVLocalizedString(@"连麦布局Btn") NormalImageString:@"plvls_liveroom_mixLayout_btn" selectedImageString:@"plvls_liveroom_mixLayout_btn"];
@@ -328,6 +342,14 @@
         [_signInButton addTarget:self action:@selector(signInAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _signInButton;
+}
+
+- (UIButton *)luckyBagButton {
+    if (!_luckyBagButton) {
+        _luckyBagButton = [self buttonWithTitle:PLVLocalizedString(@"福袋") NormalImageString:@"plvls_liveroom_lucky_bag_btn" selectedImageString:@"plvls_liveroom_lucky_bag_btn"];
+        [_luckyBagButton addTarget:self action:@selector(luckyBagAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _luckyBagButton;
 }
 
 - (UIView *)buttonSplitLine {
@@ -452,6 +474,15 @@
     }
 }
 
+- (void)bannedUserButtonAction {
+    [self dismiss];
+
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapBannedUserButton:)]) {
+        [self.delegate moreInfoSheetDidTapBannedUserButton:self];
+    }
+}
+
 - (void)mixLayoutAction {
     [self dismiss];
     
@@ -476,6 +507,15 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapSignInButton:)]) {
         [self.delegate moreInfoSheetDidTapSignInButton:self];
+    }
+}
+
+- (void)luckyBagAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLuckyBagButton:)]) {
+        [self.delegate moreInfoSheetDidTapLuckyBagButton:self];
     }
 }
 

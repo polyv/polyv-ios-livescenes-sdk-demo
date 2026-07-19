@@ -32,6 +32,8 @@
 #import "PLVVirtualBackgroudSheet.h"
 #import "PLVSALiveTemplateSheet.h"
 #import "PLVCheckVoiceWarningView.h"
+#import "PLVSABannedUserSheet.h"
+#import "PLVLiveToast.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -54,6 +56,7 @@ static NSString *const kPLVSASettingMixLayoutKey = @"kPLVSASettingMixLayoutKey";
 static NSString *const KPLVSANoiseCancellationLevelKey = @"KPLVSANoiseCancellationLevelKey";
 static NSString *const KPLVSAExternalDeviceEnabledKey = @"KPLVSAExternalDeviceEnabledKey";
 static NSString *const KPLVSAAudienceRaiseHandStateKey = @"KPLVAudienceRaiseHandStateKey";
+static NSInteger const kPLVSABannedUserToastTag = 0x504C5652;
 
 /// PLVSAStreamerViewController 所处的四种状态，不同状态下，展示不同的页面
 typedef NS_ENUM(NSInteger, PLVSAStreamerViewState) {
@@ -77,6 +80,7 @@ PLVStickerManagerDelegate,
 UINavigationControllerDelegate,
 PLVSAScreenShareCustomPictureInPictureManagerDelegate,
 PLVVirtualBackgroudSheetDelegate,
+PLVSABannedUserSheetDelegate,
 UIDocumentPickerDelegate
 >
 
@@ -134,6 +138,7 @@ UIDocumentPickerDelegate
 @property (nonatomic, strong) PLVStickerManager *stickerManager; // 贴图管理器
 @property (nonatomic, strong) PLVVirtualBackgroudSheet *aiMattingSheet; // AI抠像组件
 @property (nonatomic, strong) PLVSALiveTemplateSheet *liveTemplateSheet; // 开播模板弹层
+@property (nonatomic, strong) PLVSABannedUserSheet *bannedUserSheet; // 封禁用户弹层
 @property (nonatomic, strong) UIPinchGestureRecognizer *pinchGesture; //缩放手势
 @property (nonatomic, strong) PLVCheckVoiceWarningView *checkVoiceWarningView; // 音频审核提醒
 @property (nonatomic, strong) PLVBroadcastNotificationsManager *broadcastNotification; // 屏幕共享广播的通知
@@ -489,6 +494,15 @@ UIDocumentPickerDelegate
     return _liveTemplateSheet;
 }
 
+- (PLVSABannedUserSheet *)bannedUserSheet {
+    if (!_bannedUserSheet) {
+        _bannedUserSheet = [[PLVSABannedUserSheet alloc] initWithKickedUserList:[self.memberPresenter kickedUserList]
+                                                                 bannedUserList:[self bannedUserList]];
+        _bannedUserSheet.delegate = self;
+    }
+    return _bannedUserSheet;
+}
+
 - (UIPinchGestureRecognizer *)pinchGesture {
     if (!_pinchGesture) {
         _pinchGesture = [[UIPinchGestureRecognizer alloc] initWithTarget:self action:@selector(pinchGesture:)];
@@ -526,6 +540,7 @@ UIDocumentPickerDelegate
     // 初始化成员模块
     self.memberPresenter = [[PLVMemberPresenter alloc] init];
     self.memberPresenter.delegate = self;
+    self.memberPresenter.monitorKickUser = YES;
     [self.memberPresenter start];// 开始获取成员列表数据并开启自动更新
     
     // 初始化推流模块
@@ -1056,6 +1071,17 @@ UIDocumentPickerDelegate
         [weakSelf.homeView updateUserList:[weakSelf.memberPresenter userList]
                                 userCount:weakSelf.memberPresenter.userCount
                               onlineCount:[weakSelf.streamerPresenter.onlineUserArray count]];
+        [weakSelf updateBannedUserSheet];
+    });
+}
+
+- (void)kickedUserListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter {
+    if (self.viewState != PLVSAStreamerViewStateSteaming) {
+        return;
+    }
+    __weak typeof(self) weakSelf = self;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [weakSelf updateBannedUserSheet];
     });
 }
 
@@ -2080,6 +2106,11 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     [self showLiveTemplateSheet];
 }
 
+- (void)streamerHomeViewDidTapBannedUserButton:(PLVSAStreamerHomeView *)homeView {
+    [self updateBannedUserSheet];
+    [self.bannedUserSheet showInView:self.view];
+}
+
 /// 开始搜索
 - (void)streamerHomeView:(PLVSAStreamerHomeView *)homeView didStartSearchWithKeyword:(NSString *)keyword {
     [self.memberPresenter startSearchWithKeyword:keyword];
@@ -2088,6 +2119,78 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 /// 取消搜索
 - (void)streamerHomeViewDidCancelSearch:(PLVSAStreamerHomeView *)homeView {
     [self.memberPresenter cancelSearch];
+}
+
+#pragma mark PLVSABannedUserSheetDelegate
+
+- (void)bannedUserSheet:(PLVSABannedUserSheet *)bannedUserSheet recoverKickedUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendUnkickMessageWithUserId:user.userId];
+    if (success) {
+        [self.memberPresenter unkickUser:user];
+        [bannedUserSheet updateKickedUser:user released:YES];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已取消踢出")];
+    }
+}
+
+- (void)bannedUserSheet:(PLVSABannedUserSheet *)bannedUserSheet cancelBanUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:NO bannedUserId:user.userId];
+    if (success) {
+        [self.memberPresenter banUserWithUserId:user.userId banned:NO];
+        [bannedUserSheet updateBannedUser:user released:YES];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已取消禁言")];
+    }
+}
+
+- (void)bannedUserSheet:(PLVSABannedUserSheet *)bannedUserSheet kickUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendKickMessageWithUserId:user.userId];
+    if (success) {
+        [self.memberPresenter kickUserWithUserId:user.userId];
+        [bannedUserSheet updateKickedUser:user released:NO];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已踢出")];
+    }
+}
+
+- (void)bannedUserSheet:(PLVSABannedUserSheet *)bannedUserSheet banUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:YES bannedUserId:user.userId];
+    if (success) {
+        [self.memberPresenter banUserWithUserId:user.userId banned:YES];
+        [bannedUserSheet updateBannedUser:user released:NO];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已禁言")];
+    }
+}
+
+- (void)showBannedUserSheetToastWithMessage:(NSString *)message {
+    for (UIView *subview in [self.view.subviews copy]) {
+        if (subview.tag == kPLVSABannedUserToastTag &&
+            [subview isKindOfClass:[PLVLiveToast class]]) {
+            [subview removeFromSuperview];
+        }
+    }
+
+    [PLVSAUtils showToastWithMessage:message inView:self.view];
+
+    for (UIView *subview in [self.view.subviews reverseObjectEnumerator]) {
+        if ([subview isKindOfClass:[PLVLiveToast class]] &&
+            subview.tag != kPLVSABannedUserToastTag) {
+            subview.tag = kPLVSABannedUserToastTag;
+            break;
+        }
+    }
+}
+
+- (NSArray<PLVChatUser *> *)bannedUserList {
+    NSMutableArray<PLVChatUser *> *bannedUsers = [NSMutableArray array];
+    for (PLVChatUser *user in [self.memberPresenter userList]) {
+        if (user.banned) {
+            [bannedUsers addObject:user];
+        }
+    }
+    return [bannedUsers copy];
+}
+
+- (void)updateBannedUserSheet {
+    [_bannedUserSheet updateKickedUserList:[self.memberPresenter kickedUserList]
+                            bannedUserList:[self bannedUserList]];
 }
 
 #pragma mark PLVSABeautySheetDelegate

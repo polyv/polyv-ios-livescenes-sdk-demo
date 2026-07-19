@@ -166,6 +166,12 @@
 
 "确定踢出%@吗？" = "Are you sure you want to kick %@?";
 
+"已被踢出的用户" = "Kicked users";
+
+"已被禁言的用户" = "Muted users";
+
+"取消踢出" = "Cancel kick";
+
 "确定重置吗" = "Are you sure you want to reset?";
 
 "移交主讲权限" = "Transfer lecture permission";

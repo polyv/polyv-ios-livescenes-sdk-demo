@@ -82,6 +82,7 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
 @property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
+@property (nonatomic, assign) BOOL luckyBagWidgetShowed;
 @property (nonatomic, strong) NSArray<PLVKeyMomentModel *> *keyMoments;   // 精彩看点数据
 @property (nonatomic, strong) PLVLiveRealTimeSubtitleHandler *subtitleHandler; // 实时字幕处理器
 
@@ -479,6 +480,7 @@ PLVLiveRealTimeSubtitleHandlerDelegate
             [self.liveRoomSkinView displayCardPushButtonView:self.menuAreaView.chatVctrl.cardPushButtonView];
             [self.liveRoomSkinView displayLotteryWidgetView:self.menuAreaView.chatVctrl.lotteryWidgetView];
             [self.liveRoomSkinView displayWelfareLotteryWidgetView:self.menuAreaView.chatVctrl.welfareLotteryWidgetView];
+            [self.liveRoomSkinView displayLuckyBagWidgetView:self.menuAreaView.chatVctrl.luckyBagWidgetView];
             [self.pushView showOnView:self.liveRoomSkinView initialFrame:CGRectMake(CGRectGetWidth(self.liveRoomSkinView.frame) - padding - 104 - P_SafeAreaRightEdgeInsets(), CGRectGetMinY(self.liveRoomSkinView.playButton.frame) - padding - 204, 104, 204)];
             [self.cardDetailView hiddenCardDetailView];
         }
@@ -529,7 +531,18 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 - (void)refreshLiveRoomPlayerSkinViewUIInfo{
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     [self.liveRoomSkinView setTitleLabelWithText:roomData.menuInfo.name];
-    [self.liveRoomSkinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
+    BOOL playTimesLabelHidden = !roomData.menuInfo.pvShowEnabled;
+    self.mediaAreaView.skinView.playTimesLabel.hidden = playTimesLabelHidden;
+    self.liveRoomSkinView.playTimesLabel.hidden = playTimesLabelHidden;
+    if (!playTimesLabelHidden) {
+        if ((self.videoType != PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live)) {
+            [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
+            [self.liveRoomSkinView setPlayTimesLabelWithTimes:roomData.menuInfo.pageView.integerValue];
+        } else {
+            [self.mediaAreaView.skinView setPlayTimesLabelWithOnlineUsers:roomData.onlineCount];
+            [self.liveRoomSkinView setPlayTimesLabelWithOnlineUsers:roomData.onlineCount];
+        }
+    }
     self.liveRoomSkinView.guideChatLabel.hidden = !self.menuAreaView.chatVctrl;
     self.liveRoomSkinView.rewardButton.hidden = !self.menuAreaView.chatVctrl || !self.menuAreaView.chatVctrl.enableReward;
     [self.liveRoomSkinView showCommodityButton:self.menuAreaView.showCommodityMenu];
@@ -1075,15 +1088,23 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 
 /// 观看数 watchCount 更新
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount{
-    if ((self.videoType != PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live)) {
-        [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:watchCount];
-        [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
+    BOOL playTimesLabelHidden = ![PLVRoomDataManager sharedManager].roomData.menuInfo.pvShowEnabled;
+    self.mediaAreaView.skinView.playTimesLabel.hidden = playTimesLabelHidden;
+    self.liveRoomSkinView.playTimesLabel.hidden = playTimesLabelHidden;
+    if (!playTimesLabelHidden) {
+        if ((self.videoType != PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && !self.playTimesLabelUseNewStrategy_live)) {
+            [self.mediaAreaView.skinView setPlayTimesLabelWithTimes:watchCount];
+            [self.liveRoomSkinView setPlayTimesLabelWithTimes:watchCount];
+        }
     }
 }
 
 // 在线人数 onlineCount 更新
 - (void)roomDataManager_didOnlineCountChanged:(NSUInteger)onlineCount {
-    if ((self.videoType != PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live)) {
+    BOOL playTimesLabelHidden = ![PLVRoomDataManager sharedManager].roomData.menuInfo.pvShowEnabled;
+    self.mediaAreaView.skinView.playTimesLabel.hidden = playTimesLabelHidden;
+    self.liveRoomSkinView.playTimesLabel.hidden = playTimesLabelHidden;
+    if (!playTimesLabelHidden && ((self.videoType != PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_playback) || (self.videoType == PLVChannelVideoType_Live && self.playTimesLabelUseNewStrategy_live))) {
         [self.mediaAreaView.skinView setPlayTimesLabelWithOnlineUsers:onlineCount];
         [self.liveRoomSkinView setPlayTimesLabelWithOnlineUsers:onlineCount];
     }
@@ -1096,7 +1117,10 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 //    dispatch_async(dispatch_get_main_queue(), ^{
 //        [PLVLCUtils showHUDWithTitle:PLVLocalizedString(@"登录成功") detail:@"" view:self.view];
 //    });
-    [self.menuAreaView updateQAUserInfo];
+    plv_dispatch_main_async_safe(^{
+        [self.popoverView.latestInteractView updateUserInfo];
+        [self.menuAreaView updateQAUserInfo];
+    })
 }
 
 - (void)socketMananger_didLoginFailure:(NSError *)error {
@@ -1456,7 +1480,7 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 }
 
 - (void)chatroomManager_didSendMessage:(PLVChatModel *)model {
-    if (!self.welfareLotteryWidgetShowed ||!model || ![model isKindOfClass:[PLVChatModel class]]) {
+    if ((!self.welfareLotteryWidgetShowed && !self.luckyBagWidgetShowed) || !model || ![model isKindOfClass:[PLVChatModel class]]) {
         return;
     }
     
@@ -1468,7 +1492,12 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         if (![PLVFdUtil checkStringUseable:comment]) {
             return;
         }
-        [self.popoverView.interactView checkWelfareLotteryComment:comment];
+        if (self.welfareLotteryWidgetShowed) {
+            [self.popoverView.interactView checkWelfareLotteryComment:comment];
+        }
+        if (self.luckyBagWidgetShowed) {
+            [self.popoverView.latestInteractView checkLuckyBagComment:comment];
+        }
     }
 }
 
@@ -2117,6 +2146,15 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     [self.popoverView.interactView openWelfareLottery];
 }
 
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView wannaShowLuckyBagWithActivityId:(NSString *)activityId {
+    [self.popoverView.latestInteractView openLuckyBagWithActivityId:activityId];
+}
+
+- (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView luckyBagWidgetShowStatusChanged:(BOOL)show {
+    self.luckyBagWidgetShowed = show;
+    [self.liveRoomSkinView showLuckyBagWidgetView:show];
+}
+
 - (void)plvLCLivePageMenuAreaView:(PLVLCLivePageMenuAreaView *)pageMenuAreaView welfareLotteryWidgetShowStatusChanged:(BOOL)show {
     self.welfareLotteryWidgetShowed = show;
     [self.liveRoomSkinView showWelfareLotteryWidgetView:show];
@@ -2375,7 +2413,19 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     [self.menuAreaView.chatVctrl updateWelfareLotteryWidgetInfo:dict];
 }
 
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView updateLuckyBagWidget:(NSDictionary *)dict {
+    self.luckyBagWidgetShowed = PLV_SafeBoolForDictKey(dict, @"hasPendant");
+    [self.menuAreaView.chatVctrl updateLuckyBagWidgetInfo:dict];
+}
+
 - (void)plvInteractGenericView:(PLVInteractGenericView *)interactView welfareLotteryCommentSuccess:(NSDictionary *)dict {
+    NSString *comment = PLV_SafeStringForDictKey(dict, @"comment");
+    if ([PLVFdUtil checkStringUseable:comment]) {
+        [[PLVLCChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];
+    }
+}
+
+- (void)plvInteractGenericView:(PLVInteractGenericView *)interactView luckyBagCommentSuccess:(NSDictionary *)dict {
     NSString *comment = PLV_SafeStringForDictKey(dict, @"comment");
     if ([PLVFdUtil checkStringUseable:comment]) {
         [[PLVLCChatroomViewModel sharedViewModel] welfareLotteryCommentSuccess:comment];

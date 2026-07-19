@@ -22,6 +22,7 @@
 #import "PLVLSCountDownView.h"
 #import "PLVLSChatroomAreaView.h"
 #import "PLVLSMemberSheet.h"
+#import "PLVLSBannedUserSheet.h"
 #import "PLVLSLinkMicAreaView.h"
 #import "PLVLSBeautySheet.h"
 #import "PLVLSMoreInfoSheet.h"
@@ -37,6 +38,7 @@
 #import "PLVStreamerPopoverView.h"
 #import "PLVVirtualBackgroudSheet.h"
 #import "PLVCheckVoiceWarningView.h"
+#import "PLVLiveToast.h"
 
 // 模块
 #import "PLVRoomLoginClient.h"
@@ -56,6 +58,7 @@ static NSString *const KPLVLSNoiseCancellationLevelKey = @"KPLVLSNoiseCancellati
 static NSString *const KPLVLSExternalDeviceEnabledKey = @"KPLVLSExternalDeviceEnabledKey";
 static NSString *const KPLVLSAudienceRaiseHandStateKey = @"KPLVAudienceRaiseHandStateKey";
 static NSString *const PLVLSBroadcastStartedNotification = @"PLVLiveBroadcastStartedNotification";
+static NSInteger const kPLVLSBannedUserToastTag = 0x504C5651;
 
 @interface PLVLSStreamerViewController ()<
 PLVSocketManagerProtocol,
@@ -65,6 +68,7 @@ PLVLSStatusAreaViewProtocol,
 PLVLSDocumentAreaViewDelegate,
 PLVLSChatroomAreaViewProtocol,
 PLVLSMemberSheetDelegate,
+PLVLSBannedUserSheetDelegate,
 PLVLSLinkMicAreaViewDelegate,
 PLVStreamerPresenterDelegate,
 PLVMemberPresenterDelegate,
@@ -95,6 +99,7 @@ PLVLSChatroomViewModelProtocol
 @property (nonatomic, strong) PLVLSChannelInfoSheet *channelInfoSheet;
 @property (nonatomic, strong) PLVLSResolutionSheet *settingSheet;
 @property (nonatomic, strong) PLVLSMemberSheet *memberSheet;
+@property (nonatomic, strong) PLVLSBannedUserSheet *bannedUserSheet;
 @property (nonatomic, strong) PLVLSCountDownView *coutBackView; // 开始上课时的倒数蒙层
 @property (nonatomic, strong) PLVLSBeautySheet *beautySheet; // 美颜设置弹层
 @property (nonatomic, strong) PLVLSMoreInfoSheet *moreInfoSheet; // 更多弹层
@@ -227,6 +232,13 @@ PLVLSChatroomViewModelProtocol
         [_memberSheet refreshWithSheetWidth:screenWidth * scale];
     }
     
+    if (_bannedUserSheet) {
+        CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+        BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+        CGFloat scale = isPad ? 0.43 : 0.52;
+        [_bannedUserSheet refreshWithSheetWidth:screenWidth * scale];
+    }
+
     if (_settingSheet) {
         CGFloat sheetWidth = [UIScreen mainScreen].bounds.size.width * 0.44;
         [_settingSheet refreshWithSheetWidth:sheetWidth];
@@ -314,6 +326,7 @@ PLVLSChatroomViewModelProtocol
     
     self.memberPresenter = [[PLVMemberPresenter alloc] init];
     self.memberPresenter.delegate = self;
+    self.memberPresenter.monitorKickUser = YES;
     [self.memberPresenter start];// 开始获取成员列表数据并开启自动更新
     
     // 初始化美颜
@@ -415,6 +428,15 @@ PLVLSChatroomViewModelProtocol
         }];
     }
     return _memberSheet;
+}
+
+- (PLVLSBannedUserSheet *)bannedUserSheet {
+    if (!_bannedUserSheet) {
+        _bannedUserSheet = [[PLVLSBannedUserSheet alloc] initWithKickedUserList:[self.memberPresenter kickedUserList]
+                                                                bannedUserList:[self bannedUserList]];
+        _bannedUserSheet.delegate = self;
+    }
+    return _bannedUserSheet;
 }
 
 - (PLVLSStatusAreaView *)statusAreaView {
@@ -1220,6 +1242,78 @@ PLVLSChatroomViewModelProtocol
     [self.memberPresenter cancelSearch];
 }
 
+#pragma mark - PLVLSBannedUserSheetDelegate
+
+- (void)bannedUserSheet:(PLVLSBannedUserSheet *)bannedUserSheet recoverKickedUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendUnkickMessageWithUserId:user.userId];
+    if (success) {
+        [self.memberPresenter unkickUser:user];
+        [bannedUserSheet updateKickedUser:user released:YES];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已取消踢出")];
+    }
+}
+
+- (void)bannedUserSheet:(PLVLSBannedUserSheet *)bannedUserSheet cancelBanUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:NO bannedUserId:user.userId];
+    if (success) {
+        [self.memberPresenter banUserWithUserId:user.userId banned:NO];
+        [bannedUserSheet updateBannedUser:user released:YES];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已取消禁言")];
+    }
+}
+
+- (void)bannedUserSheet:(PLVLSBannedUserSheet *)bannedUserSheet kickUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendKickMessageWithUserId:user.userId];
+    if (success) {
+        [self.memberPresenter kickUserWithUserId:user.userId];
+        [bannedUserSheet updateKickedUser:user released:NO];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已踢出")];
+    }
+}
+
+- (void)bannedUserSheet:(PLVLSBannedUserSheet *)bannedUserSheet banUser:(PLVChatUser *)user {
+    BOOL success = [[PLVChatroomManager sharedManager] sendBandMessage:YES bannedUserId:user.userId];
+    if (success) {
+        [self.memberPresenter banUserWithUserId:user.userId banned:YES];
+        [bannedUserSheet updateBannedUser:user released:NO];
+        [self showBannedUserSheetToastWithMessage:PLVLocalizedString(@"已禁言")];
+    }
+}
+
+- (void)showBannedUserSheetToastWithMessage:(NSString *)message {
+    for (UIView *subview in [self.view.subviews copy]) {
+        if (subview.tag == kPLVLSBannedUserToastTag &&
+            [subview isKindOfClass:[PLVLiveToast class]]) {
+            [subview removeFromSuperview];
+        }
+    }
+
+    [PLVLSUtils showToastWithMessage:message inView:self.view];
+
+    for (UIView *subview in [self.view.subviews reverseObjectEnumerator]) {
+        if ([subview isKindOfClass:[PLVLiveToast class]] &&
+            subview.tag != kPLVLSBannedUserToastTag) {
+            subview.tag = kPLVLSBannedUserToastTag;
+            break;
+        }
+    }
+}
+
+- (NSArray<PLVChatUser *> *)bannedUserList {
+    NSMutableArray<PLVChatUser *> *bannedUsers = [NSMutableArray array];
+    for (PLVChatUser *user in [self.memberPresenter userList]) {
+        if (user.banned) {
+            [bannedUsers addObject:user];
+        }
+    }
+    return [bannedUsers copy];
+}
+
+- (void)updateBannedUserSheet {
+    [_bannedUserSheet updateKickedUserList:[self.memberPresenter kickedUserList]
+                            bannedUserList:[self bannedUserList]];
+}
+
 #pragma mark - PLVSDocumentAreaView Delegate
 
 - (void)documentAreaView:(PLVLSDocumentAreaView *)documentAreaView openBrush:(BOOL)isOpen {
@@ -1337,7 +1431,16 @@ PLVLSChatroomViewModelProtocol
 #pragma mark PLVMemberPresenterDelegate
 
 - (void)userListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter {
-    [_memberSheet updateUserList:[self.memberPresenter userList] userCount:self.memberPresenter.userCount onlineCount:self.streamerPresenter.onlineUserArray.count];
+    plv_dispatch_main_async_safe(^{
+        [self->_memberSheet updateUserList:[self.memberPresenter userList] userCount:self.memberPresenter.userCount onlineCount:self.streamerPresenter.onlineUserArray.count];
+        [self updateBannedUserSheet];
+    })
+}
+
+- (void)kickedUserListChangedInMemberPresenter:(PLVMemberPresenter *)memberPresenter {
+    plv_dispatch_main_async_safe(^{
+        [self updateBannedUserSheet];
+    })
 }
 
 - (NSArray *)currentOnlineUserListInMemberPresenter:(PLVMemberPresenter *)memberPresenter{
@@ -1789,12 +1892,21 @@ PLVLSChatroomViewModelProtocol
     [self.badNetworkSwitchSheet showInView:self.view currentVideoQosPreference:self.streamerPresenter.videoQosPreference];
 }
 
+- (void)moreInfoSheetDidTapBannedUserButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self updateBannedUserSheet];
+    [self.bannedUserSheet showInView:self.view];
+}
+
 - (void)moreInfoSheetDidTapMixLayoutButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
     [self.mixLayoutSheet showInView:self.view];
 }
 
 - (void)moreInfoSheetDidTapSignInButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
     [self.popoverView.interactView openInteractViewWithEventName:@"SHOW_SIGN"];
+}
+
+- (void)moreInfoSheetDidTapLuckyBagButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_LUCKY_BAG"];
 }
 
 - (void)moreInfoSheetDidTapAIMattingButton:(PLVLSMoreInfoSheet *)moreInfoSheet {

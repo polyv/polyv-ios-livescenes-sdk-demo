@@ -9,7 +9,7 @@ target 'PolyvLiveScenesDemo' do
   use_frameworks!
 
   # 保利威 多场景 SDK
-  pod 'PLVLiveScenesSDK', '1.35.0'
+  pod 'PLVLiveScenesSDK', '1.36.0'
 
   # 保利威 手机开播场景 需依赖的库
   pod 'PLVBytedEffectSDK', '4.4.2'

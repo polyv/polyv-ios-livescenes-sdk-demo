@@ -12,6 +12,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface PLVStreamerInteractGenericView : UIView
 
+/// 使用指定业务 URL 初始化互动 WebView
+/// @param webViewURLString 业务 URL 字符串
+- (instancetype)initWithWebViewURLString:(NSString *)webViewURLString;
+
 /// 加载互动 WebView
 - (void)loadInteractWebView;
 
