@@ -159,6 +159,10 @@ PLVLSChatroomViewModelProtocol
     [self.toolbarView cameraButtonOpen:open];
 }
 
+- (void)cameraControlEnabled:(BOOL)enabled {
+    [self.toolbarView cameraControlEnabled:enabled];
+}
+
 - (void)cameraSwitchButtonFront:(BOOL)front{
     [self.toolbarView cameraSwitchButtonFront:front];
 }

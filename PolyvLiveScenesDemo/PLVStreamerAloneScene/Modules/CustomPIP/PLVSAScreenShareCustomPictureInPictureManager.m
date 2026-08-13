@@ -58,7 +58,6 @@ API_AVAILABLE(ios(15.0))
             [self.pipContentView.leadingAnchor constraintEqualToAnchor:self.displaySuperview.leadingAnchor],
             [self.pipContentView.trailingAnchor constraintEqualToAnchor:self.displaySuperview.trailingAnchor]
         ]];
-        [self setupAudioSession];
         [self setupPipController];
         
         [self.displaySuperview setNeedsLayout];
@@ -113,12 +112,6 @@ API_AVAILABLE(ios(15.0))
     [self stopPictureInPicture];
     self.pipContentView = nil;
     self.pipController = nil;
-    @try {
-        NSError *error = nil;
-        [[AVAudioSession sharedInstance] setActive:NO error:&error];
-    } @catch (NSException *exception) {
-        NSLog(@"AVAudioSession setActive error = %@", exception.description);
-    }
 }
 
 - (void)updateContent:(NSAttributedString *)content networkState:(PLVBRTCNetworkQuality)networkState {
@@ -168,16 +161,6 @@ API_AVAILABLE(ios(15.0))
 }
 
 #pragma mark - [ Private Method ]
-
-- (void)setupAudioSession {
-    @try {
-        NSError *error = nil;
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:&error];
-        [[AVAudioSession sharedInstance] setActive:YES withOptions:1 error:&error];
-    } @catch (NSException *exception) {
-        NSLog(@"AVAudioSession error = %@", exception.description);
-    }
-}
 
 - (void)setupPipController {
     if (@available(iOS 15.0, *)) {

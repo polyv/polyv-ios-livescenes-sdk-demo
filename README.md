@@ -46,9 +46,9 @@
 
 | 名称      | 要求        |
 | :-------- | ----------- |
-| iOS 系统  | iOS 12.0+    |
+| iOS 系统  | iOS 13.0+    |
 | CocoaPods | 1.7.0+      |
-| 集成工具  | Xcode 11.0+ |
+| 集成工具  | Xcode 13.0+ |
 
 ### 3 体验 Demo
 
@@ -68,6 +68,7 @@ Demo [Testfight版本体验链接](https://testflight.apple.com/join/7XxnEJxS)
 
 | Github 仓库 Tag | 依赖 SDK 版本 | API 文档 | Comon 层 | 观看端-云课堂场景 | 观看端-直播带货场景 | 开播端-手机开播（三分屏）场景 | 互动学堂场景 |
 | --------------- | ------------- | -------------------------------------------------------------------------------------------- | -------- | ----------------- | ------------------- | ----------------------------- | ----------------------------- |
+| 1.40.0 | 1.40.0 | [v1.36.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.40.0-20260813/index.html) | |  | ✅| ✅ | |
 | 1.36.0 | 1.36.0 | [v1.36.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.36.0-20260719/index.html) |✅ | ✅ | ✅| ✅ | |
 | 1.35.0 | 1.35.0 | [v1.35.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.35.0-20260627/index.html) |✅ | ✅ | ✅| ✅ | |
 | 1.34.2 | 1.34.2 | [v1.34.2 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.34.2-20260607/index.html) |✅ | ✅ | ✅| ✅ | |

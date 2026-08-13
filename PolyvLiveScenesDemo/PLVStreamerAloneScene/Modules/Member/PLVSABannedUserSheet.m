@@ -352,7 +352,7 @@ UITableViewDataSource
     NSArray *displayList = [self currentDisplayList];
     self.emptyView.hidden = displayList.count > 0;
     self.tableView.hidden = displayList.count == 0;
-    NSString *emptyText = self.currentTab == PLVSABannedUserSheetTabKicked ? PLVLocalizedString(@"暂无踢出用户") : PLVLocalizedString(@"暂无禁言用户");
+    NSString *emptyText = self.currentTab == PLVSABannedUserSheetTabKicked ? PLVLocalizedString(@"暂无踢出任何用户") : PLVLocalizedString(@"暂无禁言任何用户");
     [self.emptyView setEmptyStateWithIcon:[self emptyIcon] text:emptyText];
 
     [self.tableView reloadData];
@@ -370,19 +370,20 @@ UITableViewDataSource
 }
 
 - (UIImage *)emptyIcon {
-    CGSize size = CGSizeMake(60, 60);
+    CGSize size = CGSizeMake(56, 56);
     UIGraphicsBeginImageContextWithOptions(size, NO, 0);
     CGContextRef context = UIGraphicsGetCurrentContext();
 
-    UIColor *color = PLV_UIColorFromRGBA(@"#F0F1F5", 0.28);
+    UIColor *color = PLV_UIColorFromRGBA(@"#FFFFFF", 0.45);
     CGContextSetStrokeColorWithColor(context, color.CGColor);
-    CGContextSetLineWidth(context, 2.0);
-    CGContextStrokeEllipseInRect(context, CGRectMake(18, 10, 24, 24));
-    CGContextMoveToPoint(context, 10, 52);
-    CGContextAddCurveToPoint(context, 12, 40, 48, 40, 50, 52);
-    CGContextStrokePath(context);
-    CGContextMoveToPoint(context, 16, 16);
-    CGContextAddLineToPoint(context, 44, 44);
+    CGContextSetLineWidth(context, 4.0);
+    CGContextSetLineCap(context, kCGLineCapRound);
+    UIBezierPath *boxPath = [UIBezierPath bezierPathWithRoundedRect:CGRectMake(6, 6, 44, 44) cornerRadius:9];
+    CGContextAddPath(context, boxPath.CGPath);
+    CGContextMoveToPoint(context, 18, 21);
+    CGContextAddLineToPoint(context, 38, 21);
+    CGContextMoveToPoint(context, 18, 35);
+    CGContextAddLineToPoint(context, 38, 35);
     CGContextStrokePath(context);
 
     UIImage *image = UIGraphicsGetImageFromCurrentImageContext();
@@ -512,9 +513,9 @@ UITableViewDataSource
 - (PLVLiveEmptyView *)emptyView {
     if (!_emptyView) {
         _emptyView = [[PLVLiveEmptyView alloc] init];
-        _emptyView.iconSize = 60;
-        _emptyView.iconTextSpacing = 16;
-        _emptyView.textColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.4);
+        _emptyView.iconSize = 56;
+        _emptyView.iconTextSpacing = 12;
+        _emptyView.textColor = PLV_UIColorFromRGBA(@"#F0F1F5", 0.6);
         _emptyView.textFont = [UIFont systemFontOfSize:14];
         _emptyView.hidden = YES;
     }

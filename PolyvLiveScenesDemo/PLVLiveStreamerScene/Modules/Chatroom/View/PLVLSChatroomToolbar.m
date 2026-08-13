@@ -228,7 +228,15 @@ static CGFloat kToolbarHeight = 32.0;
 
 - (void)cameraButtonOpen:(BOOL)open {
     self.cameraButton.selected = !open;
-    self.cameraSwitchButton.enabled = open;
+    self.cameraSwitchButton.enabled = open && self.cameraButton.enabled;
+}
+
+- (void)cameraControlEnabled:(BOOL)enabled {
+    self.cameraButton.enabled = enabled;
+    self.cameraButton.alpha = enabled ? 1.0 : 0.4;
+    // 前后置切换仅在摄像头开启且控件可用时允许点击
+    self.cameraSwitchButton.enabled = enabled && !self.cameraButton.selected;
+    self.cameraSwitchButton.alpha = enabled ? 1.0 : 0.4;
 }
 
 - (void)cameraSwitchButtonFront:(BOOL)front{

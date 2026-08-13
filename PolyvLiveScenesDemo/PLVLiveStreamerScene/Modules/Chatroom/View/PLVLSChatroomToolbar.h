@@ -33,6 +33,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 摄像头按钮、切换前后置摄像头按钮状态修改
 - (void)cameraButtonOpen:(BOOL)open;
 
+/// 摄像头开关、前后置切换是否可点击（屏幕共享中禁用，结束后恢复）
+- (void)cameraControlEnabled:(BOOL)enabled;
+
 /// 切换前后置摄像头按钮状态修改
 - (void)cameraSwitchButtonFront:(BOOL)front;
 

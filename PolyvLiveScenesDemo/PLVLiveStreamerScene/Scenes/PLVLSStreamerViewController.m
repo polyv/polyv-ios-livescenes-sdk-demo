@@ -1161,10 +1161,19 @@ PLVLSChatroomViewModelProtocol
 }
 
 - (void)chatroomAreaView_didTapCameraButton:(BOOL)open {
+    // 与手机竖屏开播一致：屏幕共享中不允许操作摄像头
+    if (self.localUserScreenShareOpen) {
+        [self.chatroomAreaView cameraButtonOpen:self.streamerPresenter.currentCameraShouldShow];
+        [self.chatroomAreaView cameraControlEnabled:NO];
+        return;
+    }
     [self.streamerPresenter openLocalUserCamera:open];
 }
 
 - (void)chatroomAreaView_didTapCameraSwitchButton {
+    if (self.localUserScreenShareOpen) {
+        return;
+    }
     [self.streamerPresenter switchLocalUserFrontCamera];
 }
 
@@ -1700,6 +1709,11 @@ PLVLSChatroomViewModelProtocol
         [PLVLSUtils showToastWithMessage:message inView:self.view];
     }
     [self.moreInfoSheet changeScreenShareButtonSelectedState:currentScreenShareOpen];
+    // 与手机竖屏开播一致：共享中禁用摄像头控件；结束后恢复，推流源切回摄像头
+    [self.chatroomAreaView cameraControlEnabled:!currentScreenShareOpen];
+    if (!currentScreenShareOpen) {
+        [self.chatroomAreaView cameraButtonOpen:self.streamerPresenter.currentCameraShouldShow];
+    }
 }
 
 /// 本地用户的 '摄像头前后置状态值' 发生变化

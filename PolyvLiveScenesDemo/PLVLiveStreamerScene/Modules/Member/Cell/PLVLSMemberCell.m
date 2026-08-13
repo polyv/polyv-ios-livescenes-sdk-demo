@@ -359,7 +359,7 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         _cameraShouldShowChangedBlock = ^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
             if ([onlineUser.userId isEqualToString:weakSelf.user.userId]) {
                 weakSelf.cameraButton.selected = !onlineUser.currentCameraShouldShow;
-                weakSelf.cameraSwitchButton.enabled = !weakSelf.cameraButton.selected;
+                [weakSelf refreshLocalUserCameraControlEnabled];
             }
         };
     }
@@ -418,8 +418,13 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 
 - (void)cameraButtonAction {
     [self checkMediaGrantedCompletion:^{
+        // 本地用户屏幕共享中不允许操作摄像头
+        if ([self isLoginUser:self.user.userId] && self.user.onlineUser.currentScreenShareOpen) {
+            [self refreshLocalUserCameraControlEnabled];
+            return;
+        }
         self.cameraButton.selected = !self.cameraButton.selected;
-        self.cameraSwitchButton.enabled = !self.cameraButton.selected;
+        [self refreshLocalUserCameraControlEnabled];
         
         if (self.user.onlineUser) {
             [self.user.onlineUser wantOpenUserCamera:!self.cameraButton.selected];
@@ -431,6 +436,10 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
 
 - (void)cameraSwitchButtonAction {
     [self checkMediaGrantedCompletion:^{
+        if ([self isLoginUser:self.user.userId] && self.user.onlineUser.currentScreenShareOpen) {
+            [self refreshLocalUserCameraControlEnabled];
+            return;
+        }
         self.cameraSwitchButton.selected = !self.cameraSwitchButton.selected;
         
         if (self.user.onlineUser) {
@@ -661,12 +670,28 @@ static int kLinkMicBtnTouchInterval = 300; // 连麦按钮防止连续点击间�
         }
         self.cameraButton.hidden = !cameraButtonShow;
         self.cameraButton.selected = !self.user.onlineUser.currentCameraShouldShow;
-        self.cameraSwitchButton.enabled = !self.cameraButton.selected;
         [self.user.onlineUser addCameraShouldShowChangedBlock:self.cameraShouldShowChangedBlock blockKey:self];
         
         self.cameraSwitchButton.selected = !self.user.onlineUser.currentCameraFront;
         [self.user.onlineUser addCameraFrontChangedBlock:self.cameraFrontChangedBlock blockKey:self];
+        
+        [self refreshLocalUserCameraControlEnabled];
+        __weak typeof(self) weakSelf = self;
+        [self.user.onlineUser addScreenShareOpenChangedBlock:^(PLVLinkMicOnlineUser * _Nonnull onlineUser) {
+            if ([onlineUser.userId isEqualToString:weakSelf.user.userId]) {
+                [weakSelf refreshLocalUserCameraControlEnabled];
+            }
+        } blockKey:self];
     }
+}
+
+/// 本地用户屏幕共享中禁用摄像头控件，结束后按摄像头开关状态恢复（对齐手机竖屏开播）
+- (void)refreshLocalUserCameraControlEnabled {
+    BOOL localScreenSharing = [self isLoginUser:self.user.userId] && self.user.onlineUser.currentScreenShareOpen;
+    self.cameraButton.enabled = !localScreenSharing;
+    self.cameraButton.alpha = localScreenSharing ? 0.4 : 1.0;
+    self.cameraSwitchButton.enabled = !localScreenSharing && !self.cameraButton.selected;
+    self.cameraSwitchButton.alpha = localScreenSharing ? 0.4 : 1.0;
 }
 
 - (void)refreshAuthControlButtonsState {
