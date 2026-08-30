@@ -441,6 +441,9 @@ PLVDefaultPageViewDelegate
     if (self.livePlayer) {
         [self.livePlayer startPictureInPictureFromOriginView:originView];
     } else if (self.livePlaybackPlayer) {
+        /* SDK 1.34.0 中 PLVLivePlaybackPlayer 未设置 PLVLivePictureInPictureManager 的 delegate，
+           导致画中画状态回调无法转发到业务层，此处通过 KVC 在 demo 层 workaround。 */
+        [[PLVLivePictureInPictureManager sharedInstance] setValue:self.livePlaybackPlayer forKey:@"delegate"];
         [self.livePlaybackPlayer startPictureInPictureFromOriginView:originView];
     }
 }

@@ -624,6 +624,7 @@ PLVLinkMicManagerDelegate
     if (_linkMicManager == nil) {
         _linkMicManager = [PLVLinkMicManager linkMicManagerWithRTCType:self.rtcType];
         _linkMicManager.streamScale = self.streamScale;
+        _linkMicManager.subscribeStreamFillMode = PLVBRTCVideoViewFillMode_Fit;
         _linkMicManager.delegate = self;
         
         /// 硬件默认值配置
