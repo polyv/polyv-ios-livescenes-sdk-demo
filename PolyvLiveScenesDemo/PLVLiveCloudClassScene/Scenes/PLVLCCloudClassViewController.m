@@ -66,7 +66,6 @@ PLVLCLandscapeMessagePopupViewDelegate
 #pragma mark 状态
 @property (nonatomic, assign) BOOL currentLandscape;    // 当前是否横屏 (YES:当前横屏 NO:当前竖屏)
 @property (nonatomic, assign) BOOL fullScreenDifferent; // 在更新UI布局之前，横竖屏是否发现了变化 (YES:已变化 NO:没有变化)
-@property (nonatomic, assign) BOOL hideLinkMicAreaViewInSmallScreen;// 连麦列表是否在iPad小分屏时隐藏
 @property (nonatomic, assign) PLVLinkMicStatus linkMicStatus;   // 当前的连麦状态
 
 #pragma mark 模块
@@ -304,28 +303,23 @@ PLVLCLandscapeMessagePopupViewDelegate
 
 - (void)updateUI {
     /// 连麦区域是否应该出现
-    BOOL showLinkMicAreaView = self.linkMicAreaView.inRTCRoom;
+    BOOL canShowLinkMicAreaView = self.linkMicAreaView.inRTCRoom;
     if (self.linkMicAreaView.inRTCRoom && self.channelType == PLVChannelTypeAlone) {
-        showLinkMicAreaView = self.linkMicAreaView.currentRTCRoomUserCount > 1 ? YES : NO;
+        canShowLinkMicAreaView = self.linkMicAreaView.currentRTCRoomUserCount > 1 ? YES : NO;
     }
-    showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? showLinkMicAreaView : NO;
+    BOOL showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? canShowLinkMicAreaView : NO;
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL hideLinkMicAreaToggleButtonInSmallScreen = NO;
     
     if (isPad) {
         // iPad小分屏1:2时，隐藏连麦列表；非小分屏时，显示连麦列表
         Boolean isSmallScreen = CGRectGetWidth(self.view.bounds) <= PLVScreenWidth / 3;
         if (isSmallScreen) {
+            hideLinkMicAreaToggleButtonInSmallScreen = YES;
             // 小屏 皆隐藏
             if (showLinkMicAreaView) {
                 showLinkMicAreaView = NO;
-                self.hideLinkMicAreaViewInSmallScreen = YES;
-            }
-        } else {
-            // 非小屏 但曾在小屏被强制隐藏，需显示
-            if (self.hideLinkMicAreaViewInSmallScreen){
-                showLinkMicAreaView = YES;
-                self.hideLinkMicAreaViewInSmallScreen = NO;
             }
         }
     }
@@ -422,6 +416,22 @@ PLVLCLandscapeMessagePopupViewDelegate
         
         [self.liveRoomSkinView setNeedsLayout];
         [self.popoverView setNeedsLayout];
+    }
+
+    BOOL showLinkMicAreaToggleButton = self.videoType == PLVChannelVideoType_Live &&
+                                       fullScreen &&
+                                       canShowLinkMicAreaView &&
+                                       !hideLinkMicAreaToggleButtonInSmallScreen;
+    [self.liveRoomSkinView updateLinkMicAreaToggleButtonWithAreaViewFrame:self.linkMicAreaView.frame
+                                                             areaViewShow:showLinkMicAreaView
+                                                               buttonShow:showLinkMicAreaToggleButton];
+
+    // 已连麦时，横屏控制栏需要和连麦面板保持一致，避免面板收起后遮挡展开按钮；
+    // 未连麦时仍需保留申请连麦入口。
+    if (fullScreen) {
+        BOOL joinedLinkMic = self.linkMicAreaView.currentControlBar.status == PLVLCLinkMicControlBarStatus_Joined;
+        BOOL showLinkMicControlBar = self.liveRoomSkinView.skinShow && (!joinedLinkMic || showLinkMicAreaView);
+        [self.linkMicAreaView showLinkMicControlBar:showLinkMicControlBar];
     }
     
     self.fullScreenDifferent = NO;
@@ -1037,7 +1047,9 @@ PLVLCLandscapeMessagePopupViewDelegate
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangedSkinShowStatus:(BOOL)skinShow forSkinView:(PLVLCBasePlayerSkinView *)skinView{
     if (skinView == self.liveRoomSkinView) {
         /// 横屏时，悬浮连麦控制栏跟随一同显示/隐藏
-        [self.linkMicAreaView showLinkMicControlBar:skinShow];
+        BOOL linkMicAreaViewShow = self.linkMicAreaView.areaViewShow && CGRectGetWidth(self.linkMicAreaView.frame) > 0;
+        BOOL joinedLinkMic = self.linkMicAreaView.currentControlBar.status == PLVLCLinkMicControlBarStatus_Joined;
+        [self.linkMicAreaView showLinkMicControlBar:(skinShow && (!joinedLinkMic || linkMicAreaViewShow))];
     }
 }
 
