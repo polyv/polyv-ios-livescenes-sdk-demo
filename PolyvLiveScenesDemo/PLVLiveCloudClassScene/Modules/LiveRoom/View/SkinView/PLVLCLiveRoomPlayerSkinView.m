@@ -36,6 +36,11 @@
 @property (nonatomic, strong) UIView * welfareLotteryWidgetView;
 @property (nonatomic, strong) UIView * luckyBagWidgetView;
 
+#pragma mark Data
+@property (nonatomic, assign) CGRect linkMicAreaViewFrame;
+@property (nonatomic, assign) BOOL linkMicAreaViewShow;
+@property (nonatomic, assign) BOOL linkMicAreaToggleButtonShow;
+
 @end
 
 @implementation PLVLCLiveRoomPlayerSkinView
@@ -117,6 +122,7 @@
         
         [self refreshRefreshButtonFrame];
         [self refreshFloatViewShowButtonFrame];
+        [self refreshLinkMicAreaToggleButtonFrame];
         [self refreshDanmuButtonFrame];
         [self refreshGuideChatLabelFrame];
         [self refreshBottomButtonsFrame];
@@ -268,6 +274,18 @@
 - (void)showLuckyBagWidgetView:(BOOL)show {
     self.luckyBagWidgetView.hidden = !show;
     [self refreshBottomButtonsFrame];
+}
+
+- (void)updateLinkMicAreaToggleButtonWithAreaViewFrame:(CGRect)areaViewFrame
+                                         areaViewShow:(BOOL)areaViewShow
+                                           buttonShow:(BOOL)buttonShow {
+    self.linkMicAreaViewFrame = areaViewFrame;
+    self.linkMicAreaViewShow = areaViewShow;
+    self.linkMicAreaToggleButtonShow = buttonShow;
+    if ([self isInLinkMicStatus]) {
+        [self configureLinkMicAreaToggleButtonStyle];
+    }
+    [self refreshLinkMicAreaToggleButtonFrame];
 }
 
 #pragma mark - [ Private Methods ]
@@ -426,6 +444,10 @@
 }
 
 - (void)refreshFloatViewShowButtonFrame {
+    if ([self isInLinkMicStatus]) {
+        return;
+    }
+
     CGSize buttonSize = CGSizeMake(40.0, 20.0);
     CGFloat originX = CGRectGetMinX(self.playButton.frame);
     if (!self.playButton.hidden && self.playButton.superview) {
@@ -435,7 +457,77 @@
         originX += CGRectGetWidth(self.refreshButton.frame) + 5;
     }
     self.floatViewShowButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
-    self.linkMicFullscreenButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);;
+}
+
+- (BOOL)isInLinkMicStatus {
+    return self.skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC ||
+           self.skinViewLiveStatus == PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PureRTC;
+}
+
+- (nullable UIButton *)currentLinkMicAreaToggleButton {
+    PLVChannelType channelType = [PLVRoomDataManager sharedManager].roomData.channelType;
+    return channelType == PLVChannelTypeAlone ? self.linkMicFullscreenButton : self.floatViewShowButton;
+}
+
+- (void)refreshLinkMicAreaToggleButtonFrame {
+    UIButton *button = [self currentLinkMicAreaToggleButton];
+    if (![self isInLinkMicStatus] || !button) {
+        self.linkMicFullscreenButton.hidden = YES;
+        return;
+    }
+
+    button.hidden = !self.linkMicAreaToggleButtonShow;
+    if (button.hidden) {
+        return;
+    }
+
+    CGFloat buttonLength = 32.0;
+    CGFloat buttonOriginX;
+    CGFloat buttonOriginY;
+    if (self.linkMicAreaViewShow) {
+        buttonOriginX = CGRectGetMinX(self.linkMicAreaViewFrame) + 8.0;
+        buttonOriginY = CGRectGetMinY(self.linkMicAreaViewFrame) + 8.0;
+    } else {
+        CGFloat rightSafePadding = 0.0;
+        if (@available(iOS 11.0, *)) {
+            rightSafePadding = self.safeAreaInsets.right;
+        }
+        buttonOriginX = CGRectGetWidth(self.bounds) - rightSafePadding - buttonLength;
+        buttonOriginY = (CGRectGetHeight(self.bounds) - buttonLength) / 2.0;
+    }
+
+    button.frame = CGRectMake(buttonOriginX, buttonOriginY, buttonLength, buttonLength);
+    button.selected = !self.linkMicAreaViewShow;
+    button.imageView.transform = self.linkMicAreaViewShow ? CGAffineTransformIdentity : CGAffineTransformMakeScale(-1.0, 1.0);
+    button.accessibilityLabel = self.linkMicAreaViewShow ? PLVLocalizedString(@"隐藏连麦面板") : PLVLocalizedString(@"展开连麦面板");
+    [self bringSubviewToFront:button];
+}
+
+- (void)configureLinkMicAreaToggleButtonStyle {
+    UIButton *button = [self currentLinkMicAreaToggleButton];
+    if (!button) {
+        return;
+    }
+
+    UIImage *image = [PLVLCUtils imageForLinkMicResource:@"plvlc_linkmic_control_hide"];
+    [button setImage:image forState:UIControlStateNormal];
+    [button setImage:image forState:UIControlStateSelected];
+    button.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.4);
+    button.layer.cornerRadius = 6.0;
+    button.layer.masksToBounds = YES;
+}
+
+- (void)restoreFloatViewShowButtonStyle {
+    if ([PLVRoomDataManager sharedManager].roomData.channelType == PLVChannelTypeAlone || !self.floatViewShowButton) {
+        return;
+    }
+
+    [self.floatViewShowButton setImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_skin_floatview_open"] forState:UIControlStateNormal];
+    [self.floatViewShowButton setImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_skin_floatview_close"] forState:UIControlStateSelected];
+    self.floatViewShowButton.backgroundColor = [UIColor clearColor];
+    self.floatViewShowButton.layer.cornerRadius = 0.0;
+    self.floatViewShowButton.imageView.transform = CGAffineTransformIdentity;
+    self.floatViewShowButton.accessibilityLabel = nil;
 }
 
 - (void)refreshDanmuButtonFrame {
@@ -447,11 +539,8 @@
     if (!self.refreshButton.hidden && self.refreshButton.superview) {
         originX += CGRectGetWidth(self.refreshButton.frame) + 5;
     }
-    if (!self.floatViewShowButton.hidden && self.floatViewShowButton.superview) {
+    if (![self isInLinkMicStatus] && !self.floatViewShowButton.hidden && self.floatViewShowButton.superview) {
         originX += CGRectGetWidth(self.floatViewShowButton.frame) + 5;
-    }
-    if (!self.linkMicFullscreenButton.hidden && self.linkMicFullscreenButton.superview) {
-        originX += CGRectGetWidth(self.linkMicFullscreenButton.frame) + 5;
     }
     self.danmuButton.frame = CGRectMake(originX, CGRectGetMinY(self.playButton.frame), buttonSize.width, buttonSize.height);
     originX += CGRectGetWidth(self.danmuButton.frame) + 5;
@@ -709,9 +798,9 @@
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (!_linkMicFullscreenButton && roomData.channelType == PLVChannelTypeAlone && roomData.videoType == PLVChannelVideoType_Live) {
         _linkMicFullscreenButton = [UIButton buttonWithType:UIButtonTypeCustom];
-        [_linkMicFullscreenButton setImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_skin_floatview_open_new"] forState:UIControlStateNormal];
-        [_linkMicFullscreenButton setImage:[PLVLCUtils imageForMediaResource:@"plvlc_media_skin_floatview_close_new"] forState:UIControlStateSelected];
-        _linkMicFullscreenButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        UIImage *image = [PLVLCUtils imageForLinkMicResource:@"plvlc_linkmic_control_hide"];
+        [_linkMicFullscreenButton setImage:image forState:UIControlStateNormal];
+        [_linkMicFullscreenButton setImage:image forState:UIControlStateSelected];
         [_linkMicFullscreenButton addTarget:self action:@selector(linkMicFullscreenButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         _linkMicFullscreenButton.hidden = YES;
     }
@@ -741,8 +830,10 @@
     [self addSubview:self.welfareLotteryWidgetView];
     [self addSubview:self.luckyBagWidgetView];
     [self addSubview:self.commodityButton];
-    [self addSubview:self.linkMicFullscreenButton];
     [self addSubview:self.landscapeInputView];
+    if (self.linkMicFullscreenButton) {
+        [self addSubview:self.linkMicFullscreenButton];
+    }
 
     // 注意：懒加载过程中已增加判断，若场景不匹配，将创建失败并返回nil
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 视频类型为 直播
@@ -758,19 +849,19 @@
 
 - (void)switchSkinViewLiveStatusTo:(PLVLCBasePlayerSkinViewLiveStatus)skinViewLiveStatus{
     [super switchSkinViewLiveStatusTo:skinViewLiveStatus];
-    
-    if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) { // 直播场景
-        if (skinViewLiveStatus < PLVLCBasePlayerSkinViewLiveStatus_InLinkMic_PartRTC) {
-            self.linkMicFullscreenButton.hidden = YES;
-        } else {
-            self.linkMicFullscreenButton.hidden = NO;
-            self.linkMicFullscreenButton.selected = NO;
-        }
-    }
-    
-    if (_skinViewLiveStatus == skinViewLiveStatus) { return; }
 
+    BOOL statusChanged = _skinViewLiveStatus != skinViewLiveStatus;
     _skinViewLiveStatus = skinViewLiveStatus;
+
+    if ([self isInLinkMicStatus]) {
+        [self configureLinkMicAreaToggleButtonStyle];
+        [self refreshLinkMicAreaToggleButtonFrame];
+    } else {
+        self.linkMicFullscreenButton.hidden = YES;
+        [self restoreFloatViewShowButtonStyle];
+    }
+
+    if (!statusChanged) { return; }
         
     if (self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         [self refreshBulletinButtonFrame];
@@ -780,6 +871,7 @@
         [self refreshPlayTimesLabelFrame];
         [self refreshRefreshButtonFrame];
         [self refreshFloatViewShowButtonFrame];
+        [self refreshLinkMicAreaToggleButtonFrame];
         [self refreshOnlineListButtonFrame];
         [self refreshDanmuButtonFrame];
         [self refreshGuideChatLabelFrame];

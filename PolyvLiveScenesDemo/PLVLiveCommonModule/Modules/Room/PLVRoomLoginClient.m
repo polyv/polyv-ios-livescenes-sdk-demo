@@ -357,6 +357,12 @@
         [roomData setupPushQualityPreference:preferenceString];
         roomData.linkmicNewStrategyEnabled = PLV_SafeBoolForDictKey(data, @"newMicEnabled");
         roomData.defaultOpenMicLinkEnabled = PLV_SafeStringForDictKey(data, @"defaultOpenMicLinkEnabled");
+        BOOL defaultLinkMicTypeValid = ([roomData.defaultOpenMicLinkEnabled isEqualToString:@"audio"] ||
+                                        [roomData.defaultOpenMicLinkEnabled isEqualToString:@"video"]);
+        roomData.defaultAudienceLinkMicEnabled = (roomData.linkmicNewStrategyEnabled &&
+                                                  defaultLinkMicTypeValid &&
+                                                  roomData.interactNumLimit > 0 &&
+                                                  [PLV_SafeStringForDictKey(data, @"defaultAudienceLinkMicEnabled") isEqualToString:@"Y"]);
         
         NSDictionary *appStartConfig = PLV_SafeDictionaryForDictKey(data, @"appStartConfig");
         if ([PLVFdUtil checkDictionaryUseable:appStartConfig]) {

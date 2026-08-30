@@ -309,15 +309,20 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
 }
 
 + (PLVMixLayoutType)mixLayoutTypeWithStreamerMixLayoutType:(PLVRTCStreamerMixLayoutType)streamerType {
-    PLVMixLayoutType mixLayoutType = PLVMixLayoutType_Single;
-    if (streamerType == PLVRTCStreamerMixLayoutType_Single) {
-        mixLayoutType = PLVMixLayoutType_Single;
-    }else if (streamerType == PLVRTCStreamerMixLayoutType_Tile){
-        mixLayoutType = PLVMixLayoutType_Tile;
-    }else if (streamerType == PLVRTCStreamerMixLayoutType_MainSpeaker){
-        mixLayoutType = PLVMixLayoutType_MainSpeaker;
+    switch (streamerType) {
+        case PLVRTCStreamerMixLayoutType_Tile:
+            return PLVMixLayoutType_Tile;
+        case PLVRTCStreamerMixLayoutType_MainSpeaker:
+            return PLVMixLayoutType_MainSpeaker;
+        case PLVRTCStreamerMixLayoutType_BottomList:
+            return PLVMixLayoutType_BottomList;
+        case PLVRTCStreamerMixLayoutType_RightList:
+            return PLVMixLayoutType_RightList;
+        case PLVRTCStreamerMixLayoutType_Single:
+        case PLVRTCStreamerMixLayoutType_Unknown:
+        default:
+            return PLVMixLayoutType_Single;
     }
-    return mixLayoutType;
 }
 
 + (PLVRTCStreamerMixLayoutType)streamerMixLayoutTypeWithMixLayoutType:(PLVMixLayoutType)mixLayoutType {

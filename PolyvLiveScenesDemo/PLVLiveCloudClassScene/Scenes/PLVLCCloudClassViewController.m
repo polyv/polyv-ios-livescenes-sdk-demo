@@ -81,6 +81,7 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 @property (nonatomic, strong) NSURL *commodityURL;
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
 @property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
+@property (nonatomic, assign) BOOL exitLiveRoomAfterPictureInPicturePending; // 退出直播间流程中正在等待开启画中画
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
 @property (nonatomic, assign) BOOL luckyBagWidgetShowed;
 @property (nonatomic, strong) NSArray<PLVKeyMomentModel *> *keyMoments;   // 精彩看点数据
@@ -394,18 +395,20 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 
 - (void)updateUI {
     /// 连麦区域是否应该出现
-    BOOL showLinkMicAreaView = self.linkMicAreaView.inRTCRoom;
+    BOOL canShowLinkMicAreaView = self.linkMicAreaView.inRTCRoom;
     if (self.linkMicAreaView.inRTCRoom && self.channelType == PLVChannelTypeAlone) {
-        showLinkMicAreaView = self.linkMicAreaView.currentRTCRoomUserCount > 1 ? YES : NO;
+        canShowLinkMicAreaView = self.linkMicAreaView.currentRTCRoomUserCount > 1 ? YES : NO;
     }
-    showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? showLinkMicAreaView : NO;
+    BOOL showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? canShowLinkMicAreaView : NO;
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    BOOL hideLinkMicAreaToggleButtonInSmallScreen = NO;
     
     if (isPad) {
         // iPad小分屏1:2时，隐藏连麦列表；非小分屏时，显示连麦列表
         Boolean isSmallScreen = CGRectGetWidth(self.view.bounds) <= PLVScreenWidth / 3;
         if (isSmallScreen) {
+            hideLinkMicAreaToggleButtonInSmallScreen = YES;
             // 小屏 皆隐藏
             if (showLinkMicAreaView) {
                 showLinkMicAreaView = NO;
@@ -517,6 +520,22 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         
         [self.liveRoomSkinView setNeedsLayout];
         [self.popoverView setNeedsLayout];
+    }
+
+    BOOL showLinkMicAreaToggleButton = self.videoType == PLVChannelVideoType_Live &&
+                                       fullScreen &&
+                                       canShowLinkMicAreaView &&
+                                       !hideLinkMicAreaToggleButtonInSmallScreen;
+    [self.liveRoomSkinView updateLinkMicAreaToggleButtonWithAreaViewFrame:self.linkMicAreaView.frame
+                                                             areaViewShow:showLinkMicAreaView
+                                                               buttonShow:showLinkMicAreaToggleButton];
+
+    // 已连麦时，横屏控制栏需要和连麦面板保持一致，避免面板收起后遮挡展开按钮；
+    // 未连麦时仍需保留申请连麦入口。
+    if (fullScreen) {
+        BOOL joinedLinkMic = self.linkMicAreaView.currentControlBar.status == PLVLCLinkMicControlBarStatus_Joined;
+        BOOL showLinkMicControlBar = self.liveRoomSkinView.skinShow && (!joinedLinkMic || showLinkMicAreaView);
+        [self.linkMicAreaView showLinkMicControlBar:showLinkMicControlBar];
     }
     
     // 横竖屏切换时，更新投屏按钮显示状态
@@ -1538,9 +1557,11 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         }
         else{
             // 开启画中画后，再退出当前页面
+            self.exitLiveRoomAfterPictureInPicturePending = YES;
             [self.mediaAreaView startPictureInPicture];
             __weak typeof(self) weakSelf = self;
             self.needExitViewController = ^{
+                weakSelf.exitLiveRoomAfterPictureInPicturePending = NO;
                 weakSelf.logoutWhenStopPictureInPicutre = YES;
                 if (weakSelf.navigationController) {
                     [weakSelf.navigationController popViewControllerAnimated:YES];
@@ -1640,7 +1661,9 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView didChangedSkinShowStatus:(BOOL)skinShow forSkinView:(PLVLCBasePlayerSkinView *)skinView{
     if (skinView == self.liveRoomSkinView) {
         /// 横屏时，悬浮连麦控制栏跟随一同显示/隐藏
-        [self.linkMicAreaView showLinkMicControlBar:skinShow];
+        BOOL linkMicAreaViewShow = self.linkMicAreaView.areaViewShow && CGRectGetWidth(self.linkMicAreaView.frame) > 0;
+        BOOL joinedLinkMic = self.linkMicAreaView.currentControlBar.status == PLVLCLinkMicControlBarStatus_Joined;
+        [self.linkMicAreaView showLinkMicControlBar:(skinShow && (!joinedLinkMic || linkMicAreaViewShow))];
     }
 }
 
@@ -1879,10 +1902,10 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 - (void)plvLCLiveRoomPlayerSkinViewLinkMicFullscreenButtonClicked:(PLVLCLiveRoomPlayerSkinView *)liveRoomPlayerSkinView userWannaLinkMicAreaViewShow:(BOOL)show {
     /// 告知 连麦区域视图
     [self.linkMicAreaView showAreaView:show];
-    
+
     /// 更新布局
     [self updateUI];
-    
+
     /// 弹窗提醒
     [PLVLiveToast showToastWithMessage:PLVLocalizedString(@"已调整布局") inView:self.view afterDelay:3.0];
 }
@@ -2317,6 +2340,15 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 - (void)plvLCMediaAreaView:(PLVLCMediaAreaView *)mediaAreaView pictureInPictureFailedToStartWithError:(NSError *)error {
     // 清理恢复逻辑的处理者
     [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+    // 退出直播间时开启小窗失败，需兜底退出，避免卡在直播间；手动开小窗失败则仅清理回调
+    if (self.exitLiveRoomAfterPictureInPicturePending) {
+        self.exitLiveRoomAfterPictureInPicturePending = NO;
+        self.needExitViewController = nil;
+        [self.linkMicAreaView leaveLinkMicOnlyEmit];
+        [self exitCurrentController];
+    } else {
+        self.needExitViewController = nil;
+    }
 }
 
 - (void)plvLCMediaAreaViewPictureInPictureWillStop:(PLVLCMediaAreaView *)mediaAreaView {

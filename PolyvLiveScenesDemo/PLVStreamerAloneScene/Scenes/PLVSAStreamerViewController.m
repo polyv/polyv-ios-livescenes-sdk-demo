@@ -155,7 +155,7 @@ UIDocumentPickerDelegate
 @property (nonatomic, assign, readonly) PLVBLinkMicStreamScale streamScale; // 当前直播流比例
 @property (nonatomic, assign) BOOL isInBackground; // 是否位于后台
 @property (nonatomic, strong) NSArray<PLVMobileTemplateModel *> *mobileTemplateList; // 模板列表缓存
-@property (nonatomic, assign) BOOL allowRaiseHand; // 小班课观众主动上麦开关状态
+@property (nonatomic, assign) BOOL allowRaiseHand; // 是否允许观众主动加入连麦
 
 @end
 
@@ -189,7 +189,7 @@ UIDocumentPickerDelegate
     
     [self setupUI];
     [self setupModule];
-    [self syncSmallClassAllowRaiseHandStateOnInit];
+    [self syncAllowRaiseHandStateOnInit];
     [self setupNotification];
     [self preapareStartClass];
     [self clearDatedChannelStreamInfo];
@@ -695,7 +695,8 @@ UIDocumentPickerDelegate
     if (self.stickerCanvas){
         [self.homeView addStickerCanvasView:self.stickerCanvas editMode:NO];
     }
-    if ([self isSmallClassScene]) {
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
         [self.homeView changeAllowRaiseHandButtonSelectedState:self.allowRaiseHand];
     }
 }
@@ -890,8 +891,7 @@ UIDocumentPickerDelegate
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     if (roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0) {
         __weak typeof(self) weakSelf = self;
-        BOOL allowRaiseHand = [self isSmallClassScene] ? self.allowRaiseHand : self.streamerPresenter.channelLinkMicOpen;
-        [self.streamerPresenter changeLinkMicMediaType:self.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video allowRaiseHand:allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
+        [self.streamerPresenter changeLinkMicMediaType:self.streamerPresenter.channelLinkMicMediaType != PLVChannelLinkMicMediaType_Video allowRaiseHand:self.allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
             [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
         }];
     }
@@ -2013,13 +2013,16 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     return [PLVRoomDataManager sharedManager].roomData.menuInfo.isSmallClass;
 }
 
-- (void)syncSmallClassAllowRaiseHandStateOnInit {
+- (void)syncAllowRaiseHandStateOnInit {
     PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
     BOOL supportNewStrategy = roomData.linkmicNewStrategyEnabled && self.viewerType == PLVRoomUserTypeTeacher && roomData.interactNumLimit > 0;
-    if (!supportNewStrategy || ![self isSmallClassScene]) {
+    if (!supportNewStrategy) {
         return;
     }
-    self.allowRaiseHand = [self getSmallClassAllowRaiseHandState];
+    self.allowRaiseHand = roomData.defaultAudienceLinkMicEnabled;
+    if ([self isSmallClassScene] && !self.allowRaiseHand) {
+        self.allowRaiseHand = [self getSmallClassAllowRaiseHandState];
+    }
 }
 
 - (void)saveSmallClassAllowRaiseHandState:(BOOL)allowRaiseHand {
@@ -2056,20 +2059,20 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
     if (self.streamerPresenter.onlineUserArray.count > 1) {
         [PLVSAUtils showAlertWithTitle:PLVLocalizedString(@"提示") Message:PLVLocalizedString(@"当前有用户在连麦，无法切换连麦方式，若要切换，需将麦上用户全部下麦，确认切换连麦方式吗？") cancelActionTitle:PLVLocalizedString(@"取消") cancelActionBlock:nil confirmActionTitle:PLVLocalizedString(@"切换并下麦所有用户") confirmActionBlock:^{
             [weakSelf.streamerPresenter removeAllAudiences];
-            [weakSelf.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:weakSelf.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+            [weakSelf.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:weakSelf.allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
                 if (emitSuccess) {
                     [weakSelf.homeView updateHomeViewLinkMicType:linkMicOnAudio];
-                    [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                    [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.allowRaiseHand];
                     [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
                 }
             }];
         }];
     } else {
         [self.streamerPresenter removeAllAudiences];
-        [self.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:self.streamerPresenter.channelLinkMicOpen emitCompleteBlock:^(BOOL emitSuccess) {
+        [self.streamerPresenter changeLinkMicMediaType:linkMicOnAudio allowRaiseHand:self.allowRaiseHand emitCompleteBlock:^(BOOL emitSuccess) {
             if (emitSuccess) {
                 [weakSelf.homeView updateHomeViewLinkMicType:linkMicOnAudio];
-                [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.streamerPresenter.channelLinkMicOpen];
+                [weakSelf.homeView changeAllowRaiseHandButtonSelectedState:weakSelf.allowRaiseHand];
                 [PLVRoomDataManager sharedManager].roomData.channelLinkMicMediaType = weakSelf.streamerPresenter.channelLinkMicMediaType;
             }
         }];

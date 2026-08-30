@@ -103,6 +103,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param show YES 显示 NO 不显示
 - (void)showLuckyBagWidgetView:(BOOL)show;
 
+/// 更新横屏连麦区域开关按钮布局
+/// @param areaViewFrame 连麦区域在横屏页面中的布局
+/// @param areaViewShow 连麦区域当前是否展开
+/// @param buttonShow 是否显示开关按钮
+- (void)updateLinkMicAreaToggleButtonWithAreaViewFrame:(CGRect)areaViewFrame
+                                         areaViewShow:(BOOL)areaViewShow
+                                           buttonShow:(BOOL)buttonShow;
+
 @end
 
 @protocol PLVLCLiveRoomPlayerSkinViewDelegate <NSObject>

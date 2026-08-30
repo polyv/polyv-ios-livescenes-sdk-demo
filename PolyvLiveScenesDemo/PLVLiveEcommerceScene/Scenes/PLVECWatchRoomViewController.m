@@ -70,6 +70,7 @@ PLVECRealTimeSubtitleManagerDelegate
 @property (nonatomic, assign) BOOL socketReconnecting; // socket是否重连中
 @property (nonatomic, assign) BOOL logoutWhenStopPictureInPicutre;   // 关闭画中画的时候是否登出
 @property (nonatomic, copy) void(^needExitViewController)(void); // 开启画中后，退出直播间
+@property (nonatomic, assign) BOOL exitLiveRoomAfterPictureInPicturePending; // 退出直播间流程中正在等待开启画中画
 @property (nonatomic, assign) BOOL welfareLotteryWidgetShowed;
 @property (nonatomic, assign) BOOL luckyBagWidgetShowed;
 
@@ -651,9 +652,11 @@ PLVECRealTimeSubtitleManagerDelegate
         }
         else{
             // 开启画中画后，再退出当前页面
+            self.exitLiveRoomAfterPictureInPicturePending = YES;
             [self.playerVC startPictureInPicture];
             __weak typeof(self) weakSelf = self;
             self.needExitViewController = ^{
+                weakSelf.exitLiveRoomAfterPictureInPicturePending = NO;
                 weakSelf.logoutWhenStopPictureInPicutre = YES;
                 if (weakSelf.navigationController) {
                     [weakSelf.navigationController popViewControllerAnimated:YES];
@@ -1082,6 +1085,14 @@ PLVECRealTimeSubtitleManagerDelegate
     [PLVProgressHUD hideHUDForView:self.view animated:YES];
     // 清理恢复逻辑的处理者
     [[PLVLivePictureInPictureRestoreManager sharedInstance] cleanRestoreManager];
+    // 退出直播间时开启小窗失败，需兜底退出，避免卡在直播间；手动开小窗失败则仅清理回调
+    if (self.exitLiveRoomAfterPictureInPicturePending) {
+        self.exitLiveRoomAfterPictureInPicturePending = NO;
+        self.needExitViewController = nil;
+        [self exitCurrentController];
+    } else {
+        self.needExitViewController = nil;
+    }
 }
 
 /// 画中画即将关闭

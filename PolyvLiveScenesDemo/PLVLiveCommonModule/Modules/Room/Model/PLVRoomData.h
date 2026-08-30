@@ -247,6 +247,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutBackgroundColor) {
 @property (nonatomic, assign) BOOL linkmicNewStrategyEnabled;
 /// 新版连麦默认类型类型，audio默认开启语音连麦，video默认打开视频连麦，N连麦默认不打开，默认值为N
 @property (nonatomic, copy) NSString *defaultOpenMicLinkEnabled;
+/// 新版连麦是否默认允许观众连麦，YES默认开启，NO默认关闭
+@property (nonatomic, assign) BOOL defaultAudienceLinkMicEnabled;
 // 频道默认开关，仅新版连麦生效
 @property (nonatomic, assign, readonly) PLVChannelLinkMicMediaType defaultChannelLinkMicMediaType;
 // 后台是否显示连麦布局按钮，YES显示，NO不显示
