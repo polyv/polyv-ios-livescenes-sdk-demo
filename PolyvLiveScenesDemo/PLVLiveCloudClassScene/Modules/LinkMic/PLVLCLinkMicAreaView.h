@@ -71,6 +71,9 @@ NS_ASSUME_NONNULL_BEGIN
 ///       [inRTCRoom] 为 NO 时，此方法调用无效；
 - (void)showAreaView:(BOOL)showStatus;
 
+/// 更新连麦区域的实际显示状态，不改变 areaViewShow 记录的用户展开/收起意愿
+- (void)updateAreaViewDisplayWithShowStatus:(BOOL)showStatus;
+
 - (void)showLinkMicControlBar:(BOOL)showStatus;
 
 /// 开始/结束观看无延迟直播

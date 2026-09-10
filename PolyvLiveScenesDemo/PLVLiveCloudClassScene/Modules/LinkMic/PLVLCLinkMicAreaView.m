@@ -112,11 +112,17 @@ PLVLCLinkMicWindowsViewDelegate
         return;
     }
     self.areaViewShow = showStatus;
+    if (!showStatus) {
+        self.landscapeSpeakingView.hidden = YES;
+    }
     __weak typeof(self) weakSelf = self;
-    CGFloat toAlpha = showStatus ? 1.0 : 0.0;
     [UIView animateWithDuration:0.3 animations:^{
-        weakSelf.alpha = toAlpha;
+        [weakSelf updateAreaViewDisplayWithShowStatus:showStatus];
     }];
+}
+
+- (void)updateAreaViewDisplayWithShowStatus:(BOOL)showStatus {
+    self.alpha = showStatus ? 1.0 : 0.0;
 }
 
 - (void)showLinkMicControlBar:(BOOL)showStatus{
@@ -576,7 +582,7 @@ PLVLCLinkMicWindowsViewDelegate
 /// 当前正在讲话的连麦成员
 - (void)plvLinkMicPresenter:(PLVLinkMicPresenter *)presenter reportCurrentSpeakingUsers:(NSArray<PLVLinkMicOnlineUser *> *)currentSpeakingUsers{
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
-    if (fullScreen) {
+    if (fullScreen && self.areaViewShow) {
         [self.landscapeSpeakingView updateSpeakingInfoWithNicknames:[currentSpeakingUsers valueForKeyPath:@"nickname"]];
         [self updateLandscapeSpeakingViewLayout];
     }

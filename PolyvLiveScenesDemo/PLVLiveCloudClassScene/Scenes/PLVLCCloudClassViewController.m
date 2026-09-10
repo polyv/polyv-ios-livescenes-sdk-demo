@@ -307,7 +307,9 @@ PLVLCLandscapeMessagePopupViewDelegate
     if (self.linkMicAreaView.inRTCRoom && self.channelType == PLVChannelTypeAlone) {
         canShowLinkMicAreaView = self.linkMicAreaView.currentRTCRoomUserCount > 1 ? YES : NO;
     }
-    BOOL showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? canShowLinkMicAreaView : NO;
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    // 收起状态仅影响横屏；竖屏恢复正常布局，但保留横屏的收起状态。
+    BOOL showLinkMicAreaView = canShowLinkMicAreaView && (!fullScreen || self.linkMicAreaView.areaViewShow);
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL hideLinkMicAreaToggleButtonInSmallScreen = NO;
@@ -324,10 +326,12 @@ PLVLCLandscapeMessagePopupViewDelegate
         }
     }
     
-    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (!fullScreen) {
         // 竖屏
         self.linkMicAreaView.hidden = !self.linkMicAreaView.inRTCRoom;
+        if (showLinkMicAreaView) {
+            [self.linkMicAreaView updateAreaViewDisplayWithShowStatus:YES];
+        }
         self.menuAreaView.hidden = NO;
         self.chatLandscapeView.frame = CGRectZero;
         
