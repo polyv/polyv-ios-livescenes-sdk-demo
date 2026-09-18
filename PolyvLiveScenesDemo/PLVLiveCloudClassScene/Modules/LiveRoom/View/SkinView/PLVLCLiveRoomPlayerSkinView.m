@@ -370,8 +370,9 @@
     CGFloat buttonOriginX;
     CGFloat buttonOriginY;
     if (self.linkMicAreaViewShow) {
-        buttonOriginX = CGRectGetMinX(self.linkMicAreaViewFrame) + 8.0;
-        buttonOriginY = CGRectGetMinY(self.linkMicAreaViewFrame) + 8.0;
+        // 横屏展开时放在连麦列表顶部留白区（列表 originY=64），对齐 Android 12dp 边距，避免压住第一个窗口
+        buttonOriginX = CGRectGetMinX(self.linkMicAreaViewFrame) + 12.0;
+        buttonOriginY = CGRectGetMinY(self.linkMicAreaViewFrame) + 12.0;
     } else {
         CGFloat rightSafePadding = 0.0;
         if (@available(iOS 11.0, *)) {
