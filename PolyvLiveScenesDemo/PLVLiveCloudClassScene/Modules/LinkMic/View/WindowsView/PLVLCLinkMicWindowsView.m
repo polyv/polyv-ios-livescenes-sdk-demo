@@ -17,6 +17,9 @@
 
 #define PLVColor_View_Black PLV_UIColorFromRGB(@"1A1B1F")
 
+/// 横屏连麦列表顶部留白，给隐藏按钮使用，避免与第一个连麦窗口重叠误触。对齐 Android `DP` 64。
+static const CGFloat kPLVLCLinkMicLandscapeListTopPadding = 64.0;
+
 static NSString * PLVLCLinkMicWindowCellId = @"PLVLCLinkMicWindowCellId";
 
 @interface PLVLCLinkMicWindowsView () <
@@ -92,7 +95,8 @@ UICollectionViewDelegate
 
         selfWidth = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 180.0 : 150.0;
         CGFloat originX = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad ? 15 : 8;
-        self.collectionView.frame = CGRectMake(originX, 0, selfWidth, selfHeight);
+        CGFloat originY = kPLVLCLinkMicLandscapeListTopPadding;
+        self.collectionView.frame = CGRectMake(originX, originY, selfWidth, MAX(selfHeight - originY, 0));
         self.collectionView.alwaysBounceHorizontal = NO;
         self.collectionView.alwaysBounceVertical = YES;
         

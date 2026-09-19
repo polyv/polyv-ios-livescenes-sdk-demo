@@ -36,7 +36,7 @@ PLVLivePlayerPictureInPictureDelegate,
 PLVLivePlaybackPlayerDelegate,
 PLVAdvertViewDelegate,
 PLVPublicStreamPlayerDelegate,
-PLVDefaultPageViewDelegate
+PLVPlayerTipBannerViewDelegate
 >
 
 #pragma mark 状态
@@ -62,13 +62,13 @@ PLVDefaultPageViewDelegate
 ///      ├── (UIActivityIndicatorView) activityView
 ///      ├── (UILabel) loadSpeedLabel
 ///      └── (PLVPlayerLogoView) logoView
-///      └── (PLVDefaultPageView) defaultPageView
+///      └── (PLVPlayerTipBannerView) tipBannerView
 @property (nonatomic, weak) UIView * displayView;
 @property (nonatomic, strong) PLVPlayerPresenterBackgroundView * backgroundView;
 @property (nonatomic, strong) UIView * playerBackgroundView;
 @property (nonatomic, strong) UIImageView * warmUpImageView;
 @property (nonatomic, strong) PLVPlayerLogoView * logoView;
-@property (nonatomic, strong) PLVDefaultPageView * defaultPageView;
+@property (nonatomic, strong) PLVPlayerTipBannerView * tipBannerView;
 @property (nonatomic, strong) UIActivityIndicatorView * activityView;
 @property (nonatomic, strong) UILabel * loadSpeedLabel;
 @property (nonatomic, strong) UIImageView *liveCoverImageView;
@@ -260,13 +260,13 @@ PLVDefaultPageViewDelegate
     return self.logoView.logoImageView;
 }
 
-- (PLVDefaultPageView *)defaultPageView {
-    if (!_defaultPageView) {
-        _defaultPageView = [[PLVDefaultPageView alloc] init];
-        _defaultPageView.delegate = self;
-        _defaultPageView.hidden = YES;
+- (PLVPlayerTipBannerView *)tipBannerView {
+    if (!_tipBannerView) {
+        _tipBannerView = [[PLVPlayerTipBannerView alloc] init];
+        _tipBannerView.delegate = self;
+        _tipBannerView.hidden = YES;
     }
-    return _defaultPageView;
+    return _tipBannerView;
 }
 
 - (UIImageView *)liveCoverImageView {
@@ -346,8 +346,8 @@ PLVDefaultPageViewDelegate
     }
     [self.livePlaybackPlayer setupDisplaySuperview:self.playerBackgroundView];
     
-    self.defaultPageView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-    self.defaultPageView.frame = self.backgroundView.bounds;
+    self.tipBannerView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    self.tipBannerView.frame = self.backgroundView.bounds;
 }
 
 - (void)setupScalingMode:(IJKMPMovieScalingMode)scalingMode {
@@ -440,17 +440,17 @@ PLVDefaultPageViewDelegate
 #pragma mark 直播相关
 - (void)switchLiveToAudioMode:(BOOL)audioMode{
     self.logoView.hidden = audioMode;
-    self.defaultPageView.hidden = YES;
+    self.tipBannerView.hidden = YES;
     [self.livePlayer switchToAudioMode:audioMode];
 }
 
 - (void)switchLiveToCodeRate:(NSString *)codeRate{
-    self.defaultPageView.hidden = YES;
+    self.tipBannerView.hidden = YES;
     [self.livePlayer switchToLineIndex:self.currentLineIndex codeRate:codeRate];
 }
 
 - (void)switchLiveToLineIndex:(NSInteger)lineIndex{
-    self.defaultPageView.hidden = YES;
+    self.tipBannerView.hidden = YES;
     [self.livePlayer switchToLineIndex:lineIndex codeRate:self.currentCodeRate];
 }
 
@@ -462,12 +462,12 @@ PLVDefaultPageViewDelegate
             [self.streamPlayer clearPlayer];
         }
     }
-    self.defaultPageView.hidden = YES;
+    self.tipBannerView.hidden = YES;
     [self.livePlayer switchToNoDelayWatchMode:noDelayWatchMode];
 }
 
 - (void)startPictureInPictureFromOriginView:(UIView *)originView {
-    self.defaultPageView.hidden = YES;
+    self.tipBannerView.hidden = YES;
     if (self.livePlayer) {
         [self.livePlayer startPictureInPictureFromOriginView:originView];
     } else if (self.livePlaybackPlayer) {
@@ -649,7 +649,7 @@ PLVDefaultPageViewDelegate
     [self.backgroundView addSubview:self.warmUpImageView];
     [self.backgroundView addSubview:self.activityView];
     [self.backgroundView addSubview:self.loadSpeedLabel];
-    [self.backgroundView addSubview:self.defaultPageView];
+    [self.backgroundView addSubview:self.tipBannerView];
         
     self.playerBackgroundView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
     self.playerBackgroundView.frame = self.backgroundView.bounds;
@@ -1000,10 +1000,11 @@ PLVDefaultPageViewDelegate
     if (self.countDownTime == 0) {
         [self stopCountDownTimer];
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
-            [self.defaultPageView showWithErrorMessage:PLVLocalizedString(@"视频加载缓慢，请刷新或退出重进") type:PLVDefaultPageViewTypeRefresh];
+            [self.tipBannerView showWithErrorMessage:nil type:PLVPlayerTipBannerTypeRefresh];
         } else {
             if (!self.quickLiveWatching) {
-                [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefreshAndSwitchLine];
+                PLVPlayerTipBannerType type = self.lineNum > 1 ? PLVPlayerTipBannerTypeSwitchLine : PLVPlayerTipBannerTypeRefresh;
+                [self.tipBannerView showWithErrorMessage:nil type:type];
             }
         }
     }
@@ -1034,7 +1035,7 @@ PLVDefaultPageViewDelegate
 - (void)plvPlayer:(PLVPlayer *)player playerIsPreparedToPlay:(PLVPlayerMainSubType)mainSubType{
     [self.activityView stopAnimating];
     [self stopCountDownTimer];
-    self.defaultPageView.hidden = YES;
+    self.tipBannerView.hidden = YES;
     [self timerEvent:nil];
     self.currentLivePlaybackChangingVid = NO;
     
@@ -1067,11 +1068,11 @@ PLVDefaultPageViewDelegate
                 }
             });
         } else {
-            if (player.mainPlayerLoadState & IJKMPMovieLoadStatePlaythroughOK) {
-                [self stopCountDownTimer];
-            }
             self.needShowLoading = NO;
             [self.activityView stopAnimating];
+            [self stopCountDownTimer];
+            // 卡顿恢复后关闭网络不稳定提示，避免画面已恢复弹窗仍残留
+            [self.tipBannerView hideIfNetworkUnstableTip];
         }
     }
 }
@@ -1100,8 +1101,8 @@ PLVDefaultPageViewDelegate
     if (player.mainPlayerPlaybackState != IJKMPMoviePlaybackStateSeekingForward &&
         player.mainPlayerPlaybackState != IJKMPMoviePlaybackStateSeekingBackward) {
         [PLVRoomDataManager sharedManager].roomData.playing = playing;
-        if (playing && !self.defaultPageView.hidden) {
-            self.defaultPageView.hidden = YES;
+        if (playing && !self.tipBannerView.hidden) {
+            self.tipBannerView.hidden = YES;
         }
         if ([self.delegate respondsToSelector:@selector(playerPresenter:playerPlayingStateDidChanged:)]) {
             [self.delegate playerPresenter:self playerPlayingStateDidChanged:playing];
@@ -1160,10 +1161,11 @@ PLVDefaultPageViewDelegate
         errorMessage = PLVLocalizedString(@"视频播放失败，请尝试手动刷新，或退出重新登录");
         [self.activityView stopAnimating];
         if (self.currentVideoType == PLVChannelVideoType_Playback) {
-            [self.defaultPageView showWithErrorMessage:PLVLocalizedString(@"视频加载缓慢，请刷新或退出重进") type:PLVDefaultPageViewTypeRefresh];
+            [self.tipBannerView showWithErrorMessage:nil type:PLVPlayerTipBannerTypeRefresh];
         } else {
             if (!self.quickLiveWatching) {
-                [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefreshAndSwitchLine];
+                PLVPlayerTipBannerType type = self.lineNum > 1 ? PLVPlayerTipBannerTypeSwitchLine : PLVPlayerTipBannerTypeRefresh;
+                [self.tipBannerView showWithErrorMessage:nil type:type];
             }
         }
         
@@ -1186,7 +1188,7 @@ PLVDefaultPageViewDelegate
 - (void)plvPlayer:(PLVPlayer *)player playerDidDestroyed:(PLVPlayerMainSubType)mainSubType{
     [self.activityView stopAnimating];
     [self stopCountDownTimer];
-    self.defaultPageView.hidden = YES;
+    self.tipBannerView.hidden = YES;
 }
 
 #pragma mark PLVLivePlayerDelegate
@@ -1264,17 +1266,17 @@ PLVDefaultPageViewDelegate
     }
     
     if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_PlayRestrict]) {
-        [self.defaultPageView showWithErrorCode:error.code message:PLVLocalizedString(@"存在观看限制，暂不支持进入") type:PLVDefaultPageViewTypeErrorCode];
+        [self.tipBannerView showWithErrorCode:error.code message:PLVLocalizedString(@"存在观看限制，暂不支持进入") type:PLVPlayerTipBannerTypeErrorCode];
     } else if ((error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_RequestFailed] &&
                 error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_CodeError]) ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_RequestFailed] ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetChannelInfo_ParameterError] ||
                (error.code >= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetStreamState_ParameterError] &&
                            error.code <= [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetSessionID_ParameterError])){
-        [self.defaultPageView showWithErrorCode:error.code message:nil type:PLVDefaultPageViewTypeErrorCode];
+        [self.tipBannerView showWithErrorCode:error.code message:nil type:PLVPlayerTipBannerTypeErrorCode];
 
     } else {
-        [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefresh];
+        [self.tipBannerView showWithErrorMessage:nil type:PLVPlayerTipBannerTypeRefresh];
     }
 }
 
@@ -1432,12 +1434,12 @@ PLVDefaultPageViewDelegate
         error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_FileUrlError] ||
         error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_ParameterError] ||
         error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_RequestFailed]) {
-        [self.defaultPageView showWithErrorCode:error.code message:nil type:PLVDefaultPageViewTypeErrorCode];
+        [self.tipBannerView showWithErrorCode:error.code message:nil type:PLVPlayerTipBannerTypeErrorCode];
     } else if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_CodeError] ||
                error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeGetVideoInfo_RequestFailed]){
-        [self.defaultPageView showWithErrorMessage:nil type:PLVDefaultPageViewTypeRefresh];
+        [self.tipBannerView showWithErrorMessage:nil type:PLVPlayerTipBannerTypeRefresh];
     } else if (error.code == [PLVFPlayErrorCodeGenerator errorCode:PLVFPlayErrorCodeChannelRestrict_PlayRestrict]) {
-        [self.defaultPageView showWithErrorCode:error.code message:PLVLocalizedString(@"存在观看限制，暂不支持进入") type:PLVDefaultPageViewTypeErrorCode];
+        [self.tipBannerView showWithErrorCode:error.code message:PLVLocalizedString(@"存在观看限制，暂不支持进入") type:PLVPlayerTipBannerTypeErrorCode];
     }
 }
 
@@ -1546,7 +1548,7 @@ PLVDefaultPageViewDelegate
 - (void)plvPublicStreamPlayer:(PLVPublicStreamPlayer *)streamPlayer streamPlayerPlayingStateDidChange:(BOOL)playing {
     [PLVRoomDataManager sharedManager].roomData.playing = playing;
     if (playing) {
-        self.defaultPageView.hidden = YES;
+        self.tipBannerView.hidden = YES;
         self.warmUpImageView.hidden = YES;
     }
     
@@ -1584,17 +1586,25 @@ PLVDefaultPageViewDelegate
     }
 }
 
-#pragma mark PLVDefaultPageViewDelegate
+#pragma mark PLVPlayerTipBannerViewDelegate
 
-- (void)plvDefaultPageViewWannaRefresh:(PLVDefaultPageView *)defaultPageView {
-    self.defaultPageView.hidden = YES;
+- (void)plvPlayerTipBannerViewWannaRefresh:(PLVPlayerTipBannerView *)tipBannerView {
+    self.tipBannerView.hidden = YES;
     [self resumePlay];
 }
 
-- (void)plvDefaultPageViewWannaSwitchLine:(PLVDefaultPageView *)defaultPageView {
+- (void)plvPlayerTipBannerViewWannaSwitchLine:(PLVPlayerTipBannerView *)tipBannerView {
+    if (self.lineNum <= 1) {
+        [self resumePlay];
+        return;
+    }
     if (self.delegate && [self.delegate respondsToSelector:@selector(playerPresenterWannaSwitchLine:)]) {
         [self.delegate playerPresenterWannaSwitchLine:self];
     }
+}
+
+- (void)plvPlayerTipBannerViewDidClose:(PLVPlayerTipBannerView *)tipBannerView {
+    self.tipBannerView.hidden = YES;
 }
 
 #pragma mark - 播放速度记忆功能

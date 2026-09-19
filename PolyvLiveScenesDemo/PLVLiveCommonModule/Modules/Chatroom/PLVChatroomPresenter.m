@@ -458,7 +458,39 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     model.user = [PLVChatUser copyUser:self.loginChatUser];
     model.message = content;
     
-    BOOL success = [[PLVChatroomManager sharedManager] sendQuesstionMessage:content];
+    __weak typeof(self) weakSelf = self;
+    BOOL success = [[PLVChatroomManager sharedManager] sendQuesstionMessage:content needIdCallback:YES callback:^(NSArray * _Nullable ackArray) {
+        if (!ackArray || ackArray.count == 0) {
+            return;
+        }
+        // 与 Android 对齐：args.length > 1 且 args[1] 为空时，表示严禁词禁发
+        if (ackArray.count > 1) {
+            id extra = ackArray[1];
+            BOOL extraEmpty = (extra == nil || extra == [NSNull null] ||
+                               ([extra isKindOfClass:[NSString class]] && [(NSString *)extra length] == 0));
+            if (extraEmpty && [weakSelf isBadwordForbidSendType]) {
+                [weakSelf callbackLocalQuestionSystemMessageForModel:model];
+                return;
+            }
+            NSDictionary *extraDict = nil;
+            if ([extra isKindOfClass:[NSDictionary class]]) {
+                extraDict = (NSDictionary *)extra;
+            } else if ([extra isKindOfClass:[NSString class]]) {
+                NSData *jsonData = [(NSString *)extra dataUsingEncoding:NSUTF8StringEncoding];
+                if (jsonData) {
+                    id jsonObject = [NSJSONSerialization JSONObjectWithData:jsonData options:0 error:nil];
+                    if ([jsonObject isKindOfClass:[NSDictionary class]]) {
+                        extraDict = (NSDictionary *)jsonObject;
+                    }
+                }
+            }
+            NSString *replacedContent = PLV_SafeStringForDictKey(extraDict, @"content");
+            if ([PLVFdUtil checkStringUseable:replacedContent]) {
+                model.message = replacedContent;
+                [weakSelf callbackDidUpdateLocalQuestionMessage:model];
+            }
+        }
+    }];
     return success ? model : nil;
 }
 
@@ -529,8 +561,16 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     __weak typeof(self) weakSelf = self;
     if ([model.message isKindOfClass:[PLVSpeakMessage class]]) {
         PLVSpeakMessage *message = (PLVSpeakMessage *)model.message;
-        success = [[PLVChatroomManager sharedManager] sendSpeakMessage:message callback:^(NSString * _Nonnull msgId) {
+        success = [[PLVChatroomManager sharedManager] sendSpeakMessage:message callback:^(NSString * _Nullable msgId) {
+            if (![PLVFdUtil checkStringUseable:msgId]) {
+                if ([weakSelf isBadwordForbidSendType]) {
+                    model.msgState = PLVChatMsgStateFail;
+                    [weakSelf callbackLocalSystemMessageForModel:model];
+                }
+                return;
+            }
             model.msgState = PLVChatMsgStateSuccess;
+            [weakSelf callbackDidConfirmLocalMessage:model];
             if (message.prohibitWordReplaced) {
                 if (weakSelf.delegate &&
                     [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_receiveWarning:prohibitWord:)]) {
@@ -541,8 +581,16 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
         }];
     } else if ([model.message isKindOfClass:[PLVQuoteMessage class]]) {
         PLVQuoteMessage *message = (PLVQuoteMessage *)model.message;
-        success = [[PLVChatroomManager sharedManager] sendQuoteMessage:message callback:^(NSString * _Nonnull msgId) {
+        success = [[PLVChatroomManager sharedManager] sendQuoteMessage:message callback:^(NSString * _Nullable msgId) {
+            if (![PLVFdUtil checkStringUseable:msgId]) {
+                if ([weakSelf isBadwordForbidSendType]) {
+                    model.msgState = PLVChatMsgStateFail;
+                    [weakSelf callbackLocalSystemMessageForModel:model];
+                }
+                return;
+            }
             model.msgState = PLVChatMsgStateSuccess;
+            [weakSelf callbackDidConfirmLocalMessage:model];
             if (message.prohibitWordReplaced) {
                 if (weakSelf.delegate &&
                     [weakSelf.delegate respondsToSelector:@selector(chatroomPresenter_receiveWarning:prohibitWord:)]) {
@@ -1959,6 +2007,50 @@ PLVRoomDataManagerProtocol  // 直播间数据管理器协议
     
     BOOL isLoginUser = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     return isLoginUser;
+}
+
+- (BOOL)isBadwordForbidSendType {
+    return [PLVRoomDataManager sharedManager].roomData.menuInfo.isBadwordForbidSendType;
+}
+
+- (NSString *)localSystemMessageNotSentTip {
+    return PLVLocalizedString(@"消息未发送，请修改后重试");
+}
+
+- (void)callbackDidConfirmLocalMessage:(PLVChatModel *)model {
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(chatroomPresenter_didConfirmLocalMessage:)]) {
+        [self.delegate chatroomPresenter_didConfirmLocalMessage:model];
+    }
+}
+
+- (void)callbackLocalSystemMessageForModel:(PLVChatModel *)model {
+    NSString *message = [self localSystemMessageNotSentTip];
+    plv_dispatch_main_async_safe(^{
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(chatroomPresenter_didReceiveLocalSystemMessage:replaceModel:)]) {
+            [self.delegate chatroomPresenter_didReceiveLocalSystemMessage:message replaceModel:model];
+        }
+    });
+}
+
+- (void)callbackLocalQuestionSystemMessageForModel:(PLVChatModel *)model {
+    NSString *message = [self localSystemMessageNotSentTip];
+    plv_dispatch_main_async_safe(^{
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(chatroomPresenter_didReceiveLocalQuestionSystemMessage:replaceModel:)]) {
+            [self.delegate chatroomPresenter_didReceiveLocalQuestionSystemMessage:message replaceModel:model];
+        }
+    });
+}
+
+- (void)callbackDidUpdateLocalQuestionMessage:(PLVChatModel *)model {
+    plv_dispatch_main_async_safe(^{
+        if (self.delegate &&
+            [self.delegate respondsToSelector:@selector(chatroomPresenter_didUpdateLocalQuestionMessage:)]) {
+            [self.delegate chatroomPresenter_didUpdateLocalQuestionMessage:model];
+        }
+    });
 }
 
 @end

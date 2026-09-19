@@ -24,6 +24,14 @@
 
 "我的奖励" = "マイリワード";
 
+"直播中" = "ライブ配信中";
+"等待中" = "待機中";
+"未开始" = "未開始";
+"已结束" = "終了";
+"直播暂停" = "ライブ一時停止";
+"直播倒计时 %@ 天 %@ 时 %@ 分 %@ 秒" = "配信開始まで %@日 %@時間 %@分 %@秒";
+"直播倒计时 %@ 时 %@ 分 %@ 秒" = "配信開始まで %@時間 %@分 %@秒";
+
 /** icon */
 "plv_chatroom_askquestion_default_btn" = "plv_chatroom_askquestion_default_btn_en";
 "plv_chatroom_askquestion_selected_btn" = "plv_chatroom_askquestion_selected_btn_en";

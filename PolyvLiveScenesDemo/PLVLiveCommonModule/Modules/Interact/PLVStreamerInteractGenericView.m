@@ -16,7 +16,8 @@
 @interface PLVStreamerInteractGenericView () <
 WKNavigationDelegate,
 UIDocumentPickerDelegate,
-PLVStreamerInteractWebViewBridgeDelegate
+PLVStreamerInteractWebViewBridgeDelegate,
+PLVSocketManagerProtocol
 >
 
 /// UI
@@ -27,6 +28,7 @@ PLVStreamerInteractWebViewBridgeDelegate
 @property (nonatomic, copy) NSString *webViewURLString;
 @property (nonatomic, assign) BOOL webviewLoadFinish; //webview 是否已加载完成
 @property (nonatomic, assign) BOOL webviewLoadFaid; //webview 是否加载失败
+@property (nonatomic, copy) NSString *pendingEventName; // webview 未就绪时待发送的事件
 
 @end
 
@@ -35,6 +37,7 @@ PLVStreamerInteractWebViewBridgeDelegate
 #pragma mark - [ Life Cycle ]
 
 - (void)dealloc {
+    [[PLVSocketManager sharedManager] removeDelegate:self];
     PLV_LOG_INFO(PLVConsoleLogModuleTypeInteract, @"%s",__FUNCTION__);
 }
 
@@ -55,6 +58,8 @@ PLVStreamerInteractWebViewBridgeDelegate
 
 - (void)loadInteractWebView {
     [self.webView stopLoading];
+    self.webviewLoadFinish = NO;
+    self.webviewLoadFaid = NO;
     
     NSString *urlString = [PLVFdUtil checkStringUseable:self.webViewURLString] ? self.webViewURLString : PLVLiveConstantsStreamerInteractWebViewURL;
     PLVLiveVideoConfig *liveConfig = [PLVLiveVideoConfig sharedInstance];
@@ -67,10 +72,32 @@ PLVStreamerInteractWebViewBridgeDelegate
     [self layoutWebviewFrame];
 }
 
+- (void)updateUserInfo {
+    NSDictionary *userInfo = [self getUserInfo];
+    [self.webViewBridge updateNativeAppParamsInfo:userInfo];
+}
+
 - (void)openInteractViewWithEventName:(NSString *)eventName {
     [self setInteractWebViewShow:YES];
-    if ([PLVFdUtil checkStringUseable:eventName]) {
+    // 先保证 WebView 有有效尺寸，避免加载完成后才布局导致短暂空白
+    if (!CGRectEqualToRect(self.bounds, CGRectZero)) {
+        self.webView.frame = self.bounds;
+        self.webView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    }
+    // 打开前同步最新 socketId，保证 H5 查询答题卡进行中可用
+    [self updateUserInfo];
+    if (![PLVFdUtil checkStringUseable:eventName]) {
+        return;
+    }
+    if (self.webviewLoadFinish) {
+        self.pendingEventName = nil;
         [self.webViewBridge callWebViewEvent:@{@"event" : eventName}];
+    } else {
+        // 页面未就绪时先缓存，didFinish 后再补发，避免 SHOW_ANSWER_CARD 丢失
+        self.pendingEventName = eventName;
+        if (self.webviewLoadFaid) {
+            [self loadInteractWebView];
+        }
     }
 }
 
@@ -79,6 +106,7 @@ PLVStreamerInteractWebViewBridgeDelegate
 - (void)setupData {    
     self.webViewBridge = [[PLVStreamerInteractWebViewBridge alloc] initBridgeWithWebView:self.webView webViewDelegate:self];
     self.webViewBridge.delegate = self;
+    [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
 }
 
 - (void)setupUI {
@@ -115,7 +143,13 @@ PLVStreamerInteractWebViewBridgeDelegate
         @"userType" : @"teacher",
         @"webVersion" : @"0.6.0"
     };
-    return [roomData nativeAppUserParamsWithExtraParam:extraParam];
+    NSMutableDictionary *userInfo = [[roomData nativeAppUserParamsWithExtraParam:extraParam] mutableCopy];
+    // 开播端答题卡查询进行中需要聊天室服务器分配的 socketId
+    NSString *socketId = [PLVSocketManager sharedManager].socketId;
+    if ([PLVFdUtil checkStringUseable:socketId]) {
+        userInfo[@"socketId"] = socketId;
+    }
+    return userInfo;
 }
 
 #pragma mark - Download File
@@ -246,15 +280,37 @@ PLVStreamerInteractWebViewBridgeDelegate
 
 #pragma mark - [ Delegate ]
 
+#pragma mark PLVSocketManagerProtocol
+
+- (void)socketMananger_didLoginSuccess:(NSString *)ackString {
+    // socketId 在登录成功后才可用，同步给 H5 用于查询答题卡进行中
+    [self updateUserInfo];
+}
+
 #pragma mark WKNavigationDelegate
 - (void)webView:(WKWebView *)webView didFinishNavigation:(WKNavigation *)navigation {
     // 更新 加载状态
     self.webviewLoadFaid = NO;
     self.webviewLoadFinish = YES;
+    [self layoutWebviewFrame];
+    if ([PLVFdUtil checkStringUseable:self.pendingEventName]) {
+        NSString *eventName = self.pendingEventName;
+        self.pendingEventName = nil;
+        // H5 Vue 挂载与事件监听略晚于 didFinish，稍延迟再发避免丢失
+        __weak typeof(self) weakSelf = self;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.3 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [weakSelf.webViewBridge callWebViewEvent:@{@"event" : eventName}];
+        });
+    }
 }
 
 - (void)webView:(WKWebView *)webView didFailNavigation:(WKNavigation *)navigation withError:(NSError *)error {
     // 更新 加载状态
+    self.webviewLoadFinish = NO;
+    self.webviewLoadFaid = YES;
+}
+
+- (void)webView:(WKWebView *)webView didFailProvisionalNavigation:(WKNavigation *)navigation withError:(NSError *)error {
     self.webviewLoadFinish = NO;
     self.webviewLoadFaid = YES;
 }
@@ -275,7 +331,9 @@ PLVStreamerInteractWebViewBridgeDelegate
 - (void)plvStreamerInteractBridge:(PLVStreamerInteractWebViewBridge *)webViewBridge callAppEvent:(id)jsonObject {
     NSDictionary *dict = [self dictionaryFromJSONObject:jsonObject];
     NSString *event = PLV_SafeStringForDictKey(dict, @"event");
-    if ([event isEqualToString:@"downloadSignInRecord"]) { // 下载签到记录
+    if ([event isEqualToString:@"downloadSignInRecord"] ||
+        [event isEqualToString:@"downloadAnswerCardRecord"] ||
+        [event isEqualToString:@"downloadQuickAnswerRecord"]) { // 下载签到/答题卡/快速问答记录
         NSDictionary *valueDcit = PLV_SafeDictionaryForDictKey(dict, @"value");
         NSString *downloadURL = PLV_SafeStringForDictKey(valueDcit, @"downloadURL");
         if ([PLVFdUtil checkStringUseable:downloadURL]) {

@@ -33,6 +33,8 @@
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
 @property (nonatomic, strong) UIButton *signInButton; //  签到按钮
 @property (nonatomic, strong) UIButton *luckyBagButton; //  福袋按钮
+@property (nonatomic, strong) UIButton *answerCardButton; // 答题卡按钮
+@property (nonatomic, strong) UIButton *quickAnswerButton; // 快速问答按钮
 @property (nonatomic, strong) UIView *buttonSplitLine; // 退出登录按钮顶部分割线
 @property (nonatomic, strong) UILabel *logoutButtonLabel; // 退出登录按钮背后的文本
 @property (nonatomic, strong) UIButton *logoutButton; // 退出登录按钮
@@ -94,6 +96,10 @@
         }
         [self.buttonScrollView addSubview:self.luckyBagButton];
         [interactMuButtonArray addObject:self.luckyBagButton];
+        [self.buttonScrollView addSubview:self.answerCardButton];
+        [interactMuButtonArray addObject:self.answerCardButton];
+        [self.buttonScrollView addSubview:self.quickAnswerButton];
+        [interactMuButtonArray addObject:self.quickAnswerButton];
         self.interactiveTitleLabel.hidden = [interactMuButtonArray count] == 0;
         [self.contentView addSubview:self.buttonSplitLine];
         [self.contentView addSubview:self.logoutButtonLabel];
@@ -352,6 +358,22 @@
     return _luckyBagButton;
 }
 
+- (UIButton *)answerCardButton {
+    if (!_answerCardButton) {
+        _answerCardButton = [self buttonWithTitle:PLVLocalizedString(@"答题卡") NormalImageString:@"plvls_liveroom_answer_card_btn" selectedImageString:@"plvls_liveroom_answer_card_btn"];
+        [_answerCardButton addTarget:self action:@selector(answerCardAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _answerCardButton;
+}
+
+- (UIButton *)quickAnswerButton {
+    if (!_quickAnswerButton) {
+        _quickAnswerButton = [self buttonWithTitle:PLVLocalizedString(@"快速问答") NormalImageString:@"plvls_liveroom_quick_answer_btn" selectedImageString:@"plvls_liveroom_quick_answer_btn"];
+        [_quickAnswerButton addTarget:self action:@selector(quickAnswerAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _quickAnswerButton;
+}
+
 - (UIView *)buttonSplitLine {
     if (!_buttonSplitLine) {
         _buttonSplitLine = [[UIView alloc] init];
@@ -516,6 +538,24 @@
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLuckyBagButton:)]) {
         [self.delegate moreInfoSheetDidTapLuckyBagButton:self];
+    }
+}
+
+- (void)answerCardAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapAnswerCardButton:)]) {
+        [self.delegate moreInfoSheetDidTapAnswerCardButton:self];
+    }
+}
+
+- (void)quickAnswerAction {
+    [self dismiss];
+    
+    if (self.delegate &&
+        [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapQuickAnswerButton:)]) {
+        [self.delegate moreInfoSheetDidTapQuickAnswerButton:self];
     }
 }
 

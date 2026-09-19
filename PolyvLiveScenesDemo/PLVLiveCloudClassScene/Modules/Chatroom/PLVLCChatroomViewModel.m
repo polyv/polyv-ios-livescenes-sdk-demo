@@ -28,7 +28,10 @@
 #import "PLVLCLandscapeRedpackMessageCell.h"
 #import "PLVLCCustomIntroductionMessageCell.h"
 #import "PLVLCLandscapeCustomIntroductionMessageCell.h"
+#import "PLVLCLocalSystemMessageCell.h"
+#import "PLVLCLandscapeLocalSystemMessageCell.h"
 #import "PLVMultiLanguageManager.h"
+#import <PLVLiveScenesSDK/PLVLocalSystemMessage.h>
 
 static NSInteger kPLVLCMaxPublicChatMessageCount = 500;
 
@@ -321,7 +324,9 @@ static const NSUInteger PLVLCProductClickNicknameMaxLength = 5;
     BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
     if (sendSuccess) {
         [self addPublicChatModel:model];
-        [self cacheDanmu:@[model]];
+        if ([PLVChatroomManager sharedManager].banned) {
+            [self cacheDanmu:@[model]];
+        }
     }
     return sendSuccess;
 }
@@ -331,7 +336,9 @@ static const NSUInteger PLVLCProductClickNicknameMaxLength = 5;
     BOOL sendSuccess = model && ![PLVChatroomManager sharedManager].closeRoom;
     if (sendSuccess) {
         [self addPublicChatModel:model];
-        [self cacheDanmu:@[model]];
+        if ([PLVChatroomManager sharedManager].banned) {
+            [self cacheDanmu:@[model]];
+        }
     }
     return sendSuccess;
 }
@@ -622,10 +629,17 @@ static const NSUInteger PLVLCProductClickNicknameMaxLength = 5;
         model.landscapeAttributeString = [PLVLCLandscapeCustomIntroductionMessageCell contentLabelAttributedStringWithMessage:model.message];
         model.cellHeightForV = [PLVLCCustomIntroductionMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
         model.cellHeightForH = [PLVLCLandscapeCustomIntroductionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableViewWidthForH];
+    } else if ([PLVLCLocalSystemMessageCell isModelValid:model]) {
+        model.cellHeightForV = [PLVLCLocalSystemMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForV];
+        model.cellHeightForH = [PLVLCLandscapeLocalSystemMessageCell cellHeightWithModel:model cellWidth:self.tableViewWidthForH];
     }
     
     [self.publicChatArray addObject:model];
     [self.partOfPublicChatArray addObject:model];
+    // 本地系统消息在专注模式下也需要展示
+    if ([PLVLCLocalSystemMessageCell isModelValid:model]) {
+        [self.partOfSpecialIdentityPublicChatArray addObject:model];
+    }
     dispatch_semaphore_signal(_publicChatArrayLock);
     
     [self notifyDelegatesDidSendMessage:model];
@@ -1479,7 +1493,52 @@ static const NSUInteger PLVLCProductClickNicknameMaxLength = 5;
 }
 
 - (void)chatroomPresenter_receiveWarning:(NSString *)warning prohibitWord:(NSString *)word {
+    // 严禁词禁发由本地系统消息回调处理，避免重复展示原发言气泡
+    if ([PLVRoomDataManager sharedManager].roomData.menuInfo.isBadwordForbidSendType &&
+        [PLVFdUtil checkStringUseable:word]) {
+        return;
+    }
     [self notifyDelegatesDidSendProhibitMessage];
+}
+
+- (void)chatroomPresenter_didConfirmLocalMessage:(PLVChatModel *)model {
+    [self cacheDanmu:@[model]];
+    [self resetLayoutCacheForLocalPublicChatModel:model];
+    // showAsterisk：ACK 替换 content 后需刷新气泡（不依赖 tip 回调时机）
+    BOOL contentReplaced = NO;
+    if ([model.message isKindOfClass:[PLVSpeakMessage class]]) {
+        contentReplaced = ((PLVSpeakMessage *)model.message).prohibitWordReplaced;
+    } else if ([model.message isKindOfClass:[PLVQuoteMessage class]]) {
+        contentReplaced = ((PLVQuoteMessage *)model.message).prohibitWordReplaced;
+    }
+    if (contentReplaced) {
+        [self notifyDelegatesDidSendProhibitMessage];
+    }
+}
+
+- (void)chatroomPresenter_didReceiveLocalSystemMessage:(NSString *)message
+                                          replaceModel:(PLVChatModel *)model {
+    [self replaceLocalPublicMessage:model withSystemMessage:message];
+}
+
+- (void)chatroomPresenter_didReceiveLocalQuestionSystemMessage:(NSString *)message
+                                                  replaceModel:(PLVChatModel *)model {
+    [self replaceLocalPrivateMessage:model withSystemMessage:message];
+}
+
+- (void)chatroomPresenter_didUpdateLocalQuestionMessage:(PLVChatModel *)model {
+    dispatch_semaphore_wait(_privateChatArrayLock, DISPATCH_TIME_FOREVER);
+    BOOL containsModel = [self.privateChatArray indexOfObjectIdenticalTo:model] != NSNotFound;
+    if (containsModel) {
+        model.attributeString = nil;
+        model.landscapeAttributeString = nil;
+        model.cellHeightForV = 0.0;
+        model.cellHeightForH = 0.0;
+    }
+    dispatch_semaphore_signal(_privateChatArrayLock);
+    if (containsModel) {
+        [self notifyDelegatesDidSendQuestionMessage];
+    }
 }
 
 - (void)chatroomPresenter_loadImageEmotionsSuccess {
@@ -1528,6 +1587,70 @@ static const NSUInteger PLVLCProductClickNicknameMaxLength = 5;
     
     BOOL isLoginUser = [userId isEqualToString:[PLVRoomDataManager sharedManager].roomData.roomUser.viewerId];
     return isLoginUser;
+}
+
+- (void)resetLayoutCacheForLocalPublicChatModel:(PLVChatModel *)model {
+    if (!model) {
+        return;
+    }
+
+    BOOL contentReplaced = NO;
+    if ([model.message isKindOfClass:[PLVSpeakMessage class]]) {
+        contentReplaced = ((PLVSpeakMessage *)model.message).prohibitWordReplaced;
+    } else if ([model.message isKindOfClass:[PLVQuoteMessage class]]) {
+        contentReplaced = ((PLVQuoteMessage *)model.message).prohibitWordReplaced;
+    }
+    if (!contentReplaced) {
+        return;
+    }
+
+    dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+    BOOL containsModel = [self.publicChatArray indexOfObjectIdenticalTo:model] != NSNotFound;
+    if (containsModel) {
+        model.attributeString = nil;
+        model.landscapeAttributeString = nil;
+        model.cellHeightForV = 0.0;
+        model.cellHeightForH = 0.0;
+    }
+    dispatch_semaphore_signal(_publicChatArrayLock);
+}
+
+- (void)replaceLocalPublicMessage:(PLVChatModel *)model withSystemMessage:(NSString *)message {
+    if (![PLVFdUtil checkStringUseable:message]) {
+        return;
+    }
+
+    dispatch_semaphore_wait(_publicChatArrayLock, DISPATCH_TIME_FOREVER);
+    if ([self.publicChatArray indexOfObjectIdenticalTo:model] != NSNotFound) {
+        [self.publicChatArray removeObjectIdenticalTo:model];
+        [self.partOfPublicChatArray removeObjectIdenticalTo:model];
+        [self.partOfSpecialIdentityPublicChatArray removeObjectIdenticalTo:model];
+    }
+    dispatch_semaphore_signal(_publicChatArrayLock);
+
+    PLVLocalSystemMessage *systemMessage = [[PLVLocalSystemMessage alloc] init];
+    systemMessage.content = message;
+    PLVChatModel *systemModel = [[PLVChatModel alloc] init];
+    systemModel.message = systemMessage;
+    [self addPublicChatModel:systemModel];
+}
+
+- (void)replaceLocalPrivateMessage:(PLVChatModel *)model withSystemMessage:(NSString *)message {
+    if (![PLVFdUtil checkStringUseable:message]) {
+        return;
+    }
+
+    dispatch_semaphore_wait(_privateChatArrayLock, DISPATCH_TIME_FOREVER);
+    if ([self.privateChatArray indexOfObjectIdenticalTo:model] != NSNotFound) {
+        [self.privateChatArray removeObjectIdenticalTo:model];
+    }
+    dispatch_semaphore_signal(_privateChatArrayLock);
+
+    PLVLocalSystemMessage *systemMessage = [[PLVLocalSystemMessage alloc] init];
+    systemMessage.content = message;
+    PLVChatModel *systemModel = [[PLVChatModel alloc] init];
+    systemModel.message = systemMessage;
+    [self addPrivateChatModel:systemModel local:YES];
 }
 
 - (BOOL)isConversionChatModel:(PLVChatModel *)model {

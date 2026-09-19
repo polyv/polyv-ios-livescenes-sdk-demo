@@ -21,6 +21,7 @@
 #import "PLVLCRewardMessageCell.h"
 #import "PLVLCFileMessageCell.h"
 #import "PLVLCCustomIntroductionMessageCell.h"
+#import "PLVLCLocalSystemMessageCell.h"
 #import "PLVLCProductConversionEffectCell.h"
 #import "PLVAlbumNavigationController.h"
 #import "PLVGiveRewardPresenter.h"
@@ -1120,6 +1121,14 @@ UITableViewDataSource
         CGFloat customIntroductionMessageCellWidth = self.likeButtonView.hidden ? self.tableView.frame.size.width : self.tableView.frame.size.width - PLVLCLikeButtonViewWidth / 2.0 - centerPadding - 8;// 气泡保证不遮挡点赞按钮（有点赞按钮时）
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:customIntroductionMessageCellWidth];
         return cell;
+    } else if ([PLVLCLocalSystemMessageCell isModelValid:model]) {
+        static NSString *localSystemMessageCellIdentify = @"PLVLCLocalSystemMessageCell";
+        PLVLCLocalSystemMessageCell *cell = (PLVLCLocalSystemMessageCell *)[tableView dequeueReusableCellWithIdentifier:localSystemMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLocalSystemMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:localSystemMessageCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -1212,6 +1221,11 @@ UITableViewDataSource
     } else if ([PLVLCCustomIntroductionMessageCell isModelValid:model]) {
         if (model.cellHeightForV == 0.0 || !self.likeButtonView.hidden) {
             model.cellHeightForV = [PLVLCCustomIntroductionMessageCell cellHeightWithModel:model cellWidth:fileMessageCellWidth];
+        }
+        cellHeight = model.cellHeightForV;
+    } else if ([PLVLCLocalSystemMessageCell isModelValid:model]) {
+        if (model.cellHeightForV == 0.0) {
+            model.cellHeightForV = [PLVLCLocalSystemMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
         }
         cellHeight = model.cellHeightForV;
     }

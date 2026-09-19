@@ -191,6 +191,14 @@ typedef NS_ENUM(NSUInteger, PLVLCBasePlayerSkinViewLiveStatus) {
 /// @param skinView 当前 媒体播放器皮肤视图 对象本身 (注意：该参数非 [synchOtherSkinViewState:] 中的otherSkinView)
 - (void)plvLCBasePlayerSkinViewSynchOtherView:(PLVLCBasePlayerSkinView *)skinView;
 
+/// 询问是否有需要优先于皮肤控件处理触摸事件的外部视图
+///
+/// @param skinView 媒体播放器皮肤视图
+/// @param point 此次触摸事件的 CGPoint (相对于皮肤视图skinView)
+///
+/// @return BOOL 是否由高优先级外部视图处理
+- (BOOL)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView askPriorityHandlerForTouchPointOnSkinView:(CGPoint)point;
+
 /// 询问是否有其他视图处理此次触摸事件
 ///
 /// @param skinView 媒体播放器皮肤视图

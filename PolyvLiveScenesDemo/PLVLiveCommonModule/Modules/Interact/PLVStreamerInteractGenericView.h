@@ -19,6 +19,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 加载互动 WebView
 - (void)loadInteractWebView;
 
+/// 更新原生传给 H5 的参数（开播端答题卡含 socketId），对应 updateNativeAppParamsInfo
+- (void)updateUserInfo;
+
 /// 打开互动应用弹窗
 /// @param eventName 事件名称，由 JS 传递过来。
 - (void)openInteractViewWithEventName:(NSString *)eventName;

@@ -42,6 +42,7 @@
 #import "PLVMemberPresenter.h"
 #import "PLVStreamerPresenter.h"
 #import "PLVBeautyViewModel.h"
+#import "PLVStreamerComplianceReminderManager.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -87,6 +88,7 @@ UIDocumentPickerDelegate
 #pragma mark 模块
 @property (nonatomic, strong) PLVStreamerPresenter *streamerPresenter;
 @property (nonatomic, strong) PLVMemberPresenter *memberPresenter;
+@property (nonatomic, strong) PLVStreamerComplianceReminderManager *complianceReminderManager;
 @property (nonatomic, strong) UIView *screenShareCustomPipDisplayView;
 
 @property (nonatomic, strong) PLVSAScreenShareCustomPictureInPictureManager *screenShareCustomPIPManager API_AVAILABLE(ios(15.0));
@@ -156,6 +158,8 @@ UIDocumentPickerDelegate
 @property (nonatomic, assign) BOOL isInBackground; // 是否位于后台
 @property (nonatomic, strong) NSArray<PLVMobileTemplateModel *> *mobileTemplateList; // 模板列表缓存
 @property (nonatomic, assign) BOOL allowRaiseHand; // 是否允许观众主动加入连麦
+
+- (void)startLiveWithResolutionType:(PLVResolutionType)type;
 
 @end
 
@@ -601,6 +605,9 @@ UIDocumentPickerDelegate
     }
     
     self.viewState = PLVSAStreamerViewStateBeforeSteam;
+
+    self.complianceReminderManager = [[PLVStreamerComplianceReminderManager alloc] initWithPresentingViewController:self];
+    [self.complianceReminderManager requestComplianceReminder];
 }
 
 - (void)setupNotification {
@@ -835,7 +842,7 @@ UIDocumentPickerDelegate
             [weakSelf.streamerPresenter joinRTCChannel];
             weakSelf.tryResumeClassBlock = ^{
                 PLVResolutionType type = [PLVRoomDataManager sharedManager].roomData.defaultResolution;
-                [weakSelf streamerSettingViewStartButtonClickWithResolutionType:type];
+                [weakSelf startLiveWithResolutionType:type];
             };
         }];
     }
@@ -1585,6 +1592,13 @@ localUserCameraShouldShowChanged:(BOOL)currentCameraShouldShow {
 }
 
 - (void)streamerSettingViewStartButtonClickWithResolutionType:(PLVResolutionType)type {
+    __weak typeof(self) weakSelf = self;
+    [self.complianceReminderManager checkComplianceReminderWithCompletion:^{
+        [weakSelf startLiveWithResolutionType:type];
+    }];
+}
+
+- (void)startLiveWithResolutionType:(PLVResolutionType)type {
     PLVBLinkMicStreamQuality streamQuality = [PLVRoomData streamQualityWithResolutionType:type];
     PLVBLinkMicStreamScale currentStreamScale =[PLVSAUtils sharedUtils].isLandscape ? self.streamScale : PLVBLinkMicStreamScale9_16;
     [self.streamerPresenter setupStreamScale:currentStreamScale];

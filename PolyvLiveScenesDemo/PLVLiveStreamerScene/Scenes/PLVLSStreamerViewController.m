@@ -48,6 +48,7 @@
 #import "PLVStreamerPresenter.h"
 #import "PLVMemberPresenter.h"
 #import "PLVBeautyViewModel.h"
+#import "PLVStreamerComplianceReminderManager.h"
 
 // 依赖库
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
@@ -87,6 +88,7 @@ PLVLSChatroomViewModelProtocol
 #pragma mark 功能
 @property (nonatomic, strong) PLVStreamerPresenter *streamerPresenter;
 @property (nonatomic, strong) PLVMemberPresenter *memberPresenter;
+@property (nonatomic, strong) PLVStreamerComplianceReminderManager *complianceReminderManager;
 @property (nonatomic, copy) void (^tryStartClassBlock) (void); // 用于无法立刻’尝试开始上课‘，后续需自动’尝试开始‘上课的场景；执行优先级低于 [tryResumeClassBlock]
 @property (nonatomic, copy) void (^tryResumeClassBlock) (void); // 用于在合适的时机，进行’恢复直播‘处理；执行优先级高于 [tryStartClassBlock]
 
@@ -183,6 +185,11 @@ PLVLSChatroomViewModelProtocol
         !self.allowRaiseHand) {
         self.linkMicUpdateTipsView.hidden = NO;
     }
+}
+
+- (void)viewDidAppear:(BOOL)animated {
+    [super viewDidAppear:animated];
+    [self.complianceReminderManager showComplianceReminderForGuestWhenReady];
 }
 
 - (void)viewWillLayoutSubviews {
@@ -347,6 +354,9 @@ PLVLSChatroomViewModelProtocol
     [self.streamerPresenter enableExternalDevice:externalDeviceEnabled];
     self.externalDeviceEnabled = self.streamerPresenter.localExternalDeviceEnabled;
     [self saveSelectedExternalDeviceEnabled:self.streamerPresenter.localExternalDeviceEnabled];
+
+    self.complianceReminderManager = [[PLVStreamerComplianceReminderManager alloc] initWithPresentingViewController:self];
+    [self.complianceReminderManager requestComplianceReminder];
 }
 
 - (void)setupNotification {
@@ -960,8 +970,10 @@ PLVLSChatroomViewModelProtocol
 - (BOOL)statusAreaView_didTapStartPushOrStopPushButton:(BOOL)start {
     __weak typeof(self) weakSelf = self;
     if (start) {
-        [self tryStartClassRetryCount:0 callCompletion:^(BOOL tryStartClassSuccess) {
-            [weakSelf.statusAreaView startPushButtonEnable:!tryStartClassSuccess];
+        [self.complianceReminderManager checkComplianceReminderWithCompletion:^{
+            [weakSelf tryStartClassRetryCount:0 callCompletion:^(BOOL tryStartClassSuccess) {
+                [weakSelf.statusAreaView startPushButtonEnable:!tryStartClassSuccess];
+            }];
         }];
         return YES; /// 先行禁用，由 [tryStartClassRetryCount:callCompletion:] 方法Block，进行最终的状态更新
     } else {
@@ -1928,6 +1940,14 @@ PLVLSChatroomViewModelProtocol
 
 - (void)moreInfoSheetDidTapLuckyBagButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
     [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_LUCKY_BAG"];
+}
+
+- (void)moreInfoSheetDidTapAnswerCardButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_ANSWER_CARD"];
+}
+
+- (void)moreInfoSheetDidTapQuickAnswerButton:(PLVLSMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_QUICK_ANSWER"];
 }
 
 - (void)moreInfoSheetDidTapAIMattingButton:(PLVLSMoreInfoSheet *)moreInfoSheet {

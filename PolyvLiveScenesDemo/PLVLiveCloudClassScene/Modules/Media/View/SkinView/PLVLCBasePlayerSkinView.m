@@ -82,12 +82,21 @@ UIGestureRecognizerDelegate>
 }
 
 - (BOOL)pointInside:(CGPoint)point withEvent:(UIEvent *)event{
+    BOOL priorityOtherViewHandler = NO;
+    if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinView:askPriorityHandlerForTouchPointOnSkinView:)]) {
+        priorityOtherViewHandler = [self.baseDelegate plvLCBasePlayerSkinView:self askPriorityHandlerForTouchPointOnSkinView:point];
+    }
+    // 仅高优先级外部视图（如播放器轻量提示横幅）优先，避免改变其他外部视图原有的触摸顺序
+    if (priorityOtherViewHandler) {
+        return NO;
+    }
+
     for (UIView * subview in self.subviews) {
         if (subview.hidden != YES && subview.alpha > 0 && subview.userInteractionEnabled && CGRectContainsPoint(subview.frame, point)) {
             return YES;
         }
     }
-    
+
     BOOL otherViewHandler = NO;
     if (self.baseDelegate && [self.baseDelegate respondsToSelector:@selector(plvLCBasePlayerSkinView:askHandlerForTouchPointOnSkinView:)]) {
         otherViewHandler = [self.baseDelegate plvLCBasePlayerSkinView:self askHandlerForTouchPointOnSkinView:point];

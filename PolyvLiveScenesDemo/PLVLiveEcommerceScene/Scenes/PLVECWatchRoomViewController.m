@@ -756,6 +756,9 @@ PLVECRealTimeSubtitleManagerDelegate
     if (roomData.videoType == PLVChannelVideoType_Live) { // 视频类型为 直播
         [self.homePageView updateChannelInfo:roomData.menuInfo.publisher coverImage:roomData.menuInfo.coverImage];
         [self.homePageView updateLikeCount:roomData.likeCount];
+        [self.homePageView updateLiveCountdownWithStartTime:roomData.menuInfo.startTime];
+        [self.homePageView updateLiveStatusWithWatchStatus:roomData.menuInfo.watchStatus];
+        [self.homePageView updateOnlineListButton:roomData.onlineCount];
         [self.homePageView updateRoomInfoHidden:!roomData.menuInfo.pvShowEnabled];
         if (roomData.menuInfo.pvShowEnabled) {
             NSUInteger roomInfoCount = self.playTimesLabelUseNewStrategy_live ? roomData.onlineCount : roomData.menuInfo.pageView.integerValue;
@@ -773,6 +776,7 @@ PLVECRealTimeSubtitleManagerDelegate
 
 - (void)roomDataManager_didLiveStateChanged:(PLVChannelLiveStreamState)liveState {
     [self.homePageView updatePlayerState:liveState == PLVChannelLiveStreamState_Live];
+    [self.homePageView updateLiveStatusWithStreamState:liveState];
 }
 
 - (void)roomDataManager_didWatchCountChanged:(NSUInteger)watchCount {
@@ -978,7 +982,7 @@ PLVECRealTimeSubtitleManagerDelegate
     [UIView animateWithDuration:0.5 animations:^{
             self.scrollView.contentOffset = CGPointMake(CGRectGetMinX(self.homePageView.frame), 0);
         } completion:^(BOOL finished) {
-            [self.homePageView showMoreView];
+            [self.homePageView showLineSwitchView];
         }];
 }
 

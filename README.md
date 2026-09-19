@@ -68,6 +68,7 @@ Demo [Testfight版本体验链接](https://testflight.apple.com/join/7XxnEJxS)
 
 | Github 仓库 Tag | 依赖 SDK 版本 | API 文档 | Comon 层 | 观看端-云课堂场景 | 观看端-直播带货场景 | 开播端-手机开播（三分屏）场景 | 互动学堂场景 |
 | --------------- | ------------- | -------------------------------------------------------------------------------------------- | -------- | ----------------- | ------------------- | ----------------------------- | ----------------------------- |
+| 1.42.0 | 1.42.0 | [v1.42.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.42.0-20260919/index.html) |✅ | ✅ | ✅| ✅ | |
 | 1.41.0 | 1.41.0 | [v1.41.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.41.0-20260830/index.html) |✅ | ✅ | ✅| ✅ | |
 | 1.40.0 | 1.40.0 | [v1.40.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.40.0-20260813/index.html) | |  | ✅| ✅ | |
 | 1.36.0 | 1.36.0 | [v1.36.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.36.0-20260719/index.html) |✅ | ✅ | ✅| ✅ | |

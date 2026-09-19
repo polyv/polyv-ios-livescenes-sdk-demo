@@ -1581,8 +1581,10 @@ PLVChannelClassManagerDelegate
                     }
                     
                     if (!onlineUser.localUser) {
-                        BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"audio" defaultMuteStatus:YES];
-                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"video" defaultMuteStatus:!(onlineUser.userType == PLVSocketUserTypeGuest || onlineUser.userType == PLVSocketUserTypeTeacher)];
+                        // 主讲/嘉宾默认开麦开摄像头；观众默认关，避免嘉宾自动连麦后误显示主播音视频关闭。
+                        BOOL teacherOrGuest = (onlineUser.userType == PLVSocketUserTypeGuest || onlineUser.userType == PLVSocketUserTypeTeacher);
+                        BOOL micOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"audio" defaultMuteStatus:!teacherOrGuest];
+                        BOOL cameraOpen = ![weakSelf readPrerecordWithLinkMicUserId:onlineUser.linkMicUserId mediaType:@"video" defaultMuteStatus:!teacherOrGuest];
                         
                         /// 设置初始值
                         [onlineUser updateUserCurrentMicOpen:micOpen];

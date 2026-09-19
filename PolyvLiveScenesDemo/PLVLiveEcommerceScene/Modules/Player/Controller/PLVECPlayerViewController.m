@@ -190,10 +190,11 @@ PLVPlayerPresenterDelegate
         return CGRectZero;
     }
     
-    if (self.videoSize.width >= self.videoSize.height) { // 视频源宽大于高时，屏幕等宽，等比缩放居中显示
+    if (self.videoSize.width >= self.videoSize.height) { // 视频源宽大于高时，屏幕等宽，等比缩放偏上显示
         CGFloat width = containerSize.width;
         CGFloat height = MIN(containerSize.width / self.videoSize.width * self.videoSize.height, containerSize.height);
-        CGFloat originY = fabs(containerSize.height * 0.48 - height);
+        // 略小于 0.5，让横屏视频在竖屏容器中稍靠上，避开底部互动区视觉重心
+        CGFloat originY = fabs(containerSize.height * 0.45 - height);
         if (containerSize.width > containerSize.height) {
             return CGRectMake(0, (containerSize.height - height) / 2.0, width, height);
         } else {
@@ -713,7 +714,7 @@ PLVPlayerPresenterDelegate
             [self.delegate playerController:self noDelayLiveWannaPlay:self.playing];
         }
     } else if ([self.playerPresenter pausePlay]) {
-        if (self.playerPresenter.defaultPageView.hidden) {
+        if (self.playerPresenter.tipBannerView.hidden) {
             self.playButton.hidden = NO;
         }
     }

@@ -20,6 +20,7 @@
 
 // UI
 #import "PLVECLiveRoomInfoView.h"
+#import "PLVECLiveStatusView.h"
 #import "PLVECChatroomView.h"
 #import "PLVECLikeButtonView.h"
 #import "PLVECCardPushButtonView.h"
@@ -37,6 +38,8 @@
 #import "PLVActionSheet.h"
 #import "PLVMultiLanguageManager.h"
 #import <PLVFoundationSDK/PLVFdUtil.h>
+#import <PLVFoundationSDK/PLVDataUtil.h>
+#import <PLVFoundationSDK/PLVFWeakProxy.h>
 
 static NSString *const PLVECHomePageView_Data_AudioModeItemTitle = @"音频模式";
 static NSString *const PLVECHomePageView_Data_RouteItemTitle     = @"线路";
@@ -51,6 +54,14 @@ static NSString *const PLVECHomePageView_Data_RealTimeSubtitleItemTitle = @"实�
 static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
 static NSString *const PLVECHomePageView_Data_MyRewardItemTitle = @"我的奖励";
 static NSString *const PLVECRefreshProductListEvent = @"REFRESH_PRODUCT_LIST";
+static NSString *const PLVECLiveWatchStatusLive = @"live";
+static NSString *const PLVECLiveWatchStatusWaiting = @"waiting";
+static NSString *const PLVECLiveWatchStatusUnStart = @"unStart";
+static NSString *const PLVECLiveWatchStatusEnd = @"end";
+static NSString *const PLVECLiveWatchStatusPlayback = @"playback";
+static NSString *const PLVECLiveWatchStatusStop = @"stop";
+static const CGFloat PLVECLiveInfoItemWidth = 68.0;
+static const CGFloat PLVECLiveInfoItemHeight = 24.0;
 
 /// SwitchView类型
 typedef NS_ENUM(NSInteger, PLVECSwitchViewType) {
@@ -97,6 +108,7 @@ PLVECSubtitleConfigViewDelegate
 @property (nonatomic, assign) NSUInteger curDelayModeIndex;            // 当前直播所选延迟模式
 @property (nonatomic, assign) BOOL audioMode;                          // 音频模式，默认NO-视频模式
 @property (nonatomic, assign) BOOL hiddenCodeRateSwitch;               // 是否显示切换码率按钮
+@property (nonatomic, assign) BOOL networkSwitchMoreMode;              // 更多面板仅展示线路/清晰度（卡顿提示入口）
 @property (nonatomic, assign) BOOL isPlaying;
 @property (nonatomic, assign) BOOL hiddenDelayModeSwitch;              // 是否显示模式切换按钮
 @property (nonatomic, assign) BOOL noDelayWatchMode;                   // 当前是否为无延迟观看模式
@@ -104,6 +116,12 @@ PLVECSubtitleConfigViewDelegate
 @property (nonatomic, assign) BOOL networkQualityPoorViewShowed;       // 网络糟糕提示视图是否显示过
 @property (nonatomic, copy) NSString *questionnaireEventName;          // 互动问卷事件
 @property (nonatomic, copy) NSString *triviaCardEventName;             // 答题卡事件，使用 GET_TEST_QUESTION_CONTENT
+@property (nonatomic, copy) NSString *watchStatus;                     // detail 接口返回的观看状态
+@property (nonatomic, assign) PLVChannelLiveStreamState currentLiveStreamState; // 实时流状态
+@property (nonatomic, assign) BOOL receivedLiveStreamState;            // 是否收到过实时流状态
+@property (nonatomic, assign) BOOL hasEnteredLiveStream;               // 是否已进入过直播或暂停状态
+@property (nonatomic, strong) NSDate *liveStartDate;                   // 预计开播时间
+@property (nonatomic, strong) NSTimer *liveCountdownTimer;             // 开播倒计时器
 /// 回放特有属性
 @property (nonatomic, assign) NSTimeInterval duration;                 // 回放视频时长
 @property (nonatomic, assign) NSUInteger curSpeedIndex;                // 回放视频当前播放速率
@@ -119,6 +137,8 @@ PLVECSubtitleConfigViewDelegate
 @property (nonatomic, weak) PLVECPlaybackListViewController *playbackListVC;     //回放列表视图
 @property (nonatomic, strong) PLVPinMessagePopupView *pinMsgPopupView; // 评论上墙视图
 @property (nonatomic, strong) PLVECSubtitleConfigView *subtitleConfigView; // 字幕配置视图
+@property (nonatomic, assign) BOOL hasRequestedProductPushRestore; // 是否已请求进房恢复商品推送卡片
+@property (nonatomic, assign) BOOL productPushRestoreCancelled; // 恢复请求是否已被实时推送或关闭消息作废
 
 #pragma mark UI
 
@@ -142,7 +162,9 @@ PLVECSubtitleConfigViewDelegate
 @property (nonatomic, strong) UIView *networkQualityPoorView;          // 网络糟糕提示视图
 @property (nonatomic, assign) BOOL visiable;                       // 该属性为YES表示当前该视图处于用户可见状态
 @property (nonatomic, assign) BOOL showMemoryPlayWithoutPlaybackTimeChanged; // 该属性为YES表示续播时没有触发播放器时间更新
+@property (nonatomic, strong) PLVECLiveStatusView *liveStatusView; // 直播状态
 @property (nonatomic, strong) UIButton *onlineListButton; // 在线列表按钮
+@property (nonatomic, strong) UILabel *liveCountdownLabel; // 开播倒计时
 
 @end
 
@@ -193,9 +215,11 @@ PLVECSubtitleConfigViewDelegate
         [self addSubview:self.giftButton];
         [self addSubview:self.questionnaireButton];
         [self addSubview:self.triviaCardButton];
+        [self addSubview:self.liveStatusView];
         if ([PLVRoomDataManager sharedManager].roomData.menuInfo.portraitOnlineListEnabled) {
             [self addSubview:self.onlineListButton];
         }
+        [self addSubview:self.liveCountdownLabel];
     } else if (self.type == PLVECHomePageType_Playback) {
         [self addSubview:self.chatroomView];
         [self addSubview:self.playerContolView];
@@ -364,7 +388,7 @@ PLVECSubtitleConfigViewDelegate
         _triviaCardButton = [UIButton buttonWithType:UIButtonTypeCustom];
         [_triviaCardButton setTitle:PLVLocalizedString(@"答题卡") forState:UIControlStateNormal];
         _triviaCardButton.titleLabel.font = [UIFont systemFontOfSize:12.0];
-        [_triviaCardButton setBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.16)];
+        [_triviaCardButton setBackgroundColor:PLV_UIColorFromRGBA(@"#000000", 0.4)];
         [_triviaCardButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
         _triviaCardButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
         [_triviaCardButton setImage:[PLVECUtils imageForWatchResource:@"plvec_iarentrance_trivia"] forState:UIControlStateNormal];
@@ -400,6 +424,33 @@ PLVECSubtitleConfigViewDelegate
         _onlineListButton.layer.cornerRadius = 12;
     }
     return _onlineListButton;
+}
+
+- (PLVECLiveStatusView *)liveStatusView {
+    if (!_liveStatusView) {
+        _liveStatusView = [[PLVECLiveStatusView alloc] init];
+        _liveStatusView.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.4);
+        _liveStatusView.layer.masksToBounds = YES;
+        _liveStatusView.layer.cornerRadius = PLVECLiveInfoItemHeight / 2.0;
+        [_liveStatusView updateStatusText:PLVLocalizedString(@"暂无直播") showsLiveSignal:NO];
+    }
+    return _liveStatusView;
+}
+
+- (UILabel *)liveCountdownLabel {
+    if (!_liveCountdownLabel) {
+        _liveCountdownLabel = [[UILabel alloc] init];
+        _liveCountdownLabel.backgroundColor = PLV_UIColorFromRGBA(@"#000000", 0.55);
+        _liveCountdownLabel.font = [UIFont monospacedDigitSystemFontOfSize:16.0 weight:UIFontWeightSemibold];
+        _liveCountdownLabel.adjustsFontSizeToFitWidth = YES;
+        _liveCountdownLabel.minimumScaleFactor = 0.75;
+        _liveCountdownLabel.textAlignment = NSTextAlignmentCenter;
+        _liveCountdownLabel.textColor = [UIColor whiteColor];
+        _liveCountdownLabel.layer.masksToBounds = YES;
+        _liveCountdownLabel.layer.cornerRadius = 19.0;
+        _liveCountdownLabel.hidden = YES;
+    }
+    return _liveCountdownLabel;
 }
 
 - (PLVECMoreView *)moreView {
@@ -567,6 +618,7 @@ PLVECSubtitleConfigViewDelegate
 #pragma mark - Public
 
 - (void)destroy {
+    [self stopLiveCountdownTimer];
     if (self.type == PLVECHomePageType_Live) {
         [_likeButtonView invalidTimer];
         [[PLVECChatroomViewModel sharedViewModel] clear];
@@ -576,9 +628,60 @@ PLVECSubtitleConfigViewDelegate
 
 - (void)showShoppingCart:(BOOL)show {
     self.shoppingCartButton.hidden = !show;
+    if (show) {
+        [self restoreCurrentPushingProductCardIfNeeded];
+    }
+}
+
+/// 进房恢复当前推送商品卡片（对齐 Android：push/rule → 详情 → 伪 PRODUCT_MESSAGE status=9，经 Socket 分发给原生小卡与互动 H5 大卡）
+- (void)restoreCurrentPushingProductCardIfNeeded {
+    if (self.type != PLVECHomePageType_Live ||
+        self.hasRequestedProductPushRestore ||
+        self.shoppingCartButton.isHidden) {
+        return;
+    }
+    self.hasRequestedProductPushRestore = YES;
+    self.productPushRestoreCancelled = NO;
+    
+    NSUInteger channelId = (NSUInteger)[PLVRoomDataManager sharedManager].roomData.channelId.integerValue;
+    if (channelId == 0) {
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestCurrentPushingProductMessageWithChannelId:channelId completion:^(NSDictionary * _Nullable productMessageDict) {
+        // 对齐 Android：等互动 H5 加载后再分发，大卡片依赖 Interact WebView 收 PRODUCT_MESSAGE
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf ||
+                strongSelf.productPushRestoreCancelled ||
+                strongSelf.shoppingCartButton.isHidden ||
+                ![PLVFdUtil checkDictionaryUseable:productMessageDict]) {
+                return;
+            }
+            NSDictionary *content = PLV_SafeDictionaryForDictKey(productMessageDict, @"content");
+            NSUInteger productId = PLV_SafeIntegerForDictKey(content, @"productId");
+            NSString *pushRule = PLV_SafeStringForDictKey(content, @"productPushRule");
+            BOOL smallCardShowing = (strongSelf.pushView.superview && strongSelf.pushView.alpha == 1);
+            // 同商品小卡已展示则跳过；大卡片仍需分发给 H5
+            if ([pushRule isEqualToString:@"smallCard"] &&
+                smallCardShowing &&
+                strongSelf.pushView.model &&
+                strongSelf.pushView.model.productId == productId) {
+                return;
+            }
+            NSString *jsonString = [PLVDataUtil jsonStringWithJSONObject:productMessageDict];
+            [[PLVSocketManager sharedManager] dispatchReceiveMessage:@"PRODUCT_MESSAGE"
+                                                                json:jsonString ?: @"{}"
+                                                          jsonObject:productMessageDict];
+        });
+    } failure:^(NSError *error) {
+        // 进房恢复失败不影响正常 SOCKET 推送流程
+    }];
 }
 
 - (void)showMoreView {
+    self.networkSwitchMoreMode = NO;
     if (self.type == PLVECHomePageType_Live) {
         [self.moreView reloadData];
         self.moreView.hidden = NO;
@@ -586,6 +689,19 @@ PLVECSubtitleConfigViewDelegate
         [self.moreView reloadData];
         self.moreView.hidden = NO;
     }
+}
+
+- (void)showLineSwitchView {
+    // 卡顿提示点「线路」：更多面板只展示线路 + 清晰度
+    self.switchView.hidden = YES;
+    self.networkSwitchMoreMode = YES;
+    if ([self networkSwitchMoreViewItems].count == 0) {
+        self.networkSwitchMoreMode = NO;
+        [self showMoreView];
+        return;
+    }
+    [self.moreView reloadData];
+    self.moreView.hidden = NO;
 }
 
 - (void)updateChannelInfo:(NSString *)publisher coverImage:(NSString *)coverImage {
@@ -601,6 +717,66 @@ PLVECSubtitleConfigViewDelegate
 
 - (void)updateRoomInfoCount:(NSUInteger)roomInfoCount {
     self.liveRoomInfoView.pageViewLB.text = [NSString stringWithFormat:@"%lu",(unsigned long)roomInfoCount];
+}
+
+- (void)updateLiveStatusWithWatchStatus:(NSString *)watchStatus {
+    if (self.type != PLVECHomePageType_Live) {
+        return;
+    }
+    self.watchStatus = watchStatus;
+    BOOL waitingToStart = [watchStatus isEqualToString:PLVECLiveWatchStatusWaiting] ||
+                          [watchStatus isEqualToString:PLVECLiveWatchStatusUnStart];
+    if (!waitingToStart) {
+        [self stopLiveCountdownTimer];
+    }
+    if (self.receivedLiveStreamState) {
+        [self refreshLiveStatusWithStreamState:self.currentLiveStreamState];
+    } else {
+        NSString *statusText = [self liveStatusTextWithWatchStatus:watchStatus];
+        [self.liveStatusView updateStatusText:statusText showsLiveSignal:[watchStatus isEqualToString:PLVECLiveWatchStatusLive]];
+    }
+}
+
+- (void)updateLiveStatusWithStreamState:(PLVChannelLiveStreamState)streamState {
+    if (self.type != PLVECHomePageType_Live || streamState == PLVChannelLiveStreamState_Unknown) {
+        return;
+    }
+    if (self.receivedLiveStreamState && self.currentLiveStreamState == streamState) {
+        return;
+    }
+
+    self.currentLiveStreamState = streamState;
+    self.receivedLiveStreamState = YES;
+    if (streamState == PLVChannelLiveStreamState_Live ||
+        streamState == PLVChannelLiveStreamState_Stop) {
+        self.hasEnteredLiveStream = YES;
+    }
+    [self refreshLiveStatusWithStreamState:streamState];
+}
+
+- (void)updateLiveCountdownWithStartTime:(NSString *)startTime {
+    if (self.type != PLVECHomePageType_Live) {
+        return;
+    }
+
+    [self stopLiveCountdownTimer];
+    PLVChannelLiveStreamState liveState = [PLVRoomDataManager sharedManager].roomData.liveState;
+    if (liveState == PLVChannelLiveStreamState_Live || liveState == PLVChannelLiveStreamState_Stop) {
+        return;
+    }
+    self.liveStartDate = [self dateWithStartTimeString:startTime];
+    if (self.liveStartDate && [self.liveStartDate timeIntervalSinceDate:[self currentServerDate]] > 0) {
+        self.hasEnteredLiveStream = NO;
+    }
+    [self refreshLiveCountdown:nil];
+    if (!self.liveCountdownLabel.hidden) {
+        self.liveCountdownTimer = [NSTimer timerWithTimeInterval:1.0
+                                                         target:[PLVFWeakProxy proxyWithTarget:self]
+                                                       selector:@selector(refreshLiveCountdown:)
+                                                       userInfo:nil
+                                                        repeats:YES];
+        [[NSRunLoop mainRunLoop] addTimer:self.liveCountdownTimer forMode:NSRunLoopCommonModes];
+    }
 }
 
 - (void)updateLikeCount:(NSUInteger)likeCount {
@@ -935,6 +1111,116 @@ PLVECSubtitleConfigViewDelegate
 
 #pragma mark - Private
 
+- (void)refreshLiveStatusWithStreamState:(PLVChannelLiveStreamState)streamState {
+    if (streamState == PLVChannelLiveStreamState_Live) {
+        [self stopLiveCountdownTimer];
+        [self.liveStatusView updateStatusText:PLVLocalizedString(@"直播中") showsLiveSignal:YES];
+    } else if (streamState == PLVChannelLiveStreamState_Stop) {
+        [self stopLiveCountdownTimer];
+        [self.liveStatusView updateStatusText:PLVLocalizedString(@"直播暂停") showsLiveSignal:NO];
+    } else {
+        BOOL beforeStartTime = self.liveStartDate && [self.liveStartDate timeIntervalSinceDate:[self currentServerDate]] > 0;
+        BOOL waitingStatus = [self.watchStatus isEqualToString:PLVECLiveWatchStatusWaiting] ||
+                             [self.watchStatus isEqualToString:PLVECLiveWatchStatusUnStart];
+        BOOL waitingToStart = !self.hasEnteredLiveStream && (beforeStartTime || waitingStatus);
+        NSString *statusText = waitingToStart ? [self liveStatusTextWithWatchStatus:self.watchStatus] : PLVLocalizedString(@"已结束");
+        [self.liveStatusView updateStatusText:statusText showsLiveSignal:NO];
+    }
+}
+
+- (NSString *)liveStatusTextWithWatchStatus:(NSString *)watchStatus {
+    if ([watchStatus isEqualToString:PLVECLiveWatchStatusLive]) {
+        return PLVLocalizedString(@"直播中");
+    } else if ([watchStatus isEqualToString:PLVECLiveWatchStatusWaiting]) {
+        return PLVLocalizedString(@"等待中");
+    } else if ([watchStatus isEqualToString:PLVECLiveWatchStatusUnStart]) {
+        return PLVLocalizedString(@"未开始");
+    } else if ([watchStatus isEqualToString:PLVECLiveWatchStatusEnd] ||
+               [watchStatus isEqualToString:PLVECLiveWatchStatusPlayback]) {
+        return PLVLocalizedString(@"已结束");
+    } else if ([watchStatus isEqualToString:PLVECLiveWatchStatusStop]) {
+        return PLVLocalizedString(@"直播暂停");
+    }
+    return PLVLocalizedString(@"暂无直播");
+}
+
+- (NSDate *)dateWithStartTimeString:(NSString *)startTimeString {
+    if (![PLVFdUtil checkStringUseable:startTimeString]) {
+        return nil;
+    }
+
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.locale = [[NSLocale alloc] initWithLocaleIdentifier:@"en_US_POSIX"];
+    formatter.lenient = NO;
+    NSArray<NSString *> *dateFormats = @[@"yyyy/MM/dd HH:mm:ss", @"yyyy-MM-dd HH:mm:ss", @"yyyy-MM-dd'T'HH:mm:ssXXX"];
+    for (NSString *dateFormat in dateFormats) {
+        formatter.dateFormat = dateFormat;
+        NSDate *date = [formatter dateFromString:startTimeString];
+        if (date) {
+            return date;
+        }
+    }
+    return nil;
+}
+
+- (NSDate *)currentServerDate {
+    NSTimeInterval serverTimeOffset = [PLVRoomDataManager sharedManager].roomData.serverTimeOffsetMs / 1000.0;
+    return [NSDate dateWithTimeIntervalSinceNow:serverTimeOffset];
+}
+
+- (void)refreshLiveCountdown:(NSTimer *)timer {
+    NSTimeInterval remainingTime = [self.liveStartDate timeIntervalSinceDate:[self currentServerDate]];
+    if (!self.liveStartDate || remainingTime <= 0) {
+        [self stopLiveCountdownTimer];
+        return;
+    }
+
+    BOOL countdownWasHidden = self.liveCountdownLabel.hidden;
+    CGFloat previousTextWidth = [self.liveCountdownLabel sizeThatFits:CGSizeMake(MAXFLOAT, 38.0)].width;
+    NSInteger totalSeconds = MAX(1, (NSInteger)floor(remainingTime));
+    NSInteger days = totalSeconds / (24 * 60 * 60);
+    NSInteger hours = totalSeconds / (60 * 60) % 24;
+    NSInteger minutes = totalSeconds / 60 % 60;
+    NSInteger seconds = totalSeconds % 60;
+    NSString *daysString = [NSString stringWithFormat:@"%02ld", (long)days];
+    NSString *hoursString = [NSString stringWithFormat:@"%02ld", (long)hours];
+    NSString *minutesString = [NSString stringWithFormat:@"%02ld", (long)minutes];
+    NSString *secondsString = [NSString stringWithFormat:@"%02ld", (long)seconds];
+    if (days > 0) {
+        self.liveCountdownLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"直播倒计时 %@ 天 %@ 时 %@ 分 %@ 秒"), daysString, hoursString, minutesString, secondsString];
+    } else {
+        self.liveCountdownLabel.text = [NSString stringWithFormat:PLVLocalizedString(@"直播倒计时 %@ 时 %@ 分 %@ 秒"), hoursString, minutesString, secondsString];
+    }
+    self.liveCountdownLabel.hidden = NO;
+    CGFloat currentTextWidth = [self.liveCountdownLabel sizeThatFits:CGSizeMake(MAXFLOAT, 38.0)].width;
+    if (countdownWasHidden || fabs(currentTextWidth - previousTextWidth) > 0.5) {
+        [self setNeedsLayout];
+    }
+}
+
+- (void)stopLiveCountdownTimer {
+    BOOL countdownWasVisible = !self.liveCountdownLabel.hidden;
+    [self.liveCountdownTimer invalidate];
+    self.liveCountdownTimer = nil;
+    self.liveStartDate = nil;
+    self.liveCountdownLabel.hidden = YES;
+    self.liveCountdownLabel.text = nil;
+    if (countdownWasVisible) {
+        [self setNeedsLayout];
+    }
+}
+
+- (CGFloat)liveInfoAreaBottom {
+    if (!self.liveCountdownLabel.hidden) {
+        return CGRectGetMaxY(self.liveCountdownLabel.frame);
+    }
+    CGFloat statusRowBottom = CGRectGetMaxY(self.liveStatusView.frame);
+    if (!self.triviaCardButton.hidden) {
+        statusRowBottom = MAX(statusRowBottom, CGRectGetMaxY(self.triviaCardButton.frame));
+    }
+    return statusRowBottom;
+}
+
 - (void)updateCodeRateSwitchViewHiddenState {
     BOOL hidden = self.audioMode || (!self.codeRateItems || [self.codeRateItems count] == 0);
     if (hidden == self.hiddenCodeRateSwitch) {
@@ -976,6 +1262,33 @@ PLVECSubtitleConfigViewDelegate
     if (self.type == PLVECHomePageType_Live) {
         CGFloat bottomMargin = [PLVECUtils sharedUtils].isLandscape ? 0 : P_SafeAreaBottomEdgeInsets();
         CGFloat rightMargin = [PLVECUtils sharedUtils].isLandscape ? 15 + P_SafeAreaRightEdgeInsets() : 15 ;
+        // 左上角直播信息
+        CGFloat liveInfoOriginX = CGRectGetMinX(self.liveRoomInfoView.frame);
+        CGFloat statusOriginY = CGRectGetMaxY(self.liveRoomInfoView.frame) + 12.0;
+        self.liveStatusView.frame = CGRectMake(liveInfoOriginX,
+                                               statusOriginY,
+                                               PLVECLiveInfoItemWidth,
+                                               PLVECLiveInfoItemHeight);
+
+        if (!self.triviaCardButton.hidden) {
+            self.triviaCardButton.frame = CGRectMake(CGRectGetMaxX(self.liveStatusView.frame) + 8.0,
+                                                     statusOriginY,
+                                                     PLVECLiveInfoItemWidth,
+                                                     PLVECLiveInfoItemHeight);
+        } else {
+            self.triviaCardButton.frame = CGRectZero;
+        }
+
+        if (!self.liveCountdownLabel.hidden) {
+            CGFloat countdownMaxWidth = MAX(0, CGRectGetWidth(self.bounds) - liveInfoOriginX - 15.0);
+            CGFloat countdownWidth = [self.liveCountdownLabel sizeThatFits:CGSizeMake(MAXFLOAT, 38.0)].width + 24.0;
+            self.liveCountdownLabel.frame = CGRectMake(liveInfoOriginX,
+                                                       CGRectGetMaxY(self.liveStatusView.frame) + 10.0,
+                                                       MIN(countdownWidth, countdownMaxWidth),
+                                                       38.0);
+        } else {
+            self.liveCountdownLabel.frame = CGRectZero;
+        }
         // 聊天室布局
         self.chatroomView.frame = CGRectMake(0, 0, CGRectGetWidth(self.bounds), CGRectGetHeight(self.bounds)-bottomMargin);
         // 底部按钮
@@ -1027,11 +1340,11 @@ PLVECSubtitleConfigViewDelegate
                 bulletinView = (PLVECBulletinView *)subview;
             }
         }
-        CGFloat questionnaireButtonOriginY = bulletinView ? CGRectGetMaxY(bulletinView.frame) + 10 : CGRectGetMaxY(self.liveRoomInfoView.frame) + 15;
+        if (bulletinView) {
+            bulletinView.frame = CGRectMake(15, [self liveInfoAreaBottom] + 15.0, CGRectGetWidth(self.bounds) - 30.0, 24.0);
+        }
+        CGFloat questionnaireButtonOriginY = bulletinView ? CGRectGetMaxY(bulletinView.frame) + 10 : [self liveInfoAreaBottom] + 15.0;
         self.questionnaireButton.frame = CGRectMake(15, questionnaireButtonOriginY, 68, 28);
-        // 答题卡按钮：问卷显示时在其右侧，否则在左侧
-        CGFloat triviaCardX = self.questionnaireButton.hidden ? 15 : (15 + 68 + 8);
-        self.triviaCardButton.frame = CGRectMake(triviaCardX, questionnaireButtonOriginY, 68, 28);
         CGFloat padding = 12.0;
         self.pushView.frame = CGRectMake((CGRectGetWidth(self.frame) - padding - 104), CGRectGetMinY(self.shoppingCartButton.frame) - 204 - padding, 104, 204);
     } else if (self.type == PLVECHomePageType_Playback) {
@@ -1080,11 +1393,16 @@ PLVECSubtitleConfigViewDelegate
         CGFloat viewH = 266;
         self.pipPopView.frame = CGRectMake(0, self.bounds.size.height - viewH, self.bounds.size.width, viewH);
     }
-    
-    self.pinMsgPopupView.frame = CGRectMake((self.bounds.size.width - 320)/2, (fullScreen ? 47 : 80), 320, 66);
 
     CGFloat onlineListButtonWidth = [self.onlineListButton.titleLabel sizeThatFits:CGSizeMake(MAXFLOAT,23)].width + 16;
     self.onlineListButton.frame = fullScreen ? CGRectMake(CGRectGetWidth(self.bounds) - onlineListButtonWidth - 40, 15, onlineListButtonWidth, 23) : CGRectMake(CGRectGetWidth(self.bounds) - onlineListButtonWidth - 63, 15, onlineListButtonWidth, 23);
+    
+    CGFloat pinMessageOriginY = fullScreen ? 47.0 : 80.0;
+    if (self.type == PLVECHomePageType_Live) {
+        pinMessageOriginY = MAX(pinMessageOriginY, [self liveInfoAreaBottom] + 10.0);
+    }
+    CGFloat pinMessageWidth = MIN(320.0, CGRectGetWidth(self.bounds) - 30.0);
+    self.pinMsgPopupView.frame = CGRectMake((CGRectGetWidth(self.bounds) - pinMessageWidth) / 2.0, pinMessageOriginY, pinMessageWidth, 66.0);
 }
 
 - (void)updateLikeViewAnimationLeftShift {
@@ -1290,9 +1608,10 @@ PLVECSubtitleConfigViewDelegate
 - (void)bulletinEvent:(NSDictionary *)jsonDict {
     NSString *content = PLV_SafeStringForDictKey(jsonDict, @"content");
     PLVECBulletinView *bulletinView = [[PLVECBulletinView alloc] init];
-    bulletinView.frame = CGRectMake(15, CGRectGetMaxY(self.liveRoomInfoView.frame)+15, CGRectGetWidth(self.bounds)-30, 24);
+    bulletinView.frame = CGRectMake(15, [self liveInfoAreaBottom] + 15.0, CGRectGetWidth(self.bounds) - 30.0, 24.0);
     [bulletinView showBulletinView:content duration:5.0];
     [self addSubview:bulletinView];
+    [self setNeedsLayout];
     
     if ([self.delegate respondsToSelector: @selector(homePageView:receiveBulletinMessage:open:)]) {
         [self.delegate homePageView:self receiveBulletinMessage:content open:1];
@@ -1336,7 +1655,8 @@ PLVECSubtitleConfigViewDelegate
         NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         NSString *enabledString = PLV_SafeStringForDictKey(contentDict, @"enabled");
         BOOL enabled = [enabledString isEqualToString:@"N"]?NO:YES;
-        if (!enabled && _pushView) { // 收到 关闭商品列表 消息时进行处理
+        if (!enabled) { // 收到 关闭商品列表 消息时进行处理
+            self.productPushRestoreCancelled = YES;
             [ _pushView hide];
         }
         [self showShoppingCart:enabled];
@@ -1345,6 +1665,8 @@ PLVECSubtitleConfigViewDelegate
     }
     
     if (9 == status) {
+        // 实时推送优先，防止在途恢复响应覆盖新商品或恢复已切换的卡片样式。
+        self.productPushRestoreCancelled = YES;
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
         if (![PLVFdUtil checkStringUseable:model.productPushRule]) {
@@ -1365,6 +1687,7 @@ PLVECSubtitleConfigViewDelegate
             [_pushView hide];
         }
     } else if (status == 3 || status == 2 || status == 11) { // 收到 删除/下架/取消推送商品 消息时进行处理
+        self.productPushRestoreCancelled = YES;
         [ _pushView hide];
     } else if (status == 5) { // 收到 商品信息变动 消息时进行处理
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
@@ -1581,7 +1904,30 @@ PLVECSubtitleConfigViewDelegate
 
 #pragma mark PLVECMoreViewDelegate
 
+- (NSArray<PLVECMoreViewItem *> *)networkSwitchMoreViewItems {
+    NSMutableArray *muArray = [[NSMutableArray alloc] init];
+    if (self.type != PLVECHomePageType_Live || self.noDelayWatchMode) {
+        return [muArray copy];
+    }
+    if (self.lineCount > 1) {
+        PLVECMoreViewItem *routeItem = [[PLVECMoreViewItem alloc] init];
+        routeItem.title = PLVLocalizedString(PLVECHomePageView_Data_RouteItemTitle);
+        routeItem.iconImageName = @"plv_lineSwitch_btn";
+        [muArray addObject:routeItem];
+    }
+    if (!self.hiddenCodeRateSwitch) {
+        PLVECMoreViewItem *qualityItem = [[PLVECMoreViewItem alloc] init];
+        qualityItem.title = PLVLocalizedString(PLVECHomePageView_Data_QualityItemTitle);
+        qualityItem.iconImageName = @"plv_codeRateSwitch_btn";
+        [muArray addObject:qualityItem];
+    }
+    return [muArray copy];
+}
+
 - (NSArray<PLVECMoreViewItem *> *)dataSourceOfMoreView:(PLVECMoreView *)moreView {
+    if (self.networkSwitchMoreMode) {
+        return [self networkSwitchMoreViewItems];
+    }
     NSMutableArray *muArray = [[NSMutableArray alloc] initWithCapacity:3];
     
     BOOL inLinkMic = YES;
@@ -1724,6 +2070,7 @@ PLVECSubtitleConfigViewDelegate
                [title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_QualityItemTitle)] ||
                [title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_DelayModeItemTitle)] ) {
         moreView.hidden = YES;
+        self.networkSwitchMoreMode = NO;
         PLVECSwitchViewType switchViewType = PLVECSwitchViewType_Unknown;
         if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_RouteItemTitle)]) {
             switchViewType = PLVECSwitchViewType_Line;

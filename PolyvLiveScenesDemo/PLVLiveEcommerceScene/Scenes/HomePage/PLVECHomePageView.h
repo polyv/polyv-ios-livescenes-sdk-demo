@@ -172,11 +172,23 @@ updateSubtitleOriginal:(PLVPlaybackSubtitleModel * _Nullable)originalSubtitle
 
 - (void)showMoreView;
 
+/// 直接展示线路/清晰度切换入口（不经过完整更多菜单）
+- (void)showLineSwitchView;
+
 - (void)updateChannelInfo:(NSString *)publisher coverImage:(NSString *)coverImage;
 
 - (void)updateRoomInfoHidden:(BOOL)hidden;
 
 - (void)updateRoomInfoCount:(NSUInteger)roomInfoCount;
+
+/// 使用频道详情返回的观看状态更新直播间状态
+- (void)updateLiveStatusWithWatchStatus:(NSString *)watchStatus;
+
+/// 使用实时流状态更新直播间状态
+- (void)updateLiveStatusWithStreamState:(PLVChannelLiveStreamState)streamState;
+
+/// 使用频道详情返回的开播时间更新直播倒计时
+- (void)updateLiveCountdownWithStartTime:(NSString *)startTime;
 
 - (void)updateLikeCount:(NSUInteger)likeCount;
 

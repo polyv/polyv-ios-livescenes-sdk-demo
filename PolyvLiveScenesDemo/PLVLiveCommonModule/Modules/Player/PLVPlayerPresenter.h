@@ -10,7 +10,7 @@
 
 #import <PLVLiveScenesSDK/PLVLiveScenesSDK.h>
 #import "PLVAdvertView.h"
-#import "PLVDefaultPageView.h"
+#import "PLVPlayerTipBannerView.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -148,8 +148,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// LOGO视图（当前频道存在播放器LOGO时显示）
 @property (nonatomic, readonly) UIImageView *logoImageView;
 
-/// 缺省页视图（当前频道播放器报错时显示）
-@property (nonatomic, readonly) PLVDefaultPageView *defaultPageView;
+/// 轻量提示横幅（播放器报错/网络不稳定时显示）
+@property (nonatomic, readonly) PLVPlayerTipBannerView *tipBannerView;
 
 /// 广告视图（当前频道存在片头广告或暂停广告时显示）
 @property (nonatomic, readonly) PLVAdvertView *advertView;

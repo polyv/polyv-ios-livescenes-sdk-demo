@@ -30,6 +30,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)moreInfoSheetDidTapLuckyBagButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
+- (void)moreInfoSheetDidTapAnswerCardButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
+- (void)moreInfoSheetDidTapQuickAnswerButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
+
 - (void)moreInfoSheetDidTapAIMattingButton:(PLVLSMoreInfoSheet *)moreInfoSheet;
 
 - (void)moreInfoSheetDidTapNoiseCancellationModeButton:(PLVLSMoreInfoSheet *)moreInfoSheet;

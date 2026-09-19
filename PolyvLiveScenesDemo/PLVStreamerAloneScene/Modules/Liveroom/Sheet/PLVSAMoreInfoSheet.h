@@ -71,6 +71,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 福袋按钮 触发回调
 - (void)moreInfoSheetDidTapLuckyBagButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 答题卡按钮 触发回调
+- (void)moreInfoSheetDidTapAnswerCardButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
+/// 点击 快速问答按钮 触发回调
+- (void)moreInfoSheetDidTapQuickAnswerButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 /// 点击 贴纸按钮 触发回调
 - (void)moreInfoSheetDidTapStickerButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 

@@ -1228,6 +1228,14 @@ PLVSAAICardViewDelegate
     [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_LUCKY_BAG"];
 }
 
+- (void)moreInfoSheetDidTapAnswerCardButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_ANSWER_CARD"];
+}
+
+- (void)moreInfoSheetDidTapQuickAnswerButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self.popoverView.luckyBagInteractView openInteractViewWithEventName:@"SHOW_QUICK_ANSWER"];
+}
+
 /// 点击 贴纸按钮 触发回调
 - (void)moreInfoSheetDidTapStickerButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapStickerButton:)]) {

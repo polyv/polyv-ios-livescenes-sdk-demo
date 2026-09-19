@@ -15,6 +15,7 @@
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
 #import "PLVLCImageMessageCell.h"
+#import "PLVLCLocalSystemMessageCell.h"
 #import <MJRefresh/MJRefresh.h>
 
 @interface PLVLCQuizViewController ()<
@@ -270,6 +271,14 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVLCLocalSystemMessageCell isModelValid:model]) {
+        static NSString *localSystemMessageCellIdentify = @"PLVLCQuizLocalSystemMessageCell";
+        PLVLCLocalSystemMessageCell *cell = (PLVLCLocalSystemMessageCell *)[tableView dequeueReusableCellWithIdentifier:localSystemMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLocalSystemMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:localSystemMessageCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -293,6 +302,8 @@ UITableViewDataSource
         cellHeight = [PLVLCImageMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVLCQuitSpeakMessageCell isModelValid:model]) {
         cellHeight = [PLVLCQuitSpeakMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVLCLocalSystemMessageCell isModelValid:model]) {
+        cellHeight = [PLVLCLocalSystemMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else {
         cellHeight = 0.0;
     }

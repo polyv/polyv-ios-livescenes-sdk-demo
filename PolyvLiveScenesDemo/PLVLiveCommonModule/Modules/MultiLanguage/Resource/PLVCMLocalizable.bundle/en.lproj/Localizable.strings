@@ -186,6 +186,10 @@
 
 "PLVCMVideoLoadFailedRefreshAndSwitchLineTips" = "The video is loading slowly, please switch the line or exit and re-enter";
 
+"PLVCMNetworkUnstableTryRefreshTips" = "Unstable network, please try %@";
+
+"PLVCMNetworkUnstableTrySwitchLineTips" = "Unstable network, please try switching %@";
+
 "视频加载缓慢，请刷新或退出重进" = "The video is loading slowly, please refresh or exit and re-enter";
 
 "视频播放失败，请尝试手动刷新，或退出重新登录" = "Video playback failed, please try to refresh manually, or log out and log in again";
@@ -303,6 +307,8 @@
 "图片表情资源加载失败" = "Image emoticon resource failed to load";
 "您的聊天信息中含有违规词：%@" = "Your chat message contains illegal words: %@";
 "您的聊天消息中含有违规词语，已全部作***代替处理" = "Your chat messages contain illegal words and all have been replaced by ***";
+"系统消息" = "System message";
+"消息未发送，请修改后重试" = "Message not sent. Please edit and try again.";
 
 "支付宝口令" = "Alipay password";
 "口令红包即将来袭" = "Password red envelope coming soon";
@@ -315,6 +321,7 @@
 "点击领取" = "Click to receive";
 "问卷" = "Questionnaire";
 "答题卡" = "Trivia Card";
+"快速问答" = "Quick Answer";
 "福利抽奖即将开始" = "The welfare lottery is about to begin";
 
 /**  直播间  */
@@ -797,3 +804,7 @@
 "自定义敏感词" = "Custom sensitive words";
 "未读" = "Unread";
 "向下滑动查看更多" = "Swipe down to view more";
+"不同意" = "Disagree";
+"同意" = "Agree";
+"为了您有更好的开播体验，请同意协议后再直播" = "For a better streaming experience, please agree to the terms before starting the live stream";
+"返回" = "Back";

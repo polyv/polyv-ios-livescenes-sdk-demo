@@ -78,6 +78,8 @@ PLVLCDocumentPaintModeViewDelegate
 @property (nonatomic, assign) BOOL isInPaintMode; // 当前是否处于画笔模式
 @property (nonatomic, assign) BOOL castClientStartPlaying; // 投屏当前是否播放中
 @property (nonatomic, assign) BOOL preventScreenCapturing; // 当前是否处于防录屏状态
+@property (nonatomic, assign) BOOL pendingShowRouteLineOnly; // 下次打开更多面板时仅展示线路选项
+@property (nonatomic, assign) BOOL needRestoreMoreViewAfterRouteLineOnly; // 线路-only 面板关闭后需恢复完整更多数据
 
 #pragma mark 模块
 @property (nonatomic, strong) PLVPlayerPresenter * playerPresenter; // 播放器 功能模块
@@ -781,7 +783,53 @@ PLVLCDocumentPaintModeViewDelegate
     return nil;
 }
 
+- (PLVLCMediaMoreModel *)buildQualityMoreModel {
+    if (self.noDelayWatchMode) {
+        return nil;
+    }
+    NSArray<NSString *> *codeRateOptions = self.playerPresenter.codeRateNamesOptions;
+    if (![PLVFdUtil checkArrayUseable:codeRateOptions]) {
+        return nil;
+    }
+    PLVLCMediaMoreModel *qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_QualityOptionTitle)
+                                                                optionItemsArray:codeRateOptions];
+    [qualityModel setSelectedIndexWithOptionItemString:self.playerPresenter.currentCodeRate];
+    return qualityModel;
+}
+
+- (PLVLCMediaMoreModel *)buildRouteLineMoreModel {
+    if (self.noDelayWatchMode || self.playerPresenter.lineNum <= 0) {
+        return nil;
+    }
+    NSMutableArray *routeArray = [[NSMutableArray alloc] init];
+    for (int i = 1; i <= self.playerPresenter.lineNum; i++) {
+        NSString *route = [NSString stringWithFormat:PLVLocalizedString(@"线路%d"), i];
+        [routeArray addObject:route];
+    }
+    return [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_RouteOptionTitle)
+                                    optionItemsArray:routeArray
+                                       selectedIndex:self.playerPresenter.currentLineIndex];
+}
+
+- (void)refreshMoreViewWithRouteLineOnly {
+    // 卡顿提示点「线路」时：展示清晰度 + 线路，便于网络相关切换
+    NSMutableArray *modelArray = [[NSMutableArray alloc] init];
+    PLVLCMediaMoreModel *qualityModel = [self buildQualityMoreModel];
+    PLVLCMediaMoreModel *routeModel = [self buildRouteLineMoreModel];
+    if (qualityModel) { [modelArray addObject:qualityModel]; }
+    if (routeModel) { [modelArray addObject:routeModel]; }
+    
+    if (modelArray.count > 0) {
+        [self.moreView refreshTableViewWithDataArray:modelArray];
+        [self.moreView refreshTableView];
+    } else {
+        // 无可用清晰度/线路时回退到完整更多面板
+        [self updateMoreviewWithData];
+    }
+}
+
 - (void)updateMoreviewWithData {
+    self.needRestoreMoreViewAfterRouteLineOnly = NO;
     // 音视频切换选项数据
     PLVLCMediaMoreModel *modeModel = nil;
     // 视频质量选项数据
@@ -801,15 +849,8 @@ PLVLCDocumentPaintModeViewDelegate
         NSArray<NSString *> *optionItemsArray = self.isOnlyAudio ? @[PLVLocalizedString(@"仅听声音")] : @[PLVLocalizedString(@"播放画面"),PLVLocalizedString(@"仅听声音")];
         modeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_ModeOptionTitle) optionItemsArray:optionItemsArray selectedIndex:self.playerPresenter.audioMode];
         
-        qualityModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_QualityOptionTitle) optionItemsArray:self.playerPresenter.codeRateNamesOptions];
-        [qualityModel setSelectedIndexWithOptionItemString:self.playerPresenter.currentCodeRate];
-        
-        NSMutableArray * routeArray = [[NSMutableArray alloc] init];
-        for (int i = 1; i <= self.playerPresenter.lineNum; i++) {
-            NSString * route = [NSString stringWithFormat:PLVLocalizedString(@"线路%d"),i];
-            [routeArray addObject:route];
-        }
-        routeModel = [PLVLCMediaMoreModel modelWithOptionTitle:PLVLocalizedString(PLVLCMediaAreaView_Data_RouteOptionTitle) optionItemsArray:routeArray selectedIndex:self.playerPresenter.currentLineIndex];
+        qualityModel = [self buildQualityMoreModel];
+        routeModel = [self buildRouteLineMoreModel];
     }
     
     PLVLCMediaMoreModel *realTimeSubtitleModel = nil;
@@ -1401,6 +1442,14 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 - (void)plvLCBasePlayerSkinViewMoreButtonClicked:(PLVLCBasePlayerSkinView *)skinView{
+    if (self.pendingShowRouteLineOnly) {
+        self.pendingShowRouteLineOnly = NO;
+        self.needRestoreMoreViewAfterRouteLineOnly = YES;
+        [self refreshMoreViewWithRouteLineOnly];
+    } else if (self.needRestoreMoreViewAfterRouteLineOnly) {
+        self.needRestoreMoreViewAfterRouteLineOnly = NO;
+        [self updateMoreviewWithData];
+    }
     [self.moreView showMoreViewOnSuperview:skinView.superview];
 }
 
@@ -1485,6 +1534,15 @@ PLVLCDocumentPaintModeViewDelegate
     }
 }
 
+/// 询问是否有需要优先于皮肤控件处理触摸事件的外部视图
+- (BOOL)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView askPriorityHandlerForTouchPointOnSkinView:(CGPoint)point {
+    PLVPlayerTipBannerView *tipBannerView = self.playerPresenter.tipBannerView;
+    if (tipBannerView.hidden || tipBannerView.alpha <= 0 || !tipBannerView.userInteractionEnabled) {
+        return NO;
+    }
+    return [PLVLCBasePlayerSkinView checkView:tipBannerView.bannerView canBeHandlerForTouchPoint:point onSkinView:skinView];
+}
+
 /// 询问是否有其他视图处理此次触摸事件
 - (BOOL)plvLCBasePlayerSkinView:(PLVLCBasePlayerSkinView *)skinView askHandlerForTouchPointOnSkinView:(CGPoint)point{
     if ([PLVLCBasePlayerSkinView checkView:self.canvasView.playCanvasButton canBeHandlerForTouchPoint:point onSkinView:skinView]){
@@ -1495,10 +1553,6 @@ PLVLCDocumentPaintModeViewDelegate
     }else if ([PLVLCBasePlayerSkinView checkView:self.networkQualityPoorView canBeHandlerForTouchPoint:point onSkinView:skinView]){
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.logoImageView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
-        return YES;
-    }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.defaultPageView.refreshButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
-        return YES;
-    }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.defaultPageView.switchLineButton canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
     }else if ([PLVLCBasePlayerSkinView checkView:self.playerPresenter.advertView canBeHandlerForTouchPoint:point onSkinView:skinView]) {
         return YES;
@@ -1891,10 +1945,14 @@ PLVLCDocumentPaintModeViewDelegate
 }
 
 - (void)playerPresenterWannaSwitchLine:(PLVPlayerPresenter *)playerPresenter {
+    // 直接打开线路面板（更多视图仅含线路项），而非完整更多菜单
+    self.pendingShowRouteLineOnly = YES;
     BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     if (fullScreen) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(plvLCMediaAreaViewWannaLiveRoomSkinViewShowMoreView:)]) {
             [self.delegate plvLCMediaAreaViewWannaLiveRoomSkinViewShowMoreView:self];
+        } else {
+            self.pendingShowRouteLineOnly = NO;
         }
     } else {
         [self plvLCBasePlayerSkinViewMoreButtonClicked:self.skinView];

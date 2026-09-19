@@ -68,6 +68,26 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param word 触发的严禁词, work为nil时表示消息中的严禁词已用**代替后成功发出
 - (void)chatroomPresenter_receiveWarning:(NSString *)warning prohibitWord:(NSString * _Nullable )word;
 
+/// 本地发送的公聊消息已收到成功 ACK
+/// @param model ACK 对应的本地消息模型
+- (void)chatroomPresenter_didConfirmLocalMessage:(PLVChatModel *)model;
+
+/// 本地系统提示（不作为用户发言发送），用于严禁词禁发等场景
+/// @param message 系统提示文案
+/// @param model ACK 对应的本地消息模型
+- (void)chatroomPresenter_didReceiveLocalSystemMessage:(NSString *)message
+                                          replaceModel:(PLVChatModel *)model;
+
+/// 提问列表中的本地系统提示
+/// @param message 系统提示文案
+/// @param model ACK 对应的本地提问模型
+- (void)chatroomPresenter_didReceiveLocalQuestionSystemMessage:(NSString *)message
+                                                  replaceModel:(PLVChatModel *)model;
+
+/// 本地提问内容被服务端替换后触发
+/// @param model ACK 对应且内容已更新的本地提问模型
+- (void)chatroomPresenter_didUpdateLocalQuestionMessage:(PLVChatModel *)model;
+
 /// 发送图片违规时触发
 /// @param msgId 后端返回的消息ID
 - (void)chatroomPresenter_receiveImageWarningWithMsgId:(NSString *)msgId;

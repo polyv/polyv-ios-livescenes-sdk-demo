@@ -11,6 +11,7 @@
 #import "PLVECChatroomPlaybackViewModel.h"
 #import "PLVECChatCell.h"
 #import "PLVECAskQuestionChatCell.h"
+#import "PLVECLocalSystemMessageCell.h"
 #import "PLVECNewMessageView.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
@@ -277,6 +278,14 @@ PLVECChatroomViewModelProtocol
         }
         [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVECLocalSystemMessageCell isModelValid:model]) {
+        static NSString *localSystemMessageCellIdentify = @"PLVECAskLocalSystemMessageCell";
+        PLVECLocalSystemMessageCell *cell = (PLVECLocalSystemMessageCell *)[tableView dequeueReusableCellWithIdentifier:localSystemMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVECLocalSystemMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:localSystemMessageCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else {
         static NSString *cellIdentify = @"AQCellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -299,6 +308,8 @@ PLVECChatroomViewModelProtocol
         cellHeight = [PLVECChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else if ([PLVECAskQuestionChatCell isModelValid:model]) {
         cellHeight = [PLVECAskQuestionChatCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
+    } else if ([PLVECLocalSystemMessageCell isModelValid:model]) {
+        cellHeight = [PLVECLocalSystemMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
     } else {
         cellHeight = 0.0;
     }

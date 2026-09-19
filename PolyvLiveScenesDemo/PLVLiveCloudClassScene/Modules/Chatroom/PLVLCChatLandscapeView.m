@@ -19,6 +19,7 @@
 #import "PLVLCLandscapeQuoteCell.h"
 #import "PLVLCLandscapeFileCell.h"
 #import "PLVLCLandscapeCustomIntroductionMessageCell.h"
+#import "PLVLCLandscapeLocalSystemMessageCell.h"
 #import "PLVLCProductConversionEffectCell.h"
 #import "PLVLCChatroomPlaybackViewModel.h"
 #import "PLVLiveToast.h"
@@ -623,6 +624,14 @@ UITableViewDataSource
         }
         [cell updateWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
         return cell;
+    } else if ([PLVLCLandscapeLocalSystemMessageCell isModelValid:model]) {
+        static NSString *localSystemMessageCellIdentify = @"PLVLCLandscapeLocalSystemMessageCell";
+        PLVLCLandscapeLocalSystemMessageCell *cell = (PLVLCLandscapeLocalSystemMessageCell *)[tableView dequeueReusableCellWithIdentifier:localSystemMessageCellIdentify];
+        if (!cell) {
+            cell = [[PLVLCLandscapeLocalSystemMessageCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:localSystemMessageCellIdentify];
+        }
+        [cell updateWithModel:model cellWidth:self.tableView.frame.size.width];
+        return cell;
     } else {
         static NSString *cellIdentify = @"cellIdentify";
         UITableViewCell *cell = (UITableViewCell *)[tableView dequeueReusableCellWithIdentifier:cellIdentify];
@@ -703,6 +712,11 @@ UITableViewDataSource
     } else if ([PLVLCLandscapeCustomIntroductionMessageCell isModelValid:model]) {
         if (model.cellHeightForH == 0.0) {
             model.cellHeightForH = [PLVLCLandscapeCustomIntroductionMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];
+        }
+        cellHeight = model.cellHeightForH;
+    } else if ([PLVLCLandscapeLocalSystemMessageCell isModelValid:model]) {
+        if (model.cellHeightForH == 0.0) {
+            model.cellHeightForH = [PLVLCLandscapeLocalSystemMessageCell cellHeightWithModel:model cellWidth:self.tableView.frame.size.width];
         }
         cellHeight = model.cellHeightForH;
     }

@@ -45,6 +45,7 @@
 #import "PLVMultiLanguageManager.h"
 #import "PLVKeyMomentsListView.h"
 #import <PLVLiveScenesSDK/PLVLiveVideoAPI.h>
+#import <PLVFoundationSDK/PLVDataUtil.h>
 #import "PLVLiveRealTimeSubtitleHandler.h"
 #import "PLVLiveSubtitleTranslation.h"
 
@@ -132,6 +133,8 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 @property (nonatomic, strong) PLVRewardDisplayManager *rewardDisplayManager; // 礼物打赏动画管理器
 @property (nonatomic, strong) UIView *rewardSvgaView;                   // 礼物打赏动画父视图 （仅在横屏下有效）
 @property (nonatomic, strong) PLVCommodityPushSmallCardView *pushView;           // 商品推送视图
+@property (nonatomic, assign) BOOL hasRequestedProductPushRestore; // 是否已请求进房恢复商品推送卡片
+@property (nonatomic, assign) BOOL productPushRestoreCancelled; // 恢复请求是否已被实时推送或关闭消息作废
 @property (nonatomic, strong) PLVCommodityCardDetailView *cardDetailView;           // 卡片推送加载视图
 @property (nonatomic, strong) PLVCommodityDetailPopupView *commodityDetailPopupView; // 商品详情弹出页视图
 
@@ -374,6 +377,9 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         // 根据直播状态初始化投屏按钮显示
         [self updateCastButtonShowStatus];
         
+        // 进房恢复当前推送商品卡片
+        [self restoreCurrentPushingProductCardIfNeeded];
+        
     }else if (self.videoType == PLVChannelVideoType_Playback){ // 视频类型为 直播回放
         /// 创建添加视图
         [self.view addSubview:self.mediaAreaView];    // 媒体区
@@ -399,7 +405,9 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     if (self.linkMicAreaView.inRTCRoom && self.channelType == PLVChannelTypeAlone) {
         canShowLinkMicAreaView = self.linkMicAreaView.currentRTCRoomUserCount > 1 ? YES : NO;
     }
-    BOOL showLinkMicAreaView = self.linkMicAreaView.areaViewShow ? canShowLinkMicAreaView : NO;
+    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
+    // 收起状态仅影响横屏；竖屏恢复正常布局，但保留横屏的收起状态。
+    BOOL showLinkMicAreaView = canShowLinkMicAreaView && (!fullScreen || self.linkMicAreaView.areaViewShow);
     
     BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
     BOOL hideLinkMicAreaToggleButtonInSmallScreen = NO;
@@ -423,11 +431,13 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         }
     }
     
-    BOOL fullScreen = [UIScreen mainScreen].bounds.size.width > [UIScreen mainScreen].bounds.size.height;
     CGFloat padding = 12;
     if (!fullScreen) {
         // 竖屏
         self.linkMicAreaView.hidden = !self.linkMicAreaView.inRTCRoom;
+        if (showLinkMicAreaView) {
+            [self.linkMicAreaView updateAreaViewDisplayWithShowStatus:YES];
+        }
         self.menuAreaView.hidden = NO;
         self.chatLandscapeView.frame = CGRectZero;
         
@@ -1371,6 +1381,8 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 - (void)productMessageEvent:(NSDictionary *)jsonDict {
     NSInteger status = PLV_SafeIntegerForDictKey(jsonDict, @"status");
     if (status == 9) {
+        // 实时推送优先，防止在途恢复响应覆盖新商品或恢复已切换的卡片样式。
+        self.productPushRestoreCancelled = YES;
         NSDictionary *content = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         PLVCommodityModel *model = [PLVCommodityModel commodityModelWithDict:content];
         if (![PLVFdUtil checkStringUseable:model.productPushRule]) {
@@ -1390,12 +1402,14 @@ PLVLiveRealTimeSubtitleHandlerDelegate
             [_pushView hide];
         }
     } else if (status == 3 || status == 2 || status == 11) { // 收到 删除/下架/取消推送商品 消息时进行处理
+        self.productPushRestoreCancelled = YES;
         [ _pushView hide];
     } else if (status == 10) { // 收到 关闭商品列表 消息时进行处理
         NSDictionary *contentDict = PLV_SafeDictionaryForDictKey(jsonDict, @"content");
         NSString *enabledString = PLV_SafeStringForDictKey(contentDict, @"enabled");
         BOOL enabled = [enabledString isEqualToString:@"N"]?NO:YES;
-        if (!enabled && _pushView) {
+        if (!enabled) {
+            self.productPushRestoreCancelled = YES;
             [ _pushView hide];
         }
         
@@ -1408,6 +1422,51 @@ PLVLiveRealTimeSubtitleHandlerDelegate
         }
         
     }
+}
+
+/// 进房恢复当前推送商品卡片（对齐 Android：push/rule → 详情 → 伪 PRODUCT_MESSAGE status=9，经 Socket 分发给原生小卡与互动 H5 大卡）
+- (void)restoreCurrentPushingProductCardIfNeeded {
+    if (self.videoType != PLVChannelVideoType_Live || self.hasRequestedProductPushRestore) {
+        return;
+    }
+    self.hasRequestedProductPushRestore = YES;
+    self.productPushRestoreCancelled = NO;
+    
+    NSUInteger channelId = (NSUInteger)[PLVRoomDataManager sharedManager].roomData.channelId.integerValue;
+    if (channelId == 0) {
+        return;
+    }
+    
+    __weak typeof(self) weakSelf = self;
+    [PLVLiveVideoAPI requestCurrentPushingProductMessageWithChannelId:channelId completion:^(NSDictionary * _Nullable productMessageDict) {
+        // 对齐 Android：等互动 H5 加载后再分发，大卡片依赖 Interact WebView 收 PRODUCT_MESSAGE
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf ||
+                strongSelf.productPushRestoreCancelled ||
+                !strongSelf.menuAreaView.showCommodityMenu ||
+                ![PLVFdUtil checkDictionaryUseable:productMessageDict]) {
+                return;
+            }
+            NSDictionary *content = PLV_SafeDictionaryForDictKey(productMessageDict, @"content");
+            NSUInteger productId = PLV_SafeIntegerForDictKey(content, @"productId");
+            NSString *pushRule = PLV_SafeStringForDictKey(content, @"productPushRule");
+            BOOL smallCardShowing = (strongSelf.pushView.superview && strongSelf.pushView.alpha == 1);
+            // 同商品小卡已展示则跳过；大卡片仍需分发给 H5
+            if ([pushRule isEqualToString:@"smallCard"] &&
+                smallCardShowing &&
+                strongSelf.pushView.model &&
+                strongSelf.pushView.model.productId == productId) {
+                return;
+            }
+            NSString *jsonString = [PLVDataUtil jsonStringWithJSONObject:productMessageDict];
+            [[PLVSocketManager sharedManager] dispatchReceiveMessage:@"PRODUCT_MESSAGE"
+                                                                json:jsonString ?: @"{}"
+                                                          jsonObject:productMessageDict];
+        });
+    } failure:^(NSError *error) {
+        // 进房恢复失败不影响正常 SOCKET 推送流程
+    }];
 }
 
 - (void)debugMessageEvent:(NSDictionary *)jsonDict {
@@ -1670,6 +1729,9 @@ PLVLiveRealTimeSubtitleHandlerDelegate
 - (void)plvLCMediaAreaViewWannaLiveRoomSkinViewShowMoreView:(PLVLCMediaAreaView *)mediaAreaView {
     if (self.liveRoomSkinView) {
         [self.mediaAreaView plvLCBasePlayerSkinViewMoreButtonClicked:self.liveRoomSkinView];
+    } else {
+        // 无横屏皮肤时回退到竖屏皮肤，避免 pendingShowRouteLineOnly 残留
+        [self.mediaAreaView plvLCBasePlayerSkinViewMoreButtonClicked:self.mediaAreaView.skinView];
     }
 }
 

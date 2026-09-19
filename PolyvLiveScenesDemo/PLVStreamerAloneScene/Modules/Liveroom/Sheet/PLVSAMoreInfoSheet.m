@@ -46,6 +46,8 @@
 @property (nonatomic, strong) UILabel *interactiveTitleLabel; // 互动标题
 @property (nonatomic, strong) UIButton *signInButton; // 签到
 @property (nonatomic, strong) UIButton *luckyBagButton; // 福袋
+@property (nonatomic, strong) UIButton *answerCardButton; // 答题卡
+@property (nonatomic, strong) UIButton *quickAnswerButton; // 快速问答
 @property (nonatomic, strong) UIButton *giftRewardButton; // 礼物打赏
 @property (nonatomic, strong) UIButton *giftEffectsButton; // 礼物特效
 @property (nonatomic, strong) NSArray *interactiveButtonArray; // 互动
@@ -271,6 +273,10 @@
 
     [buttonSuperView addSubview:self.luckyBagButton];
     [muInteractiveButtonArray addObject:self.luckyBagButton];
+    [buttonSuperView addSubview:self.answerCardButton];
+    [muInteractiveButtonArray addObject:self.answerCardButton];
+    [buttonSuperView addSubview:self.quickAnswerButton];
+    [muInteractiveButtonArray addObject:self.quickAnswerButton];
 
     if ([PLVSAMoreInfoSheet showGiftRewardButton]) {
         [buttonSuperView addSubview:self.giftRewardButton];
@@ -630,6 +636,34 @@
         [_luckyBagButton addTarget:self action:@selector(luckyBagButtonAction) forControlEvents:UIControlEventTouchUpInside];
     }
     return _luckyBagButton;
+}
+
+- (UIButton *)answerCardButton {
+    if (!_answerCardButton) {
+        _answerCardButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _answerCardButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _answerCardButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_answerCardButton setTitle:PLVLocalizedString(@"答题卡") forState:UIControlStateNormal];
+        _answerCardButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_answerCardButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_answer_card_btn"] forState:UIControlStateNormal];
+        [_answerCardButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_answer_card_btn"] forState:UIControlStateSelected];
+        [_answerCardButton addTarget:self action:@selector(answerCardButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _answerCardButton;
+}
+
+- (UIButton *)quickAnswerButton {
+    if (!_quickAnswerButton) {
+        _quickAnswerButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _quickAnswerButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _quickAnswerButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        [_quickAnswerButton setTitle:PLVLocalizedString(@"快速问答") forState:UIControlStateNormal];
+        _quickAnswerButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_quickAnswerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_quick_answer_btn"] forState:UIControlStateNormal];
+        [_quickAnswerButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_quick_answer_btn"] forState:UIControlStateSelected];
+        [_quickAnswerButton addTarget:self action:@selector(quickAnswerButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _quickAnswerButton;
 }
 
 - (UIButton *)giftRewardButton {
@@ -1163,6 +1197,20 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLuckyBagButton:)]) {
         [self.delegate moreInfoSheetDidTapLuckyBagButton:self];
+    }
+}
+
+- (void)answerCardButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapAnswerCardButton:)]) {
+        [self.delegate moreInfoSheetDidTapAnswerCardButton:self];
+    }
+}
+
+- (void)quickAnswerButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapQuickAnswerButton:)]) {
+        [self.delegate moreInfoSheetDidTapQuickAnswerButton:self];
     }
 }
 

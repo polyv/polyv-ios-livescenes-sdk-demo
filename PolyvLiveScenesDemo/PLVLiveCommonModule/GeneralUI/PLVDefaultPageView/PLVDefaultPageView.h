@@ -5,6 +5,9 @@
 //  Created by Dhan on 2022/8/19.
 //  Copyright © 2022 PLV. All rights reserved.
 //
+//  注意：播放器错误/卡顿提示已切换至 PLVPlayerTipBannerView。
+//  本类本迭代保留源文件便于回滚，Demo 业务路径已不再调用。
+//
 
 #import <UIKit/UIKit.h>
 
