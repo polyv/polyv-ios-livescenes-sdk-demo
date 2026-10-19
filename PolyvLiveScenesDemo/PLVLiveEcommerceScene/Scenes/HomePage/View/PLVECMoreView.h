@@ -42,6 +42,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, weak) id<PLVECMoreViewDelegate> delegate;
 
+/// 竖屏面板高度。一行时保持原来的高度，多行时向上加高，避免把已有按钮挤出首屏。
+- (CGFloat)preferredPortraitHeight;
+
 // 移除原来的子视图
 - (void)removeMoreViewItems;
 

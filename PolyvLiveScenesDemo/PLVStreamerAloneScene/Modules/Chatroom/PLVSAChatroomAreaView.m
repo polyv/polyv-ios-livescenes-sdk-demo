@@ -115,6 +115,15 @@ PLVSAChatroomListViewDelegate
 
 #pragma mark - [ Public Method ]
 
+- (void)updateMessageFontSize:(CGFloat)fontSize {
+    [self.chatroomListView updateMessageFontSize:fontSize];
+}
+
+- (void)scrollToLatestMessage {
+    [self.chatroomListView layoutIfNeeded];
+    [self.chatroomListView scrollsToBottom:NO];
+}
+
 - (void)sendCancelTopPinMessage:(NSString * _Nullable)msgId {
     BOOL success = [[PLVSAChatroomViewModel sharedViewModel] sendPinMessageWithMsgId:msgId toTop:NO];
     if (!success) {

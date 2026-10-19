@@ -37,6 +37,7 @@
 #import "PLVStreamerPopoverView.h"
 #import "PLVPinMessagePopupView.h"
 #import "PLVSADesktopChatSettingSheet.h"
+#import "PLVSAChatroomSettingSheet.h"
 #import "PLVStickerCanvas.h"
 #import "PLVSAAICardWidgetView.h"
 #import "PLVSAAICardView.h"
@@ -93,6 +94,8 @@ PLVSAAICardViewDelegate
 @property (nonatomic, strong) PLVSAStatusbarAreaView *statusbarAreaView; //顶部状态栏视图
 @property (nonatomic, strong) PLVSAToolbarAreaView *toolbarAreaView; // 底部工具类视图
 @property (nonatomic, strong) PLVSAChatroomAreaView *chatroomAreaView; // 聊天室视图
+@property (nonatomic, strong) PLVSAChatroomSettingView *chatroomSettingView; // 竖屏公屏高度字号设置视图
+@property (nonatomic, strong) PLVSAChatroomSettingSheet *chatroomSettingSheet; // 公屏高度字号设置弹层
 @property (nonatomic, strong) PLVSAChannelInfoSheet *channelInfoSheet; // 直播信息弹层
 @property (nonatomic, strong) PLVSAMoreInfoSheet *moreInfoSheet; // 更多信息弹层
 @property (nonatomic, strong) PLVSABitRateSheet *bitRateSheet; // 清晰度选择面板
@@ -125,6 +128,17 @@ PLVSAAICardViewDelegate
 @property (nonatomic, assign) NSTimeInterval requestLinkMicLimitTs; // 请求连麦的限制时间
 @property (nonatomic, assign, readonly) BOOL isGuest; // 是否为嘉宾
 @property (nonatomic, assign, readonly) BOOL isGuestManualLinkMic; // 本地嘉宾手动连麦模式
+@property (nonatomic, assign) NSInteger chatroomHeightLevel;
+@property (nonatomic, assign) NSInteger chatroomFontLevel;
+@property (nonatomic, assign) NSInteger previewChatroomHeightLevel;
+@property (nonatomic, assign) NSInteger previewChatroomFontLevel;
+@property (nonatomic, assign) BOOL showingChatroomSetting;
+@property (nonatomic, assign) BOOL chatroomSettingUsingSheet;
+@property (nonatomic, assign) BOOL chatroomSettingDidComplete;
+@property (nonatomic, strong) NSArray<UIView *> *chatroomSettingHiddenViews;
+@property (nonatomic, strong) NSArray<NSNumber *> *chatroomSettingPreviousHiddenStates;
+@property (nonatomic, assign) BOOL chatroomSettingPreviousScrollEnabled;
+@property (nonatomic, assign) BOOL chatroomSettingPreviousInteractionEnabled;
 
 @end
 
@@ -138,8 +152,10 @@ PLVSAAICardViewDelegate
     if (self) {
         self.hadShowedLayoutSwitchGuide = NO;
         self.showingLayoutSwitchGuide = NO;
+        [self loadChatroomSettings];
         [self setupLocalOnlineUser:localOnlineUser];
         [self setupUIWithLinkMicWindowsView:linkMicWindowsView];
+        [self.chatroomAreaView updateMessageFontSize:[self chatroomFontSizeForLevel:self.chatroomFontLevel]];
         [self updateToolbarLinkMicButtonStatus:PLVSAToolbarLinkMicButtonStatus_NotLive];
     }
     return self;
@@ -160,7 +176,6 @@ PLVSAAICardViewDelegate
     CGFloat marginLeft = isLandscape ? 36 : 2;
     CGFloat toolbarAreaViewHeight = isLandscape ? 56 : 60;
     CGFloat chatroomWidthScale = (isLandscape ? 0.3 : 0.65);
-    CGFloat chatroomHeightScale = (isLandscape ? 0.42 : 0.28);
     CGFloat linkMicWindowHeight = (isLandscape ? (self.bounds.size.height - top - 52 - 44 - bottom) : 280);
     CGFloat cameraAndMicphoneStateViewTop = 5;
     CGFloat linkMicWindowY = (isLandscape ? 44 : 78);
@@ -173,7 +188,6 @@ PLVSAAICardViewDelegate
         toolbarViewMarginRight = 24;
         toolbarAreaViewHeight = 72;
         chatroomWidthScale = 0.41;
-        chatroomHeightScale = 0.24;
         cameraAndMicphoneStateViewTop = 20;
         linkMicWindowHeight = 0.74 * self.bounds.size.width;
         linkMicWindowY = 92;
@@ -225,8 +239,21 @@ PLVSAAICardViewDelegate
     self.toolbarAreaView.frame = CGRectMake(left, selfSize.height - bottom - toolbarAreaViewHeight, selfSize.width - left - right, toolbarAreaViewHeight);
    
     CGFloat chatroomWidth = selfSize.width * chatroomWidthScale;
-    CGFloat chatroomHeight = selfSize.height * chatroomHeightScale;
-    self.chatroomAreaView.frame = CGRectMake(left, CGRectGetMinY(self.toolbarAreaView.frame) - chatroomHeight, chatroomWidth, chatroomHeight);
+    NSInteger currentHeightLevel = self.showingChatroomSetting ? self.previewChatroomHeightLevel : self.chatroomHeightLevel;
+    // 横屏使用设计稿独立的 72 / 108 / 164pt，并继续以实际安全区作为兜底上限。
+    CGFloat chatroomTopLimit = isLandscape ? CGRectGetMaxY(self.statusbarAreaView.frame) + 8.0 : top + 8.0;
+    // 预览始终按真实工具栏位置计算，保证弹层关闭后的公屏位置与预览一致。
+    CGFloat chatroomBottom = CGRectGetMinY(self.toolbarAreaView.frame);
+    CGFloat maxChatroomHeight = MAX(0.0, chatroomBottom - chatroomTopLimit);
+    CGFloat chatroomHeight = [self chatroomHeightForLevel:currentHeightLevel
+                                           maximumHeight:maxChatroomHeight
+                                                landscape:isLandscape];
+    self.chatroomAreaView.frame = CGRectMake(left, chatroomBottom - chatroomHeight, chatroomWidth, chatroomHeight);
+    self.chatroomSettingView.frame = self.homePageView.bounds;
+    self.chatroomSettingView.controlsBottom = CGRectGetMinY(self.toolbarAreaView.frame) - 8.0;
+    self.chatroomSettingView.bottomInset = bottom;
+    self.chatroomSettingView.rightInset = right;
+    [self.chatroomSettingView setNeedsLayout];
     self.slideRightTipsView.frame = self.bounds;
     CGRect buttonRelativeFrame = [self.toolbarAreaView convertRect:self.toolbarAreaView.layoutSwitchButton.frame toView:self.homePageView];
     self.layoutSwitchGuideView.frame = CGRectMake(CGRectGetMidX(buttonRelativeFrame) - self.layoutSwitchGuideView.viewSize.width * 0.65, CGRectGetMinY(self.toolbarAreaView.frame) - self.layoutSwitchGuideView.viewSize.height, self.layoutSwitchGuideView.viewSize.width,  self.layoutSwitchGuideView.viewSize.height);
@@ -493,6 +520,143 @@ PLVSAAICardViewDelegate
 
 #pragma mark - [ Private Method ]
 
+- (void)loadChatroomSettings {
+    PLVSAChatroomSetting *setting = [[PLVSAChatroomSetting alloc] init];
+    self.chatroomHeightLevel = setting.heightLevel;
+    self.chatroomFontLevel = setting.fontLevel;
+    self.previewChatroomHeightLevel = self.chatroomHeightLevel;
+    self.previewChatroomFontLevel = self.chatroomFontLevel;
+}
+
+- (CGFloat)chatroomHeightForLevel:(NSInteger)level
+                    maximumHeight:(CGFloat)maximumHeight
+                         landscape:(BOOL)landscape {
+    return [PLVSAChatroomSetting heightForLevel:level maximumHeight:maximumHeight landscape:landscape];
+}
+
+- (CGFloat)chatroomFontSizeForLevel:(NSInteger)level {
+    return [PLVSAChatroomSetting fontSizeForLevel:level];
+}
+
+- (void)showChatroomSetting {
+    if (self.showingChatroomSetting) {
+        return;
+    }
+
+    self.previewChatroomHeightLevel = self.chatroomHeightLevel;
+    self.previewChatroomFontLevel = self.chatroomFontLevel;
+    self.chatroomSettingDidComplete = NO;
+    self.showingChatroomSetting = YES;
+    self.chatroomSettingUsingSheet = [PLVSAUtils sharedUtils].isLandscape;
+
+    if (self.chatroomSettingUsingSheet) {
+        [self.chatroomSettingSheet updateHeightLevel:self.previewChatroomHeightLevel
+                                           fontLevel:self.previewChatroomFontLevel];
+    } else {
+        [self.chatroomSettingView updateHeightLevel:self.previewChatroomHeightLevel
+                                          fontLevel:self.previewChatroomFontLevel];
+        [self preparePortraitChatroomSettingPreview];
+        self.chatroomSettingView.hidden = NO;
+        [self.homePageView bringSubviewToFront:self.chatroomSettingView];
+    }
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+    [self.chatroomAreaView scrollToLatestMessage];
+    if (self.chatroomSettingUsingSheet) {
+        [self.chatroomSettingSheet showInView:self];
+    }
+}
+
+- (void)completeChatroomSetting {
+    self.chatroomHeightLevel = self.previewChatroomHeightLevel;
+    self.chatroomFontLevel = self.previewChatroomFontLevel;
+    PLVSAChatroomSetting *setting = [[PLVSAChatroomSetting alloc] init];
+    setting.heightLevel = self.chatroomHeightLevel;
+    setting.fontLevel = self.chatroomFontLevel;
+    [setting save];
+    self.chatroomSettingDidComplete = YES;
+    if (!self.chatroomSettingUsingSheet) {
+        [self chatroomSettingDidClose];
+    }
+}
+
+- (void)cancelChatroomSetting {
+    if (self.chatroomSettingUsingSheet) {
+        [self.chatroomSettingSheet dismiss];
+    } else {
+        [self chatroomSettingDidClose];
+    }
+}
+
+- (void)chatroomSettingSheetDidClose {
+    [self chatroomSettingDidClose];
+}
+
+- (void)preparePortraitChatroomSettingPreview {
+    NSMutableArray<UIView *> *hiddenViews = [NSMutableArray arrayWithArray:@[
+        self.statusbarAreaView,
+        self.toolbarAreaView,
+        self.pinMsgPopupView,
+        self.slideRightTipsView,
+        self.cameraAndMicphoneStateView,
+        self.aiCardWidgetView,
+        self.aiCardView,
+        self.layoutSwitchGuideView,
+        self.linkMicTipView,
+        self.popoverView
+    ]];
+    if (_badNetworkTipsView) {
+        [hiddenViews addObject:_badNetworkTipsView];
+    }
+    if (_switchSuccessTipsView) {
+        [hiddenViews addObject:_switchSuccessTipsView];
+    }
+
+    NSMutableArray<NSNumber *> *hiddenStates = [NSMutableArray arrayWithCapacity:hiddenViews.count];
+    for (UIView *view in hiddenViews) {
+        [hiddenStates addObject:@(view.hidden)];
+        view.hidden = YES;
+    }
+    self.chatroomSettingHiddenViews = [hiddenViews copy];
+    self.chatroomSettingPreviousHiddenStates = [hiddenStates copy];
+    self.chatroomSettingPreviousScrollEnabled = self.scrollView.scrollEnabled;
+    self.chatroomSettingPreviousInteractionEnabled = self.chatroomAreaView.userInteractionEnabled;
+    self.scrollView.scrollEnabled = NO;
+    self.chatroomAreaView.userInteractionEnabled = NO;
+}
+
+- (void)chatroomSettingDidClose {
+    if (!self.showingChatroomSetting) {
+        return;
+    }
+
+    if (!self.chatroomSettingDidComplete) {
+        self.previewChatroomHeightLevel = self.chatroomHeightLevel;
+        self.previewChatroomFontLevel = self.chatroomFontLevel;
+        [self.chatroomAreaView updateMessageFontSize:[self chatroomFontSizeForLevel:self.chatroomFontLevel]];
+    }
+
+    if (!self.chatroomSettingUsingSheet) {
+        for (NSUInteger idx = 0; idx < self.chatroomSettingHiddenViews.count; idx++) {
+            UIView *view = self.chatroomSettingHiddenViews[idx];
+            if (idx < self.chatroomSettingPreviousHiddenStates.count) {
+                view.hidden = self.chatroomSettingPreviousHiddenStates[idx].boolValue;
+            }
+        }
+        self.scrollView.scrollEnabled = self.chatroomSettingPreviousScrollEnabled;
+        self.chatroomAreaView.userInteractionEnabled = self.chatroomSettingPreviousInteractionEnabled;
+        self.chatroomSettingHiddenViews = nil;
+        self.chatroomSettingPreviousHiddenStates = nil;
+        self.chatroomSettingView.hidden = YES;
+    }
+    self.showingChatroomSetting = NO;
+    self.chatroomSettingUsingSheet = NO;
+    self.chatroomSettingDidComplete = NO;
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+    [self.chatroomAreaView scrollToLatestMessage];
+}
+
 - (void)setupUIWithLinkMicWindowsView:(PLVSALinkMicWindowsView *)linkMicWindowsView {
     self.linkMicWindowsView = linkMicWindowsView;
     
@@ -522,6 +686,7 @@ PLVSAAICardViewDelegate
     [self.homePageView addSubview:self.aiCardWidgetView];
     [self.homePageView addSubview:self.aiCardView];
     [self.homePageView addSubview:self.layoutSwitchGuideView];
+    [self.homePageView addSubview:self.chatroomSettingView];
 }
 
 - (void)setupLocalOnlineUser:(PLVLinkMicOnlineUser *)localOnlineUser {
@@ -765,6 +930,73 @@ PLVSAAICardViewDelegate
         _chatroomAreaView.delegate = self;
     }
     return _chatroomAreaView;
+}
+
+- (PLVSAChatroomSettingView *)chatroomSettingView {
+    if (!_chatroomSettingView) {
+        _chatroomSettingView = [[PLVSAChatroomSettingView alloc] init];
+        __weak typeof(self) weakSelf = self;
+        _chatroomSettingView.heightLevelChanged = ^(NSInteger level) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) {
+                return;
+            }
+            strongSelf.previewChatroomHeightLevel = level;
+            [UIView animateWithDuration:0.2 animations:^{
+                [strongSelf setNeedsLayout];
+                [strongSelf layoutIfNeeded];
+                [strongSelf.chatroomAreaView scrollToLatestMessage];
+            } completion:^(BOOL finished) {
+                (void)finished;
+                [strongSelf.chatroomAreaView scrollToLatestMessage];
+            }];
+        };
+        _chatroomSettingView.fontLevelChanged = ^(NSInteger level) {
+            weakSelf.previewChatroomFontLevel = level;
+            [weakSelf.chatroomAreaView updateMessageFontSize:[weakSelf chatroomFontSizeForLevel:level]];
+        };
+        _chatroomSettingView.doneHandler = ^{
+            [weakSelf completeChatroomSetting];
+        };
+    }
+    return _chatroomSettingView;
+}
+
+- (PLVSAChatroomSettingSheet *)chatroomSettingSheet {
+    if (!_chatroomSettingSheet) {
+        CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+        CGFloat sheetHeight = MIN(320.0, MAX(260.0, maxWH * 0.32));
+        CGFloat sheetLandscapeWidth = maxWH * 0.46;
+        _chatroomSettingSheet = [[PLVSAChatroomSettingSheet alloc] initWithSheetHeight:sheetHeight
+                                                                 sheetLandscapeWidth:sheetLandscapeWidth];
+        __weak typeof(self) weakSelf = self;
+        _chatroomSettingSheet.heightLevelChanged = ^(PLVSAChatroomHeightLevel level) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            if (!strongSelf) {
+                return;
+            }
+            strongSelf.previewChatroomHeightLevel = level;
+            [UIView animateWithDuration:0.2 animations:^{
+                [strongSelf setNeedsLayout];
+                [strongSelf layoutIfNeeded];
+                [strongSelf.chatroomAreaView scrollToLatestMessage];
+            } completion:^(BOOL finished) {
+                (void)finished;
+                [strongSelf.chatroomAreaView scrollToLatestMessage];
+            }];
+        };
+        _chatroomSettingSheet.fontLevelChanged = ^(PLVSAChatroomFontLevel level) {
+            weakSelf.previewChatroomFontLevel = level;
+            [weakSelf.chatroomAreaView updateMessageFontSize:[weakSelf chatroomFontSizeForLevel:level]];
+        };
+        _chatroomSettingSheet.completeHandler = ^{
+            [weakSelf completeChatroomSetting];
+        };
+        _chatroomSettingSheet.didCloseSheet = ^{
+            [weakSelf chatroomSettingSheetDidClose];
+        };
+    }
+    return _chatroomSettingSheet;
 }
 
 - (PLVSAChannelInfoSheet *)channelInfoSheet {
@@ -1036,6 +1268,10 @@ PLVSAAICardViewDelegate
 #pragma mark Action
 
 - (void)closeButtonAction:(id)sender {
+    if (self.showingChatroomSetting) {
+        [self cancelChatroomSetting];
+        return;
+    }
     if (self.delegate &&
         [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapCloseButton:)]){
         [self.delegate streamerHomeViewDidTapCloseButton:self];
@@ -1261,6 +1497,10 @@ PLVSAAICardViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(streamerHomeViewDidTapLiveTemplateButton:)]) {
         [self.delegate streamerHomeViewDidTapLiveTemplateButton:self];
     }
+}
+
+- (void)moreInfoSheetDidTapChatroomSettingButton:(PLVSAMoreInfoSheet *)moreInfoSheet {
+    [self showChatroomSetting];
 }
 
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects {

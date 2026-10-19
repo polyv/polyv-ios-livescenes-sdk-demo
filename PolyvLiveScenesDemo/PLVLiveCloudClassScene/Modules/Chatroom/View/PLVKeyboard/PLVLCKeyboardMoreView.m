@@ -10,6 +10,7 @@
 #import "PLVLCUtils.h"
 #import "PLVActionSheet.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVScreenshotHelper.h"
 #import <SDWebImage/UIButton+WebCache.h>
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
@@ -29,7 +30,8 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     PLVLCKeyboardMoreButtonTypeSwitchRewardDisplay,
     PLVLCKeyboardMoreButtonTypeMyReward,
     PLVLCKeyboardMoreButtonTypeSwitchLanguage,
-    PLVLCKeyboardMoreButtonTypePipSet
+    PLVLCKeyboardMoreButtonTypePipSet,
+    PLVLCKeyboardMoreButtonTypeScreenshot
 };
 
 @interface PLVLCMoreCollectionViewCell : UICollectionViewCell
@@ -111,6 +113,12 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
             [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_btn_pipset"] forState:UIControlStateSelected];
             [self.moreBtn setTitle:PLVLocalizedString(@"播放设置") forState:UIControlStateNormal];
             [self.moreBtn setTitle:PLVLocalizedString(@"播放设置") forState:UIControlStateSelected];
+            break;
+        case PLVLCKeyboardMoreButtonTypeScreenshot:
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_screenshot"] forState:UIControlStateNormal];
+            [self.moreBtn setImage:[PLVLCUtils imageForChatroomResource:@"plvlc_keyboard_screenshot"] forState:UIControlStateSelected];
+            [self.moreBtn setTitle:PLVLocalizedString(@"截屏") forState:UIControlStateNormal];
+            [self.moreBtn setTitle:PLVLocalizedString(@"截屏") forState:UIControlStateSelected];
             break;
         default:
             break;
@@ -258,10 +266,11 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 
 - (NSInteger)getNativeAddButtonCount {
     if (self.disableInteraction) {
-        if (self.enablePipSet){
-            return 2; // language + pipset
+        NSInteger buttonCount = self.enablePipSet ? 2 : 1;
+        if ([PLVScreenshotHelper isShowScreenshotView]) {
+            buttonCount += 1;
         }
-        return 1; // language
+        return buttonCount;
     }
     
     NSInteger buttonCount = 0;
@@ -272,6 +281,9 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
     buttonCount += (self.myRewardsEnabled ? 1 : 0) + 1; // “我的奖励” + 语言切换
     if (self.enablePipSet){
         buttonCount += 1; // for pip set
+    }
+    if ([PLVScreenshotHelper isShowScreenshotView]) {
+        buttonCount += 1;
     }
 
     return buttonCount;
@@ -382,6 +394,10 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_PipSet:)]) {
             [self.delegate keyboardMoreView_PipSet:self];
         }
+    } else if (type == PLVLCKeyboardMoreButtonTypeScreenshot) {
+        if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardMoreView_screenshot:)]) {
+            [self.delegate keyboardMoreView_screenshot:self];
+        }
     } else if (type == PLVLCKeyboardMoreButtonTypeUnknow) {
         NSInteger defaultCount = [self getNativeAddButtonCount];
         if (button.tag < defaultCount + self.dynamicDataArray.count) {
@@ -398,6 +414,9 @@ typedef NS_ENUM(NSInteger, PLVLCKeyboardMoreButtonType) {
 #pragma mark - Private Method
 
 - (PLVLCKeyboardMoreButtonType)typeOfIndex:(NSInteger)index {
+    if ([PLVScreenshotHelper isShowScreenshotView] && index == [self getNativeAddButtonCount] - 1) {
+        return PLVLCKeyboardMoreButtonTypeScreenshot;
+    }
     if (self.disableInteraction) {
         if (index == 0) {
             return PLVLCKeyboardMoreButtonTypeSwitchLanguage;

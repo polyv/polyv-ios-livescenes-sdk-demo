@@ -58,7 +58,7 @@ typedef NS_ENUM(NSInteger, PLVChatMsgContentLength) {
 @property (nonatomic, copy) NSString *overLenContent;
 
 /// cell 显示 所需要生成的 消息多属性文本
-@property (nonatomic, strong) NSMutableAttributedString *attributeString;
+@property (nonatomic, strong, nullable) NSMutableAttributedString *attributeString;
 
 /// 横屏cell 显示 所需要生成的 消息多属性文本
 @property (nonatomic, strong) NSMutableAttributedString *landscapeAttributeString;

@@ -40,6 +40,12 @@ NS_ASSUME_NONNULL_BEGIN
 /// 当前 禁用礼物特效是否开启
 @property (nonatomic, assign) BOOL closeGiftEffects;
 
+/// 实时更新纯视频开播端公屏消息字号
+- (void)updateMessageFontSize:(CGFloat)fontSize;
+
+/// 将公屏滚动到最新消息
+- (void)scrollToLatestMessage;
+
 /// 发送评论下墙消息
 - (void)sendCancelTopPinMessage:(NSString * _Nullable)msgId;
 

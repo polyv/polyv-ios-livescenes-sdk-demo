@@ -38,6 +38,9 @@
 /// 播放设置
 - (void)keyboardMoreView_PipSet:(PLVLCKeyboardMoreView *)moreView;
 
+/// 点击截屏
+- (void)keyboardMoreView_screenshot:(PLVLCKeyboardMoreView *)moreView;
+
 @end
 
 @interface PLVLCKeyboardMoreView : UIView

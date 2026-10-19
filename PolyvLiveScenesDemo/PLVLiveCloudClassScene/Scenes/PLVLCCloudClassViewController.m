@@ -1113,6 +1113,8 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     [self startCountdownTimer];
     // 菜单信息变化时（包括projectionScreenEnabled变化），更新投屏按钮显示状态
     [self updateCastButtonShowStatus];
+    // 对齐 Android：频道详情就绪后再尝试恢复推送商品卡片
+    [self restoreCurrentPushingProductCardIfNeeded];
 }
 
 /// 观看数 watchCount 更新
@@ -1424,21 +1426,35 @@ PLVLiveRealTimeSubtitleHandlerDelegate
     }
 }
 
-/// 进房恢复当前推送商品卡片（对齐 Android：push/rule → 详情 → 伪 PRODUCT_MESSAGE status=9，经 Socket 分发给原生小卡与互动 H5 大卡）
+/// 进房恢复当前推送商品卡片（对齐 Android：频道详情 channelProductPushingStatusVO → 详情 → 伪 PRODUCT_MESSAGE status=9，经 Socket 分发给原生小卡与互动 H5 大卡）
 - (void)restoreCurrentPushingProductCardIfNeeded {
     if (self.videoType != PLVChannelVideoType_Live || self.hasRequestedProductPushRestore) {
         return;
     }
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSUInteger channelId = (NSUInteger)roomData.channelId.integerValue;
+    // 对齐 Android 观察 classDetail：详情未就绪时先返回，等 didMenuInfoChanged 再试
+    if (channelId == 0 || !roomData.menuInfo) {
+        return;
+    }
+    
     self.hasRequestedProductPushRestore = YES;
     self.productPushRestoreCancelled = NO;
     
-    NSUInteger channelId = (NSUInteger)[PLVRoomDataManager sharedManager].roomData.channelId.integerValue;
-    if (channelId == 0) {
+    // 对齐 Android：复用已加载的频道详情，避免重复请求 get-channel-detail
+    PLVLiveVideoChannelProductPushingStatus *pushingStatus = roomData.menuInfo.channelProductPushingStatusVO;
+    NSUInteger productId = pushingStatus.productId;
+    NSString *pushRule = pushingStatus.pushRule;
+    if (productId == 0 || ![PLVFdUtil checkStringUseable:pushRule]) {
         return;
     }
     
     __weak typeof(self) weakSelf = self;
-    [PLVLiveVideoAPI requestCurrentPushingProductMessageWithChannelId:channelId completion:^(NSDictionary * _Nullable productMessageDict) {
+    [PLVLiveVideoAPI requestCurrentPushingProductMessageWithChannelId:channelId
+                                                            productId:productId
+                                                             pushRule:pushRule
+                                                           completion:^(NSDictionary * _Nullable productMessageDict) {
         // 对齐 Android：等互动 H5 加载后再分发，大卡片依赖 Interact WebView 收 PRODUCT_MESSAGE
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             __strong typeof(weakSelf) strongSelf = weakSelf;
@@ -1449,14 +1465,14 @@ PLVLiveRealTimeSubtitleHandlerDelegate
                 return;
             }
             NSDictionary *content = PLV_SafeDictionaryForDictKey(productMessageDict, @"content");
-            NSUInteger productId = PLV_SafeIntegerForDictKey(content, @"productId");
-            NSString *pushRule = PLV_SafeStringForDictKey(content, @"productPushRule");
+            NSUInteger restoredProductId = PLV_SafeIntegerForDictKey(content, @"productId");
+            NSString *restoredPushRule = PLV_SafeStringForDictKey(content, @"productPushRule");
             BOOL smallCardShowing = (strongSelf.pushView.superview && strongSelf.pushView.alpha == 1);
             // 同商品小卡已展示则跳过；大卡片仍需分发给 H5
-            if ([pushRule isEqualToString:@"smallCard"] &&
+            if ([restoredPushRule isEqualToString:@"smallCard"] &&
                 smallCardShowing &&
                 strongSelf.pushView.model &&
-                strongSelf.pushView.model.productId == productId) {
+                strongSelf.pushView.model.productId == restoredProductId) {
                 return;
             }
             NSString *jsonString = [PLVDataUtil jsonStringWithJSONObject:productMessageDict];

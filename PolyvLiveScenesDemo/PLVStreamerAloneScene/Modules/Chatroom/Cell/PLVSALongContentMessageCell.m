@@ -311,7 +311,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 + (NSMutableAttributedString *)contentLabelAttributedStringWithModel:(PLVChatModel *)model
                                                            loginUserId:(NSString *)loginUserId {
     PLVChatUser *user = model.user;
-    UIFont *font = [UIFont systemFontOfSize:12.0];
+    UIFont *font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
     NSString *nickNameColorHexString = [user isUserSpecial] ? @"#FFCA43" : @"#4399FF";
     UIColor *nickNameColor = [PLVColorUtil colorFromHexString:nickNameColorHexString];
     UIColor *contentColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
@@ -345,8 +345,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         UIImage *image = [PLVSABaseMessageCell actorImageWithUser:user];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
-        CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
-        attach.bounds = CGRectMake(0, -ceilf(paddingTop), image.size.width, image.size.height);
+        attach.bounds = [PLVSABaseMessageCell actorImageBoundsWithImage:image font:font];
         attach.image = image;
         //添加到富文本对象里
         NSAttributedString * imageStr = [NSAttributedString attributedStringWithAttachment:attach];
@@ -369,9 +368,9 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
     
     NSString *content = [NSString stringWithFormat:@"%@：%@", quoteUserName, (message.quoteContent ?: @"")];
     NSMutableParagraphStyle *paragraph = [[NSMutableParagraphStyle alloc] init];
-    paragraph.minimumLineHeight = 17;
+    paragraph.minimumLineHeight = MAX(17.0, [PLVSABaseMessageCell messageFontSize] + 5.0);
     NSDictionary *attributeDict = @{
-                                    NSFontAttributeName: [UIFont systemFontOfSize:12.0],
+                                    NSFontAttributeName: [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]],
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:@"#CFD1D6"],
                                     NSParagraphStyleAttributeName:paragraph
     };
@@ -382,7 +381,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 
 /// 获取严禁词提示多属性文本
 + (NSAttributedString *)contentLabelAttributedStringWithProhibitWordTip:(NSString *)prohibitTipString{
-    UIFont *font = [UIFont systemFontOfSize:12.0];
+    UIFont *font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
     UIColor *color = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:0.6];
     
     NSDictionary *AttDict = @{NSFontAttributeName: font,

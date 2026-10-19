@@ -27,6 +27,7 @@
 #import "PLVECRedpackButtonView.h"
 #import "PLVECPlayerContolView.h"
 #import "PLVECMoreView.h"
+#import "PLVScreenshotHelper.h"
 #import "PLVECSwitchView.h"
 #import "PLVECPIPPlaysetPopView.h"
 #import "PLVECLotteryWidgetView.h"
@@ -53,6 +54,7 @@ static NSString *const PLVECHomePageView_Data_SubtitleItemTitle = @"回放字幕
 static NSString *const PLVECHomePageView_Data_RealTimeSubtitleItemTitle = @"实时字幕";
 static NSString *const PLVECHomeSwitchNormalDelayAttributeName = @"switchnormaldelay";
 static NSString *const PLVECHomePageView_Data_MyRewardItemTitle = @"我的奖励";
+static NSString *const PLVECHomePageView_Data_ScreenshotItemTitle = @"截屏";
 static NSString *const PLVECRefreshProductListEvent = @"REFRESH_PRODUCT_LIST";
 static NSString *const PLVECLiveWatchStatusLive = @"live";
 static NSString *const PLVECLiveWatchStatusWaiting = @"waiting";
@@ -633,23 +635,37 @@ PLVECSubtitleConfigViewDelegate
     }
 }
 
-/// 进房恢复当前推送商品卡片（对齐 Android：push/rule → 详情 → 伪 PRODUCT_MESSAGE status=9，经 Socket 分发给原生小卡与互动 H5 大卡）
+/// 进房恢复当前推送商品卡片（对齐 Android：频道详情 channelProductPushingStatusVO → 详情 → 伪 PRODUCT_MESSAGE status=9，经 Socket 分发给原生小卡与互动 H5 大卡）
 - (void)restoreCurrentPushingProductCardIfNeeded {
     if (self.type != PLVECHomePageType_Live ||
         self.hasRequestedProductPushRestore ||
         self.shoppingCartButton.isHidden) {
         return;
     }
+    
+    PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
+    NSUInteger channelId = (NSUInteger)roomData.channelId.integerValue;
+    // 对齐 Android 观察 classDetail：详情未就绪时先返回，商品库展示后再试
+    if (channelId == 0 || !roomData.menuInfo) {
+        return;
+    }
+    
     self.hasRequestedProductPushRestore = YES;
     self.productPushRestoreCancelled = NO;
     
-    NSUInteger channelId = (NSUInteger)[PLVRoomDataManager sharedManager].roomData.channelId.integerValue;
-    if (channelId == 0) {
+    // 对齐 Android：复用已加载的频道详情，避免重复请求 get-channel-detail
+    PLVLiveVideoChannelProductPushingStatus *pushingStatus = roomData.menuInfo.channelProductPushingStatusVO;
+    NSUInteger productId = pushingStatus.productId;
+    NSString *pushRule = pushingStatus.pushRule;
+    if (productId == 0 || ![PLVFdUtil checkStringUseable:pushRule]) {
         return;
     }
     
     __weak typeof(self) weakSelf = self;
-    [PLVLiveVideoAPI requestCurrentPushingProductMessageWithChannelId:channelId completion:^(NSDictionary * _Nullable productMessageDict) {
+    [PLVLiveVideoAPI requestCurrentPushingProductMessageWithChannelId:channelId
+                                                            productId:productId
+                                                             pushRule:pushRule
+                                                           completion:^(NSDictionary * _Nullable productMessageDict) {
         // 对齐 Android：等互动 H5 加载后再分发，大卡片依赖 Interact WebView 收 PRODUCT_MESSAGE
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.5 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             __strong typeof(weakSelf) strongSelf = weakSelf;
@@ -660,14 +676,14 @@ PLVECSubtitleConfigViewDelegate
                 return;
             }
             NSDictionary *content = PLV_SafeDictionaryForDictKey(productMessageDict, @"content");
-            NSUInteger productId = PLV_SafeIntegerForDictKey(content, @"productId");
-            NSString *pushRule = PLV_SafeStringForDictKey(content, @"productPushRule");
+            NSUInteger restoredProductId = PLV_SafeIntegerForDictKey(content, @"productId");
+            NSString *restoredPushRule = PLV_SafeStringForDictKey(content, @"productPushRule");
             BOOL smallCardShowing = (strongSelf.pushView.superview && strongSelf.pushView.alpha == 1);
             // 同商品小卡已展示则跳过；大卡片仍需分发给 H5
-            if ([pushRule isEqualToString:@"smallCard"] &&
+            if ([restoredPushRule isEqualToString:@"smallCard"] &&
                 smallCardShowing &&
                 strongSelf.pushView.model &&
-                strongSelf.pushView.model.productId == productId) {
+                strongSelf.pushView.model.productId == restoredProductId) {
                 return;
             }
             NSString *jsonString = [PLVDataUtil jsonStringWithJSONObject:productMessageDict];
@@ -1384,8 +1400,8 @@ PLVECSubtitleConfigViewDelegate
     }
     [self.commodityVC viewWillLayoutSubviews];
     
-    CGFloat height = 130 + P_SafeAreaBottomEdgeInsets();
-    self.moreView.frame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(CGRectGetWidth(self.bounds) - 375, 0, 375, CGRectGetHeight(self.bounds)) : CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height);
+    CGFloat height = [PLVECUtils sharedUtils].isLandscape ? CGRectGetHeight(self.bounds) : [self.moreView preferredPortraitHeight];
+    self.moreView.frame = [PLVECUtils sharedUtils].isLandscape ? CGRectMake(CGRectGetWidth(self.bounds) - 375, 0, 375, height) : CGRectMake(0, CGRectGetHeight(self.bounds)-height, CGRectGetWidth(self.bounds), height);
     if ([PLVECUtils sharedUtils].isLandscape){
         self.pipPopView.frame = self.moreView.frame;
     }
@@ -2031,6 +2047,14 @@ PLVECSubtitleConfigViewDelegate
         [muArray addObject:itemPlaySet];
     }
         
+    if ([PLVScreenshotHelper isShowScreenshotView]) {
+        PLVECMoreViewItem *screenshotItem = [[PLVECMoreViewItem alloc] init];
+        screenshotItem.title = PLVLocalizedString(PLVECHomePageView_Data_ScreenshotItemTitle);
+        screenshotItem.iconImageName = @"plvec_more_screenshot";
+        screenshotItem.selectedIconImageName = @"plvec_more_screenshot";
+        [muArray addObject:screenshotItem];
+    }
+
     // 语言切换
     PLVECMoreViewItem *item6 = [[PLVECMoreViewItem alloc] init];
     item6.title = PLVLocalizedString(PLVECHomePageView_Data_SwitchLanguageItemTitle);
@@ -2135,6 +2159,11 @@ PLVECSubtitleConfigViewDelegate
         self.pipPopView.hidden = NO;
         self.pipPopView.exitRoomState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenExitLiveRoom;
         self.pipPopView.enterBackState = ![PLVRoomDataManager sharedManager].roomData.disableStartPipWhenEnterBackground;
+    } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_ScreenshotItemTitle)]) {
+        moreView.hidden = YES;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [PLVScreenshotHelper startScreenCaptureFromView:self];
+        });
     } else if ([title isEqualToString:PLVLocalizedString(PLVECHomePageView_Data_MyRewardItemTitle)]) {
         // 我的奖励 - 弹出抽奖记录
         moreView.hidden = YES;

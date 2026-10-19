@@ -89,6 +89,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 点击 开播模板按钮 触发回调
 - (void)moreInfoSheetDidTapLiveTemplateButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
 
+/// 点击 公屏设置按钮 触发回调
+- (void)moreInfoSheetDidTapChatroomSettingButton:(PLVSAMoreInfoSheet *)moreInfoSheet;
+
 /// 点击 礼物特效 按钮 触发回调
 - (void)moreInfoSheet:(PLVSAMoreInfoSheet *)moreInfoSheet didCloseGiftEffects:(BOOL)closeGiftEffects;
 

@@ -300,7 +300,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId
                                                           prohibitWord:(NSString *)prohibitWord {
-    UIFont *font = [UIFont systemFontOfSize:12.0];
+    UIFont *font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
     NSString *nickNameColorHexString = [user isUserSpecial] ? @"#FFCA43" : @"#4399FF";
     UIColor *nickNameColor = [PLVColorUtil colorFromHexString:nickNameColorHexString];
     UIColor *contentColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
@@ -334,8 +334,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
         UIImage *image = [PLVSABaseMessageCell actorImageWithUser:user];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
-        CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
-        attach.bounds = CGRectMake(0, -ceilf(paddingTop), image.size.width, image.size.height);
+        attach.bounds = [PLVSABaseMessageCell actorImageBoundsWithImage:image font:font];
         attach.image = image;
         //添加到富文本对象里
         NSAttributedString * imageStr = [NSAttributedString attributedStringWithAttachment:attach];
@@ -359,7 +358,7 @@ static NSString *KEYPATH_MSGSTATE = @"msgState";
 
 /// 获取严禁词提示多属性文本
 + (NSAttributedString *)contentLabelAttributedStringWithProhibitWordTip:(NSString *)prohibitTipString{
-    UIFont *font = [UIFont systemFontOfSize:12.0];
+    UIFont *font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
     UIColor *color = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:0.6];
     
     NSDictionary *AttDict = @{NSFontAttributeName: font,

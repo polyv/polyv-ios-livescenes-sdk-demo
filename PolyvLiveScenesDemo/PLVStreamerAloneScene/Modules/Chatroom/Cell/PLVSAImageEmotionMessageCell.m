@@ -305,7 +305,7 @@ static  NSString *KEYPATH_EMOTIONMSGSTATE = @"imageEmotionSendState";
 - (UILabel *)nickLabel {
     if (!_nickLabel) {
         _nickLabel = [[UILabel alloc] init];
-        _nickLabel.font = [UIFont systemFontOfSize:12];
+        _nickLabel.font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
         _nickLabel.numberOfLines = 0;
     }
     return _nickLabel;
@@ -442,7 +442,7 @@ static  NSString *KEYPATH_EMOTIONMSGSTATE = @"imageEmotionSendState";
     content = [content stringByAppendingString:@"："];
     
     NSString *colorHexString = [user isUserSpecial] ? @"#FFCA43" : @"#4399FF";
-    UIFont *font = [UIFont systemFontOfSize:12.0];
+    UIFont *font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
     NSDictionary *attributeDict = @{
                                     NSFontAttributeName: font,
                                     NSForegroundColorAttributeName:[PLVColorUtil colorFromHexString:colorHexString]
@@ -458,8 +458,7 @@ static  NSString *KEYPATH_EMOTIONMSGSTATE = @"imageEmotionSendState";
         UIImage *image = [PLVSABaseMessageCell actorImageWithUser:user];
         //创建Image的富文本格式
         NSTextAttachment *attach = [[NSTextAttachment alloc] init];
-        CGFloat paddingTop = font.lineHeight - font.pointSize + 1;
-        attach.bounds = CGRectMake(0, -ceilf(paddingTop), image.size.width, image.size.height);
+        attach.bounds = [PLVSABaseMessageCell actorImageBoundsWithImage:image font:font];
         attach.image = image;
         //添加到富文本对象里
         NSAttributedString * imageStr = [NSAttributedString attributedStringWithAttachment:attach];
@@ -471,7 +470,7 @@ static  NSString *KEYPATH_EMOTIONMSGSTATE = @"imageEmotionSendState";
 
 /// 获取严禁词提示多属性文本
 + (NSAttributedString *)contentLabelAttributedStringWithProhibitWordTip:(NSString *)prohibitTipString{
-    UIFont *font = [UIFont systemFontOfSize:12.0];
+    UIFont *font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
     UIColor *color = [UIColor colorWithRed:240/255.0 green:241/255.0 blue:245/255.0 alpha:0.6];
     
     NSDictionary *AttDict = @{NSFontAttributeName: font,

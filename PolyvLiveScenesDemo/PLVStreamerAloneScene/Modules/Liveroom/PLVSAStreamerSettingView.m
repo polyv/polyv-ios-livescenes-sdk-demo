@@ -14,6 +14,10 @@
 #import "PLVSANoiseCancellationModeSwitchSheet.h"
 #import "PLVSAExternalDeviceSwitchSheet.h"
 #import "PLVImagePickerViewController.h"
+#import "PLVSAChatroomSettingSheet.h"
+#import "PLVSAChatroomListView.h"
+#import "PLVSABaseMessageCell.h"
+#import "PLVChatModel.h"
 
 #define TEXT_MAX_LENGTH 150
 
@@ -71,6 +75,14 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, strong) UIButton *virtualBackgroundButton;
 /// 开播模板按钮
 @property (nonatomic, strong) UIButton *liveTemplateButton;
+/// 公屏设置按钮
+@property (nonatomic, strong) UIButton *chatroomSettingButton;
+/// 公屏模拟预览及横竖屏设置控件
+@property (nonatomic, strong) UIView *chatroomPreviewView;
+@property (nonatomic, strong) PLVSAChatroomListView *chatroomPreviewListView;
+@property (nonatomic, strong) PLVSAChatroomSettingView *chatroomSettingView;
+@property (nonatomic, strong) PLVSAChatroomSettingSheet *chatroomSettingSheet;
+@property (nonatomic, strong) UIButton *chatroomPreviewCloseButton;
 /// 降噪模式
 @property (nonatomic, strong) UIButton *noiseCancellationModeButton;
 /// 外接设备
@@ -123,6 +135,12 @@ PLVSAExternalDeviceSwitchSheetDelegate
 @property (nonatomic, assign) BOOL externalDeviceEnabled;
 /// 当前频道是否开启回放
 @property (nonatomic, assign) BOOL playbackEnabled;
+@property (nonatomic, strong) PLVSAChatroomSetting *chatroomSetting;
+@property (nonatomic, assign) PLVSAChatroomHeightLevel previewChatroomHeightLevel;
+@property (nonatomic, assign) PLVSAChatroomFontLevel previewChatroomFontLevel;
+@property (nonatomic, assign) BOOL showingChatroomSetting;
+@property (nonatomic, assign) CGFloat chatroomPreviewPreviousFontSize;
+@property (nonatomic, copy) NSArray<NSNumber *> *chatroomSettingPreviousHiddenStates;
 
 @end
 
@@ -152,6 +170,14 @@ PLVSAExternalDeviceSwitchSheetDelegate
 - (void)layoutSubviews {
     [super layoutSubviews];
     [self updateUI];
+    [self layoutChatroomSettingPreview];
+}
+
+- (void)didMoveToSuperview {
+    [super didMoveToSuperview];
+    if (!self.superview && self.showingChatroomSetting) {
+        [self closeChatroomSettingPreview];
+    }
 }
 
 - (void)dealloc {
@@ -211,6 +237,9 @@ PLVSAExternalDeviceSwitchSheetDelegate
     
     [self.buttonView addSubview:self.liveTemplateButton];
     [muButtonArray addObject:self.liveTemplateButton];
+
+    [self.buttonView addSubview:self.chatroomSettingButton];
+    [muButtonArray addObject:self.chatroomSettingButton];
     
     [self.buttonView addSubview:self.mirrorButton];
     [self.buttonView addSubview:self.bitRateButton];
@@ -790,6 +819,15 @@ PLVSAExternalDeviceSwitchSheetDelegate
     return _liveTemplateButton;
 }
 
+- (UIButton *)chatroomSettingButton {
+    if (!_chatroomSettingButton) {
+        _chatroomSettingButton = [self buttonWithTitle:PLVLocalizedString(@"公屏设置") NormalImageString:@"plvsa_liveroom_btn_chatroom_setting" selectedImageString:@"plvsa_liveroom_btn_chatroom_setting"];
+        [_chatroomSettingButton addTarget:self action:@selector(chatroomSettingButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+        _chatroomSettingButton.titleEdgeInsets = UIEdgeInsetsMake(_chatroomSettingButton.imageView.frame.size.height + 4, -67, 0, -38);
+    }
+    return _chatroomSettingButton;
+}
+
 - (UIButton *)noiseCancellationModeButton {
     if (!_noiseCancellationModeButton) {
         _noiseCancellationModeButton = [self buttonWithTitle:PLVLocalizedString(@"声音音质Btn") NormalImageString:@"plvsa_liveroom_btn_noise_reduction" selectedImageString:@"plvsa_liveroom_btn_noise_reduction"];
@@ -1164,6 +1202,169 @@ PLVSAExternalDeviceSwitchSheetDelegate
     }
 }
 
+- (void)chatroomSettingButtonAction:(UIButton *)sender {
+    if (self.showingChatroomSetting) {
+        return;
+    }
+    [self endEditing:YES];
+    [self setupChatroomSettingPreview];
+    self.chatroomSetting = [[PLVSAChatroomSetting alloc] init];
+    self.previewChatroomHeightLevel = self.chatroomSetting.heightLevel;
+    self.previewChatroomFontLevel = self.chatroomSetting.fontLevel;
+    self.chatroomPreviewPreviousFontSize = [PLVSABaseMessageCell messageFontSize];
+    self.chatroomSettingPreviousHiddenStates = @[@(self.configView.hidden), @(self.backButton.hidden), @(self.startButton.hidden), @(self.customMaskView.hidden)];
+    self.configView.hidden = self.backButton.hidden = self.startButton.hidden = self.customMaskView.hidden = YES;
+    self.showingChatroomSetting = YES;
+    [self addSubview:self.chatroomPreviewView];
+
+    BOOL landscape = [PLVSAUtils sharedUtils].isLandscape;
+    self.chatroomSettingView.hidden = landscape;
+    self.chatroomPreviewCloseButton.hidden = landscape;
+    [self.chatroomSettingView updateHeightLevel:self.previewChatroomHeightLevel fontLevel:self.previewChatroomFontLevel];
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+    [self.chatroomPreviewListView updateMessageFontSize:[PLVSAChatroomSetting fontSizeForLevel:self.previewChatroomFontLevel]];
+    if (landscape) {
+        [self.chatroomSettingSheet updateHeightLevel:self.previewChatroomHeightLevel fontLevel:self.previewChatroomFontLevel];
+        [self.chatroomSettingSheet showInView:self.chatroomPreviewView];
+    }
+}
+
+- (void)setupChatroomSettingPreview {
+    if (self.chatroomPreviewView) {
+        return;
+    }
+    self.chatroomPreviewView = [[UIView alloc] init];
+    self.chatroomPreviewListView = [[PLVSAChatroomListView alloc] initWithPreviewMessages:[self chatroomPreviewMessages]];
+    [self.chatroomPreviewView addSubview:self.chatroomPreviewListView];
+    self.chatroomSettingView = [[PLVSAChatroomSettingView alloc] init];
+    [self.chatroomPreviewView addSubview:self.chatroomSettingView];
+    self.chatroomPreviewCloseButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [self.chatroomPreviewCloseButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_close"] forState:UIControlStateNormal];
+    [self.chatroomPreviewCloseButton addTarget:self action:@selector(closeChatroomSettingPreview) forControlEvents:UIControlEventTouchUpInside];
+    [self.chatroomPreviewView addSubview:self.chatroomPreviewCloseButton];
+
+    CGFloat maxWH = MAX([UIScreen mainScreen].bounds.size.height, [UIScreen mainScreen].bounds.size.width);
+    self.chatroomSettingSheet = [[PLVSAChatroomSettingSheet alloc] initWithSheetHeight:MIN(320.0, MAX(260.0, maxWH * 0.32)) sheetLandscapeWidth:maxWH * 0.46];
+    __weak typeof(self) weakSelf = self;
+    self.chatroomSettingView.heightLevelChanged = ^(NSInteger level) {
+        [weakSelf previewChatroomHeightLevelChanged:level];
+    };
+    self.chatroomSettingSheet.heightLevelChanged = ^(PLVSAChatroomHeightLevel level) {
+        [weakSelf previewChatroomHeightLevelChanged:level];
+    };
+    self.chatroomSettingView.fontLevelChanged = ^(NSInteger level) {
+        [weakSelf previewChatroomFontLevelChanged:level];
+    };
+    self.chatroomSettingSheet.fontLevelChanged = ^(PLVSAChatroomFontLevel level) {
+        [weakSelf previewChatroomFontLevelChanged:level];
+    };
+    self.chatroomSettingView.doneHandler = ^{
+        [weakSelf saveChatroomSettingPreview];
+        [weakSelf closeChatroomSettingPreview];
+    };
+    self.chatroomSettingSheet.completeHandler = ^{
+        [weakSelf saveChatroomSettingPreview];
+    };
+    __weak PLVSAChatroomSettingSheet *weakSheet = self.chatroomSettingSheet;
+    self.chatroomSettingSheet.didCloseSheet = ^{
+        if (weakSelf.chatroomSettingSheet == weakSheet) {
+            [weakSelf closeChatroomSettingPreview];
+        }
+    };
+}
+
+- (NSArray<PLVChatModel *> *)chatroomPreviewMessages {
+    // 只交给预览列表渲染，不写入聊天室 ViewModel，也不发送消息。
+    NSArray<NSString *> *contents = @[
+        @"大家好，欢迎来到直播间！", @"直播准备开始啦", @"期待今天的分享 😊",
+        @"画面很清晰", @"声音也很清楚", @"为主播点赞 👍",
+        @"今天的内容很精彩，大家一起参与互动吧", @"收到，谢谢老师", @"大家好",
+        @"这是一条较长的聊天消息，可以预览不同字号下的换行效果", @"期待接下来的直播", @"一起聊聊吧 😊"
+    ];
+    NSArray<PLVChatUser *> *users = @[
+        [[PLVChatUser alloc] initWithUserInfo:@{@"userId": @"chatroom-preview-teacher", @"nick": @"李老师", @"userType": @"teacher", @"actor": PLVLocalizedString(@"讲师")}],
+        [[PLVChatUser alloc] initWithUserInfo:@{@"userId": @"chatroom-preview-assistant", @"nick": @"张老师", @"userType": @"assistant", @"actor": PLVLocalizedString(@"助教")}],
+        [[PLVChatUser alloc] initWithUserInfo:@{@"userId": @"chatroom-preview-viewer", @"nick": @"小花", @"userType": @"viewer"}]
+    ];
+    NSMutableArray<PLVChatModel *> *models = [NSMutableArray arrayWithCapacity:contents.count];
+    for (NSUInteger index = 0; index < contents.count; index++) {
+        PLVSpeakMessage *message = [[PLVSpeakMessage alloc] init];
+        message.content = contents[index];
+        PLVChatModel *model = [[PLVChatModel alloc] init];
+        model.user = users[index % users.count];
+        model.message = message;
+        model.msgState = PLVChatMsgStateSuccess;
+        model.contentLength = PLVChatMsgContentLength_0To500;
+        [models addObject:model];
+    }
+    return [models copy];
+}
+
+- (void)layoutChatroomSettingPreview {
+    if (!self.showingChatroomSetting) {
+        return;
+    }
+    UIEdgeInsets insets = [PLVSAUtils sharedUtils].areaInsets;
+    BOOL landscape = [PLVSAUtils sharedUtils].isLandscape;
+    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
+    CGFloat toolbarHeight = isPad ? 72.0 : (landscape ? 56.0 : 60.0);
+    CGFloat listLeft = isPad ? 24.0 : (landscape ? 36.0 : 8.0);
+    CGFloat chatroomWidth = CGRectGetWidth(self.bounds) * (isPad ? 0.41 : (landscape ? 0.3 : 0.65));
+    // 与直播页一致，预留聊天输入工具栏和安全区，避免预览位置与开播后不同。
+    CGFloat chatroomBottom = CGRectGetHeight(self.bounds) - insets.bottom - toolbarHeight;
+    CGFloat topLimit = insets.top + (landscape ? 80.0 : 8.0);
+    CGFloat height = [PLVSAChatroomSetting heightForLevel:self.previewChatroomHeightLevel maximumHeight:MAX(0.0, chatroomBottom - topLimit) landscape:landscape];
+    self.chatroomPreviewView.frame = self.bounds;
+    self.chatroomPreviewListView.frame = CGRectMake(insets.left + listLeft, chatroomBottom - height, MAX(0.0, chatroomWidth - listLeft), height);
+    [self.chatroomPreviewListView layoutIfNeeded];
+    [self.chatroomPreviewListView scrollsToBottom:NO];
+    self.chatroomSettingView.frame = self.chatroomPreviewView.bounds;
+    self.chatroomSettingView.controlsBottom = chatroomBottom - 8.0;
+    self.chatroomSettingView.bottomInset = insets.bottom;
+    self.chatroomSettingView.rightInset = insets.right;
+    [self.chatroomSettingView setNeedsLayout];
+    self.chatroomPreviewCloseButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - insets.right - 46.0, insets.top + 2.0, 44.0, 44.0);
+}
+
+- (void)previewChatroomHeightLevelChanged:(NSInteger)level {
+    self.previewChatroomHeightLevel = level;
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
+}
+
+- (void)previewChatroomFontLevelChanged:(NSInteger)level {
+    self.previewChatroomFontLevel = level;
+    [self.chatroomPreviewListView updateMessageFontSize:[PLVSAChatroomSetting fontSizeForLevel:level]];
+}
+
+- (void)saveChatroomSettingPreview {
+    self.chatroomSetting.heightLevel = self.previewChatroomHeightLevel;
+    self.chatroomSetting.fontLevel = self.previewChatroomFontLevel;
+    [self.chatroomSetting save];
+}
+
+- (void)closeChatroomSettingPreview {
+    if (!self.showingChatroomSetting) {
+        return;
+    }
+    self.showingChatroomSetting = NO;
+    [self.chatroomSettingSheet dismiss];
+    [self.chatroomPreviewView removeFromSuperview];
+    NSArray<UIView *> *views = @[self.configView, self.backButton, self.startButton, self.customMaskView];
+    for (NSUInteger index = 0; index < views.count; index++) {
+        views[index].hidden = self.chatroomSettingPreviousHiddenStates[index].boolValue;
+    }
+    self.chatroomSettingPreviousHiddenStates = nil;
+    [PLVSABaseMessageCell setMessageFontSize:self.chatroomPreviewPreviousFontSize];
+    self.chatroomPreviewView = nil;
+    self.chatroomPreviewListView = nil;
+    self.chatroomSettingView = nil;
+    self.chatroomSettingSheet = nil;
+    self.chatroomPreviewCloseButton = nil;
+    self.chatroomSetting = nil;
+}
+
 - (void)modifyCoverButtonAction:(id)sender {
     if ([PLVRoomDataManager sharedManager].roomData.roomUser.viewerType == PLVRoomUserTypeTeacher) {
         [self showCoverImagePicker];
@@ -1228,6 +1429,9 @@ PLVSAExternalDeviceSwitchSheetDelegate
 
 #pragma mark <UIGestureRecognizerDelegate>
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+    if (self.showingChatroomSetting) {
+        return NO;
+    }
     if ([NSStringFromClass([touch.view class]) isEqualToString:@"UITableViewCellContentView"] ||
         [NSStringFromClass([touch.view.superview class]) isEqualToString:@"UITableViewCellContentView"]) {
         return NO;
@@ -1324,6 +1528,7 @@ PLVSAExternalDeviceSwitchSheetDelegate
 }
 
 - (void)changeDeviceOrientation:(UIDeviceOrientation)orientation {
+    [self closeChatroomSettingPreview];
     self.orientationButton.selected = (orientation != UIDeviceOrientationPortrait);
     self.canAutorotate = YES;
     [PLVFdUtil changeDeviceOrientation:orientation];

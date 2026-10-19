@@ -233,3 +233,12 @@
 "本地音量" = "Local volume";
 
 "本地音量默认为 0，调大可能引发直播回音，建议戴耳机监听。" = "Turning up volume may bring echo,recommend headphones";
+
+"公屏设置" = "Chat display";
+"高度" = "Height";
+"字号" = "Text";
+"低" = "Low";
+"中" = "Mid";
+"高" = "High";
+"小" = "S";
+"大" = "L";

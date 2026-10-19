@@ -14,7 +14,17 @@
 // model
 #import "PLVChatModel.h"
 
+static CGFloat kPLVSAMessageFontSize = 12.0;
+
 @implementation PLVSABaseMessageCell
+
++ (CGFloat)messageFontSize {
+    return kPLVSAMessageFontSize;
+}
+
++ (void)setMessageFontSize:(CGFloat)fontSize {
+    kPLVSAMessageFontSize = MAX(12.0, MIN(16.0, fontSize));
+}
 
 #pragma mark - [ Life Cycle ]
 
@@ -205,5 +215,12 @@
     UIImage *image = [PLVImageUtil imageFromUIView:label opaque:NO scale:[UIScreen mainScreen].scale];
 
     return image;
+}
+
++ (CGRect)actorImageBoundsWithImage:(UIImage *)image font:(UIFont *)font {
+    // NSTextAttachment 以文字基线为原点，按字体上下沿的中心计算偏移，
+    // 保证固定高度的身份标签在不同公屏字号下都与当前行垂直居中。
+    CGFloat originY = (font.ascender + font.descender - image.size.height) / 2.0;
+    return CGRectMake(0, originY, image.size.width, image.size.height);
 }
 @end

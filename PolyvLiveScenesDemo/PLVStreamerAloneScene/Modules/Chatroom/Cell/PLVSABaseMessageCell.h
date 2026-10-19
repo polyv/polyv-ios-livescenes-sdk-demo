@@ -17,6 +17,12 @@ NS_ASSUME_NONNULL_BEGIN
 @interface PLVSABaseMessageCell : UITableViewCell
 // 数据
 
+/// 当前公屏消息字号，默认 12pt
++ (CGFloat)messageFontSize;
+
+/// 更新公屏消息字号，仅作用于纯视频开播端本地公屏
++ (void)setMessageFontSize:(CGFloat)fontSize;
+
 /// 消息数据模型
 @property (nonatomic, strong) PLVChatModel *model;
 
@@ -59,6 +65,9 @@ NS_ASSUME_NONNULL_BEGIN
 /// 身份标签图片
 /// @param user 用户模型
 + (UIImage*) actorImageWithUser:(PLVChatUser *)user;
+
+/// 身份标签在当前消息字体中的垂直居中位置
++ (CGRect)actorImageBoundsWithImage:(UIImage *)image font:(UIFont *)font;
 
 @end
 

@@ -39,6 +39,7 @@
 @property (nonatomic, strong) UIButton *stickerVideoButton; // 视频类型贴纸
 @property (nonatomic, strong) UIButton *aiMattingButton; // AI抠像
 @property (nonatomic, strong) UIButton *liveTemplateButton; // 开播模板
+@property (nonatomic, strong) UIButton *chatroomSettingButton; // 公屏设置
 @property (nonatomic, strong) UIButton *allowRaiseHandButton; // 开启/关闭观众连麦
 @property (nonatomic, strong) UIButton *linkMicSettingButton; // 连麦设置
 @property (nonatomic, strong) UIButton *removeAllAudiencesButton; // 观众下麦
@@ -261,6 +262,9 @@
     
     [buttonSuperView addSubview:self.liveTemplateButton];
     [muButtonArray addObject:self.liveTemplateButton];
+
+    [buttonSuperView addSubview:self.chatroomSettingButton];
+    [muButtonArray addObject:self.chatroomSettingButton];
     
     self.buttonArray = [muButtonArray copy];
     
@@ -600,6 +604,21 @@
     return _removeAllAudiencesButton;
 }
 
+- (UIButton *)chatroomSettingButton {
+    if (!_chatroomSettingButton) {
+        _chatroomSettingButton = [UIButton buttonWithType:UIButtonTypeCustom];
+        _chatroomSettingButton.titleLabel.font = [UIFont systemFontOfSize:12];
+        _chatroomSettingButton.titleLabel.textColor = [UIColor colorWithWhite:1 alpha:0.6];
+        _chatroomSettingButton.titleLabel.lineBreakMode = NSLineBreakByWordWrapping;
+        _chatroomSettingButton.titleLabel.textAlignment = NSTextAlignmentCenter;
+        [_chatroomSettingButton setTitle:PLVLocalizedString(@"公屏设置") forState:UIControlStateNormal];
+        _chatroomSettingButton.imageView.contentMode = UIViewContentModeScaleAspectFit;
+        [_chatroomSettingButton setImage:[PLVSAUtils imageForLiveroomResource:@"plvsa_liveroom_btn_chatroom_setting"] forState:UIControlStateNormal];
+        [_chatroomSettingButton addTarget:self action:@selector(chatroomSettingButtonAction) forControlEvents:UIControlEventTouchUpInside];
+    }
+    return _chatroomSettingButton;
+}
+
 - (UILabel *)interactiveTitleLabel {
     if (!_interactiveTitleLabel) {
         _interactiveTitleLabel = [[UILabel alloc] init];
@@ -915,7 +934,6 @@
         default:
             break;
     }
-    title = [NSString stringWithFormat:@"%@\n  ", title];
     NSArray<PLVClientPushStreamTemplateVideoParams *> *videoParamsArray = [PLVLiveVideoConfig sharedInstance].videoParams;
     if ([PLVLiveVideoConfig sharedInstance].clientPushStreamTemplateEnabled &&
         [PLVFdUtil checkStringUseable:streamQualityLevel] &&
@@ -929,9 +947,9 @@
         }];
         
         if ([PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH || [PLVMultiLanguageManager sharedManager].currentLanguage == PLVMultiLanguageModeZH_HK) {
-            title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityName];
+            title = videoParam.qualityName;
         } else {
-            title = [NSString stringWithFormat:@"%@\n  ", videoParam.qualityEnName];
+            title = videoParam.qualityEnName;
         }
         
         if ([videoParam.qualityLevel containsString:@"FHD"]) {
@@ -945,14 +963,6 @@
         }
     }
     
-    // iPad时，文案去掉换行
-    BOOL isPad = [[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPad;
-    if (isPad && [title containsString:@"\n  "]) {
-        NSRange range = [title rangeOfString:@"\n  "];
-        NSString *padTitle = [title substringToIndex:range.location];
-        title = padTitle;
-    }
-
     [self.cameraBitRateButton setTitle:title forState:UIControlStateNormal];
     [self.cameraBitRateButton setImage:[PLVSAUtils imageForLiveroomResource:imageName] forState:UIControlStateNormal];
 }
@@ -1263,6 +1273,13 @@
     [self dismiss];
     if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapLiveTemplateButton:)]) {
         [self.delegate moreInfoSheetDidTapLiveTemplateButton:self];
+    }
+}
+
+- (void)chatroomSettingButtonAction {
+    [self dismiss];
+    if (self.delegate && [self.delegate respondsToSelector:@selector(moreInfoSheetDidTapChatroomSettingButton:)]) {
+        [self.delegate moreInfoSheetDidTapChatroomSettingButton:self];
     }
 }
 

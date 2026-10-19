@@ -47,6 +47,8 @@ UITableViewDataSource
 @property (nonatomic, assign) CGPoint lastContentOffset; // 聊天室列表上次滚动结束时的contentOffset
 @property (nonatomic, assign) BOOL observingTableView; // 是否已对列表进行KVO，默认为NO
 @property (nonatomic, assign, readonly) BOOL allowPinMessage; // 是否允许评论上墙功能
+@property (nonatomic, copy) NSArray<PLVChatModel *> *previewMessages; // 开播前独立模拟数据，nil 时使用直播消息
+@property (nonatomic, strong, readonly) NSArray<PLVChatModel *> *chatModels;
 
 @end
 
@@ -56,8 +58,14 @@ UITableViewDataSource
 #pragma mark - [ Life Cycle ]
 
 - (instancetype)init {
+    return [self initWithPreviewMessages:nil];
+}
+
+- (instancetype)initWithPreviewMessages:(NSArray<PLVChatModel *> *)messages {
     self = [super init];
     if (self) {
+        _previewMessages = [messages copy];
+        self.userInteractionEnabled = !messages;
         [self addSubview:self.tableView];
         [self.layer setMask:self.gradientLayer];
         
@@ -74,6 +82,14 @@ UITableViewDataSource
 
 - (void)layoutSubviews {
     self.gradientLayer.frame = self.bounds;
+
+    if (self.previewMessages && CGRectGetWidth(self.tableView.bounds) != CGRectGetWidth(self.bounds)) {
+        self.tableView.frame = self.bounds;
+        for (PLVChatModel *model in self.previewMessages) {
+            model.cellHeightForV = 0.0;
+        }
+        [self.tableView reloadData];
+    }
     
     CGFloat contentHeight = self.tableView.contentSize.height;
     if (contentHeight < CGRectGetHeight(self.bounds)) {
@@ -85,13 +101,32 @@ UITableViewDataSource
         self.tableView.frame = self.bounds;
         self.tableView.scrollEnabled = YES;
     }
-    [PLVSAChatroomViewModel sharedViewModel].tableViewWidth = self.tableView.frame.size.width;
+    if (!self.previewMessages) {
+        [PLVSAChatroomViewModel sharedViewModel].tableViewWidth = self.tableView.frame.size.width;
+    }
 }
 
 #pragma mark - [ Public Method ]
 
 - (void)didSendMessage {
     [self.tableView reloadData];
+    [self scrollsToBottom:NO];
+}
+
+- (void)updateMessageFontSize:(CGFloat)fontSize {
+    [PLVSABaseMessageCell setMessageFontSize:fontSize];
+
+    // 消息富文本和高度缓存在字号变化后均需失效，才能完成实时预览。
+    NSArray<PLVChatModel *> *chatArray = self.chatModels;
+    NSArray<PLVChatModel *> *chatArrayWithoutReward = self.previewMessages ? @[] : [PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward;
+    for (PLVChatModel *model in [chatArray arrayByAddingObjectsFromArray:chatArrayWithoutReward ?: @[]]) {
+        model.attributeString = nil;
+        model.cellHeightForV = 0.0;
+    }
+
+    [self.tableView reloadData];
+    [self setNeedsLayout];
+    [self layoutIfNeeded];
     [self scrollsToBottom:NO];
 }
 
@@ -218,7 +253,9 @@ UITableViewDataSource
         _tableView.estimatedRowHeight = 0;
         _tableView.estimatedSectionFooterHeight = 0;
         _tableView.estimatedSectionHeaderHeight = 0;
-        _tableView.mj_header = self.refresher;
+        if (!self.previewMessages) {
+            _tableView.mj_header = self.refresher;
+        }
     }
     return _tableView;
 }
@@ -243,6 +280,13 @@ UITableViewDataSource
     }
 
     return NO;
+}
+
+- (NSArray<PLVChatModel *> *)chatModels {
+    if (self.previewMessages) {
+        return self.previewMessages;
+    }
+    return self.closeGiftEffects ? [PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward : [PLVSAChatroomViewModel sharedViewModel].chatArray;
 }
 
 - (BOOL)allowBanUser {
@@ -363,20 +407,16 @@ UITableViewDataSource
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return self.closeGiftEffects ? [[[PLVSAChatroomViewModel sharedViewModel] chatArrayWithoutReward] count] : [[[PLVSAChatroomViewModel sharedViewModel] chatArray] count];
+    return self.chatModels.count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (self.closeGiftEffects) {
-        if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward.count) {
-            return [UITableViewCell new];
-        }
-    } else if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArray.count) {
+    if (indexPath.row >= self.chatModels.count) {
         return [UITableViewCell new];
     }
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-    PLVChatModel *model = self.closeGiftEffects ? [[PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward objectAtIndex:indexPath.row] : [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
+    PLVChatModel *model = self.chatModels[indexPath.row];
     
     if ([PLVSASpeakMessageCell isModelValid:model]) {
         static NSString *speakMessageCellIdentify = @"PLVSASpeakMessageCell";
@@ -569,18 +609,14 @@ UITableViewDataSource
 #pragma mark - UITableView Delegate
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
-    if (self.closeGiftEffects) {
-        if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward.count) {
-            return 0.0;
-        }
-    } else if (indexPath.row >= [PLVSAChatroomViewModel sharedViewModel].chatArray.count) {
+    if (indexPath.row >= self.chatModels.count) {
         return 0.0;
     }
     
     CGFloat cellHeight =  44.0;
     
     PLVRoomUser *roomUser = [PLVRoomDataManager sharedManager].roomData.roomUser;
-   PLVChatModel *model = self.closeGiftEffects ? [[PLVSAChatroomViewModel sharedViewModel].chatArrayWithoutReward objectAtIndex:indexPath.row] : [[PLVSAChatroomViewModel sharedViewModel].chatArray objectAtIndex:indexPath.row];
+    PLVChatModel *model = self.chatModels[indexPath.row];
     if ([PLVSASpeakMessageCell isModelValid:model]) {
         if (model.cellHeightForV == 0.0) {
             model.cellHeightForV = [PLVSASpeakMessageCell cellHeightWithModel:model loginUserId:roomUser.viewerId cellWidth:self.tableView.frame.size.width];

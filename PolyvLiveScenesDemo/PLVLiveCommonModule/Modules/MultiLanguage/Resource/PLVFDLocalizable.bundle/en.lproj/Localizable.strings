@@ -170,6 +170,12 @@
 
 "混流配置调用错误，数据解析出错" = "Mixed flow configuration call error, data parsing error";
 
+"分辨率上报调用错误，code非200" = "Resolution report call error, code is not 200";
+
+"分辨率上报调用错误，参数出错" = "Resolution report call error, parameter error";
+
+"分辨率上报调用错误，数据解析出错" = "Resolution report call error, data parsing error";
+
 "画中画开启失败" = "Failed to enable picture-in-picture";
 
 "登录ack后台报错" = "Log in to the ack server and report an error";

@@ -46,6 +46,12 @@ NS_ASSUME_NONNULL_BEGIN
 
 @property (nonatomic, assign) BOOL closeGiftEffects;
 
+/// 使用独立模拟消息预览公屏，不加载历史消息，也不参与真实聊天交互。
+- (instancetype)initWithPreviewMessages:(nullable NSArray<PLVChatModel *> *)messages;
+
+/// 实时更新纯视频开播端公屏消息字号
+- (void)updateMessageFontSize:(CGFloat)fontSize;
+
 /// 发送消息
 - (void)didSendMessage;
 

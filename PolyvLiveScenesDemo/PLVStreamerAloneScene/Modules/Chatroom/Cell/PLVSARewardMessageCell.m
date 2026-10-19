@@ -65,13 +65,12 @@
     CGFloat rewardHeight = bubbleHeight;
     CGFloat rewardPadding = 4;
     
-    CGFloat maxTextViewWidth = self.cellWidth - xPadding * 2 - rewardWidth - rewardPadding;
-    
-    CGSize textViewSize = [self.contentLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, 12)];
-    
-    if (textViewSize.width + xPadding + rewardWidth + rewardPadding > maxTextViewWidth ) {
-        textViewSize.width = maxTextViewWidth - xPadding - rewardWidth - rewardPadding;
-    }
+    // 气泡内容依次为：左边距、文本、图文间距、礼物图标、右边距。
+    // maxTextViewWidth 已扣除了图标和全部边距，不应在截断时再次扣减。
+    CGFloat maxTextViewWidth = MAX(0, self.cellWidth - xPadding * 2 - rewardWidth - rewardPadding);
+
+    CGSize textViewSize = [self.contentLabel sizeThatFits:CGSizeMake(CGFLOAT_MAX, bubbleHeight)];
+    textViewSize.width = MIN(textViewSize.width, maxTextViewWidth);
     
     self.contentLabel.frame = CGRectMake(xPadding, (bubbleHeight - textViewSize.height ) / 2, textViewSize.width, textViewSize.height);
     
@@ -160,7 +159,7 @@
 - (UILabel *)contentLabel {
     if (!_contentLabel) {
         _contentLabel = [[UILabel alloc] init];
-        _contentLabel.font = [UIFont systemFontOfSize:12];
+        _contentLabel.font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
         _contentLabel.textColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
         _contentLabel.lineBreakMode = NSLineBreakByTruncatingMiddle;
     }
@@ -185,7 +184,7 @@
 + (NSMutableAttributedString *)contentLabelAttributedStringWithMessage:(PLVRewardMessage *)message
                                                                   user:(PLVChatUser *)user
                                                            loginUserId:(NSString *)loginUserId {
-    UIFont *font = [UIFont systemFontOfSize:12.0];
+    UIFont *font = [UIFont systemFontOfSize:[PLVSABaseMessageCell messageFontSize]];
     UIColor *nickNameColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
     UIColor *contentColor = [PLVColorUtil colorFromHexString:@"#F0F1F5"];
     

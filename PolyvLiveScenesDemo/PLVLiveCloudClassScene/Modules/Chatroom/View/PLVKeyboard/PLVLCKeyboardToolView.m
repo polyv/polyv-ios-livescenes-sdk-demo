@@ -10,6 +10,7 @@
 #import "PLVLCKeyboardTextView.h"
 #import "PLVLCEmojiSelectView.h"
 #import "PLVLCKeyboardMoreView.h"
+#import "PLVScreenshotHelper.h"
 #import "PLVEmoticonManager.h"
 #import "PLVLCUtils.h"
 #import "PLVMultiLanguageManager.h"
@@ -778,6 +779,13 @@ PLVLCKeyboardMoreViewDelegate
     if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView_pipSet:)]){
         [self.delegate keyboardToolView_pipSet:self];
     }
+}
+
+- (void)keyboardMoreView_screenshot:(PLVLCKeyboardMoreView *)moreView {
+    [self tapAction:nil];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [PLVScreenshotHelper startScreenCaptureFromView:self];
+    });
 }
 
 #pragma mark - PLVEmojiSelectView Delegate
