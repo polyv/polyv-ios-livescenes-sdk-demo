@@ -54,6 +54,8 @@
 
 Demo [Testfight版本体验链接](https://testflight.apple.com/join/7XxnEJxS) 
 
+> 1.43.0.1 起支持 Apple Silicon（arm64）模拟器直接运行，无需 Rosetta、无需排除 arm64 架构；开播、连麦、美颜、屏幕共享等依赖摄像头/麦克风的场景请使用真机体验。
+
 ### 4 Wiki 文档
 
 可在 [Wiki 文档](https://help.polyv.net/index.html#/live/ios/) 中，了解 **项目结构、SDK 能力、源码释义** 等内容
@@ -68,6 +70,7 @@ Demo [Testfight版本体验链接](https://testflight.apple.com/join/7XxnEJxS)
 
 | Github 仓库 Tag | 依赖 SDK 版本 | API 文档 | Comon 层 | 观看端-云课堂场景 | 观看端-直播带货场景 | 开播端-手机开播（三分屏）场景 | 互动学堂场景 |
 | --------------- | ------------- | -------------------------------------------------------------------------------------------- | -------- | ----------------- | ------------------- | ----------------------------- | ----------------------------- |
+| 1.43.0.1 | 1.43.0.1 | [v1.42.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.42.0-20260919/index.html) | ✅ | ✅ | ✅ | | |
 | 1.42.0 | 1.42.0 | [v1.42.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.42.0-20260919/index.html) |✅ | ✅ | ✅| ✅ | |
 | 1.41.0 | 1.41.0 | [v1.41.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.41.0-20260830/index.html) |✅ | ✅ | ✅| ✅ | |
 | 1.40.0 | 1.40.0 | [v1.40.0 API](https://repo.polyv.net/ios/documents/PLVLiveScenesSDK/1.40.0-20260813/index.html) | |  | ✅| ✅ | |
@@ -147,6 +150,7 @@ Demo [Testfight版本体验链接](https://testflight.apple.com/join/7XxnEJxS)
 | 1.3.0           | 1.3.0         |                                                                                              | ✅       | ✅                | ✅                  |                               |                               |
 
 更多版本更新详情，可前往 [版本更新列表](../../releases)，了解 **对应版本更新说明**，以及 **下载源码**
+
 
 
 
