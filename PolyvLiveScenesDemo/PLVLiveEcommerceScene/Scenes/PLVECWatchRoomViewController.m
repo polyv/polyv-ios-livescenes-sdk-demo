@@ -113,6 +113,7 @@ PLVECRealTimeSubtitleManagerDelegate
         }
         
         [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
+        roomData.sendLikeDisable = YES;
         [[PLVRoomDataManager sharedManager].roomData requestChannelFunctionSwitch];
         
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];

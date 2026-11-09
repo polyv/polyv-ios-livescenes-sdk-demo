@@ -636,7 +636,7 @@
 
 /// 切换聊天室关闭状态，开启/禁用输入框
 - (void)changeCloseRoomStatus:(BOOL)closeRoom {
-    NSString *guideChatLabelText = closeRoom ? PLVLocalizedString(@"聊天室已关闭"):PLVLocalizedString(@"跟大家聊点什么吧～");
+    NSString *guideChatLabelText = closeRoom ? PLVLocalizedString(@"聊天室已关闭") : [self defaultChatPlaceholder];
     [self.guideChatLabel setText:guideChatLabelText];
     self.guideChatLabel.userInteractionEnabled = !closeRoom;
     [self.landscapeInputView showInputView:NO];
@@ -644,13 +644,17 @@
 
 /// 切换聊天室专注模式状态，开启/禁用输入框
 - (void)changeFocusModeStatus:(BOOL)focusMode{
-    NSString *guideChatLabelText = focusMode ? PLVLocalizedString(@"当前为专注模式，无法发言"):PLVLocalizedString(@"跟大家聊点什么吧～");
+    NSString *guideChatLabelText = focusMode ? PLVLocalizedString(@"当前为专注模式，无法发言") : [self defaultChatPlaceholder];
     [self.guideChatLabel setText:guideChatLabelText];
     self.guideChatLabel.userInteractionEnabled = !focusMode;
     [self.landscapeInputView showInputView:NO];
 }
 
 #pragma mark Private Getter
+- (NSString *)defaultChatPlaceholder {
+    return [PLVRoomDataManager sharedManager].roomData.chatInputPlaceholder ?: PLVLocalizedString(@"跟大家聊点什么吧～");
+}
+
 - (UIButton *)bulletinButton{
     if (!_bulletinButton && self.skinViewType < PLVLCBasePlayerSkinViewType_AlonePlayback) {
         _bulletinButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -690,6 +694,8 @@
         _guideChatLabel.textAlignment = NSTextAlignmentCenter;
         _guideChatLabel.textColor = [UIColor whiteColor];
         _guideChatLabel.font = [UIFont fontWithName:@"PingFang SC" size:14];
+        _guideChatLabel.numberOfLines = 1;
+        _guideChatLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         _guideChatLabel.backgroundColor = [UIColor colorWithWhite:1 alpha:0.5];
         _guideChatLabel.layer.cornerRadius = 18.0;
         _guideChatLabel.clipsToBounds = YES;
@@ -698,7 +704,7 @@
         if ([PLVRoomDataManager sharedManager].roomData.videoType == PLVChannelVideoType_Playback) { //回放时不支持发言
             _guideChatLabel.text = PLVLocalizedString(@"聊天室暂时关闭");
         } else {
-            _guideChatLabel.text = PLVLocalizedString(@"跟大家聊点什么吧～");
+            _guideChatLabel.text = [self defaultChatPlaceholder];
             UITapGestureRecognizer * guideChatLabelTapGR = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(guideChatLabelTapGestureAction:)];
             [_guideChatLabel addGestureRecognizer:guideChatLabelTapGR];
         }

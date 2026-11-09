@@ -42,6 +42,8 @@ typedef NS_ENUM(NSInteger, PLVECKeyboardToolMode) {
 
 /// 是否启用聊天室键盘 只对公聊有效
 @property (nonatomic, assign) BOOL enabledKeyboardTool;
+/// 是否显示聊天分组，默认 YES
+@property (nonatomic, assign) BOOL enableChat;
 /// 是否开启提问功能【默认不开启】
 @property (nonatomic, assign) BOOL enableAskQuestion;
 

@@ -81,6 +81,18 @@ NSString * _Nonnull PLVRoomDataKeyDisableStartPipWhenEnterBackground = @"KRoomDa
 
 @implementation PLVRoomData
 
+- (NSString * _Nullable)chatInputPlaceholder {
+    for (PLVLiveVideoChannelMenu *menu in self.menuInfo.channelMenus) {
+        if ([menu.menuType isEqualToString:@"chat"] && [PLVFdUtil checkStringUseable:menu.content]) {
+            NSString *content = [menu.content stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+            if (content.length > 0) {
+                return [[content componentsSeparatedByCharactersInSet:NSCharacterSet.newlineCharacterSet] componentsJoinedByString:@" "];
+            }
+        }
+    }
+    return nil;
+}
+
 #pragma mark - [ Public Method ]
 
 - (instancetype)init{

@@ -58,7 +58,9 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 
 - (void)changePlaceholderText:(NSString *)text {
     self.placeholderText = text;
-    [self endEdit];
+    if (self.isInPlaceholder) {
+        [self endEdit];
+    }
 }
 
 - (UIColor *)editingTextColor {
@@ -70,18 +72,21 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
         return;
     }
     self.isInPlaceholder = NO;
+    self.textContainer.maximumNumberOfLines = 0;
+    self.textContainer.lineBreakMode = NSLineBreakByWordWrapping;
     self.textColor = [self editingTextColor];
     self.attributedText = self.emptyContent;
 }
 
 - (void)endEdit {
     self.isInPlaceholder = YES;
+    self.textContainer.maximumNumberOfLines = 1;
+    self.textContainer.lineBreakMode = NSLineBreakByTruncatingTail;
     self.attributedText = [self placeholderAttributedString];
 }
 
 - (void)clearText {
-    self.isInPlaceholder = YES;
-    self.attributedText = [self placeholderAttributedString];
+    [self endEdit];
 }
 
 - (NSString *)plvTextForRange:(NSRange)range {
@@ -146,6 +151,7 @@ static NSString *kTextBackedStringAttributeName = @"kTextBackedStringAttributeNa
 - (NSDictionary *)placeholderrAttribute {
     UIFont *font = [UIFont systemFontOfSize:kFontSize];
     NSMutableParagraphStyle *paragraphStyle = [self paragraphStyle];
+    paragraphStyle.lineBreakMode = NSLineBreakByTruncatingTail;
     UIColor *placeholderColor = [UIColor colorWithRed:0x49/255.0 green:0x4a/255.0 blue:0x56/255.0 alpha:1];
     
     NSDictionary *placeholderAttributes = @{NSFontAttributeName:font,

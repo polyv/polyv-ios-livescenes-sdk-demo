@@ -80,6 +80,7 @@
 - (void)setupUIWithItems:(NSArray<PLVECMoreViewItem *> *)item {
     [self removeMoreViewItems];
     self.items = item;
+    __weak typeof(self) weakSelf = self;
     for (int i = 0; i < self.items.count; i++) {
         PLVECMoreViewItem *item = self.items[i];
         item.tag = 200 + i;
@@ -91,11 +92,11 @@
         if (item.selectedTitle) {
             [itemBtn setTitle:item.selectedTitle forState:UIControlStateSelected];
         }
-        [itemBtn setTitleEdgeInsets:UIEdgeInsetsMake(42, -38, 0, -5)];
-        
         if (item.iconURLString) {
             NSURL *iconURL = [NSURL URLWithString:item.iconURLString];
-            [itemBtn sd_setImageWithURL:iconURL forState:UIControlStateNormal];
+            [itemBtn sd_setImageWithURL:iconURL forState:UIControlStateNormal completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, NSURL *imageURL) {
+                [weakSelf setNeedsLayout];
+            }];
         } else {
             UIImage *image = [PLVECUtils imageForWatchResource:item.iconImageName];
             [itemBtn setImage:image forState:UIControlStateNormal];
@@ -104,8 +105,6 @@
                 [itemBtn setImage:selectImage forState:UIControlStateSelected];
             }
         }
-        [itemBtn setImageEdgeInsets:UIEdgeInsetsMake(0, 19, 22, 9)];
-        
         itemBtn.titleLabel.font = [UIFont systemFontOfSize:12.0];
         itemBtn.titleLabel.textColor = [UIColor colorWithWhite:205/255.0 alpha:1];
         [itemBtn addTarget:self action:@selector(switchItemButtonAction:) forControlEvents:UIControlEventTouchUpInside];
@@ -125,10 +124,14 @@
     self.scrollView.frame = CGRectMake(0, 46, width, scrollHeight);
     self.scrollView.contentSize = CGSizeMake(width, [self contentHeightForRows:rows]);
     for (NSInteger i = 0; i < self.items.count; i++) {
-        UIView *button = [self.scrollView viewWithTag:self.items[i].tag];
+        UIButton *button = (UIButton *)[self.scrollView viewWithTag:self.items[i].tag];
         NSInteger column = i % columns;
         NSInteger row = i / columns;
         button.frame = CGRectMake(12 + 72 * column, [self rowOriginY:row], 70, 54);
+        CGFloat imageWidth = MIN(button.currentImage.size.width, 32.0);
+        CGFloat horizontalInset = (CGRectGetWidth(button.bounds) - imageWidth) / 2.0;
+        button.imageEdgeInsets = UIEdgeInsetsMake(0, horizontalInset, 22, horizontalInset);
+        button.titleEdgeInsets = UIEdgeInsetsMake(42, -imageWidth, 0, 0);
     }
 }
 
@@ -177,6 +180,7 @@
     }
     PLVECMoreViewItem *item = self.items[selectedIndex];
     item.selected = button.selected = !button.isSelected;
+    [self setNeedsLayout];
     if ([self.delegate respondsToSelector:@selector(moreView:didSelectItem:)]) {
         [self.delegate moreView:self didSelectItem:item];
     }

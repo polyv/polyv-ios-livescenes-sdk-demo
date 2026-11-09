@@ -11,6 +11,7 @@
 #import "PLVECRepliedMsgView.h"
 #import "PLVECUtils.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVECKeyboardToolView ()<UITextViewDelegate>
@@ -52,6 +53,7 @@
     self = [super init];
     if (self) {
         _enabledKeyboardTool = YES;
+        _enableChat = YES;
         _activatedKeyboardToolRectY = 0.0;
         [self setupUI];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
@@ -76,7 +78,8 @@
         CGFloat buttonWidth = self.askQuestionButton.hidden ? 0 : 26;
         self.askQuestionButton.frame = CGRectMake(areaInsets.left + 16, CGRectGetHeight(self.bounds)/2 - 13, buttonWidth, buttonWidth);
     }
-    self.placeholderLB.frame = CGRectMake(CGRectGetMaxX(self.leftImageView.frame) + 6, 0, CGRectGetMinX(self.askQuestionButton.frame) - CGRectGetMaxX(self.leftImageView.frame) - 12, CGRectGetHeight(self.inactivatedTextAreaView.bounds));
+    CGFloat placeholderOriginX = self.leftImageView.hidden ? 12 : CGRectGetMaxX(self.leftImageView.frame) + 6;
+    self.placeholderLB.frame = CGRectMake(placeholderOriginX, 0, CGRectGetMinX(self.askQuestionButton.frame) - placeholderOriginX - 6, CGRectGetHeight(self.inactivatedTextAreaView.bounds));
     self.sendButton.frame = CGRectMake(CGRectGetWidth(self.bounds) - 46 - areaInsets.right, 0, 35, CGRectGetHeight(self.bounds));
     CGFloat textViewWidth = CGRectGetMinX(self.sendButton.frame) -  CGRectGetMaxX(self.askQuestionButton.frame) - 8 - 16;
     [self.textView setupWithFrame:CGRectMake(CGRectGetMaxX(self.askQuestionButton.frame) + 8, CGRectGetHeight(self.bounds)/2 - 18, textViewWidth, 36)];
@@ -89,15 +92,29 @@
 #pragma mark - [ Public Method ]
 
 - (void)switchKeyboardToolMode:(PLVECKeyboardToolMode)keyboardToolMode {
+    if (!self.enableChat) {
+        keyboardToolMode = self.enableAskQuestion ? PLVECKeyboardToolModeAskQuestion : PLVECKeyboardToolModeNormal;
+    }
     _keyboardToolMode = keyboardToolMode;
     
     self.askQuestionButton.selected = (self.keyboardToolMode == PLVECKeyboardToolModeAskQuestion);
+    if (!self.enabledChatKeyboardTool) {
+        [self tapAction:nil];
+    }
     [self updatePlaceholderLabelText];
+}
+
+- (void)setEnableChat:(BOOL)enableChat {
+    _enableChat = enableChat;
+    self.askQuestionButton.hidden = !enableChat || !self.enableAskQuestion;
+    self.leftImageView.hidden = !enableChat && !self.enableAskQuestion;
+    [self switchKeyboardToolMode:self.keyboardToolMode];
+    [self setNeedsLayout];
 }
 
 - (void)setEnableAskQuestion:(BOOL)enableAskQuestion {
     _enableAskQuestion = enableAskQuestion;
-    self.askQuestionButton.hidden = !enableAskQuestion;
+    self.askQuestionButton.hidden = !enableAskQuestion || !self.enableChat;
 }
 
 - (void)addTextViewToParentView:(UIView *)parentView {
@@ -137,7 +154,7 @@
 #pragma mark - [ Private Method ]
 - (void)setupUI {
     self.keyboardToolMode = PLVECKeyboardToolModeNormal;
-    self.placeholderText = PLVLocalizedString(@"聊点什么吧~");
+    self.placeholderText = [PLVRoomDataManager sharedManager].roomData.chatInputPlaceholder ?: PLVLocalizedString(@"聊点什么吧~");
     self.backgroundColor = [PLVColorUtil colorFromHexString:@"#262523"];
     self.hidden = YES;
     self.frame = CGRectMake(0, PLVScreenHeight, PLVScreenWidth, 52);
@@ -147,10 +164,14 @@
     [self.inactivatedTextAreaView addSubview:self.leftImageView];
     [self.inactivatedTextAreaView addSubview:self.askQuestionButton];
     [self.inactivatedTextAreaView addSubview:self.placeholderLB];
+    [self updatePlaceholderLabelText];
 }
 
 /// 触发发送消息回调，隐藏面板
 - (void)sendTextAndClearTextView {
+    if (!self.enabledChatKeyboardTool) {
+        return;
+    }
     if (self.textView.attributedText.length > 0) {
         NSString *text = [self.textView plvTextForRange:NSMakeRange(0, self.textView.attributedText.length)];
         if (self.delegate && [self.delegate respondsToSelector:@selector(keyboardToolView:sendText:replyModel:)]) {
@@ -252,7 +273,9 @@
 }
 
 - (void)updatePlaceholderLabelText {
-    if ((self.keyboardToolMode == PLVECKeyboardToolModeAskQuestion)) {
+    if (!self.enableChat && !self.enableAskQuestion) {
+        self.placeholderLB.text = PLVLocalizedString(@"聊天室已关闭");
+    } else if (self.keyboardToolMode == PLVECKeyboardToolModeAskQuestion) {
         self.placeholderLB.text = PLVLocalizedString(@"发起提问");
     } else if ([PLVFdUtil checkStringUseable:self.placeholderText]) {
         self.placeholderLB.text = self.placeholderText;
@@ -289,7 +312,8 @@
         _placeholderLB.text = self.placeholderText;
         _placeholderLB.font = [UIFont systemFontOfSize:14];
         _placeholderLB.textColor = [UIColor colorWithWhite:1.0 alpha:0.6];
-        _placeholderLB.lineBreakMode = NSLineBreakByCharWrapping;
+        _placeholderLB.numberOfLines = 1;
+        _placeholderLB.lineBreakMode = NSLineBreakByTruncatingTail;
     }
     return _placeholderLB;
 }
@@ -338,12 +362,15 @@
 }
 
 - (BOOL)enabledChatKeyboardTool {
-    return (_enabledKeyboardTool || self.keyboardToolMode == PLVECKeyboardToolModeAskQuestion);
+    return self.keyboardToolMode == PLVECKeyboardToolModeAskQuestion ? self.enableAskQuestion : (self.enableChat && self.enabledKeyboardTool);
 }
 
 #pragma mark - [ Event ]
 #pragma mark - Action
 - (void)askQuestionButton:(UIButton *)sender {
+    if (!self.enableChat || !self.enableAskQuestion) {
+        return;
+    }
     sender.selected = !sender.isSelected;
     self.keyboardToolMode = (sender.selected ? PLVECKeyboardToolModeAskQuestion : PLVECKeyboardToolModeNormal);
     [self updatePlaceholderLabelText];

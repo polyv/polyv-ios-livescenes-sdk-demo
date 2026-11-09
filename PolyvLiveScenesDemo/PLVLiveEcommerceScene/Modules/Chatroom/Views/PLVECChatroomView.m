@@ -24,7 +24,8 @@ PLVECChatroomViewModelProtocol,
 PLVECChatroomPlaybackDelegate,
 PLVECChatroomPlaybackViewModelDelegate,
 PLVECKeyboardToolViewDelegate,
-PLVECChatroomMessageViewDelegate
+PLVECChatroomMessageViewDelegate,
+PLVRoomDataManagerProtocol
 >
 
 /// 聊天列表
@@ -48,6 +49,8 @@ PLVECChatroomMessageViewDelegate
 @property (nonatomic, assign, readonly) CGFloat textViewAreaRectY;
 /// 是否启用提问功能
 @property (nonatomic, assign) BOOL enableQuiz;
+/// 是否显示聊天分组
+@property (nonatomic, assign) BOOL enableChat;
 
 @end
 
@@ -56,6 +59,7 @@ PLVECChatroomMessageViewDelegate
 - (void)dealloc {
     [NSObject cancelPreviousPerformRequestsWithTarget:self];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [[PLVRoomDataManager sharedManager] removeDelegate:self];
 }
 
 - (instancetype)init {
@@ -71,7 +75,7 @@ PLVECChatroomMessageViewDelegate
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         self.playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
         
-        if (self.videoType == PLVChannelVideoType_Live) { // 直播一定会显示聊天室
+        if (self.videoType == PLVChannelVideoType_Live) {
             [[PLVECChatroomViewModel sharedViewModel] setup];
             [[PLVECChatroomViewModel sharedViewModel] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         } else { // 回放时只有chatInputDisable为YES时会显示聊天室
@@ -99,6 +103,8 @@ PLVECChatroomMessageViewDelegate
             if (self.enableQuiz) {
                 [self addSubview:self.receiveAQMessageImgView];
             }
+            [self updateChatMenuDisplay];
+            [[PLVRoomDataManager sharedManager] addDelegate:self delegateQueue:dispatch_get_main_queue()];
         }
     }
     return self;
@@ -206,6 +212,24 @@ PLVECChatroomMessageViewDelegate
 
 #pragma mark - Private Method
 
+- (void)updateChatMenuDisplay {
+    self.enableChat = NO;
+    for (PLVLiveVideoChannelMenu *menu in [PLVRoomDataManager sharedManager].roomData.menuInfo.channelMenus) {
+        if ([menu.menuType isEqualToString:@"chat"]) {
+            self.enableChat = menu.displayEnabled;
+            break;
+        }
+    }
+    self.keyboardToolView.enableChat = self.enableChat;
+    self.messageView.enableChat = self.enableChat;
+}
+
+#pragma mark - PLVRoomDataManagerProtocol
+
+- (void)roomDataManager_didMenuInfoChanged:(PLVLiveVideoChannelMenuInfo *)menuInfo {
+    [self updateChatMenuDisplay];
+}
+
 #pragma mark - PLVECChatroomViewModelProtocol
 - (void)chatroomManager_didReceiveAnswerMessage {
     if (self.keyboardToolView.keyboardToolMode == PLVECKeyboardToolModeNormal) {
@@ -265,14 +289,16 @@ PLVECChatroomMessageViewDelegate
 - (void)chatroomManager_closeRoom:(BOOL)closeRoom {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.keyboardToolView.enabledKeyboardTool = !closeRoom;
-        [self.keyboardToolView changePlaceholderText:closeRoom ? PLVLocalizedString(@"聊天室已关闭") : PLVLocalizedString(@"聊点什么吧~")];
+        NSString *placeholder = [PLVRoomDataManager sharedManager].roomData.chatInputPlaceholder ?: PLVLocalizedString(@"聊点什么吧~");
+        [self.keyboardToolView changePlaceholderText:closeRoom ? PLVLocalizedString(@"聊天室已关闭") : placeholder];
     });
 }
 
 - (void)chatroomManager_focusMode:(BOOL)focusMode {
     dispatch_async(dispatch_get_main_queue(), ^{
         self.keyboardToolView.enabledKeyboardTool = !focusMode;
-        [self.keyboardToolView changePlaceholderText:focusMode ? PLVLocalizedString(@"当前为专注模式") : PLVLocalizedString(@"聊点什么吧~")];
+        NSString *placeholder = [PLVRoomDataManager sharedManager].roomData.chatInputPlaceholder ?: PLVLocalizedString(@"聊点什么吧~");
+        [self.keyboardToolView changePlaceholderText:focusMode ? PLVLocalizedString(@"当前为专注模式") : placeholder];
     });
 }
 
@@ -436,6 +462,9 @@ PLVECChatroomMessageViewDelegate
     }
     
     if (self.keyboardToolView.keyboardToolMode == PLVECKeyboardToolModeNormal) {
+        if (!self.enableChat) {
+            return;
+        }
         BOOL success = [[PLVECChatroomViewModel sharedViewModel] sendSpeakMessage:text replyChatModel:replyModel];
         if (!success) {
             [PLVECUtils showHUDWithTitle:PLVLocalizedString(@"消息发送失败") detail:@"" view:self];
@@ -462,6 +491,9 @@ PLVECChatroomMessageViewDelegate
 #pragma mark - PLVECChatroomMessageViewDelegate
     
 - (void)chatroomMessageView:(PLVECChatroomMessageView *)messageView replyChatModel:(PLVChatModel *)replyModel {
+    if (!self.enableChat) {
+        return;
+    }
     [self.keyboardToolView replyChatModel:replyModel];
 }
 

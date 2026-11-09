@@ -71,6 +71,7 @@ PLVECChatroomPlaybackViewModelDelegate
 - (instancetype)init {
     self = [super init];
     if (self) {
+        _enableChat = YES;
         PLVRoomData *roomData = [PLVRoomDataManager sharedManager].roomData;
         self.playbackEnable = roomData.menuInfo.chatInputDisable && roomData.videoType == PLVChannelVideoType_Playback;
         self.enableQuiz = NO;
@@ -102,32 +103,51 @@ PLVECChatroomPlaybackViewModelDelegate
 - (void)layoutSubviews {
     [super layoutSubviews];
     
-    CGSize scrollViewContentSize = CGSizeMake(CGRectGetWidth(self.bounds), CGRectGetHeight(self.scrollView.bounds));
     CGFloat scrollViewHeight = self.bounds.size.height;
     CGFloat scrollViewWidth = self.bounds.size.width;
-    if (self.enableQuiz) {
+    BOOL pagingEnabled = self.enableChat && self.enableQuiz;
+    if (pagingEnabled) {
         self.pageControlView.frame = CGRectMake(0, CGRectGetHeight(self.bounds) - 4, KPLVECPageControlWidth * 2 + 4, 4);
         scrollViewHeight -= (self.pageControlView.frame.size.height + 8);
         self.leftBackgroundLayer.frame = CGRectMake(0, 0, KPLVECPageControlWidth, CGRectGetHeight(self.pageControlView.bounds));
         self.rightBackgroundLayer.frame = CGRectMake(CGRectGetMaxX(self.leftBackgroundLayer.frame) + 4, 0, KPLVECPageControlWidth, CGRectGetHeight(self.pageControlView.bounds));
         [self updatePageControlFrame];
-        self.privateChatMessageView.frame = CGRectMake(scrollViewWidth, 0, scrollViewWidth, scrollViewHeight);
-        scrollViewContentSize = CGSizeMake(scrollViewWidth * 2, scrollViewHeight);
+    }
+    if (self.enableQuiz) {
+        self.privateChatMessageView.frame = CGRectMake(self.enableChat ? scrollViewWidth : 0, 0, scrollViewWidth, scrollViewHeight);
     }
     self.scrollView.frame = CGRectMake(0, 0, self.bounds.size.width, scrollViewHeight);
     self.tableViewBackgroundView.frame = CGRectMake(0, 0, self.scrollView.bounds.size.width, self.scrollView.bounds.size.height);
     self.tableView.frame = self.tableViewBackgroundView.bounds;
     self.gradientLayer.frame = self.tableViewBackgroundView.bounds;
-    self.scrollView.contentSize = scrollViewContentSize;
+    self.scrollView.contentSize = CGSizeMake(scrollViewWidth * (pagingEnabled ? 2 : 1), scrollViewHeight);
+    CGFloat contentOffsetX = self.enableChat && self.messageViewType == PLVECChatroomMessageViewTypeAskQuestion ? scrollViewWidth : 0;
+    [self.scrollView setContentOffset:CGPointMake(contentOffsetX, 0) animated:NO];
     self.receiveNewMessageView.frame = CGRectMake(0, CGRectGetHeight(self.tableViewBackgroundView.frame) - 25, 86, 25);
     [PLVECChatroomViewModel sharedViewModel].tableViewWidth = self.tableView.frame.size.width;
 }
 
 #pragma mark - [ Public Method ]
 
+- (void)setEnableChat:(BOOL)enableChat {
+    _enableChat = enableChat;
+    self.hidden = !enableChat && !self.enableQuiz;
+    self.tableViewBackgroundView.hidden = !enableChat;
+    _pageControlView.hidden = !enableChat;
+    self.scrollView.scrollEnabled = enableChat && self.enableQuiz;
+    if (!enableChat) {
+        self.messageViewType = self.enableQuiz ? PLVECChatroomMessageViewTypeAskQuestion : PLVECChatroomMessageViewTypeNormal;
+    }
+    [self setNeedsLayout];
+}
+
 - (void)switchMessageViewType:(PLVECChatroomMessageViewType)type {
+    if ((type == PLVECChatroomMessageViewTypeNormal && !self.enableChat) ||
+        (type == PLVECChatroomMessageViewTypeAskQuestion && !self.enableQuiz)) {
+        return;
+    }
     _messageViewType = type;
-    CGFloat contentOffsetX = (type == PLVECChatroomMessageViewTypeAskQuestion ? CGRectGetWidth(self.scrollView.bounds) : 0);
+    CGFloat contentOffsetX = (type == PLVECChatroomMessageViewTypeAskQuestion && self.enableChat ? CGRectGetWidth(self.scrollView.bounds) : 0);
     [self.scrollView setContentOffset:CGPointMake(contentOffsetX, 0) animated:YES];
 }
 
@@ -598,6 +618,9 @@ PLVECChatroomPlaybackViewModelDelegate
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    if (!self.enableChat) {
+        return;
+    }
     CGFloat scrollScale = scrollView.contentOffset.x/self.scrollView.bounds.size.width;
     if (scrollScale == 0) {
         self.messageViewType = PLVECChatroomMessageViewTypeNormal;

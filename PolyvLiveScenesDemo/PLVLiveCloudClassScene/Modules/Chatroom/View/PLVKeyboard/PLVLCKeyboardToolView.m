@@ -17,6 +17,7 @@
 #import "PLVChatModel.h"
 #import "PLVLCRepliedMsgView.h"
 #import "PLVLCIarEntranceView.h"
+#import "PLVRoomDataManager.h"
 
 #define kScreenWidth ([UIScreen mainScreen].bounds.size.width)
 #define kScreenHeight ([UIScreen mainScreen].bounds.size.height)
@@ -347,6 +348,7 @@ PLVLCKeyboardMoreViewDelegate
         _enablePointReward = NO;
         _enableReward = NO;
         [self setupUI];
+        [self changePlaceholderText:[self defaultPlaceholderText]];
         
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardWillShow:) name:UIKeyboardWillShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidHide:) name:UIKeyboardDidHideNotification object:nil];
@@ -433,6 +435,13 @@ PLVLCKeyboardMoreViewDelegate
 }
 
 #pragma mark - Private Method
+- (NSString *)defaultPlaceholderText {
+    if (self.mode == PLVLCKeyboardToolModeDefault) {
+        return [PLVRoomDataManager sharedManager].roomData.chatInputPlaceholder ?: PLVLocalizedString(@"我也来聊几句");
+    }
+    return PLVLocalizedString(@"我也来聊几句");
+}
+
 - (void)updateUI {
     self.iarEntranceView.frame = CGRectMake(0, 8, kScreenWidth, PLVLCIarEntranceViewHeight);
     [self updateTextViewAndButton];
@@ -580,10 +589,13 @@ PLVLCKeyboardMoreViewDelegate
 
 /// 切换聊天室关闭状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能
 - (void)changeCloseRoomStatus:(BOOL)closeRoom {
-    NSString *placeholderText = closeRoom ? PLVLocalizedString(@"聊天室已关闭"):PLVLocalizedString(@"我也来聊几句");
+    NSString *placeholderText = closeRoom ? PLVLocalizedString(@"聊天室已关闭") : [self defaultPlaceholderText];
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.textView setEditable:!closeRoom];
         [self changePlaceholderText:placeholderText];
+        if (closeRoom) {
+            [self.textView clearText];
+        }
         self.emojiButton.enabled = !closeRoom;
         if (self.mode == PLVLCKeyboardToolModeDefault) {
             [self.moreboard changeCloseRoomStatus:closeRoom];
@@ -594,10 +606,13 @@ PLVLCKeyboardMoreViewDelegate
 
 /// 切换聊天室专注模式状态，开启/禁用输入框、emoji 选择、查看更多中的部分功能，启用只看讲师功能
 - (void)changeFocusMode:(BOOL)focusMode {
-    NSString *placeholderText = focusMode ? PLVLocalizedString(@"当前为专注模式，无法发言"):PLVLocalizedString(@"我也来聊几句");
+    NSString *placeholderText = focusMode ? PLVLocalizedString(@"当前为专注模式，无法发言") : [self defaultPlaceholderText];
     dispatch_async(dispatch_get_main_queue(), ^{
         [self.textView setEditable:!focusMode];
         [self changePlaceholderText:placeholderText];
+        if (focusMode) {
+            [self.textView clearText];
+        }
         self.emojiButton.enabled = !focusMode;
         if (self.mode == PLVLCKeyboardToolModeDefault) {
             [self.moreboard changeFocusModeStatus:focusMode];

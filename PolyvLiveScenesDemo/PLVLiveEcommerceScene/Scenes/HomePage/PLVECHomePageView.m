@@ -185,6 +185,9 @@ PLVECSubtitleConfigViewDelegate
         self.curSpeedIndex = 2; // 默认1.0x
         
         [self setupUI];
+        if (self.type == PLVECHomePageType_Live) {
+            [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(gotChatroomFunction:) name:PLVLCChatroomFunctionGotNotification object:nil];
+        }
         
         socketDelegateQueue = dispatch_get_main_queue();
         [[PLVSocketManager sharedManager] addDelegate:self delegateQueue:socketDelegateQueue];
@@ -203,6 +206,13 @@ PLVECSubtitleConfigViewDelegate
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
     _moreView.hidden = YES;
     _switchView.hidden = YES;
+}
+
+#pragma mark - Notification
+
+- (void)gotChatroomFunction:(NSNotification *)notification {
+    self.likeButtonView.hidden = [PLVRoomDataManager sharedManager].roomData.sendLikeDisable;
+    [self setNeedsLayout];
 }
 
 #pragma mark - Initialize
@@ -285,6 +295,7 @@ PLVECSubtitleConfigViewDelegate
 - (PLVECLikeButtonView *)likeButtonView {
     if (!_likeButtonView) {
         _likeButtonView = [[PLVECLikeButtonView alloc] init];
+        _likeButtonView.hidden = [PLVRoomDataManager sharedManager].roomData.sendLikeDisable;
         _likeButtonView.likeCount = [PLVRoomDataManager sharedManager].roomData.likeCount;
         [_likeButtonView startTimer];
         _likeButtonView.didTapLikeButton = ^{
@@ -622,6 +633,7 @@ PLVECSubtitleConfigViewDelegate
 - (void)destroy {
     [self stopLiveCountdownTimer];
     if (self.type == PLVECHomePageType_Live) {
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:PLVLCChatroomFunctionGotNotification object:nil];
         [_likeButtonView invalidTimer];
         [[PLVECChatroomViewModel sharedViewModel] clear];
     }
@@ -1316,7 +1328,7 @@ PLVECSubtitleConfigViewDelegate
         
         { // 右侧悬浮挂件位置
             CGFloat originX = CGRectGetMinX(self.moreButton.frame);
-            CGFloat originY = CGRectGetMinY(self.likeButtonView.frame);
+            CGFloat originY = self.likeButtonView.hidden ? CGRectGetMinY(self.moreButton.frame) : CGRectGetMinY(self.likeButtonView.frame);
             if (!self.redpackButtonView.hidden) { // 倒计时红包挂件
                 originY -= (8 + PLVECRedpackButtonViewHeight);
                 self.redpackButtonView.frame = CGRectMake(originX, originY, PLVECRedpackButtonViewWidth, PLVECRedpackButtonViewHeight);

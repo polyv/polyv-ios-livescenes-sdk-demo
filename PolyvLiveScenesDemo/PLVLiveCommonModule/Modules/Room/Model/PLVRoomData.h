@@ -82,6 +82,8 @@ typedef NS_ENUM(NSInteger, PLVMixLayoutBackgroundColor) {
 @property (nonatomic, strong) PLVPlaybackVideoInfoModel *playbackVideoInfo;
 /// 菜单信息，只读属性
 @property (nonatomic, strong, readonly) PLVLiveVideoChannelMenuInfo *menuInfo;
+/// 聊天菜单配置的输入框提示文案，未配置或为空时返回 nil
+@property (nonatomic, copy, readonly, nullable) NSString *chatInputPlaceholder;
 /// 服务器时间与本地时间偏移（毫秒），serverNow = localNow + serverTimeOffsetMs
 @property (nonatomic, assign) long long serverTimeOffsetMs;
 /// 用户对象，只读属性

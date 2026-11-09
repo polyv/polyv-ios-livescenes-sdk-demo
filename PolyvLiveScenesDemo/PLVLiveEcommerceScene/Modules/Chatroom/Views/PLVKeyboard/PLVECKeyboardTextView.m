@@ -175,6 +175,8 @@ static NSString *kPLVECTextBackedStringAttributeName = @"kTextBackedStringAttrib
         _placeholderLabel = [[UILabel alloc] init];
         _placeholderLabel.text = PLVLocalizedString(@"聊点什么～");
         _placeholderLabel.font = [UIFont systemFontOfSize:kPLVECKeyboardFontSize];
+        _placeholderLabel.numberOfLines = 1;
+        _placeholderLabel.lineBreakMode = NSLineBreakByTruncatingTail;
         _placeholderLabel.textColor = [UIColor colorWithWhite:1 alpha:0.2];
     }
     return _placeholderLabel;

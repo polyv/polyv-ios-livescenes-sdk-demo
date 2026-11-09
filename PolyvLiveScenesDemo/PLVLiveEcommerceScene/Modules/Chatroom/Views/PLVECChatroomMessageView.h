@@ -47,6 +47,9 @@ typedef NS_ENUM(NSInteger, PLVECChatroomMessageViewType) {
 
 @property (nonatomic, weak) id<PLVECChatroomMessageViewDelegate> delegate;
 
+/// 是否显示聊天分组，默认 YES；关闭后仅展示现有提问分组
+@property (nonatomic, assign) BOOL enableChat;
+
 /// 聊天室消息视图类型
 @property (nonatomic, assign, readonly) PLVECChatroomMessageViewType messageViewType;
 

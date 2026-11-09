@@ -117,6 +117,9 @@
 #pragma mark - Private Method
 
 - (void)likeAnimationWithLocalTouch:(BOOL)localTouch {
+    if (self.hidden) {
+        return;
+    }
     if (localTouch) { // 本地点击按钮动画
         //放大动画
         CABasicAnimation *scaleAnimation = [CABasicAnimation animationWithKeyPath:@"transform.scale"];

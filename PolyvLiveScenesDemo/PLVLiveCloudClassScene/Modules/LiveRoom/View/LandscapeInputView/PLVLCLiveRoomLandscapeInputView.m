@@ -12,6 +12,7 @@
 #import "PLVLCUtils.h"
 #import "PLVChatModel.h"
 #import "PLVMultiLanguageManager.h"
+#import "PLVRoomDataManager.h"
 #import <PLVFoundationSDK/PLVFoundationSDK.h>
 
 @interface PLVLCLiveRoomLandscapeInputView () <UITextFieldDelegate>
@@ -54,6 +55,10 @@
 #pragma mark - [ Public Methods ]
 - (void)showInputView:(BOOL)show{
     if (show) {
+        NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+        paragraphStyle.lineBreakMode = NSLineBreakByTruncatingTail;
+        NSString *placeholder = [PLVRoomDataManager sharedManager].roomData.chatInputPlaceholder ?: PLVLocalizedString(@"跟大家聊点什么吧～");
+        self.textField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:placeholder attributes:@{NSParagraphStyleAttributeName:paragraphStyle}];
         if (self.replyModel) {
             self.replyModelView = [[PLVLCLandscapeRepliedMsgView alloc] initWithChatModel:self.replyModel];
             __weak typeof(self) weakSelf = self;

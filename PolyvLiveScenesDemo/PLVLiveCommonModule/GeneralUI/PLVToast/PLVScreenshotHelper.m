@@ -54,10 +54,7 @@ static BOOL PLVShowScreenshotView = YES;
         return;
     }
     if (status == PLVAuthorizationStatusDenied || status == PLVAuthorizationStatusRestricted) {
-        UIViewController *viewController = [helper topViewControllerFromView:view];
-        [PLVAuthorizationManager showAlertWithTitle:PLVLocalizedString(@"提示")
-                                            message:PLVLocalizedString(@"保存图片所需的存储权限被拒绝，请到应用设置的权限管理中恢复")
-                                     viewController:viewController];
+        [helper showMessage:PLVLocalizedString(@"保存图片所需的存储权限被拒绝，请到应用设置的权限管理中恢复")];
         return;
     }
     [PLVAuthorizationManager requestAuthorizationWithType:PLVAuthorizationTypePhotoLibrary completion:^(BOOL granted) {
@@ -125,17 +122,6 @@ static BOOL PLVShowScreenshotView = YES;
         }
     }
     return UIApplication.sharedApplication.keyWindow;
-}
-
-- (UIViewController *)topViewControllerFromView:(UIView *)view {
-    UIResponder *responder = view;
-    while (responder) {
-        if ([responder isKindOfClass:[UIViewController class]]) {
-            return (UIViewController *)responder;
-        }
-        responder = responder.nextResponder;
-    }
-    return self.keyWindow.rootViewController;
 }
 
 - (void)showMessage:(NSString *)message {
